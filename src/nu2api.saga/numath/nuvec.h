@@ -9,4 +9,7 @@ typedef struct {
 
 typedef nuvec_s NUVEC;
 
+void NuVecAdd(NUVEC* v, NUVEC* v0, NUVEC* v1);
+void NuVecSub(NUVEC* v, NUVEC* v0, NUVEC* v1);
+
 #endif // NU2API_SAGA_NUMATH_NUVEC_H
