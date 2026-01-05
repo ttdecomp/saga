@@ -9,6 +9,9 @@ SYMBOL_BLOCKLIST = set([
     "_edata",
     "__dso_handle",
     "__bss_start",
+    "sqrt",
+    "__stack_chk_fail",
+    "sin",
 ])
 
 target = lief.parse("res/libTTapp.so")

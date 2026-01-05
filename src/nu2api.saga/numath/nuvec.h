@@ -2,7 +2,7 @@
 #define NU2API_SAGA_NUMATH_NUVEC_H
 
 /// @brief A 3-dimensional vector
-typedef struct {
+struct nuvec_s {
     /// @brief The x component of the vector
     float x;
 
@@ -11,9 +11,9 @@ typedef struct {
 
     /// @brief The z component of the vector
     float z;
-} nuvec_s;
+};
 
-typedef nuvec_s NUVEC;
+typedef struct nuvec_s NUVEC;
 
 /// @brief Negate a vector
 /// @details Negates the vector v0 and stores the result in v.
@@ -122,6 +122,77 @@ float NuVecMagSqr(NUVEC *v0);
 /// @details Computes the magnitude of the vector v0 and returns the result.
 /// @param v0 The vector to compute the magnitude of
 /// @return The magnitude of the vector
-// float NuVecMag(NUVEC* v0);
+float NuVecMag(NUVEC* v0);
+
+/// @brief Compute the magnitude of only the x and z components of a vector
+/// @details Computes the magnitude of only the x and z components of the vector v0 and returns the result.
+/// @param v0 The vector to compute the magnitude of
+/// @return The magnitude of the x and z components of the vector
+float NuVecMagXZ(NUVEC* v0);
+
+/// @brief Compute the normalized vector of a vector and return the initial length
+/// @details Computes the normalized vector of the vector v0, stores the result in v and returns the initial length of the vector.
+/// @param v The vector to store the result in
+/// @param v0 The vector to normalize
+/// @return The initial length of the vector
+float NuVecNorm(NUVEC* v, NUVEC* v0);
+
+/// @brief Compute the surface normal of a triangle
+/// @details Computes the surface normal of the triangle formed by the vectors v0, v1 and v2 and stores the result in v.
+/// @param v The vector to store the result in
+/// @param v0 The first vertex of the triangle
+/// @param v1 The second vertex of the triangle
+/// @param v2 The third vertex of the triangle
+/// @return void
+void NuVecSurfaceNormal(NUVEC* v, NUVEC* v0, NUVEC* v1, NUVEC* v2);
+
+/// @brief Compute the distance between two point vectors
+/// @details Computes the distance between the two point vectors v0 and v1 and returns the result. Optionally uses the vector d as storage for the directional vector between the two points.
+/// @param v0 The first point vector
+/// @param v1 The second point vector
+/// @param d The vector to store the directional vector in, can be NULL
+/// @return The distance between the two point vectors
+float NuVecDist(NUVEC* v0, NUVEC* v1, NUVEC* d);
+
+/// @brief Compute the distance squared between two point vectors
+/// @details Computes the distance squared between the two point vectors v0 and v1 and returns the result. Optionally uses the vector d as storage for the directional vector between the two points.
+/// @param v0 The first point vector
+/// @param v1 The second point vector
+/// @param d The vector to store the directional vector in, can be NULL
+/// @return The distance squared between the two point vectors
+float NuVecDistSqr(NUVEC* v0, NUVEC* v1, NUVEC* d);
+
+/// @brief Compute the distance between only the x and z components of two point vectors
+/// @details Computes the distance between only the x and z components of the two point vectors v0 and v1 and returns the result. Optionally uses the vector d as storage for the directional vector between the two points.
+/// @param v0 The first point vector
+/// @param v1 The second point vector
+/// @param d The vector to store the directional vector in, can be NULL
+/// @return The distance between the two point vectors
+float NuVecXZDist(NUVEC* v0, NUVEC* v1, NUVEC* d);
+
+/// @brief Compute the distance squared between only the x and z components of two point vectors
+/// @details Computes the distance squared between only the x and z components of the two point vectors v0 and v1 and returns the result. Optionally uses the vector d as storage for the directional vector between the two points.
+/// @param v0 The first point vector
+/// @param v1 The second point vector
+/// @param d The vector to store the directional vector in, can be NULL
+/// @return The distance squared between the two point vectors
+float NuVecXZDistSqr(NUVEC* v0, NUVEC* v1, NUVEC* d);
+
+/// @brief Compute the linear interpolation between two point vectors at a given ratio
+/// @details Computes the linear interpolation between the two point vectors v0 and v1 at the ratio t and stores the result in vt.
+/// @param vt The vector to store the result in
+/// @param v1 The second point vector
+/// @param v0 The first point vector
+/// @param t The ratio to interpolate at
+/// @return void
+void NuVecLerp(NUVEC* vt, NUVEC* v1, NUVEC* v0, float t);
+
+/// @brief Compare two vectors with a tolerance
+/// @details Compares the two vectors a and b with a tolerance and returns 1 if they are equal, 0 otherwise.
+/// @param a The first vector to compare
+/// @param b The second vector to compare
+/// @param tolerance The tolerance to compare the vectors with
+/// @return 1 if the vectors are equal, 0 otherwise
+int NuVecCompareTolerance(NUVEC *a, NUVEC *b, float tolerance);
 
 #endif // NU2API_SAGA_NUMATH_NUVEC_H
