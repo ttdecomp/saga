@@ -36,4 +36,4 @@ for name in rewrite_symbols:
 
 print(f"Symbols rewritten: {symbols_rewritten} / {len(target_symbols)}")
 print(f"Rewritten symbols size: {rewritten_size} / {target_size}")
-print(f"Progress: {symbols_rewritten / len(target_symbols) * 100}%")
+print(f"Progress: {symbols_rewritten / len(target_symbols) * 100:.2f}%")
