@@ -31,6 +31,5 @@ See the [docs/](docs/) directory.
 
 ## References
 
-- the original android app can be found at https://archive.org/download/main.1060.com.wb.lego.tcs
 - the android app can be run with the Waydroid emulator: https://waydro.id/
 
