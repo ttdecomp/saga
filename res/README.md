@@ -1,0 +1,1 @@
+`libTTapp.so` and `main.1060.com.wb.lego.tcs.obb` should be placed in this directory.
