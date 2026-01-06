@@ -18,9 +18,7 @@ jobs:
 
     
     - name: Install CMake 4.x
-      uses: lukka/get-cmake@v3
-      with:
-        cmakeVersion: 4.0.0
+      uses: lukka/get-cmake@latest
 
     - name: Configure CMake
       run: mkdir build && cd build && cmake ..
