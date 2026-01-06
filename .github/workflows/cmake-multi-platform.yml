@@ -21,7 +21,7 @@ jobs:
       uses: lukka/get-cmake@latest
 
     - name: Configure CMake
-      run: mkdir build && cd build && cmake ..
+      run: cmake -B build .
 
     - name: Build
-      run: make
+      run: make -C build
