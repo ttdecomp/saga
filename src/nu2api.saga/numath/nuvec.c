@@ -114,15 +114,15 @@ float NuVecMagSqr(NUVEC *v0) {
     return v0->x * v0->x + v0->y * v0->y + v0->z * v0->z;
 }
 
-float NuVecMag(NUVEC* v0) {
+float NuVecMag(NUVEC *v0) {
     return NuFsqrt(NuVecMagSqr(v0));
 }
 
-float NuVecMagXZ(NUVEC* v0) {
+float NuVecMagXZ(NUVEC *v0) {
     return NuFsqrt(v0->x * v0->x + v0->z * v0->z);
 }
 
-float NuVecNorm(NUVEC* v, NUVEC* v0) {
+float NuVecNorm(NUVEC *v, NUVEC *v0) {
     float len = NuFsqrt(NuVecMagSqr(v0));
     float leni;
 
@@ -139,7 +139,7 @@ float NuVecNorm(NUVEC* v, NUVEC* v0) {
     return len;
 }
 
-void NuVecSurfaceNormal(NUVEC* v, NUVEC* v0, NUVEC* v1, NUVEC* v2) {
+void NuVecSurfaceNormal(NUVEC *v, NUVEC *v0, NUVEC *v1, NUVEC *v2) {
     NUVEC vecA, vecB;
 
     NuVecSub(&vecA, v0, v1);
@@ -148,7 +148,7 @@ void NuVecSurfaceNormal(NUVEC* v, NUVEC* v0, NUVEC* v1, NUVEC* v2) {
     NuVecNorm(v, v);
 }
 
-float NuVecDist(NUVEC* v0, NUVEC* v1, NUVEC* d) {
+float NuVecDist(NUVEC *v0, NUVEC *v1, NUVEC *d) {
     NUVEC dist;
     float result;
 
@@ -163,7 +163,7 @@ float NuVecDist(NUVEC* v0, NUVEC* v1, NUVEC* d) {
     return result;
 }
 
-float NuVecDistSqr(NUVEC* v0, NUVEC* v1, NUVEC* d) {
+float NuVecDistSqr(NUVEC *v0, NUVEC *v1, NUVEC *d) {
     NUVEC dist;
     float result;
 
@@ -178,7 +178,7 @@ float NuVecDistSqr(NUVEC* v0, NUVEC* v1, NUVEC* d) {
     return result;
 }
 
-float NuVecXZDist(NUVEC* v0, NUVEC* v1, NUVEC* d) {
+float NuVecXZDist(NUVEC *v0, NUVEC *v1, NUVEC *d) {
     NUVEC dist;
     float result;
 
@@ -197,7 +197,7 @@ float NuVecXZDist(NUVEC* v0, NUVEC* v1, NUVEC* d) {
     return result;
 }
 
-float NuVecXZDistSqr(NUVEC* v0, NUVEC* v1, NUVEC* d) {
+float NuVecXZDistSqr(NUVEC *v0, NUVEC *v1, NUVEC *d) {
     NUVEC dist;
     float result;
 
@@ -216,7 +216,7 @@ float NuVecXZDistSqr(NUVEC* v0, NUVEC* v1, NUVEC* d) {
     return result;
 }
 
-void NuVecLerp(NUVEC* vt, NUVEC* v1, NUVEC* v0, float t) {
+void NuVecLerp(NUVEC *vt, NUVEC *v1, NUVEC *v0, float t) {
     vt->x = v0->x + (v1->x - v0->x) * t;
     vt->y = v0->y + (v1->y - v0->y) * t;
     vt->z = v0->z + (v1->z - v0->z) * t;
