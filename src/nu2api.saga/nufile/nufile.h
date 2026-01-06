@@ -3,12 +3,357 @@
 #include <stdint.h>
 #include <stdio.h>
 
-typedef struct nudathdr_s nudathdr_s;
-typedef enum OpenMode : int32_t {
+typedef enum NuFileOpenMode : int32_t {
     MODE_READ = 0,
     MODE_WRITE = 1,
     MODE_APPEND = 2,
-} OpenMode;
+} NuFileOpenMode;
+
+typedef struct nudathdr_s { /* PlaceHolder Structure */
+    char field0_0x0;
+    char field1_0x1;
+    char field2_0x2;
+    char field3_0x3;
+    int32_t hashesCount;
+    int32_t (**field5_0x8)[4];
+    char field6_0xc;
+    char field7_0xd;
+    char field8_0xe;
+    char field9_0xf;
+    int16_t (*field10_0x10)[6];
+    char field11_0x14;
+    char field12_0x15;
+    char field13_0x16;
+    char field14_0x17;
+    char field15_0x18;
+    char field16_0x19;
+    char field17_0x1a;
+    char field18_0x1b;
+    uint32_t *hashes;
+    int32_t someCount;
+    char field21_0x24;
+    char field22_0x25;
+    char field23_0x26;
+    char field24_0x27;
+    char *field25_0x28;
+    int32_t field26_0x2c;
+    char field27_0x30;
+    char field28_0x31;
+    char field29_0x32;
+    char field30_0x33;
+    int32_t field31_0x34[2];
+    char field32_0x3c;
+    char field33_0x3d;
+    char field34_0x3e;
+    char field35_0x3f;
+    char field36_0x40;
+    char field37_0x41;
+    char field38_0x42;
+    char field39_0x43;
+    char field40_0x44;
+    char field41_0x45;
+    char field42_0x46;
+    char field43_0x47;
+    char field44_0x48;
+    char field45_0x49;
+    char field46_0x4a;
+    char field47_0x4b;
+    char field48_0x4c;
+    char field49_0x4d;
+    char field50_0x4e;
+    char field51_0x4f;
+    char field52_0x50;
+    char field53_0x51;
+    char field54_0x52;
+    char field55_0x53;
+    char field56_0x54;
+    char field57_0x55;
+    char field58_0x56;
+    char field59_0x57;
+    char field60_0x58;
+    char field61_0x59;
+    char field62_0x5a;
+    char field63_0x5b;
+    char field64_0x5c;
+    char field65_0x5d;
+    char field66_0x5e;
+    char field67_0x5f;
+    char field68_0x60;
+    char field69_0x61;
+    char field70_0x62;
+    char field71_0x63;
+    char field72_0x64;
+    char field73_0x65;
+    char field74_0x66;
+    char field75_0x67;
+    char field76_0x68;
+    char field77_0x69;
+    char field78_0x6a;
+    char field79_0x6b;
+    char field80_0x6c;
+    char field81_0x6d;
+    char field82_0x6e;
+    char field83_0x6f;
+    char field84_0x70;
+    char field85_0x71;
+    char field86_0x72;
+    char field87_0x73;
+    char field88_0x74;
+    char field89_0x75;
+    char field90_0x76;
+    char field91_0x77;
+    char field92_0x78;
+    char field93_0x79;
+    char field94_0x7a;
+    char field95_0x7b;
+    char field96_0x7c;
+    char field97_0x7d;
+    char field98_0x7e;
+    char field99_0x7f;
+    char field100_0x80;
+    char field101_0x81;
+    char field102_0x82;
+    char field103_0x83;
+    char field104_0x84;
+    char field105_0x85;
+    char field106_0x86;
+    char field107_0x87;
+    char field108_0x88;
+    char field109_0x89;
+    char field110_0x8a;
+    char field111_0x8b;
+    char field112_0x8c;
+    char field113_0x8d;
+    char field114_0x8e;
+    char field115_0x8f;
+    char field116_0x90;
+    char field117_0x91;
+    char field118_0x92;
+    char field119_0x93;
+    char field120_0x94;
+    char field121_0x95;
+    char field122_0x96;
+    char field123_0x97;
+    char field124_0x98;
+    char field125_0x99;
+    char field126_0x9a;
+    char field127_0x9b;
+    char field128_0x9c;
+    char field129_0x9d;
+    char field130_0x9e;
+    char field131_0x9f;
+    char field132_0xa0;
+    char field133_0xa1;
+    char field134_0xa2;
+    char field135_0xa3;
+    char field136_0xa4;
+    char field137_0xa5;
+    char field138_0xa6;
+    char field139_0xa7;
+    char field140_0xa8;
+    char field141_0xa9;
+    char field142_0xaa;
+    char field143_0xab;
+    char field144_0xac;
+    char field145_0xad;
+    char field146_0xae;
+    char field147_0xaf;
+    char field148_0xb0;
+    char field149_0xb1;
+    char field150_0xb2;
+    char field151_0xb3;
+    char field152_0xb4;
+    char field153_0xb5;
+    char field154_0xb6;
+    char field155_0xb7;
+    char field156_0xb8;
+    char field157_0xb9;
+    char field158_0xba;
+    char field159_0xbb;
+    char field160_0xbc;
+    char field161_0xbd;
+    char field162_0xbe;
+    char field163_0xbf;
+    char field164_0xc0;
+    char field165_0xc1;
+    char field166_0xc2;
+    char field167_0xc3;
+    char field168_0xc4;
+    char field169_0xc5;
+    char field170_0xc6;
+    char field171_0xc7;
+    char field172_0xc8;
+    char field173_0xc9;
+    char field174_0xca;
+    char field175_0xcb;
+    char field176_0xcc;
+    char field177_0xcd;
+    char field178_0xce;
+    char field179_0xcf;
+    char field180_0xd0;
+    char field181_0xd1;
+    char field182_0xd2;
+    char field183_0xd3;
+    char field184_0xd4;
+    char field185_0xd5;
+    char field186_0xd6;
+    char field187_0xd7;
+    char field188_0xd8;
+    char field189_0xd9;
+    char field190_0xda;
+    char field191_0xdb;
+    char field192_0xdc;
+    char field193_0xdd;
+    char field194_0xde;
+    char field195_0xdf;
+    char field196_0xe0;
+    char field197_0xe1;
+    char field198_0xe2;
+    char field199_0xe3;
+    char field200_0xe4;
+    char field201_0xe5;
+    char field202_0xe6;
+    char field203_0xe7;
+    char field204_0xe8;
+    char field205_0xe9;
+    char field206_0xea;
+    char field207_0xeb;
+    char field208_0xec;
+    char field209_0xed;
+    char field210_0xee;
+    char field211_0xef;
+    char field212_0xf0;
+    char field213_0xf1;
+    char field214_0xf2;
+    char field215_0xf3;
+    char field216_0xf4;
+    char field217_0xf5;
+    char field218_0xf6;
+    char field219_0xf7;
+    char field220_0xf8;
+    char field221_0xf9;
+    char field222_0xfa;
+    char field223_0xfb;
+    char field224_0xfc;
+    char field225_0xfd;
+    char field226_0xfe;
+    char field227_0xff;
+    char field228_0x100;
+    char field229_0x101;
+    char field230_0x102;
+    char field231_0x103;
+    char field232_0x104;
+    char field233_0x105;
+    char field234_0x106;
+    char field235_0x107;
+    char field236_0x108;
+    char field237_0x109;
+    char field238_0x10a;
+    char field239_0x10b;
+    char field240_0x10c;
+    char field241_0x10d;
+    char field242_0x10e;
+    char field243_0x10f;
+    char field244_0x110;
+    char field245_0x111;
+    char field246_0x112;
+    char field247_0x113;
+    char field248_0x114;
+    char field249_0x115;
+    char field250_0x116;
+    char field251_0x117;
+    char field252_0x118;
+    char field253_0x119;
+    char field254_0x11a;
+    char field255_0x11b;
+    char field256_0x11c;
+    char field257_0x11d;
+    char field258_0x11e;
+    char field259_0x11f;
+    char field260_0x120;
+    char field261_0x121;
+    char field262_0x122;
+    char field263_0x123;
+    char field264_0x124;
+    char field265_0x125;
+    char field266_0x126;
+    char field267_0x127;
+    char field268_0x128;
+    char field269_0x129;
+    char field270_0x12a;
+    char field271_0x12b;
+    char field272_0x12c;
+    char field273_0x12d;
+    char field274_0x12e;
+    char field275_0x12f;
+    char field276_0x130;
+    char field277_0x131;
+    char field278_0x132;
+    char field279_0x133;
+    char field280_0x134;
+    char field281_0x135;
+    char field282_0x136;
+    char field283_0x137;
+    char field284_0x138;
+    char field285_0x139;
+    char field286_0x13a;
+    char field287_0x13b;
+    char field288_0x13c;
+    char field289_0x13d;
+    char field290_0x13e;
+    char field291_0x13f;
+    char field292_0x140;
+    char field293_0x141;
+    char field294_0x142;
+    char field295_0x143;
+    char field296_0x144;
+    char field297_0x145;
+    char field298_0x146;
+    char field299_0x147;
+    char field300_0x148;
+    char field301_0x149;
+    char field302_0x14a;
+    char field303_0x14b;
+    char field304_0x14c;
+    char field305_0x14d;
+    char field306_0x14e;
+    char field307_0x14f;
+    char field308_0x150;
+    char field309_0x151;
+    char field310_0x152;
+    char field311_0x153;
+    char field312_0x154;
+    char field313_0x155;
+    char field314_0x156;
+    char field315_0x157;
+    char field316_0x158;
+    char field317_0x159;
+    char field318_0x15a;
+    char field319_0x15b;
+    char field320_0x15c;
+    char field321_0x15d;
+    char field322_0x15e;
+    char field323_0x15f;
+    char field324_0x160;
+    char field325_0x161;
+    char field326_0x162;
+    char field327_0x163;
+    char field328_0x164;
+    char field329_0x165;
+    char field330_0x166;
+    char field331_0x167;
+    char field332_0x168;
+    char field333_0x169;
+    char field334_0x16a;
+    char field335_0x16b;
+    int16_t field336_0x16c;
+    int16_t field337_0x16e;
+    char field338_0x170;
+    char field339_0x171;
+    char field340_0x172;
+    char field341_0x173;
+    char *path;
+} nudathdr_s;
 
 typedef struct NuFileDevice {
     int32_t field0_0x0;
@@ -611,21 +956,26 @@ typedef uint32_t NuFileHandle;
 enum NuFileHandleRanges {
     NUFILE_HANDLE_RANGE_PS = 0,
     NUFILE_HANDLE_RANGE_MEM = 0x400,
+    NUFILE_HANDLE_RANGE_DAT = 0x800,
     NUFILE_HANDLE_RANGE_MC = 0x1000,
     NUFILE_HANDLE_RANGE_NATIVE = 0x2000,
 };
 #define NUFILE_PS(index) (index + NUFILE_HANDLE_RANGE_PS)
 #define NUFILE_MEM(index) (index + NUFILE_HANDLE_RANGE_MEM)
+#define NUFILE_DAT(index) (index + NUFILE_HANDLE_RANGE_DAT)
 #define NUFILE_MC(index) (index + NUFILE_HANDLE_RANGE_MC)
 #define NUFILE_NATIVE(index) (index + NUFILE_HANDLE_RANGE_NATIVE)
-#define NUFILE_INDEX_PS(handle) (handle - NUFILE_HANDLE_RANGE_PS)
-#define NUFILE_INDEX_MEM(handle) (handle - NUFILE_HANDLE_RANGE_MEM)
-#define NUFILE_INDEX_MC(handle) (handle - NUFILE_HANDLE_RANGE_MC)
-#define NUFILE_INDEX_NATIVE(handle) (handle - NUFILE_HANDLE_RANGE_NATIVE)
-#define NUFILE_IS_PS(handle) (handle < NUFILE_HANDLE_RANGE_MEM)
-#define NUFILE_IS_MEM(handle) ((handle >= NUFILE_HANDLE_RANGE_MEM) && (handle < NUFILE_HANDLE_RANGE_MC))
-#define NUFILE_IS_MC(handle) ((handle >= NUFILE_HANDLE_RANGE_MC) && (handle < NUFILE_HANDLE_RANGE_NATIVE))
-#define NUFILE_IS_NATIVE(handle) (handle >= NUFILE_HANDLE_RANGE_NATIVE)
+#define NUFILE_IS_PS(handle) ((handle) < NUFILE_HANDLE_RANGE_MEM)
+#define NUFILE_IS_MEM(handle) (((handle) >= NUFILE_HANDLE_RANGE_MEM) && ((handle) < NUFILE_HANDLE_RANGE_DAT))
+#define NUFILE_IS_DAT(handle) (((handle) >= NUFILE_HANDLE_RANGE_DAT) && ((handle) < NUFILE_HANDLE_RANGE_MC))
+#define NUFILE_IS_MC(handle) (((handle) >= NUFILE_HANDLE_RANGE_MC) && ((handle) < NUFILE_HANDLE_RANGE_NATIVE))
+#define NUFILE_IS_NATIVE(handle) ((handle) >= NUFILE_HANDLE_RANGE_NATIVE)
+#define NUFILE_INDEX_PS(handle) ((handle) - NUFILE_HANDLE_RANGE_PS)
+#define NUFILE_INDEX_MEM(handle) ((handle) - NUFILE_HANDLE_RANGE_MEM)
+#define NUFILE_INDEX_DAT(handle) ((handle) - NUFILE_HANDLE_RANGE_DAT)
+#define NUFILE_INDEX_MC(handle) ((handle) - NUFILE_HANDLE_RANGE_MC)
+#define NUFILE_INDEX_NATIVE(handle) ((handle) - NUFILE_HANDLE_RANGE_NATIVE)
+#define NUFILE_INVALID ((NuFileHandle)(0))
 
 static nudathdr_s *curr_dat;
 static NuFileDevice *default_device;
@@ -637,13 +987,21 @@ static nudatfileinfo_s dat_file_infos[20];
 static FILE *g_fileHandles[1];
 static NuMemFile memfiles[16];
 
-NuFileHandle NuFileOpen(const char *path, OpenMode mode);
-NuFileHandle NuFileOpenDF(const char *path, OpenMode mode, nudathdr_s *header);
+NuFileHandle NuFileOpen(const char *path, NuFileOpenMode mode);
+NuFileHandle NuFileOpenDF(const char *path, NuFileOpenMode mode, nudathdr_s *header);
+size_t NuFileRead(NuFileHandle index, char *dest, size_t length);
 NuFileDevice *NuFileGetDeviceFromPath(const char *path);
-int32_t NameToHash(const char *name);
-size_t BinarySearch(int32_t element, int32_t *array, size_t length);
-int32_t NuDatFileGetFreeInfo(void);
+size_t NuFileOpenSize(NuFileHandle file);
+int32_t NuFileSeek(NuFileHandle file, int64_t offset, int32_t seekMode);
+
 size_t NuPSFileRead(int32_t index, void *dest, size_t len);
 size_t NuMemFileRead(int32_t file, char *dest, size_t size);
+
 NuFileHandle NuDatFileOpen(nudathdr_s *header, const char *name, int32_t mode);
 size_t NuDatFileRead(NuFileHandle file, void *dest, size_t size);
+nudathdr_s *NuDatOpen(char *name, void **bufferBase, int32_t zero);
+nudathdr_s *NuDatOpenEx(char *name, void **bufferBase, int zero, short mode);
+int32_t NuDatFileGetFreeInfo(void);
+
+int32_t NameToHash(const char *name);
+size_t BinarySearch(int32_t element, int32_t *array, size_t length);

@@ -8,97 +8,12 @@
 
 #include "decomp.h"
 
-NuFileHandle NuFileOpen(const char *path, OpenMode mode) {
+NuFileHandle NuFileOpen(const char *path, NuFileOpenMode mode) {
     return NuFileOpenDF(path, mode, curr_dat);
 }
 
-NuFileHandle NuFileOpenDF(const char *path, OpenMode mode, nudathdr_s *header) {
-    NuFileHandle file;
-
-    NuFileDevice *device = NuFileGetDeviceFromPath(path);
-
-    if (device == (NuFileDevice *)0x0) {
-        if (mode != MODE_WRITE && mode != MODE_APPEND) {
-            file = 0;
-            if (header == NULL) {
-                UNIMPLEMENTED();
-                // if (g_apkFileDevice != 0) {
-                // file = NuFileAndroidAPK::OpenFile(path, 0);
-                // }
-            } else {
-                file = NuDatFileOpen(header, path, mode);
-            }
-
-            if (file > 0) {
-                return file;
-            }
-        }
-        device = default_device;
-    }
-
-    char buf[256];
-
-    //(*(code *)device->openFunc)(device, buf, path, 0x100);
-
-    if (device->field0_0x0 == 2) {
-        NuStrCat(buf, ";1");
-    }
-
-    /*
-
-    if (device->field0_0x0 == 1) {
-        local_1c = filename[2] + -0x30;
-        local_20 = filename[3] + -0x30;
-        index = NuMcOpen(local_1c, local_20, filename + *(int *)&device->field_0x48, mode, 0);
-        if (index < 0) {
-            index = 0;
-        } else {
-            index = index + 0x1000;
-        }
-    } else {
-        fileIndex = NuPSFileOpen(buf, mode);
-        if (fileIndex < 0) {
-            index = 0;
-        } else {
-            index = fileIndex;
-            memset(file_info.field31_0x28 + fileIndex * 0xe + -10, 0, 0x38);
-            lVar2 = CONCAT44(local_2c._4_4_, (int)local_2c);
-            file_info.field31_0x28[fileIndex * 0xe + -10] = index;
-            file_info.field31_0x28[fileIndex * 0xe + 2] = mode;
-            if (mode == 1) {
-                file_info.field31_0x28[fileIndex * 0xe + -5] = 0;
-                file_info.field31_0x28[fileIndex * 0xe + -4] = 0;
-            } else if (index < 0x11) {
-                do {
-                    local_2c = lVar2;
-                    lVar2 = NuFileSeek(fileIndex + 1, 0, 0, 2);
-                } while (lVar2 < 0);
-                *(long long *)(file_info.field31_0x28 + fileIndex * 0xe + -5) = lVar2;
-                local_2c = lVar2;
-                if (mode == 3) {
-                    do {
-                        iVar1 = NuFileStatus(fileIndex + 1);
-                        lVar2 = local_2c;
-                    } while (iVar1 != 0);
-                }
-                do {
-                    local_2c = lVar2;
-                    lVar2 = NuFileSeek(fileIndex + 1, 0, 0, 0);
-                } while (lVar2 < 0);
-                local_2c = lVar2;
-                if (mode == 3) {
-                    do {
-                        iVar1 = NuFileStatus(fileIndex + 1);
-                    } while (iVar1 != 0);
-                }
-            }
-            if (mode == 0) {
-                file_info.field31_0x28[fileIndex * 0xe] = nufile_buffering_enabled;
-            }
-            index = fileIndex + 1;
-        }
-    }
-    */
+NuFileHandle NuFileOpenDF(const char *path, NuFileOpenMode mode, nudathdr_s *header) {
+    UNIMPLEMENTED();
 }
 
 NuFileDevice *NuFileGetDeviceFromPath(const char *path) {
@@ -194,5 +109,63 @@ NuFileHandle NuDatFileOpen(nudathdr_s *header, const char *name, int32_t mode) {
 }
 
 size_t NuDatFileRead(NuFileHandle file, void *dest, size_t size) {
+    UNIMPLEMENTED();
+}
+
+size_t NuFileRead(NuFileHandle index, char *dest, size_t length) {
+    if (NUFILE_IS_PS(index)) {
+        return NuPSFileRead(index, dest, length);
+    } else if (NUFILE_IS_MEM(index) || NUFILE_IS_DAT(index)) {
+        return NuMemFileRead(index, dest, length);
+    } else if (NUFILE_IS_MC(index)) {
+        UNIMPLEMENTED("MC file read not implemented");
+    } else if (NUFILE_IS_NATIVE(index)) {
+        UNIMPLEMENTED("Native file read not implemented");
+    }
+}
+
+int32_t NuFileSeek(NuFileHandle file, int64_t offset, int32_t seekMode) {
+    UNIMPLEMENTED();
+}
+
+nudathdr_s *NuDatOpen(char *name, void **bufferBase, int32_t zero) {
+    return NuDatOpenEx(name, bufferBase, zero, 0);
+}
+
+nudathdr_s *NuDatOpenEx(char *name, void **bufferBase, int zero, short mode) {
+    NuFileHandle file = NuFileOpenDF(name, mode, (nudathdr_s *)0x0);
+
+    if (file == NUFILE_INVALID) {
+        return NULL;
+    }
+
+    size_t size = NuFileOpenSize(file);
+
+    int32_t buffer[2];
+    NuFileRead(file, (char *)buffer, 8);
+
+    int64_t offset = ((int64_t)buffer[0] << 32) | buffer[1];
+
+    NuFileSeek(file, offset, 0);
+
+    nudathdr_s *header = BUFFER_ALLOC(bufferBase, nudathdr_s);
+    memset(header, 0, sizeof(nudathdr_s));
+
+    header->field336_0x16c = 1;
+    header->path = buffer_alloc(bufferBase, NuStrLen(name) + 1, 1);
+    NuStrCpy(header->path, name);
+
+    NuFileRead(file, header, 4);
+    NuFileRead(file, &header->hashesCount, 4);
+
+    header->field5_0x8 = buffer_alloc(bufferBase, 0x10 * header->hashesCount, 1);
+    NuFileRead(file, header->field5_0x8, header->hashesCount * 0x10);
+
+    NuFileRead(file, &header->field6_0xc, 4);
+
+    UNIMPLEMENTED();
+}
+
+size_t NuFileOpenSize(NuFileHandle file) {
     UNIMPLEMENTED();
 }

@@ -70,3 +70,18 @@ char NuToUpper(char c) {
         return c - 0x20;
     }
 }
+
+size_t NuStrCpy(char *dest, const char *src) {
+    char *orig = dest;
+
+    if (src != NULL) {
+        for (; *src != '\0'; src = src + 1) {
+            *dest = *src;
+            dest = dest + 1;
+        }
+    }
+
+    *dest = '\0';
+
+    return (size_t)dest - (size_t)orig;
+}
