@@ -112,7 +112,7 @@ size_t NuDatFileRead(NuFileHandle file, void *dest, size_t size) {
     UNIMPLEMENTED();
 }
 
-size_t NuFileRead(NuFileHandle index, char *dest, size_t length) {
+size_t NuFileRead(NuFileHandle index, void *dest, size_t length) {
     if (NUFILE_IS_PS(index)) {
         return NuPSFileRead(index, dest, length);
     } else if (NUFILE_IS_MEM(index) || NUFILE_IS_DAT(index)) {

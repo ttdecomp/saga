@@ -9,7 +9,7 @@
         exit(EXIT_FAILURE);                                                                                            \
     } while (0)
 
-#define BUFFER_ALLOC(buffer, T) (T *)buffer_alloc((void **)(buffer), sizeof(T), alignof(T))
+#define BUFFER_ALLOC(buffer, T) (T *)buffer_alloc((void **)(buffer), sizeof(T), _Alignof(T))
 
 static inline void *buffer_alloc(void **buffer, size_t size, size_t align) {
     size_t current = (size_t)(*buffer);

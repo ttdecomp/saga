@@ -34,4 +34,4 @@ See the [docs/](docs/) directory.
 ## References
 
 - the android app can be run with the Waydroid emulator: https://waydro.id/
-
+- the android ndk can be found here: https://dl.google.com/android/ndk/android-ndk-r8e-linux-x86_64.tar.bz2

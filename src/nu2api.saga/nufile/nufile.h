@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-typedef enum NuFileOpenMode : int32_t {
+typedef enum NuFileOpenMode {
     MODE_READ = 0,
     MODE_WRITE = 1,
     MODE_APPEND = 2,
@@ -989,7 +989,7 @@ static NuMemFile memfiles[16];
 
 NuFileHandle NuFileOpen(const char *path, NuFileOpenMode mode);
 NuFileHandle NuFileOpenDF(const char *path, NuFileOpenMode mode, nudathdr_s *header);
-size_t NuFileRead(NuFileHandle index, char *dest, size_t length);
+size_t NuFileRead(NuFileHandle index, void *dest, size_t length);
 NuFileDevice *NuFileGetDeviceFromPath(const char *path);
 size_t NuFileOpenSize(NuFileHandle file);
 int32_t NuFileSeek(NuFileHandle file, int64_t offset, int32_t seekMode);
