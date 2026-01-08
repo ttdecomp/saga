@@ -15,6 +15,10 @@ struct nuvec_s {
 
 typedef struct nuvec_s NUVEC;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /// @brief Negate a vector
 /// @details Negates the vector v0 and stores the result in v.
 /// @param v The vector to store the result in
@@ -200,5 +204,9 @@ void NuVecLerp(NUVEC *vt, NUVEC *v1, NUVEC *v0, float t);
 /// @param tolerance The tolerance to compare the vectors with
 /// @return 1 if the vectors are equal, 0 otherwise
 int NuVecCompareTolerance(NUVEC *a, NUVEC *b, float tolerance);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // NU2API_SAGA_NUMATH_NUVEC_H

@@ -50,7 +50,7 @@ symbols = [
 ]
 
 [[unit]]
-path = "nu2api.saga/numath/nutrig.cpp"
+path = "nu2api.saga/numath/nutrig_gen.cpp"
 symbols = [
     "NuTrigTable",
     "NuTrigInit",

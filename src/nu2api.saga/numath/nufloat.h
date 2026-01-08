@@ -4,6 +4,10 @@
 // /// @brief The epsilon for float equivalence in NuEquiv
 // extern float fetol;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /// @brief Compute the absolute value of a float
 /// @details Computes the absolute value of the float f and returns the result.
 /// @param f The float to compute the absolute value of
@@ -46,5 +50,9 @@ float NuFsign(float f);
 /// @param f The float to compute the square root of
 /// @return The square root of the float
 float NuFsqrt(float f);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // NU2API_SAGA_NUMATH_NUFLOAT_H
