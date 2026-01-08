@@ -19,7 +19,7 @@ fn make_object<'a>(
 
     let mut obj = object::write::Object::new(
         object::BinaryFormat::Elf,
-        object::Architecture::X86_64,
+        object::Architecture::I386,
         object::Endianness::Little,
     );
 
