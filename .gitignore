@@ -5,5 +5,4 @@ build/
 ndk/android-ndk-r8e
 gonk/target/
 gonk/Cargo.lock
-units/
 objdiff.json

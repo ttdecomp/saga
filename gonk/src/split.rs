@@ -1,141 +1,173 @@
-use crate::config::{Config, ObjDiff, ObjDiffUnit};
-use object::read::elf::ElfFile32;
-use object::write::{Object, Symbol, SymbolSection};
-use object::{
-    Architecture, BinaryFormat, Endianness, Object as _, ObjectSection, ObjectSymbol, SectionKind,
-    SymbolFlags, SymbolKind, SymbolScope,
-};
-use std::collections::HashMap;
-use std::fs;
-use std::path::Path;
+use anyhow::Context;
+use object::{Object, ObjectSection as _, ObjectSymbol as _};
 
-#[derive(Debug, thiserror::Error)]
-pub enum SplitError {
-    #[error("Failed to read file: {0}")]
-    Io(#[from] std::io::Error),
-    #[error("Failed to parse TOML: {0}")]
-    Toml(#[from] toml::de::Error),
-    #[error("Failed to parse ELF: {0}")]
-    Elf(#[from] object::read::Error),
-    #[error("Symbol not found: {0}")]
-    SymbolNotFound(String),
-    #[error("Section not found for symbol: {0}")]
-    SectionNotFound(String),
-    #[error("Failed to write object file: {0}")]
-    Write(#[from] object::write::Error),
-    #[error("Failed to write JSON file: {0}")]
-    WriteJson(#[from] serde_json::Error),
+#[derive(Debug, serde::Deserialize)]
+struct CompileCommand {
+    directory: String,
+    file: String,
+    output: String,
 }
 
-pub fn split() -> Result<(), SplitError> {
-    let config: Config = toml::from_str(&fs::read_to_string("gonk.toml")?)?;
-    let file_data = fs::read(&config.target)?;
-    let elf: ElfFile32 = ElfFile32::parse(&*file_data)?;
+/// construct a new object file containing only the specified symbols from the original object file
+pub fn make_object<'a>(
+    lib: &object::read::elf::ElfFile32<'_>,
+    symbols: &[&str],
+) -> anyhow::Result<object::write::Object<'a>> {
+    log::info!("making object with symbols: {:?}", symbols);
 
-    // cache symbols by name
-    let mut syms = HashMap::new();
-    for sym in elf.symbols() {
-        if let Ok(name) = sym.name() {
-            if !name.is_empty() {
-                syms.insert(name, sym);
-            }
-        }
-    }
-
-    println!(
-        "Loaded {} symbols from {}",
-        syms.len(),
-        config.target.display()
+    let mut obj = object::write::Object::new(
+        object::BinaryFormat::Elf,
+        object::Architecture::X86_64,
+        object::Endianness::Little,
     );
 
-    // generate unit object files
-    for unit in &config.unit {
-        println!("\nProcessing unit: {}", unit.path.display());
-        let mut obj = Object::new(BinaryFormat::Elf, Architecture::I386, Endianness::Little);
-        let mut sections: HashMap<&str, _> = HashMap::new();
-        let mut offsets: HashMap<&str, u64> = HashMap::new();
+    let lib_section = lib
+        .section_by_name(".text")
+        .context("Failed to find .text section")?;
 
-        for sym_name in &unit.symbols {
-            let sym = syms
-                .get(sym_name.as_str())
-                .ok_or_else(|| SplitError::SymbolNotFound(sym_name.clone()))?;
+    let new_section = obj.add_section(vec![], b".text".to_vec(), object::SectionKind::Text);
 
-            // find the section containing this symbol
-            let section = elf
-                .sections()
-                .find(|s| sym.address() >= s.address() && sym.address() < s.address() + s.size())
-                .ok_or_else(|| SplitError::SectionNotFound(sym_name.clone()))?;
+    for symbol in symbols {
+        let Some(symbol) = lib.symbol_by_name(symbol) else {
+            log::warn!("Failed to find symbol '{symbol}' in original object, skipping");
+            continue;
+        };
 
-            let sec_name = section.name().unwrap_or("");
-            let sec_kind = section.kind();
-            let is_bss = sec_kind == SectionKind::UninitializedData;
+        let data_offset = (symbol.address() - lib_section.address()) as usize;
+        let data =
+            &lib_section.data().unwrap_or(&[])[data_offset..data_offset + symbol.size() as usize];
 
-            // get or create section in output
-            let section_id = *sections.entry(sec_name).or_insert_with(|| {
-                obj.add_section(Vec::new(), sec_name.as_bytes().to_vec(), sec_kind)
-            });
-            let offset = offsets.entry(sec_name).or_insert(0);
+        let offset = obj.append_section_data(new_section, data, 8);
 
-            // add data
-            if is_bss {
-                obj.append_section_bss(section_id, sym.size(), 1); // in ELF, bss is a section with no data at all in the file
-            } else {
-                let data_offset = (sym.address() - section.address()) as usize;
-                let data =
-                    &section.data().unwrap_or(&[])[data_offset..data_offset + sym.size() as usize];
-                obj.append_section_data(section_id, data, 1);
-            }
-
-            // add symbol to output
-            obj.add_symbol(Symbol {
-                name: sym_name.as_bytes().to_vec(),
-                value: *offset,
-                size: sym.size(),
-                kind: if sec_kind == SectionKind::Text {
-                    SymbolKind::Text
-                } else {
-                    SymbolKind::Data
-                },
-                scope: SymbolScope::Dynamic,
-                weak: false,
-                section: SymbolSection::Section(section_id),
-                flags: SymbolFlags::None,
-            });
-
-            println!(
-                "  {} @ 0x{:08x} ({} bytes, {})",
-                sym_name,
-                sym.address(),
-                sym.size(),
-                sec_name
-            );
-            *offset += sym.size(); // make sure to increment the offset for the next symbol
-        }
-
-        let output_path = Path::new("units").join(unit.path.with_added_extension("o"));
-        fs::create_dir_all(output_path.parent().unwrap())?; // create the directory for the output file if it doesn't exist
-        fs::write(&output_path, obj.write()?)?;
-        println!("Wrote processed unit: {}", output_path.display());
-    }
-
-    // generate objdiff.json file
-    let mut objdiff = ObjDiff {
-        build_base: false,
-        build_target: false,
-        units: Vec::new(),
-    };
-
-    // add units to objdiff
-    for unit in &config.unit {
-        objdiff.units.push(ObjDiffUnit {
-            name: unit.path.display().to_string(),
-            // repeating myself a bit here, but it's ok for now :)
-            target_path: Path::new("units").join(unit.path.with_added_extension("o")),
-            base_path: Path::new("build/CMakeFiles/saga.dir/src").join(unit.path.with_added_extension("o")),
+        // add symbol to output
+        obj.add_symbol(object::write::Symbol {
+            name: symbol
+                .name()
+                .context("Failed to get symbol name")?
+                .as_bytes()
+                .to_vec(),
+            value: offset,
+            size: symbol.size(),
+            kind: object::SymbolKind::Text,
+            scope: object::SymbolScope::Dynamic,
+            weak: false,
+            section: object::write::SymbolSection::Section(new_section),
+            flags: object::SymbolFlags::None,
         });
     }
 
-    fs::write("objdiff.json", serde_json::to_string_pretty(&objdiff)?)?;
-    println!("\nWrote objdiff.json");
+    Ok(obj)
+}
+
+#[derive(serde::Serialize)]
+struct ObjDiff {
+    build_base: bool,
+    build_targets: bool,
+    units: Vec<ObjDiffUnit>,
+}
+
+#[derive(serde::Serialize)]
+struct ObjDiffUnit {
+    name: String,
+    target_path: String,
+    base_path: String,
+}
+
+pub fn split() -> anyhow::Result<()> {
+    let contents = std::fs::read_to_string("build/compile_commands.json")
+        .context("Failed to read compile_commands.json")?;
+    let compile_commands: Vec<CompileCommand> =
+        serde_json::from_str(&contents).context("Failed to parse compile_commands.json")?;
+
+    let contents = std::fs::read("res/libTTapp.so").context("Failed to read libTTapp.so")?;
+    let original_lib = object::read::elf::ElfFile32::parse(&*contents)
+        .context("Failed to parse original libTTapp.so")?;
+
+    let mut objdiff_units = vec![];
+
+    for command in compile_commands.iter() {
+        log::info!("processing file '{}'", command.file);
+
+        let binary = std::path::Path::new(&command.directory).join(&command.output);
+
+        let contents = std::fs::read(&binary)
+            .with_context(|| format!("Failed to read object file: {}", command.output))?;
+        let elf = elf::ElfBytes::<elf::endian::LittleEndian>::minimal_parse(&contents)
+            .context("Failed to parse ELF file")?;
+
+        let common = elf
+            .find_common_data()
+            .context("Failed to find common data")?;
+
+        let strings = common.symtab_strs.unwrap();
+
+        let mut symbols = vec![];
+
+        for sym in common.symtab.unwrap() {
+            let name = strings
+                .get(sym.st_name as usize)
+                .context("Failed to get symbol name")?;
+
+            log::debug!("found symbol '{:?}'", sym);
+
+            if name.is_empty()
+                || name.starts_with("__x86.get_pc_thunk")
+                || ["__discard", "_GLOBAL_OFFSET_TABLE_"].contains(&name)
+                || sym.st_size == 0
+                || sym.st_info & 0xf != elf::abi::STT_FUNC
+            {
+                log::debug!("skipping symbol '{}'", name);
+                continue;
+            }
+
+            symbols.push(name);
+        }
+
+        let new_obj = make_object(&original_lib, &symbols)?;
+
+        std::fs::create_dir_all("build/split").context("Failed to create build/split directory")?;
+
+        let output_path = std::path::Path::new("build/split")
+            .join(std::path::Path::new(&command.output).file_name().unwrap());
+
+        let bytes = new_obj.write()?;
+        std::fs::write(output_path, bytes).context("Failed to write split object file")?;
+
+        let name = std::path::Path::new(&command.file)
+            .components()
+            .collect::<Vec<_>>();
+        let name =
+            name[name.len() - 3..]
+                .iter()
+                .fold(std::path::PathBuf::new(), |mut acc, comp| {
+                    acc.push(comp);
+                    acc
+                });
+
+        objdiff_units.push(ObjDiffUnit {
+            name: name.display().to_string(),
+            target_path: format!(
+                "build/split/{}",
+                std::path::Path::new(&command.output)
+                    .file_name()
+                    .unwrap()
+                    .to_string_lossy()
+            ),
+            base_path: binary.display().to_string(),
+        });
+    }
+
+    std::fs::write(
+        "objdiff.json",
+        serde_json::to_string(&ObjDiff {
+            build_base: false,
+            build_targets: true,
+            units: objdiff_units,
+        })?,
+    )
+    .context("Failed to write objdiff.json")?;
+
+    println!("Wrote objdiff.json");
+
     Ok(())
 }
