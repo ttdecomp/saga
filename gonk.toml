@@ -47,6 +47,18 @@ symbols = [
     "NuMtxSetTranslation",
     "NuMtxSetTranslationNeg",
     "NuMtxSetScale",
+    "NuMtxSetRotationX",
+    "NuMtxSetRotationY",
+    "NuMtxSetRotationZ",
+    "NuMtxSetRotationAxis",
+    "NuMtxTranslate",
+    "NuMtxTranslateNeg",
+    "NuMtxPreTranslate",
+    "NuMtxPreTranslateX",
+    "NuMtxPreTranslateNeg",
+    "NuMtxScale",
+    "NuMtxScaleU",
+    "NuMtxPreScaleU"
 ]
 
 [[unit]]
