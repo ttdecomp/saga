@@ -4,7 +4,7 @@
 #include <math.h>
 
 #define NUTRIGTABLE_COUNT 32768
-#define NUTRIGTABLE_INTERVAL (2.0f * M_PI / NUTRIGTABLE_COUNT)
+#define NUTRIGTABLE_INTERVAL (float)(2.0f * M_PI / NUTRIGTABLE_COUNT)
 
 extern float NuTrigTable[NUTRIGTABLE_COUNT];
 

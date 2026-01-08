@@ -50,6 +50,13 @@ symbols = [
 ]
 
 [[unit]]
+path = "nu2api.saga/numath/nutrig.c"
+symbols = [
+    "NuTrigTable",
+    "NuTrigInit",
+]
+
+[[unit]]
 path = "nu2api.saga/nucore/nustring.c"
 symbols = [
     "NuStrCat",

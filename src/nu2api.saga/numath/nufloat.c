@@ -3,35 +3,29 @@
 #include <math.h>
 
 float NuFabs(float f) {
-    union {
-        float f;
-        unsigned int i;
-    } u;
-
-    u.f = f;
-    u.i &= 0x7FFFFFFF;
-    return u.f;
+    return fabsf(f);
 }
 
 float NuFnabs(float f) {
-    // bit-twiddling that approximates what they did originally
-    // personally not a fan, maybe we should remove this for portability reasons
-    union {
-        float f;
-        unsigned int i;
-    } u;
+    float rv;
 
-    u.f = f;
-    u.i |= 0x80000000;
-    return u.f;
+    *(int *)&rv = *(int *)&f | 0x80000000;
+    return rv;
 }
 
 float NuFneg(float v) {
-    return -v;
+    float rv;
+
+    *(int *)&rv = *(int *)&v ^ 0x80000000;
+    return rv;
 }
 
 float NuFsign(float f) {
-    return f < 0.0f ? -1.0f : 1.0f;
+    if (*(int *)&f < 0) {
+        return -1.0f;
+    } else {
+        return 1.0f;
+    }
 }
 
 // void NuEquivTollerance(float f) {
@@ -43,5 +37,9 @@ float NuFsign(float f) {
 // }
 
 float NuFsqrt(float f) {
-    return sqrt(f);
+    if (1e-6f < f) {
+        return sqrtf(f);
+    }
+
+    return 0.0f;
 }

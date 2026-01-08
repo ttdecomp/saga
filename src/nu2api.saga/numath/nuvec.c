@@ -55,15 +55,22 @@ void NuVecInvScale(NUVEC *v, NUVEC *v0, float k) {
 }
 
 void NuVecCross(NUVEC *v, NUVEC *v0, NUVEC *v1) {
+    float y, z;
+    y = v0->z * v1->x - v0->x * v1->z;
+    z = v0->x * v1->y - v0->y * v1->x;
     v->x = v0->y * v1->z - v0->z * v1->y;
-    v->y = v0->z * v1->x - v0->x * v1->z;
-    v->z = v0->x * v1->y - v0->y * v1->x;
+
+    v->y = y;
+    v->z = z;
 }
 
 void NuVecCrossRel(NUVEC *v, NUVEC *basepnt, NUVEC *v0, NUVEC *v1) {
-    v->x = (v0->y - basepnt->y) * (v1->z - basepnt->z) - (v1->y - basepnt->y) * (v0->z - basepnt->z);
-    v->y = (v0->z - basepnt->z) * (v1->x - basepnt->x) - (v1->z - basepnt->z) * (v0->x - basepnt->x);
-    v->z = (v0->x - basepnt->x) * (v1->y - basepnt->y) - (v1->x - basepnt->x) * (v0->y - basepnt->y);
+    float y, z;
+    y = (v0->z - basepnt->z) * (v1->x - basepnt->x) - (v0->x - basepnt->x) * (v1->z - basepnt->z);
+    z = (v0->x - basepnt->x) * (v1->y - basepnt->y) - (v0->y - basepnt->y) * (v1->x - basepnt->x);
+    v->x = (v0->y - basepnt->y) * (v1->z - basepnt->z) - (v0->z - basepnt->z) * (v1->y - basepnt->y);
+    v->y = y;
+    v->z = z;
 }
 
 float NuVecDot(NUVEC *v0, NUVEC *v1) {
@@ -71,42 +78,42 @@ float NuVecDot(NUVEC *v0, NUVEC *v1) {
 }
 
 void NuVecMax(NUVEC *v, NUVEC *v0, NUVEC *v1) {
-    if (v0->x <= v1->x) {
-        v->x = v1->x;
-    } else {
+    if (v0->x > v1->x) {
         v->x = v0->x;
+    } else {
+        v->x = v1->x;
     }
 
-    if (v0->y <= v1->y) {
-        v->y = v1->y;
-    } else {
+    if (v0->y > v1->y) {
         v->y = v0->y;
+    } else {
+        v->y = v1->y;
     }
 
-    if (v0->z <= v1->z) {
-        v->z = v1->z;
-    } else {
+    if (v0->z > v1->z) {
         v->z = v0->z;
+    } else {
+        v->z = v1->z;
     }
 }
 
 void NuVecMin(NUVEC *v, NUVEC *v0, NUVEC *v1) {
-    if (v1->x <= v0->x) {
-        v->x = v1->x;
-    } else {
+    if (v0->x < v1->x) {
         v->x = v0->x;
+    } else {
+        v->x = v1->x;
     }
 
-    if (v1->y <= v0->y) {
-        v->y = v1->y;
-    } else {
+    if (v0->y < v1->y) {
         v->y = v0->y;
+    } else {
+        v->y = v1->y;
     }
 
-    if (v1->z <= v0->z) {
-        v->z = v1->z;
-    } else {
+    if (v0->z < v1->z) {
         v->z = v0->z;
+    } else {
+        v->z = v1->z;
     }
 }
 
@@ -126,10 +133,10 @@ float NuVecNorm(NUVEC *v, NUVEC *v0) {
     float len = NuFsqrt(NuVecMagSqr(v0));
     float leni;
 
-    if (len <= 0.0f) {
-        leni = 0.0f;
-    } else {
+    if (len > 0.0f) {
         leni = 1.0f / len;
+    } else {
+        leni = 0.0f;
     }
 
     v->x = v0->x * leni;
@@ -144,82 +151,70 @@ void NuVecSurfaceNormal(NUVEC *v, NUVEC *v0, NUVEC *v1, NUVEC *v2) {
 
     NuVecSub(&vecA, v0, v1);
     NuVecSub(&vecB, v0, v2);
-    NuVecCross(v, &vecA, &vecB);
+    NuVecCross(v, &vecB, &vecA);
     NuVecNorm(v, v);
 }
 
 float NuVecDist(NUVEC *v0, NUVEC *v1, NUVEC *d) {
     NUVEC dist;
-    float result;
 
-    if (d == NULL) {
-        NuVecSub(&dist, v0, v1);
-        result = NuVecMag(&dist);
-    } else {
+    if (d != NULL) {
         NuVecSub(d, v0, v1);
-        result = NuVecMag(d);
+        return NuVecMag(d);
+    } else {
+        NuVecSub(&dist, v0, v1);
+        return NuVecMag(&dist);
     }
-
-    return result;
 }
 
 float NuVecDistSqr(NUVEC *v0, NUVEC *v1, NUVEC *d) {
     NUVEC dist;
-    float result;
 
-    if (d == NULL) {
-        NuVecSub(&dist, v0, v1);
-        result = NuVecMagSqr(&dist);
-    } else {
+    if (d != NULL) {
         NuVecSub(d, v0, v1);
-        result = NuVecMagSqr(d);
+        return NuVecMagSqr(d);
+    } else {
+        NuVecSub(&dist, v0, v1);
+        return NuVecMagSqr(&dist);
     }
-
-    return result;
 }
 
 float NuVecXZDist(NUVEC *v0, NUVEC *v1, NUVEC *d) {
     NUVEC dist;
-    float result;
 
-    if (d == NULL) {
-        dist.x = v0->x - v1->x;
-        dist.y = 0.0f;
-        dist.z = v0->z - v1->z;
-        result = NuVecMag(&dist);
-    } else {
+    if (d != NULL) {
         d->x = v0->x - v1->x;
         d->y = 0.0f;
         d->z = v0->z - v1->z;
-        result = NuVecMag(d);
+        return NuVecMag(d);
+    } else {
+        dist.x = v0->x - v1->x;
+        dist.y = 0.0f;
+        dist.z = v0->z - v1->z;
+        return NuVecMag(&dist);
     }
-
-    return result;
 }
 
 float NuVecXZDistSqr(NUVEC *v0, NUVEC *v1, NUVEC *d) {
     NUVEC dist;
-    float result;
 
-    if (d == NULL) {
-        dist.x = v0->x - v1->x;
-        dist.y = 0.0f;
-        dist.z = v0->z - v1->z;
-        result = NuVecMagSqr(&dist);
-    } else {
+    if (d != NULL) {
         d->x = v0->x - v1->x;
         d->y = 0.0f;
         d->z = v0->z - v1->z;
-        result = NuVecMagSqr(d);
+        return NuVecMagSqr(d);
+    } else {
+        dist.x = v0->x - v1->x;
+        dist.y = 0.0f;
+        dist.z = v0->z - v1->z;
+        return NuVecMagSqr(&dist);
     }
-
-    return result;
 }
 
 void NuVecLerp(NUVEC *vt, NUVEC *v1, NUVEC *v0, float t) {
-    vt->x = v0->x + (v1->x - v0->x) * t;
-    vt->y = v0->y + (v1->y - v0->y) * t;
-    vt->z = v0->z + (v1->z - v0->z) * t;
+    vt->x = ((v1->x - v0->x) * t) + v0->x;
+    vt->y = ((v1->y - v0->y) * t) + v0->y;
+    vt->z = ((v1->z - v0->z) * t) + v0->z;
 }
 
 int NuVecCompareTolerance(NUVEC *a, NUVEC *b, float tolerance) {
@@ -227,8 +222,11 @@ int NuVecCompareTolerance(NUVEC *a, NUVEC *b, float tolerance) {
     NuVecSub(&diff, a, b);
 
     float result = NuVecMag(&diff);
-
-    return result <= tolerance;
+    if (result > tolerance) {
+        return 0;
+    } else {
+        return 1;
+    }
 }
 
 // int NuLineLineIntersect(NUVEC *p0, NUVEC *v0, NUVEC *p1, NUVEC *v1, float *s, float *t) {
