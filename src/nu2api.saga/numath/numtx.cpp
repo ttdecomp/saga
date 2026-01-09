@@ -310,11 +310,87 @@ void NuMtxPreRotateZ(NUMTX *m, NUANG a) {
     m->_12 = m->_12 * cosx - sinx * _02;
 }
 
-void NuMtxPreRotateY180(NUMTX *m) {}
-void NuMtxPreRotateY180X(NUMTX *m, NUANG a) {}
-void NuMtxPreSkewYX(NUMTX *Mtx, float SkewVal) {}
-void NuMtxTransposeR(NUMTX *m, NUMTX *m0) {}
-void NuMtxTranspose(NUMTX *m, NUMTX *m0) {}
+void NuMtxPreRotateY180(NUMTX *m) {
+    m->_00 = -m->_00;
+    m->_01 = -m->_01;
+    m->_02 = -m->_02;
+    m->_20 = -m->_20;
+    m->_21 = -m->_21;
+    m->_22 = -m->_22;
+}
+
+void NuMtxPreRotateY180X(NUMTX *m, NUANG a) {
+    float cosx = NU_COS_LUT(a);
+    float sinx = NU_SIN_LUT(a);
+    float _10 = m->_10;
+    float _11 = m->_11;
+    float _12 = m->_12;
+
+    m->_00 = -m->_00;
+    m->_01 = -m->_01;
+    m->_02 = -m->_02;
+    m->_10 = cosx * _10 - m->_20 * sinx;
+    m->_11 = cosx * _11 - m->_21 * sinx;
+    m->_12 = cosx * _12 - m->_22 * sinx;
+    m->_20 = -(m->_20 * cosx) - sinx * _10;
+    m->_21 = -(m->_21 * cosx) - sinx * _11;
+    m->_22 = -(m->_22 * cosx) - sinx * _12;
+}
+
+void NuMtxPreSkewYX(NUMTX *Mtx, float SkewVal) {
+    Mtx->_00 = Mtx->_00 + Mtx->_10 * SkewVal;
+    Mtx->_01 = Mtx->_01 + Mtx->_11 * SkewVal;
+    Mtx->_02 = Mtx->_02 + Mtx->_12 * SkewVal;
+}
+
+void NuMtxTransposeR(NUMTX *m, NUMTX *m0) {
+    float t;
+  
+    t = m0->_01;
+    m->_01 = m0->_10;
+    m->_10 = t;
+    t = m0->_02;
+    m->_02 = m0->_20;
+    m->_20 = t;
+    t = m0->_12;
+    m->_12 = m0->_21;
+    m->_21 = t;
+    m->_00 = m0->_00;
+    m->_11 = m0->_11;
+    m->_22 = m0->_22;
+    m->_30 = m0->_30;
+    m->_31 = m0->_31;
+    m->_32 = m0->_32;
+    m->_33 = m0->_33;
+}
+
+void NuMtxTranspose(NUMTX *m, NUMTX *m0) {
+    float t;
+  
+    t = m0->_01;
+    m->_01 = m0->_10;
+    m->_10 = t;
+    t = m0->_02;
+    m->_02 = m0->_20;
+    m->_20 = t;
+    t = m0->_03;
+    m->_03 = m0->_30;
+    m->_30 = t;
+    t = m0->_12;
+    m->_12 = m0->_21;
+    m->_21 = t;
+    t = m0->_13;
+    m->_13 = m0->_31;
+    m->_31 = t;
+    t = m0->_23;
+    m->_23 = m0->_32;
+    m->_32 = t;
+    m->_00 = m0->_00;
+    m->_11 = m0->_11;
+    m->_22 = m0->_22;
+    m->_33 = m0->_33;
+}
+
 void NuMtxInv(NUMTX *m, NUMTX *m0) {}
 void NuMtxInvR(NUMTX *m, NUMTX *m0) {}
 float NuMtxDet3(NUMTX *m) {}
