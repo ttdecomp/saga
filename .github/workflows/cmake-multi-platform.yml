@@ -16,12 +16,69 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    
     - name: Install CMake 4.x
       uses: lukka/get-cmake@latest
+
+    - name: Install Rust
+      uses: dtolnay/rust-action@stable
 
     - name: Configure CMake
       run: cmake -B build .
 
     - name: Build
-      run: make -C build
+      run: cmake --build build
+
+    - name: Build gonk
+      run: cargo build --release --manifest-path gonk/Cargo.toml
+
+    - name: Run gonk split
+      run: ./gonk/target/release/gonk split
+
+    - name: Install objdiff-cli
+      run: cargo install objdiff-cli
+
+    - name: Generate objdiff report
+      run: objdiff-cli report generate -o report.json
+
+    - name: Update progress badge
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      env:
+        GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
+        GIST_ID: ${{ vars.PROGRESS_GIST_ID }}
+      run: |
+        TOTAL_CODE=$(jq '.units | map(.measures.total_code // 0) | add' report.json)
+        MATCHED_CODE=$(jq '.units | map(.measures.matched_code // 0) | add' report.json)
+
+        if [ "$TOTAL_CODE" -gt 0 ]; then
+          PROGRESS=$(echo "scale=2; $MATCHED_CODE * 100 / $TOTAL_CODE" | bc)
+        else
+          PROGRESS="0"
+        fi
+
+        if (( $(echo "$PROGRESS >= 90" | bc -l) )); then
+          COLOR="brightgreen"
+        elif (( $(echo "$PROGRESS >= 70" | bc -l) )); then
+          COLOR="green"
+        elif (( $(echo "$PROGRESS >= 50" | bc -l) )); then
+          COLOR="yellow"
+        elif (( $(echo "$PROGRESS >= 30" | bc -l) )); then
+          COLOR="orange"
+        else
+          COLOR="red"
+        fi
+
+        BADGE_JSON="{\"schemaVersion\":1,\"label\":\"matching\",\"message\":\"${PROGRESS}%\",\"color\":\"${COLOR}\"}"
+
+        curl -X PATCH \
+          -H "Authorization: token $GIST_TOKEN" \
+          -H "Accept: application/vnd.github+json" \
+          "https://api.github.com/gists/$GIST_ID" \
+          -d "{\"files\":{\"progress.json\":{\"content\":$( echo "$BADGE_JSON" | jq -Rs . )}}}"
+
+        echo "Progress: ${PROGRESS}%"
+
+    - name: Upload report artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: objdiff-report
+        path: report.json
