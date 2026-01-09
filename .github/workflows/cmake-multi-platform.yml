@@ -20,7 +20,7 @@ jobs:
       uses: lukka/get-cmake@latest
 
     - name: Install Rust
-      uses: dtolnay/rust-action@stable
+      uses: dtolnay/rust-toolchain@stable
 
     - name: Configure CMake
       run: cmake -B build .
