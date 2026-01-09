@@ -6,6 +6,6 @@ void NuTimeGetTicksPS(unsigned int *low, unsigned int *high) {
 
 }
 
-extern "C" void NuTimeGet(NUTIME *t) {
+void NuTimeGet(NUTIME *t) {
     NuTimeGetTicksPS(&t->low, &t->high);
 }

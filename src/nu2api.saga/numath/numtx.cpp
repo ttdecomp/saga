@@ -1,5 +1,6 @@
 #include "nu2api.saga/numath/numtx.h"
 
+#include "nu2api.saga/numath/nufloat.h"
 #include "nu2api.saga/numath/nutrig.h"
 
 NUMTX numtx_zero = {0};
@@ -140,18 +141,175 @@ void NuMtxPreTranslateNeg(NUMTX *m, NUVEC *t) {
     m->_32 -= t->x * m->_02 + t->y * m->_12 + t->z * m->_22;
 }
 
-void NuMtxScale(NUMTX *m, NUVEC *s) {}
-void NuMtxScaleU(NUMTX *m, float s) {}
-void NuMtxPreScaleU(NUMTX *m, float s) {}
-NUVEC NuMtxGetScale(NUMTX *m) {}
-void NuMtxPreScale(NUMTX *m, NUVEC *s) {}
-void NuMtxPreScaleX(NUMTX *m, float ScaleX) {}
-void NuMtxRotateX(NUMTX *m, NUANG a) {}
-void NuMtxPreRotateX(NUMTX *m, NUANG a) {}
-void NuMtxRotateY(NUMTX *m, NUANG a) {}
-void NuMtxPreRotateY(NUMTX *m, NUANG a) {}
-void NuMtxRotateZ(NUMTX *m, NUANG a) {}
-void NuMtxPreRotateZ(NUMTX *m, NUANG a) {}
+void NuMtxScale(NUMTX *m, NUVEC *s) {
+    m->_00 *= s->x;
+    m->_01 *= s->y;
+    m->_02 *= s->z;
+    m->_10 *= s->x;
+    m->_11 *= s->y;
+    m->_12 *= s->z;
+    m->_20 *= s->x;
+    m->_21 *= s->y;
+    m->_22 *= s->z;
+    m->_30 *= s->x;
+    m->_31 *= s->y;
+    m->_32 *= s->z;
+}
+
+void NuMtxScaleU(NUMTX *m, float s) {
+    m->_00 *= s;
+    m->_01 *= s;
+    m->_02 *= s;
+    m->_10 *= s;
+    m->_11 *= s;
+    m->_12 *= s;
+    m->_20 *= s;
+    m->_21 *= s;
+    m->_22 *= s;
+    m->_30 *= s;
+    m->_31 *= s;
+    m->_32 *= s;
+}
+
+void NuMtxPreScaleU(NUMTX *m, float s) {
+    m->_00 *= s;
+    m->_01 *= s;
+    m->_02 *= s;
+    m->_10 *= s;
+    m->_11 *= s;
+    m->_12 *= s;
+    m->_20 *= s;
+    m->_21 *= s;
+    m->_22 *= s;
+}
+
+NUVEC NuMtxGetScale(NUMTX *m) {
+    NUVEC scale;
+
+    scale.x = NuFsqrt(m->_00 * m->_00 + m->_01 * m->_01 + m->_02 * m->_02);
+    scale.y = NuFsqrt(m->_10 * m->_10 + m->_11 * m->_11 + m->_12 * m->_12);
+    scale.z = NuFsqrt(m->_20 * m->_20 + m->_21 * m->_21 + m->_22 * m->_22);
+
+    return scale;
+}
+
+void NuMtxPreScale(NUMTX *m, NUVEC *s) {
+    m->_00 *= s->x;
+    m->_01 *= s->x;
+    m->_02 *= s->x;
+    m->_10 *= s->y;
+    m->_11 *= s->y;
+    m->_12 *= s->y;
+    m->_20 *= s->z;
+    m->_21 *= s->z;
+    m->_22 *= s->z;
+}
+
+void NuMtxPreScaleX(NUMTX *m, float ScaleX) {
+    m->_00 = m->_00 * ScaleX;
+    m->_01 = m->_01 * ScaleX;
+    m->_02 = m->_02 * ScaleX;
+}
+
+void NuMtxRotateX(NUMTX *m, NUANG a) {    
+    float cosx = NU_COS_LUT(a);
+    float sinx = NU_SIN_LUT(a);
+    float _01 = m->_01;
+    float _11 = m->_11;
+    float _21 = m->_21;
+    float _31 = m->_31;
+
+    m->_01 = _01 * cosx - m->_02 * sinx;
+    m->_02 = _01 * sinx + m->_02 * cosx;
+    m->_11 = _11 * cosx - m->_12 * sinx;
+    m->_12 = _11 * sinx + m->_12 * cosx;
+    m->_21 = _21 * cosx - m->_22 * sinx;
+    m->_22 = _21 * sinx + m->_22 * cosx;
+    m->_31 = _31 * cosx - m->_32 * sinx;
+    m->_32 = _31 * sinx + m->_32 * cosx;
+}
+
+void NuMtxPreRotateX(NUMTX *m, NUANG a) {   
+    float cosx = NU_COS_LUT(a);
+    float sinx = NU_SIN_LUT(a);
+    float _10 = m->_10;
+    float _11 = m->_11;
+    float _12 = m->_12;
+
+    m->_10 = cosx * _10 + m->_20 * sinx;
+    m->_11 = cosx * _11 + m->_21 * sinx;
+    m->_12 = cosx * _12 + m->_22 * sinx;
+    m->_20 = m->_20 * cosx - sinx * _10;
+    m->_21 = m->_21 * cosx - sinx * _11;
+    m->_22 = m->_22 * cosx - sinx * _12;
+}
+
+void NuMtxRotateY(NUMTX *m, NUANG a) {
+    float cosx = NU_COS_LUT(a);
+    float sinx = NU_SIN_LUT(a);
+    float _00 = m->_00;
+    float _10 = m->_10;
+    float _20 = m->_20;
+    float _30 = m->_30;
+
+    m->_00 = _00 * cosx + m->_02 * sinx;
+    m->_02 = m->_02 * cosx - _00 * sinx;
+    m->_10 = _10 * cosx + m->_12 * sinx;
+    m->_12 = m->_12 * cosx - _10 * sinx;
+    m->_20 = _20 * cosx + m->_22 * sinx;
+    m->_22 = m->_22 * cosx - _20 * sinx;
+    m->_30 = _30 * cosx + m->_32 * sinx;
+    m->_32 = m->_32 * cosx - _30 * sinx;
+}
+
+void NuMtxPreRotateY(NUMTX *m, NUANG a) {
+    float cosx = NU_COS_LUT(a);
+    float sinx = NU_SIN_LUT(a);
+    float _00 = m->_00;
+    float _01 = m->_01;
+    float _02 = m->_02;
+
+    m->_00 = cosx * _00 - m->_20 * sinx;
+    m->_01 = cosx * _01 - m->_21 * sinx;
+    m->_02 = cosx * _02 - m->_22 * sinx;
+    m->_20 = sinx * _00 + m->_20 * cosx;
+    m->_21 = sinx * _01 + m->_21 * cosx;
+    m->_22 = sinx * _02 + m->_22 * cosx;
+}
+
+void NuMtxRotateZ(NUMTX *m, NUANG a) {
+    float cosx = NU_COS_LUT(a);
+    float sinx = NU_SIN_LUT(a);
+    float _00 = m->_00;
+    float _10 = m->_10;
+    float _20 = m->_20;
+    float _30 = m->_30;
+
+    m->_00 = _00 * cosx - m->_01 * sinx;
+    m->_01 = _00 * sinx + m->_01 * cosx;
+    m->_10 = _10 * cosx - m->_11 * sinx;
+    m->_11 = _10 * sinx + m->_11 * cosx;
+    m->_20 = _20 * cosx - m->_21 * sinx;
+    m->_21 = _20 * sinx + m->_21 * cosx;
+    m->_30 = _30 * cosx - m->_31 * sinx;
+    m->_31 = _30 * sinx + m->_31 * cosx;
+}
+
+void NuMtxPreRotateZ(NUMTX *m, NUANG a) {
+    float cosx = NU_COS_LUT(a);
+    float sinx = NU_SIN_LUT(a);
+    float _00 = m->_00;
+    float _01 = m->_01;
+    float _02 = m->_02;
+
+    m->_00 = cosx * _00 + m->_10 * sinx;
+    m->_01 = cosx * _01 + m->_11 * sinx;
+    m->_02 = cosx * _02 + m->_12 * sinx;
+    m->_10 = m->_10 * cosx - sinx * _00;
+    m->_11 = m->_11 * cosx - sinx * _01;
+    m->_12 = m->_12 * cosx - sinx * _02;
+}
+
 void NuMtxPreRotateY180(NUMTX *m) {}
 void NuMtxPreRotateY180X(NUMTX *m, NUANG a) {}
 void NuMtxPreSkewYX(NUMTX *Mtx, float SkewVal) {}
