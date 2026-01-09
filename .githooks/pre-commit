@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# build and generate objdiff report
+cmake -B build . && cmake --build build || exit 1
+cargo build --release --manifest-path gonk/Cargo.toml || exit 1
+./gonk/target/release/gonk split || exit 1
+
+# install objdiff-cli if not present
+if ! command -v objdiff-cli &> /dev/null; then
+    cargo install objdiff-cli --git https://github.com/ttdecomp/objdiff
+fi
+
+objdiff-cli report generate -o report.json || exit 1
+
+# get fuzzy match progress from report
+PROGRESS=$(grep -o '"fuzzy_match_percent":[^,}]*' report.json | head -1 | cut -d: -f2)
+
+# determine badge color
+if (( $(echo "$PROGRESS >= 90" | bc -l) )); then
+    COLOR="brightgreen"
+elif (( $(echo "$PROGRESS >= 70" | bc -l) )); then
+    COLOR="green"
+elif (( $(echo "$PROGRESS >= 50" | bc -l) )); then
+    COLOR="yellow"
+elif (( $(echo "$PROGRESS >= 30" | bc -l) )); then
+    COLOR="orange"
+else
+    COLOR="red"
+fi
+
+# update badge in README
+BADGE_URL="https://img.shields.io/badge/matching-${PROGRESS}%25-${COLOR}"
+sed -i "s|https://img.shields.io/badge/matching-[^)]*|${BADGE_URL}|g" README.md
+
+git add report.json README.md
+
+echo "Progress: ${PROGRESS}%"
