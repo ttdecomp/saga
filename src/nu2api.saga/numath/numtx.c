@@ -123,11 +123,68 @@ void NuMtxTranslateNeg(NUMTX *m, NUVEC *t) {
 }
 
 void NuMtxPreTranslate(NUMTX *m, NUVEC *t) {
-    m->_30 += t->x;
-    m->_31 += t->y;
-    m->_32 += t->z;
+    m->_30 += t->x * m->_00 + t->y * m->_10 + t->z * m->_20;
+    m->_31 += t->x * m->_01 + t->y * m->_11 + t->z * m->_21;
+    m->_32 += t->x * m->_02 + t->y * m->_12 + t->z * m->_22;
 }
 
 void NuMtxPreTranslateX(NUMTX *m, float tx) {
-    m->_30 += tx;
+    m->_30 = m->_30 + m->_00 * tx;
+    m->_31 = m->_31 + m->_01 * tx;
+    m->_32 = m->_32 + m->_02 * tx;
 }
+
+void NuMtxPreTranslateNeg(NUMTX *m, NUVEC *t) {
+    m->_30 -= t->x * m->_00 + t->y * m->_10 + t->z * m->_20;
+    m->_31 -= t->x * m->_01 + t->y * m->_11 + t->z * m->_21;
+    m->_32 -= t->x * m->_02 + t->y * m->_12 + t->z * m->_22;
+}
+
+void NuMtxScale(NUMTX *m, NUVEC *s) {}
+void NuMtxScaleU(NUMTX *m, float s) {}
+void NuMtxPreScaleU(NUMTX *m, float s) {}
+NUVEC NuMtxGetScale(NUMTX *m) {}
+void NuMtxPreScale(NUMTX *m, NUVEC *s) {}
+void NuMtxPreScaleX(NUMTX *m, float ScaleX) {}
+void NuMtxRotateX(NUMTX *m, NUANG a) {}
+void NuMtxPreRotateX(NUMTX *m, NUANG a) {}
+void NuMtxRotateY(NUMTX *m, NUANG a) {}
+void NuMtxPreRotateY(NUMTX *m, NUANG a) {}
+void NuMtxRotateZ(NUMTX *m, NUANG a) {}
+void NuMtxPreRotateZ(NUMTX *m, NUANG a) {}
+void NuMtxPreRotateY180(NUMTX *m) {}
+void NuMtxPreRotateY180X(NUMTX *m, NUANG a) {}
+void NuMtxPreSkewYX(NUMTX *Mtx, float SkewVal) {}
+void NuMtxTransposeR(NUMTX *m, NUMTX *m0) {}
+void NuMtxTranspose(NUMTX *m, NUMTX *m0) {}
+void NuMtxInv(NUMTX *m, NUMTX *m0) {}
+void NuMtxInvR(NUMTX *m, NUMTX *m0) {}
+float NuMtxDet3(NUMTX *m) {}
+void NuMtxLookAtX(NUMTX *m, NUVEC *pnt) {}
+void NuMtxLookAtY(NUMTX *m, NUVEC *pnt) {}
+void NuMtxLookAtZ(NUMTX *m, NUVEC *pnt) {}
+void NuMtxInvLookAtX(NUMTX *m, NUVEC *pnt) {}
+void NuMtxInvLookAtY(NUMTX *m, NUVEC *pnt) {}
+void NuMtxInvLookAtZ(NUMTX *m, NUVEC *pnt) {}
+void NuMtxAddR(NUMTX *m, NUMTX *m0, NUMTX *m1) {}
+void NuMtxSubR(NUMTX *m, NUMTX *m0, NUMTX *m1) {}
+void NuMtxSkewSymmetric(NUMTX *m, NUVEC *v) {}
+void NuMtxGetXAxis(NUMTX *m, NUVEC *x) {}
+void NuMtxGetYAxis(NUMTX *m, NUVEC *y) {}
+void NuMtxGetZAxis(NUMTX *m, NUVEC *z) {}
+void NuMtxGetTranslation(NUMTX *m, NUVEC *t) {}
+int NuMtxCompare(NUMTX *a, NUMTX *b) {}
+void NuMtxTruncate24Bit(NUMTX *trunc, NUMTX *mtx) {}
+void NuMtxRotateAng(int ang, float x, float z, float *rx, float *rz) {}
+void NuMtxGetEulerXYZ(NUMTX *Mat, NUANG *x, NUANG *y, NUANG *z) {}
+void NuMtxLookAtD3D(NUMTX *mtx, NUVEC *eye, NUVEC *center, NUVEC *up) {}
+void NuMtxSetPerspectiveD3D(NUMTX *mtx, float fovy, float aspect, float zNear, float zFar) {}
+void NuMtxSetPerspectiveBlend(NUMTX *mtx, float fovy, float aspect, float zNear, float zFar) {}
+void NuMtxSetFrustumD3D(NUMTX *mtx, float l, float r, float b, float t, float n, float f) {}
+void NuMtxSetFrustumBlend(NUMTX *mtx, float l, float r, float b, float t, float n, float f) {}
+void NuMtxSetOrthoD3D(NUMTX *mtx, float l, float r, float b, float t, float n, float f) {}
+void NuMtxSetOrthoBlend(NUMTX *mtx, float l, float r, float b, float t, float n, float f) {}
+void NuMtxGetPerspectiveD3D(NUMTX *mtx, float *fovy, float *aspect, float *zNear, float *zFar) {}
+void NuMtxGetPerspectiveBlend(NUMTX *mtx, float *fovy, float *aspect, float *zNear, float *zFar) {}
+void NuMtxGetFrustumD3D(NUMTX *mtx, float *l, float *r, float *b, float *t, float *n, float *f) {}
+void NuMtxGetFrustumBlend(NUMTX *mtx, float *l, float *r, float *b, float *t, float *n, float *f) {}
