@@ -22,6 +22,12 @@ jobs:
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
 
+    - name: Cache Android NDK
+      uses: actions/cache@v4
+      with:
+        path: ndk
+        key: android-ndk-r8e
+
     - name: Configure CMake
       run: cmake -B build .
 
@@ -35,7 +41,7 @@ jobs:
       run: ./gonk/target/release/gonk split
 
     - name: Install objdiff-cli
-      run: cargo install objdiff-cli
+      run: cargo install objdiff-cli --git https://github.com/ttdecomp/objdiff
 
     - name: Generate objdiff report
       run: objdiff-cli report generate -o report.json
