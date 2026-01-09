@@ -28,14 +28,6 @@ float NuFsign(float f) {
     }
 }
 
-// void NuEquivTollerance(float f) {
-//     fetol = f;
-// }
-
-// int NuEquiv(float f1, float f2) {
-//     return NuFabs(f1 - f2) < fetol;
-// }
-
 float NuFsqrt(float f) {
     if (1e-6f < f) {
         return sqrtf(f);
