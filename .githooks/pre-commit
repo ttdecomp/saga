@@ -14,6 +14,7 @@ objdiff-cli report generate -o report.json || exit 1
 
 # get fuzzy match progress from report
 PROGRESS=$(grep -o '"fuzzy_match_percent":[^,}]*' report.json | head -1 | cut -d: -f2)
+PROGRESS=$(printf "%.2f" "$PROGRESS")
 
 # determine badge color
 if (( $(echo "$PROGRESS >= 90" | bc -l) )); then
