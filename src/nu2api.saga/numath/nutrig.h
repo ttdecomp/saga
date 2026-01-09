@@ -24,7 +24,7 @@ extern "C" {
 /// @return void
 void NuTrigInit(void);
 
-int NuAtani(int dx, int dy);
+int NuAtan2D(float dx, float dy);
 
 #ifdef __cplusplus
 }

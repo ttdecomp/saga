@@ -1,4 +1,5 @@
 #include "nu2api.saga/numath/nutrig.h"
+#include "nu2api.saga/numath/nuang.h"
 
 #define ANG_COUNT 513
 static unsigned short ang[ANG_COUNT] = {
@@ -41,17 +42,40 @@ static unsigned short ang[ANG_COUNT] = {
     0x1FAE, 0x1FB8, 0x1FC3, 0x1FCD, 0x1FD7, 0x1FE1, 0x1FEC, 0x1FF6, 0x2000};
 
 #define NU_ATAN2_LUT(y, x) ang[(y << 9) / x]
+#define NU_ATAN2F_LUT(y, x) ang[(int)((y * 512.0f) / x)]
     
-static unsigned short xy(unsigned int x, unsigned int y) {
-    if (x > y) {
-        return NUANG_90DEG - NU_ATAN2_LUT(y, x);
+static unsigned short xy(unsigned int dx, unsigned int dy) {
+    if (dx > dy) {
+        return NUANG_90DEG - NU_ATAN2_LUT(dy, dx);
     } else {
-        return NU_ATAN2_LUT(x, y);
+        return NU_ATAN2_LUT(dx, dy);
+    }
+}
+
+static unsigned short fxyd(float dx, float dy) {
+    if (dx > dy) {
+        return NUANG_90DEG - NU_ATAN2F_LUT(dy, dx);
+    } else {
+        return NU_ATAN2F_LUT(dx, dy);
     }
 }
 
 #undef NU_ATAN2_LUT
 
-int NuAtani(int dx, int dy) {
-
+int NuAtan2D(float dx, float dy) {
+    if (dx == 0.0f) {
+        return 0.0f > dy ? NUANG_180DEG : 0;
+    } else if (dy == 0.0f) {
+        return 0.0f > dx ? NUANG_270DEG : NUANG_90DEG;
+    } else if (0.0f > dx) {
+        if (0.0f > dy) {
+            return fxyd(-dx, -dy) + NUANG_180DEG;
+        } else {
+            return -fxyd(-dx, dy);
+        }
+    } else if (0.0f > dy) {
+        return NUANG_180DEG - fxyd(dx, -dy);
+    } else {
+        return fxyd(dx, dy);
+    }
 }
