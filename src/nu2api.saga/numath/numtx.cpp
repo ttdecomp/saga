@@ -710,7 +710,31 @@ void NuMtxGetFrustumBlend(NUMTX *mtx, float *l, float *r, float *b, float *t, fl
 }
 
 void NuMtxSetRotateXYZ(NUMTX *m, NUANGVEC *a) {
+    float cosx = NU_COS_LUT(a->x);
+    float sinx = NU_SIN_LUT(a->x);
+    float cosy = NU_COS_LUT(a->y);
+    float siny = NU_SIN_LUT(a->y);
+    float cosz = NU_COS_LUT(a->z);
+    float sinz = NU_SIN_LUT(a->z);
+    
+    m->_00 = cosy * cosz;
+    m->_01 = cosy * sinz;
+    m->_02 = -siny;
+    m->_03 = 0.0;
+    m->_10 = sinx * siny * cosz - cosx * sinz;
+    m->_11 = sinx * siny * sinz + cosx * cosz;
+    m->_12 = sinx * cosy;
+    m->_13 = 0.0;
+    m->_20 = cosx * siny * cosz + sinx * sinz;
+    m->_21 = cosx * siny * sinz - sinx * cosz;
+    m->_22 = cosx * cosy;
+    m->_23 = 0.0;
+    m->_30 = 0.0;
+    m->_31 = 0.0;
+    m->_32 = 0.0;
+    m->_33 = 1.0;
 }
+
 void NuMtxMul(NUMTX *m, NUMTX *m0, NUMTX *m1) {
 }
 void NuMtxMulH(NUMTX *m, NUMTX *m0, NUMTX *m1) {
@@ -722,100 +746,6 @@ void NuMtxInvRSS(NUMTX *inv, NUMTX *T) {
 void NuMtxInvRSSH(NUMTX *inv, NUMTX *T) {
 }
 void NuMtxInvH(NUMTX *mi, NUMTX *m0) {
-    int n = 4;
-    float m[16];
-    int pivot[4];
-    int i, j, k;
-
-    m[0] = m0->_00;
-    m[1] = m0->_01;
-    m[2] = m0->_02;
-    m[3] = m0->_03;
-    m[4] = m0->_10;
-    m[5] = m0->_11;
-    m[6] = m0->_12;
-    m[7] = m0->_13;
-    m[8] = m0->_20;
-    m[9] = m0->_21;
-    m[10] = m0->_22;
-    m[11] = m0->_23;
-    m[12] = m0->_30;
-    m[13] = m0->_31;
-    m[14] = m0->_32;
-    m[15] = m0->_33;
-
-    for (i = 0; i < n; i++) {
-        pivot[i] = i;
-    }
-
-    for (i = 0; i < n; i++) {
-        float maxval = 0.0f;
-        int maxrow = i;
-
-        for (j = i; j < n; j++) {
-            float tmp = NuFabs(m[j * n + i]);
-            if (tmp > maxval) {
-                maxval = tmp;
-                maxrow = j;
-            }
-        }
-
-        if (NuFdiv(1.0f, maxval) == maxval) {
-            return;
-        }
-
-        if (maxrow != i) {
-            for (k = 0; k < n; k++) {
-                float tmp = m[i * n + k];
-                m[i * n + k] = m[maxrow * n + k];
-                m[maxrow * n + k] = tmp;
-            }
-            k = pivot[i];
-            pivot[i] = pivot[maxrow];
-            pivot[maxrow] = k;
-        }
-
-        float divisor = m[i * n + i];
-        for (j = 0; j < n; j++) {
-            if (j != i) {
-                float factor = -m[j * n + i] / divisor;
-                for (k = 0; k < n; k++) {
-                    m[j * n + k] = m[j * n + k] + factor * m[i * n + k];
-                }
-            }
-        }
-
-        for (k = 0; k < n; k++) {
-            m[i * n + k] = m[i * n + k] / divisor;
-        }
-    }
-
-    for (i = n - 1; i >= 0; i--) {
-        if (pivot[i] != i) {
-            for (k = 0; k < n; k++) {
-                float tmp = m[k * n + i];
-                m[k * n + i] = m[k * n + pivot[i]];
-                m[k * n + pivot[i]] = tmp;
-            }
-        }
-    }
-
-    mi->_00 = m[0];
-    mi->_01 = m[1];
-    mi->_02 = m[2];
-    mi->_03 = m[3];
-    mi->_10 = m[4];
-    mi->_11 = m[5];
-    mi->_12 = m[6];
-    mi->_13 = m[7];
-    mi->_20 = m[8];
-    mi->_21 = m[9];
-    mi->_22 = m[10];
-    mi->_23 = m[11];
-    mi->_30 = m[12];
-    mi->_31 = m[13];
-    mi->_32 = m[14];
-    mi->_33 = m[15];
 }
 
 void NuMtxAlignX(NUMTX *m, NUVEC *v) {
