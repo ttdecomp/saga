@@ -1,5 +1,7 @@
 #include "nu2api.saga/numath/numtx.h"
 
+#include <limits.h>
+
 #include "nu2api.saga/numath/nufloat.h"
 #include "nu2api.saga/numath/nutrig.h"
 #include "nu2api.saga/numath/nuvec.h"
@@ -596,8 +598,8 @@ void NuMtxGetTranslation(NUMTX *m, NUVEC *t) {
 }
 
 int NuMtxCompare(NUMTX *a, NUMTX *b) {
-    float* aa = &a->_00;
-    float* bb = &b->_00;
+    float *aa = &a->_00;
+    float *bb = &b->_00;
 
     for (int i = 0; i < 16; i++) {
         if (*aa < *bb) {
@@ -628,12 +630,12 @@ void NuMtxTruncate24Bit(NUMTX *trunc, NUMTX *mtx) {
     trunc_int[5] = mtx_int[5] & 0xffffff00;
     trunc_int[6] = mtx_int[6] & 0xffffff00;
     trunc_int[7] = mtx_int[7] & 0xffffff00;
-    
+
     trunc_int[8] = mtx_int[8] & 0xffffff00;
     trunc_int[9] = mtx_int[9] & 0xffffff00;
     trunc_int[10] = mtx_int[10] & 0xffffff00;
     trunc_int[11] = mtx_int[11] & 0xffffff00;
-    
+
     trunc_int[12] = mtx_int[12] & 0xffffff00;
     trunc_int[13] = mtx_int[13] & 0xffffff00;
     trunc_int[14] = mtx_int[14] & 0xffffff00;
@@ -688,25 +690,187 @@ void NuMtxLookAtD3D(NUMTX *mtx, NUVEC *eye, NUVEC *center, NUVEC *up) {
 }
 
 void NuMtxSetPerspectiveD3D(NUMTX *mtx, float fovy, float aspect, float zNear, float zFar) {
+    float tanFovy2 =
+        NU_SIN_LUT((int)((fovy / 2.0f) * (USHRT_MAX / 360.0f))) /
+        NU_COS_LUT((int)((fovy / 2.0f) * (USHRT_MAX / 360.0f))); // USHRT_MAX / 360.0f is indices per degree
+    mtx->_00 = 1.0 / (aspect * tanFovy2);
+    mtx->_01 = 0.0;
+    mtx->_02 = 0.0;
+    mtx->_03 = 0.0;
+    mtx->_10 = 0.0;
+    mtx->_11 = 1.0 / tanFovy2;
+    mtx->_12 = 0.0;
+    mtx->_13 = 0.0;
+    mtx->_20 = 0.0;
+    mtx->_21 = 0.0;
+    mtx->_22 = zFar / (zFar - zNear);
+    mtx->_23 = 1.0;
+    mtx->_30 = 0.0;
+    mtx->_31 = 0.0;
+    mtx->_32 = (-zFar * zNear) / (zFar - zNear);
+    mtx->_33 = 0.0;
 }
 
 void NuMtxSetPerspectiveBlend(NUMTX *mtx, float fovy, float aspect, float zNear, float zFar) {
+    float tanFovy2 =
+        NU_SIN_LUT((int)((fovy / 2.0f) * (USHRT_MAX / 360.0f))) /
+        NU_COS_LUT((int)((fovy / 2.0f) * (USHRT_MAX / 360.0f))); // USHRT_MAX / 360.0f is indices per degree
+    mtx->_00 = 1.0f / (aspect * tanFovy2);
+    mtx->_01 = 0.0f;
+    mtx->_02 = 0.0f;
+    mtx->_03 = 0.0f;
+    mtx->_10 = 0.0f;
+    mtx->_11 = 1.0f / tanFovy2;
+    mtx->_12 = 0.0f;
+    mtx->_13 = 0.0f;
+    mtx->_20 = 0.0f;
+    mtx->_21 = 0.0f;
+    mtx->_22 = (zFar + zNear) / (zFar - zNear);
+    mtx->_23 = 1.0f;
+    mtx->_30 = 0.0f;
+    mtx->_31 = 0.0f;
+    mtx->_32 = (zFar * -2.0f * zNear) / (zFar - zNear);
+    mtx->_33 = 0.0f;
 }
+
 void NuMtxSetFrustumD3D(NUMTX *mtx, float l, float r, float b, float t, float n, float f) {
+    mtx->_00 = (n + n) / (r - l);
+    mtx->_01 = 0.0f;
+    mtx->_02 = 0.0f;
+    mtx->_03 = 0.0f;
+    mtx->_10 = 0.0f;
+    mtx->_11 = (n + n) / (t - b);
+    mtx->_12 = 0.0f;
+    mtx->_13 = 0.0f;
+    mtx->_20 = (r + l) / (l - r);
+    mtx->_21 = (t + b) / (b - t);
+    mtx->_22 = f / (f - n);
+    mtx->_23 = 1.0f;
+    mtx->_30 = 0.0f;
+    mtx->_31 = 0.0f;
+    mtx->_32 = (-f * n) / (f - n);
+    mtx->_33 = 0.0f;
 }
+
 void NuMtxSetFrustumBlend(NUMTX *mtx, float l, float r, float b, float t, float n, float f) {
+    mtx->_00 = (n + n) / (r - l);
+    mtx->_01 = 0.0f;
+    mtx->_02 = 0.0f;
+    mtx->_03 = 0.0f;
+    mtx->_10 = 0.0f;
+    mtx->_11 = (n + n) / (t - b);
+    mtx->_12 = 0.0f;
+    mtx->_13 = 0.0f;
+    mtx->_20 = (r + l) / (l - r);
+    mtx->_21 = (t + b) / (b - t);
+    mtx->_22 = (f + n) / (f - n);
+    mtx->_23 = 1.0f;
+    mtx->_30 = 0.0f;
+    mtx->_31 = 0.0f;
+    mtx->_32 = (f * -2.0f * n) / (f - n);
+    mtx->_33 = 0.0f;
 }
+
 void NuMtxSetOrthoD3D(NUMTX *mtx, float l, float r, float b, float t, float n, float f) {
+    mtx->_00 = 2.0f / (r - l);
+    mtx->_01 = 0.0f;
+    mtx->_02 = 0.0f;
+    mtx->_03 = 0.0f;
+    mtx->_10 = 0.0f;
+    mtx->_11 = 2.0f / (t - b);
+    mtx->_12 = 0.0f;
+    mtx->_13 = 0.0f;
+    mtx->_20 = 0.0f;
+    mtx->_21 = 0.0f;
+    mtx->_22 = 1.0f / (f - n);
+    mtx->_23 = 0.0f;
+    mtx->_30 = (r + l) / (l - r);
+    mtx->_31 = (t + b) / (b - t);
+    mtx->_32 = (f + n) / (n - f);
+    mtx->_33 = 1.0f;
 }
+
 void NuMtxSetOrthoBlend(NUMTX *mtx, float l, float r, float b, float t, float n, float f) {
+    mtx->_00 = 2.0f / (r - l);
+    mtx->_01 = 0.0f;
+    mtx->_02 = 0.0f;
+    mtx->_03 = 0.0f;
+    mtx->_10 = 0.0f;
+    mtx->_11 = 2.0f / (t - b);
+    mtx->_12 = 0.0f;
+    mtx->_13 = 0.0f;
+    mtx->_20 = 0.0f;
+    mtx->_21 = 0.0f;
+    mtx->_22 = 2.0f / (f - n);
+    mtx->_23 = 0.0f;
+    mtx->_30 = (r + l) / (l - r);
+    mtx->_31 = (t + b) / (b - t);
+    mtx->_32 = (f + n) / (n - f);
+    mtx->_33 = 1.0f;
 }
+
 void NuMtxGetPerspectiveD3D(NUMTX *mtx, float *fovy, float *aspect, float *zNear, float *zFar) {
+    float Q = mtx->_22;
+    *zNear = -mtx->_32 / Q;
+    *zFar = (*zNear * Q) / (Q - 1.0f);
+    *aspect = mtx->_11 / mtx->_00;
+    *fovy = NuAtan2(1.0f / mtx->_11, 1.0f) * 360.0f / (float)M_PI;
 }
+
 void NuMtxGetPerspectiveBlend(NUMTX *mtx, float *fovy, float *aspect, float *zNear, float *zFar) {
+    float Q = (mtx->_22 + 1.0f) * 0.5f;
+    *zNear = -(mtx->_32 * 0.5f) / Q;
+    *zFar = (*zNear * Q) / (Q - 1.0f);
+    *aspect = mtx->_11 / mtx->_00;
+    *fovy = NuAtan2(1.0f / mtx->_11, 1.0f) * 360.0f / (float)M_PI;
 }
+
 void NuMtxGetFrustumD3D(NUMTX *mtx, float *l, float *r, float *b, float *t, float *n, float *f) {
+    float Q = mtx->_22;
+    float zNear = -mtx->_32 / Q;
+
+    if (f != NULL) {
+        *f = (Q * zNear) / (Q - 1.0f);
+    }
+    if (l != NULL) {
+        *l = ((-1.0f - mtx->_20) * zNear) / mtx->_00;
+    }
+    if (r != NULL) {
+        *r = ((1.0f - mtx->_20) * zNear) / mtx->_00;
+    }
+    if (b != NULL) {
+        *b = ((-1.0f - mtx->_21) * zNear) / mtx->_11;
+    }
+    if (t != NULL) {
+        *t = ((1.0f - mtx->_21) * zNear) / mtx->_11;
+    }
+    if (n != NULL) {
+        *n = zNear;
+    }
 }
+
 void NuMtxGetFrustumBlend(NUMTX *mtx, float *l, float *r, float *b, float *t, float *n, float *f) {
+    float Q = (mtx->_22 + 1.0f) * 0.5f;
+    float zNear = -(mtx->_32 * 0.5f) / Q;
+
+    if (f != NULL) {
+        *f = (Q * zNear) / (Q - 1.0f);
+    }
+    if (l != NULL) {
+        *l = ((0.5f - mtx->_20) * zNear) / mtx->_00;
+    }
+    if (r != NULL) {
+        *r = ((-1.0f - mtx->_20) * zNear) / mtx->_00;
+    }
+    if (b != NULL) {
+        *b = ((0.5f - mtx->_21) * zNear) / mtx->_11;
+    }
+    if (t != NULL) {
+        *t = ((-1.0f - mtx->_21) * zNear) / mtx->_11;
+    }
+    if (n != NULL) {
+        *n = zNear;
+    }
 }
 
 void NuMtxSetRotateXYZ(NUMTX *m, NUANGVEC *a) {
@@ -716,7 +880,7 @@ void NuMtxSetRotateXYZ(NUMTX *m, NUANGVEC *a) {
     float siny = NU_SIN_LUT(a->y);
     float cosz = NU_COS_LUT(a->z);
     float sinz = NU_SIN_LUT(a->z);
-    
+
     m->_00 = cosy * cosz;
     m->_01 = cosy * sinz;
     m->_02 = -siny;
@@ -823,12 +987,12 @@ void NuMtxAlignZ(NUMTX *m, NUVEC *v) {
 
 void NuMtxOrth(NUMTX *m) {
     float magnitude;
-    
+
     magnitude = 1.0 / NuFsqrt(m->_00 * m->_00 + m->_01 * m->_01 + m->_02 * m->_02);
     m->_00 = m->_00 * magnitude;
     m->_01 = m->_01 * magnitude;
     m->_02 = m->_02 * magnitude;
-    
+
     magnitude = 1.0 / NuFsqrt(m->_10 * m->_10 + m->_11 * m->_11 + m->_12 * m->_12);
     m->_10 = m->_10 * magnitude;
     m->_11 = m->_11 * magnitude;
@@ -880,5 +1044,4 @@ float NuMtxSSE(NUMTX *a, NUMTX *b) {
 }
 
 void NuMtx24BitCorrection(NUMTX *X, NUMTX *mtx) {
-    
 }

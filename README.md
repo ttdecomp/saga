@@ -1,5 +1,5 @@
 [![CMake](https://github.com/ttdecomp/saga/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/ttdecomp/saga/actions/workflows/cmake-multi-platform.yml)
-![Progress](https://img.shields.io/badge/matching-0.63%25-red)
+![Progress](https://img.shields.io/badge/matching-0.71%25-red)
 
 # Decompilation of "LEGO Star Wars: The Complete Saga" 
 
