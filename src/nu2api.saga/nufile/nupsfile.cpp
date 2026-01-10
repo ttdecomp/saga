@@ -68,3 +68,9 @@ extern "C" int32_t NuGetFileHandlePS(void) {
 
     return -1;
 }
+
+extern "C" int32_t NuPSFileClose(int32_t index) {
+    fclose(g_fileHandles[index]);
+    g_fileHandles[index] = NULL;
+    return 1;
+}

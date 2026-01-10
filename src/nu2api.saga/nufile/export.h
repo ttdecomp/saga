@@ -472,7 +472,7 @@ struct nudathdr_s { /* PlaceHolder Structure */
     struct nudathdr_struct2 *filetree;
     int leafnamesize;
     char *leafnames;
-    uint *arr3hashes;
+    uint *hashes;
     int count3;
     int count4;
     char *arr4; /* Type 'nudathdr_struct3 *' was deleted */
@@ -777,14 +777,14 @@ struct nudathdr_s { /* PlaceHolder Structure */
 struct nudathdr_struct1 {
     int field0_0x0;
     int field1_0x4;
-    int field2_0x8;
-    undefined4 field3_0xc;
+    int size;
+    undefined4 compressionMode;
 };
 
 struct nudathdr_struct2 {
     short field0_0x0;
     short field1_0x2;
-    char *someName;
+    char *name;
     short field3_0x8;
     short field4_0xa;
 };

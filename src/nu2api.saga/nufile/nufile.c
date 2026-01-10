@@ -79,14 +79,31 @@ void NuFileReldirFix(NuFileDevice *device, char *path) {
     } while (1);
 }
 
-nudathdr_s *NuDatSet(nudathdr_s *header) {
-    nudathdr_s *dat = curr_dat;
-    curr_dat = header;
-    return dat;
-}
-
 NuFileHandle NuFileOpen(const char *path, NuFileOpenMode mode) {
     return NuFileOpenDF(path, mode, curr_dat);
+}
+
+void NuFileClose(NuFileHandle file) {
+    if (NUFILE_IS_PS(file)) {
+        int32_t index = NUFILE_INDEX_PS(file);
+
+        while (NuPSFileClose(index) < 0) {
+        }
+
+        if (file_info[index].buffer != NULL) {
+            (file_info[index].buffer)->fileinfo = NULL;
+        }
+
+        memset(&file_info[index], 0, sizeof(fileinfo_s));
+    } else if (NUFILE_IS_MEM(file) || NUFILE_IS_DAT(file)) {
+        NuMemFileClose(file);
+    } else if (NUFILE_IS_MC(file)) {
+        // NuMcClose(NUFILE_INDEX_MC(file), 0);
+        UNIMPLEMENTED("memory card specific");
+    } else {
+        // NuFileAndroidAPK::CloseFile(index);
+        UNIMPLEMENTED("android specific");
+    }
 }
 
 int32_t NuFileStatus(NuFileHandle file) {
@@ -120,7 +137,8 @@ NuFileHandle NuFileOpenDF(const char *path, NuFileOpenMode mode, nudathdr_s *hea
                 // UNIMPLEMENTED("android specific");
                 fileId = NUFILE_PS(NuPSFileOpen(path, mode));
             } else {
-                fileId = NuDatFileOpen(header, path, mode);
+                // fileId = NuDatFileOpen(header, path, mode);
+                UNIMPLEMENTED();
             }
 
             if (fileId > 0) {
@@ -239,16 +257,112 @@ size_t NuMemFileRead(NuFileHandle file, char *dest, size_t size) {
 
         return size;
     } else {
-        return NuDatFileRead(file, dest, size);
+        // return NuDatFileRead(file, dest, size);
+        UNIMPLEMENTED();
     }
 }
 
-NuFileHandle NuDatFileOpen(nudathdr_s *header, const char *name, int32_t mode) {
-    UNIMPLEMENTED();
+int32_t NuFileSeek(NuFileHandle file, int64_t offset, int32_t seekMode) {
+    LOG("file=%d, offset=%lld, seekMode=%d", file, offset, seekMode);
+
+    int iVar1;
+    uint uVar2;
+    longlong lVar4;
+    T in_stack_ffffffb4;
+    undefined4 local_20;
+
+    if (file < 0x2000) {
+        if (file < 0x1000) {
+            if (file < 0x400) {
+                int index = NUFILE_INDEX_PS(file);
+                if (file_info[index].offset.i[1] == 0) {
+                    lVar4 = NuPSFileLSeek(NUFILE_INDEX_PS(file), offset, seekMode);
+                } else {
+                    if (seekMode == 1) {
+                        file_info[index].field1_0x4.l = offset + file_info[index].field1_0x4.l;
+                    } else if (seekMode == 2) {
+                        file_info[index].field1_0x4.l = offset - file_info[index].size.l;
+                    } else {
+                        file_info[index].field1_0x4.l = offset;
+                    }
+                    lVar4 = file_info[index].field1_0x4.l;
+                }
+            } else {
+                // lVar4 = NuMemFileSeek(file, (uint)offset, (int)(uint)offset >> 31, seekMode);
+                UNIMPLEMENTED();
+            }
+        } else {
+            // iVar3 = NuMcSeek(file + -0x1000, (uint)offset, seekMode, 0);
+            // lVar4 = (longlong)iVar3;
+            UNIMPLEMENTED("memory card specific");
+        }
+    } else {
+        if (seekMode == 1) {
+            local_20 = 1;
+        } else if (seekMode == 2) {
+            local_20 = 2;
+        } else {
+            local_20 = 0;
+        }
+        // NuFileAndroidAPK::SeekFile((NuFileAndroidAPK *)file, (uint)offset, CONCAT44(local_20, offset._4_4_),
+        // in_stack_ffffffb4);
+        UNIMPLEMENTED("android specific");
+    }
+    return lVar4;
 }
 
-size_t NuDatFileRead(NuFileHandle file, void *dest, size_t size) {
-    UNIMPLEMENTED();
+uint32_t NuFileOpenSize(NuFileHandle file) {
+    LOG("file=%d", file);
+
+    uint32_t size;
+
+    if (file < 0x2000) {
+        if (file < 0x1000) {
+            if (file < 0x800) {
+                if (file < 0x400) {
+                    size = (uint32_t)file_info[NUFILE_INDEX_PS(file)].size.l;
+                } else {
+                    // size = NuMemFileOpenSize(file);
+                    UNIMPLEMENTED();
+                }
+            } else {
+                // size = NuDatFileOpenSize(file);
+                UNIMPLEMENTED();
+            }
+        } else {
+            // size = NuMcFileOpenSize(file);
+            UNIMPLEMENTED("memory card specific");
+        }
+    } else {
+        // size = NuFileAndroidAPK::GetFileSize(file);
+        UNIMPLEMENTED("android specific");
+    }
+
+    LOG("size=%u", size);
+
+    return size;
+}
+
+static int32_t CSWTCH_152[3] = {1, 2, 0};
+
+int64_t NuPSFileLSeek(int32_t index, int64_t offset, int32_t seekMode) {
+    LOG("file=%d, offset=%lld, seekMode=%d", index, offset, seekMode);
+
+    int whence = 0;
+
+    if (seekMode - 1U < 2) {
+        whence = CSWTCH_152[seekMode - 1U];
+    }
+
+    long value = 0;
+    int bit32 = 0;
+
+    if (fseek(g_fileHandles[index], offset, whence) == 0) {
+        value = ftell(g_fileHandles[index]);
+        bit32 = value >> 31;
+    }
+
+    return CONCAT44(bit32, value);
 }
 
 size_t NuFileRead(NuFileHandle file, void *dest, size_t length) {
@@ -346,308 +460,134 @@ size_t NuFileRead(NuFileHandle file, void *dest, size_t length) {
     return bytesRead;
 }
 
-int32_t NuFileSeek(NuFileHandle file, int64_t offset, int32_t seekMode) {
-    LOG("file=%d, offset=%lld, seekMode=%d", file, offset, seekMode);
+int32_t nufile_lasterror = 0;
+int32_t nufile_try_packed = 0;
 
-    int iVar1;
-    uint uVar2;
-    longlong lVar4;
-    T in_stack_ffffffb4;
-    undefined4 local_20;
+int32_t NuFileLoadBuffer(const char *name, void *dest, int32_t size) {
+
+    nufile_lasterror = 0;
+
+    if (curr_dat == NULL) {
+        return 0;
+    }
+
+    int32_t i = NuDatFileLoadBuffer(curr_dat, name, dest, size);
+    if (nufile_lasterror != -1) {
+        return 0;
+    }
+
+    if (i == 0) {
+        int32_t j = NuFileExists(name);
+
+        if (j == 0) {
+            nufile_lasterror = -2;
+        } else {
+            j = NuFileOpen(name, NUFILE_OPENMODE_READ);
+            if (j == 0) {
+                nufile_lasterror = -3;
+            } else {
+                if (nufile_try_packed == 0) {
+                    i = NuFileOpenSize(j);
+                    if ((size < i) || (i == 0)) {
+                        nufile_lasterror = -1;
+                        i = 0;
+                    } else {
+                        while (NuFileRead(j, dest, i) < 0) {
+                            while (NuFileSeek(j, 0, 0) < 0) {
+                            }
+                        }
+                    }
+                } else {
+                    // i = NuPPLoadBuffer(j, dest, size);
+                    UNIMPLEMENTED();
+                }
+                NuFileClose(j);
+            }
+        }
+    }
+
+    return i;
+}
+
+void NuMemFileClose(NuFileHandle file) {
+    if (NUFILE_IS_PS(file)) {
+        do {
+        } while (1);
+    }
+
+    if (NUFILE_IS_MEM(file)) {
+        memfiles[NUFILE_INDEX_MEM(file)].used = 0;
+    } else if (NUFILE_IS_DAT(file)) {
+        NuDatFileClose(file);
+    }
+}
+
+int32_t NuFileExists(const char *name) {
+    LOG("name=%s", name);
+    return NuFileSize(name) > 0 ? 1 : 0;
+}
+
+uint64_t NuFileSize(const char *name) {
+    int buffering = nufile_buffering_enabled;
+    nufile_buffering_enabled = 0;
+
+    int file;
+    uint64_t pos;
+
+    if (curr_dat == NULL || (file = NuDatFileFindTree(curr_dat, name), file < 0)) {
+        pos = -1;
+        if (((name != NULL) && (pos = -1, *name != '\0')) &&
+            (file = NuFileOpen(name, NUFILE_OPENMODE_READ), pos = -1, file != 0)) {
+            do {
+                pos = NuFileSeek(file, 0, 2);
+            } while (pos < 0);
+            pos = NuFilePos(file);
+            NuFileClose(file);
+        }
+    } else {
+        buffering = nufile_buffering_enabled;
+        pos = (uint64_t)curr_dat->finfo[file].size;
+    }
+
+    nufile_buffering_enabled = buffering;
+
+    return pos;
+}
+
+uint64_t NuFilePos(NuFileHandle file) {
+    longlong pos_;
+    int local_14;
 
     if (file < 0x2000) {
         if (file < 0x1000) {
             if (file < 0x400) {
-                int index = NUFILE_INDEX_PS(file);
-                if (file_info[index].offset.i[1] == 0) {
-                    lVar4 = NuPSFileLSeek(NUFILE_INDEX_PS(file), offset, seekMode);
+                file = file + -1;
+                if (file_info[file].offset.i[1] == 0) {
+                    do {
+                        pos_ = NuPSFileLSeek(file, 0, 1);
+                    } while (pos_ < 0);
+                    local_14 = (int)pos_;
                 } else {
-                    if (seekMode == 1) {
-                        file_info[index].field1_0x4.l = offset + file_info[index].field1_0x4.l;
-                    } else if (seekMode == 2) {
-                        file_info[index].field1_0x4.l = offset - file_info[index].size.l;
-                    } else {
-                        file_info[index].field1_0x4.l = offset;
-                    }
-                    lVar4 = file_info[index].field1_0x4.l;
+                    local_14 = file_info[file].field1_0x4.i[0];
                 }
             } else {
-                // lVar4 = NuMemFileSeek(file, (uint)offset, (int)(uint)offset >> 31, seekMode);
-                UNIMPLEMENTED();
+                local_14 = NuMemFilePos(file);
             }
         } else {
-            // iVar3 = NuMcSeek(file + -0x1000, (uint)offset, seekMode, 0);
-            // lVar4 = (longlong)iVar3;
+            // local_14 = NuMcSeek(file + -0x1000, 0, 2, 0);
             UNIMPLEMENTED("memory card specific");
         }
     } else {
-        if (seekMode == 1) {
-            local_20 = 1;
-        } else if (seekMode == 2) {
-            local_20 = 2;
-        } else {
-            local_20 = 0;
-        }
-        // NuFileAndroidAPK::SeekFile((NuFileAndroidAPK *)file, (uint)offset, CONCAT44(local_20, offset._4_4_),
-        // in_stack_ffffffb4);
+        // local_14 = NuFileAndroidAPK::GetFilePos(index);
         UNIMPLEMENTED("android specific");
     }
-    return lVar4;
+    return local_14;
 }
 
-nudathdr_s *NuDatOpen(char *name, void **bufferBase, int32_t zero) {
-    LOG("name=%s bufferBase=%p zero=%d", name, bufferBase, zero);
-    return NuDatOpenEx(name, bufferBase, zero, 0);
-}
-
-void APIEndianSwap(void *data, size_t count, size_t size) {
-    return;
-}
-
-nudathdr_s *NuDatOpenEx(char *name, void **bufferBase, int zero, short mode) {
-    LOG("name=%s bufferBase=%p zero=%d mode=%d", name, bufferBase, zero, mode);
-
-    uint uVar3;
-    int mode_;
-    int file_;
-    int len;
-    nudathdr_struct1 *puVar4;
-    nudathdr_struct1 *puVar5;
-    nudathdr_s *header;
-    char *str;
-    int buffer[2];
-    int file;
-    int j;
-    int local_38;
-    uint local_34;
-    int offsetL;
-    int offsetH;
-    int k;
-    int i;
-    nudathdr_struct2 *struct2;
-    int uVar1;
-    undefined4 uVar2;
-    undefined4 uVar7;
-
-    len = nufile_buffering_enabled;
-    mode_ = (int)mode;
-    uVar7 = 0;
-    uVar2 = 0;
-    file_ = NuFileOpenDF(name, mode_, NULL);
-    if (file_ == 0) {
-        header = NULL;
-        nufile_buffering_enabled = len;
+int32_t NuMemFilePos(NuFileHandle file) {
+    if (file < 0x800) {
+        return (int)memfiles[file + -0x400].ptr - (int)memfiles[file + -0x400].buffer;
     } else {
-        NuFileOpenSize(file_);
-        NuFileRead(file_, buffer, 8);
-        APIEndianSwap(buffer, 2, 4);
-        offsetH = buffer[0] >> 31;
-        offsetL = buffer[0];
-        if (offsetH < 0) {
-            offsetL = (int)((ulonglong)(uint)buffer[0] * 0xffffff00);
-            offsetH = (offsetH * -0x100 - buffer[0]) + (int)((ulonglong)(uint)buffer[0] * 0xffffff00 >> 0x20);
-        }
-        NuFileSeek(file_, CONCAT44(offsetH, offsetL), 0);
-        len = NuStrLen(name);
-        header = (nudathdr_s *)*bufferBase;
-        *bufferBase = (void *)((int)*bufferBase + 0x178);
-        memset(header, 0, 0x178);
-        header->field300_0x16c = 1;
-        header->path = (char *)*bufferBase;
-        *bufferBase = (void *)((int)*bufferBase + (len + 0x10U & 0xfffffff0));
-        NuStrCpy(header->path, name);
-        NuFileRead(file_, header, 4);
-        APIEndianSwap(header, 1, 4);
-        NuFileRead(file_, &header->filesCount, 4);
-        APIEndianSwap(&header->filesCount, 1, 4);
-        header->finfo = (nudathdr_struct1 *)((int)*bufferBase + 0x1fU & 0xffffffe0);
-        *bufferBase = (void *)((int)*bufferBase + 0x1fU & 0xffffffe0);
-        *bufferBase = (void *)((int)*bufferBase + header->filesCount * 0x10);
-        NuFileRead(file_, header->finfo, header->filesCount << 4);
-        for (i = 0; i < header->filesCount; i = i + 1) {
-            APIEndianSwap(header->finfo + i, 1, 4);
-            APIEndianSwap(&header->finfo[i].field1_0x4, 1, 4);
-            APIEndianSwap(&header->finfo[i].field2_0x8, 1, 4);
-        }
-        NuFileRead(file_, &header->treeCount, 4);
-        APIEndianSwap(&header->treeCount, 1, 4);
-        header->filetree = (nudathdr_struct2 *)*bufferBase;
-        *bufferBase = (void *)((int)*bufferBase + header->treeCount * 0xc);
-
-        if (header->version < -4) {
-            NuFileRead(file_, header->filetree, header->treeCount * 0xc);
-        } else {
-            NuFileRead(file_, header->filetree, header->treeCount << 3);
-            struct2 = header->filetree;
-            k = header->treeCount;
-            while (k = k + -1, 0 < k) {
-                header->filetree[k].field4_0xa = 0;
-                header->filetree[k].field3_0x8 = 0;
-                header->filetree[k].someName = *(char **)((int)struct2 + k * 8 + 4);
-                header->filetree[k].field1_0x2 = *(short *)((int)struct2 + k * 8 + 2);
-                header->filetree[k].field0_0x0 = *(short *)(k * 8 + (int)struct2);
-            }
-        }
-
-        for (k = 0; k < header->treeCount; k = k + 1) {
-            APIEndianSwap(header->filetree + k, 1, 2);
-            APIEndianSwap(&header->filetree[k].field1_0x2, 1, 2);
-            APIEndianSwap(&header->filetree[k].someName, 1, 4);
-            if (header->version < -4) {
-                APIEndianSwap(&header->filetree[k].field3_0x8, 1, 2);
-                APIEndianSwap(&header->filetree[k].field4_0xa, 1, 2);
-            }
-        }
-
-        NuFileRead(file_, &header->leafnamesize, 4);
-        APIEndianSwap(&header->leafnamesize, 1, 4);
-
-        header->leafnames = (char *)*bufferBase;
-        *bufferBase = (void *)((int)*bufferBase + header->leafnamesize);
-
-        NuFileRead(file_, header->leafnames, header->leafnamesize);
-        for (k = 0; k < header->treeCount; k = k + 1) {
-            header->filetree[k].someName += (size_t)header->leafnames;
-        }
-
-        header->filetree->someName = NULL;
-        *bufferBase = (void *)((int)*bufferBase - header->leafnamesize);
-        *bufferBase = (void *)((int)*bufferBase + header->treeCount * -0xc);
-        header->filetree = NULL;
-        header->leafnames = NULL;
-        header->arr3hashes = NULL;
-        header->count3 = 0;
-        header->count4 = 0;
-        header->arr4 = NULL;
-        if (header->version < -1) {
-            header->arr3hashes = (uint *)((int)*bufferBase + 0x1fU & 0xffffffe0);
-            *bufferBase = (void *)((int)*bufferBase + 0x1fU & 0xffffffe0);
-            *bufferBase = (void *)((int)*bufferBase + header->filesCount * 4);
-            NuFileRead(file_, header->arr3hashes, header->filesCount << 2);
-            for (k = 0; k < header->filesCount; k = k + 1) {
-                APIEndianSwap(header->arr3hashes + k, 1, 4);
-            }
-            NuFileRead(file_, &header->count3, 4);
-            APIEndianSwap(&header->count3, 1, 4);
-            NuFileRead(file_, &header->count4, 4);
-            APIEndianSwap(&header->count4, 1, 4);
-            header->arr4 = (char *)((int)*bufferBase + 0x1fU & 0xffffffe0);
-            *bufferBase = (void *)((int)*bufferBase + 0x1fU & 0xffffffe0);
-            *bufferBase = (void *)((int)*bufferBase + header->count4);
-            NuFileRead(file_, header->arr4, header->count4);
-            str = header->arr4;
-            for (k = 0; k < header->count3; k = k + 1) {
-                len = NuStrLen(str);
-                str = str + len + 1;
-                if (((uint)str & 1) != 0) {
-                    str = str + 1;
-                }
-                APIEndianSwap(str, 1, 2);
-                str = str + 2;
-            }
-        }
-
-        for (k = 0; k < 20; k = k + 1) {
-            header->openFiles[k].field1_0x4 = -1;
-            header->openFiles[k].file = 0;
-            header->openFiles[k].position.i[0] = 0;
-            header->openFiles[k].position.i[1] = 0;
-        }
-
-        header->openFiles[0].file = file_;
-        header->openFiles[0].position.i[0] = 0;
-        header->openFiles[0].position.i[1] = 0;
-        header->mode = mode;
-
-        if (-3 < header->version) {
-            for (i = 0; i < header->filesCount + -1; i = i + 1) {
-                local_34 = header->arr3hashes[i];
-                local_38 = i;
-                j = i;
-                while (j = j + 1, j < header->filesCount) {
-                    if (header->arr3hashes[j] <= local_34) {
-                        local_34 = header->arr3hashes[j];
-                        local_38 = j;
-                    }
-                }
-                if (i != local_38) {
-                    uVar3 = header->arr3hashes[i];
-                    header->arr3hashes[i] = header->arr3hashes[local_38];
-                    header->arr3hashes[local_38] = uVar3;
-                    puVar5 = header->finfo + i;
-                    len = puVar5->field0_0x0;
-                    file_ = puVar5->field1_0x4;
-                    uVar1 = puVar5->field2_0x8;
-                    uVar2 = puVar5->field3_0xc;
-                    puVar4 = header->finfo + i;
-                    puVar5 = header->finfo + local_38;
-                    puVar4->field0_0x0 = puVar5->field0_0x0;
-                    puVar4->field1_0x4 = puVar5->field1_0x4;
-                    puVar4->field2_0x8 = puVar5->field2_0x8;
-                    puVar4->field3_0xc = puVar5->field3_0xc;
-                    puVar5 = header->finfo + local_38;
-                    puVar5->field0_0x0 = len;
-                    puVar5->field1_0x4 = file_;
-                    puVar5->field2_0x8 = uVar1;
-                    puVar5->field3_0xc = uVar2;
-                }
-            }
-        }
+        return NuDatFilePos(file);
     }
-
-    return header;
-}
-
-uint32_t NuFileOpenSize(NuFileHandle file) {
-    LOG("file=%d", file);
-
-    uint32_t size;
-
-    if (file < 0x2000) {
-        if (file < 0x1000) {
-            if (file < 0x800) {
-                if (file < 0x400) {
-                    size = (uint32_t)file_info[NUFILE_INDEX_PS(file)].size.l;
-                } else {
-                    // size = NuMemFileOpenSize(file);
-                    UNIMPLEMENTED();
-                }
-            } else {
-                // size = NuDatFileOpenSize(file);
-                UNIMPLEMENTED();
-            }
-        } else {
-            // size = NuMcFileOpenSize(file);
-            UNIMPLEMENTED("memory card specific");
-        }
-    } else {
-        // size = NuFileAndroidAPK::GetFileSize(file);
-        UNIMPLEMENTED("android specific");
-    }
-
-    LOG("size=%u", size);
-
-    return size;
-}
-
-static int32_t CSWTCH_152[3] = {1, 2, 0};
-
-int64_t NuPSFileLSeek(int32_t index, int64_t offset, int32_t seekMode) {
-    LOG("file=%d, offset=%lld, seekMode=%d", index, offset, seekMode);
-
-    int whence = 0;
-
-    if (seekMode - 1U < 2) {
-        whence = CSWTCH_152[seekMode - 1U];
-    }
-
-    long value = 0;
-    int bit32 = 0;
-
-    if (fseek(g_fileHandles[index], offset, whence) == 0) {
-        value = ftell(g_fileHandles[index]);
-        bit32 = value >> 31;
-    }
-
-    return CONCAT44(bit32, value);
 }

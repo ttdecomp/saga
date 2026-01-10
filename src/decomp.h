@@ -22,9 +22,10 @@ static void __attribute__((noreturn)) __unimplemented(const char *file, int line
 #define LOG(...)
 #endif
 
-#define BUFFER_ALLOC(buffer, T) (T *)buffer_alloc((void **)(buffer), sizeof(T), _Alignof(T))
+#define BUFFER_ALLOC(buffer, T) (T *)buffer_alloc_aligned((buffer), sizeof(T), _Alignof(T))
+#define BUFFER_ALLOC_ARRAY(buffer, count, T) (T *)buffer_alloc_aligned((buffer), sizeof(T) * (count), _Alignof(T))
 
-static inline void *buffer_alloc(void **buffer, size_t size, size_t align) {
+static inline void *buffer_alloc_aligned(void **buffer, size_t size, size_t align) {
     size_t current = (size_t)(*buffer);
     size_t aligned = (current + (align - 1)) & ~(align - 1);
     *buffer = (void *)(aligned + size);
@@ -43,7 +44,7 @@ static inline void *buffer_alloc(void **buffer, size_t size, size_t align) {
 #define CPP_API_START
 #define CPP_API_END
 #else
-#define CPP_API_START void UNIQUE_FUNC(base)(void) {
+#define CPP_API_START static void UNIQUE_FUNC(base)(void) {
 #define CPP_API_END }
 #endif
 

@@ -15,6 +15,9 @@ void NuMtlInitEx(void **bufferBase, int32_t usually512) {
     LOG("dat->treeCount=%d", dat->treeCount);
     LOG("dat->leafnamesize=%d", dat->leafnamesize);
     LOG("dat->filetree=%p", dat->filetree);
+
+    int32_t size = NuFileLoadBuffer("stuff\\\\text\\\\badwords.txt", *bufferBase, 0x100000);
+    LOG("size=%d", size);
 }
 
 void NuInitHardware(void **bufferBase, void **bufferEnd, int32_t zero) {
