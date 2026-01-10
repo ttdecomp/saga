@@ -173,17 +173,7 @@ void NuMtxAlignY(NUMTX *m, NUVEC *v);
 void NuMtxAlignZ(NUMTX *m, NUVEC *v);
 void NuMtxOrth(NUMTX *m);
 void NuMtxVecToEulerXYZ(NUVEC *XVec, NUVEC *ZVec, NUANG *x, NUANG *y, NUANG *z);
-void NuMtxSSE(NUMTX *a, NUMTX *b);
-void NuMtx24BitCorrection(NUMTX *X, NUMTX *mtx);
-void NuMtxInvRSS(NUMTX *inv, NUMTX *T);
-void NuMtxInvRSSH(NUMTX *inv, NUMTX *T);
-void NuMtxInvH(NUMTX *mi, NUMTX *m0);
-void NuMtxAlignX(NUMTX *m, NUVEC *v);
-void NuMtxAlignY(NUMTX *m, NUVEC *v);
-void NuMtxAlignZ(NUMTX *m, NUVEC *v);
-void NuMtxOrth(NUMTX *m);
-void NuMtxVecToEulerXYZ(NUVEC *XVec, NUVEC *ZVec, NUANG *x, NUANG *y, NUANG *z);
-void NuMtxSSE(NUMTX *a, NUMTX *b);
+float NuMtxSSE(NUMTX *a, NUMTX *b);
 void NuMtx24BitCorrection(NUMTX *X, NUMTX *mtx);
 
 #ifdef __cplusplus

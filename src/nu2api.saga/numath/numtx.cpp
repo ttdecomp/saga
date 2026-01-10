@@ -596,9 +596,48 @@ void NuMtxGetTranslation(NUMTX *m, NUVEC *t) {
 }
 
 int NuMtxCompare(NUMTX *a, NUMTX *b) {
+    float* aa = &a->_00;
+    float* bb = &b->_00;
+
+    for (int i = 0; i < 16; i++) {
+        if (*aa < *bb) {
+            return -1;
+        }
+        if (*aa > *bb) {
+            return 1;
+        }
+        aa += 1;
+        bb += 1;
+    }
+
+    return 0;
 }
 
 void NuMtxTruncate24Bit(NUMTX *trunc, NUMTX *mtx) {
+    // was this really worth it?
+    // struct padding and uints bigger than 4 bytes be damned
+    unsigned int *trunc_int = (unsigned int *)trunc;
+    unsigned int *mtx_int = (unsigned int *)mtx;
+
+    trunc_int[0] = mtx_int[0] & 0xffffff00;
+    trunc_int[1] = mtx_int[1] & 0xffffff00;
+    trunc_int[2] = mtx_int[2] & 0xffffff00;
+    trunc_int[3] = mtx_int[3] & 0xffffff00;
+
+    trunc_int[4] = mtx_int[4] & 0xffffff00;
+    trunc_int[5] = mtx_int[5] & 0xffffff00;
+    trunc_int[6] = mtx_int[6] & 0xffffff00;
+    trunc_int[7] = mtx_int[7] & 0xffffff00;
+    
+    trunc_int[8] = mtx_int[8] & 0xffffff00;
+    trunc_int[9] = mtx_int[9] & 0xffffff00;
+    trunc_int[10] = mtx_int[10] & 0xffffff00;
+    trunc_int[11] = mtx_int[11] & 0xffffff00;
+    
+    trunc_int[12] = mtx_int[12] & 0xffffff00;
+    trunc_int[13] = mtx_int[13] & 0xffffff00;
+    trunc_int[14] = mtx_int[14] & 0xffffff00;
+    trunc_int[15] = mtx_int[15] & 0xffffff00;
 }
 
 void NuMtxRotateAng(NUANG ang, float x, float z, float *rx, float *rz) {
@@ -650,6 +689,7 @@ void NuMtxLookAtD3D(NUMTX *mtx, NUVEC *eye, NUVEC *center, NUVEC *up) {
 
 void NuMtxSetPerspectiveD3D(NUMTX *mtx, float fovy, float aspect, float zNear, float zFar) {
 }
+
 void NuMtxSetPerspectiveBlend(NUMTX *mtx, float fovy, float aspect, float zNear, float zFar) {
 }
 void NuMtxSetFrustumD3D(NUMTX *mtx, float l, float r, float b, float t, float n, float f) {
@@ -682,6 +722,100 @@ void NuMtxInvRSS(NUMTX *inv, NUMTX *T) {
 void NuMtxInvRSSH(NUMTX *inv, NUMTX *T) {
 }
 void NuMtxInvH(NUMTX *mi, NUMTX *m0) {
+    int n = 4;
+    float m[16];
+    int pivot[4];
+    int i, j, k;
+
+    m[0] = m0->_00;
+    m[1] = m0->_01;
+    m[2] = m0->_02;
+    m[3] = m0->_03;
+    m[4] = m0->_10;
+    m[5] = m0->_11;
+    m[6] = m0->_12;
+    m[7] = m0->_13;
+    m[8] = m0->_20;
+    m[9] = m0->_21;
+    m[10] = m0->_22;
+    m[11] = m0->_23;
+    m[12] = m0->_30;
+    m[13] = m0->_31;
+    m[14] = m0->_32;
+    m[15] = m0->_33;
+
+    for (i = 0; i < n; i++) {
+        pivot[i] = i;
+    }
+
+    for (i = 0; i < n; i++) {
+        float maxval = 0.0f;
+        int maxrow = i;
+
+        for (j = i; j < n; j++) {
+            float tmp = NuFabs(m[j * n + i]);
+            if (tmp > maxval) {
+                maxval = tmp;
+                maxrow = j;
+            }
+        }
+
+        if (NuFdiv(1.0f, maxval) == maxval) {
+            return;
+        }
+
+        if (maxrow != i) {
+            for (k = 0; k < n; k++) {
+                float tmp = m[i * n + k];
+                m[i * n + k] = m[maxrow * n + k];
+                m[maxrow * n + k] = tmp;
+            }
+            k = pivot[i];
+            pivot[i] = pivot[maxrow];
+            pivot[maxrow] = k;
+        }
+
+        float divisor = m[i * n + i];
+        for (j = 0; j < n; j++) {
+            if (j != i) {
+                float factor = -m[j * n + i] / divisor;
+                for (k = 0; k < n; k++) {
+                    m[j * n + k] = m[j * n + k] + factor * m[i * n + k];
+                }
+            }
+        }
+
+        for (k = 0; k < n; k++) {
+            m[i * n + k] = m[i * n + k] / divisor;
+        }
+    }
+
+    for (i = n - 1; i >= 0; i--) {
+        if (pivot[i] != i) {
+            for (k = 0; k < n; k++) {
+                float tmp = m[k * n + i];
+                m[k * n + i] = m[k * n + pivot[i]];
+                m[k * n + pivot[i]] = tmp;
+            }
+        }
+    }
+
+    mi->_00 = m[0];
+    mi->_01 = m[1];
+    mi->_02 = m[2];
+    mi->_03 = m[3];
+    mi->_10 = m[4];
+    mi->_11 = m[5];
+    mi->_12 = m[6];
+    mi->_13 = m[7];
+    mi->_20 = m[8];
+    mi->_21 = m[9];
+    mi->_22 = m[10];
+    mi->_23 = m[11];
+    mi->_30 = m[12];
+    mi->_31 = m[13];
+    mi->_32 = m[14];
+    mi->_33 = m[15];
 }
 
 void NuMtxAlignX(NUMTX *m, NUVEC *v) {
@@ -732,7 +866,7 @@ void NuMtxAlignZ(NUMTX *m, NUVEC *v) {
     m->_21 = v->y * len;
     m->_22 = v->z * len;
 
-    if (NuFabs(NuVecDot(NUMTX_GET_ROW_VEC(m, 1), NUMTX_GET_ROW_VEC(m, 2))) > 0.8660254f) {
+    if (NuFabs(NuVecDot(NUMTX_GET_ROW_VEC(m, 1), NUMTX_GET_ROW_VEC(m, 2))) > 0.86602540378f /* cos(30 deg) */) {
         NuVecCross(NUMTX_GET_ROW_VEC(m, 1), NUMTX_GET_ROW_VEC(m, 2), NUMTX_GET_ROW_VEC(m, 0));
         len = NuFsqrt(NuFdiv(yLenSq, m->_10 * m->_10 + m->_11 * m->_11 + m->_12 * m->_12));
         m->_10 = m->_10 * len;
@@ -758,6 +892,23 @@ void NuMtxAlignZ(NUMTX *m, NUVEC *v) {
 }
 
 void NuMtxOrth(NUMTX *m) {
+    float magnitude;
+    
+    magnitude = 1.0 / NuFsqrt(m->_00 * m->_00 + m->_01 * m->_01 + m->_02 * m->_02);
+    m->_00 = m->_00 * magnitude;
+    m->_01 = m->_01 * magnitude;
+    m->_02 = m->_02 * magnitude;
+    
+    magnitude = 1.0 / NuFsqrt(m->_10 * m->_10 + m->_11 * m->_11 + m->_12 * m->_12);
+    m->_10 = m->_10 * magnitude;
+    m->_11 = m->_11 * magnitude;
+    m->_12 = m->_12 * magnitude;
+    m->_20 = m->_01 * m->_12 - m->_02 * m->_11;
+    m->_21 = m->_02 * m->_10 - m->_00 * m->_12;
+    m->_22 = m->_00 * m->_11 - m->_01 * m->_10;
+    m->_10 = m->_21 * m->_02 - m->_22 * m->_01;
+    m->_11 = m->_22 * m->_00 - m->_20 * m->_02;
+    m->_12 = m->_20 * m->_01 - m->_21 * m->_00;
 }
 
 void NuMtxVecToEulerXYZ(NUVEC *XVec, NUVEC *ZVec, NUANG *x, NUANG *y, NUANG *z) {
@@ -774,8 +925,30 @@ void NuMtxVecToEulerXYZ(NUVEC *XVec, NUVEC *ZVec, NUANG *x, NUANG *y, NUANG *z) 
     *x = -NuAtan2D(ZVec2.y, ZVec2.z);
 }
 
-void NuMtxSSE(NUMTX *a, NUMTX *b) {
+float NuMtxSSE(NUMTX *a, NUMTX *b) {
+    // funnily enough this does not use SIMD at all...
+    float sse;
+
+    sse = (a->_00 - b->_00) * (a->_00 - b->_00);
+    sse += (a->_01 - b->_01) * (a->_01 - b->_01);
+    sse += (a->_02 - b->_02) * (a->_02 - b->_02);
+    sse += (a->_03 - b->_03) * (a->_03 - b->_03);
+    sse += (a->_10 - b->_10) * (a->_10 - b->_10);
+    sse += (a->_11 - b->_11) * (a->_11 - b->_11);
+    sse += (a->_12 - b->_12) * (a->_12 - b->_12);
+    sse += (a->_13 - b->_13) * (a->_13 - b->_13);
+    sse += (a->_20 - b->_20) * (a->_20 - b->_20);
+    sse += (a->_21 - b->_21) * (a->_21 - b->_21);
+    sse += (a->_22 - b->_22) * (a->_22 - b->_22);
+    sse += (a->_23 - b->_23) * (a->_23 - b->_23);
+    sse += (a->_30 - b->_30) * (a->_30 - b->_30);
+    sse += (a->_31 - b->_31) * (a->_31 - b->_31);
+    sse += (a->_32 - b->_32) * (a->_32 - b->_32);
+    sse += (a->_33 - b->_33) * (a->_33 - b->_33);
+
+    return sse;
 }
 
 void NuMtx24BitCorrection(NUMTX *X, NUMTX *mtx) {
+    
 }
