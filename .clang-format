@@ -5,3 +5,4 @@ ColumnLimit: 120
 AllowShortFunctionsOnASingleLine: None
 NamespaceIndentation: All
 IndentExternBlock: Indent
+IndentCaseLabels: true

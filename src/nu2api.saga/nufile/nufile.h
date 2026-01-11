@@ -84,7 +84,7 @@ NUFILE NuFileOpen(const char *path, NUFILEMODE mode);
 void NuFileClose(NUFILE file);
 int32_t NuFileStatus(NUFILE file);
 NUFILE NuFileOpenDF(const char *path, NUFILEMODE mode, NUDATHDR *header);
-size_t NuFileRead(NUFILE index, void *dest, size_t length);
+int32_t NuFileRead(NUFILE index, void *dest, int32_t length);
 NuFileDevice *NuFileGetDeviceFromPath(const char *path);
 uint32_t NuFileOpenSize(NUFILE file);
 int32_t NuFileSeek(NUFILE file, int64_t offset, NUFILESEEK seekMode);
@@ -97,8 +97,8 @@ uint64_t NuFilePos(NUFILE file);
 int32_t NuGetFileHandlePS(void);
 int32_t NuPSFileOpen(const char *path, NUFILEMODE mode);
 int32_t NuPSFileClose(int32_t index);
-size_t NuPSFileRead(int32_t index, void *dest, size_t len);
-size_t NuPSFileWrite(int32_t index, const void *src, size_t len);
+int32_t NuPSFileRead(int32_t index, void *dest, int32_t len);
+int32_t NuPSFileWrite(int32_t index, const void *src, int32_t len);
 int64_t NuPSFileLSeek(int32_t index, int64_t offset, NUFILESEEK seekMode);
 
 // Memory file functions

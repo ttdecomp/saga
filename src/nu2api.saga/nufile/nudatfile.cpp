@@ -276,44 +276,50 @@ int32_t NuDatFileLoadBuffer(nudathdr_s *dat, char *name, void *dest, int32_t max
     LOG("dat=%p name=%s dest=%p maxSize=%d", dat, name, dest, maxSize);
 
     nufile_lasterror = 0;
+
     NUFILE file = NuDatFileOpen(dat, name, NUFILE_MODE_READ);
 
-    int32_t iVar1;
-    int64_t lVar2;
+    if (file == 0) {
+        return 0;
+    }
+
+    if (dat->mode == 3) {
+        while (NuFileStatus(file) != 0) {
+        }
+    }
+
     int32_t size;
 
-    if (file != 0) {
-        if (dat->mode == 3) {
-            do {
-                iVar1 = NuFileStatus(file);
-            } while (iVar1 != 0);
-        }
-        if (dat_file_infos[file + -0x800].compressionMode == 0) {
-            size = dat_file_infos[file + -0x800].field3_0x14;
-        } else {
-            size = dat_file_infos[file + -0x800].field4_0x18;
-        }
-        if ((size <= maxSize) && (size != 0)) {
-            while (iVar1 = NuDatFileRead(file, dest, size), iVar1 < 0) {
-                do {
-                    lVar2 = NuDatFileSeek(file, 0, NUFILE_SEEK_START);
-                } while (lVar2 < 0);
+    if (dat_file_infos[file + -0x800].compressionMode == 0) {
+        size = dat_file_infos[file + -0x800].field3_0x14;
+    } else {
+        size = dat_file_infos[file + -0x800].field4_0x18;
+    }
+
+    if (size <= maxSize && size != 0) {
+        LOG("Loading %d bytes from dat file", size);
+
+        while (NuDatFileRead(file, dest, size) < 0) {
+            while (NuDatFileSeek(file, 0, NUFILE_SEEK_START) < 0) {
             }
-            if (dat->mode == 3) {
-                do {
-                    iVar1 = NuFileStatus(file);
-                } while (iVar1 != 0);
-            }
-            NuFileClose(file);
-            return size;
         }
 
-        if (size != 0) {
-            nufile_lasterror = -1;
+        if (dat->mode == 3) {
+            while (NuFileStatus(file) != 0) {
+            }
         }
 
         NuFileClose(file);
+
+        return size;
     }
+
+    if (size != 0) {
+        nufile_lasterror = -1;
+    }
+
+    NuFileClose(file);
+
     return 0;
 }
 

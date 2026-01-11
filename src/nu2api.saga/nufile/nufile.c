@@ -264,7 +264,7 @@ size_t NuMemFileRead(NUFILE file, char *dest, size_t size) {
 }
 
 int32_t NuFileSeek(NUFILE file, int64_t offset, NUFILESEEK seekMode) {
-    LOG("file=%d, offset=%lld, seekMode=%d", file, offset, seekMode);
+    LOG("file=%d, offset=0x%llx, seekMode=%d", file, offset, seekMode);
 
     int iVar1;
     uint uVar2;
@@ -309,6 +309,7 @@ int32_t NuFileSeek(NUFILE file, int64_t offset, NUFILESEEK seekMode) {
         // in_stack_ffffffb4);
         UNIMPLEMENTED("android specific");
     }
+
     return lVar4;
 }
 
@@ -344,29 +345,7 @@ uint32_t NuFileOpenSize(NUFILE file) {
     return size;
 }
 
-static int32_t CSWTCH_152[3] = {1, 2, 0};
-
-int64_t NuPSFileLSeek(NUPSFILE index, int64_t offset, NUFILESEEK seekMode) {
-    LOG("file=%d, offset=%lld, seekMode=%d", index, offset, seekMode);
-
-    int whence = 0;
-
-    if (seekMode - 1U < 2) {
-        whence = CSWTCH_152[seekMode - 1U];
-    }
-
-    long value = 0;
-    int bit32 = 0;
-
-    if (fseek(g_fileHandles[index], offset, whence) == 0) {
-        value = ftell(g_fileHandles[index]);
-        bit32 = value >> 31;
-    }
-
-    return CONCAT44(bit32, value);
-}
-
-size_t NuFileRead(NUFILE file, void *dest, size_t length) {
+int32_t NuFileRead(NUFILE file, void *dest, int32_t length) {
     int index;
     uint uVar1;
     fileinfo_s *info;
@@ -471,46 +450,45 @@ NUDATHDR *NuDatSet(NUDATHDR *header) {
 }
 
 int32_t NuFileLoadBuffer(const char *name, void *dest, int32_t size) {
+    int j;
+    int iVar2;
+    longlong lVar1;
+    int i;
 
     nufile_lasterror = 0;
-
-    if (curr_dat == NULL) {
-        return 0;
-    }
-
-    int32_t i = NuDatFileLoadBuffer(curr_dat, name, dest, size);
-    if (nufile_lasterror != -1) {
-        return 0;
-    }
-
-    if (i == 0) {
-        int32_t j = NuFileExists(name);
-
-        if (j == 0) {
-            nufile_lasterror = -2;
-        } else {
-            j = NuFileOpen(name, NUFILE_MODE_READ);
+    i = 0;
+    if ((curr_dat == NULL) || (i = NuDatFileLoadBuffer(curr_dat, name, dest, size), nufile_lasterror != -1)) {
+        if (i == 0) {
+            j = NuFileExists(name);
             if (j == 0) {
-                nufile_lasterror = -3;
+                nufile_lasterror = -2;
             } else {
-                if (nufile_try_packed == 0) {
-                    i = NuFileOpenSize(j);
-                    if ((size < i) || (i == 0)) {
-                        nufile_lasterror = -1;
-                        i = 0;
-                    } else {
-                        while (NuFileRead(j, dest, i) < 0) {
-                            while (NuFileSeek(j, 0, 0) < 0) {
+                j = NuFileOpen(name, NUFILE_MODE_READ);
+                if (j == 0) {
+                    nufile_lasterror = -3;
+                } else {
+                    if (nufile_try_packed == 0) {
+                        i = NuFileOpenSize(j);
+                        if ((size < i) || (i == 0)) {
+                            nufile_lasterror = -1;
+                            i = 0;
+                        } else {
+                            while (iVar2 = NuFileRead(j, dest, i), iVar2 < 0) {
+                                do {
+                                    lVar1 = NuFileSeek(j, 0, 0);
+                                } while (lVar1 < 0);
                             }
                         }
+                    } else {
+                        // i = NuPPLoadBuffer(j, dest, size);
+                        UNIMPLEMENTED("PP");
                     }
-                } else {
-                    // i = NuPPLoadBuffer(j, dest, size);
-                    UNIMPLEMENTED();
+                    NuFileClose(j);
                 }
-                NuFileClose(j);
             }
         }
+    } else {
+        i = 0;
     }
 
     return i;
@@ -599,4 +577,45 @@ int32_t NuMemFilePos(NUFILE file) {
     } else {
         return NuDatFilePos(file);
     }
+}
+
+uint8_t DEV_FormatName(NuFileDevice *device, char *dest, char *path, int length) {
+    LOG("device=%p, dest=%p, path=%p, length=%d", device, dest, path, length);
+
+    int n;
+    int iVar1;
+    int len;
+    char *prefix;
+    char buf[512];
+    char sep;
+
+    prefix = device->path;
+    n = NuStrLen(prefix);
+    iVar1 = NuStrNICmp(path, prefix, n);
+    if (iVar1 == 0) {
+        iVar1 = NuStrLen(prefix);
+        sep = path[iVar1];
+        if ((sep == '/') || (sep == '\\')) {
+            NuStrCpy(buf, path);
+        } else {
+            NuStrCpy(buf, device->field37_0x4c);
+            NuStrCat(buf, device->field39_0xac);
+            NuStrCat(buf, path + iVar1);
+        }
+    } else {
+        NuStrCpy(buf, device->field37_0x4c);
+        NuStrCat(buf, device->field39_0xac);
+        NuStrCat(buf, path);
+    }
+    iVar1 = NuStrLen(device->field37_0x4c);
+    NuFileCorrectSlashes(device, buf + iVar1);
+    NuFileReldirFix(device, buf);
+    len = NuStrLen(buf);
+    if (len < length) {
+        NuStrCpy(dest, buf);
+    }
+
+    LOG("Formatted path: %s, returning %d", buf, len < length);
+
+    return len < length;
 }

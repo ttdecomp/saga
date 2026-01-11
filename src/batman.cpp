@@ -16,8 +16,18 @@ void NuMtlInitEx(void **bufferBase, int32_t usually512) {
     LOG("dat->leafnamesize=%d", dat->leafnamesize);
     LOG("dat->filetree=%p", dat->filetree);
 
-    int32_t size = NuFileLoadBuffer("stuff\\\\text\\\\badwords.txt", *bufferBase, 0x100000);
+    int32_t size = NuFileLoadBuffer("stuff\\text\\badwords.txt", *bufferBase, 0x100000);
     LOG("size=%d", size);
+    // replace \n with ,
+    char *buf = (char *)*bufferBase;
+    for (int32_t i = 0; i < size; i++) {
+        if (buf[i] == '\r') {
+            buf[i] = ',';
+        } else if (buf[i] == '\n') {
+            buf[i] = ' ';
+        }
+    }
+    LOG("badwords: %*s", size, buf);
 }
 
 void NuInitHardware(void **bufferBase, void **bufferEnd, int32_t zero) {
