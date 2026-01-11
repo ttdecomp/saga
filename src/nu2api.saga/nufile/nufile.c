@@ -1,4 +1,5 @@
 #include "nu2api.saga/nufile/nufile.h"
+
 #include "nu2api.saga/nucore/nustring.h"
 #include "nu2api.saga/nuthread/nuthread.h"
 
@@ -7,14 +8,14 @@
 
 #include "decomp.h"
 
-nudathdr_s *curr_dat = NULL;
-
 NuFileDevice host_device = {
     .pathSeparator = '/',
     .formatNameFunc = (void *)DEV_FormatName,
 };
 
 NuFileDevice *default_device = &host_device;
+
+static NUDATHDR *curr_dat = NULL;
 
 int32_t numdevices = 0;
 
@@ -79,11 +80,11 @@ void NuFileReldirFix(NuFileDevice *device, char *path) {
     } while (1);
 }
 
-NuFileHandle NuFileOpen(const char *path, NuFileOpenMode mode) {
+NUFILE NuFileOpen(const char *path, NUFILEMODE mode) {
     return NuFileOpenDF(path, mode, curr_dat);
 }
 
-void NuFileClose(NuFileHandle file) {
+void NuFileClose(NUFILE file) {
     if (NUFILE_IS_PS(file)) {
         int32_t index = NUFILE_INDEX_PS(file);
 
@@ -106,7 +107,7 @@ void NuFileClose(NuFileHandle file) {
     }
 }
 
-int32_t NuFileStatus(NuFileHandle file) {
+int32_t NuFileStatus(NUFILE file) {
     if (NUFILE_IS_NATIVE(file)) {
         while (1) {
         }
@@ -120,7 +121,7 @@ int32_t NuFileStatus(NuFileHandle file) {
     return NuFileStatus(fileInfo->ptr->openFiles[fileInfo[NUFILE_INDEX_DAT(file)].index].file);
 }
 
-NuFileHandle NuFileOpenDF(const char *path, NuFileOpenMode mode, nudathdr_s *header) {
+NUFILE NuFileOpenDF(const char *path, NUFILEMODE mode, NUDATHDR *header) {
     LOG("path=%s, mode=%d, header=%p", path, mode, header);
 
     NuFileDevice *device = NuFileGetDeviceFromPath(path);
@@ -154,13 +155,13 @@ NuFileHandle NuFileOpenDF(const char *path, NuFileOpenMode mode, nudathdr_s *hea
     typedef void (*formatFuncType)(NuFileDevice *, char *, const char *, int32_t);
     (*(formatFuncType)device->formatNameFunc)(device, buf, path, 0x100);
 
-    if (device->vtable == 2) {
+    if ((int32_t)device->vtable == 2) {
         NuStrCat(buf, ";1");
     }
 
     int index;
 
-    if (device->vtable == 1) {
+    if ((int32_t)device->vtable == 1) {
         UNIMPLEMENTED("memory card specific");
         int _local[2];
         /*local_1c = buf[2] + -0x30;
@@ -190,7 +191,7 @@ NuFileHandle NuFileOpenDF(const char *path, NuFileOpenMode mode, nudathdr_s *hea
                 file_info[fileIndex].size.i[1] = 0;
             } else if (index < 17) {
                 do {
-                    size = NuFileSeek(fileIndex + 1, 0, 2);
+                    size = NuFileSeek(fileIndex + 1, 0, NUFILE_SEEK_END);
                 } while (size < 0);
 
                 file_info[fileIndex].size.l = size;
@@ -201,7 +202,7 @@ NuFileHandle NuFileOpenDF(const char *path, NuFileOpenMode mode, nudathdr_s *hea
                 }
 
                 do {
-                    size = NuFileSeek(fileIndex + 1, 0, 0);
+                    size = NuFileSeek(fileIndex + 1, 0, NUFILE_SEEK_START);
                 } while (size < 0);
 
                 if (mode == 3) {
@@ -241,7 +242,7 @@ NuFileDevice *NuFileGetDeviceFromPath(const char *path) {
     return NULL;
 }
 
-size_t NuMemFileRead(NuFileHandle file, char *dest, size_t size) {
+size_t NuMemFileRead(NUFILE file, char *dest, size_t size) {
     if (NUFILE_IS_MEM(file)) {
         int32_t i = NUFILE_INDEX_MEM(file);
         ptrdiff_t remaining = memfiles[i].end - memfiles[i].ptr + 1;
@@ -262,7 +263,7 @@ size_t NuMemFileRead(NuFileHandle file, char *dest, size_t size) {
     }
 }
 
-int32_t NuFileSeek(NuFileHandle file, int64_t offset, int32_t seekMode) {
+int32_t NuFileSeek(NUFILE file, int64_t offset, NUFILESEEK seekMode) {
     LOG("file=%d, offset=%lld, seekMode=%d", file, offset, seekMode);
 
     int iVar1;
@@ -311,7 +312,7 @@ int32_t NuFileSeek(NuFileHandle file, int64_t offset, int32_t seekMode) {
     return lVar4;
 }
 
-uint32_t NuFileOpenSize(NuFileHandle file) {
+uint32_t NuFileOpenSize(NUFILE file) {
     LOG("file=%d", file);
 
     uint32_t size;
@@ -345,7 +346,7 @@ uint32_t NuFileOpenSize(NuFileHandle file) {
 
 static int32_t CSWTCH_152[3] = {1, 2, 0};
 
-int64_t NuPSFileLSeek(int32_t index, int64_t offset, int32_t seekMode) {
+int64_t NuPSFileLSeek(NUPSFILE index, int64_t offset, NUFILESEEK seekMode) {
     LOG("file=%d, offset=%lld, seekMode=%d", index, offset, seekMode);
 
     int whence = 0;
@@ -365,7 +366,7 @@ int64_t NuPSFileLSeek(int32_t index, int64_t offset, int32_t seekMode) {
     return CONCAT44(bit32, value);
 }
 
-size_t NuFileRead(NuFileHandle file, void *dest, size_t length) {
+size_t NuFileRead(NUFILE file, void *dest, size_t length) {
     int index;
     uint uVar1;
     fileinfo_s *info;
@@ -463,6 +464,12 @@ size_t NuFileRead(NuFileHandle file, void *dest, size_t length) {
 int32_t nufile_lasterror = 0;
 int32_t nufile_try_packed = 0;
 
+NUDATHDR *NuDatSet(NUDATHDR *header) {
+    NUDATHDR *dat = curr_dat;
+    curr_dat = header;
+    return dat;
+}
+
 int32_t NuFileLoadBuffer(const char *name, void *dest, int32_t size) {
 
     nufile_lasterror = 0;
@@ -482,7 +489,7 @@ int32_t NuFileLoadBuffer(const char *name, void *dest, int32_t size) {
         if (j == 0) {
             nufile_lasterror = -2;
         } else {
-            j = NuFileOpen(name, NUFILE_OPENMODE_READ);
+            j = NuFileOpen(name, NUFILE_MODE_READ);
             if (j == 0) {
                 nufile_lasterror = -3;
             } else {
@@ -509,7 +516,7 @@ int32_t NuFileLoadBuffer(const char *name, void *dest, int32_t size) {
     return i;
 }
 
-void NuMemFileClose(NuFileHandle file) {
+void NuMemFileClose(NUFILE file) {
     if (NUFILE_IS_PS(file)) {
         do {
         } while (1);
@@ -537,7 +544,7 @@ uint64_t NuFileSize(const char *name) {
     if (curr_dat == NULL || (file = NuDatFileFindTree(curr_dat, name), file < 0)) {
         pos = -1;
         if (((name != NULL) && (pos = -1, *name != '\0')) &&
-            (file = NuFileOpen(name, NUFILE_OPENMODE_READ), pos = -1, file != 0)) {
+            (file = NuFileOpen(name, NUFILE_MODE_READ), pos = -1, file != 0)) {
             do {
                 pos = NuFileSeek(file, 0, 2);
             } while (pos < 0);
@@ -554,7 +561,7 @@ uint64_t NuFileSize(const char *name) {
     return pos;
 }
 
-uint64_t NuFilePos(NuFileHandle file) {
+uint64_t NuFilePos(NUFILE file) {
     longlong pos_;
     int local_14;
 
@@ -584,9 +591,11 @@ uint64_t NuFilePos(NuFileHandle file) {
     return local_14;
 }
 
-int32_t NuMemFilePos(NuFileHandle file) {
-    if (file < 0x800) {
-        return (int)memfiles[file + -0x400].ptr - (int)memfiles[file + -0x400].buffer;
+int32_t NuMemFilePos(NUFILE file) {
+    NuMemFile *memFile = &memfiles[NUFILE_INDEX_MEM(file)];
+
+    if (NUFILE_IS_MEM(file)) {
+        return memFile->ptr - memFile->buffer;
     } else {
         return NuDatFilePos(file);
     }

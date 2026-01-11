@@ -1,2 +1,3 @@
-Checks:
-  - readability-avoid-unfixed-integer-types
+Checks: >
+  readability-avoid-unfixed-integer-types
+  clang-diagnostic-enum-conversion

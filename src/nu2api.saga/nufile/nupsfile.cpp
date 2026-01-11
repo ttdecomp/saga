@@ -19,7 +19,7 @@ extern "C" size_t NuPSFileWrite(int32_t index, const void *src, size_t len) {
     return fwrite(src, 1, len, files[index]);
 }
 
-extern "C" int32_t NuPSFileOpen(const char *name, NuFileOpenMode mode) {
+extern "C" NUPSFILE NuPSFileOpen(const char *name, NUFILEMODE mode) {
     LOG("name=%s, mode=%d", name, mode);
 
     char path[1024];
@@ -34,15 +34,15 @@ extern "C" int32_t NuPSFileOpen(const char *name, NuFileOpenMode mode) {
             }
         }
 
-        int32_t i = NuGetFileHandlePS();
+        NUPSFILE i = NuGetFileHandlePS();
 
         FILE *file = NULL;
 
-        if (mode == NUFILE_OPENMODE_READ) {
+        if (mode == NUFILE_MODE_READ) {
             file = fopen(path, "rb");
-        } else if (mode == NUFILE_OPENMODE_WRITE) {
+        } else if (mode == NUFILE_MODE_WRITE) {
             file = fopen(path, "wb");
-        } else if (mode == NUFILE_OPENMODE_APPEND) {
+        } else if (mode == NUFILE_MODE_APPEND) {
             file = fopen(path, "ab+");
         } else {
             return -1;
@@ -59,7 +59,7 @@ extern "C" int32_t NuPSFileOpen(const char *name, NuFileOpenMode mode) {
     return -1;
 }
 
-extern "C" int32_t NuGetFileHandlePS(void) {
+extern "C" NUPSFILE NuGetFileHandlePS(void) {
     for (int32_t i = 0; i < 32; i++) {
         if (g_fileHandles[i] == NULL) {
             return i;
@@ -69,7 +69,7 @@ extern "C" int32_t NuGetFileHandlePS(void) {
     return -1;
 }
 
-extern "C" int32_t NuPSFileClose(int32_t index) {
+extern "C" int32_t NuPSFileClose(NUPSFILE index) {
     fclose(g_fileHandles[index]);
     g_fileHandles[index] = NULL;
     return 1;

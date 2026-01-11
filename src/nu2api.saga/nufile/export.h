@@ -1,3 +1,5 @@
+#pragma once
+
 typedef unsigned char undefined;
 
 #ifndef __cplusplus

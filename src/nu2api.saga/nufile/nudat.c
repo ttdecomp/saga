@@ -1,28 +1,16 @@
-#include "nu2api.saga/nucore/nustring.h"
 #include "nu2api.saga/nufile/nufile.h"
-#include "nu2api.saga/nuthread/nuthread.h"
 
-#include "implode/implode.h"
+#include "nu2api.saga/nucore/nustring.h"
+#include "nu2api.saga/nuthread/nuthread.h"
 
 #include <stddef.h>
 #include <string.h>
 
 #include "decomp.h"
 
-nudathdr_s *NuDatOpen(char *name, void **bufferBase, int32_t zero) {
+NUDATHDR *NuDatOpen(char *name, void **bufferBase, int32_t zero) {
     LOG("name=%s bufferBase=%p zero=%d", name, bufferBase, zero);
     return NuDatOpenEx(name, bufferBase, zero, 0);
-}
-
-nudathdr_s *NuDatSet(nudathdr_s *header) {
-    nudathdr_s *dat = curr_dat;
-    curr_dat = header;
-    return dat;
-}
-
-uint64_t NuDatFilePos(NuFileHandle file) {
-    int32_t index = file + -0x800;
-    return dat_file_infos[index].pos2.l;
 }
 
 void APIEndianSwap(void *data, size_t count, size_t size) {
@@ -62,12 +50,12 @@ void NuFileUpCase(void *param_1, char *path) {
     }
 }
 
-nudathdr_s *NuDatOpenEx(char *name, void **bufferBase, int zero, short mode) {
+NUDATHDR *NuDatOpenEx(char *name, void **bufferBase, int zero, short mode) {
     LOG("name=%s bufferBase=%p zero=%d mode=%d", name, bufferBase, zero, mode);
 
     int32_t buffering = nufile_buffering_enabled;
 
-    NuFileHandle file = NuFileOpenDF(name, (int32_t)mode, NULL);
+    NUFILE file = NuFileOpenDF(name, (int32_t)mode, NULL);
     if (file != 0) {
         int32_t size = NuFileOpenSize(file);
 
@@ -80,8 +68,7 @@ nudathdr_s *NuDatOpenEx(char *name, void **bufferBase, int zero, short mode) {
 
         int32_t len = NuStrLen(name);
 
-        nudathdr_s *header = (nudathdr_s *)*bufferBase;
-        *bufferBase = (void *)((int)*bufferBase + 0x178);
+        NUDATHDR *header = BUFFER_ALLOC(bufferBase, NUDATHDR);
         memset(header, 0, 0x178);
 
         header->field300_0x16c = 1;
@@ -95,8 +82,8 @@ nudathdr_s *NuDatOpenEx(char *name, void **bufferBase, int zero, short mode) {
         NuFileRead(file, &header->filesCount, 4);
         APIEndianSwap(&header->filesCount, 1, 4);
 
-        header->finfo = BUFFER_ALLOC_ARRAY(bufferBase, header->filesCount, nudathdr_struct1);
-        NuFileRead(file, header->finfo, header->filesCount << 4);
+        header->finfo = BUFFER_ALLOC_ARRAY(bufferBase, header->filesCount, struct nudathdr_struct1);
+        NuFileRead(file, header->finfo, header->filesCount * sizeof(struct nudathdr_struct1));
 
         for (int32_t i = 0; i < header->filesCount; i = i + 1) {
             APIEndianSwap(header->finfo + i, 1, 4);
@@ -106,14 +93,13 @@ nudathdr_s *NuDatOpenEx(char *name, void **bufferBase, int zero, short mode) {
 
         NuFileRead(file, &header->treeCount, 4);
         APIEndianSwap(&header->treeCount, 1, 4);
-        header->filetree = (nudathdr_struct2 *)*bufferBase;
-        *bufferBase = (void *)((int)*bufferBase + header->treeCount * 0xc);
+        header->filetree = BUFFER_ALLOC_ARRAY(bufferBase, header->treeCount, struct nudathdr_struct2);
 
         if (header->version < -4) {
-            NuFileRead(file, header->filetree, header->treeCount * 0xc);
+            NuFileRead(file, header->filetree, header->treeCount * sizeof(struct nudathdr_struct2));
         } else {
             NuFileRead(file, header->filetree, header->treeCount * 8);
-            nudathdr_struct2 *struct2 = header->filetree;
+            struct nudathdr_struct2 *struct2 = header->filetree;
             int32_t k = header->treeCount;
             while (k = k + -1, 0 < k) {
                 header->filetree[k].field4_0xa = 0;
@@ -196,8 +182,8 @@ nudathdr_s *NuDatOpenEx(char *name, void **bufferBase, int zero, short mode) {
 
         if (-3 < header->version) {
             uint uVar3;
-            nudathdr_struct1 *puVar4;
-            nudathdr_struct1 *puVar5;
+            struct nudathdr_struct1 *puVar4;
+            struct nudathdr_struct1 *puVar5;
             int uVar1;
             int32_t uVar2 = 0;
             int32_t uVar7 = 0;
@@ -242,276 +228,4 @@ nudathdr_s *NuDatOpenEx(char *name, void **bufferBase, int zero, short mode) {
         nufile_buffering_enabled = buffering;
         return NULL;
     }
-}
-
-char decode_buffer[0x40000] = {0};
-int32_t decode_buffer_pos = 0;
-int32_t decode_buffer_left = 0;
-char read_buffer[0x40000] = {0};
-int32_t read_buffer_size = 0;
-int32_t read_buffer_decoded_size = 0;
-
-int32_t NuDatFileFindTree(nudathdr_s *header, const char *name) {
-    LOG("header=%p name=%s", header, name);
-
-    int32_t index;
-    char buf[256];
-    int32_t i;
-    char *backslash;
-
-    if (*name == '@') {
-        name = name + 4;
-    }
-    NuStrCpy(buf, name);
-    NuFileUpCase(0, buf);
-    name = buf;
-
-    if (header->filetree == NULL) {
-        index = NuDatFileFindHash(header, name);
-    } else {
-        i = (int)header->filetree->field0_0x0;
-        backslash = strchr(name, L'\\');
-        if (backslash != (char *)0x0) {
-            *backslash = '\0';
-        }
-        do {
-            index = NuStrICmp(header->filetree[i].name, name);
-            if (index == 0) {
-                if (backslash == (char *)0x0) {
-                    if (header->filetree[i].field0_0x0 < 1) {
-                        return -(int)header->filetree[i].field0_0x0;
-                    }
-                    return -1;
-                }
-                i = (int)header->filetree[i].field0_0x0;
-                name = backslash + 1;
-                backslash = strchr(name, L'\\');
-                if (backslash != (char *)0x0) {
-                    *backslash = '\0';
-                }
-            } else {
-                i = (int)header->filetree[i].field1_0x2;
-            }
-        } while (i != 0);
-        index = -1;
-    }
-
-    return index;
-}
-
-void NuDatFileClose(NuFileHandle file) {
-    file = file + -0x800;
-    if (-1 < dat_file_infos[file].index) {
-        (dat_file_infos[file].ptr)->openFiles[dat_file_infos[file].index].field1_0x4 = -1;
-    }
-    dat_file_infos[file].used = 0;
-}
-
-int32_t NuDatFileLoadBuffer(nudathdr_s *dat, const char *name, void *dest, int32_t maxSize) {
-    LOG("dat=%p name=%s dest=%p maxSize=%d", dat, name, dest, maxSize);
-
-    int32_t file;
-    int32_t iVar1;
-    int64_t lVar2;
-    int32_t size;
-
-    nufile_lasterror = 0;
-    file = NuDatFileOpen(dat, name, NUFILE_OPENMODE_READ);
-    if (file != 0) {
-        if (dat->mode == 3) {
-            do {
-                iVar1 = NuFileStatus(file);
-            } while (iVar1 != 0);
-        }
-        if (dat_file_infos[file + -0x800].compressionMode == 0) {
-            size = dat_file_infos[file + -0x800].field3_0x14;
-        } else {
-            size = dat_file_infos[file + -0x800].field4_0x18;
-        }
-        if ((size <= maxSize) && (size != 0)) {
-            while (iVar1 = NuDatFileRead(file, dest, size), iVar1 < 0) {
-                do {
-                    lVar2 = NuDatFileSeek(file, 0, 0, 0);
-                } while (lVar2 < 0);
-            }
-            if (dat->mode == 3) {
-                do {
-                    iVar1 = NuFileStatus(file);
-                } while (iVar1 != 0);
-            }
-            NuFileClose(file);
-            return size;
-        }
-
-        if (size != 0) {
-            nufile_lasterror = -1;
-        }
-
-        NuFileClose(file);
-    }
-    return 0;
-}
-
-NuFileHandle NuDatFileOpen(nudathdr_s *header, const char *name, NuFileOpenMode mode) {
-    LOG("header=%p name=%s mode=%d", header, name, mode);
-
-    int iVar1;
-    int index;
-    int fileIndex;
-    longlong pos;
-    longlong lVar2;
-    int highPos;
-
-    if ((((mode == NUFILE_OPENMODE_READ) && (iVar1 = NuDatFileFindTree(header, name), -1 < iVar1)) &&
-         (header->finfo[iVar1].field1_0x4 != 0)) &&
-        (index = NuDatFileGetFreeInfo(), index != -1)) {
-        fileIndex = NuDatFileGetFreeHandleIX(header, index);
-        if (fileIndex != -1) {
-            NuThreadCriticalSectionBegin(file_criticalsection);
-            OpenDatFileBase(header, fileIndex);
-            dat_file_infos[index].ptr = header;
-            pos = (longlong)NuDatCalcPos(header, header->finfo[iVar1].field0_0x0);
-            dat_file_infos[index].pos.l = pos;
-            highPos = dat_file_infos[index].pos.i[1];
-            dat_file_infos[index].pos2.i[0] = dat_file_infos[index].pos.i[0];
-            dat_file_infos[index].pos2.i[1] = highPos;
-            dat_file_infos[index].field3_0x14 = header->finfo[iVar1].field1_0x4;
-            dat_file_infos[index].field4_0x18 = header->finfo[iVar1].size;
-            dat_file_infos[index].compressionMode = header->finfo[iVar1].compressionMode;
-            dat_file_infos[index].index = fileIndex;
-            iVar1 = dat_file_infos[index].pos2.i[1];
-            header->openFiles[fileIndex].position.i[0] = dat_file_infos[index].pos2.i[0];
-            header->openFiles[fileIndex].position.i[1] = iVar1;
-            do {
-                lVar2 = NuFileSeek(header->openFiles[fileIndex].file, dat_file_infos[index].pos.l, 0);
-            } while (lVar2 < 0);
-            if ((dat_file_infos[index].compressionMode == 2) || (dat_file_infos[index].compressionMode == 3)) {
-                // NuDatFileDecodeNewFile(dat_file_infos + index, header->openFiles + fileIndex);
-                UNIMPLEMENTED();
-            }
-            NuThreadCriticalSectionEnd(file_criticalsection);
-            return index + 0x800;
-        }
-        dat_file_infos[index].used = 0;
-    }
-    return 0;
-}
-
-int32_t NuDatFileRead(NuFileHandle file, void *dest, int32_t size) {
-    nudathdr_s *pnVar1;
-    uint uVar2;
-    size_t n;
-    uint uVar3;
-    uint length;
-    int iVar4;
-    uint pos;
-    int fileIndex;
-    int index;
-
-    fileIndex = file + -0x800;
-    pnVar1 = dat_file_infos[fileIndex].ptr;
-    index = dat_file_infos[fileIndex].index;
-    if (dat_file_infos[fileIndex].compressionMode == 0) {
-        if (pnVar1->openFiles[index].position.i[0] != dat_file_infos[fileIndex].pos2.i[0] ||
-            dat_file_infos[fileIndex].pos2.i[1] != pnVar1->openFiles[index].position.i[1]) {
-            NuFileSeek(pnVar1->openFiles[index].file, dat_file_infos[fileIndex].pos2.l, 0);
-            iVar4 = dat_file_infos[fileIndex].pos2.i[1];
-            pnVar1->openFiles[index].position.i[0] = dat_file_infos[fileIndex].pos2.i[0];
-            pnVar1->openFiles[index].position.i[1] = iVar4;
-        }
-        uVar2 = dat_file_infos[fileIndex].field3_0x14;
-        uVar3 = dat_file_infos[fileIndex].pos.u[0] + uVar2;
-        length = uVar3 - dat_file_infos[fileIndex].pos2.u[0];
-        iVar4 = ((dat_file_infos[fileIndex].pos.i[1] + ((int)uVar2 >> 0x1f) +
-                  (uint)CARRY4(dat_file_infos[fileIndex].pos.u[0], uVar2)) -
-                 dat_file_infos[fileIndex].pos2.i[1]) -
-                (uint)(uVar3 < dat_file_infos[fileIndex].pos2.u[0]);
-        if (iVar4 < 0) {
-            length = 0;
-            iVar4 = 0;
-        }
-        if ((size >> 0x1f <= iVar4) && ((size >> 0x1f < iVar4 || ((uint)size < length)))) {
-            length = size;
-        }
-        if (length == 0) {
-            pos = 0;
-        } else {
-            pos = NuFileRead(pnVar1->openFiles[index].file, dest, length);
-            if (-1 < (int)pos) {
-                uVar2 = dat_file_infos[fileIndex].pos2.u[0];
-                iVar4 = dat_file_infos[fileIndex].pos2.i[1];
-                dat_file_infos[fileIndex].pos2.i[0] = pos + uVar2;
-                dat_file_infos[fileIndex].pos2.i[1] = ((int)pos >> 0x1f) + iVar4 + (uint)CARRY4(pos, uVar2);
-                iVar4 = dat_file_infos[fileIndex].pos2.i[1];
-                pnVar1->openFiles[index].position.i[0] = dat_file_infos[fileIndex].pos2.i[0];
-                pnVar1->openFiles[index].position.i[1] = iVar4;
-            }
-        }
-    } else {
-        pos = 0;
-        for (; size != 0; size = size - n) {
-            if (decode_buffer_left == 0) {
-                // NuDatFileDecodeNext();
-                UNIMPLEMENTED();
-
-                if (read_buffer_size == read_buffer_decoded_size) {
-                    memcpy(decode_buffer, read_buffer, read_buffer_size);
-                } else if (dat_file_infos[fileIndex].compressionMode == 2) {
-                    ExplodeBufferNoHeader(read_buffer, decode_buffer, read_buffer_size, read_buffer_decoded_size);
-                } else if (dat_file_infos[fileIndex].compressionMode == 3) {
-                    InflateBuffer(decode_buffer, read_buffer_decoded_size, read_buffer, read_buffer_size);
-                }
-
-                decode_buffer_pos = 0;
-                decode_buffer_left = read_buffer_decoded_size;
-            }
-            n = decode_buffer_left;
-            if (size < decode_buffer_left) {
-                n = size;
-            }
-            memcpy(dest, decode_buffer + decode_buffer_pos, n);
-            dest = (void *)((int)dest + n);
-            decode_buffer_pos = n + decode_buffer_pos;
-            decode_buffer_left = decode_buffer_left - n;
-            pos = pos + n;
-        }
-    }
-    return pos;
-}
-
-int64_t NuDatFileSeek(NuFileHandle file, uint32_t param_2, int32_t param_3, int32_t param_4) {
-    int iVar1;
-    nudathdr_s *pnVar2;
-    int iVar3;
-    uint uVar4;
-    int iVar5;
-    uint uVar6;
-    int64_t lVar7;
-    int local_24;
-    int local_20;
-
-    iVar1 = file + -0x800;
-    pnVar2 = dat_file_infos[iVar1].ptr;
-    iVar3 = dat_file_infos[iVar1].index;
-    if (param_4 == 1) {
-        local_24 = param_2 + dat_file_infos[iVar1].pos2.u[0];
-        local_20 = param_3 + dat_file_infos[iVar1].pos2.i[1] + (uint)CARRY4(param_2, dat_file_infos[iVar1].pos2.u[0]);
-    } else if (param_4 == 2) {
-        uVar4 = dat_file_infos[iVar1].field3_0x14;
-        uVar6 = uVar4 + dat_file_infos[iVar1].pos.u[0];
-        local_24 = uVar6 - param_2;
-        local_20 = ((((int)uVar4 >> 0x1f) + dat_file_infos[iVar1].pos.i[1] +
-                     (uint)CARRY4(uVar4, dat_file_infos[iVar1].pos.u[0])) -
-                    param_3) -
-                   (uint)(uVar6 < param_2);
-    } else {
-        local_24 = param_2 + dat_file_infos[iVar1].pos.u[0];
-        local_20 = param_3 + dat_file_infos[iVar1].pos.i[1] + (uint)CARRY4(param_2, dat_file_infos[iVar1].pos.u[0]);
-    }
-    lVar7 = NuFileSeek(pnVar2->openFiles[iVar3].file, CONCAT44(local_20, local_24), 0);
-    dat_file_infos[iVar1].pos2.l = lVar7;
-    iVar5 = dat_file_infos[iVar1].pos2.i[1];
-    pnVar2->openFiles[iVar3].position.i[0] = dat_file_infos[iVar1].pos2.i[0];
-    pnVar2->openFiles[iVar3].position.i[1] = iVar5;
-    return dat_file_infos[iVar1].pos2.l;
 }
