@@ -96,7 +96,10 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/nucore.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/numath/nutrig.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/numemory/numemory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nuandroid/nuios.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/implode/implode.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/game/game.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/game/level.cpp
 )
 
 set(SAGA_INCLUDE_DIRS
@@ -105,6 +108,8 @@ set(SAGA_INCLUDE_DIRS
 
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nufile/nufile.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nufile/nupsfile.cpp PROPERTIES COMPILE_OPTIONS "-O2")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nuandroid/nuios.cpp PROPERTIES COMPILE_OPTIONS "-O2")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/level.cpp PROPERTIES COMPILE_OPTIONS "-O2;-ftree-vectorize")
 
 add_executable(saga ${SAGA_SOURCE_FILES})
 

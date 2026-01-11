@@ -1074,6 +1074,7 @@ void NuMtxInvRSSH(NUMTX *inv, NUMTX *T) {
 }
 
 void NuMtxInvH(NUMTX *mi, NUMTX *m0) {
+
 }
 
 void NuMtxAlignX(NUMTX *m, NUVEC *v) {
@@ -1184,7 +1185,6 @@ void NuMtxVecToEulerXYZ(NUVEC *XVec, NUVEC *ZVec, NUANG *x, NUANG *y, NUANG *z) 
 }
 
 float NuMtxSSE(NUMTX *a, NUMTX *b) {
-    // funnily enough this does not use SIMD at all...
     float sse;
 
     sse = (a->_00 - b->_00) * (a->_00 - b->_00);
