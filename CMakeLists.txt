@@ -97,8 +97,11 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/numemory/numemory.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nuandroid/nuios.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/implode/implode.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/game/game.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/game/world.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game/level.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/game/area.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/game/timer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/lostandfound.cpp
 )
 
 set(SAGA_INCLUDE_DIRS
@@ -108,7 +111,10 @@ set(SAGA_INCLUDE_DIRS
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nufile/nufile.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nufile/nupsfile.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nuandroid/nuios.cpp PROPERTIES COMPILE_OPTIONS "-O2")
-set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/level.cpp PROPERTIES COMPILE_OPTIONS "-O2;-ftree-vectorize")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/world.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/level.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/area.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/timer.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 
 add_executable(saga ${SAGA_SOURCE_FILES})
 

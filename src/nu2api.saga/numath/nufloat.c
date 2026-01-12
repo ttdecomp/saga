@@ -43,3 +43,7 @@ float NuFdiv(float a, float b) {
 
     return a / b;
 }
+
+float NuFmod(float a, float b) {
+    return a - (int)(a / b) * b;
+}

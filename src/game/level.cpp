@@ -1,10 +1,15 @@
 #include "game/level.h"
 
+#include "nu2api.saga/nucore/nustring.h"
+
+int LEVELCOUNT;
+LEVELDATA* LDataList;
+
 void Level_SetDefaults(LEVELDATA *level) {
-    level->field170_0xe4[0] = 5.87783e-39f;
-    level->field170_0xe4[1] = 2.3510066e-38f;
-    level->field170_0xe4[2] = 1.1755123e-38f;
-    level->field170_0xe4[3] = 1.469547e-39f;
+    level->field170_0xe4[0] = 0x400100;
+    level->field170_0xe4[1] = 0x1000040;
+    level->field170_0xe4[2] = 0x800080;
+    level->field170_0xe4[3] = 0x100080;
     level->field174_0xf4 = 10;
     level->field175_0xf5 = 8;
     level->field176_0xf6 = 10;
@@ -41,4 +46,30 @@ void Level_SetDefaults(LEVELDATA *level) {
     level->max_bombgens = 8;
     level->field206_0x114 = 5;
     level->field207_0x115 = 10;
+}
+
+// this function chooses the wrong registers for some reason???
+LEVELDATA* Level_FindByName(char* name, int* indexDest) {
+    for (int i = 0; i < LEVELCOUNT; i++) {
+        if (NuStrICmp(LDataList[i].name, name) == 0) {
+            if (indexDest != NULL) {
+                *indexDest = i;
+            }
+
+            return &LDataList[i];
+        }
+    }
+
+    if (indexDest != NULL) {
+        *indexDest = -1;
+    }
+
+    return NULL;
+}
+
+void Level_Draw(WORLDINFO* world) {
+    void(*drawFn)(WORLDINFO*) = world->current_level->drawFn;
+    if (drawFn != NULL) {
+        drawFn(world);
+    }
 }

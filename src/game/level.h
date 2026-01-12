@@ -1,6 +1,8 @@
 #ifndef GAME_LEVEL_H
 #define GAME_LEVEL_H
 
+#include "game/world.h"
+
 struct LEVELDATADISPLAY {
     char field0_0x0;
     char field1_0x1;
@@ -137,7 +139,7 @@ struct LEVELDATA_s {
     void *resetFn;
     void *updateFn;
     void *alwaysUpdateFn;
-    void *drawFn;
+    void (*drawFn)(WORLDINFO*);
     void *drawStatusFn;
     struct LEVELDATADISPLAY field108_0x84;
     short musicIndex;
@@ -201,7 +203,7 @@ struct LEVELDATA_s {
     char field167_0xdb;
     float field168_0xdc;
     float field169_0xe0;
-    float field170_0xe4[4];
+    int field170_0xe4[4];
     char field174_0xf4;
     char field175_0xf5;
     char field176_0xf6;
@@ -255,8 +257,13 @@ struct LEVELDATA_s {
 
 typedef struct LEVELDATA_s LEVELDATA;
 
+extern int LEVELCOUNT;
+extern LEVELDATA* LDataList;
+
 #ifdef __cplusplus
 void Level_SetDefaults(LEVELDATA* level);
+LEVELDATA* Level_FindByName(char* name, int* indexDest);
+void Level_Draw(WORLDINFO* world);
 
 extern "C" {
 #endif

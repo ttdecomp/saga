@@ -58,6 +58,8 @@ float NuFsqrt(float f);
 /// @return The division of the float a and b
 float NuFdiv(float a, float b);
 
+float NuFmod(float a, float b);
+
 #ifdef __cplusplus
 }
 #endif
