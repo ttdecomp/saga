@@ -2,20 +2,20 @@
 
 void NuStrCat(char *str, const char *ext) {
     while (*str != '\0') {
-        str += 1;
+        str++;
     }
 
     if (ext != NULL) {
         do {
             *str = *ext;
-            str += 1;
+            str++;
         } while (*(ext++) != '\0');
     }
 }
 
 int NuStrCmp(const char *a, const char *b) {
-    char c1;
-    char c2;
+    char a_cursor;
+    char b_cursor;
 
     if (a == NULL) {
         return -1;
@@ -26,20 +26,20 @@ int NuStrCmp(const char *a, const char *b) {
     }
 
     do {
-        c1 = *a;
-        c2 = *b;
+        a_cursor = *a;
+        b_cursor = *b;
 
-        if (c1 > c2) {
+        if (a_cursor > b_cursor) {
             return 1;
         }
 
-        if (c1 < c2) {
+        if (a_cursor < b_cursor) {
             return -1;
         }
 
-        a += 1;
-        b += 1;
-    } while (c1 != '\0' && c2 != '\0');
+        a++;
+        b++;
+    } while (a_cursor != '\0' && b_cursor != '\0');
 
     return 0;
 }
@@ -50,31 +50,32 @@ char *NuStrChr(char *src, char c) {
             return src;
         }
 
-        src += 1;
+        src++;
     }
 
     return NULL;
 }
 
 ssize_t NuStrCpy(char *dst, const char *src) {
-    char *orig = dst;
+    char *dst_start = dst;
 
     if (src != NULL) {
-        for (; *src != '\0'; src += 1) {
+        while (*src != '\0') {
             *dst = *src;
-            dst = dst + 1;
+            dst++;
+            src++;
         }
     }
 
     *dst = '\0';
 
-    return dst - orig;
+    return dst - dst_start;
 }
 
 void NuStrFixExtPlatform(char *dst, char *src, char *ext, int dst_size, char *platform_string) {
-    char *p;
+    char *period;
     char *sep;
-    char *sep2;
+    char *win_sep;
 
     if (src == NULL || ext == NULL || dst == NULL) {
         return;
@@ -82,15 +83,15 @@ void NuStrFixExtPlatform(char *dst, char *src, char *ext, int dst_size, char *pl
 
     NuStrCpy(dst, src);
 
-    p = NuStrRChr(dst, '.');
-    sep = NuStrRChr(dst, '/');
-    sep2 = NuStrRChr(dst, '\\');
+    period = NuStrRChr(dst, '.');
 
-    if (sep2 > sep) {
-        sep = sep2;
+    sep = NuStrRChr(dst, '/');
+    win_sep = NuStrRChr(dst, '\\');
+    if (win_sep > sep) {
+        sep = win_sep;
     }
 
-    if (sep >= p) {
+    if (sep >= period) {
         NuStrCat(dst, "_");
 
         if (platform_string != NULL) {
@@ -100,23 +101,25 @@ void NuStrFixExtPlatform(char *dst, char *src, char *ext, int dst_size, char *pl
         NuStrCat(dst, ".");
         NuStrCat(dst, ext);
     } else {
-        *p = '\0';
-        NuStrCat(p, "_");
+        *period = '\0';
+        NuStrCat(period, "_");
 
         if (platform_string != NULL) {
-            NuStrCat(p, platform_string);
+            NuStrCat(period, platform_string);
         }
 
-        NuStrCat(p, ".");
-        NuStrCat(p, ext);
+        NuStrCat(period, ".");
+        NuStrCat(period, ext);
     }
 
-    if (NuStrLen(dst) == dst_size - 1) {}
+    if (NuStrLen(dst) == dst_size - 1) {
+        // Nothing here. Presumably some gated code in the original.
+    }
 }
 
 int NuStrICmp(const char *a, const char *b) {
-    char c1;
-    char c2;
+    char a_cursor;
+    char b_cursor;
 
     if (a == NULL) {
         return -1;
@@ -127,37 +130,80 @@ int NuStrICmp(const char *a, const char *b) {
     }
 
     do {
-        c1 = NuToUpper(*a);
-        c2 = NuToUpper(*b);
+        a_cursor = NuToUpper(*a);
+        b_cursor = NuToUpper(*b);
 
-        if (c1 > c2) {
+        if (a_cursor > b_cursor) {
             return 1;
         }
 
-        if (c1 < c2) {
+        if (a_cursor < b_cursor) {
             return -1;
         }
 
-        a += 1;
-        b += 1;
-    } while (c1 != '\0' && c2 != '\0');
+        a++;
+        b++;
+    } while (a_cursor != '\0' && b_cursor != '\0');
 
     return 0;
 }
 
-ssize_t NuStrLen(const char *str) {
-    ssize_t i = 0;
+char *NuStrIStr(char *str, char *sub) {
+    char *str_cursor;
+    char *sub_cursor;
 
-    for (; *str != '\0'; str += 1) {
-        i++;
+    while (*str != '\0') {
+        str_cursor = str;
+        sub_cursor = sub;
+
+        while (*sub_cursor != '\0') {
+            if (*str_cursor == '\0') {
+                break;
+            }
+
+            if (NuToUpper(*str_cursor) != NuToUpper(*sub_cursor)) {
+                break;
+            }
+
+            str_cursor++;
+            sub_cursor++;
+        }
+
+        if (*sub_cursor == '\0') {
+            return str;
+        }
+
+        str++;
     }
 
-    return i;
+    return NULL;
+}
+
+ssize_t NuStrLen(const char *str) {
+    ssize_t count = 0;
+
+    while (*str != '\0') {
+        count++;
+        str++;
+    }
+
+    return count;
+}
+
+ssize_t NuStrLenW(const NUWCHAR *str) {
+    ssize_t count = 0;
+
+    while (*str != 0) {
+        count++;
+        str++;
+    }
+
+    return count;
 }
 
 int NuStrNCmp(const char *a, const char *b, ssize_t n) {
-    char c1;
-    char c2;
+    char a_cursor;
+    char b_cursor;
 
     if (a == NULL) {
         return -1;
@@ -178,28 +224,28 @@ int NuStrNCmp(const char *a, const char *b, ssize_t n) {
     }
 
     do {
-        c1 = *a;
-        c2 = *b;
+        a_cursor = *a;
+        b_cursor = *b;
 
-        if (c1 > c2) {
+        if (a_cursor > b_cursor) {
             return 1;
         }
 
-        if (c1 < c2) {
+        if (a_cursor < b_cursor) {
             return -1;
         }
 
         a++;
         b++;
         n--;
-    } while (c1 != '\0' && c2 != '\0' && n != 0);
+    } while (a_cursor != '\0' && b_cursor != '\0' && n != 0);
 
     return 0;
 }
 
 int NuStrNICmp(const char *a, const char *b, ssize_t n) {
-    char c1;
-    char c2;
+    char a_cursor;
+    char b_cursor;
 
     if (a == NULL) {
         return -1;
@@ -220,27 +266,27 @@ int NuStrNICmp(const char *a, const char *b, ssize_t n) {
     }
 
     do {
-        c1 = NuToUpper(*a);
-        c2 = NuToUpper(*b);
+        a_cursor = NuToUpper(*a);
+        b_cursor = NuToUpper(*b);
 
-        if (c1 > c2) {
+        if (a_cursor > b_cursor) {
             return 1;
         }
 
-        if (c1 < c2) {
+        if (a_cursor < b_cursor) {
             return -1;
         }
 
         a++;
         b++;
         n--;
-    } while (c1 != '\0' && c2 != '\0' && n != 0);
+    } while (a_cursor != '\0' && b_cursor != '\0' && n != 0);
 
     return 0;
 }
 
-int NuStrNCpy(char *dst, const char *src, ssize_t n) {
-    int count = 0;
+ssize_t NuStrNCpy(char *dst, const char *src, ssize_t n) {
+    ssize_t count = 0;
 
     if (src == NULL) {
         *dst = '\0';
@@ -248,18 +294,18 @@ int NuStrNCpy(char *dst, const char *src, ssize_t n) {
     }
 
     do {
-        n -= 1;
+        n--;
         if (n < 1) {
             *dst = '\0';
-            count += 1;
+            count++;
 
             break;
         }
 
         *dst = *src;
-        dst = dst + 1;
+        dst++;
 
-        count += 1;
+        count++;
     } while (*(src++) != '\0');
 
     return count - 1;
@@ -269,7 +315,7 @@ char *NuStrRChr(char *src, char c) {
     char *ptr = src;
 
     while (*ptr != '\0') {
-        ptr += 1;
+        ptr++;
     }
 
     while (ptr >= src) {
@@ -277,7 +323,7 @@ char *NuStrRChr(char *src, char c) {
             return ptr;
         }
 
-        ptr -= 1;
+        ptr--;
     }
 
     return NULL;
