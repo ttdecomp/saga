@@ -12,6 +12,8 @@ int32_t NuThreadCriticalSectionBegin(int32_t index);
 
 int32_t NuThreadCriticalSectionEnd(int32_t index);
 
+int32_t NuThreadCreateCriticalSection();
+
 C_API_END
 
 #ifdef __cplusplus

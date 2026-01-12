@@ -2,10 +2,13 @@
 
 #include "nu2api.saga/nuandroid/nuios.h"
 #include "nu2api.saga/nucore/nustring.h"
+#include "nu2api.saga/nucore/nutime.h"
 #include "nu2api.saga/numemory/numemory.h"
+#include "nu2api.saga/nuthread/nuthread.h"
 
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "export.h"
 
@@ -48,7 +51,7 @@ char *fullslotname(int32_t index) {
     return name;
 }
 
-int32_t saveload_getinfo(void) {
+static int32_t saveload_getinfo(void) {
     saveload_savepresent = 0;
     int32_t count = 0;
 
@@ -94,9 +97,10 @@ int32_t saveloadLoadSlot(int32_t slot, void *buffer, size_t size) {
         SaveLoad buf;
 
         fread(&buf, 0x2028, 1, file);
-        if (buf.offset != 0) {
-            fseek(file, buf.offset, 1);
+        if (buf.extradataOffset != 0) {
+            fseek(file, buf.extradataOffset, SEEK_CUR);
         }
+
         fread(buffer, size, 1, file);
         fclose(file);
 
@@ -155,83 +159,97 @@ void SaveSystemInitialise(int32_t slots, void *makeSaveHash, void *save, int32_t
 }
 
 int32_t ChecksumSaveData(void *buffer, int32_t size) {
-    uint uVar1;
-    int iVar2;
-    uint uVar3;
-    uint uVar4;
-    uint uVar5;
-    uint uVar6;
-    int *piVar7;
-    int iVar8;
-    int iVar9;
-    int iVar10;
-    int iVar11;
+    int32_t n = size / 4;
 
-    if (size < 0) {
-        size = size + 3;
+    int32_t sum = 0x5c0999;
+
+    for (int32_t i = 0; i < n; i++) {
+        sum += ((int32_t *)buffer)[i];
     }
-    uVar1 = size >> 2;
-    if ((int)uVar1 < 1) {
-        iVar2 = 0x5c0999;
-    } else {
-        iVar2 = 0x5c0999;
-        uVar3 = -(((uint)buffer & 0xf) >> 2) & 3;
-        if (uVar1 < uVar3) {
-            uVar3 = uVar1;
-        }
-        if (uVar1 < 9) {
-            uVar3 = uVar1;
-        }
-        uVar5 = 0;
-        if (uVar3 != 0) {
-            do {
-                iVar2 = iVar2 + *(int *)((int)buffer + uVar5 * 4);
-                uVar5 = uVar5 + 1;
-            } while (uVar5 < uVar3);
-            if (uVar1 == uVar3) {
-                return iVar2;
-            }
-        }
-        uVar6 = uVar1 - uVar3 >> 2;
-        if (uVar6 != 0) {
-            piVar7 = (int *)((int)buffer + uVar3 * 4);
-            uVar4 = 0;
-            iVar8 = 0;
-            iVar9 = 0;
-            iVar10 = 0;
-            iVar11 = 0;
-            do {
-                uVar4 = uVar4 + 1;
-                iVar8 = iVar8 + *piVar7;
-                iVar9 = iVar9 + piVar7[1];
-                iVar10 = iVar10 + piVar7[2];
-                iVar11 = iVar11 + piVar7[3];
-                piVar7 = piVar7 + 4;
-            } while (uVar4 < uVar6);
-            uVar5 = uVar5 + uVar6 * 4;
-            iVar2 = iVar2 + iVar8 + iVar10 + iVar9 + iVar11;
-            if (uVar1 - uVar3 == uVar6 * 4) {
-                return iVar2;
-            }
-        }
-        do {
-            iVar2 = iVar2 + *(int *)((int)buffer + uVar5 * 4);
-            uVar5 = uVar5 + 1;
-        } while ((int)uVar5 < (int)uVar1);
-    }
-    return iVar2;
+
+    return sum;
 }
 
 int32_t TriggerExtraDataLoad(void) {
-    int32_t iVar1 = saveloadLoadSlot(SAVESLOTS, memcard_extra_savedatabuffer, memcard_extra_savedatasize + 4);
+    void *buffer = memcard_extra_savedatabuffer;
 
-    if (iVar1 != 0) {
-        int32_t checksum = *(int32_t *)((size_t)memcard_extra_savedatabuffer + memcard_extra_savedatasize);
-        if (ChecksumSaveData(memcard_extra_savedatabuffer, memcard_extra_savedatasize) == checksum) {
-            memmove(memcard_extra_savedata, memcard_extra_savedatabuffer, memcard_extra_savedatasize);
+    if (saveloadLoadSlot(SAVESLOTS, buffer, memcard_extra_savedatasize + 4) != 0) {
+        int32_t checksum = *(int32_t *)((size_t)buffer + memcard_extra_savedatasize);
+        if (ChecksumSaveData(buffer, memcard_extra_savedatasize) == checksum) {
+            memmove(memcard_extra_savedata, buffer, memcard_extra_savedatasize);
             return 1;
         }
     }
 
     return 0;
+}
+
+void createslotfolder(int32_t slot) {
+    char *path = slotfolder(slot);
+    mkdir(path, 0777);
+}
+
+extern "C" {
+    int32_t g_writingSaveCriticalSection = -1;
+};
+
+int32_t PCSaveSlot(int32_t slot, void *extradata, int32_t extradataSize, uint32_t hash) {
+    if (saveload_slotused[slot] == 0) {
+        createslotfolder(slot);
+    }
+
+    if (g_writingSaveCriticalSection == -1) {
+        g_writingSaveCriticalSection = NuThreadCreateCriticalSection();
+    }
+
+    char *path = fullslotname(slot);
+    NuThreadCriticalSectionBegin(g_writingSaveCriticalSection);
+
+    char buf[512];
+    NuStrCpy(buf, path);
+    NuStrCat(buf, ".incomplete");
+
+    FILE *file = fopen(buf, "wb");
+    if (file != NULL) {
+        SaveLoad save;
+
+        memset(&save, 0, sizeof(SaveLoad));
+        save.field0_0x0 = 0x52474d48;
+        save.field1_0x4 = 1;
+        save.size = sizeof(SaveLoad);
+        save.field3_0xc = 0;
+        save.field4_0x10 = 0;
+        save.extradataOffset = 0;
+        memset(save.field6_0x18, 0, 0x10);
+        save.field4101_0x1028 = 0;
+        save.field6148_0x1828 = 0;
+        save.field7_0x28 = 0;
+        save.field2054_0x828 = 0;
+
+        fwrite(&save, sizeof(SaveLoad), 1, file);
+        fwrite(extradata, extradataSize, 1, file);
+        fwrite(&hash, 4, 1, file);
+
+        fflush(file);
+        fclose(file);
+
+        rename(buf, path);
+    }
+
+    NuThreadCriticalSectionEnd(g_writingSaveCriticalSection);
+
+    return file != NULL;
+}
+
+static int32_t statuswait = 0;
+static NUTIME savetimer;
+static int32_t saveload_slotid = -1;
+
+extern "C" void saveloadASSave(int slot, void *buffer, int size, int hash) {
+    statuswait = 1;
+    NuTimeGet(&savetimer);
+    saveload_status = 11;
+    PCSaveSlot(slot, buffer, size, hash);
+    saveload_autosave = slot;
+    saveload_slotid = slot;
 }

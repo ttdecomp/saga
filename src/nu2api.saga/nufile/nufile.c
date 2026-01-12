@@ -595,7 +595,7 @@ int16_t NuFileReadShort(NUFILE file) {
 }
 
 uint8_t NuFileReadUnsignedChar(NUFILE file) {
-    uint8_t value;
+    uint8_t value = 1;
     NuFileRead(file, &value, sizeof(uint8_t));
     return value;
 }
