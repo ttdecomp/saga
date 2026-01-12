@@ -7,7 +7,8 @@
 
 C_API_START
 
-typedef unsigned short NUWCHAR;
+typedef uint16_t NUWCHAR;
+typedef uint16_t NUWCHAR16;
 
 void NuStrCat(char *str, const char *ext);
 int NuStrCmp(const char *a, const char *b);
@@ -22,7 +23,14 @@ int NuStrNCmp(const char *a, const char *b, ssize_t n);
 int NuStrNICmp(const char *a, const char *b, ssize_t n);
 ssize_t NuStrNCpy(char *dest, const char *src, ssize_t n);
 char *NuStrRChr(char *src, char c);
+
 unsigned char NuToLower(unsigned char c);
 unsigned char NuToUpper(unsigned char c);
+
+float NuAToF(char *string);
+int NuAToI(char *string);
+int NuHexStringToI(char *string);
+
+void NuUnicodeToAscii(char *dst, NUWCHAR16 *src);
 
 C_API_END

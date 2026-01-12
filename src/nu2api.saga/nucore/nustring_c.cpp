@@ -348,3 +348,136 @@ unsigned char NuToUpper(unsigned char c) {
 
     return c;
 }
+
+float NuAToF(char *string) {
+    float dividend = 0.0f;
+    float divisor = 1.0f;
+
+    char c = *string;
+    string++;
+
+    if (c == '-') {
+        divisor = -1.0f;
+
+        c = *string;
+        string++;
+    }
+
+    while (c >= '0' && c <= '9') {
+        dividend *= 10.0f;
+        dividend += (float)(c - 0x30);
+
+        c = *string;
+        string++;
+    }
+
+    if (c == '.') {
+        c = *string;
+        string++;
+
+        while (c >= '0' && c <= '9') {
+            divisor *= 10.0f;
+            dividend *= 10.0f;
+            dividend += (float)(c - 0x30);
+
+            c = *string;
+            string++;
+        }
+    }
+
+    return dividend / divisor;
+}
+
+int NuAToI(char *string) {
+    int value = 0;
+    int sign = 0;
+
+    char c = *string;
+    string++;
+
+    if (c == '-') {
+        sign = -1;
+
+        c = *string;
+        string++;
+    }
+
+    while (c >= '0' && c <= '9') {
+        value = value * 10 + (int)c - 0x30;
+
+        c = *string;
+        string++;
+    }
+
+    if (sign != 0) {
+        return value * sign;
+    }
+
+    return value;
+}
+
+int NuHexStringToI(char *string) {
+    int value = 0;
+
+    for (; *string != '\0'; string++) {
+        value <<= 4;
+        int upper = (int)NuToUpper(*string);
+
+        if (upper <= '9' && upper >= '0') {
+            value |= upper - 0x30;
+        } else if (upper <= 'F' && upper >= 'A') {
+            value |= upper - 0x37;
+        } else {
+            return 0;
+        }
+    }
+
+    return value;
+}
+
+void NuUnicodeToAscii(char *dst, NUWCHAR16 *src) {
+    int pos = 0;
+
+    if (src == NULL) {
+        return;
+    }
+
+    if (dst == NULL) {
+        return;
+    }
+
+    *dst = '\0';
+
+    for (; src[pos] != '\0'; pos++) {
+        if ((src[pos] & 0xff00) != 0) {
+            switch (src[pos]) {
+                // U+2018 LEFT SINGLE QUOTATION MARK
+                case 0x2018:
+                    dst[pos] = 0x91;
+                    break;
+                // U+2019 RIGHT SINGLE QUOTATION MARK
+                case 0x2019:
+                    dst[pos] = 0x92;
+                    break;
+                // U+2013 EN DASH
+                case 0x2013:
+                    dst[pos] = 0x96;
+                    break;
+                // U+2026 HORIZONTAL ELLIPSIS
+                case 0x2026:
+                    dst[pos] = 0x85;
+                    break;
+                // U+2122 TRADE MARK SIGN
+                case 0x2122:
+                    dst[pos] = 0x99;
+                    break;
+                default:
+                    dst[pos] = '?';
+            }
+        } else {
+            dst[pos] = (char)src[pos];
+        }
+    }
+
+    dst[pos] = '\0';
+}
