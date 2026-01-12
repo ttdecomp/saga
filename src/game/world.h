@@ -23,6 +23,7 @@ void WorldInfo_Activate(void);
 void WorldInfo_Init(WORLDINFO *info);
 WORLDINFO* WorldInfo_CurrentlyActive(void);
 WORLDINFO* WorldInfo_CurrentlyLoading(void);
+void WorldInfo_InitOnce(void);
 
 extern "C" {
 #endif

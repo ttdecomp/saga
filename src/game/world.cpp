@@ -1,5 +1,7 @@
 #include "game/world.h"
 
+#include <string.h>
+
 WORLDINFO WorldInfo;
 WORLDINFO* WORLD = &WorldInfo;
 
@@ -21,4 +23,8 @@ WORLDINFO* WorldInfo_CurrentlyActive(void) {
 
 WORLDINFO* WorldInfo_CurrentlyLoading(void) {
     return LWORLD;
+}
+
+void WorldInfo_InitOnce(void) {
+    memset(&WorldInfo, 0, sizeof(WorldInfo));
 }
