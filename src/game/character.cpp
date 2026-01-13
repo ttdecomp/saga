@@ -1,4 +1,7 @@
-#include "gamelib/characters/characters.h"
+#include "game/character.h"
+
+#include "globals.h"
+#include "nu2api.saga/nucore/nustring.h"
 
 extern "C" {
     int16_t id_WEIRDO1 = -1;
@@ -419,4 +422,28 @@ extern "C" {
         {"droidstarfighter", &id_DROIDSTARFIGHTER},
         {NULL, NULL},
     };
+}
+
+int32_t CHARCOUNT = 0;
+
+CHARACTERDATA *CDataList = NULL;
+
+int32_t CharIDFromName(char *name) {
+    int iVar1;
+    int offset;
+    int i;
+
+    if (0 < CHARCOUNT) {
+        offset = 0;
+        i = 0;
+        do {
+            iVar1 = NuStrICmp(*(char **)((int)CDataList->names + offset), name);
+            if (iVar1 == 0) {
+                return i;
+            }
+            i = i + 1;
+            offset = offset + 0x4c;
+        } while (i < CHARCOUNT);
+    }
+    return -1;
 }

@@ -234,8 +234,7 @@ size_t NuMemFileRead(NUFILE file, char *dest, size_t size) {
 
         return size;
     } else {
-        // return NuDatFileRead(file, dest, size);
-        UNIMPLEMENTED();
+        return NuDatFileRead(file, dest, size);
     }
 }
 
@@ -254,8 +253,7 @@ uint32_t NuFileOpenSize(NUFILE file) {
                     UNIMPLEMENTED();
                 }
             } else {
-                // size = NuDatFileOpenSize(file);
-                UNIMPLEMENTED();
+                size = NuDatFileOpenSize(file);
             }
         } else {
             // size = NuMcFileOpenSize(file);

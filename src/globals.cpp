@@ -19,11 +19,7 @@ char unicodename[64] = "LEGO Star Wars Saga";
 
 CHEATSYSTEM CheatSystem = {0};
 
-AREADATA *ADataList = NULL;
-LEVELDATA *LDataList = NULL;
 EPISODEDATA *EDataList = NULL;
-
-AREADATA *HUB_ADATA = NULL;
 
 int32_t EPISODECOUNT = 0;
 int32_t AREACOUNT = 0;

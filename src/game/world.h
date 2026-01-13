@@ -2,9 +2,11 @@
 
 #include "globals.h"
 
+struct leveldata_s;
+
 struct WORLDINFO_s {
     char filler0[0x128];
-    LEVELDATA *current_level;
+    struct leveldata_s *current_level;
     char filler1[0xa234];
 };
 

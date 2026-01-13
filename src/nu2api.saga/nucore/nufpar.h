@@ -83,6 +83,9 @@ nufpcomfn *NuFParSetInterpreterErrorHandler(nufpcomfn *fn);
 int NuFParInterpretWord(NUFPAR *parser);
 int NuFParInterpretWordCTX(NUFPAR *parser, void *ctx);
 
+char NuGetChar(nufpar_s *parser);
+uint NuFParGetLine(nufpar_s *parser);
+
 C_API_END
 
 #endif

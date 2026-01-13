@@ -1,7 +1,190 @@
 #include "game/level.h"
 
 #include "globals.h"
+#include "nu2api.saga/nucore/nufpar.h"
 #include "nu2api.saga/nucore/nustring.h"
+
+LEVELDATA *LDataList = NULL;
+LEVELDATA *NEWGAME_LDATA = NULL;
+LEVELDATA *LOADGAME_LDATA = NULL;
+
+int32_t MAXLDATA = 64;
+
+LEVELDATA *Levels_ConfigureList(char *file, void **param_2, void **param_3, int32_t maxLevelCount, int32_t *levelcount,
+                                void *levelSetDefaults) {
+
+    nufpar_s *fp = NuFParCreate(file);
+    int i = 0;
+
+    MAXLDATA = maxLevelCount;
+
+    bool bVar2 = false;
+    LEVELDATA *pLVar4 = (LEVELDATA *)((int)*param_2 + 3U & 0xfffffffc);
+    *param_2 = pLVar4;
+
+    LEVELDATA *level = pLVar4;
+
+LAB_00484810:
+    do {
+        int iVar3 = NuFParGetLine(fp);
+        while (true) {
+            if (iVar3 == 0) {
+                NuFParDestroy(fp);
+
+                if (i == 0) {
+                    pLVar4 = NULL;
+                } else {
+                    *param_2 = level;
+                    if (levelcount == NULL) {
+                        return pLVar4;
+                    }
+                    *levelcount = i;
+                }
+
+                return pLVar4;
+            }
+
+            NuFParGetWord(fp);
+
+            char *a = fp->word_buf;
+
+            if (*a == '\0')
+                goto LAB_00484810;
+            if (!bVar2) {
+                if (NuStrICmp(a, "level_start") == 0 && i < MAXLDATA) {
+
+                    level->dir[0] = '\0';
+                    level->name[0] = '\0';
+                    level->field2_0x60 = 0xffff;
+                    level->field3_0x62 = (undefined2)i;
+                    level->flags = (LEVELFLAGS)0xe;
+                    // iVar3 = g_isLowEndDevice;
+
+                    level->loadFn = (void *)0x0;
+                    level->initFn = (void *)0x0;
+                    level->resetFn = (void *)0x0;
+                    level->updateFn = (void *)0x0;
+                    level->alwaysUpdateFn = (void *)0x0;
+                    level->drawFn = (void *)0x0;
+                    level->drawStatusFn = (void *)0x0;
+                    (level->field12_0x84).field10_0x14 = 20000;
+                    *(undefined8 *)&level->field12_0x84 = 0x3e19999a3dcccccd;
+                    (level->field12_0x84).field8_0x8 = 0x469d0800469c4000;
+                    // if (iVar3 == 0) {
+                    float fVar5 = 1.0;
+                    //} else {
+                    // fVar5 = 4.0;
+                    //}
+                    (level->field12_0x84).field9_0x10 = fVar5;
+                    (level->field12_0x84).field12_0x17 = 0;
+                    (level->field12_0x84).field11_0x16 = 0;
+                    (level->field12_0x84).field14_0x19 = 0;
+                    (level->field12_0x84).field13_0x18 = 0;
+                    (level->field12_0x84).field16_0x1b = 0;
+                    (level->field12_0x84).field15_0x1a = 0;
+                    level->musicIndex = -1;
+                    level->field94_0x11c = 0.0;
+                    level->field95_0x120 = 1.0;
+                    level->field14_0xa2 = 0xffff;
+                    level->field15_0xa4 = 0x80;
+                    level->field16_0xa6 = 0x100;
+                    level->field17_0xa8 = 0xffff;
+                    level->field18_0xaa = 0xffff;
+                    level->field19_0xac = 3;
+                    level->field20_0xad = 0x7f;
+                    level->field21_0xae = 0xff;
+                    level->field22_0xaf = 0xff;
+                    level->field25_0xb8 = 0x50;
+                    level->field23_0xb0 = 0;
+                    level->field24_0xb4 = 0;
+                    level->field26_0xb9 = 0x50;
+                    level->field27_0xba = 0x50;
+                    level->field28_0xbb = 0x32;
+                    level->field29_0xbc = 0;
+                    level->field30_0xbd = 0;
+                    level->field31_0xbe = 0;
+                    level->field32_0xbf = 0;
+                    level->field33_0xc0 = 0.5;
+                    level->field34_0xc4 = 0;
+                    level->field35_0xc8 = 0;
+                    level->field36_0xcc = 0x49f42400;
+                    level->field41_0xd4 = 0xff;
+                    level->field42_0xd5 = 5;
+                    level->field43_0xd6 = 10;
+                    level->field44_0xd7 = 5;
+                    level->field45_0xd8 = 5;
+                    level->field46_0xd9 = 10;
+                    level->field47_0xda = 5;
+                    level->field48_0xdb = 5;
+                    level->field49_0xdc = 0.0;
+                    level->field50_0xe0 = 0.0;
+                    level->musicTracks[0] = -1;
+                    level->musicTracks[2] = -1;
+                    level->musicTracks[4] = -1;
+                    level->musicTracks[1] = -1;
+                    level->musicTracks[3] = -1;
+                    level->musicTracks[5] = -1;
+                    bVar2 = true;
+                    if (levelSetDefaults != NULL) {
+                        // (*levelSetDefaults)(level);
+                        void (*func)(LEVELDATA *) = (void (*)(LEVELDATA *))levelSetDefaults;
+                        func(level);
+                    }
+                }
+                goto LAB_00484810;
+            }
+
+            if (NuStrICmp(a, "level_end") != 0)
+                break;
+
+            LEVELFLAGS LVar1;
+
+            bVar2 = false;
+            if (((level->dir[0] == '\0') || (level->name[0] == '\0')) ||
+                (LVar1 = level->flags, (LVar1 & LEVEL_TEST) != 0))
+                goto LAB_00484810;
+            if ((LVar1 & LEVEL_NEWGAME) != 0) {
+                NEWGAME_LDATA = level;
+            }
+            if ((LVar1 & LEVEL_LOADGAME) != 0) {
+                LOADGAME_LDATA = level;
+            }
+
+            i = i + 1;
+            bVar2 = false;
+            level = level + 1;
+            iVar3 = NuFParGetLine(fp);
+        }
+
+        if (NuStrICmp(fp->word_buf, "dir") == 0) {
+            if (NuFParGetWord(fp) != 0 && NuStrLen(fp->word_buf) < 0x40) {
+                NuStrCpy(level->dir, fp->word_buf);
+            }
+        } else {
+            if (NuStrICmp(fp->word_buf, "file") == 0 && NuFParGetWord(fp) != 0 && NuStrLen(fp->word_buf) < 32) {
+                NuStrCpy(level->name, fp->word_buf);
+            }
+        }
+
+        if (NuStrICmp(fp->word_buf, "test_level") == 0) {
+            level->flags = level->flags | LEVEL_TEST;
+        } else if (NuStrICmp(fp->word_buf, "intro_level") == 0) {
+            level->flags = level->flags | LEVEL_INTRO;
+        } else if (NuStrICmp(fp->word_buf, "midtro_level") == 0 || NuStrICmp(fp->word_buf, "cutscene_level") == 0) {
+            level->flags = level->flags | LEVEL_MIDTRO;
+        } else if (NuStrICmp(fp->word_buf, "outro_level") == 0) {
+            level->flags = level->flags | LEVEL_OUTRO;
+        } else if (NuStrICmp(fp->word_buf, "status_level") == 0) {
+            level->flags = (LEVELFLAGS)(level->flags & 0xfffffff5 | LEVEL_STATUS);
+        } else if (NuStrICmp(fp->word_buf, "newgame_level") == 0) {
+            if (NEWGAME_LDATA == NULL) {
+                level->flags = level->flags | LEVEL_NEWGAME;
+            }
+        } else if (NuStrICmp(fp->word_buf, "loadgame_level") == 0 && LOADGAME_LDATA == NULL) {
+            level->flags = level->flags | LEVEL_LOADGAME;
+        }
+    } while (true);
+}
 
 void Level_SetDefaults(LEVELDATA *level) {
     level->field51_0xe4 = 0x400100;

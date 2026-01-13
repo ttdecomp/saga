@@ -127,6 +127,7 @@ NUDATHDR *NuDatOpen(char *name, void **bufferBase, int32_t zero);
 NUDATHDR *NuDatOpenEx(char *name, void **bufferBase, int zero, short mode);
 void NuDatFileClose(NUFILE file);
 NUDATHDR *NuDatSet(NUDATHDR *header);
+int32_t NuDatFileOpenSize(NUFILE file);
 
 // NuDatFile functions
 NUFILE NuDatFileOpen(NUDATHDR *header, char *name, NUFILEMODE mode);

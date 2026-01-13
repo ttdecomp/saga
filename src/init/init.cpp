@@ -1,4 +1,7 @@
 #include "init/init.hpp"
+#include "game/area.h"
+#include "game/cheat.h"
+#include "game/level.h"
 #include "globals.h"
 #include "nu2api.saga/nucore/nustring.h"
 #include "nu2api.saga/nufile/nufile.h"
@@ -104,12 +107,6 @@ int32_t Episode_ContainsArea(int32_t areaId, int32_t *areaIndex) {
     }
 
     return -1;
-}
-
-void Cheat_SetArea(int32_t cheat, int32_t areaId) {
-    if (cheat >= 0 && cheat < CheatSystem.cheatsCount && areaId >= 0 && areaId < AREACOUNT) {
-        CheatSystem.cheats[cheat].area = areaId;
-    }
 }
 
 void InitGameAfterConfig(void) {
@@ -590,6 +587,25 @@ void InitGameAfterConfig(void) {
 }
 
 void LoadPermData(BGPROCINFO *proc) {
+    LDataList = Levels_ConfigureList("levels\\levels.txt", &permbuffer_ptr, &permbuffer_end, 365, &LEVELCOUNT,
+                                     (void *)Level_SetDefaults);
+    // FixUpLevels(&LevFixUp);
+
+    for (int i = 0; i < LEVELCOUNT; i++) {
+        LOG("Level %d: %s / %s", i, LDataList[i].dir, LDataList[i].name);
+    }
+    LOG("Loaded %d levels", LEVELCOUNT);
+
+    ADataList = Areas_ConfigureList("levels\\areas.txt", &permbuffer_ptr, &permbuffer_end, 0x48, &AREACOUNT);
+    // FixUpAreas();
+
+    for (int i = 0; i < AREACOUNT; i++) {
+        LOG("Area %d: %s / %s", i, ADataList[i].dir, ADataList[i].file);
+    }
+    LOG("Loaded %d areas", AREACOUNT);
+
+    // EDataList = Episodes_ConfigureList("levels\\episodes.txt", &permbuffer_ptr, &permbuffer_end, 6, &EPISODECOUNT);
+
     InitGameAfterConfig();
 }
 

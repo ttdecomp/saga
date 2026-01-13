@@ -414,3 +414,12 @@ int64_t NuDatCalcPos(nudathdr_s *header, int32_t index) {
 
     return pos + datsys_offset;
 }
+
+int32_t NuDatFileOpenSize(NUFILE file) {
+    int32_t index = NUFILE_INDEX_DAT(file);
+    if (dat_file_infos[index].compressionMode == 0) {
+        return dat_file_infos[index].field3_0x14;
+    } else {
+        return dat_file_infos[index].field4_0x18;
+    }
+}
