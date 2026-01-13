@@ -15,14 +15,8 @@ void NuMtlInitEx(void **bufferBase, int32_t usually512) {
     nudathdr_s *dat = NuDatOpen(path, bufferBase, 0);
     NuDatSet(dat);
 
-    LOG("dat->version=%d", dat->version);
-    LOG("dat->fileCount=%d", dat->filesCount);
-    LOG("dat->treeCount=%d", dat->treeCount);
-    LOG("dat->leafnamesize=%d", dat->leafnamesize);
-    LOG("dat->filetree=%p", dat->filetree);
-
     int32_t size = NuFileLoadBuffer("stuff\\text\\badwords.txt", *bufferBase, 0x100000);
-    LOG("size=%d", size);
+
     // replace \n with ,
     char *buf = (char *)*bufferBase;
     for (int32_t i = 0; i < size; i++) {
@@ -32,7 +26,7 @@ void NuMtlInitEx(void **bufferBase, int32_t usually512) {
             buf[i] = ' ';
         }
     }
-    LOG("%*s", size, buf);
+    LOG_INFO("%*s", size, buf);
 }
 
 void NuInitHardware(void **bufferBase, void **bufferEnd, int32_t zero) {
@@ -592,17 +586,17 @@ void LoadPermData(BGPROCINFO *proc) {
     // FixUpLevels(&LevFixUp);
 
     for (int i = 0; i < LEVELCOUNT; i++) {
-        LOG("Level %d: %s / %s", i, LDataList[i].dir, LDataList[i].name);
+        LOG_INFO("Level %d: %s / %s", i, LDataList[i].dir, LDataList[i].name);
     }
-    LOG("Loaded %d levels", LEVELCOUNT);
+    LOG_INFO("Loaded %d levels", LEVELCOUNT);
 
     ADataList = Areas_ConfigureList("levels\\areas.txt", &permbuffer_ptr, &permbuffer_end, 0x48, &AREACOUNT);
     // FixUpAreas();
 
     for (int i = 0; i < AREACOUNT; i++) {
-        LOG("Area %d: %s / %s", i, ADataList[i].dir, ADataList[i].file);
+        LOG_INFO("Area %d: %s / %s", i, ADataList[i].dir, ADataList[i].file);
     }
-    LOG("Loaded %d areas", AREACOUNT);
+    LOG_INFO("Loaded %d areas", AREACOUNT);
 
     // EDataList = Episodes_ConfigureList("levels\\episodes.txt", &permbuffer_ptr, &permbuffer_end, 6, &EPISODECOUNT);
 

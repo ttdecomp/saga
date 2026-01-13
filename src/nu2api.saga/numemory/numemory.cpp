@@ -49,7 +49,7 @@ void *NuMemoryManager::_BlockAlloc(uint32_t size, uint32_t param_2, uint32_t par
 }
 
 void *NuMemoryManager::_TryBlockAlloc(uint32_t size, uint32_t param_2, uint32_t param_3, char *name, uint16_t param_5) {
-    LOG("size=%x, param_2=%u, param_3=%u, name='%s', param_5=%u", size, param_2, param_3, name, param_5);
+    LOG_INFO("size=%x, param_2=%u, param_3=%u, name='%s', param_5=%u", size, param_2, param_3, name, param_5);
 
     // UNIMPLEMENTED();
     return malloc(size);

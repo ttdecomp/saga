@@ -99,7 +99,7 @@ int32_t NuFileStatus(NUFILE file) {
 }
 
 NUFILE NuFileOpenDF(const char *path, NUFILEMODE mode, NUDATHDR *header, int32_t _unused) {
-    LOG("path=%s, mode=%d, header=%p", path, mode, header);
+    LOG_DEBUG("path=%s, mode=%d, header=%p", path, mode, header);
 
     NuFileDevice *device = NuFileGetDeviceFromPath(path);
     NUFILE file;
@@ -199,7 +199,7 @@ NUFILE NuFileOpenDF(const char *path, NUFILEMODE mode, NUDATHDR *header, int32_t
 }
 
 NuFileDevice *NuFileGetDeviceFromPath(const char *path) {
-    LOG("path=%s", path);
+    LOG_DEBUG("path=%s", path);
 
     int i;
     for (i = 0; (i < 8 && (path[i] != ':')); i = i + 1) {
@@ -213,7 +213,7 @@ NuFileDevice *NuFileGetDeviceFromPath(const char *path) {
         }
     }
 
-    LOG("No device found for path=%s", path);
+    LOG_DEBUG("No device found for path=%s", path);
 
     return NULL;
 }
@@ -239,7 +239,7 @@ size_t NuMemFileRead(NUFILE file, char *dest, size_t size) {
 }
 
 uint32_t NuFileOpenSize(NUFILE file) {
-    LOG("file=%d", file);
+    LOG_DEBUG("file=%d", file);
 
     uint32_t size;
 
@@ -264,7 +264,7 @@ uint32_t NuFileOpenSize(NUFILE file) {
         UNIMPLEMENTED("android specific");
     }
 
-    LOG("size=%u", size);
+    LOG_DEBUG("size=%u", size);
 
     return size;
 }
@@ -432,7 +432,7 @@ void NuMemFileClose(NUFILE file) {
 }
 
 int32_t NuFileExists(const char *name) {
-    LOG("name=%s", name);
+    LOG_DEBUG("name=%s", name);
     return NuFileSize(name) > 0 ? 1 : 0;
 }
 
@@ -504,7 +504,7 @@ int32_t NuMemFilePos(NUFILE file) {
 }
 
 uint8_t DEV_FormatName(NuFileDevice *device, char *dest, char *path, int length) {
-    LOG("device=%p, dest=%p, path=%p, length=%d", device, dest, path, length);
+    LOG_DEBUG("device=%p, dest=%p, path=%p, length=%d", device, dest, path, length);
 
     int n;
     int iVar1;
@@ -539,7 +539,7 @@ uint8_t DEV_FormatName(NuFileDevice *device, char *dest, char *path, int length)
         NuStrCpy(dest, buf);
     }
 
-    LOG("Formatted path: %s, returning %d", buf, len < length);
+    LOG_DEBUG("Formatted path: %s, returning %d", buf, len < length);
 
     return len < length;
 }

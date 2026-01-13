@@ -87,7 +87,7 @@ int32_t NuDatFileGetFreeHandleIX(nudathdr_s *header, int32_t freeIndex) {
 }
 
 int32_t NuDatFileFindHash(nudathdr_s *header, char *name) {
-    LOG("header=%p name=%s", header, name);
+    LOG_DEBUG("header=%p name=%s", header, name);
 
     int32_t hash = NameToHash(name);
 
@@ -119,7 +119,7 @@ int32_t NuDatFileFindHash(nudathdr_s *header, char *name) {
         r = -1;
     }
 
-    LOG("header=%p name=%s => %d", header, name, r);
+    LOG_DEBUG("header=%p name=%s => %d", header, name, r);
 
     return r;
 }
@@ -138,7 +138,7 @@ static int32_t OpenDatFileBase(nudathdr_s *header, int32_t someIndex) {
 int32_t datsys_offset = 0;
 
 int32_t NuDatFileFindTree(nudathdr_s *header, char *name) {
-    LOG("header=%p name=%s", header, name);
+    LOG_DEBUG("header=%p name=%s", header, name);
 
     int32_t index;
     char buf[256];
@@ -186,7 +186,7 @@ int32_t NuDatFileFindTree(nudathdr_s *header, char *name) {
 }
 
 NUFILE NuDatFileOpen(NUDATHDR *header, char *name, NUFILEMODE mode) {
-    LOG("header=%p name=%s mode=%d", header, name, mode);
+    LOG_DEBUG("header=%p name=%s mode=%d", header, name, mode);
 
     int iVar1;
     int index;
@@ -273,7 +273,7 @@ uint64_t NuDatFilePos(NUFILE file) {
 }
 
 int32_t NuDatFileLoadBuffer(nudathdr_s *dat, char *name, void *dest, int32_t maxSize) {
-    LOG("dat=%p name=%s dest=%p maxSize=%d", dat, name, dest, maxSize);
+    LOG_DEBUG("dat=%p name=%s dest=%p maxSize=%d", dat, name, dest, maxSize);
 
     nufile_lasterror = 0;
 
@@ -297,7 +297,7 @@ int32_t NuDatFileLoadBuffer(nudathdr_s *dat, char *name, void *dest, int32_t max
     }
 
     if (size <= maxSize && size != 0) {
-        LOG("Loading %d bytes from dat file", size);
+        LOG_DEBUG("Loading %d bytes from dat file", size);
 
         while (NuDatFileRead(file, dest, size) < 0) {
             while (NuDatFileSeek(file, 0, NUFILE_SEEK_START) < 0) {

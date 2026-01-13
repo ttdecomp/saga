@@ -7,20 +7,20 @@
 #include "decomp.h"
 
 int32_t NuPSFileRead(NUPSFILE index, void *dest, int32_t len) {
-    LOG("index=%d, dest=%p, len=%zu", index, dest, len);
+    LOG_DEBUG("index=%d, dest=%p, len=%zu", index, dest, len);
 
     return fread(dest, 1, len, g_fileHandles[index]);
 }
 
 int32_t NuPSFileWrite(NUPSFILE index, const void *src, int32_t len) {
-    LOG("index=%d, src=%p, len=%zu", index, src, len);
+    LOG_DEBUG("index=%d, src=%p, len=%zu", index, src, len);
 
     FILE **files = g_fileHandles;
     return fwrite(src, 1, len, files[index]);
 }
 
 NUPSFILE NuPSFileOpen(const char *name, NUFILEMODE mode) {
-    LOG("name=%s, mode=%d", name, mode);
+    LOG_DEBUG("name=%s, mode=%d", name, mode);
 
     char path[1024];
 
@@ -51,7 +51,7 @@ NUPSFILE NuPSFileOpen(const char *name, NUFILEMODE mode) {
         if (file != NULL) {
             g_fileHandles[i] = file;
 
-            LOG("Opened file %s with index %d", path, i);
+            LOG_DEBUG("Opened file %s with index %d", path, i);
             return i;
         }
     }
@@ -76,7 +76,7 @@ int32_t NuPSFileClose(NUPSFILE index) {
 }
 
 int64_t NuPSFileLSeek(NUPSFILE index, int64_t offset, NUFILESEEK seekMode) {
-    LOG("file=%d, offset=0x%llx, seekMode=%d", index, offset, seekMode);
+    LOG_DEBUG("file=%d, offset=0x%llx, seekMode=%d", index, offset, seekMode);
 
     int32_t whence = 0;
 

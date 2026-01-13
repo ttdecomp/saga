@@ -41,7 +41,7 @@ void NuFileClose(NUFILE file) {
 }
 
 int32_t NuFileSeek(NUFILE file, int64_t offset, NUFILESEEK seekMode) {
-    LOG("file=%d, offset=0x%llx, seekMode=%d", file, offset, seekMode);
+    LOG_DEBUG("file=%d, offset=0x%llx, seekMode=%d", file, offset, seekMode);
 
     if (NUFILE_IS_PS(file)) {
         int index = NUFILE_INDEX_PS(file);

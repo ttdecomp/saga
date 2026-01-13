@@ -9,7 +9,7 @@
 #include "decomp.h"
 
 NUDATHDR *NuDatOpen(char *name, void **bufferBase, int32_t zero) {
-    LOG("name=%s bufferBase=%p zero=%d", name, bufferBase, zero);
+    LOG_DEBUG("name=%s bufferBase=%p zero=%d", name, bufferBase, zero);
     return NuDatOpenEx(name, bufferBase, zero, 0);
 }
 
@@ -51,7 +51,7 @@ void NuFileUpCase(void *param_1, char *path) {
 }
 
 NUDATHDR *NuDatOpenEx(char *name, void **bufferBase, int zero, short mode) {
-    LOG("name=%s bufferBase=%p zero=%d mode=%d", name, bufferBase, zero, mode);
+    LOG_DEBUG("name=%s bufferBase=%p zero=%d mode=%d", name, bufferBase, zero, mode);
 
     int32_t buffering = nufile_buffering_enabled;
 

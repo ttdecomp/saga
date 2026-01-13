@@ -67,8 +67,6 @@ static int32_t saveload_getinfo(void) {
             fseek(file, -4, 2);
             fread(&saveload_slotcode[i], 4, 1, file);
 
-            LOG("slot %d code=%08X", i, saveload_slotcode[i]);
-
             saveload_savepresent = 1;
 
             fclose(file);
@@ -89,7 +87,7 @@ int32_t saveloadLoadSlot(int32_t slot, void *buffer, size_t size) {
     char *filename = fullslotname(slot);
     FILE *file = fopen(filename, "rb");
 
-    LOG("slot=%d, filename=%s, file=%p", slot, filename, file);
+    LOG_DEBUG("slot=%d, filename=%s, file=%p", slot, filename, file);
 
     if (file == NULL) {
         return 0;
@@ -176,7 +174,7 @@ int32_t TriggerExtraDataLoad(void) {
     if (saveloadLoadSlot(SAVESLOTS, buffer, memcard_extra_savedatasize + 4) != 0) {
         int32_t checksum = *(int32_t *)((size_t)buffer + memcard_extra_savedatasize);
         int32_t correct = ChecksumSaveData(buffer, memcard_extra_savedatasize);
-        LOG("checksum=%08X, correct=%08X", checksum, correct);
+        LOG_DEBUG("checksum=%08X, correct=%08X", checksum, correct);
         if (correct == checksum) {
             memmove(memcard_extra_savedata, buffer, memcard_extra_savedatasize);
             return 1;
