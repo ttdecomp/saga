@@ -403,7 +403,8 @@ int NuAToI(char *string) {
     }
 
     while (c >= '0' && c <= '9') {
-        value = value * 10 + (int)c - 0x30;
+        value = (value << 3) + 2 * value;
+        value = value + (int)c - 0x30;
 
         c = *string;
         string++;
