@@ -2,8 +2,6 @@
 #include "nu2api.saga/nucore/nustring.h"
 #include "nu2api.saga/nufile/nufile.h"
 
-#include <string.h>
-
 #define PARSER_COUNT 4
 #define PARSER_BUF_SIZE 0x1000
 
