@@ -824,11 +824,3 @@ struct nudatfileinfo_s { /* PlaceHolder Structure */
     int used;
     int compressionMode;
 };
-
-struct NuMemFile {
-    void *buffer;
-    void *end;
-    void *ptr;
-    int field3_0xc;
-    int used;
-};

@@ -8,14 +8,21 @@
 
 #include "nu2api.saga/nucore/types.h"
 
-enum nufilemode_e {
+typedef enum nufilemode_e {
     NUFILE_MODE_READ = 0,
     NUFILE_MODE_WRITE = 1,
     NUFILE_MODE_APPEND = 2,
     NUFILE_MODE_READ_NOWAIT = 3,
     NUFILE_MODE_READWRITE = 4,
-};
-typedef enum nufilemode_e NUFILEMODE;
+} NUFILEMODE;
+
+typedef struct numemfile_s {
+    char *buffer;
+    char *end;
+    char *ptr;
+    NUFILEMODE mode;
+    int used;
+} NUMEMFILE;
 
 enum nufileseek_e {
     NUFILE_SEEK_START = 0,
@@ -56,7 +63,6 @@ enum NUFILE_OFFSETS {
 #define NUFILE_INVALID ((NUFILE)(-1))
 
 typedef struct nudatfileinfo_s nudatfileinfo_s;
-typedef struct NuMemFile NuMemFile;
 typedef struct fileinfo_s fileinfo_s;
 typedef struct FileBuffer FileBuffer;
 typedef struct NUDATHDRtruct1 NUDATHDRtruct1;
@@ -71,7 +77,6 @@ extern NuFileDevice devices[16];
 extern int32_t file_criticalsection;
 extern nudatfileinfo_s dat_file_infos[20];
 extern FILE *g_fileHandles[32];
-extern NuMemFile memfiles[16];
 extern int32_t nufile_buffering_enabled;
 extern fileinfo_s file_info[32];
 extern int32_t nufile_lasterror;
@@ -113,13 +118,15 @@ int32_t NuPSFileOpen(const char *path, NUFILEMODE mode);
 int32_t NuPSFileClose(int32_t index);
 int32_t NuPSFileRead(int32_t index, void *dest, int32_t len);
 int32_t NuPSFileWrite(int32_t index, const void *src, int32_t len);
-int64_t NuPSFileLSeek(int32_t index, int64_t offset, NUFILESEEK seekMode);
+int64_t NuPSFileLSeek(int32_t index, int64_t offset, NUFILESEEK whence);
 
 // Memory file functions
-size_t NuMemFileRead(NUFILE file, char *dest, size_t size);
-int32_t NuMemFilePos(NUFILE file);
+NUFILE NuMemFileOpen(void *buf, int buf_size, NUFILEMODE mode);
 void NuMemFileClose(NUFILE file);
-int64_t NuMemFileSeek(NUFILE file, int64_t seek, NUFILESEEK whence);
+int NuMemFileRead(NUFILE file, void *buf, int size);
+int NuMemFileWrite(NUFILE file, void *data, int size);
+int64_t NuMemFileSeek(NUFILE file, int64_t offset, NUFILESEEK whence);
+int64_t NuMemFilePos(NUFILE file);
 
 // Memory card functions
 int32_t NuMcClose(int32_t, int32_t);

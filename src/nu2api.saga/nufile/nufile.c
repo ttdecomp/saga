@@ -1,10 +1,6 @@
 #include "nu2api.saga/nufile/nufile.h"
 
 #include "nu2api.saga/nucore/nustring.h"
-#include "nu2api.saga/nuthread/nuthread.h"
-
-#include <stddef.h>
-#include <string.h>
 
 #include "decomp.h"
 
@@ -24,7 +20,6 @@ NuFileDevice devices[16] = {0};
 int32_t file_criticalsection;
 nudatfileinfo_s dat_file_infos[20];
 FILE *g_fileHandles[32] = {NULL};
-NuMemFile memfiles[16];
 int32_t nufile_buffering_enabled;
 fileinfo_s file_info[32];
 
@@ -218,26 +213,6 @@ NuFileDevice *NuFileGetDeviceFromPath(const char *path) {
     return NULL;
 }
 
-size_t NuMemFileRead(NUFILE file, char *dest, size_t size) {
-    if (NUFILE_IS_MEM(file)) {
-        int32_t i = NUFILE_INDEX_MEM(file);
-        ptrdiff_t remaining = memfiles[i].end - memfiles[i].ptr + 1;
-
-        if (remaining <= size) {
-            size = remaining;
-        }
-
-        if (size != 0) {
-            memcpy(dest, memfiles[i].ptr, size);
-            memfiles[i].ptr = ((char *)memfiles[i].ptr + size);
-        }
-
-        return size;
-    } else {
-        return NuDatFileRead(file, dest, size);
-    }
-}
-
 uint32_t NuFileOpenSize(NUFILE file) {
     LOG_DEBUG("file=%d", file);
 
@@ -418,19 +393,6 @@ int32_t NuFileLoadBuffer(const char *name, void *dest, int32_t size) {
     return i;
 }
 
-void NuMemFileClose(NUFILE file) {
-    if (NUFILE_IS_PS(file)) {
-        do {
-        } while (1);
-    }
-
-    if (NUFILE_IS_MEM(file)) {
-        memfiles[NUFILE_INDEX_MEM(file)].used = 0;
-    } else if (NUFILE_IS_DAT(file)) {
-        NuDatFileClose(file);
-    }
-}
-
 int32_t NuFileExists(const char *name) {
     LOG_DEBUG("name=%s", name);
     return NuFileSize(name) > 0 ? 1 : 0;
@@ -493,16 +455,6 @@ uint64_t NuFilePos(NUFILE file) {
     return local_14;
 }
 
-int32_t NuMemFilePos(NUFILE file) {
-    NuMemFile *memFile = &memfiles[NUFILE_INDEX_MEM(file)];
-
-    if (NUFILE_IS_MEM(file)) {
-        return memFile->ptr - memFile->buffer;
-    } else {
-        return NuDatFilePos(file);
-    }
-}
-
 uint8_t DEV_FormatName(NuFileDevice *device, char *dest, char *path, int length) {
     LOG_DEBUG("device=%p, dest=%p, path=%p, length=%d", device, dest, path, length);
 
@@ -542,24 +494,6 @@ uint8_t DEV_FormatName(NuFileDevice *device, char *dest, char *path, int length)
     LOG_DEBUG("Formatted path: %s, returning %d", buf, len < length);
 
     return len < length;
-}
-
-int64_t NuMemFileSeek(NUFILE file, int64_t seek, NUFILESEEK whence) {
-    if (NUFILE_IS_MEM(file)) {
-        int32_t index = NUFILE_INDEX_MEM(file);
-
-        if (whence == NUFILE_SEEK_CURRENT) {
-            memfiles[index].ptr = (void *)((size_t)memfiles[index].ptr + seek);
-        } else if (whence == NUFILE_SEEK_END) {
-            memfiles[index].ptr = (void *)((size_t)memfiles[index].end - seek);
-        } else {
-            memfiles[index].ptr = (void *)((size_t)memfiles[index].buffer + seek);
-        }
-
-        return (int64_t)((size_t)memfiles[index].ptr - (size_t)memfiles[index].buffer);
-    } else {
-        return NuDatFileSeek(file, seek, whence);
-    }
 }
 
 int8_t NuFileReadChar(NUFILE file) {

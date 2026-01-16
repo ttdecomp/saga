@@ -85,3 +85,105 @@ int32_t NuFileLoadBufferVP(char *filepath, VARIPTR *buf, VARIPTR *buf_end) {
 
     return len;
 }
+
+NUMEMFILE memfiles[20];
+
+NUFILE NuMemFileOpen(void *buf, int buf_size, NUFILEMODE mode) {
+    int i;
+
+    if (buf_size > 0 && (mode == NUFILE_MODE_READ || mode == NUFILE_MODE_WRITE)) {
+        for (i = 0; i < 20; i++) {
+            if (!memfiles[i].used) {
+                memfiles[i].buffer = (char *)buf;
+                memfiles[i].end = (char *)buf + buf_size - 1;
+                memfiles[i].ptr = memfiles[i].buffer;
+                memfiles[i].mode = mode;
+                memfiles[i].used = 1;
+
+                return i + 0x400;
+            }
+        }
+    }
+
+    return 0;
+}
+
+void NuMemFileClose(NUFILE file) {
+    if (file >= 0x2000) {
+        do {
+        } while (true);
+    }
+
+    if (file >= 0x800) {
+        NuDatFileClose(file);
+    } else {
+        file -= 0x400;
+        memfiles[file].used = 0;
+    }
+}
+
+int NuMemFileRead(NUFILE file, void *buf, int size) {
+    int remaining;
+
+    if (file >= 0x800) {
+        return NuDatFileRead(file, buf, size);
+    }
+
+    file -= 0x400;
+
+    size = memfiles[file].end - memfiles[file].ptr + 1 <= size ? memfiles[file].end - memfiles[file].ptr + 1 : size;
+
+    if (size != 0) {
+        memcpy(buf, memfiles[file].ptr, size);
+
+        memfiles[file].ptr = memfiles[file].ptr + size;
+    }
+
+    return size;
+}
+
+int NuMemFileWrite(NUFILE file, void *data, int size) {
+    file -= 0x400;
+
+    size = memfiles[file].end - memfiles[file].ptr + 1 <= size ? memfiles[file].end - memfiles[file].ptr + 1 : size;
+
+    if (size != 0) {
+        memcpy(memfiles[file].ptr, data, size);
+
+        memfiles[file].ptr += size;
+    }
+
+    return size;
+}
+
+int64_t NuMemFileSeek(NUFILE file, int64_t offset, NUFILESEEK whence) {
+    if (file >= 0x800) {
+        return NuDatFileSeek(file, offset, whence);
+    }
+
+    file -= 0x400;
+
+    switch (whence) {
+        case NUFILE_SEEK_CURRENT:
+            memfiles[file].ptr = memfiles[file].ptr + offset;
+            break;
+        case NUFILE_SEEK_END:
+            memfiles[file].ptr = memfiles[file].end - offset;
+            break;
+        default:
+            memfiles[file].ptr = memfiles[file].buffer + offset;
+            break;
+    }
+
+    return (int64_t)(memfiles[file].ptr - memfiles[file].buffer);
+}
+
+int64_t NuMemFilePos(NUFILE file) {
+    if (file >= 0x800) {
+        return NuDatFilePos(file);
+    }
+
+    file -= 0x400;
+
+    return (int64_t)(memfiles[file].ptr - memfiles[file].buffer);
+}
