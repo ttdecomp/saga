@@ -148,7 +148,7 @@ C_API_END
 
 #ifdef __cplusplus
 
-LEVELDATA *Levels_ConfigureList(char *file, void **param_2, void **param_3, int32_t maxLevelCount, int32_t *levelcount,
+LEVELDATA *Levels_ConfigureList(char *file, VARIPTR *buf, VARIPTR *buf_end, int32_t maxLevelCount, int32_t *levelcount,
                                 void *levelSetDefaults);
 
 void Level_SetDefaults(LEVELDATA *level);

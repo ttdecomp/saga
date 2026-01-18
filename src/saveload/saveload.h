@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include "decomp.h"
+#include "nu2api.saga/nucore/common.h"
 
 C_API_START
 
@@ -13,7 +14,7 @@ extern int32_t saveload_savepresent;
 extern int32_t saveload_slotused[6];
 extern int32_t saveload_slotcode[6];
 
-void saveloadInit(void **bufferStart, void *bufferEnd, int32_t, char *prodcode, char *iconname, char *unicodename,
+void saveloadInit(VARIPTR *buf, VARIPTR buf_end, int32_t, char *prodcode, char *iconname, char *unicodename,
                   int32_t);
 
 int32_t saveloadLoadSlot(int32_t slot, void *buffer, size_t size);

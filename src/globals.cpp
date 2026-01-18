@@ -1,4 +1,5 @@
 #include "globals.h"
+#include "nu2api.saga/nucore/common.h"
 
 int32_t PAL = 0;
 float FRAMETIME = 0;
@@ -7,11 +8,11 @@ float DEFAULTFRAMETIME = 0;
 float MAXFRAMETIME = 0;
 
 int32_t SUPERBUFFERSIZE = 0x2EB8EEB;
-void *permbuffer_base = NULL;
-void *original_permbuffer_base = NULL;
-void *superbuffer_end = NULL;
-void *permbuffer_ptr = NULL;
-void *permbuffer_end = NULL;
+VARIPTR permbuffer_base;
+VARIPTR original_permbuffer_base;
+VARIPTR superbuffer_end;
+VARIPTR permbuffer_ptr;
+VARIPTR permbuffer_end;
 
 char prodcode[16] = {0};
 char *iconname = "lego.ico";

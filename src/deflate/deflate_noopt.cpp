@@ -1,6 +1,6 @@
 #include "deflate/deflate.h"
 
-int32_t ExplodeBufferNoHeader(char *param_1, void *param_2, int32_t param_3, uint32_t param_4) {
+int32_t ExplodeBufferNoHeader(char *param_1, void *param_2, int32_t param_3, int32_t param_4) {
     UNIMPLEMENTED();
 }
 

@@ -32,7 +32,7 @@ AREADATA *Area_FindByName(char *name, int32_t *indexDest) {
     return NULL;
 }
 
-AREADATA *Areas_ConfigureList(char *file, void **bufferStart, void **bufferEnd, int count, int *countDest) {
+AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, int count, int *countDest) {
     byte bVar3;
     undefined2 uVar4;
     short sVar5;
@@ -60,8 +60,8 @@ AREADATA *Areas_ConfigureList(char *file, void **bufferStart, void **bufferEnd, 
     } else {
         i = 0;
         bVar2 = false;
-        area2 = (AREADATA *)((int)*bufferStart + 3U & 0xfffffffc);
-        *bufferStart = area2;
+        area2 = (AREADATA *)((int)bufferStart->void_ptr + 3U & 0xfffffffc);
+        bufferStart->void_ptr = area2;
         area = area2;
     LAB_00486340:
         iVar6 = NuFParGetLine(fp);
@@ -354,7 +354,7 @@ AREADATA *Areas_ConfigureList(char *file, void **bufferStart, void **bufferEnd, 
     LAB_004864a0:
         NuFParDestroy(fp);
         if (i != 0) {
-            *bufferStart = area;
+            bufferStart->void_ptr = area;
             if (countDest != (int *)0x0) {
                 *countDest = i;
             }

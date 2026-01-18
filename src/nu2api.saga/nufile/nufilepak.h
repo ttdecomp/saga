@@ -1,6 +1,8 @@
+#pragma once
+
 #include "decomp.h"
 
-#include "nu2api.saga/nucore/types.h"
+#include "nu2api.saga/nucore/common.h"
 
 typedef struct nufilepakhdrv0_s {
     unsigned int type;

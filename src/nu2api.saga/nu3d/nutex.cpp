@@ -51,7 +51,7 @@ LAB_002ad96d:
 
     g_datfileMode = 1;
 
-    file = NuFileOpen(dst, NUFILE_MODE_READ);
+    file = NuFileOpen(dst, NUFILE_READ);
     if (file == 0) {
         id = 0;
     } else {

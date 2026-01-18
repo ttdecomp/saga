@@ -39,7 +39,7 @@ int32_t InCollectList_Index(int32_t id, COLLECTID *list, int32_t count) {
     return -1;
 }
 
-void Collection_Configure(char *file, void **bufferStart, void **bufferEnd) {
+void Collection_Configure(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd) {
     byte bVar1;
     ushort uVar2;
     short sVar3;
@@ -52,9 +52,9 @@ void Collection_Configure(char *file, void **bufferStart, void **bufferEnd) {
     nufpar_s *fp = NuFParCreate(file);
     if (fp != NULL) {
         CollectCount = 0;
-        collect = (COLLECTID *)((int)*bufferStart + 3U & 0xfffffffc);
+        collect = (COLLECTID *)(bufferStart->addr + 3U & 0xfffffffc);
         CollectList = collect;
-        *bufferStart = collect;
+        bufferStart->void_ptr = collect;
 
         COLLECTION_COMPLETIONCOUNT = 0;
 
@@ -120,7 +120,7 @@ void Collection_Configure(char *file, void **bufferStart, void **bufferEnd) {
             CollectList = NULL;
             return;
         }
-        *bufferStart = collect;
+        bufferStart->void_ptr = collect;
     }
 
     return;

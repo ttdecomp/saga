@@ -13,30 +13,29 @@
 #include "nu2api.saga/numemory/numemory.h"
 #include "saveload/saveload.h"
 
-void NuMtlInitEx(void **bufferBase, int32_t usually512) {
+void NuMtlInitEx(VARIPTR *buf, int32_t usually512) {
     // iVar2 = AndroidOBBUtils::LookupPackagePath(path, 1);
     char *path = "res/main.1060.com.wb.lego.tcs.obb";
     // char *path = "/home/fabian/git/lstcs-decomp/game/GAME.DAT";
 
-    nudathdr_s *dat = NuDatOpen(path, bufferBase, 0);
+    nudathdr_s *dat = NuDatOpen(path, buf, 0);
     NuDatSet(dat);
 
-    int32_t size = NuFileLoadBuffer("stuff\\text\\badwords.txt", *bufferBase, 0x100000);
+    int32_t size = NuFileLoadBuffer("stuff\\text\\badwords.txt", buf->void_ptr, 0x100000);
 
     // replace \n with ,
-    char *buf = (char *)*bufferBase;
     for (int32_t i = 0; i < size; i++) {
-        if (buf[i] == '\r') {
-            buf[i] = ',';
-        } else if (buf[i] == '\n') {
-            buf[i] = ' ';
+        if (buf->char_ptr[i] == '\r') {
+            buf->char_ptr[i] = ',';
+        } else if (buf->char_ptr[i] == '\n') {
+            buf->char_ptr[i] = ' ';
         }
     }
     LOG_INFO("%*s", size, buf);
 }
 
-void NuInitHardware(void **bufferBase, void **bufferEnd, int32_t zero) {
-    NuMtlInitEx(bufferBase, 512);
+void NuInitHardware(VARIPTR *buf, VARIPTR *buf_end, ...) {
+    NuMtlInitEx(buf, 512);
 }
 
 uint16_t MakeSaveHash(void) {
@@ -76,8 +75,8 @@ void InitOnce(int32_t argc, char **param_2) {
     NuMemory *memory = NuMemoryGet();
     NuMemoryManager *manager = memory->GetThreadMem();
 
-    permbuffer_base = manager->_BlockAlloc(SUPERBUFFERSIZE, 4, 1, "", 0);
-    superbuffer_end = (void *)(SUPERBUFFERSIZE + (size_t)permbuffer_base);
+    permbuffer_base.void_ptr = manager->_BlockAlloc(SUPERBUFFERSIZE, 4, 1, "", 0);
+    superbuffer_end.char_ptr = permbuffer_base.char_ptr + SUPERBUFFERSIZE;
     original_permbuffer_base = permbuffer_base;
 
     InitGameBeforeConfig();
@@ -601,7 +600,7 @@ void InitGameAfterConfig(void) {
 }
 
 void LoadPermData(BGPROCINFO *proc) {
-    void *legalTex = (void **)((int)superbuffer_end + -0x400000);
+    void *legalTex = (void **)(superbuffer_end.addr + -0x400000);
     int32_t legal_tid = NuTexRead("stuff\\legal\\LEGAL_ENGLISH", &legalTex);
 
     CDataList =

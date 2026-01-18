@@ -59,7 +59,7 @@ void *NuFilePakLoadKey(char *filepath, VARIPTR *buf, VARIPTR buf_end, int alignm
     }
 
     alignment = alignment >= 4 ? alignment : 4;
-    buf->void_ptr = (void *)(((int)buf->void_ptr + alignment - 1) & -alignment);
+    buf->addr = ((buf->addr + alignment - 1) & -alignment);
     hdr = (NUFILEPAKHDR *)buf->void_ptr;
 
     len = NuFileLoadBufferVP(filepath, buf, &buf_end);

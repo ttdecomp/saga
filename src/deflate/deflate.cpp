@@ -216,7 +216,7 @@ uint32_t BuildHuffmanTree(DEFHUFFMAN *tree, uint8_t *codeLengths, int32_t symbol
 static uint8_t LengthDeZigZag[19] = {0x10, 0x11, 0x12, 0x00, 0x08, 0x07, 0x09, 0x06, 0x0a, 0x05,
                                      0x0b, 0x04, 0x0c, 0x03, 0x0d, 0x02, 0x0e, 0x01, 0x0f};
 
-int32_t InflateBuffer(char *buffer, int decodedSize, uint8_t *readBuffer, int32_t readBufferSize) {
+int32_t InflateBuffer(char *buffer, int decodedSize, char *readBuffer, int32_t readBufferSize) {
     DEFLATECONTEXT ctx;
 
     ctx.readBuffer = readBuffer;
@@ -295,7 +295,7 @@ int32_t DecodeDeflated(DEFLATECONTEXT *ctx) {
     uint uVar3;
     uint8_t bVar4;
     uint uVar5;
-    uint8_t *buf;
+    char *buf;
 
     uVar5 = 0;
     ctx->field2_0x8 = 0;

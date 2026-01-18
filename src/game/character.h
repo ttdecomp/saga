@@ -1,7 +1,8 @@
 #pragma once
 
-#include <stddef.h>
 #include <stdint.h>
+
+#include "nu2api.saga/nucore/common.h"
 
 struct charfixup_s {
     char *name;
@@ -352,5 +353,5 @@ extern GAMECHARACTERDATA *GCDataList;
 
 int32_t CharIDFromName(char *name);
 
-CHARACTERDATA *ConfigureCharacterList(char *file, void **bufferStart, void **bufferEnd, int32_t count,
+CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, int32_t count,
                                       int32_t *countDest, int32_t count2, GAMECHARACTERDATA **dest);

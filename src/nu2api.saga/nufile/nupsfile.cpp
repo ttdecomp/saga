@@ -38,11 +38,11 @@ NUPSFILE NuPSFileOpen(const char *name, NUFILEMODE mode) {
 
         FILE *file = NULL;
 
-        if (mode == NUFILE_MODE_READ) {
+        if (mode == NUFILE_READ) {
             file = fopen(path, "rb");
-        } else if (mode == NUFILE_MODE_WRITE) {
+        } else if (mode == NUFILE_WRITE) {
             file = fopen(path, "wb");
-        } else if (mode == NUFILE_MODE_APPEND) {
+        } else if (mode == NUFILE_APPEND) {
             file = fopen(path, "ab+");
         } else {
             return -1;

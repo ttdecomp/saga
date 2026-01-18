@@ -440,7 +440,7 @@ int32_t CharIDFromName(char *name) {
     return -1;
 }
 
-CHARACTERDATA *ConfigureCharacterList(char *file, void **bufferStart, void **bufferEnd, int count, int *countDest,
+CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, int count, int *countDest,
                                       int count2, GAMECHARACTERDATA **dataList) {
     bool bVar1;
     bool bVar2;
@@ -459,8 +459,8 @@ CHARACTERDATA *ConfigureCharacterList(char *file, void **bufferStart, void **buf
     if (500 < count) {
         count = 500;
     }
-    *bufferStart = (void *)((int)*bufferStart + 3U & 0xfffffffc);
-    characterdata = (CHARACTERDATA *)*bufferStart;
+    bufferStart->void_ptr = (void *)(bufferStart->addr + 3U & 0xfffffffc);
+    characterdata = (CHARACTERDATA *)bufferStart->void_ptr;
     i = 0;
 
     memset(buf, 0, 10000);
@@ -533,24 +533,24 @@ CHARACTERDATA *ConfigureCharacterList(char *file, void **bufferStart, void **buf
     if (i < 1) {
         characterdata = NULL;
     } else {
-        *bufferStart = cdata;
-        memmove(*bufferStart, buf, offset);
+        bufferStart->void_ptr = cdata;
+        memmove(bufferStart->void_ptr, buf, offset);
         for (j = 0; j < i; j = j + 1) {
-            characterdata[j].dir = (char *)((int)dirnameOffsets[j] + (int)*bufferStart);
-            characterdata[j].file = (char *)((int)filenameOffsets[j] + (int)*bufferStart);
+            characterdata[j].dir = (char *)((int)dirnameOffsets[j] + (int)bufferStart->void_ptr);
+            characterdata[j].file = (char *)((int)filenameOffsets[j] + (int)bufferStart->void_ptr);
         }
-        *bufferStart = (void *)((int)*bufferStart + offset);
-        *bufferStart = (void *)((int)*bufferStart + 3U & 0xfffffffc);
+        bufferStart->void_ptr = (void *)((int)bufferStart->void_ptr + offset);
+        bufferStart->void_ptr = (void *)((int)bufferStart->void_ptr + 3U & 0xfffffffc);
         if (0 < count2) {
             if (dataList != NULL) {
-                *dataList = (gamecharacterdata_s *)*bufferStart;
+                *dataList = (gamecharacterdata_s *)bufferStart->void_ptr;
             }
             for (j = 0; j < i; j = j + 1) {
-                characterdata[j].field11_0x24 = *bufferStart;
-                *bufferStart = (void *)((int)*bufferStart + count2);
+                characterdata[j].field11_0x24 = bufferStart->void_ptr;
+                bufferStart->void_ptr = (void *)((int)bufferStart->void_ptr + count2);
             }
         }
-        *bufferStart = (void *)((int)*bufferStart + 3U & 0xfffffffc);
+        bufferStart->void_ptr = (void *)((int)bufferStart->void_ptr + 3U & 0xfffffffc);
         if (countDest != (int *)0x0) {
             *countDest = i;
         }

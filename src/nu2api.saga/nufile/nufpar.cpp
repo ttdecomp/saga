@@ -97,7 +97,7 @@ NUFPAR *NuFParCreate(char *filename) {
     NUFILE file_handle;
 
     if (NuFileExists(filename)) {
-        file_handle = NuFileOpen(filename, NUFILE_MODE_READ);
+        file_handle = NuFileOpen(filename, NUFILE_READ);
         if (file_handle != 0) {
             NUFPAR *parser = NuFParOpen(file_handle);
             if (parser != NULL) {

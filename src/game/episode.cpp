@@ -6,7 +6,7 @@
 
 EPISODEDATA *EDataList = NULL;
 
-EPISODEDATA *Episodes_ConfigureList(char *file, void **bufferStart, void **bufferEnd, int32_t maxCount,
+EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, int32_t maxCount,
                                     int32_t *countDest) {
     short *psVar1;
     byte bVar2;
@@ -34,8 +34,8 @@ EPISODEDATA *Episodes_ConfigureList(char *file, void **bufferStart, void **buffe
     } else {
         count = 0;
         bVar3 = false;
-        episodePtr = (EPISODEDATA *)((int)*bufferStart + 3U & 0xfffffffc);
-        *bufferStart = episodePtr;
+        episodePtr = (EPISODEDATA *)((int)bufferStart->void_ptr + 3U & 0xfffffffc);
+        bufferStart->void_ptr = episodePtr;
         episode = episodePtr;
     LAB_00488f90:
         iVar4 = NuFParGetLine(fp);
@@ -109,7 +109,7 @@ EPISODEDATA *Episodes_ConfigureList(char *file, void **bufferStart, void **buffe
     end:
         NuFParDestroy(fp);
         if (count != 0) {
-            *bufferStart = episode;
+            bufferStart->void_ptr = episode;
             if (countDest == (int *)0x0) {
                 return episodePtr;
             }

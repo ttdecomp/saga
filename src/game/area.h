@@ -82,7 +82,7 @@ C_API_END
 
 AREADATA *Area_FindByName(char *name, int32_t *indexDest);
 
-AREADATA *Areas_ConfigureList(char *file, void **bufferStart, void **bufferEnd, int count, int *countDest);
+AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, int count, int *countDest);
 
 static inline AREAFLAGS operator|(AREAFLAGS a, AREAFLAGS b) {
     return static_cast<AREAFLAGS>(static_cast<int>(a) | static_cast<int>(b));

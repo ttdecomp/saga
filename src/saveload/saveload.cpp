@@ -76,8 +76,7 @@ static int32_t saveload_getinfo(void) {
     return count;
 }
 
-void saveloadInit(void **bufferStart, void *bufferEnd, int32_t, char *prodcode, char *iconname, char *unicodename,
-                  int32_t) {
+void saveloadInit(VARIPTR *buf, VARIPTR buf_end, int32_t, char *prodcode, char *iconname, char *unicodename, int32_t) {
     saveload_getinfo();
     saveload_status = 1;
     saveload_autosave = -1;

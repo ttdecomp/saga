@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include "decomp.h"
+#include "nu2api.saga/nucore/common.h"
 
 struct episodedata_s {
     int16_t nameId;
@@ -23,7 +24,7 @@ C_API_END
 
 #ifdef __cplusplus
 
-EPISODEDATA *Episodes_ConfigureList(char *file, void **bufferStart, void **bufferEnd, int32_t maxCount,
+EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, int32_t maxCount,
                                     int32_t *countDest);
 
 #endif

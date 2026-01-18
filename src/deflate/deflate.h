@@ -18,8 +18,8 @@ struct DEFHUFFMAN {
 typedef struct DEFHUFFMAN DEFHUFFMAN;
 
 struct DEFLATECONTEXT {
-    uint8_t *readBuffer;
-    uint8_t *readBufferEnd;
+    char *readBuffer;
+    char *readBufferEnd;
     uint field2_0x8;
     uint field3_0xc;
     void *currentPos;
@@ -30,9 +30,9 @@ struct DEFLATECONTEXT {
 };
 typedef struct DEFLATECONTEXT DEFLATECONTEXT;
 
-int32_t ExplodeBufferNoHeader(char *param_1, void *param_2, int32_t param_3, uint32_t param_4);
+int32_t ExplodeBufferNoHeader(char *param_1, void *param_2, int32_t param_3, int32_t param_4);
 
-int32_t InflateBuffer(char *buffer, int decodedSize, uint8_t *readBuffer, int32_t readBufferSize);
+int32_t InflateBuffer(char *buffer, int decodedSize, char *readBuffer, int32_t readBufferSize);
 
 int32_t ExplodeBufferSize(char *buf);
 

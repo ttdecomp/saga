@@ -7,7 +7,7 @@
 
 #include <string.h>
 
-MISSIONSYS *Missions_Configure(char *file, void **bufferStart, void **bufferEnd, MISSIONSAVE *save) {
+MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, MISSIONSAVE *save) {
     short psVar2;
     short sVar1;
     nufpar_s *fp;
@@ -33,8 +33,8 @@ MISSIONSYS *Missions_Configure(char *file, void **bufferStart, void **bufferEnd,
         }
 
         sys.flags = 1;
-        buffer = (short *)((int)*bufferStart + 3U & 0xfffffffc);
-        *bufferStart = buffer;
+        buffer = (short *)((int)bufferStart->void_ptr + 3U & 0xfffffffc);
+        bufferStart->void_ptr = buffer;
         sys.missionSave = save;
         sys.length = (int)buffer;
 
@@ -138,7 +138,7 @@ MISSIONSYS *Missions_Configure(char *file, void **bufferStart, void **bufferEnd,
                         if ((*buffer != -1) && (buffer[1] != -1)) {
                             sys.count = sys.count + 1;
                             buffer = buffer + 0xc;
-                            *bufferStart = (void *)((int)*bufferStart + 0x18);
+                            bufferStart->void_ptr = (void *)((int)bufferStart->void_ptr + 0x18);
                         }
                     }
                 }
@@ -147,10 +147,10 @@ MISSIONSYS *Missions_Configure(char *file, void **bufferStart, void **bufferEnd,
 
         NuFParDestroy(fp);
         if (sys.count != 0) {
-            dest = (MISSIONSYS *)((int)*bufferStart + 3U & 0xfffffffc);
-            *bufferStart = dest;
+            dest = (MISSIONSYS *)((int)bufferStart->void_ptr + 3U & 0xfffffffc);
+            bufferStart->void_ptr = dest;
             memmove(dest, &sys, 0x30);
-            *bufferStart = (void *)((int)*bufferStart + 0x33U & 0xfffffffc);
+            bufferStart->void_ptr = (void *)((int)bufferStart->void_ptr + 0x33U & 0xfffffffc);
             return dest;
         }
     }

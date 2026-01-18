@@ -5,6 +5,7 @@
 #include "game/mission.h"
 
 #include "decomp.h"
+#include "nu2api.saga/nucore/common.h"
 
 C_API_START
 
@@ -213,11 +214,11 @@ extern float DEFAULTFRAMETIME;
 extern float MAXFRAMETIME;
 
 extern int32_t SUPERBUFFERSIZE;
-extern void *permbuffer_base;
-extern void *original_permbuffer_base;
-extern void *superbuffer_end;
-extern void *permbuffer_ptr;
-extern void *permbuffer_end;
+extern VARIPTR permbuffer_base;
+extern VARIPTR original_permbuffer_base;
+extern VARIPTR superbuffer_end;
+extern VARIPTR permbuffer_ptr;
+extern VARIPTR permbuffer_end;
 
 extern char prodcode[16];
 extern char *iconname;

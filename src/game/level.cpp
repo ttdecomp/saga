@@ -2,6 +2,7 @@
 
 #include "globals.h"
 #include "nu2api.saga/nucore/nustring.h"
+#include "nu2api.saga/nufile/export.h"
 #include "nu2api.saga/nufile/nufpar.h"
 
 LEVELDATA *LDataList = NULL;
@@ -10,7 +11,7 @@ LEVELDATA *LOADGAME_LDATA = NULL;
 
 int32_t MAXLDATA = 64;
 
-LEVELDATA *Levels_ConfigureList(char *file, void **param_2, void **param_3, int32_t maxLevelCount, int32_t *levelcount,
+LEVELDATA *Levels_ConfigureList(char *file, VARIPTR *param_2, VARIPTR *param_3, int32_t maxLevelCount, int32_t *levelcount,
                                 void *levelSetDefaults) {
 
     nufpar_s *fp = NuFParCreate(file);
@@ -19,8 +20,8 @@ LEVELDATA *Levels_ConfigureList(char *file, void **param_2, void **param_3, int3
     MAXLDATA = maxLevelCount;
 
     bool bVar2 = false;
-    LEVELDATA *pLVar4 = (LEVELDATA *)((int)*param_2 + 3U & 0xfffffffc);
-    *param_2 = pLVar4;
+    LEVELDATA *pLVar4 = (LEVELDATA *)((int)param_2->void_ptr + 3U & 0xfffffffc);
+    param_2->void_ptr = pLVar4;
 
     LEVELDATA *level = pLVar4;
 
@@ -34,7 +35,7 @@ LAB_00484810:
                 if (i == 0) {
                     pLVar4 = NULL;
                 } else {
-                    *param_2 = level;
+                    param_2->void_ptr = level;
                     if (levelcount == NULL) {
                         return pLVar4;
                     }

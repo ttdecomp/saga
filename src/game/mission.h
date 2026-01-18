@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include "game/timer.h"
+#include "nu2api.saga/nucore/common.h"
 
 struct missionsave_s {
     char data[0xc];
@@ -25,4 +26,4 @@ struct missionsys_s {
 };
 typedef struct missionsys_s MISSIONSYS;
 
-MISSIONSYS *Missions_Configure(char *file, void **bufferStart, void **bufferEnd, MISSIONSAVE *save);
+MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, MISSIONSAVE *save);
