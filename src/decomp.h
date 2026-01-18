@@ -36,7 +36,7 @@ static const char *reset = "\x1b[0m";
 
 static const enum log_level LOG_LEVEL = LOG_LEVEL_DEBUG;
 
-static void log(enum log_level level, const char *file, int line, const char *func, const char *fmt, ...) {
+static void _saga_log(enum log_level level, const char *file, int line, const char *func, const char *fmt, ...) {
     if (level > LOG_LEVEL) {
         return;
     }
@@ -49,7 +49,7 @@ static void log(enum log_level level, const char *file, int line, const char *fu
     va_end(args);
 }
 
-#define LOG(level, ...) log(level, __FILENAME__, __LINE__, __func__, __VA_ARGS__)
+#define LOG(level, ...) _saga_log(level, __FILENAME__, __LINE__, __func__, __VA_ARGS__)
 #define LOG_WARN(...) LOG(LOG_LEVEL_WARN, __VA_ARGS__)
 #define LOG_INFO(...) LOG(LOG_LEVEL_INFO, __VA_ARGS__)
 #define LOG_DEBUG(...) LOG(LOG_LEVEL_DEBUG, __VA_ARGS__)

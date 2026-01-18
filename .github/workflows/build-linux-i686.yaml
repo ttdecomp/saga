@@ -16,6 +16,11 @@ jobs:
       - name: install gcc for i686
         run: sudo apt-get install gcc-multilib g++-multilib
 
+      - name: gcc versions
+        run: |
+          gcc --version
+          g++ --version
+
       - name: Install CMake 4.x
         uses: lukka/get-cmake@latest
 
