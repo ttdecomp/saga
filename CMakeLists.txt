@@ -149,16 +149,21 @@ if(BUILD_FOR_HOST)
     
     function(add_saga_test file test_description)
         get_filename_component(test_name ${file} NAME_WE)
+        
         add_executable(${test_name} ${file})
         target_include_directories(${test_name} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
         target_link_libraries(${test_name} saga_shared)
+        
         add_test(
             NAME ${test_name}
             COMMAND ${test_name}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )
+        
         set_target_properties(${test_name} PROPERTIES CXX_STANDARD 23)
+        set_target_properties(${test_name} PROPERTIES CXX_STANDARD_REQUIRED ON)
         set_tests_properties(${test_name} PROPERTIES LABELS "${test_description}")
+        
         set_filename_macro(${file})
     endfunction()
 
