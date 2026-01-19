@@ -1,5 +1,5 @@
-#include "nu2api.saga/nucore/nustring.h"
 #include "nu2api.saga/nufile/nufile.h"
+#include "nu2api.saga/nucore/nustring.h"
 
 int DEVHOST_Interrogate(NUFILE_DEVICE *device) {
     device->status = 1;
@@ -10,31 +10,36 @@ int DEVHOST_Interrogate(NUFILE_DEVICE *device) {
 int DEV_FormatName(NUFILE_DEVICE *device, char *formatted_name, char *path, int buf_size) {
     char buf[512];
     int device_name_len;
-    char sep;
+    char *subpath;
     int path_pos;
     int path_len;
     int sep_pos;
+    char *root;
 
     device_name_len = NuStrLen(device->name);
 
     if (NuStrNICmp(path, device->name, device_name_len) == 0) {
         sep_pos = NuStrLen(device->name);
+        subpath = &path[sep_pos];
 
-        if (path[sep_pos] == '\\' || path[sep_pos] == '/') {
+        if (*subpath == '\\' || *subpath == '/') {
             NuStrCpy(buf, path);
+            root = device->root;
         } else {
-            NuStrCpy(buf, device->root);
+            root = device->root;
+            NuStrCpy(buf, root);
             NuStrCat(buf, device->cur_dir);
-            NuStrCat(buf, path + sep_pos);
+            NuStrCat(buf, subpath);
         }
     } else {
-        NuStrCpy(buf, device->root);
+        root = device->root;
+        NuStrCpy(buf, root);
         NuStrCat(buf, device->cur_dir);
         NuStrCat(buf, path);
     }
 
-    path_pos = NuStrLen(device->root);
-    NuFileCorrectSlashes(device, path + path_pos);
+    path_pos = NuStrLen(root);
+    NuFileCorrectSlashes(device, buf + path_pos);
     NuFileReldirFix(device, buf);
 
     path_len = NuStrLen(buf);
@@ -48,4 +53,9 @@ int DEV_FormatName(NUFILE_DEVICE *device, char *formatted_name, char *path, int 
 
 int32_t NuFileReadDir(NUFILE file) {
     return 0;
+}
+
+int32_t NuFileExists(char *name) {
+    LOG_DEBUG("name=%s", name);
+    return NuFileSize(name) > 0;
 }

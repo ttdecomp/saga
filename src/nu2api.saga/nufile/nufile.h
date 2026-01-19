@@ -165,14 +165,7 @@ enum NUFILE_OFFSETS {
 #define NUFILE_INDEX_NATIVE(handle) ((handle) - NUFILE_OFFSET_NATIVE)
 #define NUFILE_INVALID ((NUFILE)(-1))
 
-typedef struct filebuff_s FileBuffer;
-
 C_API_START
-
-extern int32_t numdevices;
-extern NUFILE_DEVICE devices[16];
-extern int32_t file_criticalsection;
-extern FILE *g_fileHandles[32];
 
 int DEV_FormatName(NUFILE_DEVICE *device, char *formatted_name, char *path, int buf_size);
 int DEVHOST_Interrogate(NUFILE_DEVICE *device);
@@ -189,11 +182,12 @@ int NuFileRead(NUFILE file, void *buf, int size);
 NUFILE_DEVICE *NuFileGetDeviceFromPath(char *path);
 int64_t NuFileOpenSize(NUFILE file);
 int64_t NuFileSeek(NUFILE file, int64_t offset, NUFILESEEK seekMode);
-int32_t NuFileLoadBuffer(char *filepath, void *buf, int size);
+int32_t NuFileLoadBuffer(char *filepath, void *buf, int buf_size);
 int32_t NuFileLoadBufferVP(char *filepath, VARIPTR *buf, VARIPTR *buf_end);
 int32_t NuFileExists(char *name);
 int64_t NuFileSize(char *filepath);
 int64_t NuFilePos(NUFILE file);
+void NuFileUpCase(void *param_1, char *path);
 
 // read types
 int8_t NuFileReadChar(NUFILE file);
@@ -208,7 +202,7 @@ uint16_t NuFileReadWChar(NUFILE file);
 
 // Platform-specific file functions
 int32_t NuGetFileHandlePS(void);
-int32_t NuPSFileOpen(const char *path, NUFILEMODE mode);
+int32_t NuPSFileOpen(char *filepath, NUFILEMODE mode);
 int32_t NuPSFileClose(int32_t index);
 int32_t NuPSFileRead(int32_t index, void *dest, int32_t len);
 int32_t NuPSFileWrite(int32_t index, const void *src, int32_t len);
@@ -245,7 +239,7 @@ int64_t NuDatFileSeek(NUFILE file, int64_t offset, NUFILESEEK whence);
 int32_t NuDatFileFindTree(NUDATHDR *header, char *name);
 int32_t NuDatFileLoadBuffer(NUDATHDR *dat, char *name, void *dest, int32_t maxSize);
 
-void NuFileUpCase(void *param_1, char *path);
+int NuPPLoadBuffer(NUFILE file, void *buf, int buf_size);
 
 C_API_END
 

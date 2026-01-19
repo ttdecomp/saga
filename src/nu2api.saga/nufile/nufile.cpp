@@ -5,7 +5,6 @@
 #include "deflate/deflate.h"
 #include "nu2api.saga/nucore/common.h"
 #include "nu2api.saga/nucore/nustring.h"
-#include "nu2api.saga/nufile/export.h"
 #include "nu2api.saga/nufile/nufile.h"
 #include "nu2api.saga/nuthread/nuthread.h"
 
@@ -85,13 +84,13 @@ NUFILE_DEVICE host_device = {
 NUFILE_DEVICE *default_device = &host_device;
 
 static int file_time_count;
-static FileBuffer file_buff[4];
+static FILEBUFF file_buff[4];
 
 static void AquireFileBuffer(FILEINFO *info) {
     int i;
     int buf_idx;
     int time;
-    FileBuffer *buf;
+    FILEBUFF *buf;
     int bytes_read;
 
     buf_idx = 0;
@@ -124,26 +123,30 @@ int32_t numdevices = 0;
 NUFILE_DEVICE devices[16] = {0};
 
 int32_t file_criticalsection;
-FILE *g_fileHandles[32] = {NULL};
 
 NUFILE_DEVICE *NuFileGetDeviceFromPath(char *path) {
-    LOG_DEBUG("path=%s", path);
-
+    NUFILE_DEVICE *device;
     int i;
-    for (i = 0; (i < 8 && (path[i] != ':')); i = i + 1) {
+    int device_idx;
+
+    device = NULL;
+
+    for (i = 0; i < 8; i++) {
+        if (path[i] == ':') {
+            break;
+        }
     }
 
     if (i < 8) {
-        for (int32_t index = 0; index < numdevices; index++) {
-            if (NuStrNICmp(path, devices[index].name, devices[index].match_len) == 0) {
-                return &devices[index];
+        for (device_idx = 0; device_idx < numdevices; device_idx++) {
+            if (NuStrNICmp(path, devices[device_idx].name, devices[device_idx].match_len) == 0) {
+                device = &devices[device_idx];
+                break;
             }
         }
     }
 
-    LOG_DEBUG("No device found for path=%s", path);
-
-    return NULL;
+    return device;
 }
 
 NUFILE NuFileOpen(char *filepath, NUFILEMODE mode) {
@@ -493,11 +496,6 @@ int NuFileRead(NUFILE file, void *buf, int size) {
     }
 }
 
-int32_t NuFileExists(char *name) {
-    LOG_DEBUG("name=%s", name);
-    return NuFileSize(name) > 0 ? 1 : 0;
-}
-
 int8_t NuFileReadChar(NUFILE file) {
     int8_t value = 0;
     NuFileRead(file, &value, sizeof(int8_t));
@@ -546,50 +544,53 @@ uint16_t NuFileReadWChar(NUFILE file) {
     return value;
 }
 
-int32_t NuFileLoadBuffer(char *filepath, void *buf, int size) {
-    int j;
+int32_t NuFileLoadBuffer(char *filepath, void *buf, int buf_size) {
+    NUFILE file;
     int iVar2;
-    longlong lVar1;
-    int i;
+    int lVar1;
+    int loaded;
 
     nufile_lasterror = 0;
-    i = 0;
+    loaded = 0;
 
-    if ((curr_dat == NULL) || (i = NuDatFileLoadBuffer(curr_dat, filepath, buf, size), nufile_lasterror != -1)) {
-        if (i == 0) {
-            j = NuFileExists(filepath);
-            if (j == 0) {
-                nufile_lasterror = -2;
-            } else {
-                j = NuFileOpen(filepath, NUFILE_READ);
-                if (j == 0) {
-                    nufile_lasterror = -3;
+    if (curr_dat != NULL) {
+        loaded = NuDatFileLoadBuffer(curr_dat, filepath, buf, buf_size);
+
+        if (nufile_lasterror == -1) {
+            return 0;
+        }
+    }
+
+    if (loaded == 0) {
+        if (NuFileExists(filepath)) {
+            file = NuFileOpen(filepath, NUFILE_READ);
+            if (file != 0) {
+                if (nufile_try_packed) {
+                    loaded = NuPPLoadBuffer(file, buf, buf_size);
                 } else {
-                    if (nufile_try_packed == 0) {
-                        i = NuFileOpenSize(j);
-                        if ((size < i) || (i == 0)) {
-                            nufile_lasterror = -1;
-                            i = 0;
-                        } else {
-                            while (iVar2 = NuFileRead(j, buf, i), iVar2 < 0) {
-                                do {
-                                    lVar1 = NuFileSeek(j, 0, NUFILE_SEEK_START);
-                                } while (lVar1 < 0);
+                    loaded = NuFileOpenSize(file);
+
+                    if (loaded <= buf_size && loaded != 0) {
+                        while (NuFileRead(file, buf, loaded) < 0) {
+                            while (NuFileSeek(file, 0, NUFILE_SEEK_START) < 0) {
                             }
                         }
                     } else {
-                        // i = NuPPLoadBuffer(j, dest, size);
-                        UNIMPLEMENTED("PP");
+                        nufile_lasterror = -1;
+                        loaded = 0;
                     }
-                    NuFileClose(j);
                 }
+
+                NuFileClose(file);
+            } else {
+                nufile_lasterror = -3;
             }
+        } else {
+            nufile_lasterror = -2;
         }
-    } else {
-        i = 0;
     }
 
-    return i;
+    return loaded;
 }
 
 int32_t NuFileLoadBufferVP(char *filepath, VARIPTR *buf, VARIPTR *buf_end) {
@@ -1047,30 +1048,32 @@ void NuDatFileClose(NUFILE file) {
     info->used = 0;
 }
 
-int64_t NuDatFileSeek(NUFILE file, int64_t seek, NUFILESEEK whence) {
-    int32_t index = NUFILE_INDEX_DAT(file);
+int64_t NuDatFileSeek(NUFILE file, int64_t offset, NUFILESEEK whence) {
+    NUDATFILEINFO *info;
+    NUDATHDR *hdr;
+    NUDATOPENFILEINFO *open_info;
+    int64_t offset_in_dat;
 
-    nudathdr_s *hdr = dat_file_infos[index].hdr;
-    int ofile = dat_file_infos[index].open_file_idx;
+    file -= 0x800;
+    info = &dat_file_infos[file];
+    open_info = &info->hdr->open_files[info->open_file_idx];
 
-    int64_t offset;
-
-    if (whence == NUFILE_SEEK_CURRENT) {
-        offset = seek + dat_file_infos[index].start;
-    } else if (whence == NUFILE_SEEK_END) {
-        int64_t end = (int64_t)dat_file_infos[index].file_len + dat_file_infos[index].start;
-
-        offset = end - seek;
-    } else {
-        offset = seek + dat_file_infos[index].start;
+    switch (whence) {
+        default:
+            offset_in_dat = offset + info->start;
+            break;
+        case NUFILE_SEEK_CURRENT:
+            offset_in_dat = offset + info->pos;
+            break;
+        case NUFILE_SEEK_END:
+            offset_in_dat = info->start + info->file_len - offset;
+            break;
     }
 
-    int64_t pos = NuFileSeek(hdr->open_files[ofile].dat_file, offset, NUFILE_SEEK_START);
+    info->pos = NuFileSeek(open_info->dat_file, offset_in_dat, NUFILE_SEEK_START);
+    open_info->pos = info->pos;
 
-    dat_file_infos[index].pos = pos;
-    hdr->open_files[ofile].pos = pos;
-
-    return pos;
+    return info->pos;
 }
 
 int64_t NuDatFilePos(NUFILE file) {
@@ -1165,6 +1168,27 @@ int32_t NuDatFileGetFreeInfo(void) {
     NuThreadCriticalSectionEnd(file_criticalsection);
 
     return found;
+}
+
+int32_t NuDatFileGetFreeHandleIX(NUDATHDR *hdr, int32_t info_idx) {
+    int32_t file_idx;
+    int i;
+
+    file_idx = -1;
+
+    NuThreadCriticalSectionBegin(file_criticalsection);
+
+    for (i = 0; i < 20; i++) {
+        if (hdr->open_files[i].info_idx == -1) {
+            hdr->open_files[i].info_idx = info_idx;
+            file_idx = i;
+            break;
+        }
+    }
+
+    NuThreadCriticalSectionEnd(file_criticalsection);
+
+    return file_idx;
 }
 
 int32_t NuDatFileOpenSize(NUFILE file) {
@@ -1345,4 +1369,8 @@ void *NuMemFileAddr(NUFILE file) {
     file -= 0x400;
 
     return (void *)memfiles[file].ptr;
+}
+
+int NuPPLoadBuffer(NUFILE file, void *buf, int buf_size) {
+    UNIMPLEMENTED("PP");
 }

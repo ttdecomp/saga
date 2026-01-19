@@ -1,10 +1,11 @@
 #include "nu2api.saga/nucore/nustring.h"
 #include "nu2api.saga/nufile/nufile.h"
-#include "nu2api.saga/nuthread/nuthread.h"
 
-#include <cstring>
+#include <string.h>
 
 #include "decomp.h"
+
+static FILE *g_fileHandles[32];
 
 int32_t NuPSFileRead(NUPSFILE index, void *dest, int32_t len) {
     LOG_DEBUG("index=%d, dest=%p, len=%zu", index, dest, len);
@@ -19,40 +20,45 @@ int32_t NuPSFileWrite(NUPSFILE index, const void *src, int32_t len) {
     return fwrite(src, 1, len, files[index]);
 }
 
-NUPSFILE NuPSFileOpen(const char *name, NUFILEMODE mode) {
+NUPSFILE NuPSFileOpen(char *filepath, NUFILEMODE mode) {
+    char path[1024];
+    NUPSFILE ps_file;
+    FILE *file;
+
     LOG_DEBUG("name=%s, mode=%d", name, mode);
 
-    char path[1024];
-
-    memset(path, 0, sizeof(path));
-    NuStrCpy(path, name);
-
     if (mode != 5) {
+        memset(path, 0, sizeof(path));
+        NuStrCpy(path, filepath);
+
         for (char *c = path; *c != '\0'; c++) {
             if (*c == '\\') {
                 *c = '/';
             }
         }
 
-        NUPSFILE i = NuGetFileHandlePS();
+        ps_file = NuGetFileHandlePS();
 
-        FILE *file = NULL;
-
-        if (mode == NUFILE_READ) {
-            file = fopen(path, "rb");
-        } else if (mode == NUFILE_WRITE) {
-            file = fopen(path, "wb");
-        } else if (mode == NUFILE_APPEND) {
-            file = fopen(path, "ab+");
-        } else {
-            return -1;
+        file = NULL;
+        switch (mode) {
+            case NUFILE_READ:
+                file = fopen(path, "rb");
+                break;
+            case NUFILE_WRITE:
+                file = fopen(path, "wb");
+                break;
+            case NUFILE_APPEND:
+                file = fopen(path, "ab+");
+                break;
+            default:
+                return -1;
         }
 
         if (file != NULL) {
-            g_fileHandles[i] = file;
+            g_fileHandles[ps_file] = file;
 
             LOG_DEBUG("Opened file %s with index %d", path, i);
-            return i;
+            return ps_file;
         }
     }
 

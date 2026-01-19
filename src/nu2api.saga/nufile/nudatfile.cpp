@@ -1,7 +1,6 @@
 #include "nu2api.saga/nufile/nufile.h"
 
 #include "nu2api.saga/nucore/nustring.h"
-#include "nu2api.saga/nuthread/nuthread.h"
 
 #include "deflate/deflate.h"
 
@@ -37,28 +36,6 @@ size_t BinarySearch(uint32_t element, uint32_t *array, size_t length) {
     }
 
     return -1;
-}
-
-int32_t NuDatFileGetFreeHandleIX(nudathdr_s *header, int32_t freeIndex) {
-    int32_t i;
-    int32_t local_10;
-
-    local_10 = -1;
-    NuThreadCriticalSectionBegin(file_criticalsection);
-    i = 0;
-    do {
-        if (19 < i) {
-        LAB_0026cede:
-            NuThreadCriticalSectionEnd(file_criticalsection);
-            return local_10;
-        }
-        if (header->open_files[i].info_idx == -1) {
-            header->open_files[i].info_idx = freeIndex;
-            local_10 = i;
-            goto LAB_0026cede;
-        }
-        i = i + 1;
-    } while (1);
 }
 
 int32_t NuDatFileFindHash(nudathdr_s *header, char *name) {
