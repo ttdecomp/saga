@@ -429,7 +429,12 @@ int64_t NuFileOpenSize(NUFILE file) {
     return file_info[file].file_len;
 }
 
-int32_t NuFileRead(NUFILE file, void *buf, int size) {
+int NuFileRead(NUFILE file, void *buf, int size) {
+    FILEINFO *info;
+    int bytes_read;
+    char *char_buf;
+    int available;
+
     if (file >= 0x2000) {
         return NuFileAndroidAPK::ReadFile(file, buf, size);
     }
@@ -443,16 +448,15 @@ int32_t NuFileRead(NUFILE file, void *buf, int size) {
     }
 
     file -= 1;
-
-    FILEINFO *info = &file_info[file];
+    info = &file_info[file];
 
     if (info->use_buf) {
         if (info->buf == NULL) {
             AquireFileBuffer(info);
         }
 
-        int32_t bytes_read = 0;
-        char *char_buf = (char *)buf;
+        bytes_read = 0;
+        char_buf = (char *)buf;
 
         while (size > 0) {
             if (info->read_pos >= info->file_len) {
@@ -470,7 +474,7 @@ int32_t NuFileRead(NUFILE file, void *buf, int size) {
                 info->file_pos += info->buf_len;
             }
 
-            int32_t available = MIN(info->buf_len + (int)(info->buf_start - info->read_pos), size);
+            available = MIN(info->buf_len + (int)(info->buf_start - info->read_pos), size);
             if (available != 0) {
                 unsigned int to_read;
                 void *file_buf;
@@ -555,10 +559,13 @@ uint16_t NuFileReadWChar(NUFILE file) {
 }
 
 int32_t NuFileLoadBuffer(char *filepath, void *buf, int buf_size) {
-    LOG_DEBUG("filepath=%s, buf=%p, buf_size=%d", filepath, buf, buf_size);
+    NUFILE file;
+    int iVar2;
+    int lVar1;
+    int loaded;
 
     nufile_lasterror = 0;
-    int32_t loaded = 0;
+    loaded = 0;
 
     if (curr_dat != NULL) {
         loaded = NuDatFileLoadBuffer(curr_dat, filepath, buf, buf_size);
@@ -570,7 +577,7 @@ int32_t NuFileLoadBuffer(char *filepath, void *buf, int buf_size) {
 
     if (loaded == 0) {
         if (NuFileExists(filepath)) {
-            NUFILE file = NuFileOpen(filepath, NUFILE_READ);
+            file = NuFileOpen(filepath, NUFILE_READ);
             if (file != 0) {
                 if (nufile_try_packed) {
                     loaded = NuPPLoadBuffer(file, buf, buf_size);
@@ -747,15 +754,16 @@ NUDATHDR *NuDatOpen(char *filepath, VARIPTR *buf, int *_unused) {
 }
 
 NUDATHDR *NuDatOpenEx(char *filepath, VARIPTR *buf, int *_unused, short mode) {
-    LOG_DEBUG("filepath=%s, buf=%p, mode=%d", filepath, buf->void_ptr, mode);
-
     char _unused2[256];
     int path_len;
     int i;
     int j;
     NUFILE file;
+    int64_t seek_offset;
     int file_len;
+    int bytes_read;
     int _unused4;
+    int read_buf[2];
     int total_read;
     int n;
     NUDATHDR *hdr;
@@ -777,23 +785,16 @@ NUDATHDR *NuDatOpenEx(char *filepath, VARIPTR *buf, int *_unused, short mode) {
 
     file = NuFileOpenDF(filepath, (NUFILEMODE)mode, NULL, 0);
     if (file != 0) {
-        int32_t bytes_read = 0;
-
-        int32_t read_buf[2];
+        bytes_read = 0;
 
         file_len = NuFileOpenSize(file);
         bytes_read = NuFileRead(file, read_buf, 8);
         APIEndianSwap(read_buf, 2, 4);
 
-        int32_t offsetH = read_buf[0] >> 31;
-        int32_t offsetL = read_buf[0];
-        if (offsetH < 0) {
-            offsetL = (int)((uint64_t)(uint32_t)read_buf[0] * 0xffffff00);
-            offsetH = (offsetH * -0x100 - read_buf[0]) + (int)((uint64_t)(uint32_t)read_buf[0] * 0xffffff00 >> 32);
+        seek_offset = (int64_t)read_buf[0];
+        if (seek_offset < 0) {
+            seek_offset *= -0x100;
         }
-
-        int64_t seek_offset = CONCAT44(offsetH, offsetL);
-        LOG_DEBUG("seek_offset=0x%llx", seek_offset);
 
         NuFileSeek(file, seek_offset, NUFILE_SEEK_START);
 
@@ -812,12 +813,10 @@ NUDATHDR *NuDatOpenEx(char *filepath, VARIPTR *buf, int *_unused, short mode) {
         bytes_read = NuFileRead(file, &hdr->version, 4);
         total_read += bytes_read;
         APIEndianSwap(&hdr->version, 1, 4);
-        LOG_DEBUG("DAT version: %d", hdr->version);
 
         bytes_read = NuFileRead(file, &hdr->file_count, 4);
         total_read += bytes_read;
         APIEndianSwap(&hdr->file_count, 1, 4);
-        LOG_DEBUG("DAT file count: %d", hdr->file_count);
 
         hdr->file_info = (NUDATFINFO *)((buf->addr + 0x1f) & -0x20);
         buf->addr = (buf->addr + 0x1f) & -0x20;
@@ -1221,10 +1220,12 @@ int32_t NuDatFileOpenSize(NUFILE file) {
 }
 
 int32_t NuDatFileLoadBuffer(nudathdr_s *dat, char *name, void *dest, int32_t buf_size) {
+    NUFILE file;
+    char *buf;
 
     nufile_lasterror = 0;
 
-    NUFILE file = NuDatFileOpen(dat, name, NUFILE_READ);
+    file = NuDatFileOpen(dat, name, NUFILE_READ);
 
     if (file != 0) {
         int32_t size;
@@ -1240,7 +1241,7 @@ int32_t NuDatFileLoadBuffer(nudathdr_s *dat, char *name, void *dest, int32_t buf
             size = dat_file_infos[file - 0x800].file_len;
         }
 
-        char *buf = (char *)dest;
+        buf = (char *)dest;
 
         if (size <= buf_size && size != 0) {
             LOG_DEBUG("Loading %d bytes from dat file", size);
