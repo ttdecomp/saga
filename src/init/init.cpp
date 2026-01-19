@@ -22,6 +22,7 @@ void NuMtlInitEx(VARIPTR *buf, int32_t usually512) {
     NuDatSet(dat);
 
     int32_t size = NuFileLoadBuffer("stuff\\text\\badwords.txt", buf->void_ptr, 0x100000);
+    LOG_DEBUG("Loaded badwords.txt, size=%d", size);
 
     // replace \n with ,
     for (int32_t i = 0; i < size; i++) {
@@ -31,7 +32,7 @@ void NuMtlInitEx(VARIPTR *buf, int32_t usually512) {
             buf->char_ptr[i] = ' ';
         }
     }
-    LOG_INFO("%*s", size, buf);
+    LOG_INFO("%*s", size, buf->char_ptr);
 }
 
 void NuInitHardware(VARIPTR *buf, VARIPTR *buf_end, ...) {

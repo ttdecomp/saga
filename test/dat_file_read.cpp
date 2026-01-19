@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
     // superbuffer_end.char_ptr = permbuffer_base.char_ptr + SUPERBUFFERSIZE;
     // original_permbuffer_base = permbuffer_base;
 
-    const size_t buff_size = 0x100000;
+    const size_t buff_size = 0x200'000;
     auto ptr = std::unique_ptr<uint8_t[]>(new uint8_t[buff_size]);
     VARIPTR buf = {.void_ptr = ptr.get()};
 
@@ -43,6 +43,5 @@ int main(int argc, char **argv) {
         }
     }
 
-    LOG_INFO("%*s", size, buf);
     std::cout.write(buf.char_ptr, size);
 }

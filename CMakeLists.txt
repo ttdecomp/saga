@@ -65,8 +65,6 @@ else()
     include_directories("${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/sources/cxx-stl/stlport/stlport/")
 endif()
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/build")
-
 set(CMAKE_CXX_STANDARD 11)
 
 set(CMAKE_C_STANDARD 11)

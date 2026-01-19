@@ -43,7 +43,7 @@ int32_t NuDatFileFindHash(nudathdr_s *header, char *name) {
 
     int32_t hash = NameToHash(name);
 
-    int32_t r = BinarySearch(hash, (uint32_t *)header->hashes, header->file_count);
+    int32_t r = BinarySearch(hash, header->hash_idxs, header->file_count);
 
     if (r == -1) {
         if (header->hash_count != 0) {
@@ -98,13 +98,13 @@ int32_t NuDatFileFindTree(nudathdr_s *header, char *name) {
     } else {
         i = (int)header->file_tree->child_idx;
         backslash = strchr(name, L'\\');
-        if (backslash != (char *)0x0) {
+        if (backslash != NULL) {
             *backslash = '\0';
         }
         do {
             index = NuStrICmp(header->file_tree[i].name, name);
             if (index == 0) {
-                if (backslash == (char *)0x0) {
+                if (backslash == NULL) {
                     if (header->file_tree[i].child_idx < 1) {
                         return -(int)header->file_tree[i].child_idx;
                     }
@@ -113,13 +113,14 @@ int32_t NuDatFileFindTree(nudathdr_s *header, char *name) {
                 i = (int)header->file_tree[i].child_idx;
                 name = backslash + 1;
                 backslash = strchr(name, L'\\');
-                if (backslash != (char *)0x0) {
+                if (backslash != NULL) {
                     *backslash = '\0';
                 }
             } else {
                 i = (int)header->file_tree[i].child_idx;
             }
         } while (i != 0);
+
         index = -1;
     }
 

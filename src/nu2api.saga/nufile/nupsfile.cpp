@@ -5,10 +5,10 @@
 
 #include "decomp.h"
 
-static FILE *g_fileHandles[32];
+static FILE *g_fileHandles[32] = {NULL};
 
 int32_t NuPSFileRead(NUPSFILE index, void *dest, int32_t len) {
-    LOG_DEBUG("index=%d, dest=%p, len=%zu", index, dest, len);
+    LOG_DEBUG("index=%d, dest=%p, len=%zu, file=%p", index, dest, len, g_fileHandles[index]);
 
     return fread(dest, 1, len, g_fileHandles[index]);
 }
