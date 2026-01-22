@@ -726,8 +726,8 @@ static void NuDatFileDecodeNext() {
         case 2:
             NuFileRead(unpack_file_odi->dat_file, char_buf, 0xc);
 
-            read_buffer_decoded_size = ExplodeBufferSize(char_buf);
-            read_buffer_size = ExplodeCompressedSize(char_buf) - 0xc;
+            read_buffer_decoded_size = ExplodeBufferSize((uint8_t *)char_buf);
+            read_buffer_size = ExplodeCompressedSize((uint8_t *)char_buf) - 0xc;
             NuFileRead(unpack_file_odi->dat_file, read_buffer, read_buffer_size);
 
             unpack_file_info->pos += read_buffer_size + 0xc;
@@ -1121,10 +1121,11 @@ int NuDatFileRead(NUFILE file, void *buf, int size) {
                 if (read_buffer_size == read_buffer_decoded_size) {
                     memcpy(decode_buffer, read_buffer, read_buffer_size);
                 } else if (info->compression_mode == 2) {
-                    ExplodeBufferNoHeader(read_buffer, decode_buffer, read_buffer_size, read_buffer_decoded_size);
+                    ExplodeBufferNoHeader((uint8_t *)read_buffer, (uint8_t *)decode_buffer, read_buffer_size,
+                                          read_buffer_decoded_size);
                 } else if (info->compression_mode == 3) {
-                    inflated_size =
-                        InflateBuffer(decode_buffer, read_buffer_decoded_size, read_buffer, read_buffer_size);
+                    inflated_size = InflateBuffer((uint8_t *)decode_buffer, read_buffer_decoded_size,
+                                                  (uint8_t *)read_buffer, read_buffer_size);
                 }
 
                 decode_buffer_pos = 0;
