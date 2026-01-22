@@ -5,15 +5,14 @@
 
 #include "decomp.h"
 
-static inline int32_t ReverseBits(int32_t in, uint8_t byteValue) {
+static inline int32_t ReverseBits(int32_t in) {
     int32_t out;
 
     out = (in & 0xaaaa) >> 1 | (in & 0x5555) << 1;
     out = (out & 0xcccc) >> 2 | (out & 0x3333) << 2;
     out = (out & 0xf0f0) >> 4 | (out & 0xf0f) << 4;
-    out = (int32_t)(((uint32_t)out >> 8) | ((out & 0xff) << 8)) >> (0x10 - byteValue);
 
-    return out;
+    return (uint32_t)out >> 8 | (out & 0xff) << 8;
 }
 
 uint32_t BuildHuffmanTree(DEFHUFFMAN *tree, uint8_t *codeLengths, int32_t symbolCount) {
@@ -38,7 +37,7 @@ uint32_t BuildHuffmanTree(DEFHUFFMAN *tree, uint8_t *codeLengths, int32_t symbol
     for (uint32_t len = 1; len < 16; len++) {
         tree->numCodes[len] = tree->numCodes[len - 1] + lengthCount[len - 1];
         tree->firstCode[len] = nextCode[len];
-        tree->baseCode[len - 1] = (nextCode[len] + lengthCount[len]) << (16 - len);
+        tree->baseCode[len - 1] = (nextCode[len] + lengthCount[len]) << (0x10 - len);
 
         nextCode[len + 1] = (nextCode[len] + lengthCount[len]) << 1;
     }
@@ -56,7 +55,7 @@ uint32_t BuildHuffmanTree(DEFHUFFMAN *tree, uint8_t *codeLengths, int32_t symbol
             tree->symbolIndex[symbolTableIndex] = i;
 
             if (value < 10) {
-                int32_t j = ReverseBits(code, value);
+                int32_t j = ReverseBits(code) >> (0x10 - value);
 
                 do {
                     tree->fastLookup[j] = (int16_t)symbolTableIndex;
