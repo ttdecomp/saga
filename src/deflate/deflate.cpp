@@ -5,14 +5,12 @@
 
 #include "decomp.h"
 
-static inline int32_t ReverseBits(int32_t in) {
-    int32_t out;
-
-    out = (in & 0xaaaa) >> 1 | (in & 0x5555) << 1;
-    out = (out & 0xcccc) >> 2 | (out & 0x3333) << 2;
-    out = (out & 0xf0f0) >> 4 | (out & 0xf0f) << 4;
-
-    return (uint32_t)out >> 8 | (out & 0xff) << 8;
+static inline int32_t ReverseBits(int32_t x) {
+    x = (x & 0xaaaa) >> 1 | (x & 0x5555) << 1;
+    x = (x & 0xcccc) >> 2 | (x & 0x3333) << 2;
+    x = (x & 0xf0f0) >> 4 | (x & 0xf0f) << 4;
+    x = (x & 0xff00) >> 8 | (x & 0xff) << 8;
+    return x;
 }
 
 uint32_t BuildHuffmanTree(DEFHUFFMAN *tree, uint8_t *codeLengths, int32_t symbolCount) {
@@ -43,6 +41,7 @@ uint32_t BuildHuffmanTree(DEFHUFFMAN *tree, uint8_t *codeLengths, int32_t symbol
     }
 
     tree->baseCode[15] = 0x10000;
+    tree->firstCode[16] = 0;
 
     for (int32_t i = 0; i < symbolCount; i++) {
         int32_t value = codeLengths[i];
@@ -69,9 +68,6 @@ uint32_t BuildHuffmanTree(DEFHUFFMAN *tree, uint8_t *codeLengths, int32_t symbol
 
     return 1;
 }
-
-static uint8_t LengthDeZigZag[19] = {0x10, 0x11, 0x12, 0x00, 0x08, 0x07, 0x09, 0x06, 0x0a, 0x05,
-                                     0x0b, 0x04, 0x0c, 0x03, 0x0d, 0x02, 0x0e, 0x01, 0x0f};
 
 int32_t InflateBuffer(char *buffer, int decodedSize, char *readBuffer, int32_t readBufferSize) {
     DEFLATECONTEXT ctx;
@@ -140,303 +136,6 @@ void InitHuffmanDefaults() {
     for (int32_t i = 0; i < 32; i++) {
         DefaultDistances[i] = 5;
     }
-}
-
-bool DecompressHuffmanTrees(DEFLATECONTEXT *ctx) {
-    LOG_DEBUG("ctx=%p", ctx);
-
-    unsigned int *piVar1;
-    uint16_t uVar2;
-    uint16_t uVar3;
-    int symbolCount;
-    uint8_t bVar4;
-    uint16_t index;
-    int iVar5;
-    int iVar6;
-    int iVar7;
-    uint uVar8;
-    uint uVar9;
-    int i;
-    size_t sVar10;
-    uint uVar11;
-    bool bVar12;
-    int j;
-    uint local_210;
-    uint8_t codeLengths[19];
-    uint8_t codeLengths2[257];
-    uint8_t codeLenghts3[206];
-    uint8_t symbol;
-    uint bitBuffer;
-    char *buf;
-
-    bitBuffer = ctx->bitBuffer;
-    if ((int)bitBuffer < 5) {
-        do {
-            buf = ctx->readBuffer;
-            uVar11 = 0;
-            if (buf < ctx->readBufferEnd) {
-                uVar11 = (uint)*buf;
-                ctx->readBuffer = buf + 1;
-            }
-            bVar4 = (uint8_t)bitBuffer;
-            bitBuffer = bitBuffer + 8;
-            uVar11 = uVar11 << (bVar4 & 0x1f) | ctx->numBitsAvailable;
-            ctx->numBitsAvailable = uVar11;
-            ctx->bitBuffer = bitBuffer;
-        } while ((int)bitBuffer < 25);
-    } else {
-        uVar11 = ctx->numBitsAvailable;
-    }
-    local_210 = uVar11 >> 5;
-    bitBuffer = bitBuffer - 5;
-    ctx->numBitsAvailable = local_210;
-    ctx->bitBuffer = bitBuffer;
-    if ((int)bitBuffer < 5) {
-        do {
-            buf = ctx->readBuffer;
-            uVar8 = 0;
-            if (buf < ctx->readBufferEnd) {
-                uVar8 = (uint)*buf;
-                ctx->readBuffer = buf + 1;
-            }
-            bVar4 = (uint8_t)bitBuffer;
-            bitBuffer = bitBuffer + 8;
-            local_210 = uVar8 << (bVar4 & 0x1f) | ctx->numBitsAvailable;
-            ctx->numBitsAvailable = local_210;
-            ctx->bitBuffer = bitBuffer;
-        } while ((int)bitBuffer < 25);
-    }
-    bitBuffer = bitBuffer - 5;
-    uVar8 = local_210 >> 5;
-    ctx->numBitsAvailable = uVar8;
-    ctx->bitBuffer = bitBuffer;
-    if ((int)bitBuffer < 4) {
-        do {
-            buf = ctx->readBuffer;
-            uVar8 = 0;
-            if (buf < ctx->readBufferEnd) {
-                uVar8 = (uint)*buf;
-                ctx->readBuffer = buf + 1;
-            }
-            bVar4 = (uint8_t)bitBuffer;
-            bitBuffer = bitBuffer + 8;
-            uVar8 = uVar8 << (bVar4 & 0x1f) | ctx->numBitsAvailable;
-            ctx->numBitsAvailable = uVar8;
-            ctx->bitBuffer = bitBuffer;
-        } while ((int)bitBuffer < 0x19);
-    }
-    bitBuffer = bitBuffer - 4;
-    ctx->bitBuffer = bitBuffer;
-    ctx->numBitsAvailable = uVar8 >> 4;
-    uVar9 = 0x13;
-    buf = (char *)codeLengths;
-    bVar12 = ((uint)buf & 2) != 0;
-    if (bVar12) {
-        codeLengths[0] = 0;
-        codeLengths[1] = 0;
-        buf = (char *)codeLengths + 2;
-        uVar9 = 0x11;
-    }
-    for (uVar9 = uVar9 >> 2; uVar9 != 0; uVar9 = uVar9 - 1) {
-        buf[0] = 0;
-        buf[1] = 0;
-        buf[2] = 0;
-        buf[3] = 0;
-        buf = buf + 4;
-    }
-    if (!bVar12) {
-        buf[0] = 0;
-        buf[1] = 0;
-        buf = buf + 2;
-    }
-    *buf = 0;
-    i = 0;
-    do {
-        if ((int)bitBuffer < 3) {
-            bitBuffer = ctx->bitBuffer;
-            do {
-                buf = ctx->readBuffer;
-                uVar9 = 0;
-                if (buf < ctx->readBufferEnd) {
-                    uVar9 = (uint)*buf;
-                    ctx->readBuffer = buf + 1;
-                }
-                bVar4 = (uint8_t)bitBuffer;
-                bitBuffer = bitBuffer + 8;
-                uVar9 = uVar9 << (bVar4 & 0x1f) | ctx->numBitsAvailable;
-                ctx->numBitsAvailable = uVar9;
-                ctx->bitBuffer = bitBuffer;
-            } while ((int)bitBuffer < 0x19);
-        } else {
-            uVar9 = ctx->numBitsAvailable;
-        }
-        bitBuffer = bitBuffer - 3;
-        ctx->numBitsAvailable = uVar9 >> 3;
-        ctx->bitBuffer = bitBuffer;
-        buf = (char *)&LengthDeZigZag[i];
-        i = i + 1;
-        codeLengths[*buf] = (uint8_t)uVar9 & 7;
-    } while (i < (int)((uVar8 & 0xf) + 4));
-
-    LOG_DEBUG("build code length tree");
-    i = BuildHuffmanTree(&ctx->tempCodeLength, codeLengths, 19);
-
-    if (i != 0) {
-        j = 0;
-        i = (uVar11 & 0x1f) + 0x101;
-        symbolCount = (local_210 & 0x1f) + 1;
-        iVar5 = i + symbolCount;
-        do {
-            while (true) {
-                bitBuffer = ctx->bitBuffer;
-                if ((int)bitBuffer < 0x10) {
-                    do {
-                        buf = ctx->readBuffer;
-                        uVar8 = 0;
-                        if (buf < ctx->readBufferEnd) {
-                            uVar8 = (uint)*buf;
-                            ctx->readBuffer = buf + 1;
-                        }
-                        bVar4 = (uint8_t)bitBuffer;
-                        bitBuffer = bitBuffer + 8;
-                        uVar8 = uVar8 << (bVar4 & 0x1f) | ctx->numBitsAvailable;
-                        ctx->numBitsAvailable = uVar8;
-                        ctx->bitBuffer = bitBuffer;
-                    } while ((int)bitBuffer < 0x19);
-                } else {
-                    uVar8 = ctx->numBitsAvailable;
-                }
-                uVar9 = (uint)(uint16_t)(ctx->tempCodeLength).fastLookup[uVar8 & 0x1ff];
-                if (uVar9 != 0xffff)
-                    break;
-                uVar9 = (uVar8 & 0x5555) * 2 | (int)(uVar8 & 0xaaaa) >> 1;
-                uVar9 = (uVar9 & 0x3333) << 2 | (int)(uVar9 & 0xcccc) >> 2;
-                uVar9 = (uVar9 & 0xf0f) << 4 | (int)(uVar9 & 0xf0f0) >> 4;
-                uVar9 = (uVar9 & 0xff) << 8 | uVar9 >> 8;
-                if ((int)uVar9 < (ctx->tempCodeLength).baseCode[9]) {
-                    bVar4 = 6;
-                    iVar7 = 10;
-                } else {
-                    iVar6 = 10;
-                    do {
-                        iVar7 = iVar6 + 1;
-                        piVar1 = &ctx->tempCodeLength.baseCode[iVar6];
-
-                        //
-                        if (iVar6 >= 15) {
-                            break;
-                        }
-                        //
-
-                        iVar6 = iVar7;
-                    } while (*piVar1 <= (int)uVar9);
-                    bVar4 = 0x10 - (char)iVar7;
-                }
-                uVar2 = (ctx->tempCodeLength).firstCode[iVar7];
-                uVar3 = (ctx->tempCodeLength).numCodes[iVar7];
-                ctx->bitBuffer = bitBuffer - iVar7;
-                uVar8 = uVar8 >> ((uint8_t)iVar7 & 0x1f);
-                ctx->numBitsAvailable = uVar8;
-
-                index =
-                    *(uint16_t *)((int)ctx +
-                                  ((((int)uVar9 >> (bVar4 & 0x1f)) - (uint)uVar2) + 0x2d0 + (uint)uVar3) * 2 + 0xfe8);
-
-                if (0xf < index)
-                    goto LAB_003261f3;
-            LAB_003260f3:
-                codeLengths2[j] = (uint8_t)index;
-                j = j + 1;
-            LAB_00326102:
-                if (iVar5 <= j)
-                    goto LAB_00326257;
-            }
-            symbol = (ctx->tempCodeLength).symbols[uVar9];
-            index = (ctx->tempCodeLength).symbolIndex[uVar9];
-            uVar8 = uVar8 >> (symbol & 0x1f);
-            ctx->numBitsAvailable = uVar8;
-            ctx->bitBuffer = bitBuffer - symbol;
-            if (index < 0x10)
-                goto LAB_003260f3;
-        LAB_003261f3:
-            bitBuffer = ctx->bitBuffer;
-            if (index == 0x10) {
-                if ((int)bitBuffer < 2) {
-                    do {
-                        buf = ctx->readBuffer;
-                        uVar8 = 0;
-                        if (buf < ctx->readBufferEnd) {
-                            uVar8 = (uint)*buf;
-                            ctx->readBuffer = buf + 1;
-                        }
-                        bVar4 = (uint8_t)bitBuffer;
-                        bitBuffer = bitBuffer + 8;
-                        uVar8 = uVar8 << (bVar4 & 0x1f) | ctx->numBitsAvailable;
-                        ctx->numBitsAvailable = uVar8;
-                        ctx->bitBuffer = bitBuffer;
-                    } while ((int)bitBuffer < 0x19);
-                }
-                ctx->bitBuffer = bitBuffer - 2;
-                ctx->numBitsAvailable = uVar8 >> 2;
-                sVar10 = (uVar8 & 3) + 3;
-                memset(codeLengths2 + j, (uint)codeLengths[j + 0x12], sVar10);
-                j = j + sVar10;
-                goto LAB_00326102;
-            }
-            if (index == 0x11) {
-                if ((int)bitBuffer < 3) {
-                    do {
-                        buf = ctx->readBuffer;
-                        uVar8 = 0;
-                        if (buf < ctx->readBufferEnd) {
-                            uVar8 = (uint)*buf;
-                            ctx->readBuffer = buf + 1;
-                        }
-                        bVar4 = (uint8_t)bitBuffer;
-                        bitBuffer = bitBuffer + 8;
-                        uVar8 = uVar8 << (bVar4 & 0x1f) | ctx->numBitsAvailable;
-                        ctx->numBitsAvailable = uVar8;
-                        ctx->bitBuffer = bitBuffer;
-                    } while ((int)bitBuffer < 0x19);
-                }
-                ctx->numBitsAvailable = uVar8 >> 3;
-                ctx->bitBuffer = bitBuffer - 3;
-                sVar10 = (uVar8 & 7) + 3;
-            } else {
-                if ((int)bitBuffer < 7) {
-                    do {
-                        buf = ctx->readBuffer;
-                        uVar8 = 0;
-                        if (buf < ctx->readBufferEnd) {
-                            uVar8 = (uint)*buf;
-                            ctx->readBuffer = buf + 1;
-                        }
-                        bVar4 = (uint8_t)bitBuffer;
-                        bitBuffer = bitBuffer + 8;
-                        uVar8 = uVar8 << (bVar4 & 0x1f) | ctx->numBitsAvailable;
-                        ctx->numBitsAvailable = uVar8;
-                        ctx->bitBuffer = bitBuffer;
-                    } while ((int)bitBuffer < 25);
-                }
-                ctx->bitBuffer = bitBuffer - 7;
-                ctx->numBitsAvailable = uVar8 >> 7;
-                sVar10 = (uVar8 & 0x7f) + 0xb;
-            }
-            memset(codeLengths2 + j, 0, sVar10);
-            j = j + sVar10;
-        } while (j < iVar5);
-    LAB_00326257:
-
-        LOG_DEBUG("build length tree");
-        i = BuildHuffmanTree(&ctx->lengthTree, codeLengths2, i);
-        if (i != 0) {
-
-            LOG_DEBUG("build distance tree");
-            i = BuildHuffmanTree(&ctx->distanceTree, codeLenghts3 + (uVar11 & 0x1f), symbolCount);
-            return i != 0;
-        }
-    }
-    return false;
 }
 
 static int32_t LengthBase[29] = {3,  4,  5,  6,  7,  8,  9,  10, 11,  13,  15,  17,  19,  23, 27,
@@ -750,4 +449,437 @@ int32_t DecodeDeflated(DEFLATECONTEXT *ctx) {
     }
 
     return 1;
+}
+
+static inline uint32_t CtxPeekBits(DEFLATECONTEXT *ctx, int32_t numBits) {
+    uint32_t bitBuffer = ctx->bitBuffer;
+    uint32_t bitsAvailable = ctx->numBitsAvailable;
+    char *buf;
+    uint32_t uint8_t;
+
+    if ((int)bitBuffer < numBits) {
+        do {
+            buf = ctx->readBuffer;
+            uint8_t = 0;
+
+            if (buf < ctx->readBufferEnd) {
+                uint8_t = (uint32_t)*buf;
+                ctx->readBuffer = buf + 1;
+            }
+
+            bitsAvailable = (uint8_t << (bitBuffer & 0x1f)) | bitsAvailable;
+            bitBuffer += 8;
+
+        } while (bitBuffer < 25);
+
+        ctx->numBitsAvailable = bitsAvailable;
+    }
+
+    return bitsAvailable >> numBits;
+}
+
+static inline uint32_t CtxReadBits(DEFLATECONTEXT *ctx, int32_t numBits) {
+    uint32_t result = CtxPeekBits(ctx, numBits);
+
+    ctx->bitBuffer -= numBits;
+    ctx->numBitsAvailable = result;
+
+    return result;
+}
+
+static inline int32_t CtxReadHuffmanSymbol(DEFLATECONTEXT *ctx, DEFHUFFMAN *tree) {
+    // ensure at least 16 bits are available
+    while (ctx->numBitsAvailable < 16) {
+        if (ctx->readBuffer < ctx->readBufferEnd) {
+            ctx->bitBuffer |= (*ctx->readBuffer++) << ctx->numBitsAvailable;
+            ctx->numBitsAvailable += 8;
+        }
+    }
+
+    uint32_t bits = ctx->bitBuffer;
+
+    // fast path: 9-bit lookup
+    int32_t symbolIndex = tree->fastLookup[bits & 0x1ff];
+    if (symbolIndex != -1) {
+        int32_t symbolLength = tree->symbols[symbolIndex];
+        ctx->bitBuffer >>= symbolLength;
+        ctx->numBitsAvailable -= symbolLength;
+        return symbolIndex;
+    }
+
+    // slow path: bit-by-bit traversal
+    uint16_t rev = ReverseBits(bits & 0xFFFF);
+
+    int len;
+    if (rev < tree->baseCode[9]) {
+        len = 10;
+    } else {
+        for (len = 10; len < 16; len++) {
+            if (rev < tree->baseCode[len])
+                break;
+        }
+    }
+
+    uint16_t canonical = rev >> (16 - len);
+    uint16_t code = canonical - tree->firstCode[len];
+    uint16_t index = tree->numCodes[len] + code;
+
+    uint16_t symbol = tree->symbolIndex[index];
+
+    ctx->bitBuffer >>= len;
+    ctx->numBitsAvailable -= len;
+
+    return symbol;
+}
+
+static uint8_t LengthDeZigZag[19] = {0x10, 0x11, 0x12, 0x00, 0x08, 0x07, 0x09, 0x06, 0x0a, 0x05,
+                                     0x0b, 0x04, 0x0c, 0x03, 0x0d, 0x02, 0x0e, 0x01, 0x0f};
+
+/*bool DecompressHuffmanTrees(DEFLATECONTEXT *ctx) {
+    uint32_t hlit = (CtxReadBits(ctx, 5) & 0x1f) + 257;
+    uint32_t hdist = (CtxReadBits(ctx, 5) & 0x1f) + 1;
+    uint32_t hclen = (CtxReadBits(ctx, 4) & 0x0f) + 4;
+    LOG_DEBUG("hlit=%d, hdist=%d, hclen=%d", hlit, hdist, hclen);
+
+    uint8_t codeLengths[19];
+    memset(codeLengths, 0, sizeof(codeLengths));
+    for (int32_t i = 0; i < hclen; i++) {
+        codeLengths[LengthDeZigZag[i]] = CtxReadBits(ctx, 3) & 0b111;
+    }
+
+    if (!BuildHuffmanTree(&ctx->tempCodeLength, codeLengths, 19)) {
+        LOG_WARN("failed to build code length huffman tree");
+        return false;
+    }
+
+    uint8_t allCodeLengths[288 + 32];
+    int32_t j = 0;
+
+    while (j < hlit + hdist) {
+        int32_t symbol = CtxReadHuffmanSymbol(ctx, &ctx->tempCodeLength);
+
+        // Process the decoded symbol
+        if (symbol <= 15) {
+            // Literal code length
+            LOG_DEBUG("code length symbol: %d", symbol);
+            allCodeLengths[j++] = symbol;
+        } else if (symbol == 16) {
+            // Repeat previous code length 3-6 times
+            uint32_t repeatCount = (CtxReadBits(ctx, 2) & 0x3) + 3;
+            LOG_DEBUG("repeat previous code length %d times", repeatCount);
+            uint8_t prevCodeLength = allCodeLengths[j - 1];
+            memset(allCodeLengths + j, prevCodeLength, repeatCount);
+            j += repeatCount;
+        } else if (symbol == 17) {
+            // Repeat code length 0 for 3-10 times
+            uint32_t repeatCount = (CtxReadBits(ctx, 3) & 0x7) + 3;
+            LOG_DEBUG("repeat code length 0 %d times", repeatCount);
+            memset(allCodeLengths + j, 0, repeatCount);
+            j += repeatCount;
+        } else if (symbol == 18) {
+            // Repeat code length 0 for 11-138 times
+            uint32_t repeatCount = (CtxReadBits(ctx, 7) & 0x7f) + 11;
+            LOG_DEBUG("repeat code length 0 %d times", repeatCount);
+            memset(allCodeLengths + j, 0, repeatCount);
+            j += repeatCount;
+        } else {
+            LOG_WARN("invalid code length symbol: %d", symbol);
+            return false;
+        }
+    }
+
+    if (!BuildHuffmanTree(&ctx->lengthTree, allCodeLengths, hlit)) {
+        return false;
+    }
+    if (!BuildHuffmanTree(&ctx->distanceTree, allCodeLengths + hlit, hdist)) {
+        return false;
+    }
+
+    return true;
+}
+*/
+
+bool DecompressHuffmanTrees(DEFLATECONTEXT *ctx) {
+    int *piVar1;
+    uint16_t uVar2;
+    uint16_t uVar3;
+    int hlit;
+    int hdist;
+    uint32_t word;
+    uint8_t bVar4;
+    uint16_t index;
+    uint32_t uVar5;
+    int iVar6;
+    uint32_t hclen;
+    int i;
+    size_t sVar7;
+    uint32_t uVar8;
+    bool bVar9;
+    int j;
+    uint32_t local_210;
+    uint8_t codeLengths[19];
+    uint8_t lengths[257];
+    uint8_t distances[206];
+    uint8_t symbol;
+    uint8_t *position;
+    uint32_t bitBuffer;
+    char *buf;
+
+    bitBuffer = ctx->bitBuffer;
+    if ((int)bitBuffer < 5) {
+        do {
+            buf = ctx->readBuffer;
+            uVar8 = 0;
+            if (buf < ctx->readBufferEnd) {
+                uVar8 = (uint)*buf;
+                ctx->readBuffer = buf + 1;
+            }
+            bVar4 = (uint8_t)bitBuffer;
+            bitBuffer = bitBuffer + 8;
+            uVar8 = uVar8 << (bVar4 & 0x1f) | ctx->numBitsAvailable;
+            ctx->numBitsAvailable = uVar8;
+            ctx->bitBuffer = bitBuffer;
+        } while ((int)bitBuffer < 25);
+    } else {
+        uVar8 = ctx->numBitsAvailable;
+    }
+    local_210 = uVar8 >> 5;
+    bitBuffer = bitBuffer - 5;
+    ctx->numBitsAvailable = local_210;
+    ctx->bitBuffer = bitBuffer;
+    if ((int)bitBuffer < 5) {
+        do {
+            buf = ctx->readBuffer;
+            word = 0;
+            if (buf < ctx->readBufferEnd) {
+                word = (uint)*buf;
+                ctx->readBuffer = buf + 1;
+            }
+            bVar4 = (uint8_t)bitBuffer;
+            bitBuffer = bitBuffer + 8;
+            local_210 = word << (bVar4 & 0x1f) | ctx->numBitsAvailable;
+            ctx->numBitsAvailable = local_210;
+            ctx->bitBuffer = bitBuffer;
+        } while ((int)bitBuffer < 25);
+    }
+    bitBuffer = bitBuffer - 5;
+    hclen = local_210 >> 5;
+    ctx->numBitsAvailable = hclen;
+    ctx->bitBuffer = bitBuffer;
+    if ((int)bitBuffer < 4) {
+        do {
+            buf = ctx->readBuffer;
+            word = 0;
+            if (buf < ctx->readBufferEnd) {
+                word = (uint)*buf;
+                ctx->readBuffer = buf + 1;
+            }
+            bVar4 = (uint8_t)bitBuffer;
+            bitBuffer = bitBuffer + 8;
+            hclen = word << (bVar4 & 0x1f) | ctx->numBitsAvailable;
+            ctx->numBitsAvailable = hclen;
+            ctx->bitBuffer = bitBuffer;
+        } while ((int)bitBuffer < 0x19);
+    }
+    bitBuffer = bitBuffer - 4;
+    ctx->bitBuffer = bitBuffer;
+    ctx->numBitsAvailable = hclen >> 4;
+    word = 0x13;
+    buf = (char *)codeLengths;
+    bVar9 = ((uint)buf & 2) != 0;
+    if (bVar9) {
+        codeLengths[0] = 0;
+        codeLengths[1] = 0;
+        buf = (char *)codeLengths + 2;
+        word = 0x11;
+    }
+    for (word = word >> 2; word != 0; word = word - 1) {
+        buf[0] = 0;
+        buf[1] = 0;
+        buf[2] = 0;
+        buf[3] = 0;
+        buf = buf + 4;
+    }
+    if (!bVar9) {
+        buf[0] = 0;
+        buf[1] = 0;
+        buf = buf + 2;
+    }
+    *buf = 0;
+    i = 0;
+    do {
+        if ((int)bitBuffer < 3) {
+            bitBuffer = ctx->bitBuffer;
+            do {
+                buf = ctx->readBuffer;
+                word = 0;
+                if (buf < ctx->readBufferEnd) {
+                    word = (uint)*buf;
+                    ctx->readBuffer = buf + 1;
+                }
+                bVar4 = (uint8_t)bitBuffer;
+                bitBuffer = bitBuffer + 8;
+                word = word << (bVar4 & 0x1f) | ctx->numBitsAvailable;
+                ctx->numBitsAvailable = word;
+                ctx->bitBuffer = bitBuffer;
+            } while ((int)bitBuffer < 0x19);
+        } else {
+            word = ctx->numBitsAvailable;
+        }
+        bitBuffer = bitBuffer - 3;
+        ctx->numBitsAvailable = word >> 3;
+        ctx->bitBuffer = bitBuffer;
+        position = LengthDeZigZag + i;
+        i = i + 1;
+        codeLengths[*position] = (uint8_t)word & 7;
+    } while (i < (int)((hclen & 0xf) + 4));
+
+    LOG_DEBUG("hlit: %d, hdist: %d, hclen: %d", (uVar8 & 0x1f) + 0x101, (local_210 & 0x1f) + 1, (hclen & 0xf) + 4);
+
+    i = BuildHuffmanTree(&ctx->tempCodeLength, codeLengths, 19);
+
+    if (i != 0) {
+        j = 0;
+        hlit = (uVar8 & 0x1f) + 0x101;
+        hdist = (local_210 & 0x1f) + 1;
+        do {
+            while (true) {
+                bitBuffer = ctx->bitBuffer;
+                if ((int)bitBuffer < 16) {
+                    do {
+                        buf = ctx->readBuffer;
+                        word = 0;
+                        if (buf < ctx->readBufferEnd) {
+                            word = (uint)*buf;
+                            ctx->readBuffer = buf + 1;
+                        }
+                        bVar4 = (uint8_t)bitBuffer;
+                        bitBuffer = bitBuffer + 8;
+                        word = word << (bVar4 & 0x1f) | ctx->numBitsAvailable;
+                        ctx->numBitsAvailable = word;
+                        ctx->bitBuffer = bitBuffer;
+                    } while ((int)bitBuffer < 0x19);
+                } else {
+                    word = ctx->numBitsAvailable;
+                }
+                uVar5 = (uint)(uint16_t)(ctx->tempCodeLength).fastLookup[word & 0x1ff];
+                if (uVar5 != 0xffff)
+                    break;
+                uVar5 = (word & 0x5555) * 2 | (int)(word & 0xaaaa) >> 1;
+                uVar5 = (uVar5 & 0x3333) << 2 | (int)(uVar5 & 0xcccc) >> 2;
+                uVar5 = (uVar5 & 0xf0f) << 4 | (int)(uVar5 & 0xf0f0) >> 4;
+                uVar5 = (uVar5 & 0xff) << 8 | uVar5 >> 8;
+                if ((int)uVar5 < (ctx->tempCodeLength).baseCode[9]) {
+                    bVar4 = 6;
+                    i = 10;
+                } else {
+                    iVar6 = 10;
+                    do {
+                        i = iVar6 + 1;
+                        piVar1 = (int32_t *)(ctx->tempCodeLength).baseCode + iVar6;
+                        iVar6 = i;
+                    } while (*piVar1 <= (int)uVar5);
+                    bVar4 = 16 - (char)i;
+                }
+                uVar2 = (ctx->tempCodeLength).firstCode[i];
+                uVar3 = (ctx->tempCodeLength).numCodes[i];
+                ctx->bitBuffer = bitBuffer - i;
+                word = word >> ((uint8_t)i & 0x1f);
+                ctx->numBitsAvailable = word;
+
+                index =
+                    *(uint16_t *)((int)ctx +
+                                  ((((int)uVar5 >> (bVar4 & 0x1f)) - (uint)uVar2) + 0x2d0 + (uint)uVar3) * 2 + 0xfe8);
+
+                if (15 < index)
+                    goto LAB_003261f3;
+            LAB_003260f3:
+                lengths[j] = (uint8_t)index;
+                j = j + 1;
+            LAB_00326102:
+                if (hlit + hdist <= j)
+                    goto LAB_00326257;
+            }
+            symbol = (ctx->tempCodeLength).symbols[uVar5];
+            index = (ctx->tempCodeLength).symbolIndex[uVar5];
+            word = word >> (symbol & 0x1f);
+            ctx->numBitsAvailable = word;
+            ctx->bitBuffer = bitBuffer - symbol;
+            if (index < 0x10)
+                goto LAB_003260f3;
+        LAB_003261f3:
+            bitBuffer = ctx->bitBuffer;
+            if (index == 0x10) {
+                if ((int)bitBuffer < 2) {
+                    do {
+                        buf = ctx->readBuffer;
+                        word = 0;
+                        if (buf < ctx->readBufferEnd) {
+                            word = (uint)*buf;
+                            ctx->readBuffer = buf + 1;
+                        }
+                        bVar4 = (uint8_t)bitBuffer;
+                        bitBuffer = bitBuffer + 8;
+                        word = word << (bVar4 & 0x1f) | ctx->numBitsAvailable;
+                        ctx->numBitsAvailable = word;
+                        ctx->bitBuffer = bitBuffer;
+                    } while ((int)bitBuffer < 0x19);
+                }
+                ctx->bitBuffer = bitBuffer - 2;
+                ctx->numBitsAvailable = word >> 2;
+                sVar7 = (word & 3) + 3;
+                memset(lengths + j, (uint)codeLengths[j + 0x12], sVar7);
+                j = j + sVar7;
+                goto LAB_00326102;
+            }
+            if (index == 0x11) {
+                if ((int)bitBuffer < 3) {
+                    do {
+                        buf = ctx->readBuffer;
+                        word = 0;
+                        if (buf < ctx->readBufferEnd) {
+                            word = (uint)*buf;
+                            ctx->readBuffer = buf + 1;
+                        }
+                        bVar4 = (uint8_t)bitBuffer;
+                        bitBuffer = bitBuffer + 8;
+                        word = word << (bVar4 & 0x1f) | ctx->numBitsAvailable;
+                        ctx->numBitsAvailable = word;
+                        ctx->bitBuffer = bitBuffer;
+                    } while ((int)bitBuffer < 0x19);
+                }
+                ctx->numBitsAvailable = word >> 3;
+                ctx->bitBuffer = bitBuffer - 3;
+                sVar7 = (word & 7) + 3;
+            } else {
+                if ((int)bitBuffer < 7) {
+                    do {
+                        buf = ctx->readBuffer;
+                        word = 0;
+                        if (buf < ctx->readBufferEnd) {
+                            word = (uint)*buf;
+                            ctx->readBuffer = buf + 1;
+                        }
+                        bVar4 = (uint8_t)bitBuffer;
+                        bitBuffer = bitBuffer + 8;
+                        word = word << (bVar4 & 0x1f) | ctx->numBitsAvailable;
+                        ctx->numBitsAvailable = word;
+                        ctx->bitBuffer = bitBuffer;
+                    } while ((int)bitBuffer < 25);
+                }
+                ctx->bitBuffer = bitBuffer - 7;
+                ctx->numBitsAvailable = word >> 7;
+                sVar7 = (word & 0x7f) + 0xb;
+            }
+            memset(lengths + j, 0, sVar7);
+            j = j + sVar7;
+        } while (j < hlit + hdist);
+    LAB_00326257:
+        i = BuildHuffmanTree(&ctx->lengthTree, lengths, hlit);
+        if (i != 0) {
+            i = BuildHuffmanTree(&ctx->distanceTree, distances + (uVar8 & 0x1f), hdist);
+            return i != 0;
+        }
+    }
+    return false;
 }
