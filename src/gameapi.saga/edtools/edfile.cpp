@@ -151,6 +151,9 @@ void EdFileSetPakFile(void *pak) {
     edfile_pakfile = pak;
 }
 
+void EdFileSetReadWrongEndianess(int value) {
+}
+
 void EdFileRead(void *buf, int len) {
     int to_read;
 
@@ -178,13 +181,21 @@ char EdFileReadChar() {
     return data;
 }
 
+unsigned char EdFileReadUnsignedChar() {
+    unsigned char data;
+
+    EdFileRead(&data, 1);
+
+    return data;
+}
+
 float EdFileReadFloat() {
     float data;
 
     EdFileRead(&data, 4);
 
     if (edfile_readwrongendianess) {
-        EdFileSwapEndianess32((void *)&data);
+        EdFileSwapEndianess32(&data);
     }
 
     return data;
@@ -196,7 +207,19 @@ int EdFileReadInt() {
     EdFileRead(&data, 4);
 
     if (edfile_readwrongendianess) {
-        EdFileSwapEndianess32((void *)&data);
+        EdFileSwapEndianess32(&data);
+    }
+
+    return data;
+}
+
+unsigned int EdFileReadUnsignedInt() {
+    unsigned int data;
+
+    EdFileRead(&data, 4);
+
+    if (edfile_readwrongendianess) {
+        EdFileSwapEndianess32(&data);
     }
 
     return data;
@@ -208,10 +231,28 @@ short EdFileReadShort() {
     EdFileRead(&data, 2);
 
     if (edfile_readwrongendianess) {
-        EdFileSwapEndianess16((void *)&data);
+        EdFileSwapEndianess16(&data);
     }
 
     return data;
+}
+
+unsigned short EdFileReadUnsignedShort() {
+    unsigned short data;
+
+    EdFileRead(&data, 2);
+
+    if (edfile_readwrongendianess) {
+        EdFileSwapEndianess16(&data);
+    }
+
+    return data;
+}
+
+void EdFileReadNuVec(NUVEC *out) {
+    out->x = EdFileReadFloat();
+    out->y = EdFileReadFloat();
+    out->z = EdFileReadFloat();
 }
 
 void EdFileWrite(void *data, int len) {
