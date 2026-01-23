@@ -73,52 +73,44 @@ int EdFileOpen(char *filepath, NUFILEMODE mode) {
         edfile_write_flag = 1;
         edfile_handle = NuFileOpen(filepath, NUFILE_WRITE);
 
-        if (edfile_handle < 1) {
-            edfile_handle = -1;
-
-            return 0;
-        }
-
-        return 1;
-    }
-
-    if (edfile_pakfile != NULL) {
-        item_handle = NuFilePakGetItem(edfile_pakfile, filepath);
-
-        if (item_handle == 0) {
-            edfile_handle = NuFileOpen(filepath, NUFILE_READ);
-
-            if (edfile_handle < 1) {
-                edfile_handle = -1;
-
-                return 0;
-            }
-
-            EdFileFillBuffer();
-
+        if (edfile_handle > 0) {
             return 1;
-        } else {
-            NuFilePakGetItemInfo(edfile_pakfile, item_handle, &item, &item_size);
-
-            edfile_handle = NuMemFileOpen(item, item_size, NUFILE_READ);
-
-            if (edfile_handle < 1) {
-                edfile_handle = -1;
-            }
         }
-    }
 
-    edfile_handle = NuFileOpen(filepath, NUFILE_READ);
-
-    if (edfile_handle < 1) {
         edfile_handle = -1;
 
         return 0;
     }
 
-    EdFileFillBuffer();
+    if (edfile_pakfile != NULL) {
+        item_handle = NuFilePakGetItem(edfile_pakfile, filepath);
 
-    return 1;
+        if (item_handle != 0) {
+            NuFilePakGetItemInfo(edfile_pakfile, item_handle, &item, &item_size);
+
+            edfile_handle = NuMemFileOpen(item, item_size, NUFILE_READ);
+
+            if (edfile_handle > 0) {
+                EdFileFillBuffer();
+
+                return 1;
+            }
+
+            edfile_handle = -1;
+        }
+    }
+
+    edfile_handle = NuFileOpen(filepath, NUFILE_READ);
+
+    if (edfile_handle > 0) {
+        EdFileFillBuffer();
+
+        return 1;
+    }
+
+    edfile_handle = -1;
+
+    return 0;
 }
 
 int EdFileClose() {
@@ -165,11 +157,9 @@ void EdFileRead(void *buf, int len) {
         len -= to_read;
         buf = (void *)((int)buf + to_read);
 
-        if (edfile_buffer_pointer != 0x1000) {
-            break;
+        if (edfile_buffer_pointer == 0x1000) {
+            EdFileFillBuffer();
         }
-
-        EdFileFillBuffer();
     }
 }
 
@@ -256,27 +246,19 @@ void EdFileReadNuVec(NUVEC *out) {
 }
 
 void EdFileWrite(void *data, int len) {
-    int chunk_len;
+    int to_write;
 
     while (len > 0) {
-        while (true) {
-            chunk_len = MIN(0x1000 - edfile_buffer_pointer, len);
+        to_write = MIN(0x1000 - edfile_buffer_pointer, len);
 
-            memcpy(edfile_buffer + edfile_buffer_pointer, data, chunk_len);
+        memcpy(edfile_buffer + edfile_buffer_pointer, data, to_write);
 
-            edfile_buffer_pointer += chunk_len;
-            len -= chunk_len;
-            data = (void *)((int)data + chunk_len);
+        edfile_buffer_pointer += to_write;
+        len -= to_write;
+        data = (void *)((int)data + to_write);
 
-            if (edfile_buffer_pointer != 0x1000) {
-                break;
-            }
-
+        if (edfile_buffer_pointer == 0x1000) {
             EdFileFlushBuffer();
-
-            if (len < 1) {
-                return;
-            }
         }
     }
 }
