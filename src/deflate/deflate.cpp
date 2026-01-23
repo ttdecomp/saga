@@ -29,19 +29,22 @@ uint32_t BuildHuffmanTree(DEFHUFFMAN *tree, uint8_t *codeLengths, int32_t symbol
     }
 
     lengthCount[0] = 0;
+
     nextCode[1] = 0;
-    tree->numCodes[0] = 0;
 
-    for (uint32_t len = 1; len < 16; len++) {
-        tree->numCodes[len] = tree->numCodes[len - 1] + lengthCount[len - 1];
+    tree->firstCode[1] = 0;
+    tree->numCodes[1] = 0;
+    tree->baseCode[0] = lengthCount[1] << 15;
+
+    for (uint32_t len = 2; len < 16; len++) {
+        nextCode[len] = (nextCode[len - 1] + lengthCount[len - 1]) << 1;
+
         tree->firstCode[len] = nextCode[len];
+        tree->numCodes[len] = tree->numCodes[len - 1] + lengthCount[len - 1];
         tree->baseCode[len - 1] = (nextCode[len] + lengthCount[len]) << (0x10 - len);
-
-        nextCode[len + 1] = (nextCode[len] + lengthCount[len]) << 1;
     }
 
     tree->baseCode[15] = 0x10000;
-    tree->firstCode[16] = 0;
 
     for (int32_t i = 0; i < symbolCount; i++) {
         int32_t value = codeLengths[i];
