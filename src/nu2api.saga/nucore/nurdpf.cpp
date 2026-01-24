@@ -1,6 +1,6 @@
 #include <stddef.h>
 
-#include "nu2api.saga/nucore/nurdpf.h"
+#include "nu2api.saga/nucore/nurdp.h"
 #include "nu2api.saga/nucore/nustring.h"
 
 typedef struct rdpfctxt_s {
@@ -20,7 +20,7 @@ enum {
     TOK_RPAREN = 5,
     TOK_END = 6,
     TOK_NUM = 7,
-    TOK_NAME = 8,
+    TOK_VAR = 8,
     TOK_CNT = 9,
 };
 
@@ -145,7 +145,7 @@ static float prim_rdpf(RDPFCTXT *ctx) {
 
     switch (ctx->cur_tok) {
         case TOK_NUM:
-        case TOK_NAME:
+        case TOK_VAR:
             get_tok(ctx);
 
             return ctx->cur_val;
