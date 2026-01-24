@@ -30,7 +30,7 @@ void NuTimeInitPS(void) {
 }
 
 void NuTimeGet(NUTIME *t) {
-    NuTimeGetTicksPS(&t->low, (uint *)&t->high);
+    NuTimeGetTicksPS(&t->low, (unsigned int *)&t->high);
 }
 
 void NuTimeSub(NUTIME *t, NUTIME *a, NUTIME *b) {
