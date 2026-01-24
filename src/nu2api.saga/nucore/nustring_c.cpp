@@ -493,3 +493,16 @@ void NuStrUpr(char *dst, char *src) {
     }
     *dst = *src;
 }
+
+int NuIsAlNum(char c) {
+    switch (c) {
+        case 'A' ... 'Z':
+        case 'a' ... 'z':
+        case '0' ... '9':
+        case '_':
+            return 1;
+            break;
+        default:
+            return 0;
+    }
+}

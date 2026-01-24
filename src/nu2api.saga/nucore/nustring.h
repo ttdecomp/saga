@@ -34,4 +34,6 @@ int NuHexStringToI(char *string);
 
 void NuUnicodeToAscii(char *dst, NUWCHAR16 *src);
 
+int NuIsAlNum(char c);
+
 C_API_END
