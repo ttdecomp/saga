@@ -74,7 +74,9 @@ int NuFParGetWordW(NUFPAR *parser);
 void NuFParUnGetWord(NUFPAR *parser);
 
 float NuFParGetFloat(NUFPAR *parser);
+float NuFParGetFloatRDP(NUFPAR *parser);
 int NuFParGetInt(NUFPAR *parser);
+int NuFParGetIntRDP(NUFPAR *parser);
 
 int NuFParPushCom(NUFPAR *parser, NUFPCOMJMP *commands);
 int NuFParPushCom2(NUFPAR *parser, NUFPCOMJMP *commands, NUFPCOMJMP *commands2);

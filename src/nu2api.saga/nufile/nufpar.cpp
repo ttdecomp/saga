@@ -2,6 +2,7 @@
 
 #include "nu2api.saga/nufile/nufpar.h"
 
+#include "nu2api.saga/nucore/nurdp.h"
 #include "nu2api.saga/nucore/nustring.h"
 #include "nu2api.saga/nufile/nufile.h"
 
@@ -471,6 +472,23 @@ float NuFParGetFloat(NUFPAR *parser) {
     }
 }
 
+float NuFParGetFloatRDP(NUFPAR *parser) {
+    char buf[64];
+
+    NuFParGetWord(parser);
+    if (parser->is_utf16) {
+        NuUnicodeToAscii(buf, (NUWCHAR16 *)parser->word_buf);
+    } else {
+        NuStrCpy(buf, parser->word_buf);
+    }
+
+    if (buf[0] != '\0') {
+        return NuRDPF(buf);
+    } else {
+        return 0.0f;
+    }
+}
+
 int NuFParGetInt(NUFPAR *parser) {
     char buf[64];
 
@@ -489,6 +507,23 @@ int NuFParGetInt(NUFPAR *parser) {
         } else {
             return NuAToI(buf);
         }
+    } else {
+        return 0;
+    }
+}
+
+int NuFParGetIntRDP(NUFPAR *parser) {
+    char buf[64];
+
+    NuFParGetWord(parser);
+    if (parser->is_utf16) {
+        NuUnicodeToAscii(buf, (NUWCHAR16 *)parser->word_buf);
+    } else {
+        NuStrCpy(buf, parser->word_buf);
+    }
+
+    if (buf[0] != '\0') {
+        return NuRDPI(buf);
     } else {
         return 0;
     }
