@@ -830,7 +830,7 @@ NUDATHDR *NuDatOpenEx(char *filepath, VARIPTR *buf, int *_unused, short mode) {
 
         NuFileSeek(file, seek_offset, NUFILE_SEEK_START);
 
-        path_len = NuStrLen(filepath) + 0x10 & -0x10;
+        path_len = ALIGN(NuStrLen(filepath) + 1, 0x10);
 
         hdr = (NUDATHDR *)buf->void_ptr;
         buf->addr += sizeof(NUDATHDR);
@@ -850,8 +850,8 @@ NUDATHDR *NuDatOpenEx(char *filepath, VARIPTR *buf, int *_unused, short mode) {
         total_read += bytes_read;
         APIEndianSwap(&hdr->file_count, 1, 4);
 
-        hdr->file_info = (NUDATFINFO *)((buf->addr + 0x1f) & -0x20);
-        buf->addr = (buf->addr + 0x1f) & -0x20;
+        hdr->file_info = (NUDATFINFO *)ALIGN(buf->addr, 0x20);
+        buf->addr = ALIGN(buf->addr, 0x20);
         buf->addr += hdr->file_count * sizeof(NUDATFINFO);
         bytes_read = NuFileRead(file, hdr->file_info, hdr->file_count * sizeof(NUDATFINFO));
         total_read += bytes_read;
@@ -926,8 +926,8 @@ NUDATHDR *NuDatOpenEx(char *filepath, VARIPTR *buf, int *_unused, short mode) {
         hdr->hashes = NULL;
 
         if (hdr->version < -1) {
-            hdr->hash_idxs = (unsigned int *)((buf->addr + 0x1f) & -0x20);
-            buf->addr = (buf->addr + 0x1f) & -0x20;
+            hdr->hash_idxs = (unsigned int *)ALIGN(buf->addr, 0x20);
+            buf->addr = ALIGN(buf->addr, 0x20);
             buf->addr += hdr->file_count * sizeof(int32_t);
             bytes_read = NuFileRead(file, hdr->hash_idxs, hdr->file_count * sizeof(int32_t));
             total_read += bytes_read;
@@ -944,8 +944,8 @@ NUDATHDR *NuDatOpenEx(char *filepath, VARIPTR *buf, int *_unused, short mode) {
             total_read += bytes_read;
             APIEndianSwap(&hdr->hashes_len, 1, 4);
 
-            hdr->hashes = (char *)((buf->addr + 0x1f) & -0x20);
-            buf->addr = ((buf->addr + 0x1f) & -0x20);
+            hdr->hashes = (char *)ALIGN(buf->addr, 0x20);
+            buf->addr = ALIGN(buf->addr, 0x20);
             buf->addr += hdr->hashes_len;
             bytes_read = NuFileRead(file, hdr->hashes, hdr->hashes_len);
             total_read += bytes_read;

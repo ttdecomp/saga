@@ -1,4 +1,6 @@
 #include "nu2api.saga/nufile/nufilepak.h"
+
+#include "nu2api.saga/nucore/common.h"
 #include "nu2api.saga/nucore/nustring.h"
 #include "nu2api.saga/nufile/nufile.h"
 
@@ -59,7 +61,7 @@ void *NuFilePakLoadKey(char *filepath, VARIPTR *buf, VARIPTR buf_end, int alignm
     }
 
     alignment = alignment >= 4 ? alignment : 4;
-    buf->addr = ((buf->addr + alignment - 1) & -alignment);
+    buf->addr = ALIGN(buf->addr, alignment);
     hdr = (NUFILEPAKHDR *)buf->void_ptr;
 
     len = NuFileLoadBufferVP(filepath, buf, &buf_end);
