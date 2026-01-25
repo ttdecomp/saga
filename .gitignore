@@ -9,3 +9,7 @@ objdiff.json
 report.json
 build-*/
 vgcore.*
+*.bin
+*.pvr
+*.dds
+.vscode/

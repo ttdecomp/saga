@@ -162,8 +162,6 @@ void InitHuffmanDefaults() {
                 uint32_t byte = 0;                                                                                     \
                 if ((ctx)->readBuffer < (ctx)->readBufferEnd) {                                                        \
                     byte = *ctx->readBuffer++;                                                                         \
-                    LOG_DEBUG("read byte: 0x%02x, remaining: %d", byte,                                                \
-                              (int32_t)((ctx)->readBufferEnd - (ctx)->readBuffer));                                    \
                 }                                                                                                      \
                                                                                                                        \
                 (ctx)->bitBuffer |= byte << (ctx)->numBitsAvailable;                                                   \
@@ -185,6 +183,7 @@ static inline uint32_t CtxReadHuffmanSymbol(DEFLATECONTEXT *ctx, DEFHUFFMAN *tre
     uint32_t bits = PEEKBITS(ctx, 16);
 
     uint32_t lookupIndex = tree->fastLookup[bits & 0x1ff];
+
     if (lookupIndex != 0xffff) {
         // fast path: 9-bit lookup
         int32_t symbolLength = tree->symbols[lookupIndex];
@@ -207,7 +206,8 @@ static inline uint32_t CtxReadHuffmanSymbol(DEFLATECONTEXT *ctx, DEFHUFFMAN *tre
 
     uint16_t firstCode = tree->firstCode[len];
     uint16_t numCodes = tree->numCodes[len];
-    int32_t symbolIndex = tree->symbolIndex[(rev >> (0x10 - len)) - firstCode + numCodes];
+    int32_t symbolIndex = tree->symbolIndex[numCodes + (rev >> (16 - len)) - firstCode];
+
     return symbolIndex;
 }
 
@@ -224,7 +224,6 @@ static int32_t DistanceExtraBits[32] = {0, 0, 0, 0, 1, 1, 2,  2,  3,  3,  4,  4,
 int DecodeDeflatedBlock(DEFLATECONTEXT *ctx) {
     while (true) {
         int32_t symbol = CtxReadHuffmanSymbol(ctx, &ctx->lengthTree);
-        LOG_DEBUG("decoded symbol: %d", symbol);
 
         if (symbol < 256) {
             // Literal byte
@@ -244,12 +243,11 @@ int DecodeDeflatedBlock(DEFLATECONTEXT *ctx) {
                 distance += READBITS(ctx, DistanceExtraBits[distanceSymbol]);
             }
 
-            LOG_DEBUG("length=%d, distance=%d", length, distance);
-
-            char *copySrc = ctx->currentPos - distance;
-            for (int32_t i = 0; i != length; i++) {
-                *ctx->currentPos++ = *copySrc++;
+            char *src = ctx->currentPos - distance;
+            for (int32_t i = 0; i < length; i++) {
+                ctx->currentPos[i] = src[i];
             }
+            ctx->currentPos += length;
         } else {
             // End of block
             LOG_DEBUG("end of deflated block");
@@ -298,6 +296,7 @@ int DecodeDeflated(DEFLATECONTEXT *ctx) {
                 if (!BuildHuffmanTree(&ctx->distanceTree, DefaultDistances, 0x20)) {
                     return false;
                 }
+
             } else {
                 LOG_DEBUG("dynamic huffman trees");
 
@@ -312,14 +311,6 @@ int DecodeDeflated(DEFLATECONTEXT *ctx) {
             }
         }
     } while (!final);
-
-    // dump
-#ifdef HOST_BUILD
-    FILE *f = fopen("deflate_out.bin", "wb");
-    fwrite(ctx->startPos, 1, ctx->currentPos - ctx->startPos, f);
-    fclose(f);
-    exit(0);
-#endif
 
     return true;
 }
@@ -355,7 +346,6 @@ bool DecompressHuffmanTrees(DEFLATECONTEXT *ctx) {
         // Process the decoded symbol
         if (symbol < 16) {
             // Literal code length
-            // LOG_DEBUG("code length symbol: %d", symbol);
             allCodeLengths[j++] = symbol;
         } else {
             uint32_t repeatCount;
@@ -363,7 +353,6 @@ bool DecompressHuffmanTrees(DEFLATECONTEXT *ctx) {
             if (symbol == 16) {
                 // Repeat previous code length 3-6 times
                 repeatCount = READBITS(ctx, 2) + 3;
-                LOG_DEBUG("repeat previous code length %d times", repeatCount);
                 uint8_t prevCodeLength = allCodeLengths[j - 1];
                 memset(allCodeLengths + j, prevCodeLength, repeatCount);
             } else {
@@ -375,7 +364,6 @@ bool DecompressHuffmanTrees(DEFLATECONTEXT *ctx) {
                     repeatCount = READBITS(ctx, 7) + 11;
                 }
 
-                LOG_DEBUG("repeat code length 0 %d times", repeatCount);
                 memset(allCodeLengths + j, 0, repeatCount);
             }
 
@@ -393,5 +381,5 @@ bool DecompressHuffmanTrees(DEFLATECONTEXT *ctx) {
         return 0;
     }
 
-    return 1;
+    return true;
 }

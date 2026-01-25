@@ -76,6 +76,22 @@ LAB_002ad96d:
             NuFileClose(file);
         }
 
+        // dump
+#ifdef HOST_BUILD
+        char _dump_filename[256];
+        sprintf(_dump_filename, "zz_dump_%s.pvr", name);
+        for (int i = 0; _dump_filename[i] != '\0'; i++) {
+            if (_dump_filename[i] == '\\' || _dump_filename[i] == '/') {
+                _dump_filename[i] = '_';
+            }
+        }
+
+        FILE *f = fopen(_dump_filename, "wb");
+        fwrite(nativeTex->imagedata, 1, nativeTex->size, f);
+        fclose(f);
+        exit(0);
+#endif
+
         id = NuTexCreateNative(nativeTex, 0);
 
         memset(texture, 0, (int)buffer + (size - (int)texture));

@@ -23,7 +23,7 @@ extern "C" int32_t NuMain(int32_t argc, char **argv) {
 
 int main(int argc, char **argv) {
     NuPlatform::Create();
-    NuPlatform::ms_instance->SetCurrentPlatform(ANDROID_ETC1_PLATFORM);
+    NuPlatform::ms_instance->SetCurrentPlatform(ANDROID_PVRTC_PLATFORM);
 
     NuMain(argc, argv);
 
