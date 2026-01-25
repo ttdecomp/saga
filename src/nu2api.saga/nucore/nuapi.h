@@ -78,7 +78,7 @@ struct nuapi_s {
     char field75_0x86;
     char field76_0x87;
     int disable_os_menu_freeze;
-    int video_brightness;
+    float video_brightness;
 };
 
 typedef struct nuapi_s NUAPI;

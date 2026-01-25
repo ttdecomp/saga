@@ -37,7 +37,7 @@ void NuVideoSetMode(int mode);
 int NuVideoGetAspect(void);
 NUVIDEO_SWAPMODE NuVideoGetSwapMode(void);
 void NuVideoRollingFrameRateReset(void);
-void NuVideoSetBrightness(int brightness);
+void NuVideoSetBrightness(float brightness);
 void NuVideoSetResolution(int width, int height);
 NUVIDEO_SWAPMODE NuVideoSetSwapMode(NUVIDEO_SWAPMODE video_swap_mode);
 

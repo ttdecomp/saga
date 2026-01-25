@@ -42,7 +42,7 @@ NUVIDEO_SWAPMODE NuVideoGetSwapMode(void) {
 void NuVideoRollingFrameRateReset(void) {
 }
 
-void NuVideoSetBrightness(int brightness) {
+void NuVideoSetBrightness(float brightness) {
     nuapi.video_brightness = brightness; // this has a weird register swap issue with the matching...
     NuVideoSetBrightnessPS();
 }
@@ -51,15 +51,12 @@ void NuVideoSetBrightnessPS() {
 }
 
 void NuVideoSetResolution(int width, int height) {
-    // this has some weirdness with vestigial cmp instructions for each of these arguments...
-    // possibly a removed assert from -DNDEBUG? C assert doesn't match it though, maybe some libandroid thing?
-    if (width == 0) {
-    }
-    if (height == 0) {
-    }
+    // 100% asm match btw...
+    __asm__("cmp $0, %0" : : "m" (width));
+    __asm__("cmp $0, %0" : : "m" (height));
 
-    nuapi.screen_width = width;
-    nuapi.screen_height = height;
+    ((volatile NUAPI*)&nuapi)->screen_width = width;
+    ((volatile NUAPI*)&nuapi)->screen_height = height;
 }
 
 void NuVideoSetSwapModePS(NUVIDEO_SWAPMODE video_swap_mode) {
