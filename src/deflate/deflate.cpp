@@ -179,7 +179,7 @@ void InitHuffmanDefaults() {
         bits;                                                                                                          \
     })
 
-static inline uint32_t CtxReadHuffmanSymbol(DEFLATECONTEXT *ctx, DEFHUFFMAN *tree) {
+static inline int32_t CtxReadHuffmanSymbol(DEFLATECONTEXT *ctx, DEFHUFFMAN *tree) {
     uint32_t bits = PEEKBITS(ctx, 16);
 
     uint32_t lookupIndex = tree->fastLookup[bits & 0x1ff];
@@ -206,7 +206,7 @@ static inline uint32_t CtxReadHuffmanSymbol(DEFLATECONTEXT *ctx, DEFHUFFMAN *tre
 
     uint16_t firstCode = tree->firstCode[len];
     uint16_t numCodes = tree->numCodes[len];
-    int32_t symbolIndex = tree->symbolIndex[numCodes + (rev >> (16 - len)) - firstCode];
+    int32_t symbolIndex = tree->symbolIndex[(rev >> (16 - len)) + numCodes - firstCode];
 
     return symbolIndex;
 }
@@ -245,9 +245,8 @@ int DecodeDeflatedBlock(DEFLATECONTEXT *ctx) {
 
             char *src = ctx->currentPos - distance;
             for (int32_t i = 0; i < length; i++) {
-                ctx->currentPos[i] = src[i];
+                *ctx->currentPos++ = *src++;
             }
-            ctx->currentPos += length;
         } else {
             // End of block
             LOG_DEBUG("end of deflated block");
@@ -262,7 +261,7 @@ int DecodeUncompressedBlock(DEFLATECONTEXT *ctx) {
 
 int DecodeDeflated(DEFLATECONTEXT *ctx) {
     uint32_t final;
-    uint32_t btype;
+    int32_t btype;
 
     LOG_DEBUG("ctx=%p", ctx);
 
@@ -296,7 +295,6 @@ int DecodeDeflated(DEFLATECONTEXT *ctx) {
                 if (!BuildHuffmanTree(&ctx->distanceTree, DefaultDistances, 0x20)) {
                     return false;
                 }
-
             } else {
                 LOG_DEBUG("dynamic huffman trees");
 
