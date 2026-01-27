@@ -28,7 +28,7 @@ static int aiscript_const_curr;
 
 static int condition_has_no_goto;
 
-static AIACTIONDEF *game_aiactiondefs;
+AIACTIONDEF *game_aiactiondefs;
 static AICONDITIONDEF *game_aiconditiondefs;
 
 static float Condition_AlwaysTrue(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char *arg, void *void_arg) {
@@ -48,11 +48,11 @@ static void *Condition_AlwaysTrueInit(AISYS *sys, char *arg, AISCRIPT *script) {
     return *(void **)&value;
 }
 
+AIACTIONDEF api_aiactiondefs[] = {{NULL, NULL, 0, 0, 0}};
+
 AICONDITIONDEF api_aiconditiondefs[] = {{"PreviousResult", NULL, NULL},
                                         {"AlwaysTrue", &Condition_AlwaysTrue, &Condition_AlwaysTrueInit},
                                         {NULL, NULL, NULL}};
-
-AIACTIONDEF api_aiactiondefs[] = {{NULL, NULL, 0, 0, 0}};
 
 static int ExpressionRequiredNameLookup;
 static int ExpressionNameLookupFailed;

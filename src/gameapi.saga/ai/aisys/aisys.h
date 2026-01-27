@@ -114,6 +114,7 @@ C_API_START
 extern int AiParseExpressionFailed;
 extern AICONDITIONDEF api_aiconditiondefs[];
 extern AIACTIONDEF api_aiactiondefs[];
+extern AIACTIONDEF *game_aiactiondefs;
 
 C_API_END
 
