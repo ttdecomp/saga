@@ -89,7 +89,6 @@ LAB_002ad96d:
         FILE *f = fopen(_dump_filename, "wb");
         fwrite(nativeTex->imagedata, 1, nativeTex->size, f);
         fclose(f);
-        exit(0);
 #endif
 
         id = NuTexCreateNative(nativeTex, 0);

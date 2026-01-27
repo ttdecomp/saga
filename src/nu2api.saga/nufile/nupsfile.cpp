@@ -62,6 +62,8 @@ NUPSFILE NuPSFileOpen(char *filepath, NUFILEMODE mode) {
         }
     }
 
+    LOG_WARN("Failed to open file %s", filepath);
+
     return -1;
 }
 

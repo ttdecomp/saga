@@ -252,4 +252,7 @@ extern int32_t GOLDBRICKPOINTS;
 
 extern int32_t CompletionPointInfo[7];
 
+struct nusound_filename_info_s;
+extern nusound_filename_info_s *MusicInfo;
+
 C_API_END

@@ -47,3 +47,5 @@ int32_t POINTS_PER_SUPERSTORY = 0;
 int32_t GOLDBRICKPOINTS = 0;
 
 int32_t CompletionPointInfo[7] = {0};
+
+nusound_filename_info_s *MusicInfo = NULL;

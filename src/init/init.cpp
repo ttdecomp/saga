@@ -1,4 +1,5 @@
 #include "init/init.hpp"
+#include "decomp.h"
 #include "game/area.h"
 #include "game/character.h"
 #include "game/cheat.h"
@@ -11,12 +12,12 @@
 #include "nu2api.saga/nucore/nustring.h"
 #include "nu2api.saga/nufile/nufile.h"
 #include "nu2api.saga/numemory/numemory.h"
+#include "nu2api.saga/nusound/nusound.h"
 #include "saveload/saveload.h"
 
 void NuMtlInitEx(VARIPTR *buf, int32_t usually512) {
     // iVar2 = AndroidOBBUtils::LookupPackagePath(path, 1);
     char *path = "res/main.1060.com.wb.lego.tcs.obb";
-    // char *path = "/home/fabian/git/lstcs-decomp/game/GAME.DAT";
 
     nudathdr_s *dat = NuDatOpen(path, buf, 0);
     NuDatSet(dat);
@@ -603,6 +604,8 @@ void InitGameAfterConfig(void) {
 void LoadPermData(BGPROCINFO *proc) {
     void *legalTex = (void **)(superbuffer_end.addr + -0x400000);
     int32_t legal_tid = NuTexRead("stuff\\legal\\LEGAL_ENGLISH", &legalTex);
+
+    MusicInfo = ConfigureMusic("audio\\music.txt", &permbuffer_ptr, &permbuffer_end);
 
     CDataList =
         ConfigureCharacterList("chars\\chars.txt", &permbuffer_ptr, &permbuffer_end, 340, &CHARCOUNT, 288, &GCDataList);
