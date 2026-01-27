@@ -36,8 +36,31 @@ void NuMtlInitEx(VARIPTR *buf, int32_t usually512) {
     LOG_INFO("%*s", size, buf->char_ptr);
 }
 
-void NuInitHardware(VARIPTR *buf, VARIPTR *buf_end, ...) {
-    NuMtlInitEx(buf, 512);
+int32_t NuInitHardwarePS(VARIPTR *bufferStart, VARIPTR *bufferEnd, int32_t zero) {
+    // NuIOSThreadInit();
+    // NuIOS_IsLowEndDevice();
+    // g_vaoLifetimeMutex = NuThreadCreateCriticalSection();
+    // g_texAnimCriticalSection = NuThreadCreateCriticalSection();
+    // InitializeGLMutex();
+    // NuPad_Interface_InputManagerInitialise();
+    // BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nucore/android/nuapi_android.c", 0xf9);
+    // NuIOSMtlInit();
+    // NuInitDebrisRenderer(bufferStart, bufferEnd->voidptr);
+    // EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nucore/android/nuapi_android.c", 0xfe);
+    // NuRenderThreadCreate();
+    // BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nucore/android/nuapi_android.c", 0x103);
+    // NuShaderManagerInit(bufferStart, bufferEnd->voidptr);
+    // NuRenderContextInit();
+    // EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nucore/android/nuapi_android.c", 0x108);
+    // nurndr_pixel_width = g_backingWidth;
+    // nurndr_pixel_height = g_backingHeight;
+    NuSound3InitV(bufferStart, *bufferEnd, 0, 0);
+    return 0;
+}
+
+void NuInitHardware(VARIPTR *bufferStart, VARIPTR *bufferEnd, int32_t zero) {
+    NuMtlInitEx(bufferStart, 512);
+    NuInitHardwarePS(bufferStart, bufferEnd, zero);
 }
 
 uint16_t MakeSaveHash(void) {

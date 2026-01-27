@@ -2,17 +2,20 @@
 
 #include <stdint.h>
 
+#include "game/level.h"
 #include "globals.h"
 #include "nu2api.saga/nufile/nufpar.h"
 
 #ifdef __cplusplus
 
 struct Track {
-    enum class Flags : int32_t {};
+    enum class Flags : uint32_t {};
 
-    enum class Category : int32_t {
+    enum class Class : uint32_t {
         CATEGORY_QUIET = 0x1,
         CATEGORY_ACTION = 0x2,
+        CATEGORY_4 = 0x4,
+        CATEGORY_8 = 0x8,
         CATEGORY_CUTSCENE = 0x10,
         CATEGORY_NOMUSIC = 0x20,
     };
@@ -28,7 +31,7 @@ struct Track {
     uint8_t field8_0x11;
     uint8_t field9_0x12;
     uint8_t field10_0x13;
-    Category category;
+    Class category;
     void *field12_0x18;
     int32_t indexCount;
     uint8_t field17_0x20;
@@ -49,8 +52,9 @@ class NuMusic {
         char *name;
         char *_1;
         int32_t _2;
-        int32_t _3[5];
-        int32_t _4;
+        Track *tracks[6];
+
+        Track *GetTrack(Track::Class class_);
     };
 
   private:
@@ -72,14 +76,22 @@ class NuMusic {
     Track *currentTrack;
     char *language;
 
+    Album *album;
+
   public:
     int32_t Initialise(const char *file, char *null, VARIPTR *bufferStart, VARIPTR bufferEnd);
     void GetSoundFiles(nusound_filename_info_s **finfo, int32_t *null);
 
+    void PlayTrack(Track::Class track);
+
   private:
     void InitData(const char *file, VARIPTR *bufferStart, VARIPTR bufferEnd);
 
-    void ParseTrack(Track::Category category, nufpar_s *fpar);
+    int32_t PlayTrackI(Track::Class track);
+
+    static int32_t ClassToIX(Track::Class i);
+
+    void ParseTrack(Track::Class category, nufpar_s *fpar);
 
     char *RemovePath(char *str);
     void SubstituteString(char *dst, char *src, char *find, char *subst);
@@ -164,5 +176,7 @@ class NuMusic {
 extern "C" {
     extern NuMusic music_man;
 };
+
+void GamePlayMusic(LEVELDATA *level, int32_t zero, OPTIONSSAVE *options);
 
 #endif

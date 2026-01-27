@@ -2,6 +2,18 @@
 
 #include "nu2api.saga/nuthread/nuthread.h"
 
-namespace NuCore {
-    static NuThreadManager *m_threadManager = NULL;
+class NuApplicationState {
+  private:
+    void *field0_0x0;
+
+  public:
+    NuApplicationState();
 };
+
+namespace NuCore {
+    static NuThreadManager *m_threadManager;
+    static NuApplicationState *m_applicationState;
+
+    void Initialize();
+    NuApplicationState *GetApplicationState();
+}; // namespace NuCore

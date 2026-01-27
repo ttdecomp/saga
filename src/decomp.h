@@ -80,3 +80,28 @@ static inline void *buffer_alloc_aligned(void **buffer, size_t size, size_t alig
 #define C_API_START
 #define C_API_END
 #endif
+
+#define CONCAT(a, b) a##b
+#define CONCAT_EXPAND(a, b) CONCAT(a, b)
+#define UNIQUE_FUNC(base) CONCAT_EXPAND(base, __COUNTER__)
+
+static inline uint64_t CONCAT44(uint32_t left, uint32_t right) {
+    uint64_t result = 0;
+    result |= (((uint64_t)left) << 32) & 0xffffffff00000000;
+    result |= right;
+    return result;
+}
+
+static inline uint32_t CARRY4(uint32_t a, uint32_t b) {
+    return (a + b) < a;
+}
+
+#ifdef HOST_BUILD
+
+static inline void *__emutls_get_address(void *ptr) {
+    return ptr;
+}
+
+#else
+#define thread_local
+#endif

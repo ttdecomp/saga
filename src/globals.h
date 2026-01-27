@@ -64,6 +64,7 @@ struct OPTIONSSAVE_s { /* PlaceHolder Structure */
     undefined field10_0xa;
     undefined field11_0xb;
 };
+typedef struct OPTIONSSAVE_s OPTIONSSAVE;
 
 struct customisesave_s { /* PlaceHolder Structure */
     undefined2 field0_0x0;

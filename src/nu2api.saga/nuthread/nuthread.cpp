@@ -1,5 +1,6 @@
 #include <pthread.h>
 
+#include "nu2api.saga/nucore/nustring.h"
 #include "nu2api.saga/nuthread/nuthread.h"
 
 static pthread_mutex_t NuThread_CriticalSections[16] = {PTHREAD_MUTEX_INITIALIZER};
@@ -52,6 +53,10 @@ int32_t NuThreadManager::AllocTLS() {
     return -1;
 }
 
+NuMemoryManager *NuThreadBase::GetLocalStorage(uint32_t index) const {
+    return this->memoryManagers[index];
+}
+
 /// the original implementation uses gcc's emulated TLS
 NuThreadBase *NuThreadGetCurrentThread() {
     return NULL;
@@ -61,6 +66,100 @@ NuThreadBase *NuThreadManager::GetCurrentThread() {
     return NuThreadGetCurrentThread();
 }
 
-NuMemoryManager *NuThreadBase::GetLocalStorage(uint32_t index) const {
-    return this->memoryManagers[index];
+NuThreadBase::NuThreadBase(const NuThreadCreateParameters &params) {
+}
+
+void NuThreadBase::SetDebugName(const char *name) {
+    NuStrNCpy(this->name, name, 0x20);
+}
+
+void (*NuThreadBase::GetThreadFn() const)(void *) {
+    return this->threadFn;
+}
+void *NuThreadBase::GetParam() const {
+    return this->param;
+}
+
+NuThread *NuThreadManager::CreateThread(void (*func)(void *), void *arg, int priority, char *name, int param_5,
+                                        void *nuthreadCafeCore, void *nuthreadXbox360Core) {
+    NuThreadCreateParameters params = {
+        func, arg, priority, name, (uint8_t)param_5, nuthreadCafeCore, nuthreadXbox360Core,
+    };
+    return new NuThread(params);
+}
+
+static thread_local pthread_t g_currentPthread;
+
+NuThread::NuThread(const NuThreadCreateParameters &params) : NuThreadBase(params) {
+    pthread_t *thread = (pthread_t *)__emutls_get_address(&g_currentPthread);
+
+    if (params.field20_0x20 != 0) {
+        // ppVar1 = (pthread_t *)__emutls_get_address(__emutls_v._ZL16g_currentPthread);
+        // *ppVar1 = pVar2;
+        *thread = pthread_self();
+    } else {
+
+        struct sched_param param;
+        switch (params.priority) {
+            case 0:
+                // priority = -2;
+                param.sched_priority = -2;
+                break;
+            case 1:
+                param.sched_priority = -1;
+                break;
+            case 2:
+                param.sched_priority = 0;
+                break;
+            case 3:
+                param.sched_priority = 1;
+                break;
+            case 4:
+                param.sched_priority = 2;
+                break;
+        }
+
+        // this->field_0xa8 = params.field8_0x14;
+
+        pthread_attr_t attrs;
+        pthread_attr_init(&attrs);
+
+        pthread_attr_setschedparam(&attrs, &param);
+
+        pthread_create(thread, &attrs, (void *(*)(void *))(&NuThread::ThreadMain), this);
+        pthread_attr_destroy(&attrs);
+
+        SetDebugName(params.name);
+    }
+}
+
+void *NuThread::ThreadMain() {
+    LOG_INFO("name=%s", this->name);
+
+    while (this->startSignal != 0) {
+        NuThreadSleep(1);
+    }
+
+    void (*threadFn)(void *) = GetThreadFn();
+    void *param = GetParam();
+
+    (*threadFn)(param);
+
+    delete this;
+
+    return NULL;
+}
+
+void NuThreadSleep(int32_t seconds) {
+    timespec time;
+
+    if (seconds < 1000) {
+        time.tv_sec = 0;
+    } else {
+        time.tv_sec = seconds / 1000;
+        seconds = seconds % 1000;
+    }
+    time.tv_nsec = seconds * 1000000;
+
+    nanosleep(&time, NULL);
 }

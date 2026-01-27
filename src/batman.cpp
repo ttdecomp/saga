@@ -1,7 +1,9 @@
 #include <stdint.h>
 
+#include "game/level.h"
 #include "globals.h"
 #include "init/init.hpp"
+#include "nu2api.saga/numusic/numusic.h"
 #include "nu2api.saga/nuplatform/nuplatform.hpp"
 
 extern "C" int32_t NuMain(int32_t argc, char **argv) {
@@ -17,6 +19,11 @@ extern "C" int32_t NuMain(int32_t argc, char **argv) {
         float completion = (float)saveload_slotcode[i] * 100.0f / COMPLETIONPOINTS;
         LOG_INFO("slot %d used=%d completion=%f%% (%.1f%%)", i, saveload_slotused[i], completion, completion);
     }
+
+    LEVELDATA *level = Level_FindByName("titles", NULL);
+    LOG_INFO("titles level: %p", level);
+
+    GamePlayMusic(level, 0, &Game.optionsSave);
 
     return 0;
 }

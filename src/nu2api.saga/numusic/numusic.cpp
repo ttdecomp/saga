@@ -10,13 +10,41 @@ extern "C" {
     NuMusic music_man;
 };
 
+int32_t NuMusic::ClassToIX(Track::Class i) {
+    switch (i) {
+        case Track::Class::CATEGORY_QUIET:
+            return 0;
+        case Track::Class::CATEGORY_ACTION:
+            return 1;
+        case Track::Class::CATEGORY_4:
+            return 2;
+        case Track::Class::CATEGORY_8:
+            return 3;
+        case Track::Class::CATEGORY_CUTSCENE:
+            return 4;
+        case Track::Class::CATEGORY_NOMUSIC:
+            return 5;
+        default:
+            return -1;
+    }
+}
+
+Track *NuMusic::Album::GetTrack(Track::Class class_) {
+    int32_t index = ClassToIX(class_);
+    if (index == -1) {
+        return NULL;
+    } else {
+        return this->tracks[index];
+    }
+}
+
 int32_t NuMusic::Initialise(const char *file, char *null, VARIPTR *bufferStart, VARIPTR bufferEnd) {
     the_music_player = this;
 
-    // this->field343_0x1d4 = null;
+    this->language = null;
     // this->field6_0x18 = 0x1000;
     // this->field15_0x24 = 0;
-    // this->field271_0x124 = 0;
+    this->strictMode = false;
 
     // InitVoiceManager(this);
     InitData(file, bufferStart, bufferEnd);
@@ -24,7 +52,7 @@ int32_t NuMusic::Initialise(const char *file, char *null, VARIPTR *bufferStart, 
     // this->field336_0x1a4 = 0;
     // this->field339_0x1b0 = 0.5;
     // this->field333_0x198 = 1.0;
-    // this->field344_0x1d8 = this->album;
+    this->album = this->albums;
     // this->field334_0x19c = 1.0;
     // this->field335_0x1a0 = 1.0;
     // this->field337_0x1a8 = 1.0;
@@ -77,7 +105,77 @@ void NuMusic::InitData(const char *file, VARIPTR *bufferStart, VARIPTR bufferEnd
     NuFParSetInterpreterErrorHandler(0);
 }
 
-void NuMusic::ParseTrack(Track::Category category, nufpar_s *fpar) {
+void NuMusic::PlayTrack(Track::Class track) {
+    PlayTrackI(track);
+}
+
+int32_t NuMusic::PlayTrackI(Track::Class class_) {
+
+    if (this == NULL || the_music_player == NULL) {
+        return -1;
+    }
+
+    if (this->album == NULL) {
+        return -2;
+    }
+
+    Track *track = this->album->GetTrack(class_);
+
+    // if (track == NULL || track->field6_0xc[(int)this->track] == -1) {
+    //     return -3;
+    // }
+
+    if (track->category != Track::Class::CATEGORY_CUTSCENE) {
+        // if (FindVoiceByClassAndStatus(this, Track::Class::CATEGORY_CUTSCENE, 6) != 0) {
+        //     return -5;
+        // }
+        // if (FindVoiceByClassAndStatus(this, Track::Class::CATEGORY_CUTSCENE, 7) != 0) {
+        //     return -5;
+        // }
+    }
+
+    /*
+    struct Voice;
+    int iVar1;
+    Voice *voice;
+    Voice *vooice;
+
+    voice = (Voice *)FindVoiceByTrack(this, track);
+    if (voice != (Voice *)0x0) {
+        iVar1 = Voice::Play(voice);
+        return iVar1;
+    }
+    iVar1 = track->category;
+    if (iVar1 == 8) {
+        vooice = FindVoiceByClass(this, 8);
+        if (vooice != (Voice *)0x0) {
+            if ((vooice->field9_0x18 & 0xfffffffdU) != 1) {
+                return -5;
+            }
+            goto LAB_003242a3;
+        }
+        iVar1 = track->category;
+    }
+    if (iVar1 == 0x10) {
+        StopAll(this, 2);
+    }
+    vooice = (Voice *)FindIdleVoice(this);
+    if (vooice == (Voice *)0x0) {
+        return -5;
+    }
+LAB_003242a3:
+    iVar1 = Voice::Load(vooice, track, this->track);
+    if (iVar1 == 0) {
+        return -5;
+    }
+    iVar1 = Voice::Play(vooice);
+    return iVar1;
+    */
+
+    UNIMPLEMENTED();
+}
+
+void NuMusic::ParseTrack(Track::Class category, nufpar_s *fpar) {
     Track *track = &this->tracks[this->trackCount++];
     memset(track, 0, sizeof(Track));
 
@@ -233,10 +331,10 @@ void NuMusic::xAlbum(nufpar_s *fpar) {
     this->currentAlbum->name = AllocString(fpar->word_buf);
 }
 void NuMusic::xAction(nufpar_s *fpar) {
-    ParseTrack(Track::Category::CATEGORY_ACTION, fpar);
+    ParseTrack(Track::Class::CATEGORY_ACTION, fpar);
 }
 void NuMusic::xQuiet(nufpar_s *fpar) {
-    ParseTrack(Track::Category::CATEGORY_QUIET, fpar);
+    ParseTrack(Track::Class::CATEGORY_QUIET, fpar);
 }
 void NuMusic::xOverlay(nufpar_s *fpar) {
     UNIMPLEMENTED();
@@ -245,10 +343,10 @@ void NuMusic::xSignature(nufpar_s *fpar) {
     UNIMPLEMENTED();
 }
 void NuMusic::xCutscene(nufpar_s *fpar) {
-    ParseTrack(Track::Category::CATEGORY_CUTSCENE, fpar);
+    ParseTrack(Track::Class::CATEGORY_CUTSCENE, fpar);
 }
 void NuMusic::xNoMusicC(nufpar_s *fpar) {
-    ParseTrack(Track::Category::CATEGORY_NOMUSIC, fpar);
+    ParseTrack(Track::Class::CATEGORY_NOMUSIC, fpar);
 }
 void NuMusic::xGlobalAttenuation(nufpar_s *fpar) {
     UNIMPLEMENTED();
@@ -318,4 +416,8 @@ void NuMusic::GlobalParseErrorFn(nufpar_s *param_1) {
 }
 
 void NuMusic::TrackParseErrorFn(nufpar_s *param_1) {
+}
+
+void GamePlayMusic(LEVELDATA *level, int32_t zero, OPTIONSSAVE *options) {
+    music_man.PlayTrack(Track::Class::CATEGORY_ACTION);
 }
