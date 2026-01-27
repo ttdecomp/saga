@@ -103,10 +103,10 @@ LAB_002ad96d:
 
 void NuTexCreatePS(nunativetex_s *nativeTex, bool isPvr) {
     if (nativeTex != NULL && nativeTex->imagedata != NULL && nativeTex->size != 0) {
-        nativeTex->glTex =
-            // NuIOS_CreateGLTexFromPlatformInMemory(nativeTex->imagedata, &nativeTex->ptr, &nativeTex->field1_0x4,
-            // isPvr);
-            (int32_t)UNIMPLEMENTED();
+        // nativeTex->glTex =
+        // NuIOS_CreateGLTexFromPlatformInMemory(nativeTex->imagedata, &nativeTex->ptr, &nativeTex->field1_0x4,
+        // isPvr);
+        UNIMPLEMENTED();
         nativeTex->imagedata = NULL;
         nativeTex->size = 0;
     }

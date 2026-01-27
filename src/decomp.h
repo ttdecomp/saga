@@ -6,12 +6,11 @@
 #include <stdlib.h>
 
 #define SAGA_NOMATCH __attribute__((section(".text.nomatch")))
-#define UNIMPLEMENTED(...) __unimplemented(__FILE__, __LINE__, __func__, #__VA_ARGS__)
-
-static void *__attribute__((noreturn)) __unimplemented(const char *file, int line, const char *func, const char *msg) {
-    fprintf(stderr, "%s:%d: %s: UNIMPLEMENTED: %s\n", file, line, func, msg);
-    exit(EXIT_FAILURE);
-}
+#define UNIMPLEMENTED(...)                                                                                             \
+    ({                                                                                                                 \
+        fprintf(stderr, "%s:%d: %s: UNIMPLEMENTED: %s\n", __FILE__, __LINE__, __func__, #__VA_ARGS__);                 \
+        exit(EXIT_FAILURE);                                                                                            \
+    })
 
 #ifdef HOST_BUILD
 
@@ -81,18 +80,3 @@ static inline void *buffer_alloc_aligned(void **buffer, size_t size, size_t alig
 #define C_API_START
 #define C_API_END
 #endif
-
-#define CONCAT(a, b) a##b
-#define CONCAT_EXPAND(a, b) CONCAT(a, b)
-#define UNIQUE_FUNC(base) CONCAT_EXPAND(base, __COUNTER__)
-
-static inline uint64_t CONCAT44(uint32_t left, uint32_t right) {
-    uint64_t result = 0;
-    result |= (((uint64_t)left) << 32) & 0xffffffff00000000;
-    result |= right;
-    return result;
-}
-
-static inline uint32_t CARRY4(uint32_t a, uint32_t b) {
-    return (a + b) < a;
-}
