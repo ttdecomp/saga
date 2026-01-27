@@ -15,13 +15,7 @@ enum Commands {
 }
 
 fn main() {
-    simplelog::TermLogger::init(
-        simplelog::LevelFilter::Info,
-        simplelog::Config::default(),
-        simplelog::TerminalMode::Mixed,
-        simplelog::ColorChoice::Auto,
-    )
-    .expect("Failed to initialize logger");
+    env_logger::init();
 
     let cli = Cli::parse();
 
