@@ -12,7 +12,7 @@ struct CompileCommand {
 
 /// construct a new object file containing only the specified symbols from the original object file
 fn make_object<'a>(
-    lib: &object::read::elf::ElfFile32<'_>,
+    lib: &Lib<'_, '_>,
     symbols: &[impl AsRef<str> + std::fmt::Debug],
 ) -> anyhow::Result<object::write::Object<'a>> {
     log::info!("making object with symbols: {:?}", symbols);
@@ -26,47 +26,41 @@ fn make_object<'a>(
     let mut sections = HashMap::new();
 
     for symbol in symbols {
-        let Some(symbol) = lib.symbol_by_name(symbol.as_ref()) else {
+        let Some(symbol) = lib.symbols.get(symbol.as_ref()) else {
             log::warn!("Failed to find symbol '{symbol:?}' in original object, skipping");
             continue;
         };
 
         let name = symbol.name().context("Failed to get symbol name")?;
 
-        let Some(section) = lib
-            .sections()
-            .find(|s| s.address() <= symbol.address() && symbol.address() < s.address() + s.size())
-        else {
-            log::warn!(
-                "Failed to find section for symbol '{:?}' at address {:#x}, skipping",
-                name,
-                symbol.address()
-            );
+        let Some(section_idx) = symbol.section().index() else {
+            log::warn!("failed to find section for symbol {}, skipping", name);
             continue;
         };
 
-        let section_id = *sections
+        let section = lib
+            .file
+            .section_by_index(section_idx)
+            .context("Failed to get symbol section")?;
+
+        let write_id = *sections
             .entry(section.name().context("Failed to get section name")?)
             .or_insert_with(|| {
                 obj.add_section(
                     Vec::new(),
-                    section
-                        .name()
-                        .expect("Section should have a name")
-                        .as_bytes()
-                        .to_vec(),
+                    section.name().unwrap().as_bytes().to_vec(),
                     section.kind(),
                 )
             });
 
         let offset = if section.kind() == object::SectionKind::UninitializedData {
-            obj.append_section_bss(section_id, symbol.size(), 1)
+            obj.append_section_bss(write_id, symbol.size(), 1)
         } else {
             let bytes = section.data().context("Failed to get section data")?;
             let bytes = &bytes[(symbol.address() - section.address()) as usize
                 ..(symbol.address() - section.address() + symbol.size()) as usize];
 
-            obj.append_section_data(section_id, bytes, 8)
+            obj.append_section_data(write_id, bytes, 8)
         };
 
         // add symbol to output
@@ -77,7 +71,7 @@ fn make_object<'a>(
             kind: symbol.kind(),
             scope: symbol.scope(),
             weak: symbol.is_weak(),
-            section: object::write::SymbolSection::Section(section_id),
+            section: object::write::SymbolSection::Section(write_id),
             flags: object::SymbolFlags::None,
         });
     }
@@ -125,6 +119,14 @@ fn symbol_filter<'a>(symbol: &impl object::ObjectSymbol<'a>) -> bool {
     true
 }
 
+type ElfSymbol<'data, 'file, E> =
+    object::read::elf::ElfSymbol<'data, 'file, object::elf::FileHeader32<E>>;
+
+struct Lib<'data, 'file> {
+    file: &'file object::read::elf::ElfFile32<'file>,
+    symbols: HashMap<&'data str, ElfSymbol<'data, 'file, object::Endianness>>,
+}
+
 pub fn split() -> anyhow::Result<()> {
     let contents = std::fs::read_to_string("build/compile_commands.json")
         .context("Failed to read compile_commands.json")?;
@@ -132,8 +134,18 @@ pub fn split() -> anyhow::Result<()> {
         serde_json::from_str(&contents).context("Failed to parse compile_commands.json")?;
 
     let contents = std::fs::read("res/libTTapp.so").context("Failed to read libTTapp.so")?;
-    let original_lib = object::read::elf::ElfFile32::parse(&*contents)
+    let orig_lib_file = object::read::elf::ElfFile32::parse(&*contents)
         .context("Failed to parse original libTTapp.so")?;
+
+    let orig_symbols = orig_lib_file
+        .symbols()
+        .map(|sym| (sym.name().unwrap(), sym))
+        .collect();
+
+    let original_lib = Lib {
+        file: &orig_lib_file,
+        symbols: orig_symbols,
+    };
 
     std::fs::create_dir_all("build/split").context("Failed to create build/split directory")?;
 
@@ -192,7 +204,7 @@ pub fn split() -> anyhow::Result<()> {
     }
 
     // add a unit for the remaining symbols
-    let remaining_symbols = original_lib
+    let remaining_symbols = orig_lib_file
         .symbols()
         .filter(symbol_filter)
         .filter_map(|s| s.name().ok())
