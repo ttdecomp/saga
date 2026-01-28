@@ -4,23 +4,11 @@
 
 NuPlatform *NuPlatform::ms_instance = NULL;
 
-char *NuPlatform::GetCurrentTextureExtension() {
-    return this->textureExtension;
-}
-
-PLATFORMS_SUPPORTED NuPlatform::GetCurrentPlatform() {
-    return this->currentPlatform;
-}
-
 void NuPlatform::Create(void) {
     if (ms_instance == NULL) {
-        ms_instance = (NuPlatform *)malloc(0x10);
+        ms_instance = (NuPlatform *)malloc(sizeof(NuPlatform));
         ms_instance->currentPlatform = DEFAULT_PLATFORM;
     }
-}
-
-NuPlatform *NuPlatform::Get() {
-    return ms_instance;
 }
 
 char *g_fontExtension = NULL;

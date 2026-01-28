@@ -41,11 +41,17 @@ class NuPlatform {
   public:
     static NuPlatform *ms_instance;
 
-    static NuPlatform *Get();
+    static NuPlatform *Get(void) {
+        return NuPlatform::ms_instance;
+    }
     static void Create(void);
 
-    char *GetCurrentTextureExtension();
-    PLATFORMS_SUPPORTED GetCurrentPlatform();
+    char *GetCurrentTextureExtension() const {
+        return this->textureExtension;
+    }
+    PLATFORMS_SUPPORTED GetCurrentPlatform() const {
+        return this->currentPlatform;
+    }
     void SetCurrentPlatform(PLATFORMS_SUPPORTED platform);
 };
 
