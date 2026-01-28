@@ -2,8 +2,18 @@
 
 #include <GLES2/gl2.h>
 
-typedef struct nunativetex_ps_s {
-    GLuint gl_tex;
-} NUNATIVETEX_PS;
+#include "decomp.h"
 
-GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, int *width, int *height, bool is_pvrtc);
+typedef struct nunativetexps_s {
+    GLuint gl_tex;
+} NUNATIVETEXPS;
+
+C_API_START
+
+extern int g_textureLoadBufferCriticalSection;
+
+extern GLuint g_LegoEnvTexture;
+extern GLuint g_PhongEnvTexture;
+extern GLuint g_whiteTexture;
+
+C_API_END

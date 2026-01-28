@@ -31,7 +31,7 @@ typedef struct nunativetex_s {
     int ref_count;
     void *image_data;
     unsigned int size;
-    NUNATIVETEX_PS platform;
+    NUNATIVETEXPS platform;
 } NUNATIVETEX;
 
 C_API_START
@@ -57,6 +57,8 @@ int NuTexGetRefCount(int tex_id);
 void NuTexDisplayTexturePage(int page, float depth, int alpha);
 
 C_API_END
+
+void NuTexInitExPS(VARIPTR *buf);
 
 void NuTexCreatePS(NUNATIVETEX *tex, bool is_pvrtc);
 void NuTexDestroyPS(NUNATIVETEX *tex);

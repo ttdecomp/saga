@@ -6,12 +6,14 @@
 
 #include "nu2api.saga/nu3d/nutex_android.h"
 
+#include "nu2api.saga/nu3d/android/nutex_ios_ex.h"
 #include "nu2api.saga/nu3d/nutex.h"
 #include "nu2api.saga/nucore/common.h"
 #include "nu2api.saga/nucore/nuapi.h"
 #include "nu2api.saga/nucore/nustring.h"
 #include "nu2api.saga/nufile/nufile.h"
 #include "nu2api.saga/nuplatform/nuplatform.h"
+#include "nu2api.saga/nuthread/nuthread.h"
 
 #define TEX_PATH "mnt/sdcard/TTGames/com.wb.lego.tcs/files/androidTextures/"
 
@@ -135,6 +137,33 @@ void NuTexDestroyPS(NUNATIVETEX *tex) {
 
         NudxFw_D3DEndCriticalSection();
     }
+}
+
+int g_textureLoadBufferCriticalSection;
+
+GLuint g_LegoEnvTexture;
+GLuint g_PhongEnvTexture;
+GLuint g_whiteTexture;
+
+void NuTexInitExPS(VARIPTR *buf) {
+    GLuint white;
+
+    g_textureLoadBufferCriticalSection = NuThreadCreateCriticalSection();
+
+    g_LegoEnvTexture = NuIOS_CreateGLTexFromFile("pc/stuff/legocubemap_ios.tex");
+    g_PhongEnvTexture = NuIOS_CreateGLTexFromFile("pc/stuff/phongmap_ios.tex");
+
+    glGenTextures(1, &g_whiteTexture);
+    glActiveTexture(GL_TEXTURE0);
+
+    g_currentTexUnit = 0;
+
+    glBindTexture(GL_TEXTURE_2D, g_whiteTexture);
+
+    white = 0xffffffff;
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, &white);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 }
 
 void NuTexDisplayTexturePage(int page, float depth, int alpha) {
