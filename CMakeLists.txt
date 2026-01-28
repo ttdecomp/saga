@@ -54,6 +54,9 @@ if (BUILD_FOR_HOST)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32 -fno-stack-protector -march=i686 -msse2")
 
     add_compile_definitions(HOST_BUILD)
+
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(GLES2 REQUIRED glesv2)
 else()
     message(STATUS "Building for Android x86")
 
@@ -63,13 +66,15 @@ else()
     set(CMAKE_CXX_COMPILER "${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/linux-x86_64/bin/i686-linux-android-g++")
     set(CMAKE_SYSROOT "${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/platforms/android-9/arch-x86")
     include_directories("${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/sources/cxx-stl/stlport/stlport/")
+
+    set(GLES2_LIBRARIES "GLESv2")
 endif()
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti -Wno-write-strings -lGLESv2")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti -Wno-write-strings")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-write-strings")
 
 set(CMAKE_BUILD_TYPE Debug)
@@ -151,11 +156,13 @@ set(SAGA_SOURCE_FILES
 
 set(SAGA_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${GLES2_INCLUDE_DIRS}
 )
 
 add_executable(saga ${SAGA_SOURCE_FILES})
 set_target_properties(saga PROPERTIES ENABLE_EXPORTS TRUE)
 target_include_directories(saga PUBLIC ${SAGA_INCLUDE_DIRS})
+target_link_libraries(saga PRIVATE ${GLES2_LIBRARIES})
 
 # set __FILENAME__ macro to relative path from src/
 function(set_filename_macro f)
@@ -167,6 +174,7 @@ endfunction()
 if(BUILD_FOR_HOST)
     add_library(saga_shared SHARED ${SAGA_SOURCE_FILES})
     target_include_directories(saga_shared PUBLIC ${SAGA_INCLUDE_DIRS})
+    target_link_libraries(saga_shared PUBLIC ${GLES2_LIBRARIES})
 
     include(CTest)
     enable_testing()
@@ -176,7 +184,7 @@ if(BUILD_FOR_HOST)
 
         add_executable(${test_name} ${file})
         target_include_directories(${test_name} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
-        target_link_libraries(${test_name} saga_shared)
+        target_link_libraries(${test_name} PRIVATE saga_shared)
 
         add_test(
             NAME ${test_name}
