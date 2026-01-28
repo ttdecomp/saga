@@ -17,7 +17,7 @@ jobs:
         run: sudo apt-get install gcc-multilib g++-multilib
 
       - name: Install GLESv2 libs
-        run: sudo dpkg --add-architecture i386 && sudo apt-get update && sudo apt-get install libgles2:i386
+        run: sudo dpkg --add-architecture i386 && sudo apt-get update && sudo apt-get install libgles2-mesa-dev:i386
 
       - name: gcc versions
         run: |
@@ -29,6 +29,8 @@ jobs:
 
       - name: Configure CMake
         run: cmake -B build -DBUILD_FOR_HOST=ON .
+        env:
+          PKG_CONFIG_PATH: /usr/lib/i386-linux-gnu/pkgconfig
 
       - name: Build
         run: cmake --build build
