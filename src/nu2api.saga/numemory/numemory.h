@@ -2,49 +2,49 @@
 
 #include <stdint.h>
 
+#include "nu2api.saga/numemory/NuMemoryManager.h"
+#include "nu2api.saga/numemory/NuMemoryPool.h"
+#include "nu2api.saga/numemory/numemory_android.h"
+
 #ifdef __cplusplus
-
-class NuMemoryManager {
-  public:
-    enum ErrorCode {};
-
-    class IErrorHandler {
-      public:
-        virtual void HandleError(NuMemoryManager *manager, ErrorCode code, const char *msg);
-        virtual int OpenDump(NuMemoryManager *manager, const char *filename, unsigned int &id);
-        virtual void CloseDump(NuMemoryManager *manager, unsigned int id);
-        virtual void Dump(NuMemoryManager *manager, unsigned int id, const char *msg);
-    };
-
-  private:
-    static unsigned int m_headerSize;
-
-    const char **categoryNames;
-    unsigned int categoryCount;
-    bool isZombie;
-    uint32_t idx;
-
-  public:
-    static void SetFlags(unsigned int flags);
-
-    void *_BlockAlloc(uint32_t size, uint32_t param_2, uint32_t param_3, const char *name, uint16_t param_5);
-
-  private:
-    void *_TryBlockAlloc(uint32_t size, uint32_t param_2, uint32_t param_3, const char *name, uint16_t param_5);
-    void ____WE_HAVE_RUN_OUT_OF_MEMORY_____(uint32_t size, const char *name);
-
-    unsigned int CalculateBlockSize(unsigned int size);
-    void ValidateAllocAlignment(unsigned int alignment);
-    void ValidateAllocSize(unsigned int size);
-};
 
 struct NuMemory {
   private:
-    class MemErrorHandler : NuMemoryManager::IErrorHandler {};
+    class MemErrorHandler : public NuMemoryManager::IErrorHandler {};
+
+    class FixedPoolEventHandler : NuMemoryPool::IEventHandler {
+      public:
+        virtual int AllocatePage(NuMemoryPool *pool, unsigned int _unknown, unsigned int _unknown2,
+                                 const char *_unknown3) override;
+        virtual int ReleasePage(NuMemoryPool *pool, void *ptr) override;
+        virtual void ForceReleasePage(NuMemoryPool *pool, void *ptr) override;
+        virtual void *AllocateLargeBlock(NuMemoryPool *pool, unsigned int _unknown, unsigned int _unknown2,
+                                         const char *_unknown3) override;
+        virtual void FreeLargeBlock(NuMemoryPool *pool, void *ptr) override;
+    };
+
+    class DynamicPoolEventHandler : NuMemoryPool::IEventHandler {
+      public:
+        virtual int AllocatePage(NuMemoryPool *pool, unsigned int _unknown, unsigned int _unknown2,
+                                 const char *_unknown3) override;
+        virtual int ReleasePage(NuMemoryPool *pool, void *ptr) override;
+        virtual void ForceReleasePage(NuMemoryPool *pool, void *ptr) override;
+        virtual void *AllocateLargeBlock(NuMemoryPool *pool, unsigned int _unknown, unsigned int _unknown2,
+                                         const char *_unknown3) override;
+        virtual void FreeLargeBlock(NuMemoryPool *pool, void *ptr) override;
+    };
 
     MemErrorHandler *errorHandler;
-    int32_t tlsIndex = -1;
-    NuMemoryManager *memoryManager = NULL;
+    NuMemoryPS::Mem1EventHandler *mem1EventHandler;
+    NuMemoryPS::Mem2EventHandler *mem2EventHandler;
+    NuMemoryManager *mem1Manager;
+    NuMemoryManager *mem2Manager;
+    int _unknown;
+    FixedPoolEventHandler *fixedPoolEventHandler;
+    DynamicPoolEventHandler *dynamicPoolEventHandler;
+    int _unknown2;
+
+    int32_t tlsIndex;
 
   public:
     NuMemory(void **buf);

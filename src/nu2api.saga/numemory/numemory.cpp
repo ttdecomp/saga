@@ -20,84 +20,40 @@ const char *g_categoryNames[51] = {
 };
 
 NuMemory::NuMemory(void **buf) {
-    VARIPTR buf_ptr;
+    void *ptr;
+    NuMemoryManager *mem1;
 
-    buf_ptr.void_ptr = *buf;
+    ptr = *buf;
     this->tlsIndex = -1;
 
     NuMemoryManager::SetFlags(0);
 
-    buf_ptr.addr = ALIGN(buf_ptr.addr, 0x8);
+    ptr = (void *)ALIGN((int)ptr, 0x8);
 
-    this->errorHandler = new (&buf_ptr.void_ptr) MemErrorHandler();
-}
+    this->errorHandler = new (ptr) MemErrorHandler();
+    ptr = (void *)((int)ptr + sizeof(MemErrorHandler) + 0x100);
 
-unsigned int NuMemoryManager::m_headerSize;
+    this->mem1EventHandler = new (ptr) NuMemoryPS::Mem1EventHandler();
+    ptr = (void *)((int)ptr + sizeof(NuMemoryPS::Mem1EventHandler));
 
-void NuMemoryManager::SetFlags(unsigned int flags) {
-    if ((flags & 4) == 0) {
-        NuMemoryManager::m_headerSize = 4;
-    } else {
-        NuMemoryManager::m_headerSize = 12;
-    }
-}
+    this->mem1Manager = new (ptr) NuMemoryManager(this->mem1EventHandler, this->errorHandler, "MEM1", g_categoryNames,
+                                                  sizeof(g_categoryNames) / sizeof(char *));
+    ptr = (void *)((int)ptr + sizeof(NuMemoryManager));
 
-unsigned int NuMemoryManager::CalculateBlockSize(unsigned int size) {
-    uint uVar1;
-    int blockSize;
-    uint uVar2;
+    this->mem2EventHandler = new (ptr) NuMemoryPS::Mem2EventHandler();
+    ptr = (void *)((int)ptr + sizeof(NuMemoryPS::Mem2EventHandler));
 
-    uVar1 = ALIGN(size, 0x4);
-    uVar2 = uVar1 >= 8 ? uVar1 : 8;
+    this->mem2Manager = new (ptr) NuMemoryManager(this->mem2EventHandler, this->errorHandler, "MEM2", g_categoryNames,
+                                                  sizeof(g_categoryNames) / sizeof(char *));
+    ptr = (void *)((int)ptr + sizeof(NuMemoryManager));
 
-    blockSize = uVar2 + NuMemoryManager::m_headerSize + 4;
-    if (this->idx > 29) {
-        blockSize = uVar2 + NuMemoryManager::m_headerSize + 8;
-    }
+    this->fixedPoolEventHandler = new (ptr) FixedPoolEventHandler();
+    ptr = (void *)((int)ptr + sizeof(FixedPoolEventHandler));
 
-    return blockSize;
-}
+    this->dynamicPoolEventHandler = new (ptr) DynamicPoolEventHandler();
+    ptr = (void *)((int)ptr + sizeof(DynamicPoolEventHandler));
 
-void *NuMemoryManager::_BlockAlloc(uint32_t size, uint32_t param_2, uint32_t param_3, const char *name,
-                                   uint16_t param_5) {
-    void *ptr = this->_TryBlockAlloc(size, param_2, param_3, name, param_5);
-
-    if (ptr == NULL) {
-        this->____WE_HAVE_RUN_OUT_OF_MEMORY_____(size, name);
-    }
-
-    return ptr;
-}
-
-void *NuMemoryManager::_TryBlockAlloc(uint32_t size, uint32_t param_2, uint32_t param_3, const char *name,
-                                      uint16_t param_5) {
-    LOG_INFO("size=%x, param_2=%u, param_3=%u, name='%s', param_5=%u", size, param_2, param_3, name, param_5);
-
-    // UNIMPLEMENTED();
-    return malloc(size);
-}
-
-void NuMemoryManager::____WE_HAVE_RUN_OUT_OF_MEMORY_____(uint32_t size, const char *name) {
-    UNIMPLEMENTED();
-}
-
-void NuMemoryManager::IErrorHandler::HandleError(NuMemoryManager *manager, ErrorCode code, const char *msg) {
-}
-
-int NuMemoryManager::IErrorHandler::OpenDump(NuMemoryManager *manager, const char *filename, unsigned int &id) {
-    return 0;
-}
-
-void NuMemoryManager::IErrorHandler::CloseDump(NuMemoryManager *manager, unsigned int id) {
-}
-
-void NuMemoryManager::IErrorHandler::Dump(NuMemoryManager *manager, unsigned int id, const char *msg) {
-}
-
-void NuMemory::InitalizeThreadLocalStorage() {
-    if ((this->tlsIndex == -1) && NuCore::m_threadManager != NULL) {
-        this->tlsIndex = NuCore::m_threadManager->AllocTLS();
-    }
+    this->_unknown = 0;
 }
 
 NuMemoryManager *NuMemory::GetThreadMem() {
@@ -105,25 +61,79 @@ NuMemoryManager *NuMemory::GetThreadMem() {
 
     if (this->tlsIndex != -1) {
         NuThreadBase *thread = NuThreadManager::GetCurrentThread();
-        if (thread == NULL) {
+
+        if (thread != NULL) {
             NuMemoryManager *manager = thread->GetLocalStorage(this->tlsIndex);
+
             if (manager != NULL) {
                 return manager;
             }
         }
     }
 
-    return this->memoryManager;
+    return this->mem1Manager;
 }
 
 static char g_memoryBuffer[0x10000];
 
 NuMemory *NuMemoryGet() {
+    void *mem;
+    char *aligned;
+
     if (g_memory != NULL) {
         return g_memory;
     }
 
-    new (&g_memoryBuffer) NuMemory{(void **)&g_memoryBuffer + sizeof(NuMemory)};
-    g_memory = (NuMemory *)&g_memoryBuffer;
-    return (NuMemory *)&g_memoryBuffer;
+    aligned = (char *)ALIGN((int)g_memoryBuffer, 0x8);
+
+    mem = aligned + sizeof(NuMemory);
+    g_memory = new (aligned) NuMemory(&mem);
+    return g_memory;
+}
+
+void NuMemory::InitalizeThreadLocalStorage() {
+    if (this->tlsIndex == -1 && NuCore::m_threadManager != NULL) {
+        this->tlsIndex = NuCore::m_threadManager->AllocTLS();
+    }
+}
+
+int NuMemory::FixedPoolEventHandler::AllocatePage(NuMemoryPool *pool, unsigned int _unknown, unsigned int _unknown2,
+                                                  const char *_unknown3) {
+    return 0;
+}
+
+int NuMemory::FixedPoolEventHandler::ReleasePage(NuMemoryPool *pool, void *ptr) {
+    NuMemoryGet()->GetThreadMem()->BlockFree(ptr, 0);
+
+    return 1;
+}
+
+void NuMemory::FixedPoolEventHandler::ForceReleasePage(NuMemoryPool *pool, void *ptr) {
+    NuMemoryGet()->GetThreadMem()->BlockFree(ptr, 0);
+}
+
+void *NuMemory::FixedPoolEventHandler::AllocateLargeBlock(NuMemoryPool *pool, unsigned int size, unsigned int alignment,
+                                                          const char *_unknown3) {
+    return NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, alignment, 0, _unknown3, 0);
+}
+
+void NuMemory::FixedPoolEventHandler::FreeLargeBlock(NuMemoryPool *pool, void *ptr) {
+    NuMemoryGet()->GetThreadMem()->BlockFree(ptr, 0);
+}
+
+int NuMemory::DynamicPoolEventHandler::AllocatePage(NuMemoryPool *pool, unsigned int _unknown, unsigned int _unknown2,
+                                                    const char *_unknown3) {
+}
+
+int NuMemory::DynamicPoolEventHandler::ReleasePage(NuMemoryPool *pool, void *ptr) {
+}
+
+void NuMemory::DynamicPoolEventHandler::ForceReleasePage(NuMemoryPool *pool, void *ptr) {
+}
+
+void *NuMemory::DynamicPoolEventHandler::AllocateLargeBlock(NuMemoryPool *pool, unsigned int size,
+                                                            unsigned int alignment, const char *_unknown3) {
+}
+
+void NuMemory::DynamicPoolEventHandler::FreeLargeBlock(NuMemoryPool *pool, void *ptr) {
 }

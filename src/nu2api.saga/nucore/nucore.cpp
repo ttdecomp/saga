@@ -19,7 +19,8 @@ NuApplicationState *NuCore::GetApplicationState(void) {
         return m_applicationState;
     }
 
-    NuApplicationState *state = (NuApplicationState *)NuMemoryGet()->GetThreadMem()->_BlockAlloc(sizeof(NuApplicationState), 4, 1, "", 0);
+    NuApplicationState *state = (NuApplicationState *)NuMemoryGet()->GetThreadMem()->_BlockAlloc(
+        sizeof(NuApplicationState), alignof(NuApplicationState), 1, "", 0);
     if (state != NULL) {
         new (state) NuApplicationState();
     }

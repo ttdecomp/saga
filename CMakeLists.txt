@@ -65,7 +65,7 @@ else()
     set(CMAKE_C_COMPILER "${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/linux-x86_64/bin/i686-linux-android-gcc")
     set(CMAKE_CXX_COMPILER "${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/linux-x86_64/bin/i686-linux-android-g++")
     set(CMAKE_SYSROOT "${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/platforms/android-9/arch-x86")
-    include_directories("${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/sources/cxx-stl/stlport/stlport/")
+    include_directories("${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/sources/cxx-stl/system/include/")
 
     set(GLES2_LIBRARIES "GLESv2")
 endif()
@@ -108,10 +108,10 @@ set(SAGA_SOURCE_FILES
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/init/init.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nucamera.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nutex.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nutex_android.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/android/nutex_ios_ex.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nucamera.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nuandroid/nuios.cpp
 
@@ -142,7 +142,10 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/numath/nuvec.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/numath/nuvec4.c
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/numemory/NuMemoryManager.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/numemory/NuMemoryPool.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/numemory/numemory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/numemory/numemory_android.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/numusic/numusic.cpp
 
@@ -211,6 +214,8 @@ else()
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nufile/nufile.c PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nufile/nupsfile.cpp PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/numemory/numemory.cpp PROPERTIES COMPILE_OPTIONS "-O2")
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/numemory/numemory_android.cpp PROPERTIES COMPILE_OPTIONS "-O2")
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/numemory/NuMemoryManager.cpp PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nuandroid/nuios.cpp PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nusound/nusound.cpp PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/numusic/numusic.cpp PROPERTIES COMPILE_OPTIONS "-O2")
