@@ -29,7 +29,7 @@ NuMemory::NuMemory(void **buf) {
 
     buf_ptr.addr = ALIGN(buf_ptr.addr, 0x8);
 
-    this->errorHandler = new (buf_ptr.void_ptr) MemErrorHandler();
+    this->errorHandler = new (&buf_ptr.void_ptr) MemErrorHandler();
 }
 
 unsigned int NuMemoryManager::m_headerSize;

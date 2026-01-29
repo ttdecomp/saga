@@ -578,8 +578,6 @@ int NuFParPushCom2(NUFPAR *parser, NUFPCOMJMP *commands, NUFPCOMJMP *commands2) 
 }
 
 int NuFParPushComCTX(NUFPAR *parser, NUFPCOMJMPCTX *commands) {
-    LOG_DEBUG("parser=%p commands=%p", parser, commands);
-
     if (parser->command_pos >= 7) {
         return -1;
     }
