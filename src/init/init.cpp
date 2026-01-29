@@ -8,14 +8,19 @@
 #include "game/level.h"
 #include "game/mission.h"
 #include "globals.h"
+#include "nu2api.saga/nu3d/nucamera.h"
 #include "nu2api.saga/nu3d/nutex.h"
+#include "nu2api.saga/nuandroid/nuios.h"
 #include "nu2api.saga/nucore/nustring.h"
+#include "nu2api.saga/nucore/nuvideo.h"
 #include "nu2api.saga/nufile/nufile.h"
 #include "nu2api.saga/numemory/numemory.h"
 #include "nu2api.saga/nusound/nusound.h"
 #include "saveload/saveload.h"
 
-void NuMtlInitEx(VARIPTR *buf, int32_t usually512) {
+#include <stdarg.h>
+
+extern "C" void NuMtlInitEx(VARIPTR *buf, int32_t usually512) {
     // iVar2 = AndroidOBBUtils::LookupPackagePath(path, 1);
     char *path = "res/main.1060.com.wb.lego.tcs.obb";
 
@@ -36,7 +41,7 @@ void NuMtlInitEx(VARIPTR *buf, int32_t usually512) {
     LOG_INFO("%*s", size, buf->char_ptr);
 }
 
-int NuInitHardware(VARIPTR *buf, VARIPTR *buf_end, int heap_size, ...) {
+int32_t NuInitHardwarePS(VARIPTR *buffer_start, VARIPTR *buffer_end, int32_t zero) {
     // NuIOSThreadInit();
     // NuIOS_IsLowEndDevice();
     // g_vaoLifetimeMutex = NuThreadCreateCriticalSection();
@@ -45,16 +50,132 @@ int NuInitHardware(VARIPTR *buf, VARIPTR *buf_end, int heap_size, ...) {
     // NuPad_Interface_InputManagerInitialise();
     // BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nucore/android/nuapi_android.c", 0xf9);
     // NuIOSMtlInit();
-    // NuInitDebrisRenderer(bufferStart, bufferEnd->voidptr);
+    // NuInitDebrisRenderer(buffer_start, buffer_end->voidptr);
     // EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nucore/android/nuapi_android.c", 0xfe);
     // NuRenderThreadCreate();
     // BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nucore/android/nuapi_android.c", 0x103);
-    // NuShaderManagerInit(bufferStart, bufferEnd->voidptr);
+    // NuShaderManagerInit(buffer_start, buffer_end->voidptr);
     // NuRenderContextInit();
     // EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nucore/android/nuapi_android.c", 0x108);
     // nurndr_pixel_width = g_backingWidth;
     // nurndr_pixel_height = g_backingHeight;
-    NuSound3InitV(buf, *buf_end, 0, 0);
+    NuSound3InitV(buffer_start, *buffer_end, 0, 0);
+
+    return 0;
+}
+
+enum nuapi_setup_e : int32_t {
+    NUAPI_SETUP_END = 0,
+    NUAPI_SETUP_HOSTFS = 4,
+    NUAPI_SETUP_CDDVDMODE = 5,
+    NUAPI_SETUP_STREAMSIZE = 8,
+    NUAPI_SETUP_PAD0 = 14,
+    NUAPI_SETUP_PAD1 = 15,
+    NUAPI_SETUP_VIDEOMODE = 18,
+    NUAPI_SETUP_GLASSRPLANE = 21,
+    NUAPI_SETUP_RESOLUTION = 33,
+    NUAPI_SETUP_SWAPMODE = 34,
+    NUAPI_SETUP_0x46 = 70,
+    NUAPI_SETUP_0x47 = 71,
+    NUAPI_SETUP_0x49 = 73,
+    NUAPI_SETUP_0x4b = 75,
+};
+typedef enum nuapi_setup_e NUAPI_SETUP;
+
+int32_t NuInitHardwareParseArgsPS(int32_t setup, char **value) {
+    return 0;
+}
+
+extern "C" {
+    void *DVD = NULL;
+
+    struct nupad_s;
+    nupad_s *Game_NuPad_Store[2];
+
+    nupad_s **Game_NuPad;
+};
+
+extern "C" int32_t NuInitHardware(VARIPTR *buf, VARIPTR *buf_end, int zero, ...) {
+    // NuAPIInit();
+    // ParseCommandLine();
+
+    int32_t hostfs = 0;
+    int32_t streamsize = 0x200000;
+    nupad_s *pad0 = NULL;
+    nupad_s *pad1 = NULL;
+    int32_t videomode = 2;
+    int32_t resolution_x = 0;
+    int32_t resolution_y = 0;
+    NUVIDEO_SWAPMODE swapmode = NUVIDEO_SWAPMODE_FIELDSYNC;
+    int32_t flags = 0;
+
+    va_list args;
+    va_start(args, zero);
+
+    NUAPI_SETUP setup;
+    do {
+        setup = (NUAPI_SETUP)va_arg(args, int32_t);
+        LOG_DEBUG("NuInitHardware setup=%d", setup);
+        switch (setup) {
+            case NUAPI_SETUP_HOSTFS:
+                hostfs = va_arg(args, int32_t);
+                break;
+            case NUAPI_SETUP_STREAMSIZE:
+                streamsize = va_arg(args, int32_t);
+                break;
+            case NUAPI_SETUP_PAD0:
+                pad0 = va_arg(args, nupad_s *);
+                break;
+            case NUAPI_SETUP_PAD1:
+                pad1 = va_arg(args, nupad_s *);
+                break;
+            case NUAPI_SETUP_VIDEOMODE:
+                videomode = va_arg(args, int32_t);
+                break;
+            case NUAPI_SETUP_RESOLUTION:
+                resolution_x = va_arg(args, int32_t);
+                resolution_y = va_arg(args, int32_t);
+                break;
+            case NUAPI_SETUP_SWAPMODE:
+                swapmode = (NUVIDEO_SWAPMODE)va_arg(args, int32_t);
+                break;
+            case NUAPI_SETUP_0x46:
+                if (va_arg(args, int32_t) != 0) {
+                    flags |= 0x4;
+                }
+                break;
+            case NUAPI_SETUP_0x47:
+                if (va_arg(args, int32_t) != 0) {
+                    flags |= 0x8;
+                }
+                break;
+            case NUAPI_SETUP_0x49:
+                if (va_arg(args, int32_t) != 0) {
+                    flags |= 0x20;
+                }
+                break;
+            case NUAPI_SETUP_0x4b:
+                if (va_arg(args, int32_t) != 0) {
+                    flags |= 0x80;
+                }
+                break;
+            default:
+                if (NuInitHardwareParseArgsPS(setup, va_arg(args, char **)) == 0) {
+                    switch (setup) {
+                        case NUAPI_SETUP_CDDVDMODE:
+                            break;
+                        case NUAPI_SETUP_GLASSRPLANE:
+                            break;
+                    }
+                }
+                break;
+        }
+    } while (setup != NUAPI_SETUP_END);
+
+    va_end(args);
+
+    NuInitHardwarePS(buf, buf_end, zero);
+    NuMtlInitEx(buf, 512);
 
     return 0;
 }
@@ -92,18 +213,59 @@ void InitGameBeforeConfig() {
                          sizeof(SuperOptions));
 }
 
+void NuPhoneOSRegisterEventCallback(int32_t param_1, void (*param_2)()) {
+}
+
+void DummyCallback() {
+}
+
 void InitOnce(int32_t argc, char **param_2) {
-    NuMemory *memory = NuMemoryGet();
-    NuMemoryManager *manager = memory->GetThreadMem();
+    NuPhoneOSRegisterEventCallback(1, /* TouchCallback */ DummyCallback);
+    NuPhoneOSRegisterEventCallback(3, /* SystemPauseCallback */ DummyCallback);
+    NuPhoneOSRegisterEventCallback(6, /* SystemDidBecomeActiveCallback */ DummyCallback);
 
-    permbuffer_base.void_ptr = manager->_BlockAlloc(SUPERBUFFERSIZE, 4, 1, "", 0);
-    superbuffer_end.char_ptr = permbuffer_base.char_ptr + SUPERBUFFERSIZE;
-    original_permbuffer_base = permbuffer_base;
+    if (NuIOS_IsLowEndDevice()) {
+        SUPERBUFFERSIZE -= 0x38370;
+    }
 
+    int32_t size = SUPERBUFFERSIZE;
+
+    permbuffer_base.void_ptr = NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, 4, 1, "", 0);
+    superbuffer_end.void_ptr = (void *)(SUPERBUFFERSIZE + (size_t)permbuffer_base.void_ptr);
+    original_permbuffer_base.void_ptr = permbuffer_base.void_ptr;
     InitGameBeforeConfig();
-    //  Game_NuPad = Game_NuPad_Store;
 
-    NuInitHardware(&permbuffer_base, &superbuffer_end, 0, 0);
+    Game_NuPad = &Game_NuPad_Store[0];
+
+#define SETUP(cmd, ...) cmd, ##__VA_ARGS__
+
+    NuInitHardware(&permbuffer_base, &superbuffer_end, NULL,                   //
+                   SETUP(NUAPI_SETUP_HOSTFS, 0),                               //
+                   SETUP(NUAPI_SETUP_SWAPMODE, NUVIDEO_SWAPMODE_ASYNC),        //
+                   SETUP(NUAPI_SETUP_STREAMSIZE, 0x20000),                     //
+                   SETUP(NUAPI_SETUP_VIDEOMODE, (PAL == 0) ? 0xdeadbeef : 8),  //
+                   SETUP(NUAPI_SETUP_RESOLUTION, 512, (PAL == 0) ? 224 : 256), //
+                   SETUP(NUAPI_SETUP_GLASSRPLANE, 1),                          //
+                   SETUP(NUAPI_SETUP_CDDVDMODE, &DVD),                         //
+                   // (-(uint)(NOSOUND == 0) & 0xffffffee) + 0x1c, 0, 0x640, 0, 0,
+                   SETUP(NUAPI_SETUP_PAD0, &Game_NuPad_Store[0]), //
+                   SETUP(NUAPI_SETUP_PAD1, &Game_NuPad_Store[1]), //
+                   SETUP(NUAPI_SETUP_0x46, 1),                    //
+                   SETUP(NUAPI_SETUP_0x47, 1),                    //
+                   SETUP(NUAPI_SETUP_0x49, 1),                    //
+                   SETUP(NUAPI_SETUP_0x4b, 1),                    //
+                   NUAPI_SETUP_END                                //
+    );
+
+    pNuCam = NuCameraCreate();
+    // Game.optionsSave._11_1_ = NuIOS_IsWidescreen();
+    // WidescreenCode((uint)(byte)Game.optionsSave._11_1_);
+    // InitPanel((uint)(byte)Game.optionsSave._11_1_);
+
+    // app_tbgameset = NuTimeBarCreateSet(0);
+    // app_tbplayerset = NuTimeBarCreateSet(0);
+    // app_tbaiset = NuTimeBarCreateSet(0);
+    // app_tbdrawset = NuTimeBarCreateSet(0);
 }
 
 int32_t Episode_ContainsArea(int32_t areaId, int32_t *areaIndex) {
@@ -620,7 +782,7 @@ void InitGameAfterConfig(void) {
     //  }
 }
 
-void LoadPermData(BGPROCINFO *proc) {
+static void LoadPermData(BGPROCINFO *proc) {
     VARIPTR legalTex;
     legalTex.addr = superbuffer_end.addr + -0x400000;
 

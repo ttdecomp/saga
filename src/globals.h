@@ -256,4 +256,7 @@ extern int32_t CompletionPointInfo[7];
 struct nusound_filename_info_s;
 extern nusound_filename_info_s *MusicInfo;
 
+struct nucamera_s;
+extern nucamera_s *pNuCam;
+
 C_API_END

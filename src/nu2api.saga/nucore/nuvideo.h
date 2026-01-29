@@ -15,13 +15,13 @@ enum NUVIDEO_SWAPMODE {
 typedef enum NUVIDEO_SWAPMODE NUVIDEO_SWAPMODE;
 
 enum {
-	NUVIDEOMODE_UNDEFINED = 0,
-	NUVIDEOMODE_UNUSED1 = 1,
-	NUVIDEOMODE_NTSC = 2,
-	NUVIDEOMODE_PAL = 3,
-	NUVIDEOMODE_PALFF = 4,
-	NUVIDEOMODE_NTSCFF = 5,
-	NUVIDEOMODE_NTSC_J = 6
+    NUVIDEOMODE_UNDEFINED = 0,
+    NUVIDEOMODE_UNUSED1 = 1,
+    NUVIDEOMODE_NTSC = 2,
+    NUVIDEOMODE_PAL = 3,
+    NUVIDEOMODE_PALFF = 4,
+    NUVIDEOMODE_NTSCFF = 5,
+    NUVIDEOMODE_NTSC_J = 6
 };
 
 #ifdef __cplusplus
@@ -32,14 +32,14 @@ void NuVideoSetSwapModePS(NUVIDEO_SWAPMODE video_swap_mode);
 extern "C" {
 #endif
 
-int NuVideoGetMode(void);
-void NuVideoSetMode(int mode);
-int NuVideoGetAspect(void);
-NUVIDEO_SWAPMODE NuVideoGetSwapMode(void);
-void NuVideoRollingFrameRateReset(void);
-void NuVideoSetBrightness(float brightness);
-void NuVideoSetResolution(int width, int height);
-NUVIDEO_SWAPMODE NuVideoSetSwapMode(NUVIDEO_SWAPMODE video_swap_mode);
+    int NuVideoGetMode(void);
+    void NuVideoSetMode(int mode);
+    int NuVideoGetAspect(void);
+    NUVIDEO_SWAPMODE NuVideoGetSwapMode(void);
+    void NuVideoRollingFrameRateReset(void);
+    void NuVideoSetBrightness(float brightness);
+    void NuVideoSetResolution(int width, int height);
+    NUVIDEO_SWAPMODE NuVideoSetSwapMode(NUVIDEO_SWAPMODE video_swap_mode);
 
 #ifdef __cplusplus
 }

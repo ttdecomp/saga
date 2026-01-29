@@ -9,6 +9,7 @@ struct nuvec4_s {
 };
 
 typedef struct nuvec4_s NUVEC4;
+typedef struct nuvec4_s NUQUAT;
 
 #ifdef __cplusplus
 extern "C" {
