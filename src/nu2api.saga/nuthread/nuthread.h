@@ -2,9 +2,19 @@
 
 #include <stdint.h>
 
-#include "nu2api.saga/numemory/numemory.h"
+#include "nu2api.saga/numemory/NuMemoryManager.h"
 
 #include "decomp.h"
+
+typedef enum NUTHREADCAFECORE {
+    NUTHREADCAFECORE_UNKNOWN_1 = 1,
+    NUTHREADCAFECORE_UNKNOWN_2 = 2,
+} NUTHREADCAFECORE;
+
+typedef enum NUTHREADXBOX360CORE {
+    NUTHREADXBOX360CORE_UNKNOWN_1 = 1,
+    NUTHREADXBOX360CORE_UNKNOWN_2 = 2,
+} NUTHREADXBOX360CORE;
 
 C_API_START
 
@@ -19,21 +29,23 @@ C_API_END
 #ifdef __cplusplus
 
 struct NuThreadCreateParameters {
-    void (*func)(void *);
-    void *arg;
+    void (*threadFn)(void *);
+    void *fnArg;
     int32_t priority;
-    char *name;
-    uint8_t field20_0x20;
-    void *nuthreadCafeCore;
-    void *nuthreadXbox360Core;
+    const char *name;
+    int32_t stackSize;
+    bool isSuspended;
+    NUTHREADCAFECORE nuthreadCafeCore;
+    NUTHREADXBOX360CORE nuthreadXbox360Core;
+    bool useCurrent;
 };
 
 class NuThreadBase {
   protected:
-    NuMemoryManager *memoryManagers[32];
-    char name[32];
     void (*threadFn)(void *);
-    void *param;
+    void *fnArg;
+    char name[32];
+    NuMemoryManager *memoryManagers[32];
 
   public:
     NuThreadBase(const NuThreadCreateParameters &params);
@@ -50,11 +62,12 @@ extern NuThreadBase *g_bgProcThread;
 
 int bgProcIsBgThread(void);
 
-class NuThread : NuThreadBase {
+class NuThread : public NuThreadBase {
   private:
-    volatile uint8_t startSignal = 1;
+    volatile uint8_t startSignal;
+    bool isSuspended;
 
-    void *ThreadMain();
+    static void *ThreadMain(void *self);
 
   public:
     NuThread(const NuThreadCreateParameters &params);
@@ -70,12 +83,13 @@ class NuThreadManager {
 
   public:
     int32_t AllocTLS();
-    static NuThreadBase *GetCurrentThread();
+    NuThreadBase *GetCurrentThread();
 
-    NuThread *CreateThread(void (*func)(void *), void *param_2, int priority, char *name, int param_5,
-                           void *nuthreadCafeCore, void *nuthreadXbox360Core);
+    NuThread *CreateThread(void (*threadFn)(void *), void *fnArg, int priority, const char *name, int stackSize,
+                           NUTHREADCAFECORE nuthreadCafeCore, NUTHREADXBOX360CORE nuthreadXbox360Core);
 };
 
 void NuThreadSleep(int32_t seconds);
+NuThread *NuThreadInitPS();
 
 #endif

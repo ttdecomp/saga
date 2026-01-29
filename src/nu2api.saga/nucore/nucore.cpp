@@ -3,6 +3,7 @@
 
 #include "nu2api.saga/nucore/nucore.h"
 
+#include "nu2api.saga/numemory/numemory.h"
 #include "nu2api.saga/nuthread/nuthread.h"
 
 NuApplicationState *NuCore::m_applicationState;
@@ -19,8 +20,8 @@ NuApplicationState *NuCore::GetApplicationState(void) {
         return m_applicationState;
     }
 
-    NuApplicationState *state = (NuApplicationState *)NuMemoryGet()->GetThreadMem()->_BlockAlloc(
-        sizeof(NuApplicationState), alignof(NuApplicationState), 1, "", 0);
+    NuApplicationState *state =
+        (NuApplicationState *)NuMemoryGet()->GetThreadMem()->_BlockAlloc(sizeof(NuApplicationState), 0x4, 1, "", 0);
     if (state != NULL) {
         new (state) NuApplicationState();
     }

@@ -60,7 +60,7 @@ NuMemoryManager *NuMemory::GetThreadMem() {
     this->InitalizeThreadLocalStorage();
 
     if (this->tlsIndex != -1) {
-        NuThreadBase *thread = NuThreadManager::GetCurrentThread();
+        NuThreadBase *thread = NuCore::m_threadManager->GetCurrentThread();
 
         if (thread != NULL) {
             NuMemoryManager *manager = thread->GetLocalStorage(this->tlsIndex);

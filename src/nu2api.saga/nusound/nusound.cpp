@@ -218,8 +218,9 @@ void NuSound3Init(int32_t zero) {
     // }
     // g_NuSoundStreamer = this_01;
 
-    g_NuSoundLoadThread = NuCore::m_threadManager->CreateThread(NuSound3SampleLoadThread, NULL, 0, "NuSoundLoadThread",
-                                                                0, (void *)1, (void *)1);
+    g_NuSoundLoadThread =
+        NuCore::m_threadManager->CreateThread(NuSound3SampleLoadThread, NULL, 0, "NuSoundLoadThread", 0,
+                                              NUTHREADCAFECORE_UNKNOWN_1, NUTHREADXBOX360CORE_UNKNOWN_1);
 
     // NuSoundSystem::AddListener(&NuSound, &g_NuSoundListener);
     // NuSoundListener::SetHeadMatrix(&g_NuSoundListener, (VuMtx *)&global_camera);

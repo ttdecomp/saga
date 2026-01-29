@@ -1,11 +1,15 @@
 #include <pthread.h>
+#include <sched.h>
+#include <string.h>
 
-#include "nu2api.saga/nucore/nustring.h"
 #include "nu2api.saga/nuthread/nuthread.h"
+
+#include "nu2api.saga/nucore/nucore.h"
+#include "nu2api.saga/nucore/nustring.h"
 
 NuThreadBase *g_bgProcThread = NULL;
 
-static pthread_mutex_t NuThread_CriticalSections[16] = {PTHREAD_MUTEX_INITIALIZER};
+static pthread_mutex_t NuThread_CriticalSections[16];
 
 int32_t NuThreadCriticalSectionBegin(int32_t index) {
     return pthread_mutex_lock(&NuThread_CriticalSections[index]);
@@ -45,8 +49,7 @@ int32_t NuThreadCreateCriticalSection(void) {
 }
 
 int bgProcIsBgThread(void) {
-    NuThreadBase *current_thread = NuThreadManager::GetCurrentThread();
-    return current_thread == g_bgProcThread;
+    return NuCore::m_threadManager->GetCurrentThread() == g_bgProcThread;
 }
 
 int32_t NuThreadManager::AllocTLS() {
@@ -64,9 +67,10 @@ NuMemoryManager *NuThreadBase::GetLocalStorage(uint32_t index) const {
     return this->memoryManagers[index];
 }
 
-/// the original implementation uses gcc's emulated TLS
+static __thread NuThreadBase *g_currentThread = NULL;
+
 NuThreadBase *NuThreadGetCurrentThread() {
-    return NULL;
+    return g_currentThread;
 }
 
 NuThreadBase *NuThreadManager::GetCurrentThread() {
@@ -74,6 +78,12 @@ NuThreadBase *NuThreadManager::GetCurrentThread() {
 }
 
 NuThreadBase::NuThreadBase(const NuThreadCreateParameters &params) {
+    this->threadFn = params.threadFn;
+    this->fnArg = params.fnArg;
+
+    this->name[0] = '\0';
+
+    memset(this->memoryManagers, 0, sizeof(this->memoryManagers));
 }
 
 void NuThreadBase::SetDebugName(const char *name) {
@@ -85,79 +95,126 @@ void (*NuThreadBase::GetThreadFn() const)(void *) {
 }
 
 void *NuThreadBase::GetParam() const {
-    return this->param;
+    return this->fnArg;
 }
 
 NuThreadManager::NuThreadManager() {
     this->bitflags = 0;
 }
 
-NuThread *NuThreadManager::CreateThread(void (*func)(void *), void *arg, int priority, char *name, int param_5,
-                                        void *nuthreadCafeCore, void *nuthreadXbox360Core) {
-    NuThreadCreateParameters params = {
-        func, arg, priority, name, (uint8_t)param_5, nuthreadCafeCore, nuthreadXbox360Core,
-    };
+NuThread *NuThreadManager::CreateThread(void (*threadFn)(void *), void *fnArg, int priority, const char *name,
+                                        int stackSize, NUTHREADCAFECORE nuthreadCafeCore,
+                                        NUTHREADXBOX360CORE nuthreadXbox360Core) {
+    static int ThreadPriorityMap[] = {0, 1, 2, 3, 4};
+
+    NuThreadCreateParameters params;
+    NuThread *thread;
+
+    params = {.threadFn = threadFn,
+              .fnArg = fnArg,
+              .priority = ThreadPriorityMap[priority + 2],
+              .name = name,
+              .stackSize = stackSize == 0 ? 0x8000 : stackSize,
+              .isSuspended = false,
+              .nuthreadCafeCore = nuthreadCafeCore,
+              .nuthreadXbox360Core = nuthreadXbox360Core,
+              .useCurrent = false};
+
     return new NuThread(params);
 }
 
-static thread_local pthread_t g_currentPthread;
+static __thread pthread_t g_currentPthread;
 
 NuThread::NuThread(const NuThreadCreateParameters &params) : NuThreadBase(params) {
-    pthread_t *thread = (pthread_t *)__emutls_get_address(&g_currentPthread);
+    sched_param scheduling;
+    pthread_attr_t attrs;
 
-    if (params.field20_0x20 != 0) {
-        // ppVar1 = (pthread_t *)__emutls_get_address(__emutls_v._ZL16g_currentPthread);
-        // *ppVar1 = pVar2;
-        *thread = pthread_self();
-    } else {
+    if (params.useCurrent) {
+        g_currentPthread = pthread_self();
 
-        struct sched_param param;
-        switch (params.priority) {
-            case 0:
-                // priority = -2;
-                param.sched_priority = -2;
-                break;
-            case 1:
-                param.sched_priority = -1;
-                break;
-            case 2:
-                param.sched_priority = 0;
-                break;
-            case 3:
-                param.sched_priority = 1;
-                break;
-            case 4:
-                param.sched_priority = 2;
-                break;
-        }
-
-        // this->field_0xa8 = params.field8_0x14;
-
-        pthread_attr_t attrs;
-        pthread_attr_init(&attrs);
-
-        pthread_attr_setschedparam(&attrs, &param);
-
-        pthread_create(thread, &attrs, (void *(*)(void *))(&NuThread::ThreadMain), this);
-        pthread_attr_destroy(&attrs);
-
-        SetDebugName(params.name);
+        return;
     }
+
+    switch (params.priority) {
+        case 0:
+            scheduling.sched_priority = -2;
+            break;
+        case 1:
+            scheduling.sched_priority = -1;
+            break;
+        case 2:
+            scheduling.sched_priority = 0;
+            break;
+        case 3:
+            scheduling.sched_priority = 1;
+            break;
+        case 4:
+            scheduling.sched_priority = 2;
+            break;
+    }
+
+    this->isSuspended = params.isSuspended;
+
+    pthread_attr_init(&attrs);
+    pthread_attr_setschedparam(&attrs, &scheduling);
+
+    pthread_create(&g_currentPthread, &attrs, &ThreadMain, this);
+
+    pthread_attr_destroy(&attrs);
+
+    SetDebugName(params.name);
 }
 
-void *NuThread::ThreadMain() {
-    LOG_INFO("name=%s", this->name);
+NuThread *NuThreadInitPS() {
+    pthread_t current;
+    int policy;
+    sched_param scheduling;
+    NuThreadCreateParameters createParams;
+    NuThread *thread;
 
-    while (this->startSignal != 0) {
+    current = pthread_self();
+
+    policy = 0;
+    pthread_getschedparam(current, &policy, &scheduling);
+
+    createParams = {
+        .threadFn = NULL,
+        .fnArg = NULL,
+        .priority = 1,
+        .name = "",
+        .stackSize = 0,
+        .isSuspended = false,
+        .nuthreadCafeCore = NUTHREADCAFECORE_UNKNOWN_1,
+        .nuthreadXbox360Core = NUTHREADXBOX360CORE_UNKNOWN_1,
+        .useCurrent = true,
+    };
+
+    thread = new NuThread(createParams);
+    thread->SetDebugName("Main");
+
+    g_currentThread = thread;
+
+    return thread;
+}
+
+void *NuThread::ThreadMain(void *thread) {
+    NuThread *self = ((NuThread *)thread);
+
+    LOG_INFO("name=%s", self->name);
+
+    g_currentThread = self;
+
+    while (self->startSignal != 0) {
         NuThreadSleep(1);
     }
 
-    void (*threadFn)(void *) = GetThreadFn();
-    void *param = GetParam();
+    void (*threadFn)(void *) = self->GetThreadFn();
+    void *param = self->GetParam();
 
     (*threadFn)(param);
 
-    delete this;
+    self->~NuThread();
+    delete self;
 
     return NULL;
 }
@@ -169,8 +226,9 @@ void NuThreadSleep(int32_t seconds) {
         time.tv_sec = 0;
     } else {
         time.tv_sec = seconds / 1000;
-        seconds = seconds % 1000;
+        seconds %= 1000;
     }
+
     time.tv_nsec = seconds * 1000000;
 
     nanosleep(&time, NULL);
