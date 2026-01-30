@@ -1,4 +1,5 @@
 #include <pthread.h>
+#include <string.h>
 
 #include "decomp.h"
 
@@ -164,7 +165,7 @@ void *NuMemoryManager::_BlockAlloc(uint32_t size, uint32_t alignment, uint32_t p
 
 void *NuMemoryManager::_TryBlockAlloc(uint32_t size, uint32_t alignment, uint32_t param_3, const char *name,
                                       uint16_t param_5) {
-    LOG_INFO("size=%x, param_2=%u, param_3=%u, name='%s', param_5=%u", size, param_2, param_3, name, param_5);
+    LOG_INFO("size=%x, param_2=%u, param_3=%u, name='%s', param_5=%u", size, alignment, param_3, name, param_5);
 
     // UNIMPLEMENTED();
     return malloc(size);
