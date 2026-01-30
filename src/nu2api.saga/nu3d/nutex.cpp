@@ -107,25 +107,22 @@ int NuTexCreateNative(NUNATIVETEX *tex, bool is_pvrtc) {
 
     pthread_mutex_lock(&criticalSection);
 
-    if (max_textures <= 0) {
-        pthread_mutex_unlock(&criticalSection);
+    for (int i = 0; i < max_textures; i++) {
+        if (texture_list[i] == NULL) {
+            texture_list[i] = tex;
+            texture_order[i] = gTextureLoadCount++;
 
-        return 0;
+            pthread_mutex_unlock(&criticalSection);
+
+            NuTexCreatePS(tex, is_pvrtc);
+
+            return i + 1;
+        }
     }
-
-    i = 0;
-    while (texture_list[i] != NULL) {
-        i++;
-    }
-
-    texture_list[i] = tex;
-    texture_order[i] = gTextureLoadCount++;
 
     pthread_mutex_unlock(&criticalSection);
 
-    NuTexCreatePS(tex, is_pvrtc);
-
-    return i + 1;
+    return 0;
 }
 
 NUNATIVETEX *NuTexGetNative(int tex_id) {
