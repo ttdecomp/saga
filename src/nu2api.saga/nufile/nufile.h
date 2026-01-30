@@ -256,6 +256,6 @@ int64_t NuDatCalcPos(NUDATHDR *header, int32_t index);
 
 int32_t NuDatFileFindHash(NUDATHDR *header, char *name);
 int32_t NuDatFileGetFreeInfo(void);
-int32_t NuDatFileGetFreeHandleIX(NUDATHDR *header, int32_t freeIndex);
+int32_t NuDatFileGetFreeHandleIX(NUDATHDR *hdr, int32_t info_idx);
 
 #endif
