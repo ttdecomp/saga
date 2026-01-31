@@ -1,5 +1,7 @@
 #pragma once
 
+typedef struct numtx_s NUMTX;
+
 /// @brief A 3-dimensional vector
 struct nuvec_s {
     /// @brief The x component of the vector
@@ -213,6 +215,8 @@ extern "C" {
     /// @param tolerance The tolerance to compare the vectors with
     /// @return 1 if the vectors are equal, 0 otherwise
     int NuVecCompareTolerance(NUVEC *a, NUVEC *b, float tolerance);
+
+    void NuVecMtxTransform(NUVEC *v, NUVEC *v0, NUMTX *m0);
 #ifdef __cplusplus
 }
 #endif
