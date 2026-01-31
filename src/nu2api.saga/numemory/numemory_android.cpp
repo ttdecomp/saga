@@ -7,7 +7,7 @@
 #include "nu2api.saga/numemory/NuMemoryManager.h"
 
 NuMemoryPS::Mem1EventHandler::Mem1EventHandler() {
-    this->pageCount = 0;
+    this->page_count = 0;
 }
 
 bool NuMemoryPS::Mem1EventHandler::AllocatePage(NuMemoryManager *manager, unsigned int size, unsigned int _unknown) {
@@ -18,7 +18,7 @@ bool NuMemoryPS::Mem1EventHandler::AllocatePage(NuMemoryManager *manager, unsign
     ptr = malloc(size);
     if (ptr != NULL) {
         manager->AddPage(ptr, size, false);
-        this->pageCount++;
+        this->page_count++;
 
         return 1;
     }
@@ -30,7 +30,7 @@ bool NuMemoryPS::Mem1EventHandler::AllocatePage(NuMemoryManager *manager, unsign
 
 bool NuMemoryPS::Mem1EventHandler::ReleasePage(NuMemoryManager *manager, void *ptr, unsigned int _unknown) {
     free(ptr);
-    this->pageCount--;
+    this->page_count--;
 
     return true;
 }

@@ -34,17 +34,17 @@ struct NuMemory {
         virtual void FreeLargeBlock(NuMemoryPool *pool, void *ptr) override;
     };
 
-    MemErrorHandler *errorHandler;
-    NuMemoryPS::Mem1EventHandler *mem1EventHandler;
-    NuMemoryPS::Mem2EventHandler *mem2EventHandler;
-    NuMemoryManager *mem1Manager;
-    NuMemoryManager *mem2Manager;
-    int _unknown;
-    FixedPoolEventHandler *fixedPoolEventHandler;
-    DynamicPoolEventHandler *dynamicPoolEventHandler;
-    int _unknown2;
+    MemErrorHandler *error_handler;
+    NuMemoryPS::Mem1EventHandler *mem1_event_handler;
+    NuMemoryPS::Mem2EventHandler *mem2_event_handler;
+    NuMemoryManager *mem1_manager;
+    NuMemoryManager *mem2_manager;
+    int unknown;
+    FixedPoolEventHandler *fixed_pool_event_handler;
+    DynamicPoolEventHandler *dynamic_pool_event_handler;
+    int unknown2;
 
-    int32_t tlsIndex;
+    int32_t tls_index;
 
   public:
     NuMemory(void **buf);

@@ -7,26 +7,26 @@ extern "C" {
 #endif
 
     struct DEFHUFFMAN {
-        uint16_t fastLookup[512];
-        uint16_t firstCode[17];
-        int32_t baseCode[16];
-        uint16_t numCodes[16];
+        uint16_t fast_lookup[512];
+        uint16_t first_code[17];
+        int32_t base_code[16];
+        uint16_t num_codes[16];
         uint8_t symbols[288];
-        uint16_t symbolIndex[288];
+        uint16_t symbol_index[288];
     };
     typedef struct DEFHUFFMAN DEFHUFFMAN;
 
     struct DEFLATECONTEXT {
-        uint8_t *readBuffer;
-        uint8_t *readBufferEnd;
-        int32_t numBitsAvailable;
-        uint32_t bitBuffer;
-        char *currentPos;
-        char *startPos;
-        char *endPos;
-        DEFHUFFMAN lengthTree;
-        DEFHUFFMAN distanceTree;
-        DEFHUFFMAN tempCodeLength;
+        uint8_t *read_buffer;
+        uint8_t *read_buffer_end;
+        int32_t num_bits_available;
+        uint32_t bit_buffer;
+        char *current_pos;
+        char *start_pos;
+        char *end_pos;
+        DEFHUFFMAN length_tree;
+        DEFHUFFMAN distance_tree;
+        DEFHUFFMAN temp_code_length;
     };
     typedef struct DEFLATECONTEXT DEFLATECONTEXT;
 

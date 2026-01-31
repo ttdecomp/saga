@@ -61,11 +61,11 @@ extern "C" {
         byte cheat;
         undefined1 field30_0x7f;
         int field31_0x80;
-        short challengeTrialTime;
-        byte episodeIndex;
-        byte areaIndex;
-        short areaMusic;
-        undefined2 minikitId;
+        short challenge_trial_time;
+        byte episode_index;
+        byte area_index;
+        short area_music;
+        undefined2 minikit_id;
         undefined4 field37_0x8c;
         undefined4 field38_0x90;
         undefined2 field39_0x94;

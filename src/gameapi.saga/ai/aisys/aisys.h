@@ -61,9 +61,9 @@ typedef void *AICONDITIONINITFN(AISYS *, char *, AISCRIPT *);
 typedef struct AISCRIPTACTIONDEF_s {
     char *name;
     AIACTIONFN *eval_fn;
-    char _unknown;
-    char _unknown2;
-    short _unknown3;
+    char unknown;
+    char unknown2;
+    short unknown3;
 } AIACTIONDEF;
 
 typedef struct AISCRIPTCONDITIONDEF_s {

@@ -96,8 +96,8 @@ int32_t saveloadLoadSlot(int32_t slot, void *buffer, size_t size) {
         SaveLoad buf;
 
         fread(&buf, 0x2028, 1, file);
-        if (buf.extradataOffset != 0) {
-            fseek(file, buf.extradataOffset, SEEK_CUR);
+        if (buf.extradata_offset != 0) {
+            fseek(file, buf.extradata_offset, SEEK_CUR);
         }
 
         fread(buffer, size, 1, file);
@@ -220,7 +220,7 @@ int32_t PCSaveSlot(int32_t slot, void *extradata, int32_t extradataSize, uint32_
         save.size = sizeof(SaveLoad);
         save.field3_0xc = 0;
         save.field4_0x10 = 0;
-        save.extradataOffset = 0;
+        save.extradata_offset = 0;
         memset(save.field6_0x18, 0, 0x10);
         save.field11_0x1028 = 0;
         save.field13_0x1828 = 0;

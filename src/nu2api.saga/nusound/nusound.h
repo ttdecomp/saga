@@ -67,10 +67,10 @@ enum ErrorState {
 
 class NuSoundSample {
   private:
-    LoadState loadState;
-    ErrorState lastError;
+    LoadState load_state;
+    ErrorState last_error;
     NuSoundSystem::FileType type;
-    int32_t refCount;
+    int32_t ref_count;
 
   public:
     LoadState GetLoadState();

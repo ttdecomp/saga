@@ -12,7 +12,7 @@ class NuMemoryPS {
         virtual bool ReleasePage(NuMemoryManager *manager, void *ptr, unsigned int _unknown) override;
 
       private:
-        unsigned int pageCount;
+        unsigned int page_count;
     };
 
     class Mem2EventHandler : public NuMemoryManager::IEventHandler {

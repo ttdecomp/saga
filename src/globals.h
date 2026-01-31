@@ -34,14 +34,14 @@ extern "C" {
         undefined field15_0x15;
         undefined field16_0x16;
         undefined field17_0x17;
-        char *extraName;
+        char *extra_name;
         unsigned int flag;
     };
     typedef struct cheat_s CHEAT;
 
     struct cheatsystem_s {
         CHEAT *cheats;
-        int cheatsCount;
+        int cheats_count;
         int flags;
         undefined field3_0xc;
         undefined field4_0xd;
@@ -168,11 +168,11 @@ extern "C" {
         undefined field1_0x1;
         undefined field2_0x2;
         undefined field3_0x3;
-        struct OPTIONSSAVE_s optionsSave;
+        struct OPTIONSSAVE_s options_save;
         undefined field5_0x10;
-        undefined1 levelSave; /* Created by retype action */
+        undefined1 level_save; /* Created by retype action */
         undefined field7_0x12[30746];
-        undefined1 areaSave; /* Created by retype action */
+        undefined1 area_save; /* Created by retype action */
         undefined field9_0x782d;
         undefined field10_0x782e;
         undefined field11_0x782f;
@@ -182,7 +182,7 @@ extern "C" {
         undefined field15_0x7833;
         float field16_0x7834;
         char field17_0x7838[852];
-        undefined1 episodeSave; /* Created by retype action */
+        undefined1 episode_save; /* Created by retype action */
         char field19_0x7b8d[107];
         unsigned int field20_0x7bf8[1];
         char field21_0x7bfc[36];
@@ -200,9 +200,9 @@ extern "C" {
         undefined field33_0x7c2f;
         CUSTOMISESAVE customizer;
         undefined field35_0x7c9f;
-        MISSIONSAVE missionSave;
+        MISSIONSAVE mission_save;
         char field37_0x7ca4[88];
-        void *characterSave;
+        void *character_save;
         char field39_0x7d08[336];
     };
 

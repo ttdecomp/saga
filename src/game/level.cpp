@@ -60,13 +60,13 @@ LAB_00484810:
                     level->flags = (LEVELFLAGS)0xe;
                     // iVar3 = g_isLowEndDevice;
 
-                    level->loadFn = (void *)0x0;
-                    level->initFn = (void *)0x0;
-                    level->resetFn = (void *)0x0;
-                    level->updateFn = (void *)0x0;
-                    level->alwaysUpdateFn = (void *)0x0;
-                    level->drawFn = (void *)0x0;
-                    level->drawStatusFn = (void *)0x0;
+                    level->load_fn = (void *)0x0;
+                    level->init_fn = (void *)0x0;
+                    level->reset_fn = (void *)0x0;
+                    level->update_fn = (void *)0x0;
+                    level->always_update_fn = (void *)0x0;
+                    level->draw_fn = (void *)0x0;
+                    level->draw_status_fn = (void *)0x0;
                     (level->field12_0x84).field10_0x14 = 20000;
                     *(int64_t *)&level->field12_0x84 = 0x3e19999a3dcccccd;
                     (level->field12_0x84).field8_0x8 = 0x469d0800469c4000;
@@ -82,7 +82,7 @@ LAB_00484810:
                     (level->field12_0x84).field13_0x18 = 0;
                     (level->field12_0x84).field16_0x1b = 0;
                     (level->field12_0x84).field15_0x1a = 0;
-                    level->musicIndex = -1;
+                    level->music_index = -1;
                     level->field94_0x11c = 0.0;
                     level->field95_0x120 = 1.0;
                     level->field14_0xa2 = 0xffff;
@@ -118,12 +118,12 @@ LAB_00484810:
                     level->field48_0xdb = 5;
                     level->field49_0xdc = 0.0;
                     level->field50_0xe0 = 0.0;
-                    level->musicTracks[0] = -1;
-                    level->musicTracks[2] = -1;
-                    level->musicTracks[4] = -1;
-                    level->musicTracks[1] = -1;
-                    level->musicTracks[3] = -1;
-                    level->musicTracks[5] = -1;
+                    level->music_tracks[0] = -1;
+                    level->music_tracks[2] = -1;
+                    level->music_tracks[4] = -1;
+                    level->music_tracks[1] = -1;
+                    level->music_tracks[3] = -1;
+                    level->music_tracks[5] = -1;
                     bVar2 = true;
                     if (levelSetDefaults != NULL) {
                         // (*levelSetDefaults)(level);
@@ -249,7 +249,7 @@ LEVELDATA *Level_FindByName(char *name, int *indexDest) {
 }
 
 void Level_Draw(WORLDINFO *world) {
-    void (*drawFn)(WORLDINFO *) = (void (*)(WORLDINFO *))world->current_level->drawFn;
+    void (*drawFn)(WORLDINFO *) = (void (*)(WORLDINFO *))world->current_level->draw_fn;
     if (drawFn != NULL) {
         drawFn(world);
     }

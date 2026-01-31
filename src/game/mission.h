@@ -17,12 +17,12 @@ struct missionsys_s {
     uint8_t field3_0x6;
     uint8_t field4_0x7;
     TIMER timer;
-    MISSIONSAVE *missionSave;
+    MISSIONSAVE *mission_save;
     uint8_t count;
     uint8_t field8_0x1d;
     uint8_t flags;
-    uint8_t characterCount;
-    int16_t characterIds[8];
+    uint8_t character_count;
+    int16_t character_ids[8];
 };
 typedef struct missionsys_s MISSIONSYS;
 

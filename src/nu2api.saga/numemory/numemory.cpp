@@ -24,46 +24,46 @@ NuMemory::NuMemory(void **buf) {
     NuMemoryManager *mem1;
 
     ptr = *buf;
-    this->tlsIndex = -1;
+    this->tls_index = -1;
 
     NuMemoryManager::SetFlags(0);
 
     ptr = (void *)ALIGN((int)ptr, 0x8);
 
-    this->errorHandler = new (ptr) MemErrorHandler();
+    this->error_handler = new (ptr) MemErrorHandler();
     ptr = (void *)((int)ptr + sizeof(MemErrorHandler) + 0x100);
 
-    this->mem1EventHandler = new (ptr) NuMemoryPS::Mem1EventHandler();
+    this->mem1_event_handler = new (ptr) NuMemoryPS::Mem1EventHandler();
     ptr = (void *)((int)ptr + sizeof(NuMemoryPS::Mem1EventHandler));
 
-    this->mem1Manager = new (ptr) NuMemoryManager(this->mem1EventHandler, this->errorHandler, "MEM1", g_categoryNames,
+    this->mem1_manager = new (ptr) NuMemoryManager(this->mem1_event_handler, this->error_handler, "MEM1", g_categoryNames,
                                                   sizeof(g_categoryNames) / sizeof(char *));
     ptr = (void *)((int)ptr + sizeof(NuMemoryManager));
 
-    this->mem2EventHandler = new (ptr) NuMemoryPS::Mem2EventHandler();
+    this->mem2_event_handler = new (ptr) NuMemoryPS::Mem2EventHandler();
     ptr = (void *)((int)ptr + sizeof(NuMemoryPS::Mem2EventHandler));
 
-    this->mem2Manager = new (ptr) NuMemoryManager(this->mem2EventHandler, this->errorHandler, "MEM2", g_categoryNames,
+    this->mem2_manager = new (ptr) NuMemoryManager(this->mem2_event_handler, this->error_handler, "MEM2", g_categoryNames,
                                                   sizeof(g_categoryNames) / sizeof(char *));
     ptr = (void *)((int)ptr + sizeof(NuMemoryManager));
 
-    this->fixedPoolEventHandler = new (ptr) FixedPoolEventHandler();
+    this->fixed_pool_event_handler = new (ptr) FixedPoolEventHandler();
     ptr = (void *)((int)ptr + sizeof(FixedPoolEventHandler));
 
-    this->dynamicPoolEventHandler = new (ptr) DynamicPoolEventHandler();
+    this->dynamic_pool_event_handler = new (ptr) DynamicPoolEventHandler();
     ptr = (void *)((int)ptr + sizeof(DynamicPoolEventHandler));
 
-    this->_unknown = 0;
+    this->unknown = 0;
 }
 
 NuMemoryManager *NuMemory::GetThreadMem() {
     this->InitalizeThreadLocalStorage();
 
-    if (this->tlsIndex != -1) {
+    if (this->tls_index != -1) {
         NuThreadBase *thread = NuCore::m_threadManager->GetCurrentThread();
 
         if (thread != NULL) {
-            NuMemoryManager *manager = thread->GetLocalStorage(this->tlsIndex);
+            NuMemoryManager *manager = thread->GetLocalStorage(this->tls_index);
 
             if (manager != NULL) {
                 return manager;
@@ -71,7 +71,7 @@ NuMemoryManager *NuMemory::GetThreadMem() {
         }
     }
 
-    return this->mem1Manager;
+    return this->mem1_manager;
 }
 
 static char g_memoryBuffer[0x10000];
@@ -92,8 +92,8 @@ NuMemory *NuMemoryGet() {
 }
 
 void NuMemory::InitalizeThreadLocalStorage() {
-    if (this->tlsIndex == -1 && NuCore::m_threadManager != NULL) {
-        this->tlsIndex = NuCore::m_threadManager->AllocTLS();
+    if (this->tls_index == -1 && NuCore::m_threadManager != NULL) {
+        this->tls_index = NuCore::m_threadManager->AllocTLS();
     }
 }
 

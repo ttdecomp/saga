@@ -5,11 +5,11 @@
 #include "nu2api.saga/nucore/common.h"
 
 struct episodedata_s {
-    int16_t nameId;
-    int16_t textId;
-    int16_t areaIds[10];
-    uint8_t areaCount;
-    uint8_t regularAreas;
+    int16_t name_id;
+    int16_t text_id;
+    int16_t area_ids[10];
+    uint8_t area_count;
+    uint8_t regular_areas;
     uint8_t index;
     uint8_t field6_0x1b;
 };

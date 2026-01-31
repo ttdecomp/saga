@@ -100,7 +100,7 @@ LoadState NuSoundSample::GetLoadState() {
     LoadState ls;
 
     pthread_mutex_lock(&sCriticalSection);
-    ls = this->loadState;
+    ls = this->load_state;
     pthread_mutex_unlock(&sCriticalSection);
 
     return ls;
@@ -110,18 +110,18 @@ ErrorState NuSoundSample::GetLastErrorState() {
     ErrorState es;
 
     pthread_mutex_lock(&sCriticalSection);
-    es = this->lastError;
+    es = this->last_error;
     pthread_mutex_unlock(&sCriticalSection);
 
     return es;
 }
 
 void NuSoundSample::Reference() {
-    __atomic_fetch_add(&refCount, 1, __ATOMIC_SEQ_CST);
+    __atomic_fetch_add(&ref_count, 1, __ATOMIC_SEQ_CST);
 }
 
 void NuSoundSample::Release() {
-    __atomic_fetch_sub(&refCount, 1, __ATOMIC_RELAXED);
+    __atomic_fetch_sub(&ref_count, 1, __ATOMIC_RELAXED);
 }
 
 ErrorState NuSoundSample::Load(void *param_1, int param_2, NuSoundOutOfMemCallback oomCallback) {

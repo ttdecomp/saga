@@ -57,8 +57,8 @@ class NuMemoryManager {
 
     struct ExtendedDebugInfo {
         // Types uncertain.
-        int _unknown[32];
-        int _unknown2;
+        int unknown[32];
+        int unknown2;
     };
 
     // The existence of this type isn't directly attested, but it lets us
@@ -75,8 +75,8 @@ class NuMemoryManager {
         void *end;
         Page *next;
         Page *prev;
-        bool _unknown;
-        unsigned int _unknown2;
+        bool unknown;
+        unsigned int unknown2;
     };
 
     struct Context {
@@ -84,24 +84,24 @@ class NuMemoryManager {
         unsigned int id;
 
         // Type uncertain.
-        int _unknown;
+        int unknown;
 
         Context *next;
     };
 
     struct Stats {
-        int _unknown_00;
+        int unknown_00;
 
         unsigned int frag_bytes;
 
-        unsigned int _unknown_08;
+        unsigned int unknown_08;
 
         unsigned int frag_count;
         unsigned int max_frag_count;
         unsigned int used_block_count;
 
         // Type uncertain.
-        int _unknown_18;
+        int unknown_18;
 
         unsigned int bytes_alloc_by_category[100];
     };
@@ -136,8 +136,8 @@ class NuMemoryManager {
     FreeHeader large_bins[22];
 
     // Types uncertain.
-    int _unknown_0e2c;
-    int _unknown_0e30;
+    int unknown_0e2c;
+    int unknown_0e30;
 
     Stats stats;
 
@@ -152,10 +152,10 @@ class NuMemoryManager {
     char error_msg[0x800];
 
     // Types uncertain.
-    int _unknown_180c;
-    int _unknown_1810;
-    int _unknown_1814;
-    int _unknown_1818;
+    int unknown_180c;
+    int unknown_1810;
+    int unknown_1814;
+    int unknown_1818;
 
     unsigned short override_category;
     unsigned short override_category_bg_thread;

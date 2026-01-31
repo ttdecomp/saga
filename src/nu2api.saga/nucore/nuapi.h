@@ -26,7 +26,7 @@ struct nuapi_s {
     char field21_0x3e;
     char field22_0x3f;
     float forced_frame_time;
-    float maxFps;
+    float max_fps;
     char field25_0x48;
     char field26_0x49;
     char field27_0x4a;
@@ -43,7 +43,7 @@ struct nuapi_s {
     char field38_0x55;
     char field39_0x56;
     char field40_0x57;
-    int padrecBuffersize;
+    int padrec_buffersize;
     char field42_0x5c;
     char field43_0x5d;
     char field44_0x5e;

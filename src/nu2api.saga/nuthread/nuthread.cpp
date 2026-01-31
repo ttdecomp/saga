@@ -66,7 +66,7 @@ int32_t NuThreadManager::AllocTLS() {
 }
 
 NuMemoryManager *NuThreadBase::GetLocalStorage(uint32_t index) const {
-    return this->memoryManagers[index];
+    return this->memory_managers[index];
 }
 
 static __thread NuThreadBase *g_currentThread = NULL;
@@ -80,12 +80,12 @@ NuThreadBase *NuThreadManager::GetCurrentThread() {
 }
 
 NuThreadBase::NuThreadBase(const NuThreadCreateParameters &params) {
-    this->threadFn = params.threadFn;
-    this->fnArg = params.fnArg;
+    this->thread_fn = params.thread_fn;
+    this->fn_arg = params.fn_arg;
 
     this->name[0] = '\0';
 
-    memset(this->memoryManagers, 0, sizeof(this->memoryManagers));
+    memset(this->memory_managers, 0, sizeof(this->memory_managers));
 }
 
 void NuThreadBase::SetDebugName(const char *name) {
@@ -93,11 +93,11 @@ void NuThreadBase::SetDebugName(const char *name) {
 }
 
 void (*NuThreadBase::GetThreadFn() const)(void *) {
-    return this->threadFn;
+    return this->thread_fn;
 }
 
 void *NuThreadBase::GetParam() const {
-    return this->fnArg;
+    return this->fn_arg;
 }
 
 NuThreadManager::NuThreadManager() {
@@ -110,16 +110,16 @@ NuThread *NuThreadManager::CreateThread(void (*threadFn)(void *), void *fnArg, i
     static int ThreadPriorityMap[] = {0, 1, 2, 3, 4};
 
     NuThreadCreateParameters params{
-        .threadFn = threadFn,
-        .fnArg = fnArg,
+        .thread_fn = threadFn,
+        .fn_arg = fnArg,
         .priority = ThreadPriorityMap[priority + 2],
         .name = name,
-        .stackSize = stackSize == 0 ? 0x8000 : stackSize,
-        .isSuspended = false,
-        .nuthreadCafeCore = nuthreadCafeCore,
-        .nuthreadXbox360Core = nuthreadXbox360Core,
-        .useCurrent = false,
-        .startSignal = false,
+        .stack_size = stackSize == 0 ? 0x8000 : stackSize,
+        .is_suspended = false,
+        .nuthread_cafe_core = nuthreadCafeCore,
+        .nuthread_xbox360_core = nuthreadXbox360Core,
+        .use_current = false,
+        .start_signal = false,
     };
 
     return new NuThread(params);
@@ -131,7 +131,7 @@ NuThread::NuThread(const NuThreadCreateParameters &params) : NuThreadBase(params
     sched_param scheduling;
     pthread_attr_t attrs;
 
-    if (params.useCurrent) {
+    if (params.use_current) {
         g_currentPthread = pthread_self();
 
         return;
@@ -155,8 +155,8 @@ NuThread::NuThread(const NuThreadCreateParameters &params) : NuThreadBase(params
             break;
     }
 
-    this->isSuspended = params.isSuspended;
-    this->startSignal = params.startSignal;
+    this->is_suspended = params.is_suspended;
+    this->start_signal = params.start_signal;
 
     pthread_attr_init(&attrs);
     pthread_attr_setschedparam(&attrs, &scheduling);
@@ -181,15 +181,15 @@ NuThread *NuThreadInitPS() {
     pthread_getschedparam(current, &policy, &scheduling);
 
     createParams = {
-        .threadFn = NULL,
-        .fnArg = NULL,
+        .thread_fn = NULL,
+        .fn_arg = NULL,
         .priority = 1,
         .name = "",
-        .stackSize = 0,
-        .isSuspended = false,
-        .nuthreadCafeCore = NUTHREADCAFECORE_UNKNOWN_1,
-        .nuthreadXbox360Core = NUTHREADXBOX360CORE_UNKNOWN_1,
-        .useCurrent = true,
+        .stack_size = 0,
+        .is_suspended = false,
+        .nuthread_cafe_core = NUTHREADCAFECORE_UNKNOWN_1,
+        .nuthread_xbox360_core = NUTHREADXBOX360CORE_UNKNOWN_1,
+        .use_current = true,
     };
 
     thread = new NuThread(createParams);
@@ -207,7 +207,7 @@ void *NuThread::ThreadMain(void *thread) {
 
     g_currentThread = self;
 
-    while (self->startSignal != 0) {
+    while (self->start_signal != 0) {
         NuThreadSleep(1);
     }
 

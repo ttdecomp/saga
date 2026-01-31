@@ -41,15 +41,15 @@ struct leveldata_s { /* PlaceHolder Structure */
     undefined2 field2_0x60;
     undefined2 field3_0x62;
     LEVELFLAGS flags;
-    void *loadFn;
-    void *initFn;
-    void *resetFn; /* Created by retype action */
-    void *updateFn;
-    void *alwaysUpdateFn;
-    void *drawFn;
-    void *drawStatusFn;
+    void *load_fn;
+    void *init_fn;
+    void *reset_fn; /* Created by retype action */
+    void *update_fn;
+    void *always_update_fn;
+    void *draw_fn;
+    void *draw_status_fn;
     LEVELDATADISPLAY field12_0x84;
-    short musicIndex;
+    short music_index;
     undefined2 field14_0xa2;
     undefined2 field15_0xa4;
     undefined2 field16_0xa6;
@@ -134,7 +134,7 @@ struct leveldata_s { /* PlaceHolder Structure */
     float field95_0x120;
     undefined4 field96_0x124;
     undefined4 field97_0x128;
-    int musicTracks[6];
+    int music_tracks[6];
 };
 
 typedef struct leveldata_s LEVELDATA;

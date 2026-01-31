@@ -28,7 +28,7 @@ typedef struct fileinfo_s {
     int64_t buf_start;
     int buf_len;
     int use_buf;
-    int _unused;
+    int unused;
     int mode;
     FILEBUFF *buf;
 } FILEINFO;
@@ -96,8 +96,8 @@ typedef struct nudfnodev2_s {
     int16_t child_idx;
     int16_t sibling_idx;
     char *name;
-    int16_t _unknown;
-    int16_t _unknown2;
+    int16_t unknown;
+    int16_t unknown2;
 } NUDFNODE;
 
 typedef struct nudatopenfileinfo_s {
@@ -119,9 +119,9 @@ typedef struct nudathdr_s {
     int32_t hashes_len;
     char *hashes;
     NUDATOPENFILEINFO open_files[20];
-    short _unknown;
+    short unknown;
     short mode;
-    int _unknown2;
+    int unknown2;
     char *name;
 } NUDATHDR;
 

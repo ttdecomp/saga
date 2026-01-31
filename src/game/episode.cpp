@@ -48,9 +48,9 @@ EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *b
                 if (!bVar3) {
                     iVar4 = NuStrICmp(a, "episode_start");
                     if (iVar4 == 0 && count < maxCount) {
-                        episode->nameId = -1;
-                        episode->textId = -1;
-                        episode->areaCount = 0;
+                        episode->name_id = -1;
+                        episode->text_id = -1;
+                        episode->area_count = 0;
                         episode->index = (uint8_t)count;
                         bVar3 = true;
                     }
@@ -59,30 +59,30 @@ EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *b
 
                 if (NuStrICmp(a, "episode_end") != 0) {
                     if (NuStrICmp(fp->word_buf, "area") == 0) {
-                        if (episode->areaCount >= 10 || NuFParGetWord(fp) == 0)
+                        if (episode->area_count >= 10 || NuFParGetWord(fp) == 0)
                             goto LAB_004890ae;
 
                         area = Area_FindByName(fp->word_buf, &areaIndex);
 
                         bVar3 = true;
                         if (areaIndex != -1) {
-                            bVar2 = episode->areaCount;
+                            bVar2 = episode->area_count;
                             i = (unsigned int)bVar2;
                             if (i == 0)
                                 goto LAB_0048910d;
-                            if (areaIndex == episode->areaIds[0])
+                            if (areaIndex == episode->area_ids[0])
                                 uVar5 = 0;
                             iVar4 = NuStrICmp(fp->word_buf, "name_id");
                             if (iVar4 == 0) {
                                 iVar4 = NuFParGetInt(fp);
-                                episode->nameId = (short)iVar4;
+                                episode->name_id = (short)iVar4;
                                 bVar3 = true;
                             } else {
                                 iVar4 = NuStrICmp(fp->word_buf, "text_id");
                                 bVar3 = true;
                                 if (iVar4 == 0) {
                                     iVar4 = NuFParGetInt(fp);
-                                    episode->textId = (short)iVar4;
+                                    episode->text_id = (short)iVar4;
                                 }
                             }
                         }
@@ -90,7 +90,7 @@ EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *b
                     }
 
                     bVar3 = false;
-                    if (episode->areaCount == 0)
+                    if (episode->area_count == 0)
                         break;
                     count = count + 1;
                     iVar4 = NuFParGetLine(fp);
@@ -115,7 +115,7 @@ EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *b
         }
         return NULL;
 
-        while (iVar4 = uVar5 + 1, uVar5 = uVar6, areaIndex != episode->areaIds[iVar4]) {
+        while (iVar4 = uVar5 + 1, uVar5 = uVar6, areaIndex != episode->area_ids[iVar4]) {
         LAB_00489248:
             uVar6 = uVar5 + 1;
             if (uVar5 == bVar2 - 1)
@@ -129,8 +129,8 @@ EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *b
             if (0 < count) {
                 do {
                     iVar4 = 0;
-                    while (iVar4 != (unsigned int)episodePtr2->areaCount * 2) {
-                        psVar1 = (short *)((int)episodePtr2->areaIds + iVar4);
+                    while (iVar4 != (unsigned int)episodePtr2->area_count * 2) {
+                        psVar1 = (short *)((int)episodePtr2->area_ids + iVar4);
                         iVar4 = iVar4 + 2;
                         if (areaIndex == *psVar1)
                             goto LAB_004890ae;
@@ -140,11 +140,11 @@ EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *b
                 } while (j != count);
             }
             areaId = (short)areaIndex;
-            episode->areaIds[i] = areaId;
+            episode->area_ids[i] = areaId;
             bVar3 = true;
-            episode->areaCount = bVar2 + 1;
+            episode->area_count = bVar2 + 1;
             if ((area->flags & 6) == 0) {
-                episode->regularAreas += 1;
+                episode->regular_areas += 1;
             }
         } else {
             bVar3 = true;

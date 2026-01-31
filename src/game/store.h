@@ -58,10 +58,10 @@ struct collectid_s {
     uint8_t type;
     uint8_t field2_0x3;
     int field3_0x4;
-    uint8_t canBuy;
+    uint8_t can_buy;
     uint8_t field5_0x9;
     uint16_t field6_0xa;
-    char cheatCode[16];
+    char cheat_code[16];
 };
 typedef struct collectid_s COLLECTID;
 

@@ -838,7 +838,7 @@ NUDATHDR *NuDatOpenEx(char *filepath, VARIPTR *buf, int *_unused, short mode) {
         buf->addr += sizeof(NUDATHDR);
         memset(hdr, 0, sizeof(NUDATHDR));
 
-        hdr->_unknown = 1;
+        hdr->unknown = 1;
 
         hdr->name = (char *)buf->void_ptr;
         buf->addr += path_len;
@@ -882,8 +882,8 @@ NUDATHDR *NuDatOpenEx(char *filepath, VARIPTR *buf, int *_unused, short mode) {
             old_ver = (NUDFNODE_V1 *)hdr->file_tree;
 
             for (n = hdr->tree_node_count - 1; n > 0; n--) {
-                hdr->file_tree[n]._unknown = 0;
-                hdr->file_tree[n]._unknown2 = 0;
+                hdr->file_tree[n].unknown = 0;
+                hdr->file_tree[n].unknown2 = 0;
                 hdr->file_tree[n].name = old_ver[n].name;
                 hdr->file_tree[n].sibling_idx = old_ver[n].sibling_idx;
                 hdr->file_tree[n].child_idx = old_ver[n].child_idx;
@@ -896,8 +896,8 @@ NUDATHDR *NuDatOpenEx(char *filepath, VARIPTR *buf, int *_unused, short mode) {
             APIEndianSwap(&hdr->file_tree[n].name, 1, 4);
 
             if (hdr->version < -4) {
-                APIEndianSwap(&hdr->file_tree[n]._unknown, 1, 2);
-                APIEndianSwap(&hdr->file_tree[n]._unknown2, 1, 2);
+                APIEndianSwap(&hdr->file_tree[n].unknown, 1, 2);
+                APIEndianSwap(&hdr->file_tree[n].unknown2, 1, 2);
             }
         }
 

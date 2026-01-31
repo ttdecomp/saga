@@ -6,7 +6,7 @@ struct SaveLoad {
     int size;
     int field3_0xc;
     int field4_0x10;
-    int extradataOffset;
+    int extradata_offset;
     char field6_0x18[16];
     short field7_0x28;
     char field8_0x2a[2046];

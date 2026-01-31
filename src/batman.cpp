@@ -25,7 +25,7 @@ extern "C" int32_t NuMain(int32_t argc, char **argv) {
     LEVELDATA *level = Level_FindByName("titles", NULL);
     LOG_INFO("titles level: %p", level);
 
-    int32_t result = GamePlayMusic(level, 0, &Game.optionsSave);
+    int32_t result = GamePlayMusic(level, 0, &Game.options_save);
     if (result != 0) {
         LOG_WARN("GamePlayMusic returned %d", result);
     }

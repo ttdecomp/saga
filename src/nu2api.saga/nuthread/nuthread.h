@@ -25,24 +25,24 @@ extern "C" {
 }
 
 struct NuThreadCreateParameters {
-    void (*threadFn)(void *);
-    void *fnArg;
+    void (*thread_fn)(void *);
+    void *fn_arg;
     int32_t priority;
     const char *name;
-    int32_t stackSize;
-    bool isSuspended;
-    NUTHREADCAFECORE nuthreadCafeCore;
-    NUTHREADXBOX360CORE nuthreadXbox360Core;
-    bool useCurrent;
-    bool startSignal;
+    int32_t stack_size;
+    bool is_suspended;
+    NUTHREADCAFECORE nuthread_cafe_core;
+    NUTHREADXBOX360CORE nuthread_xbox360_core;
+    bool use_current;
+    bool start_signal;
 };
 
 class NuThreadBase {
   protected:
-    void (*threadFn)(void *);
-    void *fnArg;
+    void (*thread_fn)(void *);
+    void *fn_arg;
     char name[32];
-    NuMemoryManager *memoryManagers[32];
+    NuMemoryManager *memory_managers[32];
 
   public:
     NuThreadBase(const NuThreadCreateParameters &params);
@@ -61,8 +61,8 @@ int bgProcIsBgThread(void);
 
 class NuThread : public NuThreadBase {
   private:
-    volatile uint8_t startSignal;
-    bool isSuspended;
+    volatile uint8_t start_signal;
+    bool is_suspended;
 
     static void *ThreadMain(void *self);
 

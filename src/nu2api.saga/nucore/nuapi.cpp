@@ -19,11 +19,11 @@ void NuAPIInit(void) {
     nuapi.video_aspect = 0;
     nuapi.disable_os_menu_freeze = 0;
     nuapi.forced_frame_time = nuapi_forced_frame_time;
-    nuapi.maxFps = nuapi_max_fps;
+    nuapi.max_fps = nuapi_max_fps;
 
     NuTimeGet(&nuapi.time);
 
-    nuapi.padrecBuffersize = NUAPI_PADREC_DEFAULT_BUFFERSIZE;
+    nuapi.padrec_buffersize = NUAPI_PADREC_DEFAULT_BUFFERSIZE;
     nuapi.field50_0x64 = 0;
     nuapi.field51_0x68 = 0;
 

@@ -20,8 +20,8 @@ MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *buffer
     MISSIONSAVE local_c;
     short *buffer;
 
-    sys.characterIds[6] = 2475;
-    sys.characterIds[7] = 79;
+    sys.character_ids[6] = 2475;
+    sys.character_ids[7] = 79;
 
     fp = NuFParCreate(file);
     if (fp != NULL) {
@@ -35,7 +35,7 @@ MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *buffer
         sys.flags = 1;
         buffer = (short *)((int)bufferStart->void_ptr + 3U & 0xfffffffc);
         bufferStart->void_ptr = buffer;
-        sys.missionSave = save;
+        sys.mission_save = save;
         sys.length = (int)buffer;
 
         do {
@@ -47,11 +47,11 @@ MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *buffer
 
             i = NuStrICmp(fp->word_buf, "party");
             if (i == 0) {
-                while ((sys.characterCount < 8 && (i = NuFParGetWord(fp), i != 0))) {
+                while ((sys.character_count < 8 && (i = NuFParGetWord(fp), i != 0))) {
                     charId = CharIDFromName(fp->word_buf);
                     if (charId != -1) {
-                        sys.characterIds[sys.characterCount] = (short)charId;
-                        sys.characterCount = sys.characterCount + 1;
+                        sys.character_ids[sys.character_count] = (short)charId;
+                        sys.character_count = sys.character_count + 1;
                     }
                 }
             } else {

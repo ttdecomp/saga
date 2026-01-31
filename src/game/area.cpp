@@ -127,7 +127,7 @@ AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferE
                                             if (iVar6 != 0) {
                                                 uVar4 = CharIDFromName(fp->word_buf);
                                                 bVar2 = true;
-                                                area->minikitId = uVar4;
+                                                area->minikit_id = uVar4;
                                             }
                                         } else {
                                             iVar6 = NuStrICmp(fp->word_buf, "true_jedi");
@@ -270,7 +270,7 @@ AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferE
                                                                                                                     fp);
                                                                                                             bVar2 =
                                                                                                                 true;
-                                                                                                            area->challengeTrialTime =
+                                                                                                            area->challenge_trial_time =
                                                                                                                 sVar5;
                                                                                                         } else {
                                                                                                             iVar6 = NuStrICmp(
@@ -335,11 +335,11 @@ AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferE
                 area->cheat = 0xff;
                 area->field30_0x7f = 0;
                 area->field31_0x80 = 0;
-                area->challengeTrialTime = 0;
-                area->episodeIndex = 0xff;
-                area->areaIndex = 0xff;
-                area->areaMusic = -1;
-                area->minikitId = 0xffff;
+                area->challenge_trial_time = 0;
+                area->episode_index = 0xff;
+                area->area_index = 0xff;
+                area->area_music = -1;
+                area->minikit_id = 0xffff;
                 area->field37_0x8c = 0;
                 area->field38_0x90 = 0;
                 area->field39_0x94 = 0xffff;
@@ -362,17 +362,17 @@ AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferE
             if (0 < i) {
                 do {
                     while (true) {
-                        if (area2[j].challengeTrialTime == 0) {
+                        if (area2[j].challenge_trial_time == 0) {
                             if ((area2[j].flags & 0x104) == 4) {
-                                area2[j].challengeTrialTime = (short)AREA_DEFAULTBONUSTIMETRIALTIME;
+                                area2[j].challenge_trial_time = (short)AREA_DEFAULTBONUSTIMETRIALTIME;
                             } else if ((area2[j].flags & 0x10) != 0) {
-                                area2[j].challengeTrialTime = (short)AREA_DEFAULTCHALLENGETIME;
+                                area2[j].challenge_trial_time = (short)AREA_DEFAULTCHALLENGETIME;
                             }
                         }
                         if (area2[j].cheat != 0xff) {
                             Cheat_SetArea((int)(char)area2[j].cheat, j);
                         }
-                        if ((area2[j].challengeTrialTime != 0) && ((area2[j].flags & 0x114) == 0x10))
+                        if ((area2[j].challenge_trial_time != 0) && ((area2[j].flags & 0x114) == 0x10))
                             break;
                         j = j + 1;
                         if (i <= j) {
@@ -380,7 +380,7 @@ AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferE
                         }
                     }
                     iVar6 = j + 1;
-                    area2[j].challengeTrialTime = 1200;
+                    area2[j].challenge_trial_time = 1200;
                     j = iVar6;
                 } while (iVar6 < i);
             }

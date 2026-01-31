@@ -74,11 +74,11 @@ void Collection_Configure(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd) 
                 if (sVar3 != -1 && InCollectList_Index((int)sVar3, CollectList, CollectCount) == -1) {
                     collect->type = 0;
                     collect->field2_0x3 = 0xff;
-                    collect->canBuy = 0;
+                    collect->can_buy = 0;
                     collect->field3_0x4 = 0;
                     collect->field6_0xa = 0;
                     collect->field5_0x9 = 0;
-                    collect->cheatCode[0] = '\0';
+                    collect->cheat_code[0] = '\0';
 
                 LAB_004eb886:
                     iVar4 = NuFParGetWord(fp);
@@ -87,7 +87,7 @@ void Collection_Configure(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd) 
                         if (iVar4 == 0) {
                             bVar1 = collect->type;
                             if (bVar1 == 0) {
-                                if (collect->canBuy != 0) {
+                                if (collect->can_buy != 0) {
                                 LAB_004eb8ce:
                                     collect->field5_0x9 = 1;
                                     COLLECTION_COMPLETIONCOUNT = COLLECTION_COMPLETIONCOUNT + 1;
@@ -170,14 +170,14 @@ LAB_004eb920:
                             } else {
                                 iVar4 = NuStrICmp(fp->word_buf, "buy_in_shop");
                                 if (iVar4 == 0) {
-                                    collect->canBuy = 1;
+                                    collect->can_buy = 1;
                                     iVar4 = NuFParGetInt(fp);
                                     collect->field3_0x4 = iVar4;
                                 } else {
                                     iVar4 = NuStrICmp(fp->word_buf, "cheat_code");
                                     if (((iVar4 == 0) && (iVar4 = NuFParGetWord(fp), iVar4 != 0)) &&
                                         (iVar4 = NuStrLen(fp->word_buf), iVar4 == 6)) {
-                                        buf = collect->cheatCode;
+                                        buf = collect->cheat_code;
                                         NuStrCpy(buf, fp->word_buf);
                                         NuStrUpr(buf, buf);
                                     }

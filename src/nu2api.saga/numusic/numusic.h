@@ -43,7 +43,7 @@ class Track {
     uint8_t field10_0x13;
     TRACK_CLASS class_;
     void *field12_0x18;
-    int32_t indexCount;
+    int32_t index_count;
     uint8_t field17_0x20;
     uint8_t field18_0x21;
     uint8_t field19_0x22;
@@ -58,9 +58,9 @@ class Track {
 
 class NuMusic {
     struct Voice {
-        int32_t streamIndex;
+        int32_t stream_index;
         Track *tracks[2];
-        int32_t trackIndex;
+        int32_t track_index;
         VOICE_STATUS status;
         uint32_t flags;
         void *field16_0x2c;
@@ -86,23 +86,23 @@ class NuMusic {
     int32_t field346_0x1e0;
 
     float *indexes;
-    int32_t indexCount;
+    int32_t index_count;
 
-    char currentPath[256];
-    char *stringPoolStart;
-    char *stringPoolEnd;
-    bool strictMode;
+    char current_path[256];
+    char *string_pool_start;
+    char *string_pool_end;
+    bool strict_mode;
     Album *albums;
-    int32_t albumCount;
-    Album *currentAlbum;
+    int32_t album_count;
+    Album *current_album;
     Track *tracks;
-    int32_t trackCount;
-    Track *currentTrack;
+    int32_t track_count;
+    Track *current_track;
     Voice voices[2];
     char *language;
 
     Album *album;
-    int32_t trackIndex;
+    int32_t track_index;
 
   public:
     int32_t Initialise(const char *file, char *null, VARIPTR *bufferStart, VARIPTR bufferEnd);

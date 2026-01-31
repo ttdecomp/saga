@@ -239,7 +239,7 @@ void InitOnce(int32_t argc, char **param_2) {
 
 #define SETUP(cmd, ...) cmd, ##__VA_ARGS__
 
-    NuInitHardware(&permbuffer_base, &superbuffer_end, NULL,                   //
+    NuInitHardware(&permbuffer_base, &superbuffer_end, 0,                      //
                    SETUP(NUAPI_SETUP_HOSTFS, 0),                               //
                    SETUP(NUAPI_SETUP_SWAPMODE, NUVIDEO_SWAPMODE_ASYNC),        //
                    SETUP(NUAPI_SETUP_STREAMSIZE, 0x20000),                     //
@@ -272,8 +272,8 @@ int32_t Episode_ContainsArea(int32_t areaId, int32_t *areaIndex) {
     for (int32_t i = 0; i < EPISODECOUNT; i++) {
         EPISODEDATA *episode = &EDataList[i];
 
-        for (int32_t j = 0; j < episode->areaCount; j++) {
-            int16_t id = episode->areaIds[j];
+        for (int32_t j = 0; j < episode->area_count; j++) {
+            int16_t id = episode->area_ids[j];
             if (id == areaId) {
                 if (areaIndex != NULL) {
                     *areaIndex = j;
@@ -334,8 +334,8 @@ void InitGameAfterConfig(void) {
         AREAFLAGS areaFlags;
         do {
             int32_t episode = Episode_ContainsArea(areaId, &areaIndex);
-            area->episodeIndex = episode;
-            area->areaIndex = (byte)areaIndex;
+            area->episode_index = episode;
+            area->area_index = (byte)areaIndex;
             if ((area != HUB_ADATA) && (areaFlags = area->flags, (areaFlags & 0x2022) == 0)) {
                 if ((areaFlags & 0x100) == 0) {
                     if ((areaFlags & 4) != 0) {
@@ -438,7 +438,7 @@ void InitGameAfterConfig(void) {
                             }
                             if (episode != 0xff) {
                                 areaIndex = areaIndex + 1;
-                                bVar1 = pAVar2[(char)episode].episodeIndex;
+                                bVar1 = pAVar2[(char)episode].episode_index;
                                 level->field21_0xae = bVar1;
                                 if ((pAVar2[(char)episode].flags & 1) != 0) {
                                     level->field46_0xd9 = 0x32;
@@ -473,7 +473,7 @@ void InitGameAfterConfig(void) {
     CompletionPointInfo[2] = CompletionPointInfo[2] + POINTS_PER_CHARACTER * COLLECTION_COMPLETIONCOUNT;
     COMPLETIONPOINTS = COMPLETIONPOINTS + POINTS_PER_CHARACTER * COLLECTION_COMPLETIONCOUNT;
 
-    MissionSys = Missions_Configure("levels\\missions.txt", &permbuffer_ptr, &permbuffer_end, &Game.missionSave);
+    MissionSys = Missions_Configure("levels\\missions.txt", &permbuffer_ptr, &permbuffer_end, &Game.mission_save);
     if (MissionSys != NULL) {
         areaId = (uint32_t)MissionSys->count * POINTS_PER_MISSION;
         COMPLETIONPOINTS = COMPLETIONPOINTS + areaId;
@@ -817,7 +817,7 @@ static void LoadPermData(BGPROCINFO *proc) {
     EDataList = Episodes_ConfigureList("levels\\episodes.txt", &permbuffer_ptr, &permbuffer_end, 6, &EPISODECOUNT);
 
     for (int i = 0; i < EPISODECOUNT; i++) {
-        LOG_INFO("Episode %d: %hu areas", i, EDataList[i].areaCount);
+        LOG_INFO("Episode %d: %hu areas", i, EDataList[i].area_count);
     }
     LOG_INFO("Loaded %d episodes", EPISODECOUNT);
 

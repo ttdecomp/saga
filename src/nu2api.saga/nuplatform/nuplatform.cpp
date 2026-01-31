@@ -7,7 +7,7 @@ NuPlatform *NuPlatform::ms_instance = NULL;
 void NuPlatform::Create(void) {
     if (ms_instance == NULL) {
         ms_instance = (NuPlatform *)malloc(sizeof(NuPlatform));
-        ms_instance->currentPlatform = DEFAULT_PLATFORM;
+        ms_instance->current_platform = DEFAULT_PLATFORM;
     }
 }
 
@@ -15,7 +15,7 @@ char *g_fontExtension = NULL;
 char *g_platformName = NULL;
 
 void NuPlatform::SetCurrentPlatform(PLATFORMS_SUPPORTED platform) {
-    this->currentPlatform = platform;
+    this->current_platform = platform;
 
     switch (platform) {
         case DEFAULT_PLATFORM:
@@ -67,13 +67,13 @@ void NuPlatform::SetCurrentPlatform(PLATFORMS_SUPPORTED platform) {
         this->name = "IOS";
     LAB_00101158:
         g_fontExtension = "ANDROID_PVRTC_FNT";
-        this->textureExtension = "ANDROID_PVRTC_TEX";
-        this->fontExtension = "ANDROID_PVRTC_FNT";
+        this->texture_extension = "ANDROID_PVRTC_TEX";
+        this->font_extension = "ANDROID_PVRTC_FNT";
     } else {
         if (platform == ANDROID_ATITC_PLATFORM) {
             g_fontExtension = "ANDROID_ATITC_FNT";
-            this->textureExtension = "ANDROID_ATITC_TEX";
-            this->fontExtension = "ANDROID_ATITC_FNT";
+            this->texture_extension = "ANDROID_ATITC_TEX";
+            this->font_extension = "ANDROID_ATITC_FNT";
             goto LAB_001010e6;
         }
 
@@ -82,20 +82,20 @@ void NuPlatform::SetCurrentPlatform(PLATFORMS_SUPPORTED platform) {
                 goto LAB_00101158;
             if (platform == ANDROID_S3TC_PLATFORM) {
                 g_fontExtension = "ANDROID_S3TC_FNT";
-                this->textureExtension = "ANDROID_S3TC_TEX";
-                this->fontExtension = "ANDROID_S3TC_FNT";
+                this->texture_extension = "ANDROID_S3TC_TEX";
+                this->font_extension = "ANDROID_S3TC_FNT";
                 goto LAB_001010e6;
             }
             if (platform == ANDROID_ETC1_PLATFORM) {
                 g_fontExtension = "ANDROID_ETC1_FNT";
-                this->textureExtension = "ANDROID_ETC1_TEX";
-                this->fontExtension = "ANDROID_ETC1_FNT";
+                this->texture_extension = "ANDROID_ETC1_TEX";
+                this->font_extension = "ANDROID_ETC1_FNT";
                 goto LAB_001010e6;
             }
         }
         g_fontExtension = "fnt";
-        this->fontExtension = "fnt";
-        this->textureExtension = "TEX";
+        this->font_extension = "fnt";
+        this->texture_extension = "TEX";
     }
 
 LAB_001010e6:

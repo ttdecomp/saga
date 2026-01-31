@@ -65,18 +65,18 @@ NuMemoryManager::NuMemoryManager(IEventHandler *event_handler, IErrorHandler *er
     // The default initializers almost get these right, but they're out of order
     // and compile fails when trying to specify designated initializers out of
     // order.
-    this->initial_state_ctx._unknown = 0;
+    this->initial_state_ctx.unknown = 0;
     this->initial_state_ctx.id = 0;
     this->initial_state_ctx.next = 0;
     this->initial_state_ctx.name = 0;
 
-    this->stranded_ctx._unknown = 0;
+    this->stranded_ctx.unknown = 0;
     this->stranded_ctx.id = 0;
     this->stranded_ctx.next = 0;
     this->stranded_ctx.name = 0;
 
-    this->_unknown_1814 = 0x4000;
-    this->_unknown_1818 = 0;
+    this->unknown_1814 = 0x4000;
+    this->unknown_1818 = 0;
 
     this->is_zombie = false;
 
@@ -84,23 +84,23 @@ NuMemoryManager::NuMemoryManager(IEventHandler *event_handler, IErrorHandler *er
 
     this->pages = NULL;
 
-    this->_unknown_180c = 0;
-    this->_unknown_1810 = 0;
+    this->unknown_180c = 0;
+    this->unknown_1810 = 0;
 
     memset(this->small_bins, 0, sizeof(this->small_bins));
     memset(this->large_bins, 0, sizeof(this->large_bins));
 
     memset(this->small_bin_has_free_map, 0, sizeof(this->small_bin_has_free_map));
 
-    this->_unknown_0e2c = 0;
-    this->_unknown_0e30 = 0;
+    this->unknown_0e2c = 0;
+    this->unknown_0e30 = 0;
 
     this->large_bin_has_free_map = 0;
     this->large_bin_dirty_map = 0;
 
     memset(&this->stats, 0, sizeof(Stats));
 
-    this->stats._unknown_08 = this->stats.frag_bytes;
+    this->stats.unknown_08 = this->stats.frag_bytes;
 
     this->initial_state_ctx.name = "Initial State";
     this->cur_ctx = &this->initial_state_ctx;
