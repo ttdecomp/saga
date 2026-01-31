@@ -17,6 +17,8 @@ typedef struct nucamera_s {
 extern NUMTX clip_planes;
 extern NUCAMERA global_camera;
 extern NUMTX vmtx;
+extern NUMTX pmtx;
+extern NUMTX smtx;
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,6 +31,11 @@ extern "C" {
     NUMTX* NuCameraGetViewMtx(void);
     NUMTX* NuCameraGetClipPlanes(void);
     int NuCameraClipTestSphere(NUVEC* pnt, float radius, NUMTX* wm);
+    void NuCameraGetPosition(NUVEC* v);
+    void NuCameraGetTrans(NUVEC* v);
+    NUMTX* NuCameraGetProjectionMtx(void);
+    NUMTX* NuCameraGetScalingMtx(void);
+    NUMTX* NuCameraGetMtx(void);
 #ifdef __cplusplus
 }
 #endif

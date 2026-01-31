@@ -11,6 +11,12 @@ NUCAMERA global_camera;
 NUMTX vmtx = {
     1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
 };
+NUMTX pmtx = {
+    1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+};
+NUMTX smtx = {
+    1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+};
 
 NUCAMERA *NuCameraCreate() {
     NUCAMERA *cam = (NUCAMERA *)NuMemoryGet()->GetThreadMem()->_BlockAlloc(sizeof(NUCAMERA), 0x4, 1, "", 0);
@@ -96,4 +102,24 @@ int NuCameraClipTestSphere(NUVEC *pnt, float radius, NUMTX *wm) {
     }
     
     return 0;
+}
+
+void NuCameraGetPosition(NUVEC* v) {
+    memcpy(v, &global_camera.mtx._30, sizeof(NUVEC));
+}
+
+void NuCameraGetTrans(NUVEC* v) {
+    memcpy(v, &global_camera.mtx._30, sizeof(NUVEC));
+}
+
+NUMTX* NuCameraGetProjectionMtx(void) {
+    return &pmtx;
+}
+
+NUMTX* NuCameraGetScalingMtx(void) {
+    return &smtx;
+}
+
+NUMTX* NuCameraGetMtx(void) {
+    return &global_camera.mtx;
 }
