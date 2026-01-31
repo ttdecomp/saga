@@ -1,10 +1,8 @@
 #pragma once
 
-struct nuvec4_s {
+typedef struct nuquat_s {
     float x;
     float y;
     float z;
     float w;
-};
-
-typedef struct nuvec4_s NUVEC4;
+} NUQUAT;

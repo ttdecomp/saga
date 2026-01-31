@@ -1,10 +1,10 @@
 #pragma once
 
 #include "nu2api.saga/numath/numtx.h"
-#include "nu2api.saga/numath/nuvec4.h"
+#include "nu2api.saga/numath/nuquat.h"
 
-struct nucamera_s {
-    numtx_s mtx;
+typedef struct nucamera_s {
+    NUMTX mtx;
     float fov;
     float aspect;
     float nearclip;
@@ -12,16 +12,12 @@ struct nucamera_s {
     NUVEC forward;
     NUVEC right;
     NUQUAT rotation;
-};
-
-typedef struct nucamera_s NUCAMERA;
+} NUCAMERA;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
     NUCAMERA *NuCameraCreate(void);
-
 #ifdef __cplusplus
 }
 #endif
