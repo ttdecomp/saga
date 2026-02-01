@@ -31,6 +31,9 @@ any game assets, media, original source code, or any other copyrighted material.
 Contributions are welcome! If you find any issues or have suggestions for
 improvements, please open an issue or submit a pull request.
 
+However, please note that any contributions which include original game assets
+or source code will be rejected and expunged for the sake of the project.
+
 See [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
 
 ### Documentation

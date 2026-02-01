@@ -12,7 +12,7 @@ There are many ways to contribute to the project.
 - Encouragement and enthusiasm! It's always nice to know that one's work is
   appreciated.
 
-## !IMPORTANT NOTE!
+## ! IMPORTANT NOTE !
 
 If you have access to original source code, _do not_ contribute it to _saga_
 unless authorized to do so by the original owners under this project's license.
