@@ -14,7 +14,9 @@ class NuMemoryPool {
     };
 
   private:
-    struct FreeBlock {};
+    struct FreeBlock {
+        FreeBlock *next;
+    };
 
   private:
     static NuMemoryPool *m_firstPool;
@@ -25,7 +27,4 @@ class NuMemoryPool {
 
     static void InterlockedAdd(volatile unsigned int *augend, unsigned int addend);
     static void InterlockedSub(volatile unsigned int *minuend, unsigned int subtrahend);
-
-    static void InterlockedPush(volatile FreeBlock **block, void *ptr);
-    static void InterlockedPop(volatile FreeBlock **block);
 };

@@ -1,4 +1,5 @@
 #include <pthread.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "decomp.h"
@@ -6,9 +7,14 @@
 #include "nu2api.saga/numemory/NuMemoryManager.h"
 
 #include "nu2api.saga/nucore/common.h"
+#include "nu2api.saga/nucore/nustring.h"
 
-#define ALLOC_FLAGS 0x78000000
-#define BLOCK_SIZE(header) ((header)->block_header.value & ~ALLOC_FLAGS) * 4
+#define HEADER_MGR_HI_IDX_MASK 0x80000000
+#define HEADER_MGR_MASK 0x78000000
+#define BLOCK_SIZE_MASK ~HEADER_MGR_MASK
+#define BLOCK_SIZE(header) ((header) & BLOCK_SIZE_MASK) * 4
+
+#define STRANDED_DUMP_SUFFIX "_stranded.txt"
 
 unsigned int NuMemoryManager::m_flags;
 pthread_mutex_t *NuMemoryManager::m_globalCriticalSection;
@@ -22,7 +28,7 @@ static char g_clzTable[] = {
     0x01, 0x0a, 0x04, 0x13, 0x06, 0x0f, 0x0d, 0x17, 0x0b, 0x14, 0x10, 0x18, 0x15, 0x19, 0x1a, 0x1b,
 };
 
-static unsigned int CountLeadingZeros(unsigned int value) {
+static inline unsigned int CountLeadingZeros(unsigned int value) {
     // An almost-branchless algorithm for calculating the leading zeros of a
     // binary value by exploiting de Bruijn sequences. The value is hashed
     // using a perfect hash function and the hash provides the index to a table
@@ -65,12 +71,12 @@ NuMemoryManager::NuMemoryManager(IEventHandler *event_handler, IErrorHandler *er
     // The default initializers almost get these right, but they're out of order
     // and compile fails when trying to specify designated initializers out of
     // order.
-    this->initial_state_ctx.unknown = 0;
+    this->initial_state_ctx.used_block_count = 0;
     this->initial_state_ctx.id = 0;
     this->initial_state_ctx.next = 0;
     this->initial_state_ctx.name = 0;
 
-    this->stranded_ctx.unknown = 0;
+    this->stranded_ctx.used_block_count = 0;
     this->stranded_ctx.id = 0;
     this->stranded_ctx.next = 0;
     this->stranded_ctx.name = 0;
@@ -100,7 +106,7 @@ NuMemoryManager::NuMemoryManager(IEventHandler *event_handler, IErrorHandler *er
 
     memset(&this->stats, 0, sizeof(Stats));
 
-    this->stats.unknown_08 = this->stats.frag_bytes;
+    this->stats.min_free_bytes = this->stats.free_frag_bytes;
 
     this->initial_state_ctx.name = "Initial State";
     this->cur_ctx = &this->initial_state_ctx;
@@ -136,7 +142,7 @@ NuMemoryManager::NuMemoryManager(IEventHandler *event_handler, IErrorHandler *er
 }
 
 NuMemoryManager::~NuMemoryManager() {
-    PopContext(POP_DEBUG_MODE_UNKNOWN_2);
+    PopContext(POP_DEBUG_MODE_FREE_STRANDED_BLOCKS);
     ReleaseUnreferencedPages();
 
     pthread_mutex_lock(m_globalCriticalSection);
@@ -162,9 +168,9 @@ void NuMemoryManager::SetFlags(unsigned int flags) {
     }
 }
 
-void *NuMemoryManager::_BlockAlloc(uint32_t size, uint32_t alignment, uint32_t param_3, const char *name,
-                                   uint16_t param_5) {
-    void *ptr = this->_TryBlockAlloc(size, alignment, param_3, name, param_5);
+void *NuMemoryManager::_BlockAlloc(unsigned int size, unsigned int alignment, unsigned int flags, const char *name,
+                                   unsigned short category) {
+    void *ptr = this->_TryBlockAlloc(size, alignment, flags, name, category);
 
     if (ptr == NULL) {
         this->____WE_HAVE_RUN_OUT_OF_MEMORY_____(size, name);
@@ -173,19 +179,98 @@ void *NuMemoryManager::_BlockAlloc(uint32_t size, uint32_t alignment, uint32_t p
     return ptr;
 }
 
-void *NuMemoryManager::_TryBlockAlloc(uint32_t size, uint32_t alignment, uint32_t param_3, const char *name,
-                                      uint16_t param_5) {
-    LOG_INFO("size=%x, param_2=%u, param_3=%u, name='%s', param_5=%u", size, alignment, param_3, name, param_5);
-
+void *NuMemoryManager::_TryBlockAlloc(unsigned int size, unsigned int alignment, unsigned int flags, const char *name,
+                                      unsigned short category) {
     // UNIMPLEMENTED();
     return malloc(size);
 }
 
-void NuMemoryManager::____WE_HAVE_RUN_OUT_OF_MEMORY_____(uint32_t size, const char *name) {
+void NuMemoryManager::____WE_HAVE_RUN_OUT_OF_MEMORY_____(unsigned int size, const char *name) {
     UNIMPLEMENTED();
 }
 
 void NuMemoryManager::BlockFree(void *ptr, unsigned int flags) {
+}
+
+void NuMemoryManager::ConvertToUsedBlock(FreeHeader *header, unsigned int alignment, unsigned int flags,
+                                         const char *name, unsigned short category) {
+    unsigned int align_mask;
+    unsigned int header_value;
+    unsigned int aligned;
+    unsigned int *end_tag;
+    unsigned int manager_idx;
+
+    align_mask = -(CountLeadingZeros(alignment >> 2) << 0x1b);
+    header_value = header->block_header.value & BLOCK_SIZE_MASK;
+
+    manager_idx = this->idx;
+    aligned = header_value | align_mask;
+
+    header->block_header.value = aligned;
+
+    // Set the end tag of the block. This is used for detecting corruption and
+    // clearing the block.
+    end_tag = (unsigned int *)((int)header + header_value * 4 - 4);
+    if ((align_mask & HEADER_MGR_MASK) == 0) {
+        *end_tag = aligned & BLOCK_SIZE_MASK;
+    } else if (manager_idx >= 0x1d) {
+        *end_tag = aligned | 0xf8000000;
+        *(unsigned int *)((int)header + BLOCK_SIZE(header->block_header.value) - 8) = manager_idx;
+    } else {
+        *end_tag = ((manager_idx + 1) << 0x1b) | aligned & BLOCK_SIZE_MASK;
+    }
+
+    this->stats.used_block_count++;
+    this->stats.min_free_bytes = MIN(this->stats.min_free_bytes, this->stats.free_frag_bytes);
+
+    if ((m_flags & MEM_MANAGER_DEBUG) != 0) {
+        DebugHeader *debug = (DebugHeader *)header;
+        debug->name = name;
+        debug->category = category;
+        debug->flags.alloc_flags = flags;
+        debug->flags.ctx_id = *(char *)this->cur_ctx->id;
+        debug->flags.unknown = debug->flags.ctx_id;
+
+        this->stats.bytes_alloc_by_category[category] += BLOCK_SIZE(header->block_header.value);
+
+        if ((m_flags & MEM_MANAGER_EXTENDED_DEBUG) != 0) {
+            ExtendedDebugHeader *extended = (ExtendedDebugHeader *)header;
+
+            memset(&extended->extended_info, 0, sizeof(ExtendedDebugInfo));
+            extended->unknown = 0;
+        }
+    }
+}
+
+void *NuMemoryManager::ClearUsedBlock(Header *header, unsigned int flags) {
+    unsigned int size;
+    void *ptr;
+    unsigned int size_minus_header;
+    unsigned int *end_tag;
+    unsigned int tag_value;
+    unsigned int manager_idx;
+    unsigned int available_size;
+
+    ptr = (void *)((int)header + m_headerSize);
+    size = BLOCK_SIZE(header->value);
+    size_minus_header = size - m_headerSize;
+
+    end_tag = (unsigned int *)((int)header + size - 4);
+
+    tag_value = *end_tag >> 0x1b;
+    if (tag_value != 0x1f) {
+        manager_idx = tag_value - 1;
+    } else {
+        manager_idx = end_tag[-1];
+    }
+
+    available_size = manager_idx <= 0x1d ? size_minus_header - 4 : size_minus_header - 8;
+
+    if ((flags & MEM_ALLOC_ZERO) != 0) {
+        memset(ptr, 0, available_size);
+    }
+
+    return ptr;
 }
 
 void NuMemoryManager::AddPage(void *ptr, unsigned int size, bool _unknown) {
@@ -232,12 +317,12 @@ void NuMemoryManager::BinLink(NuMemoryManager::FreeHeader *header, bool keep_sor
     unsigned int size;
     unsigned int bin_idx;
 
-    size = BLOCK_SIZE(header);
+    size = BLOCK_SIZE(header->block_header.value);
 
     if (size < 0x400) {
         bin_idx = GetSmallBinIndex(size);
         BinLinkAfterNode(&this->small_bins[bin_idx], header);
-        this->small_bin_has_free_map[bin_idx >> 5] |= bin_idx;
+        this->small_bin_has_free_map[bin_idx >> 5] |= bin_idx & 0x1f;
     } else {
         bin_idx = GetLargeBinIndex(size);
 
@@ -250,7 +335,7 @@ void NuMemoryManager::BinLink(NuMemoryManager::FreeHeader *header, bool keep_sor
             do {
                 after = next;
                 next = next->next;
-            } while (next != NULL && BLOCK_SIZE(next) <= size);
+            } while (next != NULL && BLOCK_SIZE(next->block_header.value) <= size);
 
             BinLinkAfterNode(after, header);
         } else {
@@ -283,7 +368,7 @@ void NuMemoryManager::BinUnlink(NuMemoryManager::FreeHeader *header) {
     header->prev = NULL;
 
     // Update maps of bins with free blocks.
-    size = BLOCK_SIZE(header);
+    size = BLOCK_SIZE(header->block_header.value);
 
     if (size < 0x400) {
         bin_idx = GetSmallBinIndex(size);
@@ -319,6 +404,157 @@ void NuMemoryManager::BinLinkAfterNode(NuMemoryManager::FreeHeader *after, NuMem
 }
 
 bool NuMemoryManager::PopContext(NuMemoryManager::PopDebugMode debug_mode) {
+    char stranded_dump_path[128];
+    char ctx_name[128];
+    char largest_leak[128];
+    char leak_value[257];
+    unsigned int stranded_block_count;
+    unsigned int stranded_bytes_count;
+    unsigned int leak_count;
+    unsigned int _unknown;
+    Header *largest_stranded;
+    Context *top_ctx;
+
+    Validate();
+
+    pthread_mutex_lock(&this->mutex);
+
+    stranded_block_count = 0;
+
+    memset(stranded_dump_path, 0, sizeof(stranded_dump_path));
+    memset(ctx_name, 0, sizeof(ctx_name));
+    memset(leak_value, 0, sizeof(leak_value));
+    memset(largest_leak, 0, sizeof(largest_leak));
+
+    stranded_bytes_count = 0;
+
+    if ((m_flags & MEM_MANAGER_DEBUG) == 0) {
+        leak_count = 0;
+
+        if (this->stats.used_block_count > this->cur_ctx->used_block_count) {
+            leak_count = this->stats.used_block_count - this->cur_ctx->used_block_count;
+            strcpy(ctx_name, this->cur_ctx->name);
+        }
+    } else {
+        _unknown = 0;
+        largest_stranded = NULL;
+
+        StrandBlocksForContext(this->cur_ctx, stranded_block_count, _unknown, largest_stranded, stranded_bytes_count);
+
+        this->stats.unknown_18 = _unknown;
+
+        if (stranded_block_count != 0 && debug_mode != POP_DEBUG_MODE_NONE) {
+            size_t len;
+            DebugHeader *largest_stranded_dbg;
+            const char *block_name;
+
+            strcpy(stranded_dump_path, this->name);
+
+            len = strlen(stranded_dump_path);
+
+            stranded_dump_path[len] = '_';
+            stranded_dump_path[len + 1] = '\0';
+
+            strcpy(stranded_dump_path + len + 1, this->cur_ctx->name);
+
+            len = strlen(stranded_dump_path);
+
+            strncpy(stranded_dump_path + len, STRANDED_DUMP_SUFFIX, strlen(STRANDED_DUMP_SUFFIX) + 1);
+
+            if (len != -strlen(STRANDED_DUMP_SUFFIX)) {
+                char *cursor = stranded_dump_path;
+
+                do {
+                    if (*cursor == '/' || *cursor == '\\' || *cursor == ':' || *cursor == ' ') {
+                        *cursor = '_';
+                    }
+
+                    cursor++;
+                } while (cursor != stranded_dump_path + len + strlen(STRANDED_DUMP_SUFFIX));
+            }
+
+            Dump(0x38, stranded_dump_path);
+
+            strcpy(ctx_name, this->cur_ctx->name);
+
+            largest_stranded_dbg = (DebugHeader *)largest_stranded;
+
+            block_name = largest_stranded_dbg->name;
+            if (block_name != NULL) {
+                block_name = NuStrStripPath(block_name);
+            } else {
+                block_name = "UNKNOWN";
+            }
+
+            strcpy(largest_leak, block_name);
+
+            if ((largest_stranded_dbg->flags.alloc_flags & MEM_ALLOC_UNKNOWN_4) != 0) {
+                unsigned int value_len;
+                int i;
+
+                value_len = MIN(BLOCK_SIZE(largest_stranded->value) - m_headerSize - 4, 0x100);
+
+                for (i = 0; i != value_len; i++) {
+                    char byte;
+
+                    if ((unsigned char)largest_leak[i] - 0x30 < 10 || (unsigned char)largest_leak[i] - 0x41 < 0x1a) {
+                        byte = *(char *)((int)largest_stranded + m_headerSize + i);
+                    } else {
+                        byte = '_';
+                    }
+
+                    leak_value[i] = byte;
+                }
+
+                leak_value[i] = '\0';
+            }
+
+            leak_count = 0;
+        }
+    }
+
+    ReleaseUnreferencedPages();
+
+    top_ctx = this->cur_ctx;
+    if (top_ctx != &this->initial_state_ctx) {
+        this->cur_ctx = top_ctx->next;
+
+        BlockFree(top_ctx, 0);
+    }
+
+    pthread_mutex_unlock(&this->mutex);
+
+    if (debug_mode != POP_DEBUG_MODE_NONE) {
+        if (stranded_block_count != 0) {
+            pthread_mutex_lock(&this->error_mutex);
+
+            if (leak_value[0] != '\0') {
+                snprintf(this->error_msg, sizeof(this->error_msg),
+                         "%u stranded memory blocks(s) [%u bytes] detected popping context %s\nReport dumped "
+                         "[%s]\nLargest leak [%s]\nValue [%s]\n",
+                         stranded_block_count, stranded_bytes_count, ctx_name, stranded_dump_path, largest_leak,
+                         leak_value);
+            } else {
+                snprintf(this->error_msg, sizeof(this->error_msg),
+                         "%u stranded memory blocks(s) [%u bytes] detected popping context %s\nReport dumped "
+                         "[%s]\nLargest leak [%s]\n",
+                         stranded_block_count, stranded_bytes_count, ctx_name, stranded_dump_path, largest_leak);
+            }
+
+            this->error_handler->HandleError(this, MEM_ERROR_LEAK_DETECTED, this->error_msg);
+
+            pthread_mutex_unlock(&this->error_mutex);
+        }
+
+        if (debug_mode == POP_DEBUG_MODE_FREE_STRANDED_BLOCKS) {
+            FreeStrandedBlocks();
+        }
+    }
+
+    return stranded_block_count == 0;
+}
+
+void NuMemoryManager::Validate() {
 }
 
 void NuMemoryManager::ValidateAllocAlignment(unsigned int alignment) {
@@ -328,14 +564,24 @@ void NuMemoryManager::ValidateAllocSize(unsigned int size) {
 }
 
 void NuMemoryManager::StatsAddFragment(NuMemoryManager::FreeHeader *header) {
-    this->stats.frag_bytes += BLOCK_SIZE(header);
+    this->stats.free_frag_bytes += BLOCK_SIZE(header->block_header.value);
     this->stats.frag_count++;
     this->stats.max_frag_count = MAX(this->stats.max_frag_count, this->stats.frag_count);
 }
 
 void NuMemoryManager::StatsRemoveFragment(NuMemoryManager::FreeHeader *header) {
-    this->stats.frag_bytes -= BLOCK_SIZE(header);
+    this->stats.free_frag_bytes -= BLOCK_SIZE(header->block_header.value);
     this->stats.frag_count--;
+}
+
+void NuMemoryManager::Dump(unsigned int _unknown, const char *filepath) {
+}
+
+void NuMemoryManager::StrandBlocksForContext(Context *ctx, unsigned int &stranded_block_count, unsigned int &_unknown,
+                                             Header *&largest_stranded, unsigned int &stranded_bytes_count) {
+}
+
+void NuMemoryManager::FreeStrandedBlocks() {
 }
 
 void NuMemoryManager::IErrorHandler::HandleError(NuMemoryManager *manager, ErrorCode code, const char *msg) {

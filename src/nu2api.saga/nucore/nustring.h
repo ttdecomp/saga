@@ -36,4 +36,7 @@ extern "C" {
     int NuIsAlNum(char c);
 #ifdef __cplusplus
 }
+
+const char *NuStrStripPath(const char *string);
+
 #endif

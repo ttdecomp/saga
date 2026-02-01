@@ -121,6 +121,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/nupad.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/nurdpf.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/nurdpi.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/nustring.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/nustring_c.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/nutime.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/nuvideo.cpp
@@ -212,11 +213,13 @@ else()
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nucamera.cpp PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nutex.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/nucore.cpp PROPERTIES COMPILE_OPTIONS "-O2")
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/nustring.cpp PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nufile/nufile.c PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nufile/nupsfile.cpp PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/numemory/numemory.cpp PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/numemory/numemory_android.cpp PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/numemory/NuMemoryManager.cpp PROPERTIES COMPILE_OPTIONS "-O2")
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/numemory/NuMemoryPool.cpp PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nuthread/nuthread.cpp PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nuandroid/nuios.cpp PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nusound/nusound.cpp PROPERTIES COMPILE_OPTIONS "-O2")

@@ -14,7 +14,7 @@ class NuMemoryManager {
     };
 
     enum ErrorCode {
-        MEM_ERROR_LEAK = 0x8000000,
+        MEM_ERROR_LEAK_DETECTED = 0x8000000,
         MEM_ERROR_BAD_POINTER = 0x8000001,
         MEM_ERROR_CORRUPTION = 0x8000003,
         MEM_ERROR_UNALLOCATED_BLOCK = 0x8000004,
@@ -48,17 +48,22 @@ class NuMemoryManager {
         FreeHeader *prev;
     };
 
+    struct DebugFlags {
+        unsigned short alloc_flags : 7;
+        unsigned short ctx_id : 5;
+        unsigned short unknown : 4;
+    };
+
     struct DebugHeader {
         Header block_header;
-        char *name;
+        const char *name;
         unsigned short category;
-        unsigned short flags;
+        DebugFlags flags;
     };
 
     struct ExtendedDebugInfo {
-        // Types uncertain.
+        // Type uncertain.
         int unknown[32];
-        int unknown2;
     };
 
     // The existence of this type isn't directly attested, but it lets us
@@ -66,12 +71,15 @@ class NuMemoryManager {
     struct ExtendedDebugHeader {
         DebugHeader header;
         ExtendedDebugInfo extended_info;
+
+        // Type uncertain.
+        int unknown;
     };
 
     struct Page {
         void *start;
         unsigned int size;
-        void *first_header;
+        Header *first_header;
         void *end;
         Page *next;
         Page *prev;
@@ -84,7 +92,7 @@ class NuMemoryManager {
         unsigned int id;
 
         // Type uncertain.
-        int unknown;
+        int used_block_count;
 
         Context *next;
     };
@@ -92,10 +100,8 @@ class NuMemoryManager {
     struct Stats {
         int unknown_00;
 
-        unsigned int frag_bytes;
-
-        unsigned int unknown_08;
-
+        unsigned int free_frag_bytes;
+        unsigned int min_free_bytes;
         unsigned int frag_count;
         unsigned int max_frag_count;
         unsigned int used_block_count;
@@ -107,7 +113,14 @@ class NuMemoryManager {
     };
 
     enum PopDebugMode {
-        POP_DEBUG_MODE_UNKNOWN_2 = 2,
+        POP_DEBUG_MODE_NONE = 0,
+        POP_DEBUG_MODE_NORMAL = 1,
+        POP_DEBUG_MODE_FREE_STRANDED_BLOCKS = 2,
+    };
+
+    enum AllocFlags {
+        MEM_ALLOC_ZERO = 1,
+        MEM_ALLOC_UNKNOWN_4 = 4,
     };
 
   private:
@@ -120,7 +133,7 @@ class NuMemoryManager {
     const char **category_names;
     unsigned int category_count;
     bool is_zombie;
-    uint32_t idx;
+    unsigned int idx;
     char name[0x80];
     IEventHandler *event_handler;
     IErrorHandler *error_handler;
@@ -167,7 +180,8 @@ class NuMemoryManager {
 
     static void SetFlags(unsigned int flags);
 
-    void *_BlockAlloc(uint32_t size, uint32_t alignment, uint32_t param_3, const char *name, uint16_t param_5);
+    void *_BlockAlloc(unsigned int size, unsigned int alignment, unsigned int flags, const char *name,
+                      unsigned short category);
     void BlockFree(void *ptr, unsigned int flags);
 
     void AddPage(void *ptr, unsigned int size, bool _unknown);
@@ -176,8 +190,13 @@ class NuMemoryManager {
     static unsigned int GetLargeBinIndex(unsigned int size);
     static unsigned int GetSmallBinIndex(unsigned int size);
 
-    void *_TryBlockAlloc(uint32_t size, uint32_t alignment, uint32_t param_3, const char *name, uint16_t param_5);
-    void ____WE_HAVE_RUN_OUT_OF_MEMORY_____(uint32_t size, const char *name);
+    void *_TryBlockAlloc(unsigned int size, unsigned int alignment, unsigned int flags, const char *name,
+                         unsigned short category);
+    void ____WE_HAVE_RUN_OUT_OF_MEMORY_____(unsigned int size, const char *name);
+
+    void ConvertToUsedBlock(FreeHeader *header, unsigned int alignment, unsigned int flags, const char *name,
+                            unsigned short category);
+    void *ClearUsedBlock(Header *header, unsigned int flags);
 
     void ReleaseUnreferencedPages();
 
@@ -189,12 +208,19 @@ class NuMemoryManager {
 
     bool PopContext(PopDebugMode debug_mode);
 
+    void Validate();
     void ValidateAddress(void *ptr, const char *caller);
     void ValidateAllocAlignment(unsigned int alignment);
     void ValidateAllocSize(unsigned int size);
 
     void StatsAddFragment(FreeHeader *header);
     void StatsRemoveFragment(FreeHeader *header);
+
+    void Dump(unsigned int _unknown, const char *filepath);
+
+    void StrandBlocksForContext(Context *ctx, unsigned int &stranded_block_count, unsigned int &_unknown,
+                                Header *&largest_stranded, unsigned int &stranded_bytes_count);
+    void FreeStrandedBlocks();
 };
 
 #endif
