@@ -1,10 +1,4 @@
-#include <math.h>
-
 #include "nu2api.saga/numath/nufloat.h"
-
-float NuFabs(float f) {
-    return fabsf(f);
-}
 
 float NuFnabs(float f) {
     float rv;
@@ -34,14 +28,6 @@ float NuFsqrt(float f) {
     }
 
     return sqrtf(f);
-}
-
-float NuFdiv(float a, float b) {
-    if ((a == 0.0f) || (b == 0.0f)) {
-        return 0.0f;
-    }
-
-    return a / b;
 }
 
 float NuFmod(float a, float b) {
