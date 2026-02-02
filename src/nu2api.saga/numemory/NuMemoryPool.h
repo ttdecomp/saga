@@ -18,6 +18,9 @@ class NuMemoryPool {
         FreeBlock *next;
     };
 
+  public:
+    void AddPage(void *ptr, unsigned int size);
+
   private:
     static NuMemoryPool *m_firstPool;
     static pthread_mutex_t m_globalCriticalSection;

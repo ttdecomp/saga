@@ -14,23 +14,23 @@ struct NuMemory {
 
     class FixedPoolEventHandler : NuMemoryPool::IEventHandler {
       public:
-        virtual int AllocatePage(NuMemoryPool *pool, unsigned int _unknown, unsigned int _unknown2,
-                                 const char *_unknown3) override;
+        virtual int AllocatePage(NuMemoryPool *pool, unsigned int _unknown, unsigned int alignment,
+                                 const char *name) override;
         virtual int ReleasePage(NuMemoryPool *pool, void *ptr) override;
         virtual void ForceReleasePage(NuMemoryPool *pool, void *ptr) override;
-        virtual void *AllocateLargeBlock(NuMemoryPool *pool, unsigned int _unknown, unsigned int _unknown2,
-                                         const char *_unknown3) override;
+        virtual void *AllocateLargeBlock(NuMemoryPool *pool, unsigned int size, unsigned int alignment,
+                                         const char *name) override;
         virtual void FreeLargeBlock(NuMemoryPool *pool, void *ptr) override;
     };
 
     class DynamicPoolEventHandler : NuMemoryPool::IEventHandler {
       public:
-        virtual int AllocatePage(NuMemoryPool *pool, unsigned int _unknown, unsigned int _unknown2,
-                                 const char *_unknown3) override;
+        virtual int AllocatePage(NuMemoryPool *pool, unsigned int _unknown, unsigned int alignment,
+                                 const char *name) override;
         virtual int ReleasePage(NuMemoryPool *pool, void *ptr) override;
         virtual void ForceReleasePage(NuMemoryPool *pool, void *ptr) override;
-        virtual void *AllocateLargeBlock(NuMemoryPool *pool, unsigned int _unknown, unsigned int _unknown2,
-                                         const char *_unknown3) override;
+        virtual void *AllocateLargeBlock(NuMemoryPool *pool, unsigned int size, unsigned int alignment,
+                                         const char *name) override;
         virtual void FreeLargeBlock(NuMemoryPool *pool, void *ptr) override;
     };
 

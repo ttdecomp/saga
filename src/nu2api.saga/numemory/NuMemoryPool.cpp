@@ -1,5 +1,8 @@
 #include "nu2api.saga/numemory/NuMemoryPool.h"
 
+void NuMemoryPool::AddPage(void *ptr, unsigned int size) {
+}
+
 void NuMemoryPool::InterlockedAdd(volatile unsigned int *augend, unsigned int addend) {
     unsigned int expected;
     unsigned int actual;
