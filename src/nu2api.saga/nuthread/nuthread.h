@@ -17,7 +17,8 @@ typedef enum NUTHREADXBOX360CORE {
 #ifdef __cplusplus
 extern "C" {
 #endif
-    int32_t NuThreadCreateCriticalSection(void);
+    int32_t NuThreadCreateCriticalSection();
+    void NuThreadDestroyCriticalSection(int index);
 
     int32_t NuThreadCriticalSectionBegin(int32_t index);
     int32_t NuThreadCriticalSectionEnd(int32_t index);
@@ -31,10 +32,9 @@ struct NuThreadCreateParameters {
     const char *name;
     int32_t stack_size;
     bool is_suspended;
-    NUTHREADCAFECORE nuthread_cafe_core;
-    NUTHREADXBOX360CORE nuthread_xbox360_core;
+    NUTHREADCAFECORE cafe_core;
+    NUTHREADXBOX360CORE xbox360_core;
     bool use_current;
-    bool start_signal;
 };
 
 class NuThreadBase {
@@ -53,6 +53,9 @@ class NuThreadBase {
 
     void (*GetThreadFn() const)(void *);
     void *GetParam() const;
+
+  protected:
+    ~NuThreadBase();
 };
 
 extern NuThreadBase *g_bgProcThread;
@@ -61,13 +64,15 @@ int bgProcIsBgThread(void);
 
 class NuThread : public NuThreadBase {
   private:
-    volatile uint8_t start_signal;
     bool is_suspended;
 
     static void *ThreadMain(void *self);
 
   public:
     NuThread(const NuThreadCreateParameters &params);
+
+  protected:
+    ~NuThread();
 };
 
 class NuThreadManager {
@@ -82,10 +87,11 @@ class NuThreadManager {
     int32_t AllocTLS();
     NuThreadBase *GetCurrentThread();
 
-    NuThread *CreateThread(void (*threadFn)(void *), void *fnArg, int priority, const char *name, int stackSize,
-                           NUTHREADCAFECORE nuthreadCafeCore, NUTHREADXBOX360CORE nuthreadXbox360Core);
+    NuThread *CreateThread(void (*thread_fn)(void *), void *fn_arg, int priority, const char *name, int stack_size,
+                           NUTHREADCAFECORE cafe_core, NUTHREADXBOX360CORE xbox360_core);
 };
 
+NuThreadBase *NuThreadGetCurrentThread();
 void NuThreadSleep(int32_t seconds);
 NuThread *NuThreadInitPS();
 
