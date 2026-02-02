@@ -53,6 +53,9 @@ extern "C" {
     void NuTexRemoveReference(int tex_id);
     int NuTexGetRefCount(int tex_id);
 
+    int NuTexWidth(int tex_id);
+    int NuTexHeight(int tex_id);
+
     void NuTexDisplayTexturePage(int page, float depth, int alpha);
 #ifdef __cplusplus
 }

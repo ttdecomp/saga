@@ -132,3 +132,11 @@ NUNATIVETEX *NuTexGetNative(int tex_id) {
 
     return NULL;
 }
+
+int NuTexWidth(int tex_id) {
+    return texture_list[tex_id - 1]->width;
+}
+
+int NuTexHeight(int tex_id) {
+    return texture_list[tex_id - 1]->height;
+}
