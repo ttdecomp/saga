@@ -2,12 +2,12 @@
 
 #include "decomp.h"
 
-#include "deflate/deflate.h"
-#include "lostandfound/tmclient.h"
-#include "nu2api.saga/nucore/common.h"
-#include "nu2api.saga/nucore/nuapi.h"
-#include "nu2api.saga/nucore/nustring.h"
 #include "nu2api.saga/nufile/nufile.h"
+
+#include "deflate/deflate.h"
+#include "implode/implode.h"
+#include "nu2api.saga/nucore/common.h"
+#include "nu2api.saga/nucore/nustring.h"
 #include "nu2api.saga/nuthread/nuthread.h"
 
 namespace NuFile {
@@ -770,8 +770,8 @@ static void NuDatFileDecodeNext() {
         case 2:
             NuFileRead(unpack_file_odi->dat_file, char_buf, 0xc);
 
-            read_buffer_decoded_size = ExplodeBufferSize((uint8_t *)char_buf);
-            read_buffer_size = ExplodeCompressedSize((uint8_t *)char_buf) - 0xc;
+            read_buffer_decoded_size = ExplodeBufferSize(char_buf);
+            read_buffer_size = ExplodeCompressedSize(char_buf) - 0xc;
             NuFileRead(unpack_file_odi->dat_file, read_buffer, read_buffer_size);
 
             unpack_file_info->pos += read_buffer_size + 0xc;
@@ -1165,7 +1165,7 @@ int NuDatFileRead(NUFILE file, void *buf, int size) {
                 if (read_buffer_size == read_buffer_decoded_size) {
                     memcpy(decode_buffer, read_buffer, read_buffer_size);
                 } else if (info->compression_mode == 2) {
-                    ExplodeBufferNoHeader((uint8_t *)read_buffer, (uint8_t *)decode_buffer, read_buffer_size,
+                    ExplodeBufferNoHeader(read_buffer, decode_buffer, read_buffer_size,
                                           read_buffer_decoded_size);
                 } else if (info->compression_mode == 3) {
                     inflated_size =

@@ -87,7 +87,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/globals.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/deflate/deflate.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/deflate/deflate_noopt.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/implode/implode.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game/area.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game/character.cpp

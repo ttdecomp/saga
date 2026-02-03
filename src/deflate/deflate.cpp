@@ -83,35 +83,6 @@ int32_t InflateBuffer(char *buffer, int decodedSize, char *readBuffer, int32_t r
     }
 }
 
-int32_t ExplodeBufferSize(uint8_t *buf) {
-    char magic[] = "LZ2K";
-
-    for (int32_t i = 0; i < 4; i++) {
-        if (buf[i] != magic[i]) {
-            return 0;
-        }
-    }
-
-    return ImplodeGetI(buf, 4);
-}
-
-int32_t ExplodeCompressedSize(uint8_t *buffer) {
-    char magic[] = "LZ2K";
-
-    for (int32_t i = 0; i < 4; i++) {
-        if (buffer[i] != magic[i]) {
-            return 0;
-        }
-    }
-
-    int32_t size = ImplodeGetI(buffer + 4, 4);
-    if (size != 0) {
-        size += 0xc;
-    }
-
-    return size;
-}
-
 int32_t Inflate(DEFLATECONTEXT *ctx, char *buffer, int32_t size) {
     ctx->start_pos = buffer;
     ctx->current_pos = buffer;
@@ -254,8 +225,8 @@ int DecodeUncompressedBlock(DEFLATECONTEXT *ctx) {
 }
 
 enum {
-    BLOCK_COMPRESSED_TREE = 0,
-    BLOCK_DISTANCE_LEN = 1,
+    BLOCK_DYNAMIC_HUFFMAN = 0,
+    BLOCK_FIXED_HUFFMAN = 1,
     BLOCK_UNCOMPRESSED = 2,
 };
 
@@ -270,14 +241,18 @@ int DecodeDeflated(DEFLATECONTEXT *ctx) {
         is_final_block = READBITS(ctx, 1);
         type = READBITS(ctx, 2);
 
-        if (type == BLOCK_UNCOMPRESSED) {
-            LOG_DEBUG("uncompressed block");
+        switch (type) {
+            default:
+                if (!DecompressHuffmanTrees(ctx)) {
+                    return 0;
+                }
 
-            if (!DecodeUncompressedBlock(ctx)) {
-                return 0;
-            }
-        } else {
-            if (type == BLOCK_DISTANCE_LEN) {
+                if (!DecodeDeflatedBlock(ctx)) {
+                    LOG_WARN("failed to decode deflated block");
+                    return 0;
+                }
+                break;
+            case BLOCK_FIXED_HUFFMAN:
                 if (DefaultDistances[0x1f] == '\0') {
                     InitHuffmanDefaults();
                 }
@@ -289,16 +264,18 @@ int DecodeDeflated(DEFLATECONTEXT *ctx) {
                 if (!BuildHuffmanTree(&ctx->distance_tree, DefaultDistances, 0x20)) {
                     return 0;
                 }
-            } else {
-                if (!DecompressHuffmanTrees(ctx)) {
+                break;
+
+                if (!DecodeDeflatedBlock(ctx)) {
+                    LOG_WARN("failed to decode deflated block");
                     return 0;
                 }
-            }
-
-            if (!DecodeDeflatedBlock(ctx)) {
-                LOG_WARN("failed to decode deflated block");
-                return 0;
-            }
+                break;
+            case BLOCK_UNCOMPRESSED:
+                if (!DecodeUncompressedBlock(ctx)) {
+                    return 0;
+                }
+                break;
         }
     } while (!is_final_block);
 
@@ -328,20 +305,20 @@ int DecompressHuffmanTrees(DEFLATECONTEXT *ctx) {
     uint8_t allCodeLengths[288 + 32];
 
     unsigned int repeatCount;
-    for (int j = 0; j < hlit + hdist; j += repeatCount) {
+    for (int i = 0; i < hlit + hdist; i += repeatCount) {
         int32_t symbol = CtxReadHuffmanSymbol(ctx, &ctx->temp_code_length);
 
         // Process the decoded symbol
         if (symbol < 16) {
             // Literal code length
-            allCodeLengths[j] = symbol;
+            allCodeLengths[i] = symbol;
             repeatCount = 1;
         } else {
             if (symbol == 16) {
                 // Repeat previous code length 3-6 times
                 repeatCount = READBITS(ctx, 2) + 3;
-                uint8_t prevCodeLength = allCodeLengths[j - 1];
-                memset(allCodeLengths + j, prevCodeLength, repeatCount);
+                uint8_t prevCodeLength = allCodeLengths[i - 1];
+                memset(allCodeLengths + i, prevCodeLength, repeatCount);
             } else {
                 if (symbol == 17) {
                     // Repeat code length 0 for 3-10 times
@@ -351,7 +328,7 @@ int DecompressHuffmanTrees(DEFLATECONTEXT *ctx) {
                     repeatCount = READBITS(ctx, 7) + 11;
                 }
 
-                memset(allCodeLengths + j, 0, repeatCount);
+                memset(allCodeLengths + i, 0, repeatCount);
             }
         }
     }
