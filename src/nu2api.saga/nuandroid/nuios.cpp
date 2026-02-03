@@ -2,6 +2,8 @@
 
 #include "nu2api.saga/nuandroid/nuios.h"
 
+#include <string.h>
+
 int32_t g_isLowEndDevice = 0;
 
 int32_t NuIOS_IsLowEndDevice(void) {
