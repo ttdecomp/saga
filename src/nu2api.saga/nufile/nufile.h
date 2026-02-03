@@ -236,6 +236,7 @@ extern "C" {
 
     void NuPSFileInitDevices(int device_id, int reboot_iop, int eject);
     int NuFileInitEx(int device_id, int reboot_iop, int eject);
+    void NuFileInit(int device_id);
 #ifdef __cplusplus
 }
 #endif

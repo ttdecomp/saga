@@ -1548,3 +1548,7 @@ int NuFileInitEx(int device_id, int reboot_iop, int eject) {
 
     return device_id;
 }
+
+void NuFileInit(int device_id) {
+    NuFileInitEx(device_id, 1, 0);
+}
