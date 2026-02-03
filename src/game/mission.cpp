@@ -29,14 +29,14 @@ MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *buffer
 
         for (i = 12; i != 0; i--) {
             dest->length = 0;
-            dest = (MISSIONSYS *)((ssize_t)dest + 4);
+            dest = (MISSIONSYS *)((isize)dest + 4);
         }
 
         sys.flags = 1;
-        buffer = (i16 *)((ssize_t)bufferStart->void_ptr + 3U & 0xfffffffc);
+        buffer = (i16 *)((isize)bufferStart->void_ptr + 3U & 0xfffffffc);
         bufferStart->void_ptr = buffer;
         sys.mission_save = save;
-        sys.length = (ssize_t)buffer;
+        sys.length = (isize)buffer;
 
         do {
             i = NuFParGetLine(fp);
@@ -139,7 +139,7 @@ MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *buffer
                         if ((*buffer != -1) && (buffer[1] != -1)) {
                             sys.count = sys.count + 1;
                             buffer = buffer + 0xc;
-                            bufferStart->void_ptr = (void *)((ssize_t)bufferStart->void_ptr + 0x18);
+                            bufferStart->void_ptr = (void *)((isize)bufferStart->void_ptr + 0x18);
                         }
                     }
                 }
@@ -148,10 +148,10 @@ MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *buffer
 
         NuFParDestroy(fp);
         if (sys.count != 0) {
-            dest = (MISSIONSYS *)((ssize_t)bufferStart->void_ptr + 3U & 0xfffffffc);
+            dest = (MISSIONSYS *)((isize)bufferStart->void_ptr + 3U & 0xfffffffc);
             bufferStart->void_ptr = dest;
             memmove(dest, &sys, 0x30);
-            bufferStart->void_ptr = (void *)((ssize_t)bufferStart->void_ptr + 0x33U & 0xfffffffc);
+            bufferStart->void_ptr = (void *)((isize)bufferStart->void_ptr + 0x33U & 0xfffffffc);
             return dest;
         }
     }

@@ -60,7 +60,7 @@ AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferE
     } else {
         i = 0;
         bVar2 = false;
-        area2 = (AREADATA *)((ssize_t)bufferStart->void_ptr + 3U & 0xfffffffc);
+        area2 = (AREADATA *)((isize)bufferStart->void_ptr + 3U & 0xfffffffc);
         bufferStart->void_ptr = area2;
         area = area2;
     LAB_00486340:

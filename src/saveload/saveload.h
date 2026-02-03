@@ -16,7 +16,7 @@ extern "C" {
 
     void saveloadInit(VARIPTR *buf, VARIPTR buf_end, i32, char *prodcode, char *iconname, char *unicodename, i32);
 
-    i32 saveloadLoadSlot(i32 slot, void *buffer, size_t size);
+    i32 saveloadLoadSlot(i32 slot, void *buffer, usize size);
 
     i32 TriggerExtraDataLoad(void);
 

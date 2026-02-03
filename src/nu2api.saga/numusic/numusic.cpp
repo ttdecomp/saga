@@ -131,10 +131,10 @@ void NuMusic::InitData(const char *file, VARIPTR *buffer_start, VARIPTR buffer_e
     Album *pAVar3;
 
     Album *albumPtr = this->albums;
-    album = (Album *)((ssize_t)this->string_pool_end + 3U & 0xfffffffc);
+    album = (Album *)((isize)this->string_pool_end + 3U & 0xfffffffc);
     if (albumPtr == album) {
         tracksPtr = this->tracks;
-        alloced = (Track *)((uint)((ssize_t)&albumPtr[count].name + 3U) & 0xfffffffc);
+        alloced = (Track *)((uint)((isize)&albumPtr[count].name + 3U) & 0xfffffffc);
         pTVar3 = tracksPtr;
         if (tracksPtr == alloced)
             goto LAB_003203e6;
@@ -162,8 +162,7 @@ void NuMusic::InitData(const char *file, VARIPTR *buffer_start, VARIPTR buffer_e
         albumPtr = pAVar3 + count;
         do {
             if (pAVar3->tracks_source != (Track *)0x0) {
-                pAVar3->tracks_source =
-                    (Track *)((ssize_t)pAVar3->tracks_source + ((ssize_t)tracksPtr - (ssize_t)pTVar3));
+                pAVar3->tracks_source = (Track *)((isize)pAVar3->tracks_source + ((isize)tracksPtr - (isize)pTVar3));
             }
             pAVar3 = pAVar3 + 1;
         } while (pAVar3 != albumPtr);
@@ -172,7 +171,7 @@ void NuMusic::InitData(const char *file, VARIPTR *buffer_start, VARIPTR buffer_e
 
 LAB_003203e6:
     f32 *pfVar2 = this->indexes;
-    f32 *__dest = (f32 *)((uint)((ssize_t)&tracksPtr[track_count].path + 3U) & 0xfffffffc);
+    f32 *__dest = (f32 *)((uint)((isize)&tracksPtr[track_count].path + 3U) & 0xfffffffc);
     i32 local_20;
     if (pfVar2 == __dest) {
         local_20 = this->index_count;
@@ -486,7 +485,7 @@ void NuMusic::SubstituteString(char *dst, char *src, char *find, char *subst) {
         if (pcVar2 == NULL)
             break;
 
-        int pos = (ssize_t)pcVar2 - (ssize_t)src;
+        int pos = (isize)pcVar2 - (isize)src;
         NuStrNCpy(dst, src, pos + 1);
         NuStrCpy(dst + pos, subst);
 

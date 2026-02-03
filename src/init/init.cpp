@@ -231,7 +231,7 @@ void InitOnce(i32 argc, char **param_2) {
     i32 size = SUPERBUFFERSIZE;
 
     permbuffer_base.void_ptr = NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, 4, 1, "", 0);
-    superbuffer_end.void_ptr = (void *)(SUPERBUFFERSIZE + (ssize_t)permbuffer_base.void_ptr);
+    superbuffer_end.void_ptr = (void *)(SUPERBUFFERSIZE + (isize)permbuffer_base.void_ptr);
     original_permbuffer_base.void_ptr = permbuffer_base.void_ptr;
     InitGameBeforeConfig();
 

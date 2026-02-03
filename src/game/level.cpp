@@ -19,7 +19,7 @@ LEVELDATA *Levels_ConfigureList(char *file, VARIPTR *param_2, VARIPTR *param_3, 
     MAXLDATA = maxLevelCount;
 
     bool bVar2 = false;
-    LEVELDATA *pLVar4 = (LEVELDATA *)((ssize_t)param_2->void_ptr + 3U & 0xfffffffc);
+    LEVELDATA *pLVar4 = (LEVELDATA *)((isize)param_2->void_ptr + 3U & 0xfffffffc);
     param_2->void_ptr = pLVar4;
 
     LEVELDATA *level = pLVar4;

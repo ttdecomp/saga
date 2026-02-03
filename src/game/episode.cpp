@@ -34,7 +34,7 @@ EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *b
     } else {
         count = 0;
         bVar3 = false;
-        episodePtr = (EPISODEDATA *)((ssize_t)bufferStart->void_ptr + 3U & 0xfffffffc);
+        episodePtr = (EPISODEDATA *)((isize)bufferStart->void_ptr + 3U & 0xfffffffc);
         bufferStart->void_ptr = episodePtr;
         episode = episodePtr;
     LAB_00488f90:
@@ -130,7 +130,7 @@ EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *b
                 do {
                     iVar4 = 0;
                     while (iVar4 != (u32)episodePtr2->area_count * 2) {
-                        psVar1 = (i16 *)((ssize_t)episodePtr2->area_ids + iVar4);
+                        psVar1 = (i16 *)((isize)episodePtr2->area_ids + iVar4);
                         iVar4 = iVar4 + 2;
                         if (areaIndex == *psVar1)
                             goto LAB_004890ae;

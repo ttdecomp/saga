@@ -451,7 +451,7 @@ CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR 
     char buf[10000];
     CHARACTERDATA *cdatas;
     int j;
-    size_t offset;
+    usize offset;
     int i;
     CHARACTERDATA *cdata;
 
@@ -536,21 +536,21 @@ CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR 
         bufferStart->void_ptr = cdata;
         memmove(bufferStart->void_ptr, buf, offset);
         for (j = 0; j < i; j = j + 1) {
-            characterdata[j].dir = (char *)((int)dirnameOffsets[j] + (ssize_t)bufferStart->void_ptr);
-            characterdata[j].file = (char *)((int)filenameOffsets[j] + (ssize_t)bufferStart->void_ptr);
+            characterdata[j].dir = (char *)((int)dirnameOffsets[j] + (isize)bufferStart->void_ptr);
+            characterdata[j].file = (char *)((int)filenameOffsets[j] + (isize)bufferStart->void_ptr);
         }
-        bufferStart->void_ptr = (void *)((ssize_t)bufferStart->void_ptr + offset);
-        bufferStart->void_ptr = (void *)((ssize_t)bufferStart->void_ptr + 3U & 0xfffffffc);
+        bufferStart->void_ptr = (void *)((isize)bufferStart->void_ptr + offset);
+        bufferStart->void_ptr = (void *)((isize)bufferStart->void_ptr + 3U & 0xfffffffc);
         if (0 < count2) {
             if (dataList != NULL) {
                 *dataList = (gamecharacterdata_s *)bufferStart->void_ptr;
             }
             for (j = 0; j < i; j = j + 1) {
                 characterdata[j].field11_0x24 = bufferStart->void_ptr;
-                bufferStart->void_ptr = (void *)((ssize_t)bufferStart->void_ptr + count2);
+                bufferStart->void_ptr = (void *)((isize)bufferStart->void_ptr + count2);
             }
         }
-        bufferStart->void_ptr = (void *)((ssize_t)bufferStart->void_ptr + 3U & 0xfffffffc);
+        bufferStart->void_ptr = (void *)((isize)bufferStart->void_ptr + 3U & 0xfffffffc);
         if (countDest != (int *)0x0) {
             *countDest = i;
         }

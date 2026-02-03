@@ -12,8 +12,8 @@
 #define ALLOC_MASK 0x78000000
 #define BLOCK_SIZE_MASK ~ALLOC_MASK
 #define BLOCK_SIZE(header_val) ((header_val) & BLOCK_SIZE_MASK) * 4
-#define END_TAG(block, size) (u32 *)((ssize_t)block + size - 4)
-#define END_TAG_HI(block, size) (u32 *)((ssize_t)block + size - 8)
+#define END_TAG(block, size) (u32 *)((isize)block + size - 4)
+#define END_TAG_HI(block, size) (u32 *)((isize)block + size - 8)
 
 #define STRANDED_DUMP_SUFFIX "_stranded.txt"
 
@@ -206,7 +206,7 @@ void NuMemoryManager::ConvertToUsedBlock(FreeHeader *header, u32 alignment, u32 
         *end_tag = aligned & BLOCK_SIZE_MASK;
     } else if (manager_idx >= 0x1d) {
         *end_tag = aligned | HEADER_MGR_HI_MASK;
-        *(u32 *)((ssize_t)header + BLOCK_SIZE(header->block_header.value) - 8) = manager_idx;
+        *(u32 *)((isize)header + BLOCK_SIZE(header->block_header.value) - 8) = manager_idx;
     } else {
         *end_tag = ((manager_idx + 1) << 0x1b) | aligned & BLOCK_SIZE_MASK;
     }
@@ -242,7 +242,7 @@ void *NuMemoryManager::ClearUsedBlock(Header *header, u32 flags) {
     u32 manager_idx;
     u32 available_size;
 
-    ptr = (void *)((ssize_t)header + m_headerSize);
+    ptr = (void *)((isize)header + m_headerSize);
     size = BLOCK_SIZE(header->value);
     size_minus_header = size - m_headerSize;
 
@@ -318,7 +318,7 @@ void NuMemoryManager::BlockFree(void *ptr, u32 flags) {
 
         manager->ValidateAddress(ptr, "BlockFree");
 
-        header = (Header *)((ssize_t)ptr - m_headerSize);
+        header = (Header *)((isize)ptr - m_headerSize);
 
         manager->ValidateBlockIsAllocated(header, "BlockFree");
         manager->ValidateBlockFlags(header, flags, "BlockFree");
@@ -357,7 +357,7 @@ void NuMemoryManager::BlockFree(void *ptr, u32 flags) {
             // See if we can combine this block with the one to the right.
             // It seems like a big assumption that there's a valid block to the
             // right in memory, but that seems to be what they assume.
-            right = (Header *)((ssize_t)header + BLOCK_SIZE(header->value));
+            right = (Header *)((isize)header + BLOCK_SIZE(header->value));
             if ((right->value & ALLOC_MASK) == 0) {
                 manager->MergeBlocks(header, right, "BlockFree[R]");
             }
@@ -367,9 +367,9 @@ void NuMemoryManager::BlockFree(void *ptr, u32 flags) {
             // See if we can combine this block with the one to the left.
             // Again, it seems like a big assumption, but the assumption is
             // made.
-            left_end = *(u32 *)((ssize_t)header - 4);
+            left_end = *(u32 *)((isize)header - 4);
             if ((left_end & HEADER_MGR_HI_MASK) == 0) {
-                final = (FreeHeader *)((ssize_t)header - BLOCK_SIZE(left_end));
+                final = (FreeHeader *)((isize)header - BLOCK_SIZE(left_end));
                 manager->MergeBlocks(&final->block_header, header, "BlockFree[L]");
             }
 
@@ -422,7 +422,7 @@ inline void NuMemoryManager::MergeBlocks(Header *left, Header *right, const char
 void NuMemoryManager::AddPage(void *ptr, u32 size, bool _unknown) {
     Page *page;
 
-    page = (Page *)ALIGN((ssize_t)ptr, 0x4);
+    page = (Page *)ALIGN((isize)ptr, 0x4);
 
     memset(page, 0, sizeof(Page));
 
@@ -597,7 +597,7 @@ bool NuMemoryManager::PopContext(NuMemoryManager::PopDebugMode debug_mode) {
         this->stats.unknown_18 = _unknown;
 
         if (stranded_block_count != 0 && debug_mode != POP_DEBUG_MODE_NONE) {
-            size_t len;
+            usize len;
             DebugHeader *largest_stranded_dbg;
             const char *block_name;
 
@@ -651,7 +651,7 @@ bool NuMemoryManager::PopContext(NuMemoryManager::PopDebugMode debug_mode) {
                     char byte;
 
                     if ((unsigned char)largest_leak[i] - 0x30 < 10 || (unsigned char)largest_leak[i] - 0x41 < 0x1a) {
-                        byte = *(char *)((ssize_t)largest_stranded + m_headerSize + i);
+                        byte = *(char *)((isize)largest_stranded + m_headerSize + i);
                     } else {
                         byte = '_';
                     }
@@ -712,7 +712,7 @@ void NuMemoryManager::Validate() {
 
 void NuMemoryManager::ValidateAddress(void *ptr, const char *caller) {
     // Addresses should always be aligned to at minimum 4 bytes.
-    if (((ssize_t)ptr & 3) != 0) {
+    if (((isize)ptr & 3) != 0) {
         char address[19];
 
         NuStrFormatAddress(address, sizeof(address), ptr);

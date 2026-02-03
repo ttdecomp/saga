@@ -22,7 +22,7 @@ void NuStrFormatSize(char *buf, u32 buf_len, u32 size, bool align_left) {
     u32 mb;
     u32 kb;
     u32 b;
-    size_t len;
+    usize len;
 
     gb = size / 1000000000;
     remainder = size % 1000000000;
@@ -46,7 +46,7 @@ void NuStrFormatSize(char *buf, u32 buf_len, u32 size, bool align_left) {
     len = strlen(buf);
 
     if (!align_left) {
-        size_t remaining = buf_len - len;
+        usize remaining = buf_len - len;
 
         memmove(buf + remaining - 1, buf, len + 1);
         memset(buf, 0x20, remaining - 1);

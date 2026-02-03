@@ -114,7 +114,7 @@ static void *AIScriptBufferAlloc(VARIPTR *buf, VARIPTR *buf_end, int size) {
     } else {
         if (buf_end->addr > buf->addr + size) {
             ret = (void *)ALIGN(buf->addr, 0x10);
-            buf->void_ptr = (void *)((ssize_t)ret + size);
+            buf->void_ptr = (void *)((isize)ret + size);
             memset(ret, 0, size);
         } else {
             // Debug logging goes here.

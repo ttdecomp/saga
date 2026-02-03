@@ -16,7 +16,7 @@ typedef union variptr_u {
     void *void_ptr;
     char *char_ptr;
     i16 *short_ptr;
-    size_t addr;
+    usize addr;
 } VARIPTR;
 
 #define ALIGN(value, alignment) (((value) + alignment - 1) & -alignment)

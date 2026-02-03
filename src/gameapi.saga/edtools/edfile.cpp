@@ -155,7 +155,7 @@ void EdFileRead(void *buf, int len) {
 
         edfile_buffer_pointer += to_read;
         len -= to_read;
-        buf = (void *)((ssize_t)buf + to_read);
+        buf = (void *)((isize)buf + to_read);
 
         if (edfile_buffer_pointer == 0x1000) {
             EdFileFillBuffer();
@@ -255,7 +255,7 @@ void EdFileWrite(void *data, int len) {
 
         edfile_buffer_pointer += to_write;
         len -= to_write;
-        data = (void *)((ssize_t)data + to_write);
+        data = (void *)((isize)data + to_write);
 
         if (edfile_buffer_pointer == 0x1000) {
             EdFileFlushBuffer();

@@ -16,6 +16,19 @@ typedef int64_t i64;
 typedef float f32;
 typedef double f64;
 
+#ifdef __x86_64__
+typedef u64 usize;
+typedef i64 isize;
+#else
+
+#ifdef __cplusplus
+static_assert(sizeof(void *) == 4, "Unsupported pointer size");
+#endif
+
+typedef u32 usize;
+typedef i32 isize;
+#endif
+
 // Define undefined* types from ghidra
 typedef u8 undefined;
 typedef u8 byte;
@@ -97,9 +110,9 @@ static void _saga_log(enum log_level level, const char *file, int line, const ch
 #define BUFFER_ALLOC_ARRAY(buffer, count, T, align) (T *)buffer_alloc_aligned((buffer), sizeof(T) * (count), (align))
 #define BUFFER_ALLOC_ARRAY_ALIGNED(buffer, count, T) BUFFER_ALLOC_ARRAY((buffer), (count), T, alignof(T))
 
-static inline void *buffer_alloc_aligned(void **buffer, size_t size, size_t align) {
-    size_t current = (ssize_t)(*buffer);
-    size_t aligned = (current + (align - 1)) & ~(align - 1);
+static inline void *buffer_alloc_aligned(void **buffer, usize size, usize align) {
+    usize current = (isize)(*buffer);
+    usize aligned = (current + (align - 1)) & ~(align - 1);
     *buffer = (void *)(aligned + size);
     return (void *)aligned;
 }

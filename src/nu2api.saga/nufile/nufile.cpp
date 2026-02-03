@@ -519,7 +519,7 @@ int NuFileRead(NUFILE file, void *buf, int size) {
 
                 to_read = available;
                 file_buf = info->buf;
-                memcpy(char_buf, (void *)((ssize_t)file_buf + (info->read_pos - info->buf_start) + 8), to_read);
+                memcpy(char_buf, (void *)((isize)file_buf + (info->read_pos - info->buf_start) + 8), to_read);
             }
 
             char_buf += available;
@@ -922,7 +922,7 @@ NUDATHDR *NuDatOpenEx(char *filepath, VARIPTR *buf, int *_unused, i16 mode) {
 
         for (n = 0; n < hdr->tree_node_count; n++) {
             _unused4 = 0;
-            hdr->file_tree[n].name = (ssize_t)hdr->leaf_names + hdr->file_tree[n].name - _unused4;
+            hdr->file_tree[n].name = (isize)hdr->leaf_names + hdr->file_tree[n].name - _unused4;
         }
 
         hdr->file_tree[0].name = NULL;

@@ -12,8 +12,8 @@ static int gExplodeInitialised = 1;
 
 char *implode_inbuffer;
 char *implode_outbuffer;
-size_t implode_origsize;
-size_t implode_compsize;
+usize implode_origsize;
+usize implode_compsize;
 
 static int bytes_to_copy;
 
@@ -67,7 +67,7 @@ static void decode(unsigned int size, unsigned char *buf) {
 
 static unsigned char buffer[0x2000];
 
-ssize_t ExplodeBufferNoHeader(char *in_buf, char *out_buf, ssize_t compressed_size, ssize_t orig_size) {
+isize ExplodeBufferNoHeader(char *in_buf, char *out_buf, isize compressed_size, isize orig_size) {
     int total_read;
     unsigned int read_size;
 
@@ -98,7 +98,7 @@ ssize_t ExplodeBufferNoHeader(char *in_buf, char *out_buf, ssize_t compressed_si
     return total_read;
 }
 
-ssize_t ExplodeBufferSize(char *buf) {
+isize ExplodeBufferSize(char *buf) {
     char magic[] = "LZ2K";
 
     for (i32 i = 0; i < 4; i++) {
@@ -112,7 +112,7 @@ ssize_t ExplodeBufferSize(char *buf) {
     return size;
 }
 
-ssize_t ExplodeCompressedSize(char *buf) {
+isize ExplodeCompressedSize(char *buf) {
     char magic[] = "LZ2K";
 
     for (i32 i = 0; i < 4; i++) {

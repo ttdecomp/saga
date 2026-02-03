@@ -19,12 +19,12 @@ static u32 NameToHash(char *name) {
     return hash;
 }
 
-ssize_t BinarySearch(u32 element, u32 *array, size_t length) {
-    ssize_t start = 0;
-    ssize_t end = length - 1;
+isize BinarySearch(u32 element, u32 *array, usize length) {
+    isize start = 0;
+    isize end = length - 1;
 
     while (start <= end) {
-        ssize_t index = (start + end) / 2;
+        isize index = (start + end) / 2;
         if (array[index] == element) {
             return index;
         } else if (element > array[index]) {

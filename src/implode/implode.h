@@ -8,15 +8,15 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    ssize_t ExplodeBufferNoHeader(char *in_buf, char *out_buf, ssize_t orig_size, ssize_t compressed_size);
+    isize ExplodeBufferNoHeader(char *in_buf, char *out_buf, isize orig_size, isize compressed_size);
 
-    ssize_t ExplodeBufferSize(char *buf);
-    ssize_t ExplodeCompressedSize(char *buf);
+    isize ExplodeBufferSize(char *buf);
+    isize ExplodeCompressedSize(char *buf);
 
     extern char *implode_inbuffer;
     extern char *implode_outbuffer;
-    extern size_t implode_origsize;
-    extern size_t implode_compsize;
+    extern usize implode_origsize;
+    extern usize implode_compsize;
     extern u32 implode_bitbuf;
 
     extern u16 implode_left[];

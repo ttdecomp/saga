@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
     // superbuffer_end.char_ptr = permbuffer_base.char_ptr + SUPERBUFFERSIZE;
     // original_permbuffer_base = permbuffer_base;
 
-    const size_t buff_size = 0x200'000;
+    const usize buff_size = 0x200'000;
     auto ptr = std::unique_ptr<u8[]>(new u8[buff_size]);
     VARIPTR buf = {.void_ptr = ptr.get()};
 

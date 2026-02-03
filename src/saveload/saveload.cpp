@@ -84,7 +84,7 @@ void saveloadInit(VARIPTR *buf, VARIPTR buf_end, i32, char *prodcode, char *icon
     saveload_autosave = -1;
 }
 
-i32 saveloadLoadSlot(i32 slot, void *buffer, size_t size) {
+i32 saveloadLoadSlot(i32 slot, void *buffer, usize size) {
     char *filename = fullslotname(slot);
     FILE *file = fopen(filename, "rb");
 
@@ -173,7 +173,7 @@ i32 TriggerExtraDataLoad(void) {
     void *buffer = memcard_extra_savedatabuffer;
 
     if (saveloadLoadSlot(SAVESLOTS, buffer, memcard_extra_savedatasize + 4) != 0) {
-        i32 checksum = *(i32 *)((ssize_t)buffer + memcard_extra_savedatasize);
+        i32 checksum = *(i32 *)((isize)buffer + memcard_extra_savedatasize);
         i32 correct = ChecksumSaveData(buffer, memcard_extra_savedatasize);
         LOG_DEBUG("checksum=%08X, correct=%08X", checksum, correct);
         if (correct == checksum) {

@@ -51,7 +51,7 @@ void NuShaderObjectDestroy(NUSHADEROBJECT *shader) {
 }
 
 void NuShaderObjectBaseInit(NUSHADEROBJECTBASE *shader, NUSHADEROBJECTKEY *key, int unk) {
-    shader->key = (ssize_t) * (NUSHADEROBJECTKEY **)key; // it only matches if you do this noop cast/dereference
+    shader->key = (isize) * (NUSHADEROBJECTKEY **)key; // it only matches if you do this noop cast/dereference
     shader->field0 = unk;
 }
 
