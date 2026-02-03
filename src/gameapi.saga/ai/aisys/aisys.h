@@ -1,8 +1,6 @@
 #include "nu2api.saga/nucore/common.h"
 #include "nu2api.saga/nucore/nulist.h"
 
-#include "decomp.h"
-
 typedef struct AISYS_s AISYS;
 
 typedef struct AISCRIPTPROCESS_s AISCRIPTPROCESS;

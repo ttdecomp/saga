@@ -1,11 +1,46 @@
 #pragma once
 
 #include <stddef.h>
+#include <stdint.h>
 
-#include "decomp.h"
+// Define fixed-width types for convenience.
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+typedef uint64_t u64;
+typedef int8_t i8;
+typedef int16_t i16;
+typedef int32_t i32;
+typedef int64_t i64;
+
+// This is a bit of a hack. It allows us to represent parameters representing
+// sizes in a way that's a bit more future-proof while retaining compatibility
+// with mangled symbol names, signedness, and width in the NDK-based build. Why
+// not just use `size_t` and `ssize_t`? Because `ssize_t` is `long` and so
+// mangled symbol names come out wrong.
+#ifdef HOST_BUILD
+typedef size_t usize;
+typedef ssize_t isize;
+#else
+typedef uint32_t usize;
+typedef int32_t isize;
+#endif
+
+// Ensure that floating-point types are of the expected width.
+#ifdef HOST_BUILD
+#include <math.h>
+
+typedef _Float32_t f32;
+typedef _Float64_t f64;
+#else
+typedef float f32;
+typedef double f64;
+#endif
 
 #define MAX(a, b) (a) > (b) ? (a) : (b)
 #define MIN(a, b) (a) < (b) ? (a) : (b)
+
+#define ALIGN(value, alignment) (((value) + alignment - 1) & -alignment)
 
 // In the original engine, `variptr_u` is a union of a wide variety of pointer
 // types from various parts of the engine. This allows for convenient casting of
@@ -18,5 +53,3 @@ typedef union variptr_u {
     i16 *short_ptr;
     usize addr;
 } VARIPTR;
-
-#define ALIGN(value, alignment) (((value) + alignment - 1) & -alignment)

@@ -2,7 +2,6 @@
 
 #include <string.h>
 
-#include "decomp.h"
 #include "nu2api.saga/numemory/numemory.h"
 
 unsigned int rndrstream_nbuffers = 2;
