@@ -5,3 +5,6 @@
 void NuRndrInitEx(int stream_buffer_size, VARIPTR *buffer) {
     NuRndrStreamInit(stream_buffer_size, buffer);
 }
+
+void NuRndrInitWorld(void) {
+}

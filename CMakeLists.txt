@@ -170,6 +170,8 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/lostandfound/tmclient.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nurndr.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nustream.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nurndr.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nuprim.cpp
 )
 
 set(SAGA_INCLUDE_DIRS
