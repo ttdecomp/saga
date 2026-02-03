@@ -71,7 +71,7 @@ NUMTX *NuCameraGetClipPlanes(void) {
     return &clip_planes;
 }
 
-int NuCameraClipTestSphere(NUVEC *pnt, f32 radius, NUMTX *wm) {
+i32 NuCameraClipTestSphere(NUVEC *pnt, f32 radius, NUMTX *wm) {
     NUCAMERA *cam = NuCameraGetCam();
     NUMTX *view = NuCameraGetViewMtx();
 

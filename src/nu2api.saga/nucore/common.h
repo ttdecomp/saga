@@ -19,6 +19,8 @@ typedef int64_t i64;
 // not just use `size_t` and `ssize_t`? Because `ssize_t` is `long` and so
 // mangled symbol names come out wrong.
 #ifdef HOST_BUILD
+#include <stdlib.h>
+
 typedef size_t usize;
 typedef ssize_t isize;
 #else
@@ -28,10 +30,8 @@ typedef int32_t isize;
 
 // Ensure that floating-point types are of the expected width.
 #ifdef HOST_BUILD
-#include <math.h>
-
-typedef _Float32_t f32;
-typedef _Float64_t f64;
+typedef _Float32 f32;
+typedef _Float64 f64;
 #else
 typedef float f32;
 typedef double f64;

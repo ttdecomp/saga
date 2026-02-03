@@ -27,12 +27,12 @@ extern "C" {
 #endif
     NUCAMERA *NuCameraCreate(void);
     void NuCameraDestroy(NUCAMERA *cam);
-    float NuCameraDist(nuvec_s *v);
-    float NuCameraDistSqr(nuvec_s *v);
+    f32 NuCameraDist(nuvec_s *v);
+    f32 NuCameraDistSqr(nuvec_s *v);
     NUCAMERA *NuCameraGetCam(void);
     NUMTX *NuCameraGetViewMtx(void);
     NUMTX *NuCameraGetClipPlanes(void);
-    int NuCameraClipTestSphere(NUVEC *pnt, float radius, NUMTX *wm);
+    i32 NuCameraClipTestSphere(NUVEC *pnt, float radius, NUMTX *wm);
     void NuCameraGetPosition(NUVEC *v);
     void NuCameraGetTrans(NUVEC *v);
     NUMTX *NuCameraGetProjectionMtx(void);
