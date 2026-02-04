@@ -1,7 +1,8 @@
 use std::collections::{HashMap, HashSet};
 
 use anyhow::Context;
-use object::{Object, ObjectSection as _, ObjectSymbol as _};
+use iced_x86::{Decoder, DecoderOptions, Instruction, Mnemonic, OpKind};
+use object::{Object, ObjectSection as _, ObjectSymbol as _, RelocationFlags, elf::R_386_PC32, write::Relocation};
 
 #[derive(Debug, serde::Deserialize)]
 struct CompileCommand {
@@ -26,7 +27,7 @@ fn make_object<'a>(
     let mut sections = HashMap::new();
 
     for symbol in symbols {
-        let Some(symbol) = lib.symbols.get(symbol.as_ref()) else {
+        let Some(symbol) = lib.symbols_by_name.get(symbol.as_ref()) else {
             log::warn!("Failed to find symbol '{symbol:?}' in original object, skipping");
             continue;
         };
@@ -53,6 +54,10 @@ fn make_object<'a>(
                 )
             });
 
+        // symbols to make relocs against
+        // map of original address to dummy symbol id
+        let mut dummy_symbols: HashMap<u64, object::write::SymbolId> = HashMap::new();
+
         let offset = if section.kind() == object::SectionKind::UninitializedData {
             obj.append_section_bss(write_id, symbol.size(), 1)
         } else {
@@ -60,7 +65,54 @@ fn make_object<'a>(
             let bytes = &bytes[(symbol.address() - section.address()) as usize
                 ..(symbol.address() - section.address() + symbol.size()) as usize];
 
-            obj.append_section_data(write_id, bytes, 8)
+            let current_symbol_offset = obj.append_section_data(write_id, bytes, 8);
+
+            let mut decoder = Decoder::with_ip(32, bytes, symbol.address(), DecoderOptions::NONE);
+            let mut instruction = Instruction::default();
+            while decoder.can_decode() {
+                decoder.decode_out(&mut instruction);
+
+                match instruction.mnemonic() {
+                    Mnemonic::Call => match instruction.op0_kind() {
+                        OpKind::NearBranch32 => {
+                            let target = instruction.near_branch_target();
+                            if let Some(target_symbol) = lib.symbols_by_address.get(&target) {
+                                // a dummy symbol in the written object file to make a reloc against
+                                let target_reloc_symbol = if let Some(id) = dummy_symbols.get(&target) {
+                                    *id
+                                } else {
+                                    let id = obj.add_symbol(object::write::Symbol {
+                                        name: target_symbol.name().context("Failed to get target symbol name")?.as_bytes().to_vec(),
+                                        value: 0,
+                                        size: 0,
+                                        kind: object::SymbolKind::Text,
+                                        scope: object::SymbolScope::Dynamic,
+                                        weak: false,
+                                        section: object::write::SymbolSection::Undefined,
+                                        flags: object::SymbolFlags::None,
+                                    });
+
+                                    dummy_symbols.insert(target, id);
+                                    id
+                                };
+
+                                obj.add_relocation(write_id, Relocation {
+                                    offset: current_symbol_offset + (decoder.position() - instruction.len()) as u64 + 1,
+                                    symbol: target_reloc_symbol,
+                                    addend: -4,
+                                    flags: RelocationFlags::Elf { r_type: R_386_PC32 },
+                                }).context("Failed to add relocation")?;
+                            } else {
+                                log::warn!("failed to find target symbol for near relative call to 0x{target:x} in {name} (0x{:x}) in original object, skipping", symbol.address());
+                            }
+                        },
+                        _ => (),
+                    }
+                    _ => (),
+                }
+            }
+
+            current_symbol_offset
         };
 
         // add symbol to output
@@ -132,7 +184,8 @@ type ElfSymbol<'data, 'file, E> =
 
 struct Lib<'data, 'file> {
     file: &'file object::read::elf::ElfFile32<'file>,
-    symbols: HashMap<&'data str, ElfSymbol<'data, 'file, object::Endianness>>,
+    symbols_by_name: HashMap<&'data str, ElfSymbol<'data, 'file, object::Endianness>>,
+    symbols_by_address: HashMap<u64, ElfSymbol<'data, 'file, object::Endianness>>,
 }
 
 pub fn split() -> anyhow::Result<()> {
@@ -145,14 +198,15 @@ pub fn split() -> anyhow::Result<()> {
     let orig_lib_file = object::read::elf::ElfFile32::parse(&*contents)
         .context("Failed to parse original libTTapp.so")?;
 
-    let orig_symbols = orig_lib_file
+    let orig_symbols: HashMap<_, _> = orig_lib_file
         .symbols()
         .map(|sym| (sym.name().unwrap(), sym))
         .collect();
 
     let original_lib = Lib {
         file: &orig_lib_file,
-        symbols: orig_symbols,
+        symbols_by_name: orig_symbols.clone(),
+        symbols_by_address: orig_symbols.into_iter().map(|(name, symbol)| (symbol.address(), symbol)).collect(),
     };
 
     std::fs::create_dir_all("build/split").context("Failed to create build/split directory")?;

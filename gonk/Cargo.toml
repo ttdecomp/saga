@@ -7,6 +7,7 @@ edition = "2024"
 anyhow = "1.0.100"
 clap = { version = "4.5.54", features = ["derive"] }
 env_logger = "0.11.8"
+iced-x86 = "1.21.0"
 log = "0.4.29"
 object = { version = "0.38.1", features = ["read", "write"] }
 serde = { version = "1.0.228", features = ["derive"] }
