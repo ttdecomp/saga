@@ -35,7 +35,7 @@ enum levelflags_e {
 };
 typedef enum levelflags_e LEVELFLAGS;
 
-struct leveldata_s { /* PlaceHolder Structure */
+struct LEVELDATA_s { /* PlaceHolder Structure */
     char dir[64];
     char name[32]; /* Created by retype action */
     undefined2 field2_0x60;
@@ -137,7 +137,7 @@ struct leveldata_s { /* PlaceHolder Structure */
     int music_tracks[6];
 };
 
-typedef struct leveldata_s LEVELDATA;
+typedef struct LEVELDATA_s LEVELDATA;
 
 #ifdef __cplusplus
 extern "C" {
