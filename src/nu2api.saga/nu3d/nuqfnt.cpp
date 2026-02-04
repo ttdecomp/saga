@@ -449,8 +449,8 @@ void NuQFntSetICGap(NUQFNT *font, float ic_gap) {
     font->ic_gap = ic_gap;
 }
 
-int NuQFntReadPS(VUFNT* font, int t_id, int flags, int render_plane, VARIPTR* buffer, VARIPTR buffer_end) {
-    NUMTL* mtl = NuMtlCreate(1);
+int NuQFntReadPS(VUFNT *font, int t_id, int flags, int render_plane, VARIPTR *buffer, VARIPTR buffer_end) {
+    NUMTL *mtl = NuMtlCreate(1);
     font->mtl = mtl;
 
     mtl->scale.x = 1.0f;
@@ -462,7 +462,7 @@ int NuQFntReadPS(VUFNT* font, int t_id, int flags, int render_plane, VARIPTR* bu
     mtl->tex_id = (u16)t_id;
     mtl->unk_flag2 = 0xe5;
 
-    NUSHADERMTLDESC* shader_desc_ptr;
+    NUSHADERMTLDESC *shader_desc_ptr;
     NUSHADERMTLDESC shader_desc;
     shader_desc_ptr = &shader_desc;
     memset(shader_desc_ptr, 0, sizeof(NUSHADERMTLDESC));
@@ -479,8 +479,9 @@ int NuQFntReadPS(VUFNT* font, int t_id, int flags, int render_plane, VARIPTR* bu
     NuMtlSetShaderDescPS(mtl, shader_desc_ptr);
     NuMtlUpdate(font->mtl);
 
+    // this section is all wonky and doesn't semantically match i think... TODO: fix
     font->field_0x48 = ALIGN(buffer->addr, 16);
-    buffer->void_ptr = (void*)(ALIGN(buffer->addr, 16) + 0x58);
+    buffer->void_ptr = (void *)(ALIGN(buffer->addr, 16) + 0x58);
     usize aligned = font->field_0x48;
     font->field_0x3c = 0;
     font->field_0x44 = aligned;
