@@ -310,7 +310,7 @@ pub fn split() -> anyhow::Result<()> {
             scratch: Some(ObjDiffScratch {
                 platform: String::from("android_x86"),
                 compiler: String::from("ndk-r8e-gcc-4.7"),
-                c_flags: String::new(),
+                c_flags: String::from("-fno-exceptions -fno-rtti"),
             }),
         });
     }
