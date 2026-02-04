@@ -3,7 +3,9 @@ use std::collections::{HashMap, HashSet};
 use anyhow::Context;
 use iced_x86::{Decoder, DecoderOptions, Instruction, Mnemonic, OpKind};
 use object::{
-    Object, ObjectSection as _, ObjectSymbol as _, RelocationFlags, elf::R_386_PC32,
+    Endianness, Object, ObjectSection as _, ObjectSymbol as _, RelocationFlags,
+    elf::{FileHeader32, R_386_PC32},
+    read::{self, elf::FileHeader},
     write::Relocation,
 };
 
@@ -59,76 +61,25 @@ fn make_object<'a>(
 
         // symbols to make relocs against
         // map of original address to dummy symbol id
-        let mut dummy_symbols: HashMap<u64, object::write::SymbolId> = HashMap::new();
-
         let offset = if section.kind() == object::SectionKind::UninitializedData {
             obj.append_section_bss(write_id, symbol.size(), 1)
         } else {
             let bytes = section.data().context("Failed to get section data")?;
-            let bytes = &bytes[(symbol.address() - section.address()) as usize
-                ..(symbol.address() - section.address() + symbol.size()) as usize];
+
+            let symbol_start = (symbol.address() - section.address()) as usize;
+            let bytes = &bytes[symbol_start..symbol_start + symbol.size() as usize];
 
             let current_symbol_offset = obj.append_section_data(write_id, bytes, 8);
 
-            let mut decoder = Decoder::with_ip(32, bytes, symbol.address(), DecoderOptions::NONE);
-            let mut instruction = Instruction::default();
-            while decoder.can_decode() {
-                decoder.decode_out(&mut instruction);
-
-                #[allow(clippy::single_match)]
-                match instruction.mnemonic() {
-                    Mnemonic::Call => match instruction.op0_kind() {
-                        OpKind::NearBranch32 => {
-                            let target = instruction.near_branch_target();
-                            if let Some(target_symbol) = lib.symbols_by_address.get(&target) {
-                                // a dummy symbol in the written object file to make a reloc against
-                                let target_reloc_symbol =
-                                    if let Some(id) = dummy_symbols.get(&target) {
-                                        *id
-                                    } else {
-                                        let id = obj.add_symbol(object::write::Symbol {
-                                            name: target_symbol
-                                                .name()
-                                                .context("Failed to get target symbol name")?
-                                                .as_bytes()
-                                                .to_vec(),
-                                            value: 0,
-                                            size: 0,
-                                            kind: object::SymbolKind::Text,
-                                            scope: object::SymbolScope::Dynamic,
-                                            weak: false,
-                                            section: object::write::SymbolSection::Undefined,
-                                            flags: object::SymbolFlags::None,
-                                        });
-
-                                        dummy_symbols.insert(target, id);
-                                        id
-                                    };
-
-                                obj.add_relocation(
-                                    write_id,
-                                    Relocation {
-                                        offset: current_symbol_offset
-                                            + (decoder.position() - instruction.len()) as u64
-                                            + 1,
-                                        symbol: target_reloc_symbol,
-                                        addend: -4,
-                                        flags: RelocationFlags::Elf { r_type: R_386_PC32 },
-                                    },
-                                )
-                                .context("Failed to add relocation")?;
-                            } else {
-                                log::warn!(
-                                    "failed to find target symbol for near relative call to 0x{target:x} in {name} (0x{:x}) in original object, skipping",
-                                    symbol.address()
-                                );
-                            }
-                        }
-                        _ => (),
-                    },
-                    _ => (),
-                }
-            }
+            process_text_symbol(
+                lib,
+                &mut obj,
+                name,
+                symbol,
+                write_id,
+                bytes,
+                current_symbol_offset,
+            )?;
 
             current_symbol_offset
         };
@@ -147,6 +98,73 @@ fn make_object<'a>(
     }
 
     Ok(obj)
+}
+
+fn process_text_symbol(
+    lib: &Lib<'_, '_>,
+    obj: &mut object::write::Object<'_>,
+    symbol: &read::elf::ElfSymbol<FileHeader32<Endianness>>,
+    name: &str,
+    section_id: object::write::SectionId,
+    bytes: &[u8],
+    current_symbol_offset: u64,
+) -> Result<(), anyhow::Error> {
+    let mut external_symbols: HashMap<u64, object::write::SymbolId> = HashMap::new();
+    let mut decoder = Decoder::with_ip(32, bytes, symbol.address(), DecoderOptions::NONE);
+
+    while decoder.can_decode() {
+        let mut instruction = Instruction::default();
+        decoder.decode_out(&mut instruction);
+
+        #[allow(clippy::single_match)]
+        match instruction.mnemonic() {
+            Mnemonic::Call => match instruction.op0_kind() {
+                OpKind::NearBranch32 => {
+                    let target = instruction.near_branch_target();
+                    if let Some(target_symbol) = lib.symbols_by_address.get(&target) {
+                        // a dummy symbol in the written object file to make a reloc against
+                        let target_reloc_symbol =
+                            *external_symbols.entry(target).or_insert_with(|| {
+                                obj.add_symbol(object::write::Symbol {
+                                    name: target_symbol.name().unwrap().as_bytes().to_vec(),
+                                    value: 0,
+                                    size: 0,
+                                    kind: symbol.kind(),
+                                    scope: symbol.scope(),
+                                    weak: symbol.is_weak(),
+                                    section: object::write::SymbolSection::Undefined,
+                                    flags: object::SymbolFlags::None,
+                                })
+                            });
+
+                        obj.add_relocation(
+                            section_id,
+                            Relocation {
+                                offset: current_symbol_offset
+                                    + (decoder.position() - instruction.len()) as u64
+                                    + 1,
+                                symbol: target_reloc_symbol,
+                                addend: -4,
+                                flags: RelocationFlags::Elf { r_type: R_386_PC32 },
+                            },
+                        )
+                        .context("Failed to add relocation")?;
+                    } else {
+                        log::warn!(
+                            "failed to find target symbol for near relative call to 0x{target:x} in {name} (0x{:x}) in original object, skipping",
+                            symbol.address()
+                        );
+                    }
+                }
+
+                _ => (),
+            },
+
+            _ => for op_idx in 0..instruction.op_count() {},
+        }
+    }
+
+    Ok(())
 }
 
 #[derive(serde::Serialize)]
@@ -225,8 +243,8 @@ pub fn split() -> anyhow::Result<()> {
         file: &orig_lib_file,
         symbols_by_name: orig_symbols.clone(),
         symbols_by_address: orig_symbols
-            .into_iter()
-            .map(|(name, symbol)| (symbol.address(), symbol))
+            .into_values()
+            .map(|symbol| (symbol.address(), symbol))
             .collect(),
     };
 
