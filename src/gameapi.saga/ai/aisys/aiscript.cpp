@@ -105,7 +105,7 @@ f32 AiParseExpression(char *expr) {
     return value;
 }
 
-static void *AIScriptBufferAlloc(VARIPTR *buf, VARIPTR *buf_end, isize size) {
+static void *AIScriptBufferAlloc(VARIPTR *buf, VARIPTR *buf_end, usize size) {
     void *ret;
 
     ret = NULL;
@@ -126,7 +126,7 @@ static void *AIScriptBufferAlloc(VARIPTR *buf, VARIPTR *buf_end, isize size) {
 
 static char *AIScriptCopyString(char *str, VARIPTR *buf, VARIPTR *buf_end) {
     char *dst;
-    int len;
+    usize len;
 
     dst = NULL;
     if (str != NULL) {
