@@ -49,5 +49,6 @@ typedef union variptr_u {
     void *void_ptr;
     char *char_ptr;
     i16 *short_ptr;
+    u8* uchar_ptr;
     usize addr;
 } VARIPTR;

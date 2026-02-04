@@ -174,6 +174,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nuprim.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi.saga/gui/apimenu.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/numtl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nuqfnt.cpp
 )
 
 set(SAGA_INCLUDE_DIRS
@@ -254,6 +255,7 @@ else()
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nurndr.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nustream.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi.saga/gui/apimenu.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nuqfnt.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 endif()
 
 foreach(source_file IN LISTS SAGA_SOURCE_FILES)
