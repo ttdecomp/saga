@@ -1,4 +1,3 @@
-#include <cstdint>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -103,12 +102,12 @@ isize ExplodeBufferSize(char *buf) {
 
     for (i32 i = 0; i < 4; i++) {
         int does_not_match;
-        if ((does_not_match = *(buf++) != magic[i]) != 0) {
+        if ((does_not_match = *(buf++) != magic[i])) {
             return 0;
         }
     }
 
-    i32 size = ImplodeGetI(buf, 4);
+    i32 size = ImplodeGetI(buf, sizeof(i32));
     return size;
 }
 
@@ -117,7 +116,7 @@ isize ExplodeCompressedSize(char *buf) {
 
     for (i32 i = 0; i < 4; i++) {
         int does_not_match;
-        if ((does_not_match = *(buf++) != magic[i]) != 0) {
+        if ((does_not_match = *(buf++) != magic[i])) {
             return 0;
         }
     }
@@ -307,14 +306,19 @@ u32 ImplodeDecodeOffset() {
 }
 
 void ImplodeMakeTable(i32 size, u8 *len, i32 unknown, u16 *table) {
-    i32 shift;
-    u32 unknown2;
-    u32 unknown3;
-    u32 i;
-    u32 j;
     u16 symbol_count[17];
     u16 masks[17];
     u16 offsets[18];
+    u32 symbol;
+    i32 shift;
+    u32 length;
+    u32 i;
+    u32 j;
+    u32 k;
+    u32 unknown2;
+    u32 unknown3;
+    u32 unknown4;
+    u16 *cursor;
 
     for (i = 1; i < 0x11; i++) {
         symbol_count[i] = 0;
@@ -355,10 +359,7 @@ void ImplodeMakeTable(i32 size, u8 *len, i32 unknown, u16 *table) {
     unknown2 = size;
     unknown3 = 1 << (0xf - unknown);
 
-    for (u32 symbol = 0; symbol < size; symbol++) {
-        u32 length;
-        u32 unknown4;
-
+    for (symbol = 0; symbol < size; symbol++) {
         if ((length = len[symbol]) == 0) {
             continue;
         }
@@ -369,12 +370,10 @@ void ImplodeMakeTable(i32 size, u8 *len, i32 unknown, u16 *table) {
                 table[i] = symbol;
             }
         } else {
-            u16 *cursor;
-
             j = offsets[length];
             cursor = table + (j >> shift);
 
-            for (u32 i = length - unknown; i != 0; i--) {
+            for (k = length - unknown; k != 0; k--) {
                 if (*cursor == 0) {
                     implode_left[unknown2] = 0;
                     implode_right[unknown2] = implode_left[unknown2];
