@@ -55,8 +55,8 @@ NUFPAR *NuFParOpen(NUFILE file_handle) {
         parser->command_pos = -1;
         parser->separator_list = NULL;
         parser->separator_tokens = NULL;
-        parser->line_buf_ptr = parser->line_buf;
-        parser->word_buf_ptr = parser->word_buf;
+        parser->line_buf = parser->line_buf_store;
+        parser->word_buf = parser->word_buf_store;
         parser->line_buf_size = 0x200;
         parser->word_buf_size = 0x200;
 
@@ -181,12 +181,12 @@ int NuFParGetLine(NUFPAR *parser) {
                     break;
                 }
             case '\0':
-                parser->line_buf_ptr[len] = '\0';
+                parser->line_buf[len] = '\0';
                 return len;
             case '"':
                 in_quoted_text = 1 - in_quoted_text;
                 is_done = true;
-                parser->line_buf_ptr[CLAMP_LINE(len)] = c;
+                parser->line_buf[CLAMP_LINE(len)] = c;
                 len++;
                 break;
             case ';':
@@ -220,7 +220,7 @@ int NuFParGetLine(NUFPAR *parser) {
                                     NuGetChar(parser);
                                 case '\n':
                                 case '\0':
-                                    parser->line_buf_ptr[len] = '\0';
+                                    parser->line_buf[len] = '\0';
                                     return len;
                                 default:
                                     break;
@@ -236,7 +236,7 @@ int NuFParGetLine(NUFPAR *parser) {
                 is_done = true;
             case '\t':
             case ' ':
-                parser->line_buf_ptr[CLAMP_LINE(len)] = c;
+                parser->line_buf[CLAMP_LINE(len)] = c;
                 len++;
                 break;
         }
@@ -252,7 +252,7 @@ int NuFParGetLineW(NUFPAR *parser) {
     int in_quoted_text;
 
     in_quoted_text = 0;
-    line = (NUWCHAR *)parser->line_buf_ptr;
+    line = (NUWCHAR *)parser->line_buf;
     len = 0;
     parser->line_pos = 0;
     parser->line_num++;
@@ -347,18 +347,18 @@ int NuFParGetWord(NUFPAR *parser) {
 
     old_line_pos = parser->line_pos;
 
-    while (parser->line_buf_ptr[CLAMP_LINE(parser->line_pos)] != 0) {
-        char c = parser->line_buf_ptr[parser->line_pos];
+    while (parser->line_buf[CLAMP_LINE(parser->line_pos)] != 0) {
+        char c = parser->line_buf[parser->line_pos];
 
         if (parser->separator_tokens != NULL && !in_quoted_text) {
             if (NuStrChr(parser->separator_tokens, c) != NULL) {
                 if (len == 0) {
-                    parser->word_buf_ptr[len] = c;
+                    parser->word_buf[len] = c;
                     len++;
                     parser->line_pos++;
                 }
 
-                parser->word_buf_ptr[CLAMP_WORD(len)] = '\0';
+                parser->word_buf[CLAMP_WORD(len)] = '\0';
 
                 return len;
             }
@@ -376,7 +376,7 @@ int NuFParGetWord(NUFPAR *parser) {
             case '\t':
                 if (!in_quoted_text) {
                     if (len != 0) {
-                        parser->word_buf_ptr[CLAMP_WORD(len)] = '\0';
+                        parser->word_buf[CLAMP_WORD(len)] = '\0';
                         return len;
                     }
 
@@ -387,7 +387,7 @@ int NuFParGetWord(NUFPAR *parser) {
                     in_quoted_text = 1 - in_quoted_text;
                     found_quotes = 1;
                 } else {
-                    parser->word_buf_ptr[CLAMP_WORD(len)] = c;
+                    parser->word_buf[CLAMP_WORD(len)] = c;
                     len++;
                 }
 
@@ -401,13 +401,13 @@ int NuFParGetWord(NUFPAR *parser) {
         }
     }
 
-    parser->word_buf_ptr[CLAMP_WORD(len)] = '\0';
+    parser->word_buf[CLAMP_WORD(len)] = '\0';
     return len;
 }
 
 int NuFParGetWordW(NUFPAR *parser) {
-    NUWCHAR *line = (NUWCHAR *)parser->line_buf_ptr;
-    NUWCHAR *word = (NUWCHAR *)parser->word_buf_ptr;
+    NUWCHAR *line = (NUWCHAR *)parser->line_buf;
+    NUWCHAR *word = (NUWCHAR *)parser->word_buf;
     int len = 0;
     int in_quoted_text = 0;
 
@@ -482,9 +482,9 @@ f32 NuFParGetFloat(NUFPAR *parser) {
 
     NuFParGetWord(parser);
     if (parser->is_utf16) {
-        NuUnicodeToAscii(buf, (NUWCHAR16 *)parser->word_buf_ptr);
+        NuUnicodeToAscii(buf, (NUWCHAR16 *)parser->word_buf);
     } else {
-        NuStrCpy(buf, parser->word_buf_ptr);
+        NuStrCpy(buf, parser->word_buf);
     }
 
     if (buf[0] != '\0') {
@@ -499,9 +499,9 @@ f32 NuFParGetFloatRDP(NUFPAR *parser) {
 
     NuFParGetWord(parser);
     if (parser->is_utf16) {
-        NuUnicodeToAscii(buf, (NUWCHAR16 *)parser->word_buf_ptr);
+        NuUnicodeToAscii(buf, (NUWCHAR16 *)parser->word_buf);
     } else {
-        NuStrCpy(buf, parser->word_buf_ptr);
+        NuStrCpy(buf, parser->word_buf);
     }
 
     if (buf[0] != '\0') {
@@ -516,9 +516,9 @@ int NuFParGetInt(NUFPAR *parser) {
 
     NuFParGetWord(parser);
     if (parser->is_utf16) {
-        NuUnicodeToAscii(buf, (NUWCHAR16 *)parser->word_buf_ptr);
+        NuUnicodeToAscii(buf, (NUWCHAR16 *)parser->word_buf);
     } else {
-        NuStrCpy(buf, parser->word_buf_ptr);
+        NuStrCpy(buf, parser->word_buf);
     }
 
     if (buf[0] != '\0') {
@@ -539,9 +539,9 @@ int NuFParGetIntRDP(NUFPAR *parser) {
 
     NuFParGetWord(parser);
     if (parser->is_utf16) {
-        NuUnicodeToAscii(buf, (NUWCHAR16 *)parser->word_buf_ptr);
+        NuUnicodeToAscii(buf, (NUWCHAR16 *)parser->word_buf);
     } else {
-        NuStrCpy(buf, parser->word_buf_ptr);
+        NuStrCpy(buf, parser->word_buf);
     }
 
     if (buf[0] != '\0') {
@@ -611,9 +611,9 @@ int NuFParInterpretWord(NUFPAR *parser) {
     int i;
 
     if (parser->is_utf16) {
-        NuUnicodeToAscii(buf, (NUWCHAR16 *)parser->word_buf_ptr);
+        NuUnicodeToAscii(buf, (NUWCHAR16 *)parser->word_buf);
     } else {
-        NuStrCpy(buf, parser->word_buf_ptr);
+        NuStrCpy(buf, parser->word_buf);
     }
 
     if (buf[0] == '\0') {
@@ -656,9 +656,9 @@ int NuFParInterpretWordCTX(NUFPAR *parser, void *ctx) {
     int i;
 
     if (parser->is_utf16) {
-        NuUnicodeToAscii(buf, (NUWCHAR16 *)parser->word_buf_ptr);
+        NuUnicodeToAscii(buf, (NUWCHAR16 *)parser->word_buf);
     } else {
-        NuStrCpy(buf, parser->word_buf_ptr);
+        NuStrCpy(buf, parser->word_buf);
     }
 
     if (buf[0] == '\0') {

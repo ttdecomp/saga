@@ -42,7 +42,7 @@ EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *b
         if (iVar4 != 0) {
             while (true) {
                 NuFParGetWord(fp);
-                a = fp->word_buf_ptr;
+                a = fp->word_buf;
                 if (*a == '\0')
                     break;
                 if (!bVar3) {
@@ -58,11 +58,11 @@ EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *b
                 }
 
                 if (NuStrICmp(a, "episode_end") != 0) {
-                    if (NuStrICmp(fp->word_buf_ptr, "area") == 0) {
+                    if (NuStrICmp(fp->word_buf, "area") == 0) {
                         if (episode->area_count >= 10 || NuFParGetWord(fp) == 0)
                             goto LAB_004890ae;
 
-                        area = Area_FindByName(fp->word_buf_ptr, &areaIndex);
+                        area = Area_FindByName(fp->word_buf, &areaIndex);
 
                         bVar3 = true;
                         if (areaIndex != -1) {
@@ -72,13 +72,13 @@ EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *b
                                 goto LAB_0048910d;
                             if (areaIndex == episode->area_ids[0])
                                 uVar5 = 0;
-                            iVar4 = NuStrICmp(fp->word_buf_ptr, "name_id");
+                            iVar4 = NuStrICmp(fp->word_buf, "name_id");
                             if (iVar4 == 0) {
                                 iVar4 = NuFParGetInt(fp);
                                 episode->name_id = (i16)iVar4;
                                 bVar3 = true;
                             } else {
-                                iVar4 = NuStrICmp(fp->word_buf_ptr, "text_id");
+                                iVar4 = NuStrICmp(fp->word_buf, "text_id");
                                 bVar3 = true;
                                 if (iVar4 == 0) {
                                     iVar4 = NuFParGetInt(fp);

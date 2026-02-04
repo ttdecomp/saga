@@ -105,7 +105,7 @@ void NuMusic::InitData(const char *file, VARIPTR *buffer_start, VARIPTR buffer_e
     if (fpar != NULL) {
         NuFParPushComCTX(fpar, top_jmp_tab);
 
-        while (NuFParGetLine(fpar), *fpar->line_buf_ptr != '\0') {
+        while (NuFParGetLine(fpar), *fpar->line_buf != '\0') {
             NuFParGetWord(fpar);
             NuFParInterpretWordCTX(fpar, this);
         }
@@ -425,7 +425,7 @@ void NuMusic::ParseTrack(u32 category, nufpar_s *fpar) {
     char buf2[512];
     NuFParGetWord(fpar);
     NuStrCpy(buf, this->current_path);
-    NuStrCat(buf, fpar->word_buf_ptr);
+    NuStrCat(buf, fpar->word_buf);
     SubstituteString(buf2, buf, "$lang", this->language);
 
     track->path = AllocString(buf2);
@@ -438,13 +438,13 @@ void NuMusic::ParseTrack(u32 category, nufpar_s *fpar) {
     }
 
     NuFParPushComCTX(fpar, track_jmp_tab);
-    if (*fpar->word_buf_ptr != '\0' && *fpar->word_buf_ptr != ';') {
+    if (*fpar->word_buf != '\0' && *fpar->word_buf != ';') {
         do {
             NuFParGetWord(fpar);
             NuFParInterpretWordCTX(fpar, this);
-            if (*fpar->word_buf_ptr == ';')
+            if (*fpar->word_buf == ';')
                 break;
-        } while (*fpar->word_buf_ptr != '\0');
+        } while (*fpar->word_buf != '\0');
     }
     NuFParPopCom(fpar);
 
@@ -555,7 +555,7 @@ void NuMusic::xAlbum(nufpar_s *fpar) {
     this->current_album->tracks_count = 0;
 
     NuFParGetWord(fpar);
-    this->current_album->name = AllocString(fpar->word_buf_ptr);
+    this->current_album->name = AllocString(fpar->word_buf);
     LOG_DEBUG("Parsing album: '%s' at %p, tracks_source=%p", this->current_album->name, this->current_album,
               this->current_album->tracks_source);
 }
@@ -582,10 +582,10 @@ void NuMusic::xGlobalAttenuation(nufpar_s *fpar) {
 }
 void NuMusic::xPath(nufpar_s *fpar) {
     NuFParGetWord(fpar);
-    NuStrCpy(this->current_path, fpar->word_buf_ptr);
+    NuStrCpy(this->current_path, fpar->word_buf);
 }
 void NuMusic::xStrict(nufpar_s *fpar) {
-    fpar->line_buf_ptr[28] = '\x01';
+    fpar->line_buf[28] = '\x01';
     NuFParSetInterpreterErrorHandler(GlobalParseErrorFn);
 }
 
@@ -616,7 +616,7 @@ void NuMusic::xsAttenuation(nufpar_s *fpar, void *thisptr) {
 
 void NuMusic::xIdent(nufpar_s *fpar) {
     NuFParGetWord(fpar);
-    this->current_track->ident = AllocString(fpar->word_buf_ptr);
+    this->current_track->ident = AllocString(fpar->word_buf);
 }
 void NuMusic::xIndex(nufpar_s *fpar) {
     this->indexes[this->index_count++] = NuFParGetFloatRDP(fpar);

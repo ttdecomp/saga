@@ -64,8 +64,8 @@ void Collection_Configure(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd) 
         while (NuFParGetLine(fp) != 0) {
 
         LAB_004eb7f3:
-            if (NuFParGetWord(fp) != 0 && NuStrICmp(fp->word_buf_ptr, "collect") == 0 && NuFParGetWord(fp) != 0) {
-                sVar3 = CharIDFromName(fp->word_buf_ptr);
+            if (NuFParGetWord(fp) != 0 && NuStrICmp(fp->word_buf, "collect") == 0 && NuFParGetWord(fp) != 0) {
+                sVar3 = CharIDFromName(fp->word_buf);
 
                 LOG_DEBUG("Collection_Configure: Found collect id %s -> %d", fp->word_buf_ptr, sVar3);
 
@@ -105,7 +105,7 @@ void Collection_Configure(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd) 
                             goto LAB_004eb7f3;
                         }
 
-                        iVar4 = NuStrICmp(fp->word_buf_ptr, "story");
+                        iVar4 = NuStrICmp(fp->word_buf, "story");
                         if (iVar4 != 0)
                             goto LAB_004eb920;
 
@@ -129,56 +129,56 @@ void Collection_Configure(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd) 
     return;
 
 LAB_004eb920:
-    iVar4 = NuStrICmp(fp->word_buf_ptr, "area_complete");
+    iVar4 = NuStrICmp(fp->word_buf, "area_complete");
     if (iVar4 == 0) {
         iVar4 = NuFParGetWord(fp);
-        if (iVar4 != 0 && (pAVar5 = Area_FindByName(fp->word_buf_ptr, &i), pAVar5 != NULL)) {
+        if (iVar4 != 0 && (pAVar5 = Area_FindByName(fp->word_buf, &i), pAVar5 != NULL)) {
             collect->type = 2;
             collect->field2_0x3 = (byte)i;
         }
     } else {
-        iVar4 = NuStrICmp(fp->word_buf_ptr, "all_episodes_complete");
+        iVar4 = NuStrICmp(fp->word_buf, "all_episodes_complete");
         if (iVar4 == 0) {
             collect->type = 3;
         } else {
-            iVar4 = NuStrICmp(fp->word_buf_ptr, "in_pack");
+            iVar4 = NuStrICmp(fp->word_buf, "in_pack");
             if (iVar4 == 0) {
                 iVar4 = NuFParGetWord(fp);
-                if ((iVar4 != 0) && (iVar4 = Store_FindPack(-1, fp->word_buf_ptr), iVar4 != -1)) {
+                if ((iVar4 != 0) && (iVar4 = Store_FindPack(-1, fp->word_buf), iVar4 != -1)) {
                     collect->type = 8;
                     collect->field2_0x3 = (byte)iVar4;
                 }
             } else {
-                iVar4 = NuStrICmp(fp->word_buf_ptr, "100_percent");
+                iVar4 = NuStrICmp(fp->word_buf, "100_percent");
                 if (iVar4 == 0) {
                     collect->type = 7;
                 } else {
-                    iVar4 = NuStrICmp(fp->word_buf_ptr, "gold_bricks");
+                    iVar4 = NuStrICmp(fp->word_buf, "gold_bricks");
                     if (iVar4 == 0) {
                         collect->type = 6;
                         iVar4 = NuFParGetInt(fp);
                         uVar2 = (ushort)(iVar4 >> 31);
                         collect->field6_0xa = ((ushort)iVar4 ^ uVar2) - uVar2;
                     } else {
-                        iVar4 = NuStrICmp(fp->word_buf_ptr, "all_minikits_complete");
+                        iVar4 = NuStrICmp(fp->word_buf, "all_minikits_complete");
                         if (iVar4 == 0) {
                             collect->type = 4;
                         } else {
-                            iVar4 = NuStrICmp(fp->word_buf_ptr, "minikit");
+                            iVar4 = NuStrICmp(fp->word_buf, "minikit");
                             if (iVar4 == 0) {
                                 collect->type = 5;
                             } else {
-                                iVar4 = NuStrICmp(fp->word_buf_ptr, "buy_in_shop");
+                                iVar4 = NuStrICmp(fp->word_buf, "buy_in_shop");
                                 if (iVar4 == 0) {
                                     collect->can_buy = 1;
                                     iVar4 = NuFParGetInt(fp);
                                     collect->field3_0x4 = iVar4;
                                 } else {
-                                    iVar4 = NuStrICmp(fp->word_buf_ptr, "cheat_code");
+                                    iVar4 = NuStrICmp(fp->word_buf, "cheat_code");
                                     if (((iVar4 == 0) && (iVar4 = NuFParGetWord(fp), iVar4 != 0)) &&
-                                        (iVar4 = NuStrLen(fp->word_buf_ptr), iVar4 == 6)) {
+                                        (iVar4 = NuStrLen(fp->word_buf), iVar4 == 6)) {
                                         buf = collect->cheat_code;
-                                        NuStrCpy(buf, fp->word_buf_ptr);
+                                        NuStrCpy(buf, fp->word_buf);
                                         NuStrUpr(buf, buf);
                                     }
                                 }

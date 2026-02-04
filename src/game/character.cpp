@@ -471,31 +471,31 @@ CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR 
     cdata = characterdata;
     while (NuFParGetLine(fp) != 0) {
         NuFParGetWord(fp);
-        if (*fp->word_buf_ptr != '\0') {
+        if (*fp->word_buf != '\0') {
             if (bVar2) {
-                if (NuStrICmp(fp->word_buf_ptr, "char_end") == 0) {
+                if (NuStrICmp(fp->word_buf, "char_end") == 0) {
                     bVar2 = false;
                     if ((dirnameOffsets[i] != -1) && (filenameOffsets[i] != -1)) {
                         i = i + 1;
                         cdata = cdata + 1;
                     }
-                } else if (NuStrICmp(fp->word_buf_ptr, "dir") == 0 && NuFParGetWord(fp) != 0) {
-                    i32 len = NuStrLen(fp->word_buf_ptr);
+                } else if (NuStrICmp(fp->word_buf, "dir") == 0 && NuFParGetWord(fp) != 0) {
+                    i32 len = NuStrLen(fp->word_buf);
                     if ((len + offset + 1) < 10000) {
-                        NuStrCpy(buf + offset, fp->word_buf_ptr);
+                        NuStrCpy(buf + offset, fp->word_buf);
                         dirnameOffsets[i] = (i16)offset;
                         offset = offset + len + 1;
                     }
-                } else if (NuStrICmp(fp->word_buf_ptr, "file") == 0 && NuFParGetWord(fp) != 0) {
-                    i32 len = NuStrLen(fp->word_buf_ptr);
+                } else if (NuStrICmp(fp->word_buf, "file") == 0 && NuFParGetWord(fp) != 0) {
+                    i32 len = NuStrLen(fp->word_buf);
                     if ((len + offset + 1) < 10000) {
-                        NuStrCpy(buf + offset, fp->word_buf_ptr);
+                        NuStrCpy(buf + offset, fp->word_buf);
                         filenameOffsets[i] = (i16)offset;
                         offset = offset + len + 1;
                     }
                 }
             } else {
-                if (NuStrICmp(fp->word_buf_ptr, "char_start") == 0 && i < count) {
+                if (NuStrICmp(fp->word_buf, "char_start") == 0 && i < count) {
                     bVar1 = true;
                 } else {
                     bVar1 = false;

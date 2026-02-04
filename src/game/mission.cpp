@@ -45,32 +45,32 @@ MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *buffer
 
             NuFParGetWord(fp);
 
-            i = NuStrICmp(fp->word_buf_ptr, "party");
+            i = NuStrICmp(fp->word_buf, "party");
             if (i == 0) {
                 while ((sys.character_count < 8 && (i = NuFParGetWord(fp), i != 0))) {
-                    charId = CharIDFromName(fp->word_buf_ptr);
+                    charId = CharIDFromName(fp->word_buf);
                     if (charId != -1) {
                         sys.character_ids[sys.character_count] = (i16)charId;
                         sys.character_count = sys.character_count + 1;
                     }
                 }
             } else {
-                i = NuStrICmp(fp->word_buf_ptr, "pickups");
+                i = NuStrICmp(fp->word_buf, "pickups");
                 if (i == 0) {
                     i = NuFParGetWord(fp);
                     if (i != 0) {
-                        i = NuStrICmp(fp->word_buf_ptr, "on");
+                        i = NuStrICmp(fp->word_buf, "on");
                         if (i == 0) {
                             sys.flags |= 1;
                         } else {
-                            i = NuStrICmp(fp->word_buf_ptr, "off");
+                            i = NuStrICmp(fp->word_buf, "off");
                             if (i == 0) {
                                 sys.flags &= 0xfe;
                             }
                         }
                     }
                 } else {
-                    i = NuStrICmp(fp->word_buf_ptr, "mission");
+                    i = NuStrICmp(fp->word_buf, "mission");
                     if (i == 0) {
                         *buffer = -1;
                         buffer[1] = -1;
@@ -85,25 +85,25 @@ MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *buffer
                     LAB_004f0bd0:
                         i = NuFParGetWord(fp);
                         if (i != 0) {
-                            while (i = NuStrICmp(fp->word_buf_ptr, "find"), i == 0) {
+                            while (i = NuStrICmp(fp->word_buf, "find"), i == 0) {
                                 i = NuFParGetWord(fp);
                                 if (i == 0)
                                     goto LAB_004f0bd0;
-                                sVar1 = CharIDFromName(fp->word_buf_ptr);
+                                sVar1 = CharIDFromName(fp->word_buf);
                                 *buffer = sVar1;
                                 i = NuFParGetWord(fp);
                                 if (i == 0)
                                     goto LAB_004f0c1f;
                             }
-                            i = NuStrICmp(fp->word_buf_ptr, "in_level");
+                            i = NuStrICmp(fp->word_buf, "in_level");
                             if (i == 0) {
                                 i = NuFParGetWord(fp);
                                 if ((i != 0) &&
-                                    (pLVar2 = Level_FindByName(fp->word_buf_ptr, &charId), pLVar2 != NULL)) {
+                                    (pLVar2 = Level_FindByName(fp->word_buf, &charId), pLVar2 != NULL)) {
                                     buffer[1] = (i16)charId;
                                 }
                             } else {
-                                i = NuStrICmp(fp->word_buf_ptr, "time");
+                                i = NuStrICmp(fp->word_buf, "time");
                                 if (i == 0) {
                                     i = NuFParGetInt(fp);
                                     uVar3 = 3;
@@ -112,19 +112,19 @@ MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *buffer
                                     }
                                     buffer[8] = uVar3;
                                 } else {
-                                    i = NuStrICmp(fp->word_buf_ptr, "bounty");
+                                    i = NuStrICmp(fp->word_buf, "bounty");
                                     if (i == 0) {
                                         i = NuFParGetInt(fp);
                                         *(int *)(buffer + 4) = i;
                                         i = NuFParGetInt(fp);
                                         *(int *)(buffer + 6) = i;
                                     } else {
-                                        i = NuStrICmp(fp->word_buf_ptr, "name_id");
+                                        i = NuStrICmp(fp->word_buf, "name_id");
                                         if (i == 0) {
                                             i = NuFParGetInt(fp);
                                             buffer[2] = (i16)i;
                                         } else {
-                                            i = NuStrICmp(fp->word_buf_ptr, "text_id");
+                                            i = NuStrICmp(fp->word_buf, "text_id");
                                             if (i == 0) {
                                                 i = NuFParGetInt(fp);
                                                 buffer[3] = (i16)i;

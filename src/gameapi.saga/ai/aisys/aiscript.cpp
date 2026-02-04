@@ -192,18 +192,18 @@ static void xActions(NUFPAR *parser) {
 
         NuFParGetWord(parser);
 
-        if (NuStrICmp(parser->word_buf_ptr, "}") == 0) {
+        if (NuStrICmp(parser->word_buf, "}") == 0) {
             return;
         }
 
-        if (NuStrICmp(parser->word_buf_ptr, "DoMacro") == 0) {
+        if (NuStrICmp(parser->word_buf, "DoMacro") == 0) {
             AIACTIONMACRO *macro;
 
             NuFParGetWord(parser);
 
             macro = (AIACTIONMACRO *)NuLinkedListGetHead(&load_aiscript->action_macros);
             while (macro != NULL) {
-                if (NuStrICmp(macro->name, parser->word_buf_ptr) == 0) {
+                if (NuStrICmp(macro->name, parser->word_buf) == 0) {
                     AIScriptCopyActions(&macro->actions, load_actionshdr, load_buff, load_endbuff);
 
                     break;
@@ -215,7 +215,7 @@ static void xActions(NUFPAR *parser) {
             AIACTIONDEF *def;
             char params[24][128];
 
-            def = AIActionFind(parser->word_buf_ptr);
+            def = AIActionFind(parser->word_buf);
             if (def != NULL) {
                 int param_count;
 
@@ -233,10 +233,10 @@ static void xActions(NUFPAR *parser) {
                 param_count = 0;
 
                 while (NuFParGetWord(parser) != 0) {
-                    if (NuStrCmp(parser->word_buf_ptr, "\\") == 0) {
+                    if (NuStrCmp(parser->word_buf, "\\") == 0) {
                         NuFParGetLine(parser);
                     } else {
-                        NuStrCpy(params[param_count++], parser->word_buf_ptr);
+                        NuStrCpy(params[param_count++], parser->word_buf);
                     }
                 }
 
@@ -252,7 +252,7 @@ static void xActions(NUFPAR *parser) {
                     }
                 }
             } else {
-                NuStrChr(parser->word_buf_ptr, '{');
+                NuStrChr(parser->word_buf, '{');
             }
         }
     }
@@ -263,11 +263,11 @@ __attribute__((noinline)) static void ConditionsParseFinalise(AICONDITION *cond,
 
     NuFParGetWord(parser);
 
-    cond->next_state_name = AIScriptCopyString(parser->word_buf_ptr, load_buff, load_endbuff);
+    cond->next_state_name = AIScriptCopyString(parser->word_buf, load_buff, load_endbuff);
 
     NuFParGetWord(parser);
 
-    if (NuStrICmp(parser->word_buf_ptr, "KeepBlockedMessages") == 0) {
+    if (NuStrICmp(parser->word_buf, "KeepBlockedMessages") == 0) {
         cond->keep_blocked = 1;
     }
 }
@@ -329,14 +329,14 @@ static void xConditions(NUFPAR *parser) {
 
         NuFParGetWord(parser);
 
-        if (NuStrICmp(parser->word_buf_ptr, "}") == 0) {
+        if (NuStrICmp(parser->word_buf, "}") == 0) {
             return;
         }
 
-        if (NuStrICmp(parser->word_buf_ptr, "IF") == 0) {
+        if (NuStrICmp(parser->word_buf, "IF") == 0) {
             NuFParGetWord(parser);
 
-            def = AIConditionFind(parser->word_buf_ptr);
+            def = AIConditionFind(parser->word_buf);
             if (def == NULL) {
                 continue;
             }
@@ -354,34 +354,34 @@ static void xConditions(NUFPAR *parser) {
 
             NuFParGetWord(parser);
 
-            if (NuStrICmp(parser->word_buf_ptr, "=") == 0 || NuStrICmp(parser->word_buf_ptr, "==") == 0) {
+            if (NuStrICmp(parser->word_buf, "=") == 0 || NuStrICmp(parser->word_buf, "==") == 0) {
                 cond->type = EQ;
-            } else if (NuStrICmp(parser->word_buf_ptr, "<") == 0) {
+            } else if (NuStrICmp(parser->word_buf, "<") == 0) {
                 cond->type = LT;
-            } else if (NuStrICmp(parser->word_buf_ptr, ">") == 0) {
+            } else if (NuStrICmp(parser->word_buf, ">") == 0) {
                 cond->type = GT;
-            } else if (NuStrICmp(parser->word_buf_ptr, "<=") == 0) {
+            } else if (NuStrICmp(parser->word_buf, "<=") == 0) {
                 cond->type = LT_EQ;
-            } else if (NuStrICmp(parser->word_buf_ptr, ">=") == 0) {
+            } else if (NuStrICmp(parser->word_buf, ">=") == 0) {
                 cond->type = GT_EQ;
-            } else if (NuStrICmp(parser->word_buf_ptr, "!=") == 0) {
+            } else if (NuStrICmp(parser->word_buf, "!=") == 0) {
                 cond->type = NEQ;
             } else {
-                cond->arg = AIScriptCopyString(parser->word_buf_ptr, load_buff, load_endbuff);
+                cond->arg = AIScriptCopyString(parser->word_buf, load_buff, load_endbuff);
 
                 NuFParGetWord(parser);
 
-                if (NuStrICmp(parser->word_buf_ptr, "=") == 0 || NuStrICmp(parser->word_buf_ptr, "==") == 0) {
+                if (NuStrICmp(parser->word_buf, "=") == 0 || NuStrICmp(parser->word_buf, "==") == 0) {
                     cond->type = EQ;
-                } else if (NuStrICmp(parser->word_buf_ptr, "<") == 0) {
+                } else if (NuStrICmp(parser->word_buf, "<") == 0) {
                     cond->type = LT;
-                } else if (NuStrICmp(parser->word_buf_ptr, ">") == 0) {
+                } else if (NuStrICmp(parser->word_buf, ">") == 0) {
                     cond->type = GT;
-                } else if (NuStrICmp(parser->word_buf_ptr, "<=") == 0) {
+                } else if (NuStrICmp(parser->word_buf, "<=") == 0) {
                     cond->type = LT_EQ;
-                } else if (NuStrICmp(parser->word_buf_ptr, ">=") == 0) {
+                } else if (NuStrICmp(parser->word_buf, ">=") == 0) {
                     cond->type = GT_EQ;
-                } else if (NuStrICmp(parser->word_buf_ptr, "!=") == 0) {
+                } else if (NuStrICmp(parser->word_buf, "!=") == 0) {
                     cond->type = NEQ;
                 }
             }
@@ -392,12 +392,12 @@ static void xConditions(NUFPAR *parser) {
                 char param_idx;
                 char *param;
 
-                param = NuStrIStr(parser->word_buf_ptr, "param");
+                param = NuStrIStr(parser->word_buf, "param");
                 if (param == NULL) {
                     for (int i = 0; i < 4; i++) {
                         char *param_name = load_aiscript->params[i].name;
 
-                        if (param_name != NULL && NuStrICmp(param_name, parser->word_buf_ptr) == 0) {
+                        if (param_name != NULL && NuStrICmp(param_name, parser->word_buf) == 0) {
                             cond->param_idx = i;
                             cond->is_param_idx_valid = 1;
 
@@ -416,7 +416,7 @@ static void xConditions(NUFPAR *parser) {
                     int i;
 
                     for (i = 0; i < aiscript_const_curr; i++) {
-                        if (NuStrICmp(aiscript_const[i].name, parser->word_buf_ptr) == 0) {
+                        if (NuStrICmp(aiscript_const[i].name, parser->word_buf) == 0) {
                             cond->param_val = aiscript_const[i].default_val;
 
                             break;
@@ -424,12 +424,12 @@ static void xConditions(NUFPAR *parser) {
                     }
 
                     if (i == aiscript_const_curr) {
-                        cond->param_val = AiParseExpression(parser->word_buf_ptr);
+                        cond->param_val = AiParseExpression(parser->word_buf);
 
                         if (AiParseExpressionFailed) {
                             cond->is_complex = 1;
                             cond->param_idx = complex_idx++;
-                            cond->complex_arg = AIScriptCopyString(parser->word_buf_ptr, load_buff, load_endbuff);
+                            cond->complex_arg = AIScriptCopyString(parser->word_buf, load_buff, load_endbuff);
                         }
                     }
                 }
@@ -437,19 +437,19 @@ static void xConditions(NUFPAR *parser) {
 
             NuFParGetWord(parser);
 
-            if (NuStrICmp(parser->word_buf_ptr, "goto") == 0) {
+            if (NuStrICmp(parser->word_buf, "goto") == 0) {
                 ConditionsParseFinalise(cond, parser);
-            } else if (NuStrICmp(parser->word_buf_ptr, "and") == 0) {
+            } else if (NuStrICmp(parser->word_buf, "and") == 0) {
                 cond->bool_and = 1;
             }
-        } else if (NuStrICmp(parser->word_buf_ptr, "OnMacro") == 0) {
+        } else if (NuStrICmp(parser->word_buf, "OnMacro") == 0) {
             AICONDITIONMACRO *macro;
 
             NuFParGetWord(parser);
 
             macro = (AICONDITIONMACRO *)NuLinkedListGetHead(&load_aiscript->condition_macros);
             while (macro != NULL) {
-                if (NuStrICmp(macro->name, parser->word_buf_ptr) == 0) {
+                if (NuStrICmp(macro->name, parser->word_buf) == 0) {
                     AICONDITION *macro_last;
 
                     AIScriptCopyConditions(&macro->conditions, load_conditionshdr, load_buff, load_endbuff);
@@ -457,9 +457,9 @@ static void xConditions(NUFPAR *parser) {
 
                     NuFParGetWord(parser);
 
-                    if (NuStrICmp(parser->word_buf_ptr, "goto") == 0) {
+                    if (NuStrICmp(parser->word_buf, "goto") == 0) {
                         ConditionsParseFinalise(macro_last, parser);
-                    } else if (NuStrICmp(parser->word_buf_ptr, "and") == 0) {
+                    } else if (NuStrICmp(parser->word_buf, "and") == 0) {
                         macro_last->bool_and = 1;
                     }
 
@@ -469,7 +469,7 @@ static void xConditions(NUFPAR *parser) {
                 macro = (AICONDITIONMACRO *)NuLinkedListGetNext(&load_aiscript->condition_macros, &macro->list_node);
             }
         } else {
-            NuStrChr(parser->word_buf_ptr, '{');
+            NuStrChr(parser->word_buf, '{');
         }
     }
 }
@@ -495,16 +495,16 @@ static void xRefScript(NUFPAR *parser) {
         while (NuFParGetWord(parser) != 0) {
             char *cursor;
 
-            if (NuStrICmp(parser->word_buf_ptr, "}") == 0) {
+            if (NuStrICmp(parser->word_buf, "}") == 0) {
                 goto done;
             }
 
-            if ((cursor = NuStrIStr(parser->word_buf_ptr, "Script")) != NULL) {
+            if ((cursor = NuStrIStr(parser->word_buf, "Script")) != NULL) {
                 ref_script->name = AIScriptCopyString(cursor + strlen("Script") + 1, load_buff, load_endbuff);
-            } else if ((cursor = NuStrIStr(parser->word_buf_ptr, "ReturnState")) != NULL) {
+            } else if ((cursor = NuStrIStr(parser->word_buf, "ReturnState")) != NULL) {
                 ref_script->return_state_name =
                     AIScriptCopyString(cursor + strlen("ReturnState") + 1, load_buff, load_endbuff);
-            } else if (NuStrICmp(parser->word_buf_ptr, "CONDITIONS") == 0) {
+            } else if (NuStrICmp(parser->word_buf, "CONDITIONS") == 0) {
                 load_conditionshdr = &ref_script->conditions;
                 condition_has_no_goto = 1;
 
@@ -512,10 +512,10 @@ static void xRefScript(NUFPAR *parser) {
 
                 load_conditionshdr = NULL;
                 condition_has_no_goto = 0;
-            } else if (NuStrIStr(parser->word_buf_ptr, "Source") != NULL) {
-                if (NuStrIStr(parser->word_buf_ptr, "Global") != NULL) {
+            } else if (NuStrIStr(parser->word_buf, "Source") != NULL) {
+                if (NuStrIStr(parser->word_buf, "Global") != NULL) {
                     ref_script->check_global_scripts = 1;
-                } else if (NuStrIStr(parser->word_buf_ptr, "Local") != NULL) {
+                } else if (NuStrIStr(parser->word_buf, "Local") != NULL) {
                     ref_script->check_local_scripts = 1;
                 }
             }
@@ -561,7 +561,7 @@ static void xState(NUFPAR *parser) {
 
         memset(load_aistate, 0, sizeof(AISTATE));
 
-        load_aistate->name = AIScriptCopyString(parser->word_buf_ptr, load_buff, load_endbuff);
+        load_aistate->name = AIScriptCopyString(parser->word_buf, load_buff, load_endbuff);
 
         if (NuStrICmp(load_aistate->name, "Base") == 0) {
             NuLinkedListInsert(&load_aiscript->states, &load_aistate->list_node);
@@ -605,7 +605,7 @@ static void xParam(NUFPAR *parser) {
         return;
     }
 
-    load_aiscript->params[param_idx].name = AIScriptCopyString(parser->word_buf_ptr, load_buff, load_endbuff);
+    load_aiscript->params[param_idx].name = AIScriptCopyString(parser->word_buf, load_buff, load_endbuff);
     load_aiscript->params[param_idx].default_val = NuFParGetFloat(parser);
 }
 
@@ -613,9 +613,9 @@ static void xConst(NUFPAR *parser) {
     int cur;
     f32 default_val;
 
-    NuStrLen(parser->word_buf_ptr);
+    NuStrLen(parser->word_buf);
     NuFParGetWord(parser);
-    NuStrNCpy(aiscript_const[aiscript_const_curr].name, parser->word_buf_ptr, 0x20);
+    NuStrNCpy(aiscript_const[aiscript_const_curr].name, parser->word_buf, 0x20);
 
     cur = aiscript_const_curr;
     default_val = NuFParGetFloat(parser);
@@ -637,7 +637,7 @@ static void xConditionMacro(NUFPAR *parser) {
     }
 
     macro->list_node.next = NULL;
-    macro->name = AIScriptCopyString(parser->word_buf_ptr, load_buff, load_endbuff);
+    macro->name = AIScriptCopyString(parser->word_buf, load_buff, load_endbuff);
 
     NuLinkedListAppend(&load_aiscript->condition_macros, &macro->list_node);
 
@@ -663,7 +663,7 @@ static void xActionMacro(NUFPAR *parser) {
     }
 
     macro->list_node.next = NULL;
-    macro->name = AIScriptCopyString(parser->word_buf_ptr, load_buff, load_endbuff);
+    macro->name = AIScriptCopyString(parser->word_buf, load_buff, load_endbuff);
 
     NuLinkedListAppend(&load_aiscript->action_macros, &macro->list_node);
 
@@ -685,17 +685,17 @@ static void xDeriveFromScript(NUFPAR *parser) {
         while (NuFParGetWord(parser) != 0) {
             char *cursor;
 
-            if (NuStrICmp(parser->word_buf_ptr, "}") == 0) {
+            if (NuStrICmp(parser->word_buf, "}") == 0) {
                 goto done;
             }
 
-            if ((cursor = NuStrIStr(parser->word_buf_ptr, "Script")) != NULL) {
+            if ((cursor = NuStrIStr(parser->word_buf, "Script")) != NULL) {
                 load_aiscript->derived_from =
                     AIScriptCopyString(cursor + strlen("Script") + 1, load_buff, load_endbuff);
-            } else if (NuStrIStr(parser->word_buf_ptr, "Source") != NULL) {
-                if (NuStrIStr(parser->word_buf_ptr, "Global") != NULL) {
+            } else if (NuStrIStr(parser->word_buf, "Source") != NULL) {
+                if (NuStrIStr(parser->word_buf, "Global") != NULL) {
                     load_aiscript->is_derived_from_level_script = 0;
-                } else if (NuStrIStr(parser->word_buf_ptr, "Level") != NULL) {
+                } else if (NuStrIStr(parser->word_buf, "Level") != NULL) {
                     load_aiscript->is_derived_from_level_script = 1;
                 }
             }
@@ -720,7 +720,7 @@ static void xInclude(NUFPAR *parser) {
     NuFParGetWord(parser);
     NuFParSuspend(parser);
 
-    AIScriptOpenPakFileParse(&load_aiscript, load_pakfile, parser->word_buf_ptr, load_path, load_buff, load_endbuff);
+    AIScriptOpenPakFileParse(&load_aiscript, load_pakfile, parser->word_buf, load_path, load_buff, load_endbuff);
 
     NuFParResume(parser);
 

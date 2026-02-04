@@ -23,10 +23,10 @@ typedef struct nufpar_s {
     NUFILE file_handle;
     char file_name[256];
 
-    char line_buf[514];
-    char word_buf[514];
-    char *line_buf_ptr;
-    char *word_buf_ptr;
+    char line_buf_store[514];
+    char word_buf_store[514];
+    char *line_buf;
+    char *word_buf;
     int line_buf_size;
     int word_buf_size;
 

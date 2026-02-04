@@ -46,7 +46,7 @@ LAB_00484810:
 
             NuFParGetWord(fp);
 
-            char *a = fp->word_buf_ptr;
+            char *a = fp->word_buf;
 
             if (*a == '\0')
                 goto LAB_00484810;
@@ -156,32 +156,32 @@ LAB_00484810:
             iVar3 = NuFParGetLine(fp);
         }
 
-        if (NuStrICmp(fp->word_buf_ptr, "dir") == 0) {
-            if (NuFParGetWord(fp) != 0 && NuStrLen(fp->word_buf_ptr) < 0x40) {
-                NuStrCpy(level->dir, fp->word_buf_ptr);
+        if (NuStrICmp(fp->word_buf, "dir") == 0) {
+            if (NuFParGetWord(fp) != 0 && NuStrLen(fp->word_buf) < 0x40) {
+                NuStrCpy(level->dir, fp->word_buf);
             }
         } else {
-            if (NuStrICmp(fp->word_buf_ptr, "file") == 0 && NuFParGetWord(fp) != 0 && NuStrLen(fp->word_buf_ptr) < 32) {
-                NuStrCpy(level->name, fp->word_buf_ptr);
+            if (NuStrICmp(fp->word_buf, "file") == 0 && NuFParGetWord(fp) != 0 && NuStrLen(fp->word_buf) < 32) {
+                NuStrCpy(level->name, fp->word_buf);
             }
         }
 
-        if (NuStrICmp(fp->word_buf_ptr, "test_level") == 0) {
+        if (NuStrICmp(fp->word_buf, "test_level") == 0) {
             level->flags = level->flags | LEVEL_TEST;
-        } else if (NuStrICmp(fp->word_buf_ptr, "intro_level") == 0) {
+        } else if (NuStrICmp(fp->word_buf, "intro_level") == 0) {
             level->flags = level->flags | LEVEL_INTRO;
-        } else if (NuStrICmp(fp->word_buf_ptr, "midtro_level") == 0 ||
-                   NuStrICmp(fp->word_buf_ptr, "cutscene_level") == 0) {
+        } else if (NuStrICmp(fp->word_buf, "midtro_level") == 0 ||
+                   NuStrICmp(fp->word_buf, "cutscene_level") == 0) {
             level->flags = level->flags | LEVEL_MIDTRO;
-        } else if (NuStrICmp(fp->word_buf_ptr, "outro_level") == 0) {
+        } else if (NuStrICmp(fp->word_buf, "outro_level") == 0) {
             level->flags = level->flags | LEVEL_OUTRO;
-        } else if (NuStrICmp(fp->word_buf_ptr, "status_level") == 0) {
+        } else if (NuStrICmp(fp->word_buf, "status_level") == 0) {
             level->flags = (LEVELFLAGS)(level->flags & 0xfffffff5 | LEVEL_STATUS);
-        } else if (NuStrICmp(fp->word_buf_ptr, "newgame_level") == 0) {
+        } else if (NuStrICmp(fp->word_buf, "newgame_level") == 0) {
             if (NEWGAME_LDATA == NULL) {
                 level->flags = level->flags | LEVEL_NEWGAME;
             }
-        } else if (NuStrICmp(fp->word_buf_ptr, "loadgame_level") == 0 && LOADGAME_LDATA == NULL) {
+        } else if (NuStrICmp(fp->word_buf, "loadgame_level") == 0 && LOADGAME_LDATA == NULL) {
             level->flags = level->flags | LEVEL_LOADGAME;
         }
     } while (true);
