@@ -6,7 +6,7 @@
 #define PI_OVER_4 0.785398f
 #define NEG_1_OVER_6 -0.166667f
 #define NEG_3_OVER_40 -0.075f
-#define NEG_5_OVER_112 -0.0446429
+#define NEG_5_OVER_112 -0.0446429f
 #define NEG_35_OVER_1152 -0.0303819f
 #define MAX_SHORT_OVER_PI 10430.4f
 
@@ -40,19 +40,23 @@ static short NuASin(f32 sin) {
         transformed_sin = -1.0f;
     }
 
-    return ((something_else * sin + sin) * PI_OVER_4 - (something_else * sin * value) +
-            (something_else * sin * value * something_else * sin * value * something_else * sin * value *
-             NEG_1_OVER_6) +
-            (something_else * sin * value * something_else * sin * value * something_else * sin * value *
-             something_else * sin * value * something_else * sin * value * NEG_3_OVER_40) +
-            (something_else * sin * value * something_else * sin * value * something_else * sin * value *
-             something_else * sin * value * something_else * sin * value * something_else * sin * value *
-             something_else * sin * value * NEG_5_OVER_112) +
-            (something_else * sin * value * something_else * sin * value * something_else * sin * value *
-             something_else * sin * value * something_else * sin * value * something_else * sin * value *
-             something_else * sin * value * something_else * sin * value * something_else * sin * value *
-             NEG_35_OVER_1152)) *
-           10430.4f;
+    return (PI_OVER_4 * (something_else * transformed_sin + sin) - (something_else * transformed_sin * value) +
+            (NEG_1_OVER_6 * ((something_else * transformed_sin * value) * (something_else * transformed_sin * value) *
+                             (something_else * transformed_sin * value))) +
+            (NEG_3_OVER_40 * ((something_else * transformed_sin * value) * (something_else * transformed_sin * value) *
+                              (something_else * transformed_sin * value) * (something_else * transformed_sin * value) *
+                              (something_else * transformed_sin * value))) +
+            (NEG_5_OVER_112 * ((something_else * transformed_sin * value) * (something_else * transformed_sin * value) *
+                               (something_else * transformed_sin * value) * (something_else * transformed_sin * value) *
+                               (something_else * transformed_sin * value) * (something_else * transformed_sin * value) *
+                               (something_else * transformed_sin * value))) +
+            (NEG_35_OVER_1152 *
+             ((something_else * transformed_sin * value) * (something_else * transformed_sin * value) *
+              (something_else * transformed_sin * value) * (something_else * transformed_sin * value) *
+              (something_else * transformed_sin * value) * (something_else * transformed_sin * value) *
+              (something_else * transformed_sin * value) * (something_else * transformed_sin * value) *
+              (something_else * transformed_sin * value)))) *
+           MAX_SHORT_OVER_PI;
 }
 
 short NuACos(f32 cos) {
