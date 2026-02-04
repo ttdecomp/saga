@@ -52,13 +52,13 @@ NuFileDeviceAndroidAPK *g_apkFileDevice;
 
 char g_datfileMode = 1;
 
-int read_critical_section;
+i32 read_critical_section = -1;
 
 static NUDATHDR *curr_dat;
 i32 nufile_try_packed = 0;
 static FILEINFO file_info[33];
-int nufile_buffering_enabled;
-static int nufile_lasterror = 0;
+i32 nufile_buffering_enabled;
+static i32 nufile_lasterror = 0;
 NUDATFILEINFO dat_file_infos[20];
 
 NUFILE_DEVICE host_device = {
@@ -736,8 +736,8 @@ i32 NuFileStatus(NUFILE file) {
     return _unused;
 }
 
-static NUDATFILEINFO *unpack_file_info = NULL;
-static NUDATOPENFILEINFO *unpack_file_odi = 0;
+static NUDATFILEINFO *unpack_file_info;
+static NUDATOPENFILEINFO *unpack_file_odi;
 static i64 unpack_file_pos;
 static i32 decode_buffer_left;
 static char decode_buffer[0x40000];

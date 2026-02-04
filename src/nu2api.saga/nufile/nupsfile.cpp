@@ -24,50 +24,48 @@ i32 NuPSFileWrite(NUPSFILE index, const void *src, i32 len) {
 }
 
 NUPSFILE NuPSFileOpen(char *filepath, NUFILEMODE mode) {
-    char path[1024];
+    char path[0x400];
     NUPSFILE ps_file;
     FILE *file;
 
-    LOG_DEBUG("name=%s, mode=%d", filepath, mode);
+    if (mode == NUFILE_MODE_CNT) {
+        return -1;
+    }
 
-    if (mode != 5) {
-        memset(path, 0, sizeof(path));
-        NuStrCpy(path, filepath);
+    memset(path, 0, sizeof(path));
+    NuStrCpy(path, filepath);
 
-        for (char *c = path; *c != '\0'; c++) {
-            if (*c == '\\') {
-                *c = '/';
-            }
-        }
-
-        ps_file = NuGetFileHandlePS();
-
-        file = NULL;
-        switch (mode) {
-            case NUFILE_READ:
-                file = fopen(path, "rb");
-                break;
-            case NUFILE_WRITE:
-                file = fopen(path, "wb");
-                break;
-            case NUFILE_APPEND:
-                file = fopen(path, "ab+");
-                break;
-            default:
-                return -1;
-        }
-
-        if (file != NULL) {
-            g_fileHandles[ps_file] = file;
-
-            LOG_DEBUG("Opened file %s with index %d", path, ps_file);
-            return ps_file;
+    for (char *cursor = path; *cursor != '\0'; cursor++) {
+        if (*cursor == '\\') {
+            *cursor = '/';
         }
     }
 
-    LOG_WARN("Failed to open file %s", filepath);
+    ps_file = NuGetFileHandlePS();
 
-    return -1;
+    file = NULL;
+    switch (mode) {
+        case NUFILE_READ:
+            file = fopen(path, "rb");
+            break;
+        case NUFILE_WRITE:
+            file = fopen(path, "wb");
+            break;
+        case NUFILE_APPEND:
+            file = fopen(path, "ab+");
+            break;
+        default:
+            return -1;
+    }
+
+    if (file == NULL) {
+        return -1;
+    }
+
+    g_fileHandles[ps_file] = file;
+
+    LOG_DEBUG("Opened file %s with index %d", path, ps_file);
+    return ps_file;
 }
 
 NUPSFILE NuGetFileHandlePS(void) {

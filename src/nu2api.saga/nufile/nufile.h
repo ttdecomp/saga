@@ -10,6 +10,7 @@ typedef enum nufilemode_e {
     NUFILE_APPEND = 2,
     NUFILE_READ_NOWAIT = 3,
     NUFILE_READWRITE = 4,
+    NUFILE_MODE_CNT = 5,
 } NUFILEMODE;
 
 typedef struct filebuff_s {
