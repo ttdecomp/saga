@@ -38,7 +38,7 @@ void Door_RegisterGizmo(int type_id) {
     addtype = Default_ADDGIZMOTYPE;
     addtype.name = "Door";
     addtype.prefix = "";
-    addtype.id = 0;
+    addtype.unknown1 = 0;
     addtype.early_update_fn = NULL;
     addtype.panel_draw_fn = NULL;
     addtype.get_visibility_fn = NULL;

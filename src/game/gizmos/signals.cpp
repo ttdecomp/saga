@@ -80,7 +80,7 @@ void Signals_RegisterGizmo(int type_id) {
     addtype = Default_ADDGIZMOTYPE;
     addtype.name = "Signal";
     addtype.prefix = "";
-    addtype.id = 0x28;
+    addtype.unknown1 = 0x28;
     addtype.early_update_fn = NULL;
     addtype.panel_draw_fn = NULL;
     addtype.get_visibility_fn = NULL;

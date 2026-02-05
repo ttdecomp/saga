@@ -52,9 +52,9 @@ typedef void (*GIZMOEARLYUPDATEFN)(void*, void*, float);
 typedef struct ADDGIZMOTYPE_s {
     char *name;
     char *prefix;
-    i16 id;
-    u8 unknown1;
+    i16 unknown1;
     u8 unknown2;
+    u8 unknown3;
     GIZMOGETMAXGIZMOSFN get_max_gizmos_fn;
     GIZMOADDGIZMOSFN add_gizmos_fn;
     GIZMOEARLYUPDATEFN early_update_fn;

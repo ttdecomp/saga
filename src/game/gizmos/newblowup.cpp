@@ -86,7 +86,7 @@ void NewBlowup_RegisterGizmo(int type_id) {
     addtype = Default_ADDGIZMOTYPE;
     addtype.name = "blowup";
     addtype.prefix = "";
-    addtype.id = 0x100;
+    addtype.unknown1 = 0x100;
     addtype.early_update_fn = GizmoBlowupEarlyUpdate;
     addtype.panel_draw_fn = NULL;
     addtype.get_visibility_fn = Blowup_GetVisibility;

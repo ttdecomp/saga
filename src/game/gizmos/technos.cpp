@@ -82,7 +82,7 @@ void Technos_RegisterGizmo(int type_id) {
     addtype = Default_ADDGIZMOTYPE;
     addtype.name = "Techno";
     addtype.prefix = "";
-    addtype.id = 8;
+    addtype.unknown1 = 8;
     addtype.early_update_fn = Technos_EarlyUpdate;
     addtype.panel_draw_fn = NULL;
     addtype.get_visibility_fn = NULL;

@@ -86,7 +86,7 @@ void GizBuildIts_RegisterGizmo(int type_id) {
     addtype = Default_ADDGIZMOTYPE;
     addtype.name = "GizBuildit";
     addtype.prefix = "";
-    addtype.id = 0x60;
+    addtype.unknown1 = 0x60;
     addtype.early_update_fn = GizBuildIts_EarlyUpdate;
     addtype.panel_draw_fn = NULL;
     addtype.get_visibility_fn = NULL;

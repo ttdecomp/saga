@@ -76,7 +76,7 @@ void Shards_RegisterGizmo(int type_id) {
     addtype = Default_ADDGIZMOTYPE;
     addtype.name = "Shard";
     addtype.prefix = "";
-    addtype.id = 0x30;
+    addtype.unknown1 = 0x30;
     addtype.early_update_fn = Shards_UpdateBeforeCharacters;
     addtype.panel_draw_fn = NULL;
     addtype.get_visibility_fn = NULL;

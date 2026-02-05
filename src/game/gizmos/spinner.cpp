@@ -100,7 +100,7 @@ void Spinner_RegisterGizmo(int type_id) {
     addtype = Default_ADDGIZMOTYPE;
     addtype.name = "Spinner";
     addtype.prefix = "";
-    addtype.id = 0x40;
+    addtype.unknown1 = 0x40;
     addtype.early_update_fn = GizSpinners_Update;
     addtype.panel_draw_fn = GizSpinner_PanelDraw;
     addtype.get_visibility_fn = NULL;

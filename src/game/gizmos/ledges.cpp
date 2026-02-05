@@ -68,7 +68,7 @@ void Ledges_RegisterGizmo(int type_id) {
     addtype = Default_ADDGIZMOTYPE;
     addtype.name = "Ledge";
     addtype.prefix = "";
-    addtype.id = 0x20;
+    addtype.unknown1 = 0x20;
     addtype.early_update_fn = NULL;
     addtype.panel_draw_fn = NULL;
     addtype.get_visibility_fn = NULL;

@@ -89,7 +89,7 @@ void Levers_RegisterGizmo(int type_id) {
 
     addtype = Default_ADDGIZMOTYPE;
     addtype.name = "Lever";
-    addtype.id = 12;
+    addtype.unknown1 = 12;
     addtype.early_update_fn = NULL;
     addtype.prefix = "";
     addtype.panel_draw_fn = NULL;

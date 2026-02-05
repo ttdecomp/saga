@@ -50,7 +50,7 @@ void GizTimer_RegisterGizmo(int type_id) {
     addtype = Default_ADDGIZMOTYPE;
     addtype.name = "GizTimer";
     addtype.prefix = "";
-    addtype.id = 0;
+    addtype.unknown1 = 0;
     addtype.early_update_fn = GizTimer_Update;
     addtype.panel_draw_fn = NULL;
     addtype.get_visibility_fn = NULL;

@@ -72,9 +72,10 @@ void GizPanel_RegisterGizmo(int type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;
+    
     addtype.name = "Panel";
+    addtype.unknown1 = 0xc;
     addtype.prefix = "";
-    addtype.id = 0xc;
     addtype.early_update_fn = NULL;
     addtype.panel_draw_fn = NULL;
     addtype.get_visibility_fn = NULL;

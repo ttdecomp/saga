@@ -82,7 +82,7 @@ void GizmoPickups_RegisterGizmo(int type_id) {
     addtype = Default_ADDGIZMOTYPE;
     addtype.name = "GizmoPickup";
     addtype.prefix = "";
-    addtype.id = 0x100;
+    addtype.unknown1 = 0x100;
     addtype.early_update_fn = NULL;
     addtype.panel_draw_fn = NULL;
     addtype.get_visibility_fn = NULL;

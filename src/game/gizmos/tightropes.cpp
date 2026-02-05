@@ -68,7 +68,7 @@ void TightRopes_RegisterGizmo(int type_id) {
     addtype = Default_ADDGIZMOTYPE;
     addtype.name = "TightRope";
     addtype.prefix = "";
-    addtype.id = 8;
+    addtype.unknown1 = 8;
     addtype.early_update_fn = NULL;
     addtype.panel_draw_fn = NULL;
     addtype.get_visibility_fn = NULL;
