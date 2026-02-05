@@ -9,7 +9,7 @@ extern int blowup_gizmotype_id;
 typedef struct BLOWUP_s {
 } BLOWUP;
 
-void NewBlowup_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* NewBlowup_RegisterGizmo(int type_id);
 
 extern "C" {
 #endif

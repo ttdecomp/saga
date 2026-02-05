@@ -9,7 +9,7 @@ extern int edGizShadow_gizmotype_id;
 typedef struct EDGIZSHADOW_s {
 } EDGIZSHADOW;
 
-void EdGizShadowMachine_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* EdGizShadowMachine_RegisterGizmo(int type_id);
 
 extern "C" {
 #endif

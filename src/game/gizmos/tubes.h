@@ -7,7 +7,7 @@
 typedef struct TUBE_s {
 } TUBE;
 
-void Tubes_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* Tubes_RegisterGizmo(int type_id);
 
 extern "C" {
 #endif

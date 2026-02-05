@@ -50,7 +50,7 @@ static int GizMiniCut_Load(void *, void *) {
     UNIMPLEMENTED();
 }
 
-void MiniCut_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE* MiniCut_RegisterGizmo(int type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;
@@ -84,4 +84,6 @@ void MiniCut_RegisterGizmo(int type_id) {
     addtype.load_fn = GizMiniCut_Load;
     addtype.post_load_fn = NULL;
     addtype.add_level_sfx_fn = NULL;
+
+    return &addtype;
 }

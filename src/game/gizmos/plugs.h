@@ -9,7 +9,7 @@ extern int plug_gizmotype_id;
 typedef struct PLUG_s {
 } PLUG;
 
-void Plugs_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* Plugs_RegisterGizmo(int type_id);
 
 extern "C" {
 #endif

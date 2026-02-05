@@ -74,7 +74,7 @@ static int Tubes_Load(void *, void *) {
     UNIMPLEMENTED();
 }
 
-void Tubes_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE* Tubes_RegisterGizmo(int type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;
@@ -108,4 +108,6 @@ void Tubes_RegisterGizmo(int type_id) {
     addtype.load_fn = Tubes_Load;
     addtype.post_load_fn = NULL;
     addtype.add_level_sfx_fn = NULL;
+
+    return &addtype;
 }

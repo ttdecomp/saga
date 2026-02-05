@@ -9,7 +9,7 @@ extern int grapple_gizmotype_id;
 typedef struct GRAPPLE_s {
 } GRAPPLE;
 
-void Grapples_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* Grapples_RegisterGizmo(int type_id);
 
 extern "C" {
 #endif

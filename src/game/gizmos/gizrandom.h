@@ -9,7 +9,7 @@ extern int gizrandom_gizmotype_id;
 typedef struct GIZRANDOM_s {
 } GIZRANDOM;
 
-void GizRandom_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* GizRandom_RegisterGizmo(int type_id);
 
 extern "C" {
 #endif

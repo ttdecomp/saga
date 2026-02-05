@@ -9,7 +9,7 @@ extern int bombgen_gizmotype_id;
 typedef struct GIZBOMBGEN_s {
 } GIZBOMBGEN;
 
-void GizBombGen_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* GizBombGen_RegisterGizmo(int type_id);
 
 extern "C" {
 #endif

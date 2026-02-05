@@ -7,7 +7,7 @@
 typedef struct SIGNAL_s {
 } SIGNAL;
 
-void Signals_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* Signals_RegisterGizmo(int type_id);
 
 extern "C" {
 #endif

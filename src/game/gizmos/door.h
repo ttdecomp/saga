@@ -9,7 +9,7 @@ extern char door_gizmotype_id;
 typedef struct DOOR_s {
 } DOOR;
 
-void Door_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* Door_RegisterGizmo(int type_id);
 
 extern "C" {
 #endif

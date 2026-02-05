@@ -9,7 +9,7 @@ extern int lever_gizmotype_id;
 typedef struct LEVER_s {
 } LEVER;
 
-void Levers_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* Levers_RegisterGizmo(int type_id);
 
 extern "C" {
 #endif

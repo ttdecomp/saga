@@ -9,7 +9,7 @@ extern int gizpanel_gizmotype_id;
 typedef struct GIZPANEL_s {
 } GIZPANEL;
 
-void GizPanel_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* GizPanel_RegisterGizmo(int type_id);
 
 extern "C" {
 #endif

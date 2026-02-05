@@ -4,47 +4,47 @@
 
 int giztimer_gizmotype_id = -1;
 
-static int GizTimer_GetMaxGizmos(void *timer) {
+int GizTimer_GetMaxGizmos(void *timer) {
     UNIMPLEMENTED();
 }
 
-static void GizTimer_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+void GizTimer_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
     UNIMPLEMENTED();
 }
 
-static void GizTimer_Update(void *, void *, float) {
+void GizTimer_Update(void *, void *, float) {
     UNIMPLEMENTED();
 }
 
-static char *GizTimer_GetGizmoName(GIZMO *gizmo) {
+char *GizTimer_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
 }
 
-static int GizTimer_GetOutput(GIZMO *gizmo, int, int) {
+int GizTimer_GetOutput(GIZMO *gizmo, int, int) {
     UNIMPLEMENTED();
 }
 
-static char *GizTimer_GetOutputName(GIZMO *gizmo, int output_index) {
+char *GizTimer_GetOutputName(GIZMO *gizmo, int output_index) {
+    return "Ping";
+}
+
+int GizTimer_GetNumOutputs(GIZMO *gizmo) {
+    return 1;
+}
+
+void GizTimer_Activate(GIZMO *gizmo, int) {
     UNIMPLEMENTED();
 }
 
-static int GizTimer_GetNumOutputs(GIZMO *gizmo) {
+int GizTimer_ReserveBufferSpace(void *, int) {
     UNIMPLEMENTED();
 }
 
-static void GizTimer_Activate(GIZMO *gizmo, int) {
+int GizTimer_Load(void *, void *) {
     UNIMPLEMENTED();
 }
 
-static int GizTimer_ReserveBufferSpace(void *, int) {
-    UNIMPLEMENTED();
-}
-
-static int GizTimer_Load(void *, void *) {
-    UNIMPLEMENTED();
-}
-
-void GizTimer_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE* GizTimer_RegisterGizmo(int type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;
@@ -79,4 +79,6 @@ void GizTimer_RegisterGizmo(int type_id) {
     addtype.post_load_fn = NULL;
     addtype.add_level_sfx_fn = NULL;
     giztimer_gizmotype_id = type_id;
+
+    return &addtype;
 }

@@ -98,7 +98,7 @@ static void GizForces_AddLevelSfx(void *, void *, int *, int *, int) {
     UNIMPLEMENTED();
 }
 
-void GizForce_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE* GizForce_RegisterGizmo(int type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;
@@ -133,4 +133,6 @@ void GizForce_RegisterGizmo(int type_id) {
     addtype.post_load_fn = GizForces_PostLoad;
     addtype.add_level_sfx_fn = GizForces_AddLevelSfx;
     force_gizmotype_id = type_id;
+
+    return &addtype;
 }

@@ -68,11 +68,11 @@ static int GizPanel_Load(void *, void *) {
     UNIMPLEMENTED();
 }
 
-void GizPanel_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE* GizPanel_RegisterGizmo(int type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;
-    
+
     addtype.name = "Panel";
     addtype.unknown1 = 0xc;
     addtype.prefix = "";
@@ -104,4 +104,6 @@ void GizPanel_RegisterGizmo(int type_id) {
     addtype.post_load_fn = NULL;
     addtype.add_level_sfx_fn = NULL;
     gizpanel_gizmotype_id = type_id;
+
+    return &addtype;
 }

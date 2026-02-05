@@ -9,7 +9,7 @@ extern int hatmachine_gizmotype_id;
 typedef struct HATMACHINE_s {
 } HATMACHINE;
 
-void HatMachine_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* HatMachine_RegisterGizmo(int type_id);
 
 extern "C" {
 #endif

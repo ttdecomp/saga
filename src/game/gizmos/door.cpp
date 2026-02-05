@@ -32,7 +32,7 @@ static void Door_Activate(GIZMO *gizmo, int) {
     UNIMPLEMENTED();
 }
 
-void Door_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE* Door_RegisterGizmo(int type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;
@@ -67,4 +67,6 @@ void Door_RegisterGizmo(int type_id) {
     addtype.post_load_fn = NULL;
     addtype.add_level_sfx_fn = NULL;
     door_gizmotype_id = (char)type_id;
+
+    return &addtype;
 }

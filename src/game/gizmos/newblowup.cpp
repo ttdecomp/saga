@@ -80,7 +80,7 @@ static int gizmoblowup_Load(void *, void *) {
     UNIMPLEMENTED();
 }
 
-void NewBlowup_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE* NewBlowup_RegisterGizmo(int type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;
@@ -115,4 +115,6 @@ void NewBlowup_RegisterGizmo(int type_id) {
     addtype.post_load_fn = NULL;
     addtype.add_level_sfx_fn = NULL;
     blowup_gizmotype_id = type_id;
+
+    return &addtype;
 }

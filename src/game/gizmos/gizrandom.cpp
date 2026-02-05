@@ -36,7 +36,7 @@ static int GizRandom_ReserveBufferSpace(void *, int) {
     UNIMPLEMENTED();
 }
 
-void GizRandom_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE* GizRandom_RegisterGizmo(int type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;
@@ -71,4 +71,6 @@ void GizRandom_RegisterGizmo(int type_id) {
     addtype.post_load_fn = NULL;
     addtype.add_level_sfx_fn = NULL;
     gizrandom_gizmotype_id = type_id;
+
+    return &addtype;
 }

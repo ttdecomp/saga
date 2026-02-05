@@ -7,7 +7,7 @@
 typedef struct TIGHTROPE_s {
 } TIGHTROPE;
 
-void TightRopes_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* TightRopes_RegisterGizmo(int type_id);
 
 extern "C" {
 #endif

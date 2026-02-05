@@ -72,7 +72,7 @@ static int Plugs_Load(void *, void *) {
     UNIMPLEMENTED();
 }
 
-void Plugs_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE* Plugs_RegisterGizmo(int type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;
@@ -107,4 +107,6 @@ void Plugs_RegisterGizmo(int type_id) {
     addtype.post_load_fn = NULL;
     addtype.add_level_sfx_fn = NULL;
     plug_gizmotype_id = type_id;
+
+    return &addtype;
 }

@@ -7,7 +7,7 @@
 typedef struct LEDGE_s {
 } LEDGE;
 
-void Ledges_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* Ledges_RegisterGizmo(int type_id);
 
 extern "C" {
 #endif

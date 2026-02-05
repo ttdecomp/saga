@@ -98,7 +98,7 @@ static void GizTurrets_AddLevelSfx(void *, void *, int *, int *, int) {
     UNIMPLEMENTED();
 }
 
-void GizTurrets_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE* GizTurrets_RegisterGizmo(int type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;
@@ -133,4 +133,6 @@ void GizTurrets_RegisterGizmo(int type_id) {
     addtype.post_load_fn = GizTurrets_PostLoad;
     addtype.add_level_sfx_fn = GizTurrets_AddLevelSfx;
     turret_gizmotype_id = type_id;
+
+    return &addtype;
 }

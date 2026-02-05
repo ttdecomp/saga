@@ -30,7 +30,7 @@ static void AI_Activate(GIZMO *gizmo, int) {
     UNIMPLEMENTED();
 }
 
-void AI_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE* AI_RegisterGizmo(int type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;
@@ -64,4 +64,6 @@ void AI_RegisterGizmo(int type_id) {
     addtype.load_fn = NULL;
     addtype.post_load_fn = NULL;
     addtype.add_level_sfx_fn = NULL;
+
+    return &addtype;
 }

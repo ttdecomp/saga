@@ -7,7 +7,7 @@
 typedef struct GUIDELINE_s {
 } GUIDELINE;
 
-void GuideLines_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* GuideLines_RegisterGizmo(int type_id);
 
 extern "C" {
 #endif

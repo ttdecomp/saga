@@ -36,7 +36,7 @@ static int edGizShadow_Load(void *, void *) {
     UNIMPLEMENTED();
 }
 
-void EdGizShadowMachine_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE* EdGizShadowMachine_RegisterGizmo(int type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;
@@ -71,4 +71,6 @@ void EdGizShadowMachine_RegisterGizmo(int type_id) {
     addtype.post_load_fn = NULL;
     addtype.add_level_sfx_fn = NULL;
     edGizShadow_gizmotype_id = type_id;
+
+    return &addtype;
 }

@@ -85,9 +85,15 @@ typedef struct ADDGIZMOTYPE_s {
     GIZMOADDLEVELSFXFN add_level_sfx_fn;
 } ADDGIZMOTYPE;
 
+typedef ADDGIZMOTYPE* (*REGISTERGIZMOTYPEFN)(int);
 extern ADDGIZMOTYPE Default_ADDGIZMOTYPE;
 
 #ifdef __cplusplus
+
+VARIPTR* GizmoBufferAlloc(VARIPTR* buffer, VARIPTR* buffer_end, int size);
+void RegisterGizmoTypes(VARIPTR* buffer, VARIPTR* buffer_end, REGISTERGIZMOTYPEFN* register_gizmo_type_fns, int unknown);
+void RegisterGizmoTypes_LSW(VARIPTR* buffer, VARIPTR* buffer_end);
+
 extern "C" {
 #endif
 

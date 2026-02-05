@@ -68,7 +68,7 @@ static int edpush_Load(void *, void *) {
     UNIMPLEMENTED();
 }
 
-void Push_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE* Push_RegisterGizmo(int type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;
@@ -103,4 +103,6 @@ void Push_RegisterGizmo(int type_id) {
     addtype.post_load_fn = NULL;
     addtype.add_level_sfx_fn = NULL;
     pushblock_gizmotype_id = type_id;
+
+    return &addtype;
 }

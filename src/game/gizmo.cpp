@@ -1,4 +1,33 @@
 #include "game/gizmo.h"
+#include "decomp.h"
+#include "game/gizmos/ai.h"
+#include "game/gizmos/door.h"
+#include "game/gizmos/edgizshadowmachine.h"
+#include "game/gizmos/gizaimessage.h"
+#include "game/gizmos/gizbombgen.h"
+#include "game/gizmos/gizbuildits.h"
+#include "game/gizmos/gizforce.h"
+#include "game/gizmos/gizmopickups.h"
+#include "game/gizmos/gizobstacles.h"
+#include "game/gizmos/gizpanel.h"
+#include "game/gizmos/gizrandom.h"
+#include "game/gizmos/gizspecial.h"
+#include "game/gizmos/giztimer.h"
+#include "game/gizmos/giztorpmachine.h"
+#include "game/gizmos/gizturrets.h"
+#include "game/gizmos/grapples.h"
+#include "game/gizmos/hatmachine.h"
+#include "game/gizmos/lever.h"
+#include "game/gizmos/minicut.h"
+#include "game/gizmos/newblowup.h"
+#include "game/gizmos/plugs.h"
+#include "game/gizmos/portal.h"
+#include "game/gizmos/push.h"
+#include "game/gizmos/spinner.h"
+#include "game/gizmos/technos.h"
+#include "game/gizmos/teleport.h"
+#include "game/gizmos/tubes.h"
+#include "game/gizmos/zipups.h"
 
 static int DefaultGizmo_GetOutput(GIZMO *, int, int) {
     return 0;
@@ -47,3 +76,60 @@ ADDGIZMOTYPE Default_ADDGIZMOTYPE = {
     NULL,                       // post_load_fn
     NULL,                       // add_level_sfx_fn
 };
+
+REGISTERGIZMOTYPEFN GizmoTypesLSW[] = {GizObstacles_RegisterGizmo,
+                                       GizBuildIts_RegisterGizmo,
+                                       GizForce_RegisterGizmo,
+                                       NewBlowup_RegisterGizmo,
+                                       GizmoPickups_RegisterGizmo,
+                                       Levers_RegisterGizmo,
+                                       Spinner_RegisterGizmo,
+                                       MiniCut_RegisterGizmo,
+                                       Tubes_RegisterGizmo,
+                                       ZipUps_RegisterGizmo,
+                                       GizTurrets_RegisterGizmo,
+                                       GizBombGen_RegisterGizmo,
+                                       AI_RegisterGizmo,
+                                       GizSpecial_RegisterGizmo,
+                                       GizAIMessage_RegisterGizmo,
+                                       GizTimer_RegisterGizmo,
+                                       GizRandom_RegisterGizmo,
+                                       GizPanel_RegisterGizmo,
+                                       HatMachine_RegisterGizmo,
+                                       Push_RegisterGizmo,
+                                       Door_RegisterGizmo,
+                                       Teleport_RegisterGizmo,
+                                       GizTorpMachine_RegisterGizmo,
+                                       EdGizShadowMachine_RegisterGizmo,
+                                       Portal_RegisterGizmo,
+                                       Grapples_RegisterGizmo,
+                                       Plugs_RegisterGizmo,
+                                       Technos_RegisterGizmo,
+                                       NULL};
+
+#define GIZMO_TYPES_LSW_COUNT ((sizeof(GizmoTypesLSW) / sizeof(REGISTERGIZMOTYPEFN)) - 1)
+
+VARIPTR *GizmoBufferAlloc(VARIPTR *buffer, VARIPTR *buffer_end, int size) {
+    VARIPTR *ptr = NULL;
+
+    if (buffer_end != NULL && buffer != NULL) {
+        if (buffer_end->addr > buffer->addr + size) {
+            ptr = (VARIPTR *)ALIGN(buffer->addr, 16);
+            buffer->addr = (usize)ptr + size;
+            memset(ptr, 0, size);
+        }
+    }
+
+    return ptr;
+}
+
+void RegisterGizmoTypes(VARIPTR *buffer, VARIPTR *buffer_end, REGISTERGIZMOTYPEFN *register_gizmo_type_fns,
+                        int unknown) {
+    UNIMPLEMENTED();
+}
+
+void RegisterGizmoTypes_LSW(VARIPTR *buffer, VARIPTR *buffer_end) {
+    REGISTERGIZMOTYPEFN gizmo_types[GIZMO_TYPES_LSW_COUNT + 1];
+    memcpy(gizmo_types, GizmoTypesLSW, sizeof(GizmoTypesLSW));
+    RegisterGizmoTypes(buffer, buffer_end, gizmo_types, 12);
+}

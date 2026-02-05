@@ -9,7 +9,7 @@ extern int techno_gizmotype_id;
 typedef struct TECHNO_s {
 } TECHNO;
 
-void Technos_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* Technos_RegisterGizmo(int type_id);
 
 extern "C" {
 #endif

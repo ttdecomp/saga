@@ -9,7 +9,7 @@ extern int gizmopickup_typeid;
 typedef struct GIZMOPICKUP_s {
 } GIZMOPICKUP;
 
-void GizmoPickups_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* GizmoPickups_RegisterGizmo(int type_id);
 
 extern "C" {
 #endif

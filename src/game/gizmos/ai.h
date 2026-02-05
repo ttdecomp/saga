@@ -7,7 +7,7 @@
 typedef struct AI_s {
 } AI;
 
-void AI_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* AI_RegisterGizmo(int type_id);
 
 extern "C" {
 #endif

@@ -70,7 +70,7 @@ static int Attractos_Load(void *, void *) {
     UNIMPLEMENTED();
 }
 
-void Attractos_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE* Attractos_RegisterGizmo(int type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;
@@ -104,4 +104,6 @@ void Attractos_RegisterGizmo(int type_id) {
     addtype.load_fn = Attractos_Load;
     addtype.post_load_fn = NULL;
     addtype.add_level_sfx_fn = NULL;
+
+    return &addtype;
 }

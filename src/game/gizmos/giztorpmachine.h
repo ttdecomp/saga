@@ -9,7 +9,7 @@ extern int giztorpmachine_gizmotype_id;
 typedef struct GIZTORPMACHINE_s {
 } GIZTORPMACHINE;
 
-void GizTorpMachine_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* GizTorpMachine_RegisterGizmo(int type_id);
 
 extern "C" {
 #endif

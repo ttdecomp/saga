@@ -9,7 +9,7 @@ extern int portal_gizmotype_id;
 typedef struct PORTAL_s {
 } PORTAL;
 
-void Portal_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* Portal_RegisterGizmo(int type_id);
 
 extern "C" {
 #endif

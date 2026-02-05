@@ -62,7 +62,7 @@ static int TightRopes_Load(void *, void *) {
     UNIMPLEMENTED();
 }
 
-void TightRopes_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE* TightRopes_RegisterGizmo(int type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;
@@ -96,4 +96,6 @@ void TightRopes_RegisterGizmo(int type_id) {
     addtype.load_fn = TightRopes_Load;
     addtype.post_load_fn = NULL;
     addtype.add_level_sfx_fn = NULL;
+
+    return &addtype;
 }

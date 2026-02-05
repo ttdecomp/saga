@@ -80,7 +80,7 @@ static void GizBuildIts_PostLoad(void *, void *) {
     UNIMPLEMENTED();
 }
 
-void GizBuildIts_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE* GizBuildIts_RegisterGizmo(int type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;
@@ -115,4 +115,6 @@ void GizBuildIts_RegisterGizmo(int type_id) {
     addtype.post_load_fn = GizBuildIts_PostLoad;
     addtype.add_level_sfx_fn = NULL;
     gizbuildit_gizmotype_id = type_id;
+
+    return &addtype;
 }

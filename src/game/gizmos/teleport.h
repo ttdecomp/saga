@@ -9,7 +9,7 @@ extern int teleport_gizmotype_id;
 typedef struct TELEPORT_s {
 } TELEPORT;
 
-void Teleport_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* Teleport_RegisterGizmo(int type_id);
 
 extern "C" {
 #endif
