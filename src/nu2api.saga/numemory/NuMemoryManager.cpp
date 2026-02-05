@@ -1,9 +1,9 @@
+#include "nu2api.saga/numemory/NuMemoryManager.h"
+
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include "nu2api.saga/numemory/NuMemoryManager.h"
 
 #include "nu2api.saga/nucore/common.h"
 #include "nu2api.saga/nucore/nustring.h"
@@ -316,13 +316,13 @@ void NuMemoryManager::BlockFree(void *ptr, u32 flags) {
         u32 tag_value;
         u32 manager_idx;
 
-        manager->ValidateAddress(ptr, "BlockFree");
+        manager->ValidateAddress(ptr, __FUNCTION__);
 
         header = (Header *)((usize)ptr - m_headerSize);
 
-        manager->ValidateBlockIsAllocated(header, "BlockFree");
-        manager->ValidateBlockFlags(header, flags, "BlockFree");
-        manager->ValidateBlockEndTags(header, "BlockFree");
+        manager->ValidateBlockIsAllocated(header, __FUNCTION__);
+        manager->ValidateBlockFlags(header, flags, __FUNCTION__);
+        manager->ValidateBlockEndTags(header, __FUNCTION__);
 
         end_tag = END_TAG(header, BLOCK_SIZE(header->value));
 
@@ -339,7 +339,7 @@ void NuMemoryManager::BlockFree(void *ptr, u32 flags) {
             u32 left_end;
             FreeHeader *final;
 
-            manager->ValidateBlockIsPaged(ptr, "BlockFree");
+            manager->ValidateBlockIsPaged(ptr, __FUNCTION__);
 
             pthread_mutex_lock(&manager->mutex);
 
@@ -397,25 +397,27 @@ inline void NuMemoryManager::MergeBlocks(Header *left, Header *right, const char
     u32 combined_no_hi_bit;
     u32 *end_tag;
 
-    ValidateBlockEndTags(right, "BlockFree[R]");
+    ValidateBlockEndTags(right, caller);
 
     BinUnlink((FreeHeader *)right);
 
     combined_values = (left->value & BLOCK_SIZE_MASK) + (right->value & BLOCK_SIZE_MASK);
     alloc_value = left->value & ALLOC_MASK;
-    new_value = combined_values & 0x3fffffff;
-    combined_no_hi_bit = combined_values & 0x07ffffff;
+    new_value = combined_values & 0x3fffffff | alloc_value;
+    combined_no_hi_bit = combined_values & BLOCK_SIZE_MASK;
 
     left->value = new_value;
 
+    u32 manager_idx = this->idx;
+
     end_tag = END_TAG(left, combined_no_hi_bit * 4);
-    if ((combined_values & 0x38000000) == 0 && alloc_value == 0) {
+    if ((combined_values & ALLOC_MASK) == 0 && alloc_value == 0) {
         *end_tag = combined_no_hi_bit;
-    } else if (this->idx < 0x1e) {
-        *end_tag = ((this->idx + 1) << 0x1b) | combined_no_hi_bit;
+    } else if (manager_idx < 0x1e) {
+        *end_tag = ((manager_idx + 1) << 0x1b) | combined_no_hi_bit;
     } else {
         *end_tag = new_value | HEADER_MGR_HI_MASK;
-        *END_TAG_HI(left, BLOCK_SIZE(left->value)) = this->idx;
+        *END_TAG_HI(left, BLOCK_SIZE(left->value)) = manager_idx;
     }
 }
 
@@ -760,9 +762,94 @@ void NuMemoryManager::StatsRemoveFragment(NuMemoryManager::FreeHeader *header) {
 }
 
 u32 NuMemoryManager::CalculateLargestFragmentSize() {
+    u32 largest_frag_unadjusted;
+    u32 largest_frag_size;
+    FreeHeader *largest_frag;
+
+    if ((m_flags & MEM_MANAGER_IN_ERROR_STATE) != 0) {
+        return 0;
+    }
+
+    pthread_mutex_lock(&this->mutex);
+
+    largest_frag = FindLargestFragment();
+    if (largest_frag == NULL) {
+        pthread_mutex_unlock(&this->mutex);
+
+        return 0;
+    }
+
+    largest_frag_unadjusted = BLOCK_SIZE(largest_frag->block_header.value);
+
+    pthread_mutex_unlock(&this->mutex);
+
+    largest_frag_unadjusted -= m_headerSize;
+
+    largest_frag_size = this->idx < 0x1e ? largest_frag_unadjusted - 4 : largest_frag_unadjusted - 8;
+
+    return largest_frag_size;
 }
 
 u32 NuMemoryManager::CalculateFreeBytes() {
+    u32 free_bytes = 0;
+
+    if ((m_flags & MEM_MANAGER_IN_ERROR_STATE) != 0) {
+        return 0;
+    }
+
+    pthread_mutex_lock(&this->mutex);
+
+    for (i32 i = 0x15; i >= 0; i--) {
+        for (FreeHeader *header = &this->large_bins[i]; header != NULL; header = header->next) {
+            free_bytes += BLOCK_SIZE(header->block_header.value);
+        }
+    }
+
+    for (i32 i = 0xff; i >= 0; i--) {
+        for (FreeHeader *header = &this->small_bins[i]; header != NULL; header = header->next) {
+            free_bytes += BLOCK_SIZE(header->block_header.value);
+        }
+    }
+
+    pthread_mutex_unlock(&this->mutex);
+
+    return free_bytes;
+}
+
+NuMemoryManager::FreeHeader *NuMemoryManager::FindLargestFragment() {
+    FreeHeader *frag;
+
+    if ((m_flags & MEM_MANAGER_IN_ERROR_STATE) != 0) {
+        return NULL;
+    }
+
+    pthread_mutex_lock(&this->mutex);
+
+    for (i32 i = 0x15; i >= 0; i--) {
+        FreeHeader *header = &this->large_bins[i];
+
+        do {
+            frag = header;
+            header = header->next;
+        } while (header != NULL);
+
+        if (BLOCK_SIZE(frag->block_header.value) != 0) {
+            goto done;
+        }
+    }
+
+    for (i32 i = 0xff; i >= 0; i--) {
+        frag = this->small_bins[i].next;
+
+        if (frag != NULL) {
+            break;
+        }
+    }
+
+done:
+    pthread_mutex_unlock(&this->mutex);
+
+    return frag;
 }
 
 void NuMemoryManager::Dump(u32 _unknown, const char *filepath) {

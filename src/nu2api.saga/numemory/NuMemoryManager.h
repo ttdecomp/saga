@@ -225,6 +225,8 @@ class NuMemoryManager {
     u32 CalculateLargestFragmentSize();
     u32 CalculateFreeBytes();
 
+    FreeHeader *FindLargestFragment();
+
     void Dump(u32 _unknown, const char *filepath);
 
     void StrandBlocksForContext(Context *ctx, u32 &stranded_block_count, u32 &_unknown, Header *&largest_stranded,
