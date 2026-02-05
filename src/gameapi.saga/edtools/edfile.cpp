@@ -179,7 +179,7 @@ unsigned char EdFileReadUnsignedChar() {
     return data;
 }
 
-f32 EdFileReadf32() {
+f32 EdFileReadFloat() {
     f32 data;
 
     EdFileRead(&data, 4);
@@ -240,9 +240,9 @@ u16 EdFileReadUnsignedShort() {
 }
 
 void EdFileReadNuVec(NUVEC *out) {
-    out->x = EdFileReadf32();
-    out->y = EdFileReadf32();
-    out->z = EdFileReadf32();
+    out->x = EdFileReadFloat();
+    out->y = EdFileReadFloat();
+    out->z = EdFileReadFloat();
 }
 
 void EdFileWrite(void *data, int len) {
