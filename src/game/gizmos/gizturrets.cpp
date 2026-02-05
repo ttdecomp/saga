@@ -66,7 +66,7 @@ static int GizTurrets_BoltHit(void *, void *, void *, NUVEC *, int, float, NUVEC
     UNIMPLEMENTED();
 }
 
-static void GizTurrets_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *GizTurrets_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

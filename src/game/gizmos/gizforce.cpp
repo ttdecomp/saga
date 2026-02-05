@@ -66,7 +66,7 @@ static int GizForces_BoltHit(void *, void *, void *, NUVEC *, int, float, NUVEC 
     UNIMPLEMENTED();
 }
 
-static void GizForces_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *GizForces_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

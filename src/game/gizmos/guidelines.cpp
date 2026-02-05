@@ -38,7 +38,7 @@ static void GuideLine_SetVisibility(GIZMO *gizmo, int) {
     UNIMPLEMENTED();
 }
 
-static void GuideLines_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *GuideLines_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

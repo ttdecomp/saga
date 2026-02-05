@@ -70,7 +70,7 @@ static int GizSpinner_HasBoltHit(void *, void *, void *, NUVEC *, int, float, NU
     UNIMPLEMENTED();
 }
 
-static void GizSpinner_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *GizSpinner_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

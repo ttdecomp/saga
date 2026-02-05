@@ -52,7 +52,7 @@ static int GizmoBuildit_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
 }
 
-static void GizBuildIts_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *GizBuildIts_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

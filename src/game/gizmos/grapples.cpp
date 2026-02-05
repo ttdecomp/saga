@@ -44,7 +44,7 @@ static void Grapple_SetVisibility(GIZMO *gizmo, int) {
     UNIMPLEMENTED();
 }
 
-static void Grapples_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *Grapples_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

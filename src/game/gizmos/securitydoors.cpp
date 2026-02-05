@@ -46,7 +46,7 @@ static int SecurityDoor_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
 }
 
-static void SecurityDoors_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *SecurityDoors_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

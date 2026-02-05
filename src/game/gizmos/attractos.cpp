@@ -46,7 +46,7 @@ static int Attracto_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
 }
 
-static void Attractos_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *Attractos_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

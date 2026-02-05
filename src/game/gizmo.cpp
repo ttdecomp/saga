@@ -1,5 +1,6 @@
 #include "game/gizmo.h"
 #include "decomp.h"
+#include "nu2api.saga/nucore/nustring.h"
 #include "game/gizmos/ai.h"
 #include "game/gizmos/door.h"
 #include "game/gizmos/edgizshadowmachine.h"
@@ -110,6 +111,8 @@ static REGISTERGIZMOTYPEFN GizmoTypesLSW[] = {GizObstacles_RegisterGizmo,
 
 #define GIZMO_TYPES_LSW_COUNT ((sizeof(GizmoTypesLSW) / sizeof(REGISTERGIZMOTYPEFN)) - 1)
 
+GIZMOTYPES* gizmo_types;
+
 VARIPTR *GizmoBufferAlloc(VARIPTR *buffer, VARIPTR *buffer_end, int size) {
     VARIPTR *ptr = NULL;
 
@@ -126,7 +129,100 @@ VARIPTR *GizmoBufferAlloc(VARIPTR *buffer, VARIPTR *buffer_end, int size) {
 
 void RegisterGizmoTypes(VARIPTR *buffer, VARIPTR *buffer_end, REGISTERGIZMOTYPEFN *register_gizmo_type_fns,
                         int unknown) {
-    UNIMPLEMENTED();
+    ADDGIZMOTYPE *addgizmo;
+    GIZMOTYPES *types;
+    GIZMOTYPE *gizmo;
+    void *pvVar4;
+    VARIPTR* pvVar3;
+    int i;
+
+    if (gizmo_types != NULL || register_gizmo_type_fns == NULL || *register_gizmo_type_fns == NULL) {
+        return;
+    }
+
+    int ntypes = 0;
+    for (; register_gizmo_type_fns[ntypes] != NULL; ntypes++) {}
+
+    types = (GIZMOTYPES *)GizmoBufferAlloc(buffer, buffer_end, 0xc);
+    gizmo_types = types;
+    if (types == NULL) {
+        return;
+    }
+
+    types->unknown = unknown;
+    types->types = (GIZMOTYPE *)GizmoBufferAlloc(buffer, buffer_end, ntypes * sizeof(GIZMOTYPE));
+    gizmo = gizmo_types->types;
+
+    if (gizmo == NULL) {
+        return;
+    }
+
+    gizmo_types->count = ntypes;
+
+    for (int n = 0; n < gizmo_types->count; n++, gizmo++) {
+        addgizmo = register_gizmo_type_fns[n](n);
+
+        if (*addgizmo->prefix != '\0' && n != 0) {
+            i = 0;
+            do {
+                while (gizmo_types->types[i].prefix[0] == '\0') {
+                    i = i + 1;
+                    if (i == n) goto copy_data;
+                }
+                NuStrICmp(addgizmo->prefix, gizmo_types->types[i].prefix);
+                i = i + 1;
+            } while (i != n);
+        }
+
+    copy_data:
+        NuStrCpy(gizmo->name, addgizmo->name);
+        NuStrNCpy(gizmo->prefix, addgizmo->prefix, sizeof(gizmo->prefix));
+        gizmo->fns.unknown1 = addgizmo->fns.unknown1;
+        gizmo->fns.get_max_gizmos_fn = addgizmo->fns.get_max_gizmos_fn;
+        gizmo->fns.add_gizmos_fn = addgizmo->fns.add_gizmos_fn;
+        gizmo->fns.early_update_fn = addgizmo->fns.early_update_fn;
+        gizmo->fns.late_update_fn = addgizmo->fns.late_update_fn;
+        gizmo->fns.draw_fn = addgizmo->fns.draw_fn;
+        gizmo->fns.panel_draw_fn = addgizmo->fns.panel_draw_fn;
+        gizmo->fns.get_gizmo_name_fn = addgizmo->fns.get_gizmo_name_fn;
+        gizmo->fns.get_output_fn = addgizmo->fns.get_output_fn;
+        gizmo->fns.get_output_name_fn = addgizmo->fns.get_output_name_fn;
+        gizmo->fns.get_num_outputs_fn = addgizmo->fns.get_num_outputs_fn;
+        gizmo->fns.activate_fn = addgizmo->fns.activate_fn;
+        gizmo->fns.activate_rev_fn = addgizmo->fns.activate_rev_fn;
+        gizmo->fns.set_visibility_fn = addgizmo->fns.set_visibility_fn;
+        gizmo->fns.get_visibility_fn = addgizmo->fns.get_visibility_fn;
+        gizmo->fns.get_pos_fn = addgizmo->fns.get_pos_fn;
+        gizmo->fns.using_special_fn = addgizmo->fns.using_special_fn;
+        gizmo->fns.bolt_hit_plat_fn = addgizmo->fns.bolt_hit_plat_fn;
+        gizmo->fns.get_best_bolt_target_fn = addgizmo->fns.get_best_bolt_target_fn;
+        gizmo->fns.bolt_hit_fn = addgizmo->fns.bolt_hit_fn;
+        gizmo->fns.allocate_progress_data_fn = addgizmo->fns.allocate_progress_data_fn;
+        gizmo->fns.clear_progress_fn = addgizmo->fns.clear_progress_fn;
+        gizmo->fns.store_progress_fn = addgizmo->fns.store_progress_fn;
+        gizmo->fns.reset_fn = addgizmo->fns.reset_fn;
+        gizmo->fns.reserve_buffer_space_fn = addgizmo->fns.reserve_buffer_space_fn;
+        gizmo->fns.load_fn = addgizmo->fns.load_fn;
+        gizmo->fns.post_load_fn = addgizmo->fns.post_load_fn;
+        gizmo->fns.add_level_sfx_fn = addgizmo->fns.add_level_sfx_fn;
+
+        pvVar4 = (void *)addgizmo->fns.allocate_progress_data_fn;
+
+        if (pvVar4 != NULL && gizmo_types->unknown != 0) {
+            pvVar3 = GizmoBufferAlloc(buffer, buffer_end, gizmo_types->unknown << 2);
+            gizmo->buffer = pvVar3;
+            if (types != NULL && gizmo_types->unknown > 0) {
+                i = 0;
+                while (1) {
+                    void* pvVar5 = gizmo->fns.allocate_progress_data_fn(buffer, buffer_end);
+                    pvVar3[i].void_ptr = pvVar5;
+                    i = i + 1;
+                    if (gizmo_types->unknown <= i) break;
+                    pvVar3 = gizmo->buffer;
+                }
+            }
+        }
+    }
 }
 
 void RegisterGizmoTypes_LSW(VARIPTR *buffer, VARIPTR *buffer_end) {

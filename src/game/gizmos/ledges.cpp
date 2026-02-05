@@ -38,7 +38,7 @@ static void Ledge_SetVisibility(GIZMO *gizmo, int) {
     UNIMPLEMENTED();
 }
 
-static void Ledges_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *Ledges_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

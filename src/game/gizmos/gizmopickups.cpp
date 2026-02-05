@@ -48,7 +48,7 @@ static int GizmoPickup_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
 }
 
-static void GizmoPickups_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *GizmoPickups_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

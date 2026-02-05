@@ -60,7 +60,7 @@ static void Lever_SetVisibility(GIZMO *gizmo, int) {
     UNIMPLEMENTED();
 }
 
-static void Levers_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *Levers_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

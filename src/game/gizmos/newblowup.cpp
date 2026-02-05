@@ -56,7 +56,7 @@ static int GizmoBlowup_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
 }
 
-static void Blowup_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *Blowup_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

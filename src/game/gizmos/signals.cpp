@@ -50,7 +50,7 @@ static int Signal_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
 }
 
-static void Signals_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *Signals_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

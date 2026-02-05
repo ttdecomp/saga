@@ -52,7 +52,7 @@ static int Techno_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
 }
 
-static void Technos_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *Technos_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

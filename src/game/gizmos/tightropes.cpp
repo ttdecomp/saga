@@ -38,7 +38,7 @@ static void TightRope_SetVisibility(GIZMO *gizmo, int) {
     UNIMPLEMENTED();
 }
 
-static void TightRopes_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *TightRopes_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

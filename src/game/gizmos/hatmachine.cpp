@@ -44,7 +44,7 @@ static void HatMachine_SetVisibility(GIZMO *gizmo, int) {
     UNIMPLEMENTED();
 }
 
-static void HatMachines_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *HatMachines_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 
@@ -56,7 +56,7 @@ static void HatMachines_StoreProgress(void *, void *, void *) {
     UNIMPLEMENTED();
 }
 
-static void HatMachines_Reset(void *, void *, void *) {
+static void HatMachines_Reset(void *, void *, void*) {
     UNIMPLEMENTED();
 }
 

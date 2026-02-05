@@ -44,7 +44,7 @@ static void GizPanel_SetVisibility(GIZMO *gizmo, int) {
     UNIMPLEMENTED();
 }
 
-static void GizPanels_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *GizPanels_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

@@ -48,7 +48,7 @@ static void ZipUp_SetVisibility(GIZMO *gizmo, int) {
     UNIMPLEMENTED();
 }
 
-static void ZipUps_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *ZipUps_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

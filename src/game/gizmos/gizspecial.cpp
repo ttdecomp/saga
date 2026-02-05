@@ -50,7 +50,7 @@ static void GizSpecial_UsingSpecial(GIZMO **, void *, int, char *) {
     UNIMPLEMENTED();
 }
 
-static void GizSpecial_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *GizSpecial_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

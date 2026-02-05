@@ -66,7 +66,7 @@ static int GizObstacles_BoltHit(void *, void *, void *, NUVEC *, int, float, NUV
     UNIMPLEMENTED();
 }
 
-static void GizObstacles_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *GizObstacles_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

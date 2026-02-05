@@ -36,7 +36,7 @@ static int Portal_ActivateRev(GIZMO *gizmo, int, int) {
     UNIMPLEMENTED();
 }
 
-static void Portals_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *Portals_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

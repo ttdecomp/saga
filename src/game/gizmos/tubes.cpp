@@ -50,7 +50,7 @@ static int Tube_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
 }
 
-static void Tubes_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *Tubes_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

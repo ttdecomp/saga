@@ -46,7 +46,7 @@ static void Shard_SetVisibility(GIZMO *gizmo, int) {
     UNIMPLEMENTED();
 }
 
-static void Shards_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *Shards_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

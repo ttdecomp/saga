@@ -44,7 +44,7 @@ static int Pushblocks_BoltHitPlat(void *, void *, BOLT *, unsigned char *) {
     UNIMPLEMENTED();
 }
 
-static void Push_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *Push_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

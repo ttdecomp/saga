@@ -44,7 +44,7 @@ static int GizmoBombGen_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
 }
 
-static void GizBombGens_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *GizBombGens_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 

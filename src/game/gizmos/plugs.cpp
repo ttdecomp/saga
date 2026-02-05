@@ -48,7 +48,7 @@ static int Plug_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
 }
 
-static void Plugs_AllocateProgressData(VARIPTR *, VARIPTR *) {
+static void *Plugs_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 
