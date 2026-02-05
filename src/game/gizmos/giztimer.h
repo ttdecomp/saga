@@ -7,9 +7,9 @@ extern int giztimer_gizmotype_id;
 
 typedef struct GIZTIMER_s {
     f32 time_remaining;
-    f32 unknown;
+    f32 start_time;
     char filler1[2];
-    char active; // unsure if this is actually what this is
+    unsigned char flags; // unsure if this is actually what this is
     char filler2;
     char name[16];
 } GIZTIMER;
@@ -24,7 +24,7 @@ char *GizTimer_GetGizmoName(GIZMO *gizmo);
 int GizTimer_GetOutput(GIZMO *gizmo, int, int);
 char *GizTimer_GetOutputName(GIZMO *gizmo, int output_index);
 int GizTimer_GetNumOutputs(GIZMO *gizmo);
-void GizTimer_Activate(GIZMO *gizmo, int);
+void GizTimer_Activate(GIZMO *gizmo, int unknown);
 int GizTimer_ReserveBufferSpace(void *, int);
 int GizTimer_Load(void *world_info, void *);
 

@@ -2,6 +2,7 @@
 
 #include "decomp.h"
 #include "gameapi.saga/edtools/edfile.h"
+#include "lostandfound/qrand.h"
 
 int giztimer_gizmotype_id = -1;
 
@@ -33,7 +34,7 @@ char *GizTimer_GetGizmoName(GIZMO *gizmo) {
 }
 
 int GizTimer_GetOutput(GIZMO *gizmo, int, int) {
-    if (gizmo->object.timer->active & 1) {
+    if (gizmo->object.timer->flags & 1) {
         return gizmo->object.timer->time_remaining <= 0.0f;
     }
 
@@ -48,7 +49,15 @@ int GizTimer_GetNumOutputs(GIZMO *gizmo) {
     return 1;
 }
 
-void GizTimer_Activate(GIZMO *gizmo, int) {
+void GizTimer_Activate(GIZMO *gizmo, int unknown) {
+    // if ((gizmo->object.timer->flags & 2) == 0) {
+    //     gizmo->object.timer->time_remaining = gizmo->object.timer->start_time;
+    // } else {
+    //     gizmo->object.timer->time_remaining = QRAND_FLOAT() * gizmo->object.timer->start_time;
+    // }
+
+    // gizmo->object.timer->flags = gizmo->object.timer->flags & 0xfe | ~-(unknown == 0) & 1U;
+
     UNIMPLEMENTED();
 }
 
