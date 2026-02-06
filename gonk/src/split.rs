@@ -531,7 +531,7 @@ struct ObjDiff {
 struct ObjDiffUnit {
     name: String,
     target_path: PathBuf,
-    base_path: String,
+    base_path: PathBuf,
     scratch: Option<ObjDiffScratch>,
 }
 
@@ -660,7 +660,7 @@ pub fn split() -> anyhow::Result<()> {
         objdiff_units.push(ObjDiffUnit {
             name: name.display().to_string(),
             target_path: output_path,
-            base_path: binary.display().to_string(),
+            base_path: binary,
             scratch: Some(ObjDiffScratch {
                 platform: String::from("android_x86"),
                 compiler: String::from("ndk-r8e-gcc-4.7"),
@@ -700,7 +700,7 @@ pub fn split() -> anyhow::Result<()> {
     objdiff_units.push(ObjDiffUnit {
         name: "remaining".to_string(),
         target_path: PathBuf::from("build/split/remaining.c.o"),
-        base_path: String::from("remaining.c.o"),
+        base_path: PathBuf::from("remaining.c.o"),
         scratch: None,
     });
 
