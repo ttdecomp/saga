@@ -236,3 +236,7 @@ void RegisterGizmoTypes_LSW(VARIPTR *buffer, VARIPTR *buffer_end) {
     memcpy(gizmo_types, GizmoTypesLSW, sizeof(GizmoTypesLSW));
     RegisterGizmoTypes(buffer, buffer_end, gizmo_types, 12);
 }
+
+GIZMO *AddGizmo(GIZMOSYS *gizmo_sys, int, char *, void *) {
+    UNIMPLEMENTED();
+}

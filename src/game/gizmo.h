@@ -7,12 +7,12 @@ struct GIZTIMER_s;
 
 typedef struct GIZMO_s {
     union {
-        struct GIZTIMER_s* timer;
+        struct GIZTIMER_s *timer;
     } object;
 } GIZMO;
 
 typedef struct GIZMOSYS_s {
-    
+
 } GIZMOSYS;
 
 typedef struct GIZMOSET_s {
@@ -48,10 +48,10 @@ typedef int (*GIZMOBOLTHITFN)(void *, void *, void *, NUVEC *, int, float, NUVEC
                               unsigned char *);
 typedef void (*GIZMOPOSTLOADFN)(void *, void *);
 typedef void (*GIZMOADDLEVELSFXFN)(void *, void *, int *, int *, int);
-typedef int (*GIZMOGETVISIBILITYFN)(GIZMO*);
-typedef void (*GIZMOUSINGSPECIALFN)(GIZMO**, void*, int, char*);
-typedef void (*GIZMOPANELDRAWFN)(void*, void*, float);
-typedef void (*GIZMOEARLYUPDATEFN)(void*, void*, float delta_time);
+typedef int (*GIZMOGETVISIBILITYFN)(GIZMO *);
+typedef void (*GIZMOUSINGSPECIALFN)(GIZMO **, void *, int, char *);
+typedef void (*GIZMOPANELDRAWFN)(void *, void *, float);
+typedef void (*GIZMOEARLYUPDATEFN)(void *, void *, float delta_time);
 
 typedef struct GIZMOFNS_s {
     i16 unknown1;
@@ -94,13 +94,13 @@ typedef struct ADDGIZMOTYPE_s {
     GIZMOFNS fns;
 } ADDGIZMOTYPE;
 
-typedef ADDGIZMOTYPE* (*REGISTERGIZMOTYPEFN)(int);
+typedef ADDGIZMOTYPE *(*REGISTERGIZMOTYPEFN)(int);
 
 typedef struct GIZMOTYPE_s {
     char name[32];
     char prefix[8];
     GIZMOFNS fns;
-    VARIPTR* buffer;
+    VARIPTR *buffer;
 } GIZMOTYPE;
 
 typedef struct GIZMOTYPES_s {
@@ -113,9 +113,11 @@ extern ADDGIZMOTYPE Default_ADDGIZMOTYPE;
 
 #ifdef __cplusplus
 
-VARIPTR* GizmoBufferAlloc(VARIPTR* buffer, VARIPTR* buffer_end, int size);
-void RegisterGizmoTypes(VARIPTR* buffer, VARIPTR* buffer_end, REGISTERGIZMOTYPEFN* register_gizmo_type_fns, int unknown);
-void RegisterGizmoTypes_LSW(VARIPTR* buffer, VARIPTR* buffer_end);
+VARIPTR *GizmoBufferAlloc(VARIPTR *buffer, VARIPTR *buffer_end, int size);
+void RegisterGizmoTypes(VARIPTR *buffer, VARIPTR *buffer_end, REGISTERGIZMOTYPEFN *register_gizmo_type_fns,
+                        int unknown);
+void RegisterGizmoTypes_LSW(VARIPTR *buffer, VARIPTR *buffer_end);
+GIZMO *AddGizmo(GIZMOSYS *gizmo_sys, int, char *, void *);
 
 extern "C" {
 #endif

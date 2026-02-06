@@ -3,6 +3,7 @@
 #include "decomp.h"
 #include "gameapi.saga/edtools/edfile.h"
 #include "lostandfound/qrand.h"
+#include "nu2api.saga/nucore/nustring.h"
 
 int giztimer_gizmotype_id = -1;
 
@@ -10,8 +11,16 @@ int GizTimer_GetMaxGizmos(void *timer) {
     UNIMPLEMENTED();
 }
 
-void GizTimer_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
-    UNIMPLEMENTED();
+void GizTimer_AddGizmos(GIZMOSYS *gizmo_sys, int unknown1, void * world_info, void * unknown2) {
+    WORLDINFO *world = (WORLDINFO *)world_info;
+
+    for (int i = 0; i < world->giz_timers_count; i++) {
+        if (NuStrLen(world->giz_timers[i].name) == 0) {
+            continue;
+        }
+
+        AddGizmo(gizmo_sys, unknown1, NULL, &world->giz_timers[i]);
+    }
 }
 
 void GizTimer_Update(void *world_info, void *, float delta_time) {

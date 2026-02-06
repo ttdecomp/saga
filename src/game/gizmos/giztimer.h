@@ -18,7 +18,7 @@ typedef struct GIZTIMER_s {
 
 ADDGIZMOTYPE *GizTimer_RegisterGizmo(int type_id);
 int GizTimer_GetMaxGizmos(void *timer);
-void GizTimer_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *);
+void GizTimer_AddGizmos(GIZMOSYS *gizmo_sys, int unknown1, void * world_info, void * unknown2);
 void GizTimer_Update(void *world_info, void *, float delta_time);
 char *GizTimer_GetGizmoName(GIZMO *gizmo);
 int GizTimer_GetOutput(GIZMO *gizmo, int, int);
