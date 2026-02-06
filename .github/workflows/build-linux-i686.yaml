@@ -1,36 +1,36 @@
 name: Linux i686 build
 
 on:
-  push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
+    push:
+        branches: ["main"]
+    pull_request:
+        branches: ["main"]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+    build:
+        runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
+        steps:
+            - uses: actions/checkout@v4
 
-      - name: install gcc for i686
-        run: sudo apt-get install gcc-multilib g++-multilib
+            - name: install gcc for i686
+              run: sudo apt-get -y update && sudo apt-get install gcc-multilib g++-multilib
 
-      - name: Install GLESv2 libs
-        run: sudo dpkg --add-architecture i386 && sudo apt-get update && sudo apt-get install libgles2-mesa-dev:i386
+            - name: Install GLESv2 libs
+              run: sudo dpkg --add-architecture i386 && sudo apt-get -y update && sudo apt-get install libgles2-mesa-dev:i386
 
-      - name: gcc versions
-        run: |
-          gcc --version
-          g++ --version
+            - name: gcc versions
+              run: |
+                  gcc --version
+                  g++ --version
 
-      - name: Install CMake 4.x
-        uses: lukka/get-cmake@latest
+            - name: Install CMake 4.x
+              uses: lukka/get-cmake@latest
 
-      - name: Configure CMake
-        run: cmake -B build -DBUILD_FOR_HOST=ON .
-        env:
-          PKG_CONFIG_PATH: /usr/lib/i386-linux-gnu/pkgconfig
+            - name: Configure CMake
+              run: cmake -B build -DBUILD_FOR_HOST=ON .
+              env:
+                  PKG_CONFIG_PATH: /usr/lib/i386-linux-gnu/pkgconfig
 
-      - name: Build
-        run: cmake --build build
+            - name: Build
+              run: cmake --build build
