@@ -21,11 +21,26 @@ any game assets, media, original source code, or any other copyrighted material.
 
 ## Build Instructions
 
-| Build             | Initial setup                             | Build (and run)                                                               |
-| ----------------- | ----------------------------------------- | ----------------------------------------------------------------------------- |
-| Android x86 build | `cmake -B build -DBUILD_FOR_HOST=OFF`     | `cmake --build build`                                                         |
-| Host build        | `cmake -B build-host -DBUILD_FOR_HOST=ON` | `cmake --build build-host && ./build-host/saga`                               |
-| Tests             | `cmake -B build-host -DBUILD_FOR_HOST=ON` | `cmake --build build-host && ctest --output-on-failure --test-dir build-host` |
+### Android x86 build
+
+```bash
+# configure
+cmake -B build
+# build
+cmake --build build
+```
+
+### Host build
+
+```bash
+cmake -B build-host -DBUILD_FOR_HOST=ON
+cmake --build build-host
+
+# executable
+./build-host/saga
+# ctest
+ctest --output-on-failure --test-dir build-host
+```
 
 ## Contributing
 
