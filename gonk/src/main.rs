@@ -22,7 +22,7 @@ fn main() {
     match cli.command {
         Commands::Split => match split::split() {
             Ok(_) => println!("\nSplit successful"),
-            Err(e) => println!("\nSplit unsuccessful: {e}"),
+            Err(e) => println!("\nSplit unsuccessful: {e:?}"),
         },
     }
 }

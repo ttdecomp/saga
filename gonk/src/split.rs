@@ -1,4 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    path::PathBuf,
+};
 
 use anyhow::Context;
 use iced_x86::{Decoder, DecoderOptions, Instruction, Mnemonic, OpKind, Register};
@@ -11,9 +14,9 @@ use object::{
 
 #[derive(Debug, serde::Deserialize)]
 struct CompileCommand {
-    directory: String,
-    file: String,
-    output: String,
+    directory: PathBuf,
+    file: PathBuf,
+    output: PathBuf,
 }
 
 /// construct a new object file containing only the specified symbols from the original object file
@@ -527,7 +530,7 @@ struct ObjDiff {
 #[derive(serde::Serialize)]
 struct ObjDiffUnit {
     name: String,
-    target_path: String,
+    target_path: PathBuf,
     base_path: String,
     scratch: Option<ObjDiffScratch>,
 }
@@ -602,13 +605,13 @@ pub fn split() -> anyhow::Result<()> {
     let mut used_symbols: HashSet<_> = HashSet::new();
 
     for command in compile_commands.iter() {
-        log::info!("processing file '{}'", command.file);
+        log::info!("processing file '{}'", command.file.display());
 
         let binary = std::path::Path::new(&command.directory).join(&command.output);
 
         let contents = std::fs::read(&binary)
-            .with_context(|| format!("Failed to read object file: {}", command.output))?;
-        let elf = object::read::elf::ElfFile32::<'_, object::LittleEndian, _>::parse(&*contents)
+            .with_context(|| format!("Failed to read object file: {}", command.output.display()))?;
+        let elf = read::elf::ElfFile32::<'_, object::LittleEndian, _>::parse(&*contents)
             .context("Failed to parse ELF file")?;
 
         let (text_symbols, data_symbols): (Vec<_>, Vec<_>) =
@@ -634,11 +637,14 @@ pub fn split() -> anyhow::Result<()> {
         used_symbols.extend(text_symbols);
         used_symbols.extend(data_symbols);
 
-        let output_path = std::path::Path::new("build/split")
-            .join(std::path::Path::new(&command.output).file_name().unwrap());
+        let output_relative_path = command.output.strip_prefix("CMakeFiles/saga.dir").unwrap();
+        let output_path = std::path::Path::new("build/split").join(output_relative_path);
+
+        std::fs::create_dir_all(output_path.parent().unwrap())
+            .context("Failed to create build/split directory")?;
 
         let bytes = new_obj.write()?;
-        std::fs::write(output_path, bytes).context("Failed to write split object file")?;
+        std::fs::write(&output_path, bytes).context("Failed to write split object file")?;
 
         let name = std::path::Path::new(&command.file)
             .components()
@@ -653,13 +659,7 @@ pub fn split() -> anyhow::Result<()> {
 
         objdiff_units.push(ObjDiffUnit {
             name: name.display().to_string(),
-            target_path: format!(
-                "build/split/{}",
-                std::path::Path::new(&command.output)
-                    .file_name()
-                    .unwrap()
-                    .to_string_lossy()
-            ),
+            target_path: output_path,
             base_path: binary.display().to_string(),
             scratch: Some(ObjDiffScratch {
                 platform: String::from("android_x86"),
@@ -699,7 +699,7 @@ pub fn split() -> anyhow::Result<()> {
 
     objdiff_units.push(ObjDiffUnit {
         name: "remaining".to_string(),
-        target_path: "build/split/remaining.c.o".to_string(),
+        target_path: PathBuf::from("build/split/remaining.c.o"),
         base_path: String::from("remaining.c.o"),
         scratch: None,
     });
