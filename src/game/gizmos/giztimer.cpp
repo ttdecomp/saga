@@ -66,6 +66,7 @@ int GizTimer_GetNumOutputs(GIZMO *gizmo) {
 }
 
 void GizTimer_Activate(GIZMO *gizmo, int unknown) {
+    // can't get this stupid function to match
     GIZTIMER* timer = gizmo->object.timer;
 
     if (timer->flags & 2) {
@@ -74,6 +75,7 @@ void GizTimer_Activate(GIZMO *gizmo, int unknown) {
     } else {
         timer->time_remaining = timer->start_time;
     }
+
     timer->flags = (timer->flags & ~1) | (unknown != 0);
 }
 
