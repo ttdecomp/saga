@@ -351,6 +351,8 @@ void NuPadUpdatePads() {
     i32 i;
     i32 j;
     int has_active_pad;
+    i32 unused;
+    i32 unused2;
 
     max_interface_devices = NuPad_Interface_GetMaxDevices();
     max_game_pads = NuPadGetMaxGamePads();
@@ -387,9 +389,11 @@ void NuPadUpdatePads() {
             }
         }
 
-        if (!has_active_pad) {
-            g_nupadScannedPads[i].mapped_to_pad = -1;
+        if (has_active_pad) {
+            continue;
         }
+
+        g_nupadScannedPads[i].mapped_to_pad = -1;
     }
 
     if (!g_atLeastOnePadBeenActivated) {
@@ -407,6 +411,7 @@ void NuPadUpdatePads() {
                     g_nupadScannedPads[j].analog_left_y != ANALOG_CENTER ||
                     g_nupadScannedPads[j].analog_right_x != ANALOG_CENTER ||
                     g_nupadScannedPads[j].analog_right_y != ANALOG_CENTER) {
+                    unused = 1;
                     g_nupadMapping[0].port = j;
                     g_nupadScannedPads[j].mapped_to_pad = 0;
 
@@ -424,6 +429,12 @@ void NuPadUpdatePads() {
     }
 
     if (g_atLeastOnePadBeenActivated) {
+        if (g_nupadMapping[0].is_active) {
+            unused2 = 0;
+        } else {
+            unused2 = 1;
+        }
+
         for (i = 0; i < max_game_pads; i++) {
             if (g_nupadMapping[i].is_active == 1 && !g_nupadScannedPads[g_nupadMapping[i].port].is_valid) {
                 for (j = 0; j < max_interface_devices; j++) {
@@ -446,18 +457,22 @@ void NuPadUpdatePads() {
                 if (g_nupadMapping[0].is_active + g_nupadMapping[1].is_active == 0) {
                     if (i == 0) {
                         for (j = 0; j < max_interface_devices; j++) {
-                            if (g_nupadScannedPads[j].mapped_to_pad == -1 ||
-                                g_nupadMapping[g_nupadScannedPads[j].mapped_to_pad].is_active != 1) {
-                                g_nupadScannedPads[j].mapped_to_pad = -1;
+                            if (g_nupadScannedPads[j].mapped_to_pad != -1 &&
+                                g_nupadMapping[g_nupadScannedPads[j].mapped_to_pad].is_active == 1) {
+                                continue;
                             }
+
+                            g_nupadScannedPads[j].mapped_to_pad = -1;
                         }
                     }
                 } else {
                     for (j = 0; j < max_interface_devices; j++) {
-                        if (g_nupadScannedPads[j].mapped_to_pad == -1 ||
-                            g_nupadMapping[g_nupadScannedPads[j].mapped_to_pad].is_active != 1) {
-                            g_nupadScannedPads[j].mapped_to_pad = -1;
+                        if (g_nupadScannedPads[j].mapped_to_pad != -1 &&
+                            g_nupadMapping[g_nupadScannedPads[j].mapped_to_pad].is_active == 1) {
+                            continue;
                         }
+
+                        g_nupadScannedPads[j].mapped_to_pad = -1;
                     }
                 }
 
@@ -470,7 +485,9 @@ void NuPadUpdatePads() {
                             g_nupadScannedPads[j].analog_left_x != ANALOG_CENTER ||
                             g_nupadScannedPads[j].analog_left_y != ANALOG_CENTER ||
                             g_nupadScannedPads[j].analog_right_x != ANALOG_CENTER ||
-                            g_nupadScannedPads[j].analog_right_y != ANALOG_CENTER ||
+
+                            // ORIG_BUG: This tests `analog_right_x` twice.
+                            g_nupadScannedPads[j].analog_right_x != ANALOG_CENTER ||
                             (g_nupadScannedPads[j].digital_buttons_pressed &
                              (PAD_BUTTON_UNKNOWN_800 | PAD_BUTTON_UNKNOWN_40)) != 0) {
                             break;
