@@ -15,10 +15,12 @@ typedef struct nuportal_s {
 
 ADDGIZMOTYPE* Portal_RegisterGizmo(int type_id);
 char *Portal_GetOutputName(GIZMO *gizmo, int output_index);
-void Portal_Activate(GIZMO *gizmo, int);
+void Portal_Activate(GIZMO *gizmo, int active);
 
 extern "C" {
 #endif
+
+void NuPortalSetActiveDirect(NUPORTAL* portal, int active);
 
 #ifdef __cplusplus
 }
