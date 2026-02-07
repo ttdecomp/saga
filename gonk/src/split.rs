@@ -276,11 +276,7 @@ fn rewrite_text_symbol<'data, 'file, E: object::Endian>(
     let mut decoder = Decoder::with_ip(32, bytes, orig_sym.address(), DecoderOptions::NONE);
 
     let orig_got_section = lib.file.section_by_name(".got").unwrap();
-    let orig_got_symbol_addr = lib
-        .symbols_by_name
-        .get("_GLOBAL_OFFSET_TABLE_")
-        .unwrap()
-        .address() as u32;
+    let orig_got_sym = lib.symbols_by_name.get("_GLOBAL_OFFSET_TABLE_").unwrap();
 
     let mut local_rewrites = Vec::new();
     let mut relocs = Vec::new();
@@ -356,7 +352,7 @@ fn rewrite_text_symbol<'data, 'file, E: object::Endian>(
                     && instruction.op0_register() == thunk_reg;
                 let op1_is_got_offset = instruction.op1_kind() == OpKind::Immediate32
                     && (value as u32).wrapping_add(instruction.immediate32())
-                        == orig_got_symbol_addr;
+                        == orig_got_sym.address() as u32;
 
                 if op0_is_thunk_reg && op1_is_got_offset {
                     // Add a reloc for the _GLOBAL_OFFSET_TABLE_ symbol.
@@ -364,13 +360,11 @@ fn rewrite_text_symbol<'data, 'file, E: object::Endian>(
                         .get_constant_offsets(&instruction)
                         .immediate_offset();
 
-                    let orig_got = lib.file.symbol_by_name("_GLOBAL_OFFSET_TABLE_").unwrap();
-
                     relocs.push(Reloc {
                         section_id,
                         offset: (decoder.position() - instruction.len() + immediate_off) as u64,
                         addend: 2,
-                        target: RelocTarget::Symbol(orig_got),
+                        target: RelocTarget::Symbol(*orig_got_sym),
                         r_type: R_386_GOTPC,
                     });
 
@@ -397,8 +391,9 @@ fn rewrite_text_symbol<'data, 'file, E: object::Endian>(
                 continue;
             }
 
-            let orig_addr =
-                orig_got_symbol_addr.wrapping_add(instruction.memory_displacement32()) as u64;
+            let orig_addr = (orig_got_sym.address() as u32)
+                .wrapping_add(instruction.memory_displacement32())
+                as u64;
 
             let rewrite = generate_rewrite(
                 lib,
