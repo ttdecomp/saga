@@ -4,7 +4,7 @@
 #include "nu2api.saga/nucore/nutime.h"
 #include "nu2api.saga/nucore/nuvideo.h"
 
-struct nuapi_s {
+typedef struct nuapi_s {
     int field0_0x0;
     int video_mode;
     NUVIDEO_SWAPMODE video_swap_mode;
@@ -78,9 +78,7 @@ struct nuapi_s {
     char field76_0x87;
     int disable_os_menu_freeze;
     f32 video_brightness;
-};
-
-typedef struct nuapi_s NUAPI;
+} NUAPI;
 
 extern NUAPI nuapi;
 

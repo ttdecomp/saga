@@ -2,14 +2,12 @@
 
 #include "nu2api.saga/numath/nuvec.h"
 
-struct nuvec4_s {
+typedef struct nuvec4_s {
     f32 x;
     f32 y;
     f32 z;
     f32 w;
-};
-
-typedef struct nuvec4_s NUVEC4;
+} NUVEC4;
 
 #ifdef __cplusplus
 extern "C" {
