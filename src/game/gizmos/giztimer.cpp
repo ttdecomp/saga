@@ -4,11 +4,18 @@
 #include "gameapi.saga/edtools/edfile.h"
 #include "lostandfound/qrand.h"
 #include "nu2api.saga/nucore/nustring.h"
+#include "game/level.h"
 
 int giztimer_gizmotype_id = -1;
+    
+int GizTimer_GetMaxGizmos(void *world_info) {
+    WORLDINFO* world = (WORLDINFO*)world_info;
 
-int GizTimer_GetMaxGizmos(void *timer) {
-    UNIMPLEMENTED();
+    if (world == NULL || world->current_level == NULL) {
+        return 0;
+    }
+
+    return world->current_level->max_giz_timers;
 }
 
 void GizTimer_AddGizmos(GIZMOSYS *gizmo_sys, int unknown1, void * world_info, void * unknown2) {
@@ -59,15 +66,15 @@ int GizTimer_GetNumOutputs(GIZMO *gizmo) {
 }
 
 void GizTimer_Activate(GIZMO *gizmo, int unknown) {
-    // if ((gizmo->object.timer->flags & 2) == 0) {
-    //     gizmo->object.timer->time_remaining = gizmo->object.timer->start_time;
-    // } else {
-    //     gizmo->object.timer->time_remaining = QRAND_FLOAT() * gizmo->object.timer->start_time;
-    // }
+    GIZTIMER* timer = gizmo->object.timer;
 
-    // gizmo->object.timer->flags = gizmo->object.timer->flags & 0xfe | ~-(unknown == 0) & 1U;
-
-    UNIMPLEMENTED();
+    if (timer->flags & 2) {
+        timer->time_remaining = QRAND_FLOAT() * timer->start_time;
+        
+    } else {
+        timer->time_remaining = timer->start_time;
+    }
+    timer->flags = (timer->flags & ~1) | (unknown != 0);
 }
 
 int GizTimer_ReserveBufferSpace(void *, int) {

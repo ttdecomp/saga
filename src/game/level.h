@@ -92,7 +92,7 @@ struct LEVELDATA_s { /* PlaceHolder Structure */
     undefined4 field53_0xec;
     undefined4 field54_0xf0;
     undefined1 field55_0xf4;
-    undefined1 field56_0xf5;
+    u8 max_giz_timers;
     undefined1 field57_0xf6;
     undefined1 field58_0xf7;
     undefined1 field59_0xf8;

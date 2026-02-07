@@ -6,7 +6,7 @@
 
 #ifdef __cplusplus
 
-u16 qrand(void);
+i32 qrand(void);
 
 extern "C" {
 #endif

@@ -193,7 +193,7 @@ void Level_SetDefaults(LEVELDATA *level) {
     level->field53_0xec = 0x800080;
     level->field54_0xf0 = 0x100080;
     level->field55_0xf4 = 10;
-    level->field56_0xf5 = 8;
+    level->max_giz_timers = 8;
     level->field57_0xf6 = 10;
     level->field58_0xf7 = 10;
     level->field59_0xf8 = 10;
