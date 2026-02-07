@@ -621,7 +621,7 @@ pub fn split() -> anyhow::Result<()> {
         used_symbols.extend(text_symbols.iter().map(|sym| sym.index()));
         used_symbols.extend(data_symbols.iter().map(|sym| sym.index()));
 
-        let output_relative_path = command.output.strip_prefix("CMakeFiles/saga.dir").unwrap();
+        let output_relative_path = command.output.file_name().unwrap();
         let output_path = std::path::Path::new("build/split").join(output_relative_path);
 
         std::fs::create_dir_all(output_path.parent().unwrap())
