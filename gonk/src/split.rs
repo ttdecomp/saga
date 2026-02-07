@@ -517,9 +517,7 @@ fn generate_rewrite<'data, 'file: 'data>(
     orig_got_section: &read::elf::ElfSection<'_, '_, FileHeader32<Endianness>>,
     orig_addr: u64,
 ) -> Option<Rewrite<'data, 'file>> {
-    if let Some(orig_sym) = lib.symbols_by_address.get(&orig_addr)
-        && orig_sym.kind() != SymbolKind::Section
-    {
+    if let Some(orig_sym) = lib.symbols_by_address.get(&orig_addr) {
         // The address points directly to a symbol.
         let new_addr = orig_sym_idx_to_new_offset.get(&orig_sym.index()).copied();
 
@@ -648,11 +646,13 @@ pub fn split() -> anyhow::Result<()> {
 
     let orig_symbols: HashMap<_, _> = orig_lib_file
         .symbols()
+        .filter(|sym| matches!(sym.kind(), SymbolKind::Data | SymbolKind::Text))
         .map(|sym| (sym.name().unwrap(), sym))
         .collect();
 
     let symbols_by_address = orig_lib_file
         .symbols()
+        .filter(|sym| matches!(sym.kind(), SymbolKind::Data | SymbolKind::Text))
         .map(|sym| (sym.address(), sym))
         .collect();
 
