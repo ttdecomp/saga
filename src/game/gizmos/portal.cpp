@@ -58,10 +58,7 @@ static int Portal_ActivateRev(GIZMO *gizmo, int inactive, int unknown) {
     if ((unknown & 1) == 0) {
         NuPortalSetActiveDirect(gizmo->object.portal, inactive == 0);
     } else if (inactive != 0) {
-        if ((gizmo->object.portal->active & 1) == 0) {
-            return 0;
-        }
-        if (inactive != 1) {
+        if ((gizmo->object.portal->active & 1) == 0 || inactive != 1) {
             return 0;
         }
     }
@@ -69,15 +66,21 @@ static int Portal_ActivateRev(GIZMO *gizmo, int inactive, int unknown) {
     return 1;
 }
 
-static void *Portals_AllocateProgressData(VARIPTR * buffer, VARIPTR * buffer_end) {
-    return GizmoBufferAlloc(buffer, buffer_end, 4);
+static void *Portals_AllocateProgressData(VARIPTR *buffer, VARIPTR *buffer_end) {
+    return GizmoBufferAlloc(buffer, buffer_end, sizeof(GIZPORTALPROGRESS));
 }
 
-static void Portals_ClearProgress(void *, void *) {
-    UNIMPLEMENTED();
+static void Portals_ClearProgress(void *, void *progress) {
+    GIZPORTALPROGRESS *portal_progress = (GIZPORTALPROGRESS *)progress;
+
+    if (portal_progress == NULL) {
+        return;
+    }
+
+    portal_progress->unknown = -1;
 }
 
-static void Portals_StoreProgress(void *, void *, void *) {
+static void Portals_StoreProgress(void *, void *, void* progress) {
     UNIMPLEMENTED();
 }
 
@@ -85,7 +88,7 @@ static void Portals_Reset(void *, void *, void *) {
     UNIMPLEMENTED();
 }
 
-ADDGIZMOTYPE* Portal_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *Portal_RegisterGizmo(int type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;
@@ -124,7 +127,7 @@ ADDGIZMOTYPE* Portal_RegisterGizmo(int type_id) {
     return &addtype;
 }
 
-void NuPortalSetActiveDirect(NUPORTAL* portal, int active) {
+void NuPortalSetActiveDirect(NUPORTAL *portal, int active) {
     if (portal == NULL) {
         return;
     }

@@ -13,6 +13,10 @@ typedef struct nuportal_s {
     u32 active;
 } NUPORTAL;
 
+typedef struct gizportalprogress_s {
+    i32 unknown;
+} GIZPORTALPROGRESS;
+
 ADDGIZMOTYPE* Portal_RegisterGizmo(int type_id);
 char *Portal_GetOutputName(GIZMO *gizmo, int output_index);
 void Portal_Activate(GIZMO *gizmo, int active);
