@@ -21,7 +21,7 @@ int GizTimer_GetMaxGizmos(void *world_info) {
 void GizTimer_AddGizmos(GIZMOSYS *gizmo_sys, int unknown1, void *world_info, void *unknown2) {
     WORLDINFO *world = (WORLDINFO *)world_info;
 
-    for (int i = 0; i < world->giz_timers_count; i++) {
+    for (i32 i = 0; i < world->giz_timers_count; i++) {
         if (NuStrLen(world->giz_timers[i].name) == 0) {
             continue;
         }

@@ -12,7 +12,7 @@ struct WORLDINFO_s {
     struct LEVELDATA_s *current_level;
     char filler2[0x4fd0];
     struct GIZTIMER_s* giz_timers;
-    int giz_timers_count;
+    i32 giz_timers_count;
     char filler3[21084];
 };
 
