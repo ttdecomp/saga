@@ -1,6 +1,8 @@
 #pragma once
 
 #include "gamelib/nuwind/nuwind.h"
+#include "nu2api.saga/nucore/common.h"
+#include "nu2api.saga/nucore/nupad.h"
 #include "nu2api.saga/nucore/nutime.h"
 #include "nu2api.saga/nucore/nuvideo.h"
 
@@ -25,36 +27,12 @@ typedef struct nuapi_s {
     char field20_0x3d;
     char field21_0x3e;
     char field22_0x3f;
+
     f32 forced_frame_time;
     f32 max_fps;
-    char field25_0x48;
-    char field26_0x49;
-    char field27_0x4a;
-    char field28_0x4b;
-    char field29_0x4c;
-    char field30_0x4d;
-    char field31_0x4e;
-    char field32_0x4f;
-    char field33_0x50;
-    char field34_0x51;
-    char field35_0x52;
-    char field36_0x53;
-    char field37_0x54;
-    char field38_0x55;
-    char field39_0x56;
-    char field40_0x57;
-    int padrec_buffersize;
-    char field42_0x5c;
-    char field43_0x5d;
-    char field44_0x5e;
-    char field45_0x5f;
 
-    // Type uncertain.
-    i32 unknown_60;
+    NUPADREC pad_record;
 
-    int field50_0x64;
-    int field51_0x68;
-    int pad_recording;
     char field56_0x70;
     char field57_0x71;
     char field58_0x72;

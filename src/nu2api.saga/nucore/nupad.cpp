@@ -2,22 +2,24 @@
 
 #include <string.h>
 
+#include "nu2api.saga/nucore/common.h"
 #include "nu2api.saga/nucore/nuapi.h"
+#include "nu2api.saga/nufile/nufile.h"
 #include "nu2api.saga/numath/nufloat.h"
 #include "nu2api.saga/numemory/NuMemoryManager.h"
 #include "nu2api.saga/numemory/numemory.h"
 
-#define SCANNED_PADS_COUNT 2
+#define MAX_GAME_PAD_COUNT 2
 
 #define ANALOG_CENTER 0x80
 
-static NUGENERICPAD g_nupadScannedPads[SCANNED_PADS_COUNT];
+static NUGENERICPAD g_nupadScannedPads[MAX_GAME_PAD_COUNT];
 static i32 g_atLeastOnePadBeenActivated;
 static i32 g_directpadMapping;
 
-NUPADMAPPING g_nupadMapping[SCANNED_PADS_COUNT];
+NUPADMAPPING g_nupadMapping[MAX_GAME_PAD_COUNT];
 i32 g_profilePlayerPad = -1;
-i32 MaxGamePads = 2;
+i32 MaxGamePads = MAX_GAME_PAD_COUNT;
 char UseCorrectDeadZoning;
 i32 enable_touch_controls = 1;
 
@@ -26,13 +28,13 @@ void NuPadInit() {
 
     memset(g_nupadScannedPads, 0, sizeof(g_nupadScannedPads));
 
-    for (i = 0; i < SCANNED_PADS_COUNT; i++) {
+    for (i = 0; i < MAX_GAME_PAD_COUNT; i++) {
         g_nupadScannedPads[i].mapped_to_pad = -1;
 
         NuPadInitPS(g_nupadScannedPads + i);
     }
 
-    for (i = 0; i < SCANNED_PADS_COUNT; i++) {
+    for (i = 0; i < MAX_GAME_PAD_COUNT; i++) {
         g_nupadMapping[i].is_active = 0;
         g_nupadMapping[i].pad = -1;
         g_nupadMapping[i].port = -1;
@@ -376,7 +378,7 @@ void NuPadUpdatePads() {
         NuPadProcessReadData(g_nupadScannedPads + i);
     }
 
-    if (nuapi.unknown_60 == 1) {
+    if (nuapi.pad_record.should_end == 1) {
         NuPadRecordEnd();
     }
 
@@ -504,11 +506,105 @@ i32 NuPadGetMaxGamePads() {
 }
 
 void NuPadRecordStart(void) {
-    nuapi.pad_recording = 1;
+    nuapi.pad_record.is_recording = 1;
 }
 
 void NuPadRecordPlay(NUGENERICPAD *pad) {
+    VARIPTR *record_ptr;
+    u8 *next;
+
+    if (pad->is_valid && nuapi.pad_record.mode == NUPAD_PLAY &&
+        (pad->digital_buttons & nuapi.pad_record.end_play_buttons) != 0) {
+        nuapi.pad_record.mode = NUPAD_NORM;
+    }
+
+    if (pad->is_valid && nuapi.pad_record.mode == NUPAD_RECORD &&
+        (pad->digital_buttons & nuapi.pad_record.end_record_buttons) != 0) {
+        nuapi.pad_record.should_end = 1;
+    }
+
+    record_ptr = &nuapi.pad_record.record;
+
+    switch (nuapi.pad_record.mode) {
+        case NUPAD_RECORD:
+            *record_ptr->u32_ptr++ = pad->is_valid;
+
+            if (pad->is_valid) {
+                *record_ptr->uchar_ptr++ = pad->analog_left_x;
+                *record_ptr->uchar_ptr++ = pad->analog_left_y;
+                *record_ptr->uchar_ptr++ = pad->analog_right_x;
+                *record_ptr->uchar_ptr++ = pad->analog_right_y;
+
+                *record_ptr->uchar_ptr++ = pad->analog_l1;
+                *record_ptr->uchar_ptr++ = pad->analog_l2;
+                *record_ptr->uchar_ptr++ = pad->analog_r1;
+                *record_ptr->uchar_ptr++ = pad->analog_r2;
+
+                *record_ptr->u32_ptr++ = pad->digital_buttons;
+            }
+            break;
+        case NUPAD_PLAY:
+            pad->is_valid = *record_ptr->u32_ptr++;
+
+            if (pad->is_valid) {
+                pad->analog_left_x = *record_ptr->uchar_ptr++;
+                pad->analog_left_y = *record_ptr->uchar_ptr++;
+                pad->analog_right_x = *record_ptr->uchar_ptr++;
+                pad->analog_right_y = *record_ptr->uchar_ptr++;
+
+                pad->analog_l1 = *record_ptr->uchar_ptr++;
+                pad->analog_l2 = *record_ptr->uchar_ptr++;
+                pad->analog_r1 = *record_ptr->uchar_ptr++;
+                pad->analog_r2 = *record_ptr->uchar_ptr++;
+
+                pad->digital_buttons = *record_ptr->u32_ptr++;
+            }
+            break;
+        default:
+            break;
+    }
 }
 
 void NuPadRecordEnd() {
+    switch (nuapi.pad_record.mode) {
+        case NUPAD_RECORD:
+            NuPadRecordSave(nuapi.pad_record.filepath);
+            break;
+        case NUPAD_PLAY:
+            nuapi.pad_record.mode = NUPAD_NORM;
+            nuapi.pad_record.record.uchar_ptr = nuapi.pad_record.buf_start;
+            break;
+    }
+
+    nuapi.pad_record.should_end = 0;
+}
+
+void NuPadRecordSave(char *filepath) {
+    NUFILE file;
+    u8 *record_start;
+    usize record_size;
+    NUPADREC *record;
+
+    record = &nuapi.pad_record;
+
+    if (record->mode == NUPAD_RECORD && record->record.uchar_ptr != record->buf_start) {
+        if (filepath != NULL) {
+            file = NuFileOpen(filepath, NUFILE_WRITE);
+
+            if (file != 0) {
+                record_size = record->record.addr - (usize)record->buf_start;
+
+                record_start = record->buf_start;
+
+                NuFileWriteInt(file, record_size);
+                NuFileWrite(file, record_start, record_size);
+                NuFileWriteUnsignedInt(file, 0xe0f);
+
+                NuFileClose(file);
+            }
+        }
+
+        record->should_end = 0;
+        record->mode = NUPAD_NORM;
+    }
 }

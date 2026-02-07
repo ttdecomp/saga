@@ -26,9 +26,9 @@ void NuAPIInit(void) {
 
     NuTimeGet(&nuapi.time);
 
-    nuapi.padrec_buffersize = NUAPI_PADREC_DEFAULT_BUFFERSIZE;
-    nuapi.field50_0x64 = 0;
-    nuapi.field51_0x68 = 0;
+    nuapi.pad_record.buf_size = NUAPI_PADREC_DEFAULT_BUFFERSIZE;
+    nuapi.pad_record.end_record_buttons = 0;
+    nuapi.pad_record.end_play_buttons = 0;
 
     NuWindInitialise(nuapi.wind);
 }

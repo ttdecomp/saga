@@ -165,6 +165,28 @@ typedef struct _nupadmapping_s {
     i32 is_active;
 } NUPADMAPPING;
 
+typedef enum nurecmode_e { NUPAD_NORM = 0, NUPAD_RECORD = 1, NUPAD_PLAY = 2 } NURECMODE;
+
+typedef struct nupadrec_s {
+    NURECMODE mode;
+
+    u8 *buf_start;
+    u8 *buf_end;
+
+    VARIPTR record;
+
+    i32 buf_size;
+
+    char *filepath;
+
+    i32 should_end;
+
+    i32 end_record_buttons;
+    i32 end_play_buttons;
+
+    i32 is_recording;
+} NUPADREC;
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -205,5 +227,7 @@ i32 NuPadGetDeadzoneByPortPS(i32 port);
 
 void NuPadRecordPlay(NUGENERICPAD *pad);
 void NuPadRecordEnd();
+
+void NuPadRecordSave(char *filepath);
 
 #endif
