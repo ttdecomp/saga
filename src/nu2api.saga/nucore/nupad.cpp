@@ -220,8 +220,8 @@ static f32 CalcRamp(f32 ramp) {
 static f32 ramp_rate = 0.1f;
 
 enum {
-    PAD_BUTTON_UNKNOWN_40 = 1 << 0x6,
-    PAD_BUTTON_UNKNOWN_800 = 1 << 0xb,
+    PAD_BUTTON_JUMP_SELECT = 1 << 0x6,
+    PAD_BUTTON_START = 1 << 0xb,
     PAD_BUTTON_UP = 1 << 0xc,
     PAD_BUTTON_RIGHT = 1 << 0xd,
     PAD_BUTTON_DOWN = 1 << 0xe,
@@ -421,8 +421,8 @@ void NuPadUpdatePads() {
                         return;
                     }
 
-                    if ((g_nupadScannedPads[j].digital_buttons_pressed &
-                         (PAD_BUTTON_UNKNOWN_800 | PAD_BUTTON_UNKNOWN_40)) != 0) {
+                    if ((g_nupadScannedPads[j].digital_buttons_pressed & (PAD_BUTTON_START | PAD_BUTTON_JUMP_SELECT)) !=
+                        0) {
                         return;
                     }
                 }
@@ -441,7 +441,7 @@ void NuPadUpdatePads() {
             if (g_nupadMapping[i].is_active == 1 && !g_nupadScannedPads[g_nupadMapping[i].port].is_valid) {
                 for (j = 0; j < max_interface_devices; j++) {
                     if (g_nupadScannedPads[j].is_valid &&
-                        (g_nupadScannedPads[j].digital_buttons_pressed & PAD_BUTTON_UNKNOWN_800) != 0 &&
+                        (g_nupadScannedPads[j].digital_buttons_pressed & PAD_BUTTON_START) != 0 &&
                         (g_nupadScannedPads[j].mapped_to_pad == -1 ||
                          !g_nupadMapping[g_nupadScannedPads[j].mapped_to_pad].is_active)) {
                         g_nupadMapping[i].port = j;
@@ -491,7 +491,7 @@ void NuPadUpdatePads() {
                             // ORIG_BUG: This tests `analog_right_x` twice.
                             g_nupadScannedPads[j].analog_right_x != ANALOG_CENTER ||
                             (g_nupadScannedPads[j].digital_buttons_pressed &
-                             (PAD_BUTTON_UNKNOWN_800 | PAD_BUTTON_UNKNOWN_40)) != 0) {
+                             (PAD_BUTTON_START | PAD_BUTTON_JUMP_SELECT)) != 0) {
                             break;
                         }
                     }
