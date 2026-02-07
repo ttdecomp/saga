@@ -6,10 +6,10 @@ use std::{
 use anyhow::Context;
 use iced_x86::{Decoder, DecoderOptions, Instruction, Mnemonic, OpKind, Register};
 use object::{
-    Endianness, Object, ObjectSection as _, ObjectSymbol as _, RelocationFlags, SectionKind,
+    Endianness, Object, ObjectSection as _, ObjectSymbol as _, ObjectSymbolTable, RelocationFlags,
+    RelocationTarget, SectionKind, SymbolKind,
     elf::{FileHeader32, R_386_GOT32, R_386_GOTOFF, R_386_GOTPC, R_386_PC32, R_386_PLT32},
-    read,
-    write::{Relocation, SectionId, Symbol},
+    read, write,
 };
 
 #[derive(Debug, serde::Deserialize)]
@@ -77,7 +77,7 @@ fn make_object<'a, E: object::Endian>(
         };
 
         let (bytes, relocs) = if should_process_relocs {
-            let relocs = generate_text_relocs(
+            let relocs = rewrite_text_symbol(
                 lib,
                 orig_sym,
                 name,
@@ -103,46 +103,45 @@ fn make_object<'a, E: object::Endian>(
             kind: orig_sym.kind(),
             scope: orig_sym.scope(),
             weak: orig_sym.is_weak(),
-            section: object::write::SymbolSection::Section(write_id),
+            section: write::SymbolSection::Section(write_id),
             flags: object::SymbolFlags::None,
         });
 
         orig_sym_idx_to_new_offset.insert(orig_sym.index(), current_symbol_offset as u32);
     }
 
-    add_relocs(lib, &mut obj, sections, all_relocs)?;
+    add_relocs(&mut obj, sections, all_relocs)?;
 
     Ok(obj)
 }
 
 fn add_relocs(
-    lib: &Lib<'_, '_>,
-    obj: &mut object::write::Object<'_>,
-    sections: HashMap<&str, SectionId>,
+    obj: &mut write::Object<'_>,
+    sections: HashMap<&str, write::SectionId>,
     all_relocs: HashMap<u64, Vec<Reloc>>,
 ) -> Result<(), anyhow::Error> {
     let mut external_syms = HashMap::new();
     for (sym_offset, relocs) in all_relocs {
         for reloc in relocs {
             let target = match reloc.target {
-                RelocTarget::Symbol(sym_name) => {
+                RelocTarget::Symbol(orig_sym) => {
+                    let sym_name = orig_sym.name().unwrap();
+
                     if let Some(sym_id) = obj.symbol_id(sym_name.as_bytes()) {
                         sym_id
                     } else {
                         // The symbol is not defined in the current file.
                         // Generate an extern symbol as the destination of the
                         // reloc.
-                        let orig_sym = lib.symbols_by_name.get(sym_name).unwrap();
-
                         *external_syms.entry(sym_name).or_insert_with(|| {
-                            obj.add_symbol(Symbol {
+                            obj.add_symbol(write::Symbol {
                                 name: orig_sym.name().unwrap().as_bytes().to_vec(),
                                 value: 0,
                                 size: 0,
                                 kind: orig_sym.kind(),
                                 scope: orig_sym.scope(),
                                 weak: orig_sym.is_weak(),
-                                section: object::write::SymbolSection::Undefined,
+                                section: write::SymbolSection::Undefined,
                                 flags: object::SymbolFlags::None,
                             })
                         })
@@ -158,7 +157,7 @@ fn add_relocs(
 
             obj.add_relocation(
                 reloc.section_id,
-                Relocation {
+                write::Relocation {
                     offset: sym_offset + reloc.offset,
                     symbol: target,
                     addend: reloc.addend,
@@ -178,7 +177,7 @@ fn build_data_sections<'data, E: object::Endian>(
     lib: &Lib<'_, 'data>,
     data_symbols: &[read::elf::ElfSymbol<FileHeader32<E>>],
     obj: &mut object::write::Object<'_>,
-    sections: &mut HashMap<&'data str, SectionId>,
+    sections: &mut HashMap<&'data str, write::SectionId>,
 ) -> Result<HashMap<read::SymbolIndex, u32>, anyhow::Error> {
     let mut orig_sym_idx_to_new_offset = HashMap::new();
 
@@ -206,7 +205,9 @@ fn build_data_sections<'data, E: object::Endian>(
             });
 
         let new_offset = match section.kind() {
-            SectionKind::Data | SectionKind::ReadOnlyData => {
+            SectionKind::UninitializedData => obj.append_section_bss(write_id, orig_sym.size(), 1),
+
+            _ => {
                 let bytes = section.data().context("Failed to get section data")?;
 
                 let symbol_start = (orig_sym.address() - section.address()) as usize;
@@ -214,10 +215,6 @@ fn build_data_sections<'data, E: object::Endian>(
 
                 obj.append_section_data(write_id, bytes, 8)
             }
-
-            SectionKind::UninitializedData => obj.append_section_bss(write_id, orig_sym.size(), 1),
-
-            _ => continue,
         };
 
         obj.add_symbol(object::write::Symbol {
@@ -238,38 +235,44 @@ fn build_data_sections<'data, E: object::Endian>(
 }
 
 #[derive(Debug)]
-enum Rewrite<'a> {
+enum Rewrite<'data, 'file> {
     // An entry in the global offset table.
-    Got(&'a str),
+    Got(read::elf::ElfSymbol<'data, 'file, FileHeader32<Endianness>>),
 
     /// An offset from the start of the _GLOBAL_OFFSET_TABLE_ directly to the
     /// symbol or data in memory.
-    GotOffset(Option<u32>, &'a str),
+    GotOffset(Option<u32>, OffsetTarget<'data, 'file>),
 }
 
 #[derive(Debug)]
-struct Reloc<'a> {
-    section_id: SectionId,
+enum OffsetTarget<'data, 'file> {
+    Symbol(read::elf::ElfSymbol<'data, 'file, FileHeader32<Endianness>>),
+    Section(read::elf::ElfSection32<'data, 'file, Endianness>),
+}
+
+#[derive(Debug)]
+struct Reloc<'data, 'file> {
+    section_id: write::SectionId,
     offset: u64,
     addend: i64,
-    target: RelocTarget<'a>,
+    target: RelocTarget<'data, 'file>,
     r_type: u32,
 }
 
 #[derive(Debug)]
-enum RelocTarget<'a> {
-    Symbol(&'a str),
-    Section(&'a str),
+enum RelocTarget<'data, 'file> {
+    Symbol(read::elf::ElfSymbol<'data, 'file, FileHeader32<Endianness>>),
+    Section(&'file str),
 }
 
-fn generate_text_relocs<'data, E: object::Endian>(
+fn rewrite_text_symbol<'data, 'file, E: object::Endian>(
     lib: &Lib<'_, 'data>,
     orig_sym: &read::elf::ElfSymbol<FileHeader32<E>>,
     name: &str,
     section_id: object::write::SectionId,
     bytes: &mut [u8],
     orig_sym_idx_to_new_offset: &mut HashMap<read::SymbolIndex, u32>,
-) -> Result<Vec<Reloc<'data>>, anyhow::Error> {
+) -> Result<Vec<Reloc<'data, 'file>>, anyhow::Error> {
     let mut decoder = Decoder::with_ip(32, bytes, orig_sym.address(), DecoderOptions::NONE);
 
     let orig_got_section = lib.file.section_by_name(".got").unwrap();
@@ -282,6 +285,9 @@ fn generate_text_relocs<'data, E: object::Endian>(
     let mut local_rewrites = Vec::new();
     let mut relocs = Vec::new();
 
+    let orig_plt_section = lib.file.section_by_name(".plt").unwrap();
+    let orig_got_plt_section = lib.file.section_by_name(".got.plt").unwrap();
+
     // The register which holds the address of the _GLOBAL_OFFSET_TABLE_ symbol.
     let mut thunk_reg = None;
 
@@ -293,6 +299,7 @@ fn generate_text_relocs<'data, E: object::Endian>(
             Mnemonic::Call => {
                 if instruction.op0_kind() == OpKind::NearBranch32 {
                     let target = instruction.near_branch_target();
+
                     if let Some(target_symbol) = lib.symbols_by_address.get(&target) {
                         let target_name = target_symbol.name().unwrap();
 
@@ -310,9 +317,25 @@ fn generate_text_relocs<'data, E: object::Endian>(
                             section_id,
                             offset: (decoder.position() - instruction.len()) as u64 + 1,
                             addend: -4,
-                            target: RelocTarget::Symbol(target_name),
+                            target: RelocTarget::Symbol(*target_symbol),
                             r_type,
                         });
+                    } else if (orig_plt_section.address()
+                        ..orig_plt_section.address() + orig_plt_section.size())
+                        .contains(&target)
+                    {
+                        // The address falls within the .plt section, suggesting it's a pointer
+                        // to a symbol defined externally. Find the corresponding relocation.
+                        let reloc = create_reloc_for_extern_sym(
+                            lib,
+                            section_id,
+                            (decoder.position() - instruction.len()) as u64 + 1,
+                            &orig_plt_section,
+                            &orig_got_plt_section,
+                            target,
+                        );
+
+                        relocs.push(reloc);
                     } else {
                         log::warn!(
                             "failed to find target symbol for near relative call to 0x{target:x} in {name} (0x{:x}) in original object, skipping",
@@ -341,11 +364,13 @@ fn generate_text_relocs<'data, E: object::Endian>(
                         .get_constant_offsets(&instruction)
                         .immediate_offset();
 
+                    let orig_got = lib.file.symbol_by_name("_GLOBAL_OFFSET_TABLE_").unwrap();
+
                     relocs.push(Reloc {
                         section_id,
                         offset: (decoder.position() - instruction.len() + immediate_off) as u64,
                         addend: 2,
-                        target: RelocTarget::Symbol("_GLOBAL_OFFSET_TABLE_"),
+                        target: RelocTarget::Symbol(orig_got),
                         r_type: R_386_GOTPC,
                     });
 
@@ -383,22 +408,20 @@ fn generate_text_relocs<'data, E: object::Endian>(
             );
 
             if let Some(rewrite) = rewrite {
-                let (r_type, target, new_addr) = match &rewrite {
-                    Rewrite::Got(symbol_name) => {
-                        (R_386_GOT32, RelocTarget::Symbol(symbol_name), None)
-                    }
+                let (r_type, target, new_addr) = match rewrite {
+                    Rewrite::Got(orig_sym) => (R_386_GOT32, RelocTarget::Symbol(orig_sym), None),
 
-                    Rewrite::GotOffset(new_addr, symbol_name) => {
-                        if let Some(new_addr) = *new_addr {
-                            (
-                                R_386_GOTOFF,
-                                RelocTarget::Section(symbol_name),
-                                Some(new_addr),
-                            )
-                        } else {
-                            (R_386_GOT32, RelocTarget::Symbol(symbol_name), None)
+                    Rewrite::GotOffset(new_addr, target) => match target {
+                        OffsetTarget::Symbol(orig_sym) => {
+                            (R_386_GOT32, RelocTarget::Symbol(orig_sym), new_addr)
                         }
-                    }
+
+                        OffsetTarget::Section(orig_section) => (
+                            R_386_GOTOFF,
+                            RelocTarget::Section(orig_section.name().unwrap()),
+                            new_addr,
+                        ),
+                    },
                 };
 
                 // Rewrite the instruction and add a reloc to point to the new
@@ -441,13 +464,67 @@ fn generate_text_relocs<'data, E: object::Endian>(
     Ok(relocs)
 }
 
-fn generate_rewrite<'data>(
-    lib: &Lib<'_, 'data>,
+/// Creates a relocation for an external symbol.
+///
+/// Recreates a relocation to a symbol defined externally to the original shared
+/// object and dynamically linked in.
+fn create_reloc_for_extern_sym<'data, 'file: 'data>(
+    lib: &Lib<'_, 'file>,
+    section_id: write::SectionId,
+    reloc_offset: u64,
+    orig_plt_section: &read::elf::ElfSection<'_, '_, FileHeader32<Endianness>>,
+    orig_got_plt_section: &read::elf::ElfSection<'_, '_, FileHeader32<Endianness>>,
+    target: u64,
+) -> Reloc<'data, 'file> {
+    let bytes = orig_plt_section.data().unwrap();
+
+    let target_addr = target as usize - orig_plt_section.address() as usize;
+
+    let mut thunk_decoder = Decoder::new(32, &bytes[target_addr..], DecoderOptions::NONE);
+
+    let mut thunk_instr = Instruction::default();
+    thunk_decoder.decode_out(&mut thunk_instr);
+
+    // This gets us the offset into the .got.plt section of the pointer which is
+    // relocated to the external symbol. We then scan the relocations list to
+    // find the one which corresponds to that location.
+    let got_plt_offset = thunk_instr.memory_displacement32() as u64;
+
+    let reloc = lib
+        .dyn_relocs_by_addr
+        .get(&(orig_got_plt_section.address() + got_plt_offset))
+        .unwrap();
+
+    let RelocationTarget::Symbol(sym_idx) = reloc.target() else {
+        panic!("reloc is not for symbol");
+    };
+
+    // The symbol index of the relocation indexes the dynamic symbol table.
+    let target_sym = lib
+        .file
+        .dynamic_symbol_table()
+        .unwrap()
+        .symbol_by_index(sym_idx)
+        .unwrap();
+
+    Reloc {
+        section_id,
+        offset: reloc_offset,
+        addend: -4,
+        target: RelocTarget::Symbol(target_sym),
+        r_type: R_386_PLT32,
+    }
+}
+
+fn generate_rewrite<'data, 'file: 'data>(
+    lib: &Lib<'_, 'file>,
     orig_sym_idx_to_new_offset: &HashMap<read::SymbolIndex, u32>,
     orig_got_section: &read::elf::ElfSection<'_, '_, FileHeader32<Endianness>>,
     orig_addr: u64,
-) -> Option<Rewrite<'data>> {
-    if let Some(orig_sym) = lib.symbols_by_address.get(&orig_addr) {
+) -> Option<Rewrite<'data, 'file>> {
+    if let Some(orig_sym) = lib.symbols_by_address.get(&orig_addr)
+        && orig_sym.kind() != SymbolKind::Section
+    {
         // The address points directly to a symbol.
         let orig_section = lib
             .file
@@ -456,14 +533,13 @@ fn generate_rewrite<'data>(
 
         let new_addr = orig_sym_idx_to_new_offset.get(&orig_sym.index()).copied();
 
-        let symbol_name = if new_addr.is_some() {
-            orig_section.name()
+        let target = if new_addr.is_some() {
+            OffsetTarget::Section(orig_section)
         } else {
-            orig_sym.name()
-        }
-        .unwrap();
+            OffsetTarget::Symbol(*orig_sym)
+        };
 
-        Some(Rewrite::GotOffset(new_addr, symbol_name))
+        Some(Rewrite::GotOffset(new_addr, target))
     } else if (orig_got_section.address()..orig_got_section.address() + orig_got_section.size())
         .contains(&orig_addr)
     {
@@ -485,9 +561,8 @@ fn generate_rewrite<'data>(
         ]);
 
         let orig_sym = lib.symbols_by_address.get(&sym_addr).unwrap();
-        let orig_name = orig_sym.name().unwrap();
 
-        Some(Rewrite::Got(orig_name))
+        Some(Rewrite::Got(*orig_sym))
     } else {
         None
     }
@@ -563,6 +638,7 @@ struct Lib<'data, 'file> {
     file: &'file object::read::elf::ElfFile32<'file>,
     symbols_by_name: HashMap<&'data str, ElfSymbol<'data, 'file, object::Endianness>>,
     symbols_by_address: HashMap<u64, ElfSymbol<'data, 'file, object::Endianness>>,
+    dyn_relocs_by_addr: HashMap<u64, object::Relocation>,
 }
 
 pub fn split() -> anyhow::Result<()> {
@@ -580,13 +656,18 @@ pub fn split() -> anyhow::Result<()> {
         .map(|sym| (sym.name().unwrap(), sym))
         .collect();
 
+    let symbols_by_address = orig_lib_file
+        .symbols()
+        .map(|sym| (sym.address(), sym))
+        .collect();
+
+    let dyn_relocs_by_addr = orig_lib_file.dynamic_relocations().unwrap().collect();
+
     let original_lib = Lib {
         file: &orig_lib_file,
-        symbols_by_name: orig_symbols.clone(),
-        symbols_by_address: orig_symbols
-            .into_values()
-            .map(|symbol| (symbol.address(), symbol))
-            .collect(),
+        symbols_by_name: orig_symbols,
+        symbols_by_address,
+        dyn_relocs_by_addr,
     };
 
     std::fs::create_dir_all("build/split").context("Failed to create build/split directory")?;
