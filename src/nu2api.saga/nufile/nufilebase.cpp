@@ -30,19 +30,19 @@ u32 NuFileBase::GetType() const {
 }
 
 i64 NuFileBase::GetPos() const {
-    return const_cast<NuFileBase *>(this)->Seek(0, NuFile::SeekOrigin::T::CURRENT);
+    return const_cast<NuFileBase *>(this)->Seek(0, NuFile::SeekOrigin::CURRENT);
 }
 
 i64 NuFileBase::GetSize() const {
     i64 cur_pos;
     i64 size;
 
-    cur_pos = const_cast<NuFileBase *>(this)->Seek(0, NuFile::SeekOrigin::T::CURRENT);
+    cur_pos = const_cast<NuFileBase *>(this)->Seek(0, NuFile::SeekOrigin::CURRENT);
 
-    size = const_cast<NuFileBase *>(this)->Seek(0, NuFile::SeekOrigin::T::END);
+    size = const_cast<NuFileBase *>(this)->Seek(0, NuFile::SeekOrigin::END);
 
     // Restore position.
-    const_cast<NuFileBase *>(this)->Seek(cur_pos, NuFile::SeekOrigin::T::START);
+    const_cast<NuFileBase *>(this)->Seek(cur_pos, NuFile::SeekOrigin::START);
 
     return size;
 }

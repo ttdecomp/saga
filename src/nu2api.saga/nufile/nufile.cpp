@@ -302,13 +302,13 @@ i64 NuFileSeek(NUFILE file, i64 offset, NUFILESEEK whence) {
     if (file >= 0x2000) {
         switch (whence) {
             default:
-                native_mode = NuFile::SeekOrigin::T::START;
+                native_mode = NuFile::SeekOrigin::START;
                 break;
             case NUFILE_SEEK_CURRENT:
-                native_mode = NuFile::SeekOrigin::T::CURRENT;
+                native_mode = NuFile::SeekOrigin::CURRENT;
                 break;
             case NUFILE_SEEK_END:
-                native_mode = NuFile::SeekOrigin::T::END;
+                native_mode = NuFile::SeekOrigin::END;
                 break;
         }
 
