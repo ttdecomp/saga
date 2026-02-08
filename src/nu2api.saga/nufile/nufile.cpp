@@ -11,7 +11,7 @@
 #include "nu2api.saga/nuthread/nuthread.h"
 
 #ifdef ANDROID
-#include "nu2api.saga/nufile/nufile_android.h"
+#include "nu2api.saga/nufile/android/nufile_android.h"
 #endif
 
 char g_datfileMode = 1;

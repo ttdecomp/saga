@@ -167,41 +167,43 @@ namespace NuFile {
     namespace OpenMode {
         enum T {
             READ = 0,
+            WRITE = 1,
         };
     }
 
     class IFile {
       public:
         // Return types uncertain.
-        virtual i32 GetCapabilities() const;
-        virtual const char *GetFilename() const;
-        virtual u32 GetType() const;
-        virtual void Seek(i64 offset, SeekOrigin::T);
-        virtual isize Read(void *buf, usize size);
-        virtual isize Write(const void *buf, usize size);
-        virtual usize GetPos() const;
-        virtual i64 GetSize() const;
-        virtual void Close();
-        virtual void Flush();
+        // NOLINTBEGIN
+        virtual i32 GetCapabilities() const {}
+        virtual const char *GetFilename() const {}
+        virtual u32 GetType() const {}
+        virtual i64 Seek(i64 offset, SeekOrigin::T) {}
+        virtual isize Read(void *buf, usize size) {}
+        virtual isize Write(const void *buf, usize size) {}
+        virtual i64 GetPos() const {}
+        virtual i64 GetSize() const {}
+        virtual void Close() {}
+        virtual void Flush() {}
+        // NOLINTEND
     };
 }; // namespace NuFile
 
-class NuFileBase : NuFile::IFile {
+class NuFileBase : public NuFile::IFile {
   public:
-    NuFileBase() = delete;
     NuFileBase(const char *filepath, NuFile::OpenMode::T mode, u32 type);
 
     virtual i32 GetCapabilities() const override;
     virtual const char *GetFilename() const override;
     virtual u32 GetType() const override;
 
-    virtual usize GetPos() const override;
+    virtual i64 GetPos() const override;
     virtual i64 GetSize() const override;
 
     virtual void Flush() override;
 
   protected:
-    virtual ~NuFileBase() = default;
+    virtual ~NuFileBase();
 
   private:
     // Type uncertain.
