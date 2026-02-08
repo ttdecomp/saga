@@ -134,6 +134,9 @@ char *GizmoGetOutputName(GIZMOSYS *gizmo_sys, GIZMO *gizmo, int output_index);
 int GizmoGetOutput(GIZMOSYS *gizmo_sys, GIZMO *gizmo, int unknown1, int unknown2);
 void GizmoSysEarlyUpdate(GIZMOSYS *gizmo_sys, void *world_info, float delta_time);
 void GizmoSysLateUpdate(GIZMOSYS *gizmo_sys, void *world_info, float delta_time);
+void GizmoSysDraw(GIZMOSYS *gizmo_sys, void *world_info, float delta_time);
+void GizmoSysPanelDraw(GIZMOSYS *gizmo_sys, void *world_info, float delta_time);
+int GizmoSys_BoltHitPlat(GIZMOSYS *gizmo_sys, void *world_info, BOLT *bolt, unsigned char *unknown);
 
 extern "C" {
 #endif

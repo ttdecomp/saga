@@ -372,3 +372,50 @@ void GizmoSysLateUpdate(GIZMOSYS *gizmo_sys, void *world_info, float delta_time)
         }
     }
 }
+
+void GizmoSysDraw(GIZMOSYS *gizmo_sys, void *world_info, float delta_time) {
+    if (gizmotypes == NULL || gizmo_sys == NULL) {
+        return;
+    }
+
+    GIZMOTYPE *type = gizmotypes->types;
+    GIZMOSET *set = gizmo_sys->sets;
+    for (i32 i = 0; i < gizmotypes->count; i++, set++, type++) {
+        if (type->fns.draw_fn != NULL) {
+            type->fns.draw_fn(world_info, set->unknown, delta_time);
+        }
+    }
+}
+
+void GizmoSysPanelDraw(GIZMOSYS *gizmo_sys, void *world_info, float delta_time) {
+    if (gizmotypes == NULL || gizmo_sys == NULL) {
+        return;
+    }
+
+    GIZMOTYPE *type = gizmotypes->types;
+    GIZMOSET *set = gizmo_sys->sets;
+    for (i32 i = 0; i < gizmotypes->count; i++, set++, type++) {
+        if (type->fns.panel_draw_fn != NULL) {
+            type->fns.panel_draw_fn(world_info, set->unknown, delta_time);
+        }
+    }
+}
+
+int GizmoSys_BoltHitPlat(GIZMOSYS *gizmo_sys, void *world_info, BOLT *bolt, unsigned char *unknown) {
+    if (gizmotypes == NULL || bolt == NULL || gizmo_sys == NULL) {
+        return 0;
+    }
+
+    GIZMOTYPE *type = gizmotypes->types;
+    GIZMOSET *set = gizmo_sys->sets;
+    for (i32 i = 0; i < gizmotypes->count; i++, set++, type++) {
+        if (type->fns.bolt_hit_plat_fn != NULL) {
+            i32 result = type->fns.bolt_hit_plat_fn(world_info, set->unknown, bolt, unknown);
+            if (result != 0) {
+                return 1;
+            }
+        }
+    }
+
+    return 0;
+}
