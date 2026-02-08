@@ -419,3 +419,18 @@ int GizmoSys_BoltHitPlat(GIZMOSYS *gizmo_sys, void *world_info, BOLT *bolt, unsi
 
     return 0;
 }
+
+int ResetGizmoType(GIZMOSYS *gizmo_sys, int type_id, char *name) {
+    if (name != NULL && type_id == -1) {
+        type_id = GizmoGetTypeIDByName(gizmo_sys, name);
+    }
+
+    if (type_id == -1) {
+        return 0;
+    }
+
+    gizmo_sys->sets[type_id].count = 0;
+    memset(gizmo_sys->sets[type_id].gizmos, 0, gizmo_sys->sets[type_id].max_count * sizeof(GIZMO));
+
+    return 1;
+}
