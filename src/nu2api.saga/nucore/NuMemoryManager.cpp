@@ -1,4 +1,4 @@
-#include "nu2api.saga/numemory/NuMemoryManager.h"
+#include "nu2api.saga/nucore/NuMemoryManager.h"
 
 #include <pthread.h>
 #include <stdio.h>

@@ -7,9 +7,9 @@
 #include "saveload/saveload.h"
 
 #include "nu2api.saga/nuandroid/nuios.h"
+#include "nu2api.saga/nucore/numemory.h"
 #include "nu2api.saga/nucore/nustring.h"
 #include "nu2api.saga/nucore/nutime.h"
-#include "nu2api.saga/numemory/numemory.h"
 #include "nu2api.saga/nuthread/nuthread.h"
 
 #include "export.h"

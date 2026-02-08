@@ -1,10 +1,10 @@
 #include "nu2api.saga/nu3d/nucamera.h"
 
 #include "decomp.h"
+#include "nu2api.saga/nucore/numemory.h"
 #include "nu2api.saga/numath/numtx.h"
 #include "nu2api.saga/numath/nutrig.h"
 #include "nu2api.saga/numath/nuvec4.h"
-#include "nu2api.saga/numemory/numemory.h"
 
 #include <string.h>
 

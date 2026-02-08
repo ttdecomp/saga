@@ -3,7 +3,7 @@
 #include <new>
 #include <stddef.h>
 
-#include "nu2api.saga/numemory/numemory.h"
+#include "nu2api.saga/nucore/numemory.h"
 #include "nu2api.saga/nuthread/nuthread.h"
 
 NuApplicationState *NuCore::m_applicationState;

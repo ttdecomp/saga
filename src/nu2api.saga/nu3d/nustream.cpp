@@ -2,7 +2,7 @@
 
 #include <string.h>
 
-#include "nu2api.saga/numemory/numemory.h"
+#include "nu2api.saga/nucore/numemory.h"
 
 unsigned int rndrstream_nbuffers = 2;
 int nurndr_maxstreamsize;

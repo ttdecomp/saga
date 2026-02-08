@@ -1,10 +1,12 @@
 #pragma once
 
-#include "nu2api.saga/numemory/NuMemoryManager.h"
-#include "nu2api.saga/numemory/NuMemoryPool.h"
-#include "nu2api.saga/numemory/numemory_android.h"
-
+#include "nu2api.saga/nucore/NuMemoryManager.h"
+#include "nu2api.saga/nucore/NuMemoryPool.h"
 #include "nu2api.saga/nucore/common.h"
+
+#ifdef ANDROID
+#include "nu2api.saga/nucore/android/numemory_android.h"
+#endif
 
 #ifdef __cplusplus
 

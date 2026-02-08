@@ -2,7 +2,6 @@
 
 #include "decomp.h"
 #include "nu2api.saga/nucore/common.h"
-#include "nu2api.saga/numemory/numemory.h"
 
 template <typename T> class NuVector {
   public:

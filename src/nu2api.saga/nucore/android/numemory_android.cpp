@@ -1,10 +1,9 @@
+#include "nu2api.saga/nucore/android/numemory_android.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "nu2api.saga/numemory/numemory_android.h"
-
 #include "nu2api.saga/nucore/common.h"
-#include "nu2api.saga/numemory/NuMemoryManager.h"
 
 NuMemoryPS::Mem1EventHandler::Mem1EventHandler() {
     this->page_count = 0;

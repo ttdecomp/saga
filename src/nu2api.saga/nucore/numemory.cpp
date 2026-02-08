@@ -1,7 +1,7 @@
 #include <new>
 #include <pthread.h>
 
-#include "nu2api.saga/numemory/numemory.h"
+#include "nu2api.saga/nucore/numemory.h"
 
 #include "nu2api.saga/nucore/common.h"
 #include "nu2api.saga/nucore/nucore.hpp"

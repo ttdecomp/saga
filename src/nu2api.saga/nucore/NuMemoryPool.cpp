@@ -1,4 +1,4 @@
-#include "nu2api.saga/numemory/NuMemoryPool.h"
+#include "nu2api.saga/nucore/NuMemoryPool.h"
 
 void NuMemoryPool::AddPage(void *ptr, unsigned int size) {
 }

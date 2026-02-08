@@ -1,8 +1,8 @@
 #include <new>
 
 #include "globals.h"
-#include "nu2api.saga/numemory/NuMemoryManager.h"
-#include "nu2api.saga/numemory/numemory.h"
+#include "nu2api.saga/nucore/NuMemoryManager.h"
+#include "nu2api.saga/nucore/numemory.h"
 
 void *operator new(std::size_t size) {
     if (g_disallowGlobalNew != false) {

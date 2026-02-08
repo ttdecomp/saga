@@ -2,7 +2,7 @@
 
 #include "nu2api.saga/nucore/nustring.h"
 #include "nu2api.saga/nufile/nufile.h"
-#include "nu2api.saga/numemory/numemory.h"
+#include "nu2api.saga/nucore/numemory.h"
 #include "saveload/saveload.h"
 
 struct bgprocinfo_s;

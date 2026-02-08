@@ -2,12 +2,12 @@
 
 #include <string.h>
 
+#include "nu2api.saga/nucore/NuMemoryManager.h"
 #include "nu2api.saga/nucore/common.h"
 #include "nu2api.saga/nucore/nuapi.h"
+#include "nu2api.saga/nucore/numemory.h"
 #include "nu2api.saga/nufile/nufile.h"
 #include "nu2api.saga/numath/nufloat.h"
-#include "nu2api.saga/numemory/NuMemoryManager.h"
-#include "nu2api.saga/numemory/numemory.h"
 
 #define MAX_GAME_PAD_COUNT 2
 
