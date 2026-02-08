@@ -113,7 +113,16 @@ set(SAGA_SOURCE_FILES
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/java/jni_stub.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/NuRenderDevice.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nucamera.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nugscn.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/numtl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nuprim.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nuqfnt.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nurndr.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nurndr.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nushader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nustream.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nutex.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nutex_android.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/android/nutex_ios_ex.cpp
@@ -179,17 +188,8 @@ set(SAGA_SOURCE_FILES
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/saveload/saveload.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nushader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/NuRenderDevice.cpp
-
     ${CMAKE_CURRENT_SOURCE_DIR}/src/lostandfound/tmclient.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nurndr.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nustream.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nurndr.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nuprim.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi.saga/gui/apimenu.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/numtl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nuqfnt.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmo.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/lever.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/gizforce.cpp
@@ -228,8 +228,6 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/plugs.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/lostandfound/qrand.cpp
-
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nugscn.cpp
 )
 
 set(SAGA_INCLUDE_DIRS
