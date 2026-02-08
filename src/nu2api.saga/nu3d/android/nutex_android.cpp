@@ -1,10 +1,10 @@
+#include "nu2api.saga/nu3d/android/nutex_android.h"
+
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
 #include <GLES2/gl2.h>
-
-#include "nu2api.saga/nu3d/nutex_android.h"
 
 #include "nu2api.saga/nu3d/android/nutex_ios_ex.h"
 #include "nu2api.saga/nu3d/nutex.h"

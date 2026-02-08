@@ -6,7 +6,7 @@
 #include "nu2api.saga/nucore/common.h"
 
 #ifdef ANDROID
-#include "nu2api.saga/nu3d/nutex_android.h"
+#include "nu2api.saga/nu3d/android/nutex_android.h"
 #endif
 
 typedef enum nutextype_e {

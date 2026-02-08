@@ -1,8 +1,8 @@
-#include "decomp.h"
-
 #include "nu2api.saga/nu3d/android/nutex_ios_ex.h"
 
-#include "nu2api.saga/nu3d/nutex_android.h"
+#include "decomp.h"
+
+#include "nu2api.saga/nu3d/android/nutex_android.h"
 
 int g_currentTexUnit = -1;
 
