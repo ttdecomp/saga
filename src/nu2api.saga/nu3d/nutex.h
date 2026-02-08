@@ -65,7 +65,7 @@ void NuTexInitExPS(VARIPTR *buf);
 void NuTexCreatePS(NUNATIVETEX *tex, bool is_pvrtc);
 void NuTexDestroyPS(NUNATIVETEX *tex);
 
-void NuChecksumAsHex(unsigned char *checksum, char *out);
+void NuChecksumAsHex(u8 *checksum, char *out);
 void NuTexHiresFilename(int tex_id, char *filename);
 int NuTexSwapHires(int tex_id_lo, int tex_id_hi);
 

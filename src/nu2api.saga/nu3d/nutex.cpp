@@ -6,12 +6,12 @@
 #include "nu2api.saga/nucore/common.h"
 #include "nu2api.saga/nucore/nustring.h"
 
-void NuChecksumAsHex(unsigned char *checksum, char *out) {
+void NuChecksumAsHex(u8 *checksum, char *out) {
     char hex_digits[] = "0123456789abcdef";
 
     for (int i = 0; i < 16; i++) {
-        unsigned char check_digit = checksum[i];
-        int least_sig_digit = (int)check_digit >> 4;
+        u8 check_digit = checksum[i];
+        i32 least_sig_digit = check_digit >> 4;
 
         out[i * 2] = hex_digits[least_sig_digit];
         out[i * 2 + 1] = hex_digits[(check_digit - (least_sig_digit << 4)) & 0xff];
