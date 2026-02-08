@@ -32,6 +32,8 @@ typedef u16 word;
 #define SAGA_NOMATCH __attribute__((section(".text.nomatch")))
 
 #ifdef HOST_BUILD
+#include <stdio.h>
+
 #define UNIMPLEMENTED(...)                                                                                             \
     ({                                                                                                                 \
         fprintf(stderr, "%s:%d: %s: UNIMPLEMENTED: %s\n", __FILE__, __LINE__, __func__, #__VA_ARGS__);                 \
