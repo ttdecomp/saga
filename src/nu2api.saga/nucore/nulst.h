@@ -32,6 +32,8 @@ extern "C" {
     NULSTHDR *NuLstCreate(i32 element_count, i32 element_size);
     void NuLstDestroy(NULSTHDR *list);
 
+    void NuLstFree(NULNKHDR *node);
+
     NULNKHDR *NuLstGetNext(NULSTHDR *list, NULNKHDR *node);
 #ifdef __cplusplus
 }

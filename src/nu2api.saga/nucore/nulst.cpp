@@ -60,6 +60,9 @@ void NuLstDestroy(NULSTHDR *list) {
     NuMemoryGet()->GetThreadMem()->BlockFree(list, 0);
 }
 
+void NuLstFree(NULNKHDR *node) {
+}
+
 NULNKHDR *NuLstGetNext(NULSTHDR *list, NULNKHDR *node) {
     if (node != NULL) {
         node--;

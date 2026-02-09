@@ -83,6 +83,59 @@ void *NuThread::ThreadMain(void *thread) {
     return NULL;
 }
 
+NuThreadSemaphore::NuThreadSemaphore(i32 max_signals) {
+    this->signaled_count = 0;
+    this->max_signals = max_signals;
+
+    pthread_mutex_init(&this->mutex, NULL);
+    pthread_cond_init(&this->condition, NULL);
+}
+
+NuThreadSemaphore::~NuThreadSemaphore() {
+    pthread_mutex_destroy(&this->mutex);
+    pthread_cond_destroy(&this->condition);
+}
+
+void NuThreadSemaphore::Signal() {
+    pthread_mutex_lock(&this->mutex);
+
+    if (this->signaled_count < this->max_signals) {
+        this->signaled_count++;
+
+        pthread_cond_signal(&this->condition);
+    }
+
+    pthread_mutex_unlock(&this->mutex);
+}
+
+i32 NuThreadSemaphore::TryWait() {
+    i32 did_wait;
+
+    pthread_mutex_lock(&this->mutex);
+
+    did_wait = 0;
+    if (this->signaled_count > 0) {
+        this->signaled_count--;
+        did_wait = 1;
+    }
+
+    pthread_mutex_unlock(&this->mutex);
+
+    return did_wait;
+}
+
+void NuThreadSemaphore::Wait() {
+    pthread_mutex_lock(&this->mutex);
+
+    while (this->signaled_count == 0) {
+        pthread_cond_wait(&this->condition, &this->mutex);
+    }
+
+    this->signaled_count--;
+
+    pthread_mutex_unlock(&this->mutex);
+}
+
 NuThread *NuThreadInitPS() {
     pthread_t current;
     int policy;
