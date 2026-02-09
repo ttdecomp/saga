@@ -32,6 +32,9 @@ extern "C" {
     NULSTHDR *NuLstCreate(i32 element_count, i32 element_size);
     void NuLstDestroy(NULSTHDR *list);
 
+    NULNKHDR *NuLstAlloc(NULSTHDR *list);
+    NULNKHDR *NuLstAllocHead(NULSTHDR *list);
+    NULNKHDR *NuLstAllocTail(NULSTHDR *list);
     void NuLstFree(NULNKHDR *node);
 
     NULNKHDR *NuLstGetNext(NULSTHDR *list, NULNKHDR *node);

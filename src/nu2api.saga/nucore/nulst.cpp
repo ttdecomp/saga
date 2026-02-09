@@ -60,6 +60,100 @@ void NuLstDestroy(NULSTHDR *list) {
     NuMemoryGet()->GetThreadMem()->BlockFree(list, 0);
 }
 
+NULNKHDR *NuLstAlloc(NULSTHDR *list) {
+    return NuLstAllocHead(list);
+}
+
+NULNKHDR *NuLstAllocHead(NULSTHDR *list) {
+    u32 current_thread;
+    NULNKHDR *node;
+
+    if (list->free != NULL) {
+        current_thread = nu_current_thread_id;
+
+        if (list->safe_thread != current_thread) {
+            (*NuThreadDisableThreadSwap)();
+        }
+
+        node = list->free;
+        list->free = list->free->next;
+
+        if (list->free == NULL) {
+            list->free_tail = NULL;
+        } else {
+            list->free->prev = NULL;
+        }
+
+        node->next = list->head;
+
+        if (list->head != NULL) {
+            list->head->prev = node;
+        } else {
+            list->tail = node;
+        }
+
+        node->prev = NULL;
+
+        list->head = node;
+        list->used_count++;
+
+        node->is_used = true;
+
+        if (list->safe_thread != current_thread) {
+            (*NuThreadEnableThreadSwap)();
+        }
+
+        return node + 1;
+    }
+
+    return NULL;
+}
+
+NULNKHDR *NuLstAllocTail(NULSTHDR *list) {
+    u32 current_thread;
+    NULNKHDR *node;
+
+    if (list->free != NULL) {
+        current_thread = nu_current_thread_id;
+
+        if (list->safe_thread != current_thread) {
+            (*NuThreadDisableThreadSwap)();
+        }
+
+        node = list->free;
+        list->free = list->free->next;
+
+        if (list->free == NULL) {
+            list->free_tail = NULL;
+        } else {
+            list->free->prev = NULL;
+        }
+
+        node->prev = list->tail;
+
+        if (list->tail != NULL) {
+            list->tail->next = node;
+        } else {
+            list->head = node;
+        }
+
+        node->next = NULL;
+
+        list->tail = node;
+
+        node->is_used = true;
+        list->used_count++;
+
+        if (list->safe_thread != current_thread) {
+            (*NuThreadEnableThreadSwap)();
+        }
+
+        return node + 1;
+    }
+
+    return NULL;
+}
+
 void NuLstFree(NULNKHDR *node) {
     u32 current_thread;
     NULSTHDR *list;
