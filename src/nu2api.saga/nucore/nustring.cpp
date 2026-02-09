@@ -62,7 +62,7 @@ const char *NuStrStripPath(const char *string) {
     do {
         cursor = string;
 
-        while (*cursor != '\\' && *cursor != '/') {
+        while (*cursor != '/' && *cursor != '\\') {
             if (*cursor == '\0') {
                 return string;
             }
