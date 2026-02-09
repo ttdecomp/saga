@@ -83,8 +83,8 @@ class NuMemoryManager {
     };
 
     enum AllocFlags {
-        MEM_ALLOC_ZERO = 1 << 0x0,
-        MEM_ALLOC_UNKNOWN_2 = 1 << 0x1,
+        MEM_ALLOC_SET_TO_ZERO = 1 << 0x0,
+        MEM_ALLOC_ARRAY = 1 << 0x1,
         MEM_ALLOC_UNKNOWN_4 = 1 << 0x2,
     };
 
@@ -240,7 +240,7 @@ class NuMemoryManager {
 
     static void SetFlags(u32 flags);
 
-    void *_BlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, NUMEMORY_CATEGORY category);
+    void *_BlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, u16 category);
     void BlockFree(void *ptr, u32 flags);
 
     void AddPage(void *ptr, u32 size, bool _unknown);
@@ -249,9 +249,9 @@ class NuMemoryManager {
     static u32 GetLargeBinIndex(u32 size);
     static u32 GetSmallBinIndex(u32 size);
 
-    void *_TryBlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, NUMEMORY_CATEGORY category);
+    void *_TryBlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, u16 category);
 
-    void ConvertToUsedBlock(FreeHeader *header, u32 alignment, u32 flags, const char *name, NUMEMORY_CATEGORY category);
+    void ConvertToUsedBlock(FreeHeader *header, u32 alignment, u32 flags, const char *name, u16 category);
     void *ClearUsedBlock(Header *header, u32 flags);
 
     void ____WE_HAVE_RUN_OUT_OF_MEMORY_____(u32 size, const char *name);

@@ -46,7 +46,8 @@ void NuPadInit() {
 NUPAD *NuPadOpen(i32 port, i32 slot) {
     NUPAD *pad;
 
-    pad = (NUPAD *)NU_ALLOC(sizeof(NUPAD) + 0x800, 0x4, NuMemoryManager::MEM_ALLOC_ZERO, "", NUMEMORY_CATEGORY_NONE);
+    pad = (NUPAD *)NuMemoryGet()->GetThreadMem()->_BlockAlloc(
+        sizeof(NUPAD) + 0x800, 0x4, NuMemoryManager::MEM_ALLOC_SET_TO_ZERO, "", NUMEMORY_CATEGORY_NONE);
 
     if (pad != NULL) {
         memset(pad, 0, sizeof(NUPAD));

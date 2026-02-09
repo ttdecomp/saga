@@ -315,6 +315,7 @@ else()
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/NuMemoryPool.cpp PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/nucore.cpp PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/numemory.cpp PROPERTIES COMPILE_OPTIONS "-O2")
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/nunew.cpp PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/nustring.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/android/numemory_android.cpp PROPERTIES COMPILE_OPTIONS "-O2")

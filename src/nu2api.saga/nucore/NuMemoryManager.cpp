@@ -169,7 +169,7 @@ void NuMemoryManager::SetFlags(u32 flags) {
     }
 }
 
-void *NuMemoryManager::_BlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, NUMEMORY_CATEGORY category) {
+void *NuMemoryManager::_BlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, u16 category) {
     void *ptr = this->_TryBlockAlloc(size, alignment, flags, name, category);
 
     if (ptr == NULL) {
@@ -179,14 +179,12 @@ void *NuMemoryManager::_BlockAlloc(u32 size, u32 alignment, u32 flags, const cha
     return ptr;
 }
 
-void *NuMemoryManager::_TryBlockAlloc(u32 size, u32 alignment, u32 flags, const char *name,
-                                      NUMEMORY_CATEGORY category) {
+void *NuMemoryManager::_TryBlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, u16 category) {
     // UNIMPLEMENTED();
     return malloc(size);
 }
 
-void NuMemoryManager::ConvertToUsedBlock(FreeHeader *header, u32 alignment, u32 flags, const char *name,
-                                         NUMEMORY_CATEGORY category) {
+void NuMemoryManager::ConvertToUsedBlock(FreeHeader *header, u32 alignment, u32 flags, const char *name, u16 category) {
     u32 align_mask;
     u32 header_value;
     u32 aligned;
@@ -259,7 +257,7 @@ void *NuMemoryManager::ClearUsedBlock(Header *header, u32 flags) {
 
     available_size = manager_idx <= 0x1d ? size_minus_header - 4 : size_minus_header - 8;
 
-    if ((flags & MEM_ALLOC_ZERO) != 0) {
+    if ((flags & MEM_ALLOC_SET_TO_ZERO) != 0) {
         memset(ptr, 0, available_size);
     }
 
