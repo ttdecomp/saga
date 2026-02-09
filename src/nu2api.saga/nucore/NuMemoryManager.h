@@ -6,10 +6,6 @@
 
 #ifdef __cplusplus
 
-#define NU_ALLOC(size, alignment, flags, name, category)                                                               \
-    NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, alignment, flags, name, category);
-#define NU_ALLOC_T(type, flags, name, category) (type *)NU_ALLOC(sizeof(type), alignof(type), flags, name, category)
-
 class NuMemoryManager {
   public:
     enum Flags {
