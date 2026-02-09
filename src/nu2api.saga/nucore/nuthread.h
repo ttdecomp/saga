@@ -16,6 +16,8 @@ typedef enum NUTHREADXBOX360CORE {
 #ifdef __cplusplus
 extern "C" {
 #endif
+    extern u32 nu_current_thread_id;
+
     i32 NuThreadCreateCriticalSection();
     void NuThreadDestroyCriticalSection(int index);
 

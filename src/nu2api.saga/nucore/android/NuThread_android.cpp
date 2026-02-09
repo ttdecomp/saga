@@ -1,8 +1,9 @@
+#include "nu2api.saga/nucore/android/NuThread_android.h"
+
 #include <pthread.h>
 
-#include "nu2api.saga/nucore/nuthread.h"
-
 #include "java/java.h"
+#include "nu2api.saga/nucore/nuthread.h"
 
 static __thread NuThreadBase *g_currentThread;
 static __thread pthread_t g_currentPthread;

@@ -19,6 +19,8 @@ const char *g_categoryNames[51] = {
     "RUNTIME",       "TTSHARED",
 };
 
+bool g_disallowGlobalNew = false;
+
 NuMemory::NuMemory(void **buf) {
     VARIPTR ptr;
     NuMemoryManager *manager;
@@ -38,9 +40,8 @@ NuMemory::NuMemory(void **buf) {
 
     manager = (NuMemoryManager *)ptr.void_ptr;
     if (ptr.addr != 0) {
-        manager =
-            new (manager) NuMemoryManager(this->mem1_event_handler, this->error_handler, "MEM1", g_categoryNames,
-                                               sizeof(g_categoryNames) / sizeof(char *));
+        manager = new (manager) NuMemoryManager(this->mem1_event_handler, this->error_handler, "MEM1", g_categoryNames,
+                                                sizeof(g_categoryNames) / sizeof(char *));
     }
     this->mem1_manager = manager;
     ptr.addr += sizeof(NuMemoryManager);
@@ -50,9 +51,8 @@ NuMemory::NuMemory(void **buf) {
 
     manager = (NuMemoryManager *)ptr.void_ptr;
     if (ptr.addr != 0) {
-        manager =
-            new (ptr.void_ptr) NuMemoryManager(this->mem2_event_handler, this->error_handler, "MEM2", g_categoryNames,
-                                               sizeof(g_categoryNames) / sizeof(char *));
+        manager = new (ptr.void_ptr) NuMemoryManager(this->mem2_event_handler, this->error_handler, "MEM2",
+                                                     g_categoryNames, sizeof(g_categoryNames) / sizeof(char *));
     }
     this->mem2_manager = manager;
     ptr.addr += sizeof(NuMemoryManager);

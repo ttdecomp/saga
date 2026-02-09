@@ -5,31 +5,34 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+    struct nulsthdr_s;
 
-    struct nulnkhdr_s;
+    typedef struct nulnkhdr_s {
+        struct nulsthdr_s *owner;
+        struct nulnkhdr_s *next;
+        struct nulnkhdr_s *prev;
+        u16 id;
+        u16 is_used : 1;
+    } NULNKHDR;
 
-    struct nulsthdr_s {
-        nulnkhdr_s *free;
-        nulnkhdr_s *free_tail;
-        nulnkhdr_s *head;
-        nulnkhdr_s *tail;
+    typedef struct nulsthdr_s {
+        NULNKHDR *free;
+        NULNKHDR *free_tail;
+        NULNKHDR *head;
+        NULNKHDR *tail;
         u16 element_count;
         u16 element_size;
-        u16 element_total_size;
+        u16 element_size_total;
         u16 used_count;
         u32 safe_thread;
-    };
 
-    struct nulnkhdr_s {
-        nulsthdr_s *owner;
-        nulnkhdr_s *succ;
-        nulnkhdr_s *prev;
-        u16 id;
-        u16 used : 1;
-    };
+        u16 padding[2];
+    } NULSTHDR;
 
-    nulsthdr_s *NuLstCreate(i32 element_count, i32 element_size);
+    NULSTHDR *NuLstCreate(i32 element_count, i32 element_size);
+    void NuLstDestroy(NULSTHDR *list);
 
+    NULNKHDR *NuLstGetNext(NULSTHDR *list, NULNKHDR *node);
 #ifdef __cplusplus
 }
 #endif

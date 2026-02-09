@@ -7,6 +7,8 @@
 #include "nu2api.saga/nucore/common.h"
 #include "nu2api.saga/nucore/nustring.h"
 
+u32 nu_current_thread_id;
+
 static pthread_mutex_t NuThread_CriticalSections[16];
 static char NuThread_CriticalSectionsUsed[16];
 

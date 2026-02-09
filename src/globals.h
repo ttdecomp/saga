@@ -7,8 +7,6 @@
 
 #ifdef __cplusplus
 
-extern bool g_disallowGlobalNew;
-
 extern "C" {
 #endif
     struct cheat_s { /* PlaceHolder Structure */
@@ -253,8 +251,6 @@ extern "C" {
     extern nusound_filename_info_s *MusicInfo;
 
     extern NUCAMERA *pNuCam;
-
-    extern u32 nu_current_thread_id;
 
 #ifdef __cplusplus
 }
