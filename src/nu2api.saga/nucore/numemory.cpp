@@ -20,38 +20,48 @@ const char *g_categoryNames[51] = {
 };
 
 NuMemory::NuMemory(void **buf) {
-    void *ptr;
-    NuMemoryManager *mem1;
+    VARIPTR ptr;
+    NuMemoryManager *manager;
 
-    ptr = *buf;
+    ptr.void_ptr = *buf;
     this->tls_index = -1;
 
     NuMemoryManager::SetFlags(0);
 
-    ptr = (void *)ALIGN((usize)ptr, 0x8);
+    ptr.addr = ALIGN(ptr.addr, 0x8);
 
-    this->error_handler = new (ptr) MemErrorHandler();
-    ptr = (void *)((usize)ptr + sizeof(MemErrorHandler) + 0x100);
+    this->error_handler = new (ptr.void_ptr) MemErrorHandler();
+    ptr.addr += sizeof(MemErrorHandler);
 
-    this->mem1_event_handler = new (ptr) NuMemoryPS::Mem1EventHandler();
-    ptr = (void *)((usize)ptr + sizeof(NuMemoryPS::Mem1EventHandler));
+    this->mem1_event_handler = new (ptr.void_ptr) NuMemoryPS::Mem1EventHandler();
+    ptr.addr += sizeof(NuMemoryPS::Mem1EventHandler);
 
-    this->mem1_manager = new (ptr) NuMemoryManager(this->mem1_event_handler, this->error_handler, "MEM1",
-                                                   g_categoryNames, sizeof(g_categoryNames) / sizeof(char *));
-    ptr = (void *)((usize)ptr + sizeof(NuMemoryManager));
+    manager = (NuMemoryManager *)ptr.void_ptr;
+    if (ptr.addr != 0) {
+        manager =
+            new (manager) NuMemoryManager(this->mem1_event_handler, this->error_handler, "MEM1", g_categoryNames,
+                                               sizeof(g_categoryNames) / sizeof(char *));
+    }
+    this->mem1_manager = manager;
+    ptr.addr += sizeof(NuMemoryManager);
 
-    this->mem2_event_handler = new (ptr) NuMemoryPS::Mem2EventHandler();
-    ptr = (void *)((usize)ptr + sizeof(NuMemoryPS::Mem2EventHandler));
+    this->mem2_event_handler = new (ptr.void_ptr) NuMemoryPS::Mem2EventHandler();
+    ptr.addr += sizeof(NuMemoryPS::Mem2EventHandler);
 
-    this->mem2_manager = new (ptr) NuMemoryManager(this->mem2_event_handler, this->error_handler, "MEM2",
-                                                   g_categoryNames, sizeof(g_categoryNames) / sizeof(char *));
-    ptr = (void *)((usize)ptr + sizeof(NuMemoryManager));
+    manager = (NuMemoryManager *)ptr.void_ptr;
+    if (ptr.addr != 0) {
+        manager =
+            new (ptr.void_ptr) NuMemoryManager(this->mem2_event_handler, this->error_handler, "MEM2", g_categoryNames,
+                                               sizeof(g_categoryNames) / sizeof(char *));
+    }
+    this->mem2_manager = manager;
+    ptr.addr += sizeof(NuMemoryManager);
 
-    this->fixed_pool_event_handler = new (ptr) FixedPoolEventHandler();
-    ptr = (void *)((usize)ptr + sizeof(FixedPoolEventHandler));
+    this->fixed_pool_event_handler = new (ptr.void_ptr) FixedPoolEventHandler();
+    ptr.addr += sizeof(FixedPoolEventHandler);
 
-    this->dynamic_pool_event_handler = new (ptr) DynamicPoolEventHandler();
-    ptr = (void *)((usize)ptr + sizeof(DynamicPoolEventHandler));
+    this->dynamic_pool_event_handler = new (ptr.void_ptr) DynamicPoolEventHandler();
+    ptr.addr += sizeof(DynamicPoolEventHandler);
 
     this->unknown = 0;
 }
