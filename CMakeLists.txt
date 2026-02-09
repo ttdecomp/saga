@@ -199,7 +199,6 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nufile/nufilebase.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nufile/nufilepak.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nufile/nufpar.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nufile/nupsfile.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nufile/numc.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nufile/nudatfile.cpp
 
@@ -321,7 +320,6 @@ else()
 
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nufile/nufile.c PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nufile/nufilebase.cpp PROPERTIES COMPILE_OPTIONS "-O2")
-    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nufile/nupsfile.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nufile/android/nufile_android.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 
