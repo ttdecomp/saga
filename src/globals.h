@@ -254,6 +254,8 @@ extern "C" {
 
     extern NUCAMERA *pNuCam;
 
+    extern u32 nu_current_thread_id;
+
 #ifdef __cplusplus
 }
 #endif

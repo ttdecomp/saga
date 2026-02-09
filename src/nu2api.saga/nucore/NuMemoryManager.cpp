@@ -169,7 +169,7 @@ void NuMemoryManager::SetFlags(u32 flags) {
     }
 }
 
-void *NuMemoryManager::_BlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, u16 category) {
+void *NuMemoryManager::_BlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, NUMEMORY_CATEGORY category) {
     void *ptr = this->_TryBlockAlloc(size, alignment, flags, name, category);
 
     if (ptr == NULL) {
@@ -179,12 +179,14 @@ void *NuMemoryManager::_BlockAlloc(u32 size, u32 alignment, u32 flags, const cha
     return ptr;
 }
 
-void *NuMemoryManager::_TryBlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, u16 category) {
+void *NuMemoryManager::_TryBlockAlloc(u32 size, u32 alignment, u32 flags, const char *name,
+                                      NUMEMORY_CATEGORY category) {
     // UNIMPLEMENTED();
     return malloc(size);
 }
 
-void NuMemoryManager::ConvertToUsedBlock(FreeHeader *header, u32 alignment, u32 flags, const char *name, u16 category) {
+void NuMemoryManager::ConvertToUsedBlock(FreeHeader *header, u32 alignment, u32 flags, const char *name,
+                                         NUMEMORY_CATEGORY category) {
     u32 align_mask;
     u32 header_value;
     u32 aligned;

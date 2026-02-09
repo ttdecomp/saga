@@ -15,7 +15,7 @@ static int rndrstream_buffid;
 void NuRndrStreamInit(int stream_buffer_size, VARIPTR *buffer) {
     if (buffer == NULL) {
         for (int i = 0; i < rndrstream_nbuffers; i++) {
-            rndrstream[i].void_ptr = NuMemoryGet()->GetThreadMem()->_BlockAlloc(stream_buffer_size, 4, 1, "", 0);
+            rndrstream[i].void_ptr = NU_ALLOC(stream_buffer_size, 4, 1, "", NUMEMORY_CATEGORY_NONE);
             memset(rndrstream[i].void_ptr, 0, stream_buffer_size);
         }
     } else {

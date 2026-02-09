@@ -6,6 +6,64 @@
 
 #ifdef __cplusplus
 
+#define NU_ALLOC(size, alignment, flags, name, category)                                                               \
+    NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, alignment, flags, name, category);
+#define NU_ALLOC_T(type, flags, name, category) (type *)NU_ALLOC(sizeof(type), alignof(type), flags, name, category)
+
+typedef enum numemory_category_e : u16 {
+    NUMEMORY_CATEGORY_NONE = 0,
+    NUMEMORY_CATEGORY_INITIAL = 1,
+    NUMEMORY_CATEGORY_HARDWAREINIT = 2,
+    NUMEMORY_CATEGORY_NUFILE = 3,
+    NUMEMORY_CATEGORY_NUFONT = 4,
+    NUMEMORY_CATEGORY_NUSCENE = 5,
+    NUMEMORY_CATEGORY_NURENDER = 6,
+    NUMEMORY_CATEGORY_NUSOUND = 7,
+    NUMEMORY_CATEGORY_NUDEBUG = 8,
+    NUMEMORY_CATEGORY_CHARS = 9,
+    NUMEMORY_CATEGORY_CHARANIMS = 10,
+    NUMEMORY_CATEGORY_SPLITSCREEN = 11,
+    NUMEMORY_CATEGORY_DYNOTERRAIN = 12,
+    NUMEMORY_CATEGORY_DYNODATA = 13,
+    NUMEMORY_CATEGORY_DYNOSYSTEM = 14,
+    NUMEMORY_CATEGORY_AI = 15,
+    NUMEMORY_CATEGORY_PARTICLE = 16,
+    NUMEMORY_CATEGORY_VFX = 17,
+    NUMEMORY_CATEGORY_TECH = 18,
+    NUMEMORY_CATEGORY_SCRIPT = 19,
+    NUMEMORY_CATEGORY_RESOURCE = 20,
+    NUMEMORY_CATEGORY_GAMEFRAMEWORK = 21,
+    NUMEMORY_CATEGORY_LEVEL = 22,
+    NUMEMORY_CATEGORY_CUTSCENE = 23,
+    NUMEMORY_CATEGORY_KRAWLIE = 24,
+    NUMEMORY_CATEGORY_GAME = 25,
+    NUMEMORY_CATEGORY_EDITOR = 26,
+    NUMEMORY_CATEGORY_ANIMATION = 27,
+    NUMEMORY_CATEGORY_MANAGERS = 28,
+    NUMEMORY_CATEGORY_ENGINE = 29,
+    NUMEMORY_CATEGORY_G_LEGOSETS = 30,
+    NUMEMORY_CATEGORY_L_LEGOSETS = 31,
+    NUMEMORY_CATEGORY_TECH_GIN = 32,
+    NUMEMORY_CATEGORY_TECH_GIZMO = 33,
+    NUMEMORY_CATEGORY_TECH_GADGET = 34,
+    NUMEMORY_CATEGORY_TECH_FLOW = 35,
+    NUMEMORY_CATEGORY_TECH_ANIM = 36,
+    NUMEMORY_CATEGORY_TECH_LIGHTING = 37,
+    NUMEMORY_CATEGORY_TECH_AI = 38,
+    NUMEMORY_CATEGORY_TECH_AI_EDMESH = 39,
+    NUMEMORY_CATEGORY_TECH_AI_GRAPH = 40,
+    NUMEMORY_CATEGORY_TECH_CAMERA = 41,
+    NUMEMORY_CATEGORY_TECH_AUDIO = 42,
+    NUMEMORY_CATEGORY_TECH_PICKUPS = 43,
+    NUMEMORY_CATEGORY_TECH_KRAWLIE = 44,
+    NUMEMORY_CATEGORY_TECH_STREAM = 45,
+    NUMEMORY_CATEGORY_TECH_GRASS = 46,
+    NUMEMORY_CATEGORY_TECH_MAINLED = 47,
+    NUMEMORY_CATEGORY_TECH_FIXUP = 48,
+    NUMEMORY_CATEGORY_RUNTIME = 49,
+    NUMEMORY_CATEGORY_TTSHARED = 50,
+} NUMEMORY_CATEGORY;
+
 class NuMemoryManager {
   public:
     enum Flags {
@@ -182,7 +240,7 @@ class NuMemoryManager {
 
     static void SetFlags(u32 flags);
 
-    void *_BlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, u16 category);
+    void *_BlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, NUMEMORY_CATEGORY category);
     void BlockFree(void *ptr, u32 flags);
 
     void AddPage(void *ptr, u32 size, bool _unknown);
@@ -191,9 +249,9 @@ class NuMemoryManager {
     static u32 GetLargeBinIndex(u32 size);
     static u32 GetSmallBinIndex(u32 size);
 
-    void *_TryBlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, u16 category);
+    void *_TryBlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, NUMEMORY_CATEGORY category);
 
-    void ConvertToUsedBlock(FreeHeader *header, u32 alignment, u32 flags, const char *name, u16 category);
+    void ConvertToUsedBlock(FreeHeader *header, u32 alignment, u32 flags, const char *name, NUMEMORY_CATEGORY category);
     void *ClearUsedBlock(Header *header, u32 flags);
 
     void ____WE_HAVE_RUN_OUT_OF_MEMORY_____(u32 size, const char *name);

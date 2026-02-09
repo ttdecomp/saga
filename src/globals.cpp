@@ -56,3 +56,5 @@ nusound_filename_info_s *MusicInfo = NULL;
 NUCAMERA *pNuCam = NULL;
 
 bool g_disallowGlobalNew = false;
+
+u32 nu_current_thread_id = 0;

@@ -23,7 +23,7 @@ NUMTX smtx = {
 };
 
 NUCAMERA *NuCameraCreate() {
-    NUCAMERA *cam = (NUCAMERA *)NuMemoryGet()->GetThreadMem()->_BlockAlloc(sizeof(NUCAMERA), 0x4, 1, "", 0);
+    NUCAMERA *cam = NU_ALLOC_T(NUCAMERA, 1, "", NUMEMORY_CATEGORY_NONE);
 
     NuMtxSetIdentity(&cam->mtx);
 

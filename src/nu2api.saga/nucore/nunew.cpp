@@ -9,7 +9,8 @@ void *operator new(std::size_t size) {
         g_disallowGlobalNew = false;
     }
 
-    return NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, 0x10, NuMemoryManager::MEM_ALLOC_ZERO, "_new", 0);
+    return NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, 0x10, NuMemoryManager::MEM_ALLOC_ZERO, "_new",
+                                                      NUMEMORY_CATEGORY_NONE);
 }
 
 void *operator new(std::size_t size, u32 alignment) {
@@ -17,7 +18,8 @@ void *operator new(std::size_t size, u32 alignment) {
         g_disallowGlobalNew = false;
     }
 
-    return NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, alignment, NuMemoryManager::MEM_ALLOC_ZERO, "_new", 0);
+    return NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, alignment, NuMemoryManager::MEM_ALLOC_ZERO, "_new",
+                                                      NUMEMORY_CATEGORY_NONE);
 }
 
 void *operator new(std::size_t size, const std::nothrow_t &) noexcept {
@@ -25,7 +27,8 @@ void *operator new(std::size_t size, const std::nothrow_t &) noexcept {
         g_disallowGlobalNew = false;
     }
 
-    return NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, 0x10, NuMemoryManager::MEM_ALLOC_ZERO, "_new", 0);
+    return NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, 0x10, NuMemoryManager::MEM_ALLOC_ZERO, "_new",
+                                                      NUMEMORY_CATEGORY_NONE);
 }
 
 void *operator new(std::size_t size, u32 alignment, const std::nothrow_t &) noexcept {
@@ -33,23 +36,28 @@ void *operator new(std::size_t size, u32 alignment, const std::nothrow_t &) noex
         g_disallowGlobalNew = false;
     }
 
-    return NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, alignment, NuMemoryManager::MEM_ALLOC_ZERO, "_new", 0);
+    return NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, alignment, NuMemoryManager::MEM_ALLOC_ZERO, "_new",
+                                                      NUMEMORY_CATEGORY_NONE);
 }
 
 void *operator new[](std::size_t size) {
-    return NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, 0x10, NuMemoryManager::MEM_ALLOC_ZERO, "_new", 0);
+    return NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, 0x10, NuMemoryManager::MEM_ALLOC_ZERO, "_new",
+                                                      NUMEMORY_CATEGORY_NONE);
 }
 
 void *operator new[](std::size_t size, u32 alignment) {
-    return NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, alignment, NuMemoryManager::MEM_ALLOC_ZERO, "_new", 0);
+    return NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, alignment, NuMemoryManager::MEM_ALLOC_ZERO, "_new",
+                                                      NUMEMORY_CATEGORY_NONE);
 }
 
 void *operator new[](std::size_t size, const std::nothrow_t &) noexcept {
-    return NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, 0x10, NuMemoryManager::MEM_ALLOC_ZERO, "_new", 0);
+    return NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, 0x10, NuMemoryManager::MEM_ALLOC_ZERO, "_new",
+                                                      NUMEMORY_CATEGORY_NONE);
 }
 
 void *operator new[](std::size_t size, u32 alignment, const std::nothrow_t &) noexcept {
-    return NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, alignment, NuMemoryManager::MEM_ALLOC_ZERO, "_new", 0);
+    return NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, alignment, NuMemoryManager::MEM_ALLOC_ZERO, "_new",
+                                                      NUMEMORY_CATEGORY_NONE);
 }
 
 void operator delete(void *ptr) noexcept {

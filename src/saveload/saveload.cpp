@@ -143,15 +143,8 @@ void SaveSystemInitialise(i32 slots, void *makeSaveHash, void *save, i32 saveSiz
     memcard_extra_savedata = extradata;
     memcard_extra_savedatasize = extradataSize;
 
-    NuMemory *mem = NuMemoryGet();
-    NuMemoryManager *manager = mem->GetThreadMem();
-
-    memcard_savedatabuffer = manager->_BlockAlloc(saveSize + 4, 4, 1, "", 0);
-    mem = NuMemoryGet();
-
-    manager = mem->GetThreadMem();
-
-    memcard_extra_savedatabuffer = (void *)manager->_BlockAlloc(extradataSize + 4, 4, 1, "", 0);
+    memcard_savedatabuffer = NU_ALLOC(saveSize + 4, 4, 1, "", NUMEMORY_CATEGORY_NONE);
+    memcard_extra_savedatabuffer = NU_ALLOC(extradataSize + 4, 4, 1, "", NUMEMORY_CATEGORY_NONE);
 
     memcard_autosave = saveCount;
     memcard_drawasiconfn = drawSaveIcon;
