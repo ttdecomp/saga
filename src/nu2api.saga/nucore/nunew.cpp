@@ -9,7 +9,7 @@ void *operator new(std::size_t size) {
         g_disallowGlobalNew = false;
     }
 
-    return NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, 16, NuMemoryManager::MEM_ALLOC_ZERO, "_new", 0);
+    return NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, 0x10, NuMemoryManager::MEM_ALLOC_ZERO, "_new", 0);
 }
 
 void *operator new(std::size_t size, u32 alignment) {

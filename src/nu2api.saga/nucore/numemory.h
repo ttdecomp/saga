@@ -10,7 +10,7 @@
 
 #ifdef __cplusplus
 
-struct NuMemory {
+class NuMemory {
   private:
     class MemErrorHandler : public NuMemoryManager::IErrorHandler {};
 
