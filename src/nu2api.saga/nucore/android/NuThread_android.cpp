@@ -1,6 +1,7 @@
 #include "nu2api.saga/nucore/android/NuThread_android.h"
 
 #include <pthread.h>
+#include <string.h>
 
 #include "java/java.h"
 #include "nu2api.saga/nucore/nustring.h"
