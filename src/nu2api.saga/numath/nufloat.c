@@ -1,5 +1,7 @@
 #include "nu2api.saga/numath/nufloat.h"
 
+#include "nu2api.saga/nucore/common.h"
+
 f32 NuFnabs(f32 f) {
     f32 rv;
 
@@ -32,4 +34,8 @@ f32 NuFsqrt(f32 f) {
 
 f32 NuFmod(f32 a, f32 b) {
     return a - (int)(a / b) * b;
+}
+
+f32 NuFloor(f32 f) {
+    return (f32)(i32)f;
 }
