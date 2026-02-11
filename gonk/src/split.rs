@@ -759,7 +759,7 @@ pub fn split() -> anyhow::Result<()> {
         std::fs::File::create("objdiff.json").context("Failed to open objdiff.json")?,
     );
 
-    serde_json::to_writer(
+    serde_json::to_writer_pretty(
         json,
         &ObjDiff {
             build_base: true,
