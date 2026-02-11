@@ -1280,7 +1280,7 @@ i32 NuDatFileOpenSize(NUFILE file) {
     }
 }
 
-i32 NuDatFileLoadBuffer(nudathdr_s *dat, char *name, void *dest, i32 buf_size) {
+i32 NuDatFileLoadBuffer(NUDATHDR *dat, char *name, void *dest, i32 buf_size) {
     NUFILE file;
     char *buf;
 

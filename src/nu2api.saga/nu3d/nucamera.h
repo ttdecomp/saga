@@ -34,8 +34,8 @@ extern "C" {
 #endif
     NUCAMERA *NuCameraCreate(void);
     void NuCameraDestroy(NUCAMERA *cam);
-    f32 NuCameraDist(nuvec_s *v);
-    f32 NuCameraDistSqr(nuvec_s *v);
+    f32 NuCameraDist(NUVEC *v);
+    f32 NuCameraDistSqr(NUVEC *v);
     NUCAMERA *NuCameraGetCam(void);
     NUMTX *NuCameraGetViewMtx(void);
     NUMTX *NuCameraGetClipPlanes(void);
@@ -45,7 +45,7 @@ extern "C" {
     NUMTX *NuCameraGetProjectionMtx(void);
     NUMTX *NuCameraGetScalingMtx(void);
     NUMTX *NuCameraGetMtx(void);
-    void NuCameraCalcRay(float screen_x, float screen_y, nuvec_s *ray_start, nuvec_s *ray_end, nucamera_s *cam);
+    void NuCameraCalcRay(float screen_x, float screen_y, NUVEC *ray_start, NUVEC *ray_end, NUCAMERA *cam);
 #ifdef __cplusplus
 }
 #endif

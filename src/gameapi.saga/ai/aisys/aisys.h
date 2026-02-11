@@ -320,11 +320,13 @@ extern "C" {
     void AIScriptLoadAllPakFile(void *pak, char *path, VARIPTR *buf, VARIPTR *buf_end, AISYS *sys);
 
     void AIScriptClearInterrupt(AISCRIPTPROCESS *processor, char *state_name);
+
+    AISTATE *AIStateFind(char *name, AISCRIPT *script);
 #ifdef __cplusplus
 }
 #endif
 
 f32 AiParseExpression(char *expr);
 
-void AIScriptOpenPakFileParse(AISCRIPT_s **script_ref, void *pak, char *filename, char *path, VARIPTR *buf,
+void AIScriptOpenPakFileParse(AISCRIPT **script_ref, void *pak, char *filename, char *path, VARIPTR *buf,
                               VARIPTR *buf_end);
