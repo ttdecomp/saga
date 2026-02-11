@@ -803,7 +803,6 @@ static void NuDatFileDecodeNext() {
 
             unpack_file_info->pos += read_buffer_size + 0xc;
             unpack_file_odi->pos = unpack_file_info->pos;
-            break;
     }
 }
 
