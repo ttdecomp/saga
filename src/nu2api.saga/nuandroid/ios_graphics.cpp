@@ -65,12 +65,19 @@ u32 NuIOS_YieldThread(void) {
     UNIMPLEMENTED();
 }
 
+i32 NuIOS_ShouldUseMSAA(void) {
+    return 0;
+}
+
 static pthread_mutex_t g_wakeRenderMutex;
 static pthread_cond_t g_wakeRenderCondition;
 static pthread_mutex_t g_renderThreadDoneThreadMutex;
 static pthread_cond_t g_renderThreadDoneThreadCondition;
 static pthread_mutex_t g_awaitingRenderWakeMutex;
 static pthread_cond_t g_awaitingRenderWakeCondition;
+static i32 g_awaitingRenderWake;
+static pthread_t *g_wakeRenderThread;
+static pthread_t *g_renderThreadDoneThread;
 
 void NuIOS_InitRenderThread() {
     pthread_mutex_init(&g_wakeRenderMutex, NULL);
@@ -81,6 +88,24 @@ void NuIOS_InitRenderThread() {
     pthread_cond_init(&g_awaitingRenderWakeCondition, NULL);
 }
 
-i32 NuIOS_ShouldUseMSAA(void) {
-    return 0;
+void NuIOS_WaitUntilAllowedToRender(void) {
+    pthread_mutex_lock(&g_awaitingRenderWakeMutex);
+    g_awaitingRenderWake = 1;
+    pthread_cond_signal(&g_awaitingRenderWakeCondition);
+    pthread_mutex_unlock(&g_awaitingRenderWakeMutex);
+    pthread_mutex_lock(&g_wakeRenderMutex);
+    while (g_wakeRenderThread == NULL) {
+        pthread_cond_wait(&g_wakeRenderCondition, &g_wakeRenderMutex);
+    }
+    g_wakeRenderThread = NULL;
+    pthread_mutex_lock(&g_awaitingRenderWakeMutex);
+    g_awaitingRenderWake = 0;
+    pthread_mutex_unlock(&g_awaitingRenderWakeMutex);
+    pthread_mutex_unlock(&g_wakeRenderMutex);
+}
+
+void NuIOS_SetRenderIncomplete(void) {
+    pthread_mutex_lock(&g_renderThreadDoneThreadMutex);
+    g_renderThreadDoneThread = NULL;
+    pthread_mutex_unlock(&g_renderThreadDoneThreadMutex);
 }

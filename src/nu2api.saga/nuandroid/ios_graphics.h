@@ -19,6 +19,8 @@ extern "C" {
     void NuIOSInitOpenGLES(void);
     void NuIOS_AllocateSystemFramebuffers(void);
     i32 NuCheckGLErrorsFL(char *file, i32 line);
+    void NuIOS_WaitUntilAllowedToRender(void);
+    void NuIOS_SetRenderIncomplete(void);
 #ifdef __cplusplus
 }
 #endif

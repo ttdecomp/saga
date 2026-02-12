@@ -4,12 +4,22 @@
 
 NuRenderDevice g_renderDevice;
 
+__thread i32 gt_glContextIndex;
+
+void NuRenderDevice::SetThisTreadAsRender() {
+    gt_glContextIndex = 3;
+}
+
 int NuRenderDevice::BeginCriticalSection(const char *file, int line) {
     UNIMPLEMENTED();
 }
 
 void NuRenderDevice::EndCriticalSection(const char *file, int line) {
     UNIMPLEMENTED();
+}
+
+void NuRenderSetThisTreadAsRender() {
+    g_renderDevice.SetThisTreadAsRender();
 }
 
 void BeginCriticalSectionGL(const char *file, int line) {
