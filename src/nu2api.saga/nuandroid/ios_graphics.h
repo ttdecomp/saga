@@ -3,6 +3,8 @@
 #include "nu2api.saga/nucore/common.h"
 
 #ifdef __cplusplus
+i32 NuCheckGLErrorsFL(const char *file, i32 line);
+
 extern "C" {
 #endif
     extern i32 g_isLowEndDevice;
@@ -18,7 +20,6 @@ extern "C" {
     i32 NuIOS_ShouldUseMSAA(void);
     void NuIOSInitOpenGLES(void);
     void NuIOS_AllocateSystemFramebuffers(void);
-    i32 NuCheckGLErrorsFL(char *file, i32 line);
     void NuIOS_WaitUntilAllowedToRender(void);
     void NuIOS_SetRenderIncomplete(void);
     void NuIOS_SetRenderComplete(void);

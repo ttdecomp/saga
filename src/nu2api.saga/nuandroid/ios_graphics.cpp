@@ -6,6 +6,7 @@
 
 #include "decomp.h"
 #include "nu2api.saga/nu3d/NuRenderDevice.h"
+#include "nu2api.saga/nu3d/android/nutex_ios_ex.h"
 
 void NuIOSInitOpenGLES(void) {
     BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nuandroid/ios_graphics.cpp", 308);
@@ -13,13 +14,6 @@ void NuIOSInitOpenGLES(void) {
     glFrontFace(GL_CW);
     EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nuandroid/ios_graphics.cpp", 312);
 }
-
-GLuint g_lastBound2DTexIds[16];
-GLuint g_lastBoundCubeTexIds[16];
-GLuint g_earlyColorFramebuffer;
-GLuint g_defaultFramebuffer;
-GLuint g_currentFramebuffer;
-GLuint g_earlyColorMSAAFramebuffer;
 
 void NuIOS_AllocateSystemFramebuffers(void) {
     BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nuandroid/ios_graphics.cpp", 106);
@@ -37,7 +31,7 @@ void NuIOS_AllocateSystemFramebuffers(void) {
     EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nuandroid/ios_graphics.cpp", 260);
 }
 
-i32 NuCheckGLErrorsFL(char *file, i32 line) {
+i32 NuCheckGLErrorsFL(const char *file, i32 line) {
     return 0; // nice
 }
 

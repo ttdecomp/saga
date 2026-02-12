@@ -179,3 +179,13 @@ int NuTexReserve(int size) {
 
 void NuTexUnReserve() {
 }
+
+void NuTexSetTextureWithStagePS(NUNATIVETEX *tex, GLuint stage) {
+    GLuint gl_tex;
+
+    glActiveTexture(GL_TEXTURE0 + stage);
+
+    g_currentTexUnit = stage;
+
+    glBindTexture(GL_TEXTURE_2D, tex != NULL ? tex->platform.gl_tex : 0);
+}
