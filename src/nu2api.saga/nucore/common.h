@@ -65,9 +65,10 @@ typedef union variptr_u {
 
 #define BUFFER_ALLOC(buffer_ptr, size, align)                                                                          \
     ({                                                                                                                 \
-        void *ptr = (void *)((usize)(buffer_ptr) + ALIGN((usize)(buffer_ptr), (align)));                               \
+        void *ptr = (void *)ALIGN((usize)(*(void **)buffer_ptr), (align));                                             \
         *(void **)(buffer_ptr) = (void *)((usize)ptr + (size));                                                        \
         ptr;                                                                                                           \
     })
-#define BUFFER_ALLOC_T(buffer_ptr, T) (T *)BUFFER_ALLOC((buffer_ptr), sizeof(T), alignof(T))
-#define BUFFER_ALLOC_ARRAY(buffer_ptr, count, T) (T *)BUFFER_ALLOC((buffer_ptr), sizeof(T) * (count), alignof(T))
+#define BUFFER_ALLOC_T(buffer_ptr, T) (T *)BUFFER_ALLOC((void **)(buffer_ptr), sizeof(T), alignof(T))
+#define BUFFER_ALLOC_ARRAY(buffer_ptr, count, T)                                                                       \
+    (T *)BUFFER_ALLOC((void **)(buffer_ptr), sizeof(T) * (count), alignof(T))

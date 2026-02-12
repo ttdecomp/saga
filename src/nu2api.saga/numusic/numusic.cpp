@@ -92,12 +92,12 @@ void NuMusic::GetSoundFiles(nusound_filename_info_s **finfo, int *null) {
 void NuMusic::InitData(const char *file, VARIPTR *buffer_start, VARIPTR buffer_end) {
     VARIPTR buffer_original = *buffer_start;
 
-    this->string_pool_start = BUFFER_ALLOC_ARRAY(&buffer_start->void_ptr, 0x10000, char);
+    this->string_pool_start = BUFFER_ALLOC_ARRAY(buffer_start, 0x10000, char);
     this->string_pool_end = this->string_pool_start;
 
-    this->albums = BUFFER_ALLOC_ARRAY(&buffer_start->void_ptr, 512, Album);
-    this->tracks = BUFFER_ALLOC_ARRAY(&buffer_start->void_ptr, 2048, Track);
-    this->indexes = BUFFER_ALLOC_ARRAY(&buffer_start->void_ptr, 2048, f32);
+    this->albums = BUFFER_ALLOC_ARRAY(buffer_start, 512, Album);
+    this->tracks = BUFFER_ALLOC_ARRAY(buffer_start, 2048, Track);
+    this->indexes = BUFFER_ALLOC_ARRAY(buffer_start, 2048, f32);
     LOG_DEBUG("this->albums=%p, this->tracks=%p, this->indexes=%p", this->albums, this->tracks, this->indexes);
 
     NuFParSetInterpreterErrorHandler(0);

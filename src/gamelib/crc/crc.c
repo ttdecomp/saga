@@ -12,7 +12,7 @@ void CRC_Init(VARIPTR *buffer_start) {
         return;
     }
 
-    g_crc_table = BUFFER_ALLOC_ARRAY(&buffer_start->void_ptr, 0x100, i32);
+    g_crc_table = BUFFER_ALLOC_ARRAY(buffer_start, 0x100, i32);
 
     for (u32 i = 0; i < 0x100; i++) {
         u32 crc = i << 24;
