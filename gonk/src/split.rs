@@ -673,7 +673,7 @@ pub fn split() -> anyhow::Result<()> {
     for command in compile_commands.iter() {
         log::info!("processing file '{}'", command.file.display());
 
-        let binary = std::path::Path::new(&command.directory).join(&command.output);
+        let binary = command.directory.join(&command.output);
 
         let contents = std::fs::read(&binary)
             .with_context(|| format!("Failed to read object file: {}", command.output.display()))?;
