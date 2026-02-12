@@ -140,6 +140,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/zipups.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi.saga/ai/aisys/aiscript.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi.saga/ai/aisys/aistate.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi.saga/edtools/edfile.cpp
 
@@ -289,6 +290,7 @@ else()
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/world.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi.saga/ai/aisys/aiscript.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi.saga/ai/aisys/aistate.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi.saga/edtools/edfile.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 
