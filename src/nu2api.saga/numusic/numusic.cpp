@@ -92,12 +92,12 @@ void NuMusic::GetSoundFiles(nusound_filename_info_s **finfo, int *null) {
 void NuMusic::InitData(const char *file, VARIPTR *buffer_start, VARIPTR buffer_end) {
     VARIPTR buffer_original = *buffer_start;
 
-    this->string_pool_start = BUFFER_ALLOC_ARRAY_ALIGNED(&buffer_start->void_ptr, 0x10000, char);
+    this->string_pool_start = BUFFER_ALLOC_ARRAY(&buffer_start->void_ptr, 0x10000, char);
     this->string_pool_end = this->string_pool_start;
 
-    this->albums = BUFFER_ALLOC_ARRAY_ALIGNED(&buffer_start->void_ptr, 512, Album);
-    this->tracks = BUFFER_ALLOC_ARRAY_ALIGNED(&buffer_start->void_ptr, 2048, Track);
-    this->indexes = BUFFER_ALLOC_ARRAY_ALIGNED(&buffer_start->void_ptr, 2048, f32);
+    this->albums = BUFFER_ALLOC_ARRAY(&buffer_start->void_ptr, 512, Album);
+    this->tracks = BUFFER_ALLOC_ARRAY(&buffer_start->void_ptr, 2048, Track);
+    this->indexes = BUFFER_ALLOC_ARRAY(&buffer_start->void_ptr, 2048, f32);
     LOG_DEBUG("this->albums=%p, this->tracks=%p, this->indexes=%p", this->albums, this->tracks, this->indexes);
 
     NuFParSetInterpreterErrorHandler(0);
@@ -203,7 +203,59 @@ LAB_003203e6:
         this->albums[i].Initialise();
     }
 
-    // BuildSoundTable(this, buffer_start, buffer_end);
+    BuildSoundTable(buffer_start, buffer_end);
+}
+
+void NuMusic::BuildSoundTable(variptr_u *buffer_start, variptr_u buffer_end) {
+    nusound_filename_info_s *finfo = (nusound_filename_info_s *)buffer_start->void_ptr;
+    this->fileinfo = finfo;
+
+    i32 count = 0;
+
+    i32 i = 0;
+    for (; i < this->track_count; i++) {
+        Track *track = &this->tracks[i];
+
+        track->file_indexes[0] =
+            FindOrCreateSoundFile(finfo, &count, track->path, (i32)((track->flags << 6) >> 7), track->pitch);
+        track->file_indexes[1] =
+            FindOrCreateSoundFile(this->fileinfo, &count, track->name, (i32)((track->flags << 6) >> 7), track->pitch);
+    }
+
+    i += count;
+
+    nusound_filename_info_s *puVar1 = &finfo[i];
+    puVar1->name = NULL;
+    puVar1->field1_0x4 = 0;
+    puVar1->index = -1;
+
+    buffer_start->void_ptr = &finfo[i + 1];
+}
+
+i32 NuMusic::FindOrCreateSoundFile(nusound_filename_info_s *files, i32 *count, const char *name, i32 param_4,
+                                   i32 unused)
+
+{
+    if (name == NULL) {
+        return -1;
+    }
+
+    i32 index = 0;
+    for (; index < *count; index++) {
+        if (NuStrICmp(files[index].name, name) == 0) {
+            return index;
+        }
+    }
+
+    nusound_filename_info_s *puVar1 = &files[index];
+    puVar1->name = name;
+    puVar1->index = index;
+    puVar1->field3_0xc = 0;
+    puVar1->field1_0x4 = (param_4 == 0);
+
+    (*count)++;
+
+    return index;
 }
 
 void NuMusic::Album::Initialise() {
@@ -334,7 +386,6 @@ i32 NuMusic::GetTrackHandle(TRACK_CLASS clazz, const char *name) {
                       this->album->tracks_count);
             for (i32 i = 0; i < this->album->tracks_count; i++) {
                 if (this->album->tracks_source[i].clazz == clazz && this->album->tracks_source[i].ident != NULL) {
-                    LOG_DEBUG("Comparing '%s' to '%s'", this->album->tracks_source[i].ident, name);
                     if (NuStrICmp(this->album->tracks_source[i].ident, name) == 0) {
                         // return ((int)this->album - (int)this->albums >> 2) * 0x1c71c800 | i;
                         return i;
@@ -427,7 +478,7 @@ i32 NuMusic::PlayTrackI(TRACK_CLASS clazz) {
     Track *track = this->album->GetTrack(clazz);
     LOG_DEBUG("Playing track class %d: track=%p", clazz, track);
 
-    if (track == NULL || track->field6_0xc[this->track_index] == -1) {
+    if (track == NULL || track->file_indexes[this->track_index] == -1) {
         return -3;
     }
 

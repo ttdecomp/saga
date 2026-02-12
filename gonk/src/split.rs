@@ -768,7 +768,7 @@ pub fn split() -> anyhow::Result<()> {
             custom_make: String::from("sh"),
             custom_args: vec![
                 "-c".to_owned(),
-                "cmake -B build && cmake --build build -- ".to_owned(),
+                "cmake -B build && cmake --build build -j8 -- ".to_owned(),
             ],
         },
     )

@@ -56,3 +56,5 @@ nusound_filename_info_s *g_music = NULL;
 i32 SFX_MUSIC_COUNT = 0;
 
 NUCAMERA *pNuCam = NULL;
+
+i32 NOSOUND = 0;

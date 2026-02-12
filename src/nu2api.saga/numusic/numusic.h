@@ -29,12 +29,9 @@ typedef u32 TRACK_FLAGS;
 class Track {
   public:
     char *path;
-    u8 field1_0x4;
-    u8 field2_0x5;
-    u8 field3_0x6;
-    u8 field4_0x7;
+    char *name;
     char *ident;
-    int field6_0xc[2];
+    i32 file_indexes[2];
     TRACK_CLASS clazz;
     void *field12_0x18;
     i32 index_count;
@@ -43,7 +40,7 @@ class Track {
     u8 field19_0x22;
     u8 field20_0x23;
     f32 field21_0x24;
-    u32 field22_0x28;
+    i32 pitch;
     f32 field23_0x2c;
     f32 field24_0x30;
     f32 field25_0x34;
@@ -99,7 +96,7 @@ class NuMusic {
     i32 track_index;
 
   public:
-    i32 Initialise(const char *file, char *null, VARIPTR *bufferStart, VARIPTR bufferEnd);
+    i32 Initialise(const char *file, char *null, VARIPTR *buffer_start, VARIPTR buffer_end);
     void GetSoundFiles(nusound_filename_info_s **finfo, i32 *null);
 
     bool SelectTrackByHandle(TRACK_CLASS clazz, i32 trackIndex);
@@ -107,8 +104,10 @@ class NuMusic {
     i32 GetTrackHandle(TRACK_CLASS clazz, const char *name);
 
   private:
-    void InitData(const char *file, VARIPTR *bufferStart, VARIPTR bufferEnd);
+    void InitData(const char *file, VARIPTR *buffer_start, VARIPTR buffer_end);
     void InitVoiceManager();
+    void BuildSoundTable(variptr_u *buffer_start, variptr_u buffer_end);
+    i32 FindOrCreateSoundFile(nusound_filename_info_s *files, i32 *count, const char *name, i32 param_4, i32 unused);
 
     Voice *FindVoiceByClassAndStatus(TRACK_CLASS class_, VOICE_STATUS status);
     Voice *FindVoiceByTrack(Track *track);

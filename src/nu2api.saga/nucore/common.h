@@ -54,3 +54,20 @@ typedef union variptr_u {
     u32 *u32_ptr;
     usize addr;
 } VARIPTR;
+
+#ifndef HOST_BUILD
+#define thread_local __thread // NOLINT
+#endif
+
+#ifndef __cplusplus
+#define alignof _Alignof
+#endif
+
+#define BUFFER_ALLOC(buffer_ptr, size, align)                                                                          \
+    ({                                                                                                                 \
+        void *ptr = (void *)((usize)(buffer_ptr) + ALIGN((usize)(buffer_ptr), (align)));                               \
+        *(void **)(buffer_ptr) = (void *)((usize)ptr + (size));                                                        \
+        ptr;                                                                                                           \
+    })
+#define BUFFER_ALLOC_T(buffer_ptr, T) (T *)BUFFER_ALLOC((buffer_ptr), sizeof(T), alignof(T))
+#define BUFFER_ALLOC_ARRAY(buffer_ptr, count, T) (T *)BUFFER_ALLOC((buffer_ptr), sizeof(T) * (count), alignof(T))

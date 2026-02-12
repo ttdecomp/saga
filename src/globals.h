@@ -254,6 +254,8 @@ extern "C" {
 
     extern NUCAMERA *pNuCam;
 
+    extern i32 NOSOUND;
+
 #ifdef __cplusplus
 }
 #endif

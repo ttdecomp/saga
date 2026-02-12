@@ -669,12 +669,15 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
 extern "C" {
     void RegisterMusic(nusound_filename_info_s *files) {
+        LOG_DEBUG("files=%p", files);
+
         g_music = files;
         SFX_MUSIC_COUNT = 0;
 
         if (files != NULL) {
             for (; files->name != NULL; files = files + 1) {
                 NuStrLen(files->name);
+                LOG_DEBUG("Registered music file: %s", files->name);
                 SFX_MUSIC_COUNT++;
             }
         }

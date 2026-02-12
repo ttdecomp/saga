@@ -7,8 +7,8 @@
 #include "nu2api.saga/nucore/nustring.h"
 #include "nu2api.saga/nucore/nuthread.h"
 
-static __thread NuThreadBase *g_currentThread;
-static __thread pthread_t g_currentPthread;
+static thread_local NuThreadBase *g_currentThread;
+static thread_local pthread_t g_currentPthread;
 
 NuThreadBase *NuThreadGetCurrentThread() {
     return g_currentThread;
