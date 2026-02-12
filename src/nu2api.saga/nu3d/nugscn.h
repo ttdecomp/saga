@@ -1,6 +1,6 @@
 #pragma once
 
-#include "game/gizmos/portal.h"
+#include "game/gizmos/gizportal.h"
 
 typedef struct nugscn_s { /* PlaceHolder Structure */
     undefined field0_0x0;

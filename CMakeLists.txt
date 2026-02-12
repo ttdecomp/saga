@@ -114,6 +114,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/gizpanel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/gizmopickups.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/gizobstacles.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/gizportal.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/gizrandom.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/gizspecial.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/giztimer.cpp
@@ -127,7 +128,6 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/minicut.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/newblowup.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/plugs.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/portal.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/push.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/securitydoors.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/shards.cpp
@@ -161,6 +161,8 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nucamera.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nugscn.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/numtl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nuocclusion.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nuportal.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nuprim.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nuqfnt.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nurndr.c
@@ -168,6 +170,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nushader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nustream.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nutex.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nuwater.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/android/nutex_android.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/android/nutex_ios_ex.cpp
@@ -180,10 +183,12 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/nuapi.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/nucore.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/nunew.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/nukeyboard.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/nulist.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/nulst.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/numem.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/numemory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/numouse.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/nupad.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/nupad_interface.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/nurdpf.cpp
@@ -304,6 +309,7 @@ else()
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/NuRenderDevice.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nucamera.cpp PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nugscn.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nuportal.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nuqfnt.cpp PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nurndr.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nushader.cpp PROPERTIES COMPILE_OPTIONS "-O3")
@@ -349,6 +355,7 @@ else()
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/gizpanel.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/gizmopickups.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/gizobstacles.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/gizportal.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/gizrandom.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/gizspecial.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/giztimer.cpp PROPERTIES COMPILE_OPTIONS "-O3")
@@ -362,7 +369,6 @@ else()
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/minicut.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/newblowup.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/plugs.cpp PROPERTIES COMPILE_OPTIONS "-O3")
-    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/portal.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/push.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/securitydoors.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmos/shards.cpp PROPERTIES COMPILE_OPTIONS "-O3")

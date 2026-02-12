@@ -1,4 +1,4 @@
-#include "game/gizmos/portal.h"
+#include "game/gizmos/gizportal.h"
 
 #include <stdio.h>
 
@@ -205,18 +205,6 @@ ADDGIZMOTYPE *Portal_RegisterGizmo(int type_id) {
     portal_gizmotype_id = type_id;
 
     return &addtype;
-}
-
-void NuPortalSetActiveDirect(NUPORTAL *portal, int active) {
-    if (portal == NULL) {
-        return;
-    }
-
-    if (active) {
-        portal->active |= 1;
-    } else {
-        portal->active = 0;
-    }
 }
 
 void PortalDoors_Reset(WORLDINFO *world_info) {

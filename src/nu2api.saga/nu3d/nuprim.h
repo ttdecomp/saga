@@ -14,6 +14,7 @@ extern "C" {
     void NuPrimSetCoordinateSystem(NUPRIMSCALEMODE scale_mode);
     void NuPrimPushCoordSystem(NUPRIMSCALEMODE scale_mode);
     void NuPrimInit(VARIPTR *buffer, VARIPTR buffer_end);
+    void NuPrimReset(void);
 #ifdef __cplusplus
 }
 #endif

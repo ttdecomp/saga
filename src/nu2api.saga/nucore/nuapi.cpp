@@ -6,6 +6,12 @@
 #include "decomp.h"
 
 #include "nu2api.saga/nu3d/numtl.h"
+#include "nu2api.saga/nu3d/nuocclusion.h"
+#include "nu2api.saga/nu3d/nuportal.h"
+#include "nu2api.saga/nu3d/nuprim.h"
+#include "nu2api.saga/nu3d/nuwater.h"
+#include "nu2api.saga/nucore/nukeyboard.h"
+#include "nu2api.saga/nucore/numouse.h"
 
 NUAPI nuapi;
 
@@ -127,4 +133,14 @@ i32 NuInitHardware(VARIPTR *buf, VARIPTR *buf_end, int heap_size, ...) {
     NuMtlInitEx(buf, 512);
 
     return 0;
+}
+
+void NuFrameBegin(void) {
+    nuapi.nuframe_begin_cnt++;
+    NuPortalInit();
+    NuPrimReset();
+    NuWaterReset();
+    NuMouseRead();
+    NuKeyboardRead();
+    NuOcclusionManagerBeginFrame();
 }

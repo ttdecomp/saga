@@ -41,3 +41,6 @@ void NuPrimInit(VARIPTR *buffer, VARIPTR buffer_end) {
     NuPrimCSPos = -1;
     NuPrimPushCoordSystem(NUPRIM_SCALEMODE_PS2);
 }
+
+void NuPrimReset(void) {
+}

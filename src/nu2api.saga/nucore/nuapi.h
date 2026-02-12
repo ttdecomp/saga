@@ -90,8 +90,9 @@ extern "C" {
     void NuCommandLine(int argc, char **argv);
     void NuDisableOSMenuFreeze(void);
 
-    void NudxFw_D3DBeginCriticalSection();
-    void NudxFw_D3DEndCriticalSection();
+    void NudxFw_D3DBeginCriticalSection(void);
+    void NudxFw_D3DEndCriticalSection(void);
+    void NuFrameBegin(void);
 #ifdef __cplusplus
 }
 #endif
