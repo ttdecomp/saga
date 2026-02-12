@@ -267,6 +267,8 @@ typedef struct AISYS_s {
     u8 goody_idx;
 
     i16 has_done_reset : 1;
+    i16 unknown_flag_2 : 1;
+    i16 unknown_flag_4 : 1;
 
     // The AI system for game-specific logic.
     void *game_sys;
@@ -318,6 +320,8 @@ extern "C" {
 
     void AIScriptLoadAll(char *path, VARIPTR *buf, VARIPTR *buf_end, AISYS *sys);
     void AIScriptLoadAllPakFile(void *pak, char *path, VARIPTR *buf, VARIPTR *buf_end, AISYS *sys);
+
+    void AIScriptInitConditions(AISYS *sys);
 
     AISCRIPT *AIScriptFind(AISYS *sys, char *name, i32 can_use_default, i32 check_level_scripts,
                            i32 check_global_scripts);

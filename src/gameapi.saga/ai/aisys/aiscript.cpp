@@ -273,6 +273,155 @@ __attribute__((noinline)) static void ConditionsParseFinalise(AICONDITION *cond,
     }
 }
 
+static void AIScriptFindRefScripts(AISYS *sys, AISCRIPT *script) {
+    AIREFSCRIPT *ref;
+    AIREFSCRIPT *next;
+    AICONDITION *condition;
+    AISTATE *state;
+
+    ref = (AIREFSCRIPT *)NuLinkedListGetHead(&script->ref_scripts);
+
+    while (ref != NULL) {
+        next = (AIREFSCRIPT *)NuLinkedListGetNext(&script->ref_scripts, &ref->list_node);
+
+        if (!sys->unknown_flag_4 || ref->script == NULL) {
+            ref->script = AIScriptFind(sys, ref->name, 1, ref->check_level_scripts, ref->check_global_scripts);
+
+            if (ref->script == NULL || script == ref->script) {
+                NuLinkedListRemove(&script->ref_scripts, &ref->list_node);
+                ref = next;
+
+                continue;
+            }
+
+            ref->return_state = AIStateFind(ref->return_state_name, script);
+
+            condition = (AICONDITION *)NuLinkedListGetHead(&ref->conditions);
+
+            while (condition != NULL) {
+                if (condition->def->init_fn != NULL) {
+                    condition->void_arg = (*condition->def->init_fn)(sys, condition->arg, script);
+                }
+
+                condition = (AICONDITION *)NuLinkedListGetNext(&ref->conditions, &condition->list_node);
+            }
+        }
+
+        ref = next;
+    }
+
+    state = (AISTATE *)NuLinkedListGetHead(&script->states);
+
+    while (state != NULL) {
+        ref = (AIREFSCRIPT *)NuLinkedListGetHead(&state->ref_scripts);
+
+        while (ref != NULL) {
+            next = (AIREFSCRIPT *)NuLinkedListGetNext(&state->ref_scripts, &ref->list_node);
+
+            if (!sys->unknown_flag_4 || ref->script == NULL) {
+                ref->script = AIScriptFind(sys, ref->name, 1, ref->check_level_scripts, ref->check_global_scripts);
+
+                if (ref->script == NULL || script == ref->script) {
+                    NuLinkedListRemove(&script->ref_scripts, &ref->list_node);
+                    ref = next;
+
+                    continue;
+                }
+
+                ref->return_state = AIStateFind(ref->return_state_name, script);
+
+                condition = (AICONDITION *)NuLinkedListGetHead(&ref->conditions);
+
+                while (condition != NULL) {
+                    if (condition->def->init_fn != NULL) {
+                        condition->void_arg = (*condition->def->init_fn)(sys, condition->arg, script);
+                    }
+
+                    condition = (AICONDITION *)NuLinkedListGetNext(&ref->conditions, &condition->list_node);
+                }
+            }
+
+            ref = next;
+        }
+
+        state = (AISTATE *)NuLinkedListGetNext(&script->states, &state->list_node);
+    }
+}
+
+void AIScriptInitConditions(AISYS *sys) {
+    AISCRIPT *script;
+    AISTATE *state;
+    AICONDITION *condition;
+    AICONDITION *param_cond;
+
+    NuLinkedListGetHead(&global_aiscripts);
+
+    if (sys != NULL) {
+        script = (AISCRIPT *)NuLinkedListGetHead(&sys->scripts);
+
+        while (script != NULL) {
+            state = (AISTATE *)NuLinkedListGetHead(&script->states);
+
+            while (state != NULL) {
+                condition = (AICONDITION *)NuLinkedListGetHead(&state->conditions);
+
+                while (condition != NULL) {
+                    if (condition->def->init_fn != NULL) {
+                        condition->void_arg = (*condition->def->init_fn)(sys, condition->arg, script);
+                    }
+
+                    param_cond = condition->param_cond;
+                    if (param_cond != NULL && param_cond->def != NULL && param_cond->def->init_fn != NULL) {
+                        param_cond->void_arg = (*param_cond->def->init_fn)(sys, param_cond->arg, script);
+                    }
+
+                    condition = (AICONDITION *)NuLinkedListGetNext(&state->conditions, &condition->list_node);
+                }
+
+                state = (AISTATE *)NuLinkedListGetNext(&script->states, &state->list_node);
+            }
+
+            script->base_state = AIStateFind("Base", script);
+
+            AIScriptFindRefScripts(sys, script);
+
+            script = (AISCRIPT *)NuLinkedListGetNext(&sys->scripts, &script->list_node);
+        }
+    }
+
+    script = (AISCRIPT *)NuLinkedListGetHead(&global_aiscripts);
+
+    while (script != NULL) {
+        state = (AISTATE *)NuLinkedListGetHead(&script->states);
+
+        while (state != NULL) {
+            condition = (AICONDITION *)NuLinkedListGetHead(&state->conditions);
+
+            while (condition != NULL) {
+                if (condition->def->init_fn != NULL) {
+                    if (sys == NULL) {
+                        condition->void_arg = (*condition->def->init_fn)(NULL, condition->arg, script);
+                    } else if (!sys->unknown_flag_4 || condition->void_arg == NULL) {
+                        condition->void_arg = (*condition->def->init_fn)(sys, condition->arg, script);
+                    }
+                }
+
+                condition = (AICONDITION *)NuLinkedListGetNext(&state->conditions, &condition->list_node);
+            }
+
+            state = (AISTATE *)NuLinkedListGetNext(&script->states, &state->list_node);
+        }
+
+        script->base_state = AIStateFind("Base", script);
+
+        if (sys != NULL) {
+            AIScriptFindRefScripts(sys, script);
+        }
+
+        script = (AISCRIPT *)NuLinkedListGetNext(&global_aiscripts, &script->list_node);
+    }
+}
+
 static AICONDITIONDEF *AIConditionFind(char *name) {
     AICONDITIONDEF *def;
 
