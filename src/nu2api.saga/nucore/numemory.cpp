@@ -157,3 +157,14 @@ void *NuMemory::DynamicPoolEventHandler::AllocateLargeBlock(NuMemoryPool *pool, 
 void NuMemory::DynamicPoolEventHandler::FreeLargeBlock(NuMemoryPool *pool, void *ptr) {
     NuMemoryGet()->GetThreadMem()->BlockFree(ptr, 0);
 }
+
+NuMemoryManager *NuMemory::CreateMemoryManager(NuMemoryManager::IEventHandler *event_handler, const char *name) {
+    NuMemoryManager *manager = (NuMemoryManager *)GetThreadMem()->_BlockAlloc(
+        sizeof(NuMemoryManager), 4, 0, "i:/SagaTouch-Android_9176564/nu2api.2013/numemory/numemory.cpp:501", 0);
+
+    if (manager != NULL) {
+        new (manager) NuMemoryManager(event_handler, this->error_handler, name, NULL, 0);
+    }
+
+    return manager;
+}

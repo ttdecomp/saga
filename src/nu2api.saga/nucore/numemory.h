@@ -57,6 +57,7 @@ class NuMemory {
   public:
     NuMemory(void **buf);
     NuMemoryManager *GetThreadMem();
+    NuMemoryManager *CreateMemoryManager(NuMemoryManager::IEventHandler *event_handler, const char *name);
 
   private:
     void InitalizeThreadLocalStorage();

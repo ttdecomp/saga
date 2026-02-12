@@ -187,11 +187,13 @@ class NuMemoryManager {
 
     void AddPage(void *ptr, u32 size, bool _unknown);
 
+    void SetBlockDebugCategory(void *block, u16 category);
+
+    void *_TryBlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, u16 category);
+
   private:
     static u32 GetLargeBinIndex(u32 size);
     static u32 GetSmallBinIndex(u32 size);
-
-    void *_TryBlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, u16 category);
 
     void ConvertToUsedBlock(FreeHeader *header, u32 alignment, u32 flags, const char *name, u16 category);
     void *ClearUsedBlock(Header *header, u32 flags);

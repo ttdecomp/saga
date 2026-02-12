@@ -667,6 +667,23 @@ void FixUpLevels(LEVELFIXUP *fixup) {
     }
 }
 
+extern "C" {
+    void RegisterMusic(nusound_filename_info_s *files) {
+        g_music = files;
+        SFX_MUSIC_COUNT = 0;
+
+        if (files != NULL) {
+            for (; files->name != NULL; files = files + 1) {
+                NuStrLen(files->name);
+                SFX_MUSIC_COUNT++;
+            }
+        }
+    }
+
+    void InitSfx(variptr_u *buffer_start, variptr_u buffer_end, const char *file) {
+    }
+}
+
 static void LoadPermData(BGPROCINFO *proc) {
     VARIPTR legalTex;
     legalTex.addr = superbuffer_end.addr + -0x400000;
@@ -674,6 +691,8 @@ static void LoadPermData(BGPROCINFO *proc) {
     i32 legal_tid = NuTexRead("stuff\\legal\\LEGAL_ENGLISH", &legalTex, &superbuffer_end);
 
     MusicInfo = ConfigureMusic("audio\\music.txt", &permbuffer_ptr, &permbuffer_end);
+    RegisterMusic(MusicInfo);
+    InitSfx(&permbuffer_ptr, permbuffer_end, "Audio\\Audio.cfg");
 
     CDataList =
         ConfigureCharacterList("chars\\chars.txt", &permbuffer_ptr, &permbuffer_end, 340, &CHARCOUNT, 288, &GCDataList);

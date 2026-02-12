@@ -5,6 +5,7 @@
 
 #include "nu2api.saga/nufile/nufpar.h"
 #include "nu2api.saga/numusic/numusic.h"
+#include "nu2api.saga/nusound/nusound.h"
 
 static NuMusic *the_music_player = NULL;
 
@@ -397,6 +398,21 @@ i32 NuMusic::StopAll(i32 toggle) {
 }
 
 i32 NuMusic::Voice::Play() {
+    LOG_DEBUG("");
+
+#define ARG(key, value) key, value
+
+    NuSound3PlayStereoV(                                      //
+        ARG(NUSOUNDPLAYTOK_STEREOSTREAM, this->stream_index), //
+        ARG(NUSOUNDPLAYTOK_SAMPLE, NULL),                     //
+        ARG(NUSOUNDPLAYTOK_PITCH, 0.0f),                      //
+        ARG(NUSOUNDPLAYTOK_VOL, 1.0f),                        //
+        ARG(NUSOUNDPLAYTOK_STARTOFFSET, 0.0f),                //
+        ARG(NUSOUNDPLAYTOK_LOOPTYPE, 0),                      //
+        NUSOUNDPLAYTOK_END                                    //
+    );
+
+    return 1;
 }
 
 i32 NuMusic::PlayTrackI(TRACK_CLASS clazz) {

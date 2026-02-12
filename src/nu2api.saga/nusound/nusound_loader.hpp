@@ -4,6 +4,7 @@
 #include "nu2api.saga/nufile/nufile.h"
 
 #include "nu2api.saga/nusound/nusound_buffer.hpp"
+#include "nu2api.saga/nusound/nusound_system.hpp"
 
 #include <pthread.h>
 

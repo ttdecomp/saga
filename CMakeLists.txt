@@ -235,7 +235,12 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nusound/nusound3_include.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nusound/nusound_buffer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nusound/nusound_loader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nusound/nusound_streamer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nusound/nusound_memorymanager.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nusound/nusound_bus.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nusound/nusound_sample.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nusound/nusound_android.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nusound/nusound_system.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nusound/nusound_voice.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/saveload/saveload.cpp

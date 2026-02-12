@@ -8,6 +8,8 @@
 #include "nu2api.saga/nucore/common.h"
 #include "nu2api.saga/nucore/nustring.h"
 
+#include "decomp.h"
+
 #define HEADER_MGR_HI_MASK 0xf8000000
 #define ALLOC_MASK 0x78000000
 #define BLOCK_SIZE_MASK ~ALLOC_MASK
@@ -180,8 +182,10 @@ void *NuMemoryManager::_BlockAlloc(u32 size, u32 alignment, u32 flags, const cha
 }
 
 void *NuMemoryManager::_TryBlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, u16 category) {
-    // UNIMPLEMENTED();
+#ifdef HOST_BUILD
+    LOG_WARN("replacing _TryBlockAlloc with malloc");
     return malloc(size);
+#endif
 }
 
 void NuMemoryManager::ConvertToUsedBlock(FreeHeader *header, u32 alignment, u32 flags, const char *name, u16 category) {
@@ -873,4 +877,7 @@ void NuMemoryManager::IErrorHandler::CloseDump(NuMemoryManager *manager, u32 id)
 }
 
 void NuMemoryManager::IErrorHandler::Dump(NuMemoryManager *manager, u32 id, const char *msg) {
+}
+
+void NuMemoryManager::SetBlockDebugCategory(void *block, u16 category) {
 }

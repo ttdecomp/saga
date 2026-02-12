@@ -20,6 +20,10 @@ ErrorState NuSoundSample::GetLastErrorState() const {
     return es;
 }
 
+i32 NuSoundSample::GetThreadQueueCount() const {
+    return this->thread_queue_count;
+}
+
 void NuSoundSample::Reference() {
     __sync_fetch_and_add(&ref_count, 1);
 }
@@ -67,4 +71,12 @@ ErrorState NuSoundSample::Load(void *param_1, i32 param_2, NuSoundOutOfMemCallba
     }
 
     return EVar3;
+}
+
+u32 NuSoundSample::GetResourceCount() {
+    return this->ref_count;
+}
+
+void NuSoundSample::AddedToThreadQueue() {
+    __sync_fetch_and_add(&thread_queue_count, 1);
 }

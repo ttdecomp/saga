@@ -3,12 +3,21 @@
 #include "globals.h"
 #include "nu2api.saga/nufile/nufile.h"
 
+struct NuSoundStreamingSample;
 typedef struct nusound_filename_info_s {
     char *name;
+    void *field4_0x4;
+    NuSoundStreamingSample *streaming_sample;
 } NUSOUND_FILENAME_INFO;
 
 typedef enum {
-
+    NUSOUNDPLAYTOK_END = 1,
+    NUSOUNDPLAYTOK_STEREOSTREAM = 2,
+    NUSOUNDPLAYTOK_SAMPLE = 3,
+    NUSOUNDPLAYTOK_VOL = 6,
+    NUSOUNDPLAYTOK_PITCH = 9,
+    NUSOUNDPLAYTOK_STARTOFFSET = 10,
+    NUSOUNDPLAYTOK_LOOPTYPE = 11,
 } NUSOUNDPLAYTOK;
 
 #ifdef __cplusplus
