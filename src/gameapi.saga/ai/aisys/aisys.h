@@ -113,10 +113,10 @@ typedef struct AIPATHINFO_s {
     u16 game_flags;
     u16 next_check;
 
-    u16 unknown_flag_1;
-    u16 unknown_flag_2;
-    u16 unknown_flag_4;
-    u16 unknown_flag_8;
+    u16 unknown_flag_1 : 1;
+    u16 unknown_flag_2 : 1;
+    u16 unknown_flag_4 : 1;
+    u16 unknown_flag_8 : 1;
 
     f32 dist;
     f32 width;
@@ -150,6 +150,8 @@ typedef struct AISCRIPTPROCESS_s {
     AISCRIPTPROCESSSTACK param_stack[2];
 
     u32 is_first_time_action : 1;
+    u32 unknown_flag_2 : 1;
+    u32 unknown_flag_4 : 1;
 
     AIREFSCRIPT *active_refs[4];
     i32 active_ref_count;
@@ -161,7 +163,7 @@ typedef struct AISCRIPTPROCESS_s {
     f32 action_data_4;
     f32 action_data_5;
 
-    NUVEC *action_pos;
+    NUVEC action_pos;
 
     AIPATHINFO path_info;
 
@@ -190,6 +192,56 @@ typedef struct AISCRIPTPROCESS_s {
 } AISCRIPTPROCESS;
 
 typedef struct AICREATURE_s {
+    char name[0x10];
+
+    char script_name[0x10];
+
+    NUVEC pos;
+    NUANG y_rot;
+
+    AIPATHINFO path_info;
+
+    i32 flags;
+
+    u8 set;
+
+    i16 type;
+
+    u8 group_idx;
+    u8 pos_across;
+
+    char padding[3];
+
+    u32 unknown_58;
+
+    f32 x_spacing;
+    f32 z_spacing;
+
+    f32 script_params[4];
+
+    AIAREA *activate_area;
+    AIAREA *area;
+
+    AILOCATOR *locator;
+    AILOCATOR *respawn_locator;
+
+    u8 activation_difficulty;
+
+    char min_respawn_count;
+    char max_respawn_count;
+
+    u8 activate_type;
+
+    f32 min_respawn_time;
+    f32 max_respawn_time;
+
+    f32 start_stagger;
+
+    f32 view_distance;
+    f32 hear_distance;
+
+    f32 max_view_height;
+    f32 min_view_height;
 } AICREATURE;
 
 typedef struct AIROW_s {
@@ -202,6 +254,8 @@ typedef struct AIROW_s {
     u8 next_direction;
 
     u8 is_alive;
+
+    char padding[2];
 
     u32 is_clockwise : 1;
     u32 is_turning : 1;
@@ -323,10 +377,16 @@ extern "C" {
 
     void AIScriptInitConditions(AISYS *sys);
 
+    void AIScriptProcessorInit(AISYS *sys, AIPACKET *packet, AISCRIPTPROCESS *processor, AICREATURE *creature,
+                               char *script_name, char *start_state_name, i32 can_use_default, AISCRIPT *script,
+                               AISTATE *start_state);
+
     AISCRIPT *AIScriptFind(AISYS *sys, char *name, i32 can_use_default, i32 check_level_scripts,
                            i32 check_global_scripts);
 
     void AIScriptClearInterrupt(AISCRIPTPROCESS *processor, char *state_name);
+    void AIScriptSetState(AISCRIPTPROCESS *processor, AISTATE *state);
+    i32 AIScriptSetStateByName(AISCRIPTPROCESS *processor, char *name);
 
     AISTATE *AIStateFind(char *name, AISCRIPT *script);
 #ifdef __cplusplus

@@ -1265,6 +1265,64 @@ done:
     NuFParDestroy(parser);
 }
 
+void AIScriptProcessorInit(AISYS *sys, AIPACKET *packet, AISCRIPTPROCESS *processor, AICREATURE *creature,
+                           char *script_name, char *start_state_name, i32 can_use_default, AISCRIPT *script,
+                           AISTATE *start_state) {
+    i32 i;
+
+    if (processor == NULL) {
+        return;
+    }
+
+    processor->unknown_flag_4 = 0;
+    processor->unknown_b2 = 0;
+
+    if (script == NULL) {
+        script = AIScriptFind(sys, script_name, can_use_default, 1, 1);
+
+        processor->unknown_c4 = 0;
+    }
+
+    if (script != NULL) {
+        processor->script = script;
+        processor->next_state = NULL;
+
+        if (processor->base_script == NULL) {
+            processor->base_script = script;
+        }
+
+        if (creature != NULL) {
+            for (i = 0; i < 4; i++) {
+                processor->params[i] = creature->script_params[i];
+            }
+
+            for (i = 0; i < 4; i++) {
+                if ((creature->flags & (1 << (i + 1))) == 0) {
+                    processor->params[i] = script->params[i].default_val;
+                }
+            }
+        } else {
+            for (i = 0; i < 4; i++) {
+                processor->params[i] = script->params[i].default_val;
+            }
+        }
+
+        if (start_state != NULL ||
+            (start_state_name != NULL && (start_state = AIStateFind(start_state_name, script)) != NULL)) {
+            AIScriptSetState(processor, start_state);
+        } else {
+            AIScriptSetStateByName(processor, "Base");
+        }
+    }
+
+    processor->interrupt_timer = 0.0f;
+    processor->interrupt_priority = 0;
+    processor->interrupt_id = 0;
+    processor->interrupt_state = NULL;
+
+    processor->return_to_state = NULL;
+}
+
 AISCRIPT *AIScriptFind(AISYS *sys, char *name, i32 can_use_default, i32 check_level_scripts, i32 check_global_scripts) {
     AISCRIPT *script;
 
@@ -1318,4 +1376,46 @@ void AIScriptClearInterrupt(AISCRIPTPROCESS *processor, char *state_name) {
             processor->interrupt_state = NULL;
         }
     }
+}
+
+void AIScriptSetState(AISCRIPTPROCESS *processor, AISTATE *state) {
+    NULISTLNK *action_node;
+
+    if (state != NULL && processor != NULL) {
+        if (!processor->unknown_flag_4) {
+            processor->unknown_b2 = 0;
+        }
+
+        processor->unknown_flag_4 = 0;
+
+        processor->state = state;
+        processor->action_node = NULL;
+        processor->next_state = NULL;
+        processor->param_stack[0].is_first_time_state = 1;
+
+        action_node = NuLinkedListGetHead(&state->actions);
+
+        if (action_node != NULL) {
+            processor->action_node = action_node;
+            processor->is_first_time_action = 1;
+        } else {
+            processor->action_node = NULL;
+        }
+    }
+}
+
+i32 AIScriptSetStateByName(AISCRIPTPROCESS *processor, char *name) {
+    AISTATE *state;
+
+    if (name != NULL && processor != NULL && processor->script != NULL) {
+        state = AIStateFind(name, processor->script);
+
+        if (state != NULL) {
+            AIScriptSetState(processor, state);
+
+            return 1;
+        }
+    }
+
+    return 0;
 }
