@@ -235,9 +235,9 @@ void NuCameraBuildClipPlanes(void) {
     NuMtxSetZero(&frustum_planes);
 
     frustum_planes.m00 = -near_dist * left_right_inv;
-    frustum_planes.m12 = left_right_inv * -near_dist;
+    frustum_planes.m12 = -near_dist * top_bottom_inv;
     frustum_planes.m20 = left_right * left_right_inv;
-    frustum_planes.m22 = left_right_inv * top_bottom;
+    frustum_planes.m22 = top_bottom * top_bottom_inv;
 
     frustum_planes.m01 = -frustum_planes.m00;
     frustum_planes.m13 = -frustum_planes.m12;
@@ -254,16 +254,14 @@ void NuCameraBuildClipPlanes(void) {
     NuMtxSetZero(&scissor_planes);
 
     scissor_planes.m00 = -near_dist * left_right_inv;
-    scissor_planes.m12 = -near_dist * near_dist_sq;
+    scissor_planes.m12 = -near_dist * top_bottom_inv;
     scissor_planes.m20 = left_right * left_right_inv;
-    scissor_planes.m22 = near_dist_sq * near_dist;
+    scissor_planes.m22 = near_dist * top_bottom_inv;
 
     scissor_planes.m01 = -scissor_planes.m00;
     scissor_planes.m13 = -scissor_planes.m12;
     scissor_planes.m21 = scissor_planes.m20;
     scissor_planes.m23 = scissor_planes.m22;
-
-    scissor_planes.m33 = 4.228058e-39;
 
     NuMtxMulH(&ClipPlanes.frustum_planes, &vmtx, &frustum_planes);
     NuMtxMulH(&ClipPlanes.scissor_planes, &vmtx, &scissor_planes);
@@ -281,20 +279,20 @@ void NuCameraBuildClipPlanes(void) {
     ClipPlanes.near_far_planes.m20 = -global_camera.mtx.m22;
     ClipPlanes.near_far_planes.m30 = dot + global_camera.far_clip;
 
-    ClipPlanes.near_far_planes.m01 = global_camera.mtx.m20;
-    ClipPlanes.near_far_planes.m11 = global_camera.mtx.m21;
-    ClipPlanes.near_far_planes.m21 = global_camera.mtx.m22;
+    ClipPlanes.near_far_planes.m01 = ClipPlanes.near_plane.x;
+    ClipPlanes.near_far_planes.m11 = ClipPlanes.near_plane.y;
+    ClipPlanes.near_far_planes.m21 = ClipPlanes.near_plane.z;
     ClipPlanes.near_far_planes.m31 = ClipPlanes.near_plane.w;
 
-    ClipPlanes.near_far_planes.m02 = NuFabs(-global_camera.mtx.m20);
-    ClipPlanes.near_far_planes.m12 = NuFabs(-global_camera.mtx.m21);
-    ClipPlanes.near_far_planes.m22 = NuFabs(-global_camera.mtx.m22);
+    ClipPlanes.near_far_planes.m02 = NuFabs(ClipPlanes.near_far_planes.m00);
+    ClipPlanes.near_far_planes.m12 = NuFabs(ClipPlanes.near_far_planes.m10);
+    ClipPlanes.near_far_planes.m22 = NuFabs(ClipPlanes.near_far_planes.m20);
     ClipPlanes.near_far_planes.m32 = NuFabs(ClipPlanes.near_far_planes.m30);
 
-    ClipPlanes.near_far_planes.m03 = NuFabs(global_camera.mtx.m20);
-    ClipPlanes.near_far_planes.m13 = NuFabs(global_camera.mtx.m21);
-    ClipPlanes.near_far_planes.m23 = NuFabs(global_camera.mtx.m22);
-    ClipPlanes.near_far_planes.m33 = NuFabs(ClipPlanes.near_plane.w);
+    ClipPlanes.near_far_planes.m03 = NuFabs(ClipPlanes.near_far_planes.m01);
+    ClipPlanes.near_far_planes.m13 = NuFabs(ClipPlanes.near_far_planes.m11);
+    ClipPlanes.near_far_planes.m23 = NuFabs(ClipPlanes.near_far_planes.m21);
+    ClipPlanes.near_far_planes.m33 = NuFabs(ClipPlanes.near_far_planes.m31);
 
     ClipPlanes.abs_frustum_planes.m00 = NuFabs(ClipPlanes.frustum_planes.m00);
     ClipPlanes.abs_frustum_planes.m01 = NuFabs(ClipPlanes.frustum_planes.m01);
