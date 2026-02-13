@@ -3,16 +3,11 @@ cmake_minimum_required(VERSION 3.10)
 project(saga)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
-set(CMAKE_SYSTEM_NAME Linux) 
 
 # add option to compile for host
 option(BUILD_FOR_HOST "Build for host system" OFF)
 
 function(get_ndk)
-
-
-
-
     if (CMAKE_HOST_WIN32)
         # Download Android NDK if not present
         set(NDK_DIR "${CMAKE_SOURCE_DIR}/ndk")
@@ -143,11 +138,6 @@ set(CMAKE_BUILD_TYPE Debug)
 
 # disable --dependency-file argument on ld which is too old to support it
 set(CMAKE_LINK_DEPENDS_NO_SHARED ON)
-if(NOT BUILD_FOR_HOST)
-    set(CMAKE_PLATFORM_NO_VERSIONED_SONAME 1)
-    set(CMAKE_C_CREATE_SHARED_LIBRARY_FORBIDDEN_FLAGS "")
-    set(CMAKE_CXX_CREATE_SHARED_LIBRARY_FORBIDDEN_FLAGS "")
-endif()
 set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/batman.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/globals.cpp
@@ -318,6 +308,7 @@ set(SAGA_INCLUDE_DIRS
 
 add_executable(saga ${SAGA_SOURCE_FILES})
 if(CMAKE_HOST_WIN32)
+    #Needed because msys adds incorrect flags to the linker
     set_target_properties(saga PROPERTIES ENABLE_EXPORTS TRUE)
     set_target_properties(saga PROPERTIES LINK_FLAGS "-rdynamic")
     set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
