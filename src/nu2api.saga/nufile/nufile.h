@@ -334,6 +334,9 @@ extern "C" {
     void NuPSFileInitDevices(i32 device_id, i32 reboot_iop, i32 eject);
     i32 NuFileInitEx(i32 device_id, i32 reboot_iop, i32 eject);
     void NuFileInit(i32 device_id);
+
+    i32 NuFileNormalise(char *dst, i32 length, const char *src);
+
 #ifdef __cplusplus
 }
 #endif

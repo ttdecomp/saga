@@ -63,3 +63,8 @@ i32 NuFileExists(char *name) {
 
     return NuFileSize(name) > 0;
 }
+
+i32 NuFileNormalise(char *dst, i32 length, const char *src) {
+    NuStrNCpy(dst, src, length);
+    return 1;
+}

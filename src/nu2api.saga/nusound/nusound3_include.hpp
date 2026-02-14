@@ -9,11 +9,3 @@
 extern "C" {
     void NuSound3Init(i32 zero);
 }
-
-class NuSoundStreamingSample : public NuSoundSample {
-  public:
-    NuSoundBuffer *buffer1;
-    NuSoundBuffer *buffer2;
-
-    NuSoundLoader *loader;
-};

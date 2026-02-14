@@ -98,6 +98,7 @@ else()
     message(STATUS "Building for Android x86")
 
     get_ndk()
+    
     if (CMAKE_HOST_WIN32)
         set(CMAKE_C_COMPILER "${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/windows-x86_64/bin/i686-linux-android-gcc")
         set(CMAKE_CXX_COMPILER "${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/windows-x86_64/bin/i686-linux-android-g++")
@@ -113,16 +114,15 @@ else()
         set(CMAKE_EXECUTABLE_SUFFIX "")
         set(CMAKE_CROSSCOMPILING TRUE)
     else()
+        set(CMAKE_C_COMPILER "${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/linux-x86_64/bin/i686-linux-android-gcc")
+        set(CMAKE_CXX_COMPILER "${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/linux-x86_64/bin/i686-linux-android-g++")
+        set(CMAKE_SYSROOT "${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/platforms/android-9/arch-x86")
+        include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/sources/cxx-stl/system/include/")
 
-    set(CMAKE_C_COMPILER "${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/linux-x86_64/bin/i686-linux-android-gcc")
-    set(CMAKE_CXX_COMPILER "${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/linux-x86_64/bin/i686-linux-android-g++")
-    set(CMAKE_SYSROOT "${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/platforms/android-9/arch-x86")
-    include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/sources/cxx-stl/system/include/")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-function-sections -fno-data-sections")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-function-sections -fno-data-sections")
 
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-function-sections -fno-data-sections")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-function-sections -fno-data-sections")
-
-    set(GLES2_LIBRARIES "GLESv2")
+        set(GLES2_LIBRARIES "GLESv2")
     endif()
 
 endif()
@@ -284,6 +284,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/numath/nuvec4.c
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/numusic/numusic.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/numusic/sfx.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nuplatform/nuplatform.cpp
 
@@ -291,6 +292,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nusound/nusound3_include.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nusound/nusound_buffer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nusound/nusound_loader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nusound/nusound_source.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nusound/nusound_streamer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nusound/nusound_memorymanager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nusound/nusound_bus.cpp

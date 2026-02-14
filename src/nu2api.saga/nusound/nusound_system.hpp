@@ -3,15 +3,17 @@
 #include "nu2api.saga/nucore/common.h"
 #include "nu2api.saga/nucore/numemory.h"
 #include "nu2api.saga/nusound/nusound_memorymanager.hpp"
+#include "nu2api.saga/nusound/nusound_source.hpp"
 
 #include "decomp.h"
 
 class NuSoundLoader;
 class NuSoundBus;
+class NuSoundSample;
 
 class NuSoundSystem {
   public:
-    enum MemoryDiscipline : u32 {
+    enum class MemoryDiscipline : u32 {
         SCRATCH = 0,
         SAMPLE = 1,
         DECODER = 2,
@@ -21,10 +23,27 @@ class NuSoundSystem {
         u32 channels;
     };
 
-    enum FileType : u32 { FILE_TYPE_WAV = 0, FILE_TYPE_OGG = 5 };
+    // "wav", "adp", "ima", "caf", "xma", "ogg",  "dsp", "msf", "vag", "gcm", "wua", "cbx"
+
+    enum class FileType : u32 {
+        WAV = 0,
+        ADP = 1,
+        IMA = 2,
+        CAF = 3,
+        XMA = 4,
+        OGG = 5,
+        DSP = 6,
+        MSF = 7,
+        VAG = 8,
+        GCM = 9,
+        WUA = 10,
+        CBX = 11,
+        _COUNT = 12,
+        INVALID = 13,
+    };
 
   private:
-    void **samples;
+    NuSoundSample **samples;
     u32 sample_count;
 
   public:
@@ -39,6 +58,8 @@ class NuSoundSystem {
 
     static NuSoundMemoryManager *s_mmSample;
     static NuSoundMemoryManager *s_mmDecoder;
+
+    static const char *sFileExtensions[12];
 
     static struct : NuMemoryManager::IEventHandler {
         u32 unknown;
@@ -69,6 +90,15 @@ class NuSoundSystem {
     static u32 GetDecoderMemorySize();
     static u32 GetFreeMemory(MemoryDiscipline disc);
 
+    NuSoundSample *AddSample(const char *name, FileType file_type, NuSoundSource::FeedType feed_type);
+
+    const char *GetFileExtension(FileType type);
+    static FileType DetermineFileType(const char *path);
+
+    NuSoundSample *GetSample(const char *path);
+
+    i32 GenerateHash(const char *str);
+
     // vtable:
     // create_effect
     // release_effect
@@ -97,9 +127,10 @@ class NuSoundOutOfMemCallback {
 
 class NuSoundStreamDesc {};
 
-enum LoadState {
-    LOADSTATE_LOADED = 1,
+enum class LoadState {
+    NOT_LOADED = 0,
+    LOADED = 1,
 };
-enum ErrorState {
-    ERRORSTATE_NONE = 0,
+enum class ErrorState {
+    NONE = 0,
 };

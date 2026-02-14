@@ -20,6 +20,7 @@
 #include "nu2api.saga/nucore/nustring.h"
 #include "nu2api.saga/nucore/nuvideo.h"
 #include "nu2api.saga/numusic/numusic.h"
+#include "nu2api.saga/numusic/sfx.h"
 #include "nu2api.saga/nusound/nusound.h"
 #include "saveload/saveload.h"
 
@@ -681,9 +682,6 @@ extern "C" {
                 SFX_MUSIC_COUNT++;
             }
         }
-    }
-
-    void InitSfx(variptr_u *buffer_start, variptr_u buffer_end, const char *file) {
     }
 }
 

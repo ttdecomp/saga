@@ -1,3 +1,5 @@
+#pragma once
+
 #include <pthread.h>
 
 #include "nu2api.saga/nucore/common.h"

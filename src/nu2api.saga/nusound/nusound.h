@@ -3,14 +3,15 @@
 #include "globals.h"
 #include "nu2api.saga/nufile/nufile.h"
 
-struct NuSoundStreamingSample;
+class NuSoundStreamingSample;
+
 typedef struct nusound_filename_info_s {
     const char *name;
     void *field4_0x4;
     i32 index;
     i32 field3_0xc;
     u32 field1_0x4;
-    NuSoundStreamingSample *streaming_sample;
+    NuSoundStreamingSample *sample;
 } NUSOUND_FILENAME_INFO;
 
 typedef enum {
@@ -35,6 +36,7 @@ extern "C" {
     i32 NuSound3PlayStereoV(NUSOUNDPLAYTOK, ...);
 
     void NuSound3Init(i32 zero);
+    void NuSound3SetSampleTable(nusound_filename_info_s *info, variptr_u *buffer_start, variptr_u buffer_end);
 
 #ifdef __cplusplus
 }

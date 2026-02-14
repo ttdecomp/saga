@@ -4,6 +4,18 @@
 
 pthread_mutex_t NuSoundSample::sCriticalSection = PTHREAD_MUTEX_INITIALIZER;
 
+NuSoundSample::NuSoundSample(const char *path, FeedType feed_type)
+    : NuSoundSource(path, SourceType::ZERO, feed_type), buffer{} {
+    this->field2_0x24 = 0;
+    this->field1_0x20 = 0;
+    this->file_type = NuSoundSystem::DetermineFileType(path);
+    this->load_state = LoadState::NOT_LOADED;
+    this->last_error = ErrorState::NONE;
+    this->next = NULL;
+    this->thread_queue_count = 0;
+    this->ref_count = 0;
+}
+
 LoadState NuSoundSample::GetLoadState() const {
     pthread_mutex_lock(&sCriticalSection);
     LoadState ls = this->load_state;
@@ -38,9 +50,9 @@ ErrorState NuSoundSample::Load(void *param_1, i32 param_2, NuSoundOutOfMemCallba
     NuSoundBuffer *buffer;
     LoadState LVar2;
 
-    ErrorState EVar3 = ERRORSTATE_NONE;
-    if (GetLoadState() != LOADSTATE_LOADED) {
-        loader = NuSoundSystem::CreateFileLoader(this->type);
+    ErrorState EVar3 = ErrorState::NONE;
+    if (GetLoadState() != LoadState::LOADED) {
+        loader = NuSoundSystem::CreateFileLoader(this->file_type);
 
         // desc = (NuSoundStreamDesc *)(*(code *)loader->vtable[2])(loader);
         desc = loader->CreateHeader();

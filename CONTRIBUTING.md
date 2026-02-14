@@ -56,6 +56,14 @@ if you prefer a command-line tool,
 
 ## Style Guidelines
 
+## Clang-Format
+
+The project uses `clang-format` to enforce a consistent coding style.
+Please make sure to either run `clang-format` on any code you contribute, or configure
+your editor to do this automatically.
+
+## Naming Conventions
+
 The original code is divided into essentially two parts as far as we can tell:
 code which is essentially C and broadly-speaking survives from earlier versions
 of the engine, and newer code written in object-oriented C++. Evidence from

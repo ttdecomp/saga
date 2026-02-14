@@ -488,7 +488,7 @@ void NuUnicodeToAscii(char *dst, NUWCHAR16 *src) {
     dst[pos] = '\0';
 }
 
-void NuStrUpr(char *dst, char *src) {
+void NuStrUpr(char *dst, const char *src) {
     for (; *src != '\0'; src++) {
         *dst = NuToUpper(*src);
         dst++;

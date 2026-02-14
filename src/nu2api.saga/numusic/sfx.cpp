@@ -53,6 +53,129 @@ static NUFPCOMJMP audioCom[] = {
     {NULL, NULL},
 };
 
+static char cfgfile_name[256] = "Audio/audio.cfg";
+
+void InitSfx(variptr_u *buffer_start, variptr_u buffer_end, const char *file) {
+    // bVar15 = 0;
+    // g_soundMap = (short *)((int)buffer_start->voidptr + 3U & 0xfffffffc);
+    // sfx_info = (nusound_filename_info_s *)(g_soundMap + 0x100);
+    // SfxInfo = sfx_info;
+    // buffer_start->voidptr = g_soundMap + 0x6500;
+    // memset(sfx_info, 0, 0xc800);
+    // sound_info = (SoundInfo *)((int)buffer_start->voidptr + 3U & 0xfffffffc);
+    // g_soundInfo = sound_info;
+    // buffer_start->voidptr = sound_info + 0x640;
+    // memset(sound_info, 0, 0x1a900);
+    //__s = (void *)((int)buffer_start->voidptr + 3U & 0xfffffffc);
+    // g_revertSoundInfo = __s;
+    // buffer_start->voidptr = (void *)((int)__s + 0x1a900);
+    // memset(__s, 0, 0x1a900);
+
+    CRC_Init(buffer_start);
+
+    // psVar5 = g_soundMap;
+    // uVar10 = -(((uint)g_soundMap & 0xf) >> 1) & 7;
+    // if (uVar10 == 0) {
+    //     iVar12 = 0x100;
+    //     uVar6 = 0;
+    // } else {
+    //     uVar6 = 0;
+    //     do {
+    //         psVar5[uVar6] = -1;
+    //         uVar6 = uVar6 + 1;
+    //         iVar12 = 0x100 - uVar6;
+    //     } while (uVar6 < uVar10);
+    // }
+    // uVar8 = 0x100 - uVar10 >> 3;
+    // if (uVar8 != 0) {
+    //     psVar9 = psVar5 + uVar10;
+    //     uVar11 = 0;
+    //     do {
+    //         psVar9[0] = -1;
+    //         psVar9[1] = -1;
+    //         psVar9[2] = -1;
+    //         psVar9[3] = -1;
+    //         psVar9[4] = -1;
+    //         psVar9[5] = -1;
+    //         psVar9[6] = -1;
+    //         psVar9[7] = -1;
+    //         uVar11 = uVar11 + 1;
+    //         psVar9 = psVar9 + 8;
+    //     } while (uVar11 < uVar8);
+    //     uVar6 = uVar6 + uVar8 * 8;
+    //     iVar12 = iVar12 + uVar8 * -8;
+    //     if (0x100 - uVar10 == uVar8 * 8)
+    //         goto LAB_00359cdd;
+    // }
+    // uVar10 = uVar6 + iVar12;
+    // do {
+    //     psVar5[uVar6] = -1;
+    //     uVar6 = uVar6 + 1;
+    // } while (uVar6 != uVar10);
+    // LAB_00359cdd:
+    // NumSfx = 0;
+    // NumSfxInst = 0;
+    // if (SFX_MUSIC_COUNT < 1) {
+    //    iVar12 = 0;
+    //    sfx_info = SfxInfo;
+    //} else {
+    //    sfx_info = SfxInfo;
+    //    iVar13 = 0;
+    //    do {
+    //        pnVar4 = g_music;
+    //        finfo = sfx_info + iVar13;
+    //        finfo->name = g_music[iVar13].name;
+    //        finfo->field1_0x4 = pnVar4[iVar13].field1_0x4;
+    //        finfo->index = pnVar4[iVar13].index;
+    //        finfo->field3_0xc = pnVar4[iVar13].field3_0xc;
+    //        finfo->field4_0x10 = pnVar4[iVar13].field4_0x10;
+    //        finfo->field5_0x14 = pnVar4[iVar13].field5_0x14;
+    //        finfo->streaming_sample = pnVar4[iVar13].streaming_sample;
+    //        finfo->field7_0x1c = pnVar4[iVar13].field7_0x1c;
+    //        pcVar3 = finfo->name;
+    //        SfxInfo[iVar13].index = iVar13;
+    //        iVar12 = iVar13 + 1;
+    //        NuStrCpy(sfx_filename + iVar13 * 0x40, pcVar3);
+    //        sfx_info = SfxInfo;
+    //        NumSfx = NumSfx + 1;
+    //        NumSfxNames = NumSfxNames + 1;
+    //        SfxInfo[iVar13].name = sfx_filename + iVar13 * 0x40;
+    //        iVar13 = iVar12;
+    //    } while (iVar12 < SFX_MUSIC_COUNT);
+    //    iVar12 = iVar12 * 0x20;
+    //}
+    // puVar1 = (undefined4 *)((int)&sfx_info->name + iVar12);
+    //*puVar1 = 0;
+    // puVar1[1] = 0;
+    // puVar1[2] = 0xffffffff;
+
+    NuStrCpy(cfgfile_name, file);
+
+    LoadSfx(file, buffer_start, buffer_end);
+
+    // piVar14 = GlobalSfxBits;
+    // for (iVar12 = 0x32; iVar12 != 0; iVar12 = iVar12 + -1) {
+    //     *piVar14 = 0;
+    //     piVar14 = piVar14 + (uint)bVar15 * -2 + 1;
+    // }
+
+    // if (0 < NumSfxInst) {
+    //     end = g_soundInfo + NumSfxInst;
+    //     sound_info = g_soundInfo;
+    //     do {
+    //         if ((sound_info->flags & 2) != 0) {
+    //             sVar7 = (short)(*(short *)&sound_info->field_0x4 * 2) >> 1;
+    //             local_14 = (byte)sVar7 & 0xf;
+    //             puVar2 = (ushort *)((int)GlobalSfxBits + ((int)sVar7 >> 4) * 2);
+    //             *puVar2 = *puVar2 | (ushort)(1 << local_14);
+    //         }
+    //         sound_info = sound_info + 1;
+    //     } while (sound_info != end);
+    // }
+
+    // ResetSounds();
+}
+
 void LoadSfx(const char *file, variptr_u *buffer_start, variptr_u buffer_end) {
     nusound_filename_info_s *pnVar1;
     nusound_filename_info_s *info;

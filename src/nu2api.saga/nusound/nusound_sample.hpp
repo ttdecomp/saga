@@ -1,23 +1,34 @@
 #pragma once
 
-#include "nu2api.saga/nusound/nusound_system.hpp"
+#include "nu2api.saga/nusound/nusound_buffer.hpp"
+#include "nu2api.saga/nusound/nusound_source.hpp"
 
 #include <pthread.h>
 
-class NuSoundSample {
+class NuSoundSample : public NuSoundSource {
+  private:
+    NuSoundBuffer buffer;
+    NuSoundSystem::FileType file_type;
+
+    i32 field1_0x20;
+    i32 field2_0x24;
+
+  public:
+    NuSoundSample *next;
+
   private:
     LoadState load_state;
     ErrorState last_error;
-    NuSoundSystem::FileType type;
     i32 thread_queue_count;
     i32 ref_count;
 
     static pthread_mutex_t sCriticalSection;
 
-  protected:
+  public:
+    NuSoundSample(const char *path, FeedType feed_type);
+
     void AddedToThreadQueue();
 
-  public:
     LoadState GetLoadState() const;
     ErrorState GetLastErrorState() const;
     i32 GetThreadQueueCount() const;

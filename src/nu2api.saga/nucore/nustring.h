@@ -23,7 +23,7 @@ extern "C" {
     int NuStrNICmp(const char *a, const char *b, int n);
     int NuStrNCpy(char *dest, const char *src, int n);
     char *NuStrRChr(char *src, char c);
-    void NuStrUpr(char *dest, char *src);
+    void NuStrUpr(char *dest, const char *src);
 
     unsigned char NuToLower(unsigned char c);
     unsigned char NuToUpper(unsigned char c);

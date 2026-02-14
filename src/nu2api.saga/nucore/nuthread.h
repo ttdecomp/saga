@@ -1,6 +1,7 @@
 #pragma once
 
 #include "nu2api.saga/nucore/NuMemoryManager.h"
+#include "nu2api.saga/nucore/android/NuThread_android.h"
 #include "nu2api.saga/nucore/common.h"
 
 typedef enum NUTHREADCAFECORE {
@@ -12,6 +13,12 @@ typedef enum NUTHREADXBOX360CORE {
     NUTHREADXBOX360CORE_UNKNOWN_1 = 1,
     NUTHREADXBOX360CORE_UNKNOWN_2 = 2,
 } NUTHREADXBOX360CORE;
+
+typedef union nuthread_core_u {
+    NUTHREADCAFECORE cafe_core;
+    NUTHREADXBOX360CORE xbox360_core;
+    i32 value;
+} NUTHREAD_CORE;
 
 typedef void nuthreadenableswapfn();
 typedef void nuthreaddisableswapfn();

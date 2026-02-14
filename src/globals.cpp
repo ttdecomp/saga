@@ -16,7 +16,6 @@ VARIPTR original_permbuffer_base;
 VARIPTR superbuffer_end;
 VARIPTR permbuffer_ptr;
 VARIPTR permbuffer_end;
-char g_BackgroundUsedFogColour;
 
 char prodcode[16] = {0};
 char *iconname = "lego.ico";
@@ -53,8 +52,11 @@ i32 CompletionPointInfo[7] = {0};
 
 nusound_filename_info_s *MusicInfo = NULL;
 nusound_filename_info_s *g_music = NULL;
+u8 g_BackgroundUsedFogColour = 0;
 i32 SFX_MUSIC_COUNT = 0;
 
 NUCAMERA *pNuCam = NULL;
 
 i32 NOSOUND = 0;
+
+const char *theEmptyString = "";

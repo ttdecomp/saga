@@ -250,10 +250,12 @@ extern "C" {
     extern nusound_filename_info_s *MusicInfo;
     extern nusound_filename_info_s *g_music;
     extern i32 SFX_MUSIC_COUNT;
-    extern char g_BackgroundUsedFogColour;
+    extern u8 g_BackgroundUsedFogColour;
     extern NUCAMERA *pNuCam;
 
     extern i32 NOSOUND;
+
+    extern const char *theEmptyString;
 
 #ifdef __cplusplus
 }

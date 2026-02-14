@@ -80,9 +80,9 @@ nusound_filename_info_s *ConfigureMusic(char *file, VARIPTR *bufferStart, VARIPT
 
 NuSoundLoader *NuSoundSystem::CreateFileLoader(FileType type) {
     switch (type) {
-        case FILE_TYPE_WAV:
+        case FileType::WAV:
             UNIMPLEMENTED("WAV loader");
-        case FILE_TYPE_OGG:
+        case FileType::OGG:
             UNIMPLEMENTED("OGG loader");
         default:
             return NULL;
@@ -189,7 +189,7 @@ i32 NuSound3PlayStereoV(NUSOUNDPLAYTOK token, ...) {
     LOG_DEBUG("stream_index=%d, sample_index=%d, volume=%f, pitch=%f, start_offset=%f, loop_type=%d", stream_index,
               sample_index, volume, pitch, start_offset, loop_type);
 
-    NuSoundStreamingSample *streaming_sample = g_NuSoundSamples.data[sample_index].streaming_sample;
+    NuSoundStreamingSample *streaming_sample = g_NuSoundSamples.data[sample_index].sample;
     if (streaming_sample->GetThreadQueueCount() < 1) {
         NuSoundWeakPtrListNode *stream_ptr = g_NuSoundStreams[stream_index];
         if (stream_ptr != NULL) {
@@ -198,15 +198,17 @@ i32 NuSound3PlayStereoV(NUSOUNDPLAYTOK token, ...) {
                 NuSound3StopStereoStream(stream_index);
                 stream = stream_ptr->stream;
             }
+
             LoadState load_state = stream->GetLoadState();
-            if ((load_state == 0) && stream_ptr->stream->GetResourceCount() == 0) {
+            if ((load_state == LoadState::NOT_LOADED) && stream_ptr->stream->GetResourceCount() == 0) {
                 delete stream_ptr;
                 g_NuSoundStreams[stream_index] = NULL;
-            } else if (g_NuSoundStreams[stream_index] != (void *)0x0) {
+            } else if (g_NuSoundStreams[stream_index] != NULL) {
                 return 0;
             }
         }
-        if (streaming_sample != NULL && streaming_sample->NuSoundSample::GetResourceCount() == 0) {
+
+        if (streaming_sample != NULL && streaming_sample->GetResourceCount() == 0) {
             NuSoundWeakPtrListNode *node = new NuSoundWeakPtrListNode();
 
             node->status = 0;
@@ -227,4 +229,78 @@ i32 NuSound3PlayStereoV(NUSOUNDPLAYTOK token, ...) {
     }
 
     return 0;
+}
+
+void NuSound3SetSampleTable(nusound_filename_info_s *info, variptr_u *buffer_start, variptr_u buffer_end) {
+    if (info == NULL) {
+        return;
+    }
+
+    i32 iVar5 = info->index;
+    while (iVar5 != -1) {
+        // TODO: dont cast classes
+        if (info->index < 0x1000) {
+            info->sample = (NuSoundStreamingSample *)NuSound.AddSample(info->name, NuSoundSystem::FileType::OGG,
+                                                                       NuSoundSource::FeedType::STREAMING);
+        } else {
+            info->sample = (NuSoundStreamingSample *)NuSound.AddSample(info->name, NuSoundSystem::FileType::WAV,
+                                                                       NuSoundSource::FeedType::ZERO);
+        }
+
+        /*pnVar3 = g_NuSoundSamples.ptr;
+        uVar4 = g_NuSoundSamples.length + 1;
+        if ((uint)g_NuSoundSamples.capacity < uVar4) {
+            length = g_NuSoundSamples.length + 4U & 0xfffffffc;
+            pNVar1 = NuMemoryGet();
+            pNVar2 = NuMemory::GetThreadMem(pNVar1);
+            sound_info = NuMemoryManager::_BlockReAlloc(pNVar2, pnVar3, length << 5, 4, 0x41, "", 0);
+            pnVar3 = g_NuSoundSamples.ptr;
+            if (sound_info != g_NuSoundSamples.ptr) {
+                iVar5 = 0;
+                offset = g_NuSoundSamples.length << 5;
+                if (g_NuSoundSamples.length != 0) {
+                    do {
+                        *(undefined4 *)((int)&sound_info->name + iVar5) = *(undefined4 *)((int)&pnVar3->name + iVar5);
+                        *(undefined4 *)((int)&sound_info->field1_0x4 + iVar5) =
+                            *(undefined4 *)((int)&pnVar3->field1_0x4 + iVar5);
+                        *(undefined4 *)((int)&sound_info->index + iVar5) = *(undefined4 *)((int)&pnVar3->index + iVar5);
+                        *(undefined4 *)((int)&sound_info->field3_0xc + iVar5) =
+                            *(undefined4 *)((int)&pnVar3->field3_0xc + iVar5);
+                        *(undefined4 *)((int)&sound_info->field4_0x10 + iVar5) =
+                            *(undefined4 *)((int)&pnVar3->field4_0x10 + iVar5);
+                        *(undefined4 *)((int)&sound_info->field5_0x14 + iVar5) =
+                            *(undefined4 *)((int)&pnVar3->field5_0x14 + iVar5);
+                        *(undefined4 *)((int)&sound_info->streaming_sample + iVar5) =
+                            *(undefined4 *)((int)&pnVar3->streaming_sample + iVar5);
+                        *(undefined4 *)((int)&sound_info->field7_0x1c + iVar5) =
+                            *(undefined4 *)((int)&pnVar3->field7_0x1c + iVar5);
+                        iVar5 = iVar5 + 0x20;
+                    } while (iVar5 != offset);
+                }
+                pNVar1 = NuMemoryGet();
+                pNVar2 = NuMemory::GetThreadMem(pNVar1);
+                NuMemoryManager::BlockFree(pNVar2, pnVar3, 0);
+            }
+            uVar4 = g_NuSoundSamples.length + 1;
+            g_NuSoundSamples.ptr = sound_info;
+            g_NuSoundSamples.capacity = length;
+        }
+        pnVar3 = g_NuSoundSamples.ptr + g_NuSoundSamples.length;
+        pnVar3->name = info->name;
+        pnVar3->field1_0x4 = info->field1_0x4;
+        pnVar3->index = info->index;
+        pnVar3->field3_0xc = info->field3_0xc;
+        pnVar3->field4_0x10 = info->field4_0x10;
+        pnVar3->field5_0x14 = info->field5_0x14;
+        pnVar3->streaming_sample = info->streaming_sample;
+        pnVar3->field7_0x1c = info->field7_0x1c;
+        if (info + 1 == (nusound_filename_info_s *)0x0) {
+            g_NuSoundSamples.length = uVar4;
+            return;
+        }
+        iVar5 = info[1].index;
+        info = info + 1;
+        g_NuSoundSamples.length = uVar4;
+        */
+    }
 }
