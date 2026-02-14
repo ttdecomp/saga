@@ -9,12 +9,11 @@
 #include "nu2api.saga/nucore/common.h"
 #include "nu2api.saga/nucore/nustring.h"
 #include "nu2api.saga/nucore/nuthread.h"
+#include "nu2api.saga/nuplatform/nuplatform.h"
 
 #ifdef ANDROID
 #include "nu2api.saga/nufile/android/nufile_android.h"
 #endif
-
-char g_datfileMode = 1;
 
 i32 read_critical_section = -1;
 
@@ -53,15 +52,15 @@ NUFILE_DEVICE host_device = {
 
 NUFILE_DEVICE *default_device = &host_device;
 
-static int file_time_count;
+static i32 file_time_count;
 static FILEBUFF file_buff[4];
 
 static void AquireFileBuffer(FILEINFO *info) {
-    int i;
-    int buf_idx;
-    int time;
+    i32 i;
+    i32 buf_idx;
+    i32 time;
     FILEBUFF *buf;
-    int bytes_read;
+    i32 bytes_read;
 
     buf_idx = 0;
     time = file_time_count;
@@ -96,8 +95,8 @@ i32 file_criticalsection;
 
 NUFILE_DEVICE *NuFileGetDeviceFromPath(char *path) {
     NUFILE_DEVICE *device;
-    int i;
-    int device_idx;
+    i32 i;
+    i32 device_idx;
 
     device = NULL;
 
@@ -194,10 +193,10 @@ NUFILE NuFileOpenDF(char *filepath, NUFILEMODE mode, NUDATHDR *header, i32 _unus
     char buf[256];
     i64 len;
     NUFILE_DEVICE *device;
-    int mc_slot;
-    int mc_port;
-    int ps_index;
-    int file_index;
+    i32 mc_slot;
+    i32 mc_port;
+    i32 ps_index;
+    i32 file_index;
     NUFILE file_handle;
 
     device = NuFileGetDeviceFromPath(filepath);
@@ -322,7 +321,7 @@ i64 NuFileSeek(NUFILE file, i64 offset, NUFILESEEK whence) {
     }
 
     if (file >= 0x400) {
-        pos = NuMemFileSeek(file, (int)offset, whence);
+        pos = NuMemFileSeek(file, (i32)offset, whence);
         return pos;
     }
 
@@ -350,9 +349,9 @@ i64 NuFileSeek(NUFILE file, i64 offset, NUFILESEEK whence) {
 }
 
 i64 NuFileSize(char *filepath) {
-    int file;
+    i32 file;
     i64 pos;
-    int buffering;
+    i32 buffering;
 
     buffering = nufile_buffering_enabled;
     nufile_buffering_enabled = 0;
@@ -367,7 +366,7 @@ i64 NuFileSize(char *filepath) {
     pos = -1;
 
     if (filepath != NULL && *filepath != '\0') {
-        int file;
+        i32 file;
 
         file = NuFileOpen(filepath, NUFILE_READ);
         if (file != 0) {
@@ -442,9 +441,9 @@ i64 NuFileOpenSize(NUFILE file) {
     return file_info[file].file_len;
 }
 
-int NuFileRead(NUFILE file, void *buf, int size) {
+i32 NuFileRead(NUFILE file, void *buf, i32 size) {
     FILEINFO *info;
-    int bytes_read;
+    i32 bytes_read;
     char *char_buf;
     i32 available;
 
@@ -489,7 +488,7 @@ int NuFileRead(NUFILE file, void *buf, int size) {
                 info->file_pos += info->buf_len;
             }
 
-            available = MIN(info->buf_len + (int)(info->buf_start - info->read_pos), size);
+            available = MIN(info->buf_len + (i32)(info->buf_start - info->read_pos), size);
             if (available != 0) {
                 u32 to_read;
                 void *file_buf;
@@ -511,7 +510,7 @@ int NuFileRead(NUFILE file, void *buf, int size) {
     }
 }
 
-int NuFileWrite(NUFILE file, void *data, int size) {
+i32 NuFileWrite(NUFILE file, void *data, i32 size) {
     if (file >= 0x1000) {
         return NuMcWrite(file - 0x1000, data, size, 0);
     }
@@ -613,11 +612,11 @@ u32 NuFileWriteUnsignedInt(NUFILE file, u32 value) {
     return NuFileWrite(file, &tmp, sizeof(u32));
 }
 
-i32 NuFileLoadBuffer(char *filepath, void *buf, int buf_size) {
+i32 NuFileLoadBuffer(char *filepath, void *buf, i32 buf_size) {
     NUFILE file;
-    int iVar2;
-    int lVar1;
-    int loaded;
+    i32 iVar2;
+    i32 lVar1;
+    i32 loaded;
 
     nufile_lasterror = 0;
     loaded = 0;
@@ -723,8 +722,8 @@ void NuFileReldirFix(NUFILE_DEVICE *device, char *path) {
 }
 
 i32 NuFileStatus(NUFILE file) {
-    int _unused;
-    int _unused2;
+    i32 _unused;
+    i32 _unused2;
     NUDATFILEINFO *info;
     NUDATOPENFILEINFO *open_info;
 
@@ -778,8 +777,8 @@ static void NuDatFileDecodeNewFile(NUDATFILEINFO *file, NUDATOPENFILEINFO *open_
 
 static void NuDatFileDecodeNext() {
     char char_buf[12];
-    int int_buf[3];
-    int compressed_size;
+    i32 int_buf[3];
+    i32 compressed_size;
     NUDATFILEINFO *info;
     NUDATOPENFILEINFO *open_info;
 
@@ -806,37 +805,37 @@ static void NuDatFileDecodeNext() {
     }
 }
 
-static void APIEndianSwap(void *data, int count, int size) {
+static void APIEndianSwap(void *data, i32 count, i32 size) {
 }
 
-NUDATHDR *NuDatOpen(char *filepath, VARIPTR *buf, int *_unused) {
+NUDATHDR *NuDatOpen(char *filepath, VARIPTR *buf, i32 *_unused) {
     return NuDatOpenEx(filepath, buf, _unused, 0);
 }
 
-NUDATHDR *NuDatOpenEx(char *filepath, VARIPTR *buf, int *_unused, i16 mode) {
+NUDATHDR *NuDatOpenEx(char *filepath, VARIPTR *buf, i32 *_unused, i16 mode) {
     char _unused2[256];
-    int path_len;
-    int i;
-    int j;
+    i32 path_len;
+    i32 i;
+    i32 j;
     NUFILE file;
     i64 seek_offset;
-    int file_len;
-    int bytes_read;
-    int _unused4;
-    int read_buf[2];
-    int total_read;
-    int n;
+    i32 file_len;
+    i32 bytes_read;
+    i32 _unused4;
+    i32 read_buf[2];
+    i32 total_read;
+    i32 n;
     NUDATHDR *hdr;
     NUDFNODE_V1 *old_ver;
     VARIPTR hash;
     u32 hash_idx;
-    int idx_to_swap;
+    i32 idx_to_swap;
     u32 tmp_idx;
     NUDATFINFO tmp;
-    int dfnodev2_size;
-    int dfnodev1_size;
-    int buffering;
-    int _unused3;
+    i32 dfnodev2_size;
+    i32 dfnodev1_size;
+    i32 buffering;
+    i32 _unused3;
 
     _unused3 = 0;
     total_read = 0;
@@ -1039,7 +1038,7 @@ NUDATHDR *NuDatSet(NUDATHDR *header) {
     return dat;
 }
 
-static int OpenDatFileBase(NUDATHDR *hdr, int file_idx) {
+static i32 OpenDatFileBase(NUDATHDR *hdr, i32 file_idx) {
     NUDATOPENFILEINFO *open_file;
 
     open_file = hdr->open_files + file_idx;
@@ -1052,9 +1051,9 @@ static int OpenDatFileBase(NUDATHDR *hdr, int file_idx) {
 }
 
 NUFILE NuDatFileOpen(NUDATHDR *hdr, char *filepath, NUFILEMODE mode) {
-    int node_idx;
-    int info_idx;
-    int file_idx;
+    i32 node_idx;
+    i32 info_idx;
+    i32 file_idx;
     NUDATOPENFILEINFO *open_info;
     NUDATFILEINFO *info;
     i64 start;
@@ -1159,13 +1158,13 @@ i64 NuDatFilePos(NUFILE file) {
     return info->pos - info->start;
 }
 
-int NuDatFileRead(NUFILE file, void *buf, int size) {
+i32 NuDatFileRead(NUFILE file, void *buf, i32 size) {
     NUDATFILEINFO *info;
     NUDATOPENFILEINFO *open_file;
-    int inflated_size;
-    int total_read;
-    int bytes_read;
-    int to_read;
+    i32 inflated_size;
+    i32 total_read;
+    i32 bytes_read;
+    i32 to_read;
 
     file -= 0x800;
     info = &dat_file_infos[file];
@@ -1246,7 +1245,7 @@ i32 NuDatFileGetFreeInfo(void) {
 
 i32 NuDatFileGetFreeHandleIX(NUDATHDR *hdr, i32 info_idx) {
     i32 file_idx;
-    int i;
+    i32 i;
 
     file_idx = -1;
 
@@ -1333,8 +1332,8 @@ i32 NuDatFileLoadBuffer(NUDATHDR *dat, char *name, void *dest, i32 buf_size) {
 
 NUMEMFILE memfiles[20];
 
-NUFILE NuMemFileOpen(void *buf, int buf_size, NUFILEMODE mode) {
-    int i;
+NUFILE NuMemFileOpen(void *buf, i32 buf_size, NUFILEMODE mode) {
+    i32 i;
 
     if (buf_size > 0 && (mode == NUFILE_READ || mode == NUFILE_WRITE)) {
         for (i = 0; i < 20; i++) {
@@ -1367,8 +1366,8 @@ void NuMemFileClose(NUFILE file) {
     }
 }
 
-int NuMemFileRead(NUFILE file, void *buf, int size) {
-    int remaining;
+i32 NuMemFileRead(NUFILE file, void *buf, i32 size) {
+    i32 remaining;
 
     if (file >= 0x800) {
         return NuDatFileRead(file, buf, size);
@@ -1387,7 +1386,7 @@ int NuMemFileRead(NUFILE file, void *buf, int size) {
     return size;
 }
 
-int NuMemFileWrite(NUFILE file, void *data, int size) {
+i32 NuMemFileWrite(NUFILE file, void *data, i32 size) {
     file -= 0x400;
 
     size = MIN(memfiles[file].end - memfiles[file].ptr + 1, size);
@@ -1433,7 +1432,7 @@ i64 NuMemFilePos(NUFILE file) {
     return (i64)(memfiles[file].ptr - memfiles[file].buffer);
 }
 
-int NuMemFileOpenSize(NUFILE file) {
+i32 NuMemFileOpenSize(NUFILE file) {
     file -= 0x400;
 
     return memfiles[file].end - memfiles[file].buffer;
@@ -1445,113 +1444,130 @@ void *NuMemFileAddr(NUFILE file) {
     return (void *)memfiles[file].ptr;
 }
 
-int NuPPLoadBuffer(NUFILE file, void *buf, int buf_size) {
+i32 NuPPLoadBuffer(NUFILE file, void *buf, i32 buf_size) {
     UNIMPLEMENTED("PP");
 }
 
 static FILEEXTINFO extensions[64];
-static int num_extensions;
+static i32 num_extensions;
 
-static void AddExtension(char *extension, int type, int platform) {
+static void AddExtension(char *extension, i32 type, i32 platform) {
     char *ext;
-    int len;
+    i32 len;
     FILEEXTINFO *next;
 
-    next = extensions + num_extensions;
+    next = &extensions[num_extensions];
+
     len = NuStrLen(extension);
-    next->len = (char)len;
-    ext = (char *)next;
+    next->len = len;
+
+    ext = next->extension;
     while (len != 0) {
-        len = len - 1;
+        len--;
         *ext = extension[len];
-        ext = ext + 1;
+        ext++;
     }
+
     *ext = '\0';
 
-    next->type = (char)type;
-    next->platform = (char)platform;
-    num_extensions = num_extensions + 1;
+    next->type = type;
+    next->platform = platform;
+    num_extensions++;
 }
 
 static void NuFileExtInit(void) {
-    static int first_time = 1;
+    static i32 first_time = 1;
 
-    if (first_time) {
-        first_time = 0;
-
-        memset(extensions, 0, sizeof(extensions));
-        num_extensions = 0;
-
-        AddExtension(".ca3", 0, 6);
-        AddExtension(".cbs", 1, 6);
-        AddExtension("_360.ghg", 2, 6);
-        AddExtension("_360.gsc", 3, 6);
-        AddExtension("_360.tex", 4, 6);
-        AddExtension(".cc2", 5, 6);
-        AddExtension(".wavx", 6, 6);
-        AddExtension(".wavm", 7, 6);
-        AddExtension(".wmv", 8, 6);
-        AddExtension(".ca3", 0, 5);
-        AddExtension(".cbs", 1, 5);
-        AddExtension("_ps3.ghg", 2, 5);
-        AddExtension("_ps3.gsc", 3, 5);
-        AddExtension("_ps3.tex", 4, 5);
-        AddExtension(".cc2", 5, 5);
-        AddExtension(".msf", 6, 5);
-        AddExtension(".mib", 7, 5);
-        AddExtension(".pam", 8, 5);
-        AddExtension(".an3", 0, 4);
-        AddExtension(".bsa", 1, 4);
-        AddExtension("_pc.dds", 4, 4);
-        AddExtension(".cu2", 5, 4);
-        AddExtension(".wav", 6, 4);
-        AddExtension(".mib", 7, 4);
-        AddExtension(".bik", 8, 4);
-        AddExtension("_ios.gsc", 3, 4);
-        AddExtension("_lr_ios.ghg", 2, 4);
-        AddExtension(".an3", 0, 0);
-        AddExtension(".bsa", 1, 0);
-        AddExtension(".ghg", 2, 0);
-        AddExtension(".gsc", 3, 0);
-        AddExtension(".pnt", 4, 0);
-        AddExtension(".cu2", 5, 0);
-        AddExtension(".vag", 6, 0);
-        AddExtension(".mib", 7, 0);
-        AddExtension(".pss", 8, 0);
-        AddExtension(".ca3", 0, 2);
-        AddExtension(".cbs", 1, 2);
-        AddExtension(".chg", 2, 2);
-        AddExtension(".csc", 3, 2);
-        AddExtension(".ctx", 4, 2);
-        AddExtension(".cc2", 5, 2);
-        AddExtension(".dsp", 6, 2);
-        AddExtension(".gcm", 7, 2);
-        AddExtension(".h4m", 8, 2);
-        AddExtension(".an3", 0, 1);
-        AddExtension(".bsa", 1, 1);
-        AddExtension(".hx2", 2, 1);
-        AddExtension(".nx2", 3, 1);
-        AddExtension(".dds", 4, 1);
-        AddExtension(".cu2", 5, 1);
-        AddExtension(".wavx", 6, 1);
-        AddExtension(".wavm", 7, 1);
-        AddExtension(".wmv", 8, 1);
-        AddExtension(".an3", 0, 3);
-        AddExtension(".bsa", 1, 3);
-        AddExtension(".phg", 2, 3);
-        AddExtension(".psc", 3, 3);
-        AddExtension(".pnt", 4, 3);
-        AddExtension(".cu2", 5, 3);
-        AddExtension(".vag", 6, 3);
-        AddExtension(".at3", 7, 3);
-        AddExtension(".pss", 8, 3);
+    if (!first_time) {
         return;
     }
 
-    return;
+    first_time = 0;
+
+    memset(extensions, 0, sizeof(extensions));
+    num_extensions = 0;
+
+    AddExtension(".ca3", NUFILETYPE_ANIM, X360_PLATFORM);
+    AddExtension(".cbs", NUFILETYPE_BSANIM, X360_PLATFORM);
+    AddExtension("_360.ghg", NUFILETYPE_CHARACTER, X360_PLATFORM);
+    AddExtension("_360.gsc", NUFILETYPE_SCENE, X360_PLATFORM);
+    AddExtension("_360.tex", NUFILETYPE_TEXTURE, X360_PLATFORM);
+    AddExtension(".cc2", NUFILETYPE_CUTSCENE, X360_PLATFORM);
+    AddExtension(".wavx", NUFILETYPE_SFX, X360_PLATFORM);
+    AddExtension(".wavm", NUFILETYPE_SOUNDSTREAM, X360_PLATFORM);
+    AddExtension(".wmv", NUFILETYPE_VIDEO, X360_PLATFORM);
+
+    AddExtension(".ca3", NUFILETYPE_ANIM, PS3_PLATFORM);
+    AddExtension(".cbs", NUFILETYPE_BSANIM, PS3_PLATFORM);
+    AddExtension("_ps3.ghg", NUFILETYPE_CHARACTER, PS3_PLATFORM);
+    AddExtension("_ps3.gsc", NUFILETYPE_SCENE, PS3_PLATFORM);
+    AddExtension("_ps3.tex", NUFILETYPE_TEXTURE, PS3_PLATFORM);
+    AddExtension(".cc2", NUFILETYPE_CUTSCENE, PS3_PLATFORM);
+    AddExtension(".msf", NUFILETYPE_SFX, PS3_PLATFORM);
+    AddExtension(".mib", NUFILETYPE_SOUNDSTREAM, PS3_PLATFORM);
+    AddExtension(".pam", NUFILETYPE_VIDEO, PS3_PLATFORM);
+
+    AddExtension(".an3", NUFILETYPE_ANIM, PC_PLATFORM);
+    AddExtension(".bsa", NUFILETYPE_BSANIM, PC_PLATFORM);
+
+#ifndef ANDROID
+    AddExtension("_pc.ghg", NUFILETYPE_CHARACTER, PC_PLATFORM);
+    AddExtension("_pc.gsc", NUFILETYPE_SCENE, PC_PLATFORM);
+#endif
+
+    AddExtension("_pc.dds", NUFILETYPE_TEXTURE, PC_PLATFORM);
+    AddExtension(".cu2", NUFILETYPE_CUTSCENE, PC_PLATFORM);
+    AddExtension(".wav", NUFILETYPE_SFX, PC_PLATFORM);
+    AddExtension(".mib", NUFILETYPE_SOUNDSTREAM, PC_PLATFORM);
+    AddExtension(".bik", NUFILETYPE_VIDEO, PC_PLATFORM);
+
+#ifdef ANDROID
+    AddExtension("_ios.gsc", NUFILETYPE_SCENE, PC_PLATFORM);
+    AddExtension("_lr_ios.ghg", NUFILETYPE_CHARACTER, PC_PLATFORM);
+#endif
+
+    AddExtension(".an3", NUFILETYPE_ANIM, DEFAULT_PLATFORM);
+    AddExtension(".bsa", NUFILETYPE_BSANIM, DEFAULT_PLATFORM);
+    AddExtension(".ghg", NUFILETYPE_CHARACTER, DEFAULT_PLATFORM);
+    AddExtension(".gsc", NUFILETYPE_SCENE, DEFAULT_PLATFORM);
+    AddExtension(".pnt", NUFILETYPE_TEXTURE, DEFAULT_PLATFORM);
+    AddExtension(".cu2", NUFILETYPE_CUTSCENE, DEFAULT_PLATFORM);
+    AddExtension(".vag", NUFILETYPE_SFX, DEFAULT_PLATFORM);
+    AddExtension(".mib", NUFILETYPE_SOUNDSTREAM, DEFAULT_PLATFORM);
+    AddExtension(".pss", NUFILETYPE_VIDEO, DEFAULT_PLATFORM);
+
+    AddExtension(".ca3", NUFILETYPE_ANIM, GAMECUBE_PLATFORM);
+    AddExtension(".cbs", NUFILETYPE_BSANIM, GAMECUBE_PLATFORM);
+    AddExtension(".chg", NUFILETYPE_CHARACTER, GAMECUBE_PLATFORM);
+    AddExtension(".csc", NUFILETYPE_SCENE, GAMECUBE_PLATFORM);
+    AddExtension(".ctx", NUFILETYPE_TEXTURE, GAMECUBE_PLATFORM);
+    AddExtension(".cc2", NUFILETYPE_CUTSCENE, GAMECUBE_PLATFORM);
+    AddExtension(".dsp", NUFILETYPE_SFX, GAMECUBE_PLATFORM);
+    AddExtension(".gcm", NUFILETYPE_SOUNDSTREAM, GAMECUBE_PLATFORM);
+    AddExtension(".h4m", NUFILETYPE_VIDEO, GAMECUBE_PLATFORM);
+
+    AddExtension(".an3", NUFILETYPE_ANIM, XBOX_PLATFORM);
+    AddExtension(".bsa", NUFILETYPE_BSANIM, XBOX_PLATFORM);
+    AddExtension(".hx2", NUFILETYPE_CHARACTER, XBOX_PLATFORM);
+    AddExtension(".nx2", NUFILETYPE_SCENE, XBOX_PLATFORM);
+    AddExtension(".dds", NUFILETYPE_TEXTURE, XBOX_PLATFORM);
+    AddExtension(".cu2", NUFILETYPE_CUTSCENE, XBOX_PLATFORM);
+    AddExtension(".wavx", NUFILETYPE_SFX, XBOX_PLATFORM);
+    AddExtension(".wavm", NUFILETYPE_SOUNDSTREAM, XBOX_PLATFORM);
+    AddExtension(".wmv", NUFILETYPE_VIDEO, XBOX_PLATFORM);
+
+    AddExtension(".an3", NUFILETYPE_ANIM, PSP_PLATFORM);
+    AddExtension(".bsa", NUFILETYPE_BSANIM, PSP_PLATFORM);
+    AddExtension(".phg", NUFILETYPE_CHARACTER, PSP_PLATFORM);
+    AddExtension(".psc", NUFILETYPE_SCENE, PSP_PLATFORM);
+    AddExtension(".pnt", NUFILETYPE_TEXTURE, PSP_PLATFORM);
+    AddExtension(".cu2", NUFILETYPE_CUTSCENE, PSP_PLATFORM);
+    AddExtension(".vag", NUFILETYPE_SFX, PSP_PLATFORM);
+    AddExtension(".at3", NUFILETYPE_SOUNDSTREAM, PSP_PLATFORM);
+    AddExtension(".pss", NUFILETYPE_VIDEO, PSP_PLATFORM);
 }
 
-int NuFileInitEx(int device_id, int reboot_iop, int eject) {
+i32 NuFileInitEx(i32 device_id, i32 reboot_iop, i32 eject) {
     NuPSFileInitDevices(device_id, reboot_iop, eject);
 
     memset(memfiles, 0, sizeof(memfiles));
@@ -1565,6 +1581,6 @@ int NuFileInitEx(int device_id, int reboot_iop, int eject) {
     return device_id;
 }
 
-void NuFileInit(int device_id) {
+void NuFileInit(i32 device_id) {
     NuFileInitEx(device_id, 1, 0);
 }

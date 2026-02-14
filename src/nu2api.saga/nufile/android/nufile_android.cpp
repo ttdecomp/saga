@@ -12,6 +12,8 @@
 #include "nu2api.saga/nucore/nuthread.h"
 #include "nu2api.saga/nufile/nufile.h"
 
+char g_datfileMode = 1;
+
 NuFileAndroidAPK::NuFileAndroidAPK(const char *filepath, NuFile::OpenMode::T mode)
     : NuFileBase(filepath, mode, 0x534f2020) {
 }

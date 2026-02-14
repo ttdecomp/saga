@@ -13,46 +13,60 @@ typedef enum nufilemode_e {
     NUFILE_MODE_CNT = 5,
 } NUFILEMODE;
 
+typedef enum {
+    NUFILETYPE_UNKNOWN = -1,
+    NUFILETYPE_ANIM = 0,
+    NUFILETYPE_BSANIM = 1,
+    NUFILETYPE_CHARACTER = 2,
+    NUFILETYPE_SCENE = 3,
+    NUFILETYPE_TEXTURE = 4,
+    NUFILETYPE_CUTSCENE = 5,
+    NUFILETYPE_SFX = 6,
+    NUFILETYPE_SOUNDSTREAM = 7,
+    NUFILETYPE_VIDEO = 8,
+    NUFILETYPE_CNT = 9,
+} NUFILETYPE;
+
 typedef struct filebuff_s {
     struct fileinfo_s *file_info;
-    int time;
+    i32 time;
     char data[1024];
 } FILEBUFF;
 
 typedef struct fileinfo_s {
-    int handle;
+    i32 handle;
     i64 read_pos;
     i64 file_pos;
     i64 file_len;
     i64 buf_start;
-    int buf_len;
-    int use_buf;
-    int unused;
-    int mode;
+    i32 buf_len;
+    i32 use_buf;
+    i32 unused;
+    i32 mode;
     FILEBUFF *buf;
 } FILEINFO;
 
 struct nufile_device_s;
 
-typedef int nufiledevFormatName(struct nufile_device_s *, char *, char *, int);
-typedef int nufiledevInterrogate(struct nufile_device_s *);
+typedef i32 nufiledevFormatName(struct nufile_device_s *, char *, char *, i32);
+typedef i32 nufiledevInterrogate(struct nufile_device_s *);
 
 typedef struct nufile_device_s {
-    int id;
-    int unit_id;
-    int attr;
-    int status;
+    i32 id;
+    i32 unit_id;
+    i32 attr;
+    i32 status;
     char dir_separator;
 
-    int max_name_size;
-    int max_ext_size;
-    int max_dir_entries;
+    i32 max_name_size;
+    i32 max_ext_size;
+    i32 max_dir_entries;
 
-    int free_space;
-    int params[4];
+    i32 free_space;
+    i32 params[4];
     char name[16];
-    int match_len;
-    int name_len;
+    i32 match_len;
+    i32 name_len;
     char root[32];
     char desc[64];
     char cur_dir[128];
@@ -68,15 +82,14 @@ typedef struct numemfile_s {
     char *end;
     char *ptr;
     NUFILEMODE mode;
-    int used;
+    i32 used;
 } NUMEMFILE;
 
-enum nufileseek_e {
+typedef enum nufileseek_e {
     NUFILE_SEEK_START = 0,
     NUFILE_SEEK_CURRENT = 1,
     NUFILE_SEEK_END = 2,
-};
-typedef enum nufileseek_e NUFILESEEK;
+} NUFILESEEK;
 
 typedef struct nudatinfo_s {
     i32 file_offset;
@@ -101,7 +114,7 @@ typedef struct nudfnodev2_s {
 
 typedef struct nudatopenfileinfo_s {
     NUFILE dat_file;
-    int info_idx;
+    i32 info_idx;
     i64 pos;
 } NUDATOPENFILEINFO;
 
@@ -128,11 +141,11 @@ typedef struct nudatfileinfo_s {
     NUDATHDR *hdr;
     i64 start;
     i64 pos;
-    int file_len;
-    int decompressed_len;
-    int open_file_idx;
-    int is_used;
-    int compression_mode;
+    i32 file_len;
+    i32 decompressed_len;
+    i32 open_file_idx;
+    i32 is_used;
+    i32 compression_mode;
 } NUDATFILEINFO;
 
 typedef i32 NUPSFILE;
@@ -152,7 +165,7 @@ typedef struct fileextinfo_s {
     char len;
 } FILEEXTINFO;
 
-extern int read_critical_section;
+extern i32 read_critical_section;
 
 #ifdef __cplusplus
 namespace NuFile {
@@ -175,16 +188,35 @@ namespace NuFile {
       public:
         // Return types uncertain.
         // NOLINTBEGIN
-        virtual i32 GetCapabilities() const {}
-        virtual const char *GetFilename() const {}
-        virtual u32 GetType() const {}
-        virtual i64 Seek(i64 offset, SeekOrigin::T) {}
-        virtual isize Read(void *buf, usize size) {}
-        virtual isize Write(const void *buf, usize size) {}
-        virtual i64 GetPos() const {}
-        virtual i64 GetSize() const {}
-        virtual void Close() {}
-        virtual void Flush() {}
+        virtual i32 GetCapabilities() const {
+        }
+
+        virtual const char *GetFilename() const {
+        }
+
+        virtual u32 GetType() const {
+        }
+
+        virtual i64 Seek(i64 offset, SeekOrigin::T) {
+        }
+
+        virtual isize Read(void *buf, usize size) {
+        }
+
+        virtual isize Write(const void *buf, usize size) {
+        }
+
+        virtual i64 GetPos() const {
+        }
+
+        virtual i64 GetSize() const {
+        }
+
+        virtual void Close() {
+        }
+
+        virtual void Flush() {
+        }
         // NOLINTEND
     };
 }; // namespace NuFile
@@ -220,8 +252,8 @@ extern "C" {
     extern char g_datfileMode;
     extern i32 NuFile_SwapEndianOnWrite;
 
-    int DEV_FormatName(NUFILE_DEVICE *device, char *formatted_name, char *path, int buf_size);
-    int DEVHOST_Interrogate(NUFILE_DEVICE *device);
+    i32 DEV_FormatName(NUFILE_DEVICE *device, char *formatted_name, char *path, i32 buf_size);
+    i32 DEVHOST_Interrogate(NUFILE_DEVICE *device);
 
     void NuFileCorrectSlashes(NUFILE_DEVICE *device, char *path);
     void NuFileReldirFix(NUFILE_DEVICE *device, char *path);
@@ -231,12 +263,12 @@ extern "C" {
     void NuFileClose(NUFILE file);
     i32 NuFileStatus(NUFILE file);
     NUFILE NuFileOpenDF(char *filepath, NUFILEMODE mode, NUDATHDR *header, i32 _unused);
-    int NuFileRead(NUFILE file, void *buf, int size);
-    int NuFileWrite(NUFILE file, void *data, int size);
+    i32 NuFileRead(NUFILE file, void *buf, i32 size);
+    i32 NuFileWrite(NUFILE file, void *data, i32 size);
     NUFILE_DEVICE *NuFileGetDeviceFromPath(char *path);
     i64 NuFileOpenSize(NUFILE file);
     i64 NuFileSeek(NUFILE file, i64 offset, NUFILESEEK seekMode);
-    i32 NuFileLoadBuffer(char *filepath, void *buf, int buf_size);
+    i32 NuFileLoadBuffer(char *filepath, void *buf, i32 buf_size);
     i32 NuFileLoadBufferVP(char *filepath, VARIPTR *buf, VARIPTR *buf_end);
     i32 NuFileExists(char *name);
     i64 NuFileSize(char *filepath);
@@ -266,25 +298,25 @@ extern "C" {
     i64 NuPSFileLSeek(i32 index, i64 offset, NUFILESEEK whence);
 
     // Memory file functions
-    NUFILE NuMemFileOpen(void *buf, int buf_size, NUFILEMODE mode);
+    NUFILE NuMemFileOpen(void *buf, i32 buf_size, NUFILEMODE mode);
     void NuMemFileClose(NUFILE file);
-    int NuMemFileRead(NUFILE file, void *buf, int size);
-    int NuMemFileWrite(NUFILE file, void *data, int size);
+    i32 NuMemFileRead(NUFILE file, void *buf, i32 size);
+    i32 NuMemFileWrite(NUFILE file, void *data, i32 size);
     i64 NuMemFileSeek(NUFILE file, i64 offset, NUFILESEEK whence);
     i64 NuMemFilePos(NUFILE file);
     void *NuMemFileAddr(NUFILE file);
 
     // Memory card functions
-    int NuMcOpen(int port, int slot, char *filepath, int mode, int async);
-    i32 NuMcClose(int fd, int async);
-    int NuMcSeek(int fd, int offset, NUFILESEEK mode, int async);
-    int NuMcOpenSize(int fd);
-    int NuMcRead(int fd, void *buf, int size, int async);
-    int NuMcWrite(int fd, void *data, int size, int async);
+    i32 NuMcOpen(i32 port, i32 slot, char *filepath, i32 mode, i32 async);
+    i32 NuMcClose(i32 fd, i32 async);
+    i32 NuMcSeek(i32 fd, i32 offset, NUFILESEEK mode, i32 async);
+    i32 NuMcOpenSize(i32 fd);
+    i32 NuMcRead(i32 fd, void *buf, i32 size, i32 async);
+    i32 NuMcWrite(i32 fd, void *data, i32 size, i32 async);
 
     // NuDat functions
-    NUDATHDR *NuDatOpen(char *filepath, VARIPTR *buf, int *_unused);
-    NUDATHDR *NuDatOpenEx(char *filepath, VARIPTR *buf, int *_unused, i16 mode);
+    NUDATHDR *NuDatOpen(char *filepath, VARIPTR *buf, i32 *_unused);
+    NUDATHDR *NuDatOpenEx(char *filepath, VARIPTR *buf, i32 *_unused, i16 mode);
     void NuDatFileClose(NUFILE file);
     NUDATHDR *NuDatSet(NUDATHDR *header);
     i32 NuDatFileOpenSize(NUFILE file);
@@ -292,22 +324,22 @@ extern "C" {
     // NuDatFile functions
     NUFILE NuDatFileOpen(NUDATHDR *hdr, char *filepath, NUFILEMODE mode);
     i64 NuDatFilePos(NUFILE file);
-    int NuDatFileRead(NUFILE file, void *buf, int size);
+    i32 NuDatFileRead(NUFILE file, void *buf, i32 size);
     i64 NuDatFileSeek(NUFILE file, i64 offset, NUFILESEEK whence);
     i32 NuDatFileFindTree(NUDATHDR *header, char *name);
     i32 NuDatFileLoadBuffer(NUDATHDR *dat, char *name, void *dest, i32 maxSize);
 
-    int NuPPLoadBuffer(NUFILE file, void *buf, int buf_size);
+    i32 NuPPLoadBuffer(NUFILE file, void *buf, i32 buf_size);
 
-    void NuPSFileInitDevices(int device_id, int reboot_iop, int eject);
-    int NuFileInitEx(int device_id, int reboot_iop, int eject);
-    void NuFileInit(int device_id);
+    void NuPSFileInitDevices(i32 device_id, i32 reboot_iop, i32 eject);
+    i32 NuFileInitEx(i32 device_id, i32 reboot_iop, i32 eject);
+    void NuFileInit(i32 device_id);
 #ifdef __cplusplus
 }
 #endif
 
-int NuMemFileOpenSize(NUFILE file);
-int NuMcFileOpenSize(NUFILE file);
+i32 NuMemFileOpenSize(NUFILE file);
+i32 NuMcFileOpenSize(NUFILE file);
 
 #ifdef __cplusplus
 
