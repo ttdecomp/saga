@@ -267,11 +267,11 @@ void InitGameAfterConfig(void) {
         i32 i = 0;
         LEVELDATA *level = LDataList;
         do {
-            if (799 < level->field2_0x60) {
+            if (799 < level->unknown_060) {
                 // level->field2_0x60 = tab;
             }
-            level->field22_0xaf = 0xff;
-            level->field41_0xd4 = 0xff;
+            level->unknown_0af = 0xff;
+            level->unknown_0d4 = 0xff;
             if (iVar3 < 1) {
                 areaIndex = 0;
             } else {
@@ -282,23 +282,23 @@ void InitGameAfterConfig(void) {
                         i32 iVar4 = 0;
                         do {
                             if (area->field2_0x60[iVar4] == i) {
-                                level->field22_0xaf = (byte)areaIndex;
-                                level->field41_0xd4 = (byte)iVar4;
+                                level->unknown_0af = (byte)areaIndex;
+                                level->unknown_0d4 = (byte)iVar4;
                                 episode = (byte)areaIndex;
                             } else {
-                                episode = level->field22_0xaf;
+                                episode = level->unknown_0af;
                             }
                             if (episode != 0xff) {
                                 areaIndex = areaIndex + 1;
                                 bVar1 = pAVar2[(char)episode].episode_index;
-                                level->field21_0xae = bVar1;
+                                level->unknown_0ae = bVar1;
                                 if ((pAVar2[(char)episode].flags & 1) != 0) {
-                                    level->field46_0xd9 = 0x32;
-                                    level->field47_0xda = 0x14;
+                                    level->unknown_0d9 = 0x32;
+                                    level->unknown_0da = 0x14;
                                 }
                                 if (((bVar1 != 0xff) && ((pAVar2[(char)episode].flags & 0x106) == 0)) &&
                                     ((level->flags & (LEVEL_STATUS | LEVEL_OUTRO | LEVEL_MIDTRO | LEVEL_INTRO)) == 0)) {
-                                    level->flags |= (LEVELFLAGS)0x2000;
+                                    level->flags |= 0x2000;
                                 }
                                 goto LAB_0012cb40;
                             }
@@ -651,16 +651,16 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         level->music_index = -1;
 
         i32 handle = music_man.GetTrackHandle(TRACK_CLASS_QUIET, "titles");
-        level->music_tracks[0] = handle;
-        level->music_tracks[1] = handle;
+        level->music_tracks[0][0] = handle;
+        level->music_tracks[0][1] = handle;
 
         handle = music_man.GetTrackHandle(TRACK_CLASS_ACTION, "titles");
-        level->music_tracks[2] = handle;
-        level->music_tracks[3] = handle;
+        level->music_tracks[1][0] = handle;
+        level->music_tracks[1][1] = handle;
 
         handle = music_man.GetTrackHandle(TRACK_CLASS_NOMUSIC, "titles");
-        level->music_tracks[4] = handle;
-        level->music_tracks[5] = handle;
+        level->music_tracks[2][0] = handle;
+        level->music_tracks[2][1] = handle;
 
         LOG_DEBUG("Titles level track handles: %d, %d, %d, %d, %d, %d", level->music_tracks[0], level->music_tracks[1],
                   level->music_tracks[2], level->music_tracks[3], level->music_tracks[4], level->music_tracks[5]);
@@ -705,7 +705,7 @@ static void LoadPermData(BGPROCINFO *proc) {
     LOG_INFO("Loaded %d characters", CHARCOUNT);
 
     LDataList = Levels_ConfigureList("levels\\levels.txt", &permbuffer_ptr, &permbuffer_end, 365, &LEVELCOUNT,
-                                     (void *)Level_SetDefaults);
+                                     Level_SetDefaults);
     FixUpLevels(&LevFixUp);
 
     for (int i = 0; i < LEVELCOUNT; i++) {

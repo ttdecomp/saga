@@ -770,7 +770,7 @@ void NuMusic::TrackParseErrorFn(nufpar_s *param_1) {
 }
 
 i32 GamePlayMusic(LEVELDATA *level, i32 zero, OPTIONSSAVE *options) {
-    music_man.SelectTrackByHandle(TRACK_CLASS_QUIET, level->music_tracks[0]);
+    music_man.SelectTrackByHandle(TRACK_CLASS_QUIET, level->music_tracks[0][0]);
 
     return music_man.PlayTrack(TRACK_CLASS_QUIET);
 }

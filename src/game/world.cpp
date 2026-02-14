@@ -18,8 +18,8 @@ void WorldInfo_Activate(void) {
         if (WORLD) {
             LEVELDATA* current_level = (LEVELDATA*)(WORLD->current_level);
             if (current_level) {
-                if ((current_level->field12_0x84.level_width) < 20000.0f) {
-                    result = (current_level->field12_0x84.level_depth < 20000.0f);
+                if (current_level->data_display.level_width < 20000.0f) {
+                    result = current_level->data_display.level_depth < 20000.0f;
                 }
             }
         }

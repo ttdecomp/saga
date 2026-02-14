@@ -1,172 +1,185 @@
 #pragma once
 
 #include "game/world.h"
-#include "globals.h"
+#include "nu2api.saga/nucore/common.h"
 
-struct leveldatadisplay_s { /* PlaceHolder Structure */
-    undefined field0_0x0;
-    undefined field1_0x1;
-    undefined field2_0x2;
-    undefined field3_0x3;
-    undefined field4_0x4;
-    undefined field5_0x5;
-    undefined field6_0x6;
-    undefined field7_0x7;
-    float level_width;
-    float level_depth;
-    f32 field9_0x10;
-    i16 field10_0x14;
-    undefined field11_0x16;
-    undefined field12_0x17;
-    undefined field13_0x18;
-    undefined field14_0x19;
-    undefined field15_0x1a;
-    undefined field16_0x1b;
+typedef struct leveldatadisplay_s {
+    f32 unknown_00;
+    f32 unknown_04;
+
+    f32 level_width;
+    f32 level_depth;
+
+    f32 unknown_10;
+    i16 unknown_14;
+
+    char unknown_16;
+    char unknown_17;
+    char unknown_18;
+    char unknown_19;
+    char unknown_1a;
+    char unknown_1b;
+} LEVELDATADISPLAY;
+
+enum {
+    LEVEL_UNKNOWN_FLAG_2 = 1 << 1,
+    LEVEL_UNKNOWN_FLAG_8 = 1 << 3,
+    LEVEL_INTRO = 1 << 5,
+    LEVEL_MIDTRO = 1 << 6,
+    LEVEL_OUTRO = 1 << 7,
+    LEVEL_TEST = 1 << 9,
+    LEVEL_STATUS = 1 << 10,
+    LEVEL_NEWGAME = 1 << 16,
+    LEVEL_LOADGAME = 1 << 17,
 };
-typedef struct leveldatadisplay_s LEVELDATADISPLAY;
 
-enum levelflags_e {
-    LEVEL_INTRO = 0x20,
-    LEVEL_MIDTRO = 0x40,
-    LEVEL_OUTRO = 0x80,
-    LEVEL_TEST = 0x200,
-    LEVEL_STATUS = 0x400,
-    LEVEL_NEWGAME = 0x10000,
-    LEVEL_LOADGAME = 0x20000,
-};
-typedef enum levelflags_e LEVELFLAGS;
+typedef struct LEVELDATA_s {
+    char dir[0x40];
+    char name[0x20];
 
-struct LEVELDATA_s { /* PlaceHolder Structure */
-    char dir[64];
-    char name[32]; /* Created by retype action */
-    undefined2 field2_0x60;
-    undefined2 field3_0x62;
-    LEVELFLAGS flags;
+    i16 unknown_060;
+
+    i16 idx;
+
+    u32 flags;
+
     void *load_fn;
     void *init_fn;
-    void *reset_fn; /* Created by retype action */
+    void *reset_fn;
     void *update_fn;
     void *always_update_fn;
     void *draw_fn;
     void *draw_status_fn;
-    LEVELDATADISPLAY field12_0x84;
-    i16 music_index;
-    undefined2 field14_0xa2;
-    undefined2 field15_0xa4;
-    undefined2 field16_0xa6;
-    undefined2 field17_0xa8;
-    undefined2 field18_0xaa;
-    undefined1 field19_0xac;
-    undefined1 field20_0xad;
-    undefined1 field21_0xae;
-    undefined1 field22_0xaf;
-    undefined4 field23_0xb0;
-    undefined4 field24_0xb4;
-    undefined1 field25_0xb8;
-    undefined1 field26_0xb9;
-    undefined1 field27_0xba;
-    undefined1 field28_0xbb;
-    undefined1 field29_0xbc;
-    undefined1 field30_0xbd;
-    undefined1 field31_0xbe;
-    undefined1 field32_0xbf;
-    f32 field33_0xc0;
-    undefined4 field34_0xc4;
-    undefined4 field35_0xc8;
-    undefined4 field36_0xcc;
-    undefined field37_0xd0;
-    undefined field38_0xd1;
-    undefined field39_0xd2;
-    undefined field40_0xd3;
-    undefined1 field41_0xd4;
-    byte field42_0xd5;
-    byte field43_0xd6;
-    undefined1 field44_0xd7;
-    undefined1 field45_0xd8;
-    undefined1 field46_0xd9;
-    undefined1 field47_0xda;
-    undefined1 field48_0xdb;
-    f32 field49_0xdc;
-    f32 field50_0xe0;
-    int field51_0xe4;
-    undefined4 field52_0xe8;
-    undefined4 field53_0xec;
-    undefined4 field54_0xf0;
-    undefined1 field55_0xf4;
-    u8 max_giz_timers;
-    undefined1 field57_0xf6;
-    undefined1 field58_0xf7;
-    undefined1 field59_0xf8;
-    undefined1 field60_0xf9;
-    undefined1 field61_0xfa;
-    byte max_obstacles;
-    undefined1 field63_0xfc;
-    undefined1 field64_0xfd;
-    undefined1 field65_0xfe;
-    undefined1 field66_0xff;
-    undefined1 field67_0x100;
-    undefined1 field68_0x101;
-    undefined1 field69_0x102;
-    undefined1 field70_0x103;
-    undefined1 field71_0x104;
-    undefined1 field72_0x105;
-    undefined1 field73_0x106;
-    undefined1 field74_0x107;
-    undefined1 field75_0x108;
-    undefined1 field76_0x109;
-    undefined1 field77_0x10a;
-    undefined1 field78_0x10b;
-    undefined1 field79_0x10c;
-    undefined1 field80_0x10d;
-    undefined1 field81_0x10e;
-    undefined1 field82_0x10f;
-    undefined1 field83_0x110;
-    undefined1 field84_0x111;
-    undefined1 field85_0x112;
-    byte max_bombgens;
-    undefined1 field87_0x114;
-    undefined1 field88_0x115;
-    undefined field89_0x116;
-    undefined field90_0x117;
-    undefined2 field91_0x118;
-    undefined field92_0x11a;
-    undefined field93_0x11b;
-    f32 field94_0x11c;
-    f32 field95_0x120;
-    undefined4 field96_0x124;
-    undefined4 field97_0x128;
-    i32 music_tracks[6];
-};
 
-typedef struct LEVELDATA_s LEVELDATA;
+    LEVELDATADISPLAY data_display;
+
+    i16 music_index;
+
+    i16 unknown_0a2;
+    i16 unknown_0a4;
+    i16 unknown_0a6;
+    i16 unknown_0a8;
+    i16 unknown_0aa;
+
+    char unknown_0ac;
+    char unknown_0ad;
+    char unknown_0ae;
+    char unknown_0af;
+
+    i32 unknown_0b0;
+    i32 unknown_0b4;
+
+    char unknown_0b8;
+    char unknown_0b9;
+    char unknown_0ba;
+    char unknown_0bb;
+    char unknown_0bc;
+    char unknown_0bd;
+    char unknown_0be;
+    char unknown_0bf;
+
+    f32 unknown_0c0;
+    f32 unknown_0c4;
+    f32 unknown_0c8;
+    f32 unknown_0cc;
+
+    char unknown_0d0;
+    char unknown_0d1;
+    char unknown_0d2;
+    char unknown_0d3;
+
+    char unknown_0d4;
+    char unknown_0d5;
+    char unknown_0d6;
+    char unknown_0d7;
+    char unknown_0d8;
+    char unknown_0d9;
+    char unknown_0da;
+    char unknown_0db;
+
+    f32 unknown_0dc;
+    f32 unknown_0e0;
+
+    u16 max_antinodes;
+    u16 max_gizmo_blowups;
+    u16 max_gizmo_blowup_types;
+
+    u16 unknown_0ea;
+    u16 unknown_0ec;
+    u16 unknown_0ee;
+    u16 unknown_0f0;
+    u16 unknown_0f2;
+
+    u8 field55_0xf4;
+
+    u8 max_giz_timers;
+
+    u8 field57_0xf6;
+    u8 field58_0xf7;
+    u8 field59_0xf8;
+    u8 field60_0xf9;
+    u8 field61_0xfa;
+
+    u8 max_obstacles;
+
+    u8 field63_0xfc;
+    u8 field64_0xfd;
+    u8 field65_0xfe;
+    u8 field66_0xff;
+    u8 field67_0x100;
+    u8 field68_0x101;
+    u8 field69_0x102;
+    u8 field70_0x103;
+    u8 field71_0x104;
+    u8 field72_0x105;
+    u8 field73_0x106;
+    u8 field74_0x107;
+    u8 field75_0x108;
+    u8 field76_0x109;
+    u8 field77_0x10a;
+    u8 field78_0x10b;
+    u8 field79_0x10c;
+    u8 field80_0x10d;
+    u8 field81_0x10e;
+    u8 field82_0x10f;
+    u8 field83_0x110;
+    u8 field84_0x111;
+    u8 field85_0x112;
+    u8 max_bombgens;
+
+    u8 field87_0x114;
+    u8 field88_0x115;
+    u8 field89_0x116;
+    u8 field90_0x117;
+    i16 field91_0x118;
+    u8 field92_0x11a;
+    u8 field93_0x11b;
+
+    f32 unknown_11c;
+    f32 unknown_120;
+
+    i32 field96_0x124;
+    i32 field97_0x128;
+
+    i32 music_tracks[3][2];
+} LEVELDATA;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
     extern LEVELDATA *LDataList;
     extern LEVELDATA *NEWGAME_LDATA;
     extern LEVELDATA *LOADGAME_LDATA;
-
 #ifdef __cplusplus
 }
-#endif
 
-#ifdef __cplusplus
+typedef void LEVELSETDEFAULTSFN(LEVELDATA *);
 
-LEVELDATA *Levels_ConfigureList(char *file, VARIPTR *buf, VARIPTR *buf_end, i32 maxLevelCount, i32 *levelcount,
-                                void *levelSetDefaults);
+LEVELDATA *Levels_ConfigureList(char *file, VARIPTR *buf, VARIPTR *buf_end, i32 max_level_count, i32 *level_count_out,
+                                LEVELSETDEFAULTSFN *set_defaults_fn);
 
 void Level_SetDefaults(LEVELDATA *level);
-LEVELDATA *Level_FindByName(char *name, int *indexDest);
+LEVELDATA *Level_FindByName(char *name, int *idx_out);
 void Level_Draw(WORLDINFO *world);
-
-static inline LEVELFLAGS operator|(LEVELFLAGS a, LEVELFLAGS b) {
-    return static_cast<LEVELFLAGS>(static_cast<int>(a) | static_cast<int>(b));
-}
-static inline LEVELFLAGS operator|=(LEVELFLAGS &a, LEVELFLAGS b) {
-    a = a | b;
-    return a;
-}
 
 #endif
