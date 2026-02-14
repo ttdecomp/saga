@@ -66,7 +66,7 @@ static void GizSpecial_Reset(void *, void *, void *) {
     UNIMPLEMENTED();
 }
 
-static void *GizSpecial_ReserveBuffer(void *) {
+void *GizSpecial_ReserveBuffer(void *) {
     UNIMPLEMENTED();
 }
 

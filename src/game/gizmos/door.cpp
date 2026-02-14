@@ -2,7 +2,7 @@
 
 #include "decomp.h"
 
-char door_gizmotype_id = -1;
+static char door_gizmotype_id = -1;
 
 static int Door_GetMaxGizmos(void *door) {
     UNIMPLEMENTED();
@@ -20,7 +20,7 @@ static int Door_GetOutput(GIZMO *gizmo, int, int) {
     UNIMPLEMENTED();
 }
 
-static char *Door_GetOutputName(GIZMO *gizmo, int output_index) {
+char *Door_GetOutputName(GIZMO *gizmo, int output_index) {
     UNIMPLEMENTED();
 }
 
@@ -28,7 +28,7 @@ static int Door_GetNumOutputs(GIZMO *gizmo) {
     UNIMPLEMENTED();
 }
 
-static void Door_Activate(GIZMO *gizmo, int) {
+void Door_Activate(GIZMO *gizmo, int) {
     UNIMPLEMENTED();
 }
 

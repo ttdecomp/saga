@@ -52,7 +52,7 @@ static void Lever_Activate(GIZMO *gizmo, int) {
     UNIMPLEMENTED();
 }
 
-static int LeverActivateRev(GIZMO *gizmo, int, int) {
+static int Lever_ActivateRev(GIZMO *gizmo, int, int) {
     UNIMPLEMENTED();
 }
 
@@ -108,7 +108,7 @@ ADDGIZMOTYPE *Levers_RegisterGizmo(int type_id) {
     addtype.fns.get_output_name_fn = Lever_GetOutputName;
     addtype.fns.get_num_outputs_fn = Lever_GetNumOutputs;
     addtype.fns.activate_fn = Lever_Activate;
-    addtype.fns.activate_rev_fn = LeverActivateRev;
+    addtype.fns.activate_rev_fn = Lever_ActivateRev;
     addtype.fns.set_visibility_fn = Lever_SetVisibility;
     addtype.fns.allocate_progress_data_fn = Levers_AllocateProgressData;
     addtype.fns.clear_progress_fn = Levers_ClearProgress;

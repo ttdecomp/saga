@@ -46,13 +46,13 @@ SAGA_NOMATCH char *NuIOS_GetDocumentsPath(void) {
 }
 
 char *NuIOS_GetAppBundlePath(void) {
-    static char storedAppBundlePath[4096];
+    static char storedBundlePath[4096];
 
-    if (storedAppBundlePath[0] == '\0') {
-        strcpy(storedAppBundlePath, "dummyPath");
+    if (storedBundlePath[0] == '\0') {
+        strcpy(storedBundlePath, "dummyPath");
     }
 
-    return storedAppBundlePath;
+    return storedBundlePath;
 }
 
 u32 NuIOS_YieldThread(void) {

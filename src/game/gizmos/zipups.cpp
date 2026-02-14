@@ -60,7 +60,7 @@ static void ZipUps_StoreProgress(void *, void *, void *) {
     UNIMPLEMENTED();
 }
 
-static void ZipUps_Reset(void *, void *, void *) {
+void ZipUps_Reset(void *, void *, void *) {
     UNIMPLEMENTED();
 }
 

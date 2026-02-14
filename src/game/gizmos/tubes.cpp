@@ -15,7 +15,6 @@ static void Tubes_Update(void *, void *, float) {
 }
 
 static void Tubes_Draw(void *, void *, float) {
-    UNIMPLEMENTED();
 }
 
 static char *Tube_GetGizmoName(GIZMO *gizmo) {

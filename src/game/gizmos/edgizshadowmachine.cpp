@@ -2,7 +2,7 @@
 
 #include "decomp.h"
 
-int edGizShadow_gizmotype_id = -1;
+int edGizShadow_gizmotype_id;
 
 static int edGizShadow_GetMaxGizmos(void *shadow) {
     UNIMPLEMENTED();

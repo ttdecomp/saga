@@ -54,7 +54,7 @@ struct storepack_s {
 };
 typedef struct storepack_s STOREPACK;
 
-struct collectid_s {
+typedef struct COLLECTID {
     i16 id;
     u8 type;
     u8 field2_0x3;
@@ -63,7 +63,6 @@ struct collectid_s {
     u8 field5_0x9;
     u16 field6_0xa;
     char cheat_code[16];
-};
-typedef struct collectid_s COLLECTID;
+} COLLECTID;
 
 i32 Store_FindPack(i32 id, char *name);

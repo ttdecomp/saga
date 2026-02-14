@@ -29,7 +29,7 @@ typedef struct nuapi_s {
     char field22_0x3f;
 
     f32 forced_frame_time;
-    f32 max_fps;
+    i32 max_fps;
 
     NUPADREC pad_record;
 

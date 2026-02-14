@@ -72,7 +72,7 @@ static int GizmoPickups_Load(void *, void *) {
     UNIMPLEMENTED();
 }
 
-static void GizmoPickups_PostLoad(void *, void *) {
+void GizmoPickups_PostLoad(void *, void *) {
     UNIMPLEMENTED();
 }
 

@@ -12,7 +12,7 @@ static void GizSpinner_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
     UNIMPLEMENTED();
 }
 
-static void GizSpinners_Update(void *, void *, float) {
+void GizSpinners_Update(void *, void *, float) {
     UNIMPLEMENTED();
 }
 
@@ -21,30 +21,29 @@ static void GizSpinner_Draw(void *, void *, float) {
 }
 
 static void GizSpinner_PanelDraw(void *, void *, float) {
-    UNIMPLEMENTED();
 }
 
 static char *GizSpinner_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
 }
 
-static int GizSpinner_GetOutput(GIZMO *gizmo, int, int) {
+int GizSpinner_GetOutput(GIZMO *gizmo, int, int) {
     UNIMPLEMENTED();
 }
 
-static char *GizSpinner_GetOutputName(GIZMO *gizmo, int output_index) {
+char *GizSpinner_GetOutputName(GIZMO *gizmo, int output_index) {
     UNIMPLEMENTED();
 }
 
-static int GizSpinner_GetNumOutputs(GIZMO *gizmo) {
+int GizSpinner_GetNumOutputs(GIZMO *gizmo) {
     UNIMPLEMENTED();
 }
 
-static void GizSpinner_Activate(GIZMO *gizmo, int) {
+void GizSpinner_Activate(GIZMO *gizmo, int) {
     UNIMPLEMENTED();
 }
 
-static void GizSpinner_SetVisibility(GIZMO *gizmo, int) {
+void GizSpinner_SetVisibility(GIZMO *gizmo, int) {
     UNIMPLEMENTED();
 }
 
@@ -52,7 +51,7 @@ static int GizSpinner_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
 }
 
-static void GizSpinner_UsingSpecial(GIZMO **, void *, int, char *) {
+void GizSpinner_UsingSpecial(GIZMO **, void *, int, char *) {
     UNIMPLEMENTED();
 }
 

@@ -6,7 +6,7 @@
 
 static int max_materials;
 static NUMTL *material_list;
-static int numtl_renderplane;
+int numtl_renderplane;
 
 void NuMtlInitEx(VARIPTR *buf, i32 max_mtls) {
     // iVar2 = AndroidOBBUtils::LookupPackagePath(path, 1);

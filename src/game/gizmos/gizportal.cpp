@@ -7,7 +7,7 @@
 #include "game/world.h"
 #include "nu2api.saga/nu3d/nugscn.h"
 
-int portal_gizmotype_id = -1;
+int portal_gizmotype_id;
 
 static int Portal_GetMaxGizmos(void *world_info) {
     WORLDINFO *world = (WORLDINFO *)world_info;

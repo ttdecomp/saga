@@ -4,35 +4,35 @@
 
 int gizrandom_gizmotype_id = -1;
 
-static int GizRandom_GetMaxGizmos(void *random) {
+int GizRandom_GetMaxGizmos(void *random) {
     UNIMPLEMENTED();
 }
 
-static void GizRandom_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+void GizRandom_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
     UNIMPLEMENTED();
 }
 
-static char *GizRandom_GetGizmoName(GIZMO *gizmo) {
+char *GizRandom_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
 }
 
-static int GizRandom_GetOutput(GIZMO *gizmo, int, int) {
+int GizRandom_GetOutput(GIZMO *gizmo, int, int) {
     UNIMPLEMENTED();
 }
 
-static char *GizRandom_GetOutputName(GIZMO *gizmo, int output_index) {
+char *GizRandom_GetOutputName(GIZMO *gizmo, int output_index) {
     UNIMPLEMENTED();
 }
 
-static int GizRandom_GetNumOutputs(GIZMO *gizmo) {
+int GizRandom_GetNumOutputs(GIZMO *gizmo) {
     UNIMPLEMENTED();
 }
 
-static void GizRandom_Activate(GIZMO *gizmo, int) {
+void GizRandom_Activate(GIZMO *gizmo, int) {
     UNIMPLEMENTED();
 }
 
-static void *GizRandom_ReserveBufferSpace(void *) {
+void *GizRandom_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
 }
 

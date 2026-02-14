@@ -12,15 +12,15 @@ static void Blowup_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
     UNIMPLEMENTED();
 }
 
-static void GizmoBlowupEarlyUpdate(void *, void *, float) {
+void GizmoBlowupEarlyUpdate(void *, void *, float) {
     UNIMPLEMENTED();
 }
 
-static void GizmoBlowupLateUpdate(void *, void *, float) {
+void GizmoBlowupLateUpdate(void *, void *, float) {
     UNIMPLEMENTED();
 }
 
-static void GizmoBlowupBurstDraw(void *, void *, float) {
+void GizmoBlowupBurstDraw(void *, void *, float) {
     UNIMPLEMENTED();
 }
 
@@ -48,7 +48,7 @@ static void Blowup_SetVisibility(GIZMO *gizmo, int) {
     UNIMPLEMENTED();
 }
 
-static int Blowup_GetVisibility(GIZMO *gizmo) {
+int Blowup_GetVisibility(GIZMO *gizmo) {
     UNIMPLEMENTED();
 }
 
@@ -72,11 +72,11 @@ static void Blowups_Reset(void *, void *, void *) {
     UNIMPLEMENTED();
 }
 
-static void *gizmoblowup_reservebuffers(void *) {
+void *gizmoblowup_reservebuffers(void *) {
     UNIMPLEMENTED();
 }
 
-static int gizmoblowup_Load(void *, void *) {
+int gizmoblowup_Load(void *, void *) {
     UNIMPLEMENTED();
 }
 

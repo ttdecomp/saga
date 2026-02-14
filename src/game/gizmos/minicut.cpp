@@ -26,7 +26,7 @@ static int GizMiniCut_GetNumOutputs(GIZMO *gizmo) {
     UNIMPLEMENTED();
 }
 
-static void GizMiniCut_Activate(GIZMO *gizmo, int) {
+void GizMiniCut_Activate(GIZMO *gizmo, int) {
     UNIMPLEMENTED();
 }
 
@@ -38,7 +38,7 @@ static void GizMiniCut_UsingSpecial(GIZMO **, void *, int, char *) {
     UNIMPLEMENTED();
 }
 
-static void GizMiniCut_Reset(void *, void *, void *) {
+void GizMiniCut_Reset(void *, void *, void *) {
     UNIMPLEMENTED();
 }
 
@@ -46,7 +46,7 @@ static void *GizMiniCut_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
 }
 
-static int GizMiniCut_Load(void *, void *) {
+int GizMiniCut_Load(void *, void *) {
     UNIMPLEMENTED();
 }
 

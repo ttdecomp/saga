@@ -2,7 +2,7 @@
 
 #include "decomp.h"
 
-int giztorpmachine_gizmotype_id = -1;
+int giztorpmachine_gizmotype_id;
 
 static int GizTorp_GetMaxGizmos(void *torp) {
     UNIMPLEMENTED();

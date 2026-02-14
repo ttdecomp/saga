@@ -14,9 +14,9 @@
 
 #include "export.h"
 
-i32 saveload_status = 0;
-i32 saveload_autosave = 0;
-i32 saveload_savepresent = 0;
+i32 saveload_status;
+i32 saveload_autosave = -1;
+i32 saveload_savepresent;
 
 i32 saveload_slotused[6] = {0};
 i32 saveload_slotcode[6] = {0};
@@ -235,9 +235,9 @@ i32 PCSaveSlot(i32 slot, void *extradata, i32 extradataSize, u32 hash) {
     return file != NULL;
 }
 
-static i32 statuswait = 0;
+static i32 statuswait;
 static NUTIME savetimer;
-static i32 saveload_slotid = -1;
+i32 saveload_slotid;
 
 void saveloadASSave(i32 slot, void *buffer, i32 size, u32 hash) {
     statuswait = 1;

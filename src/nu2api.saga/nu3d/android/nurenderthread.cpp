@@ -10,7 +10,7 @@
 
 static volatile i32 renderThreadCS;
 static i32 renderThreadIsLocked;
-static pthread_t *g_renderThread;
+pthread_t *g_renderThread;
 
 void NuRenderThreadLock(void) {
     BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nurenderthread.cpp", 134);

@@ -2,7 +2,7 @@
 
 #include "decomp.h"
 
-int pushblock_gizmotype_id = -1;
+int pushblock_gizmotype_id;
 
 static int Push_GetMaxGizmos(void *push) {
     UNIMPLEMENTED();
@@ -12,7 +12,7 @@ static void Push_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
     UNIMPLEMENTED();
 }
 
-static void UpdatePushBlocks(void *, void *, float) {
+void UpdatePushBlocks(void *, void *, float) {
     UNIMPLEMENTED();
 }
 
@@ -20,15 +20,15 @@ static char *GizPush_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
 }
 
-static int GizPush_GetOutput(GIZMO *gizmo, int, int) {
+int GizPush_GetOutput(GIZMO *gizmo, int, int) {
     UNIMPLEMENTED();
 }
 
-static char *GizPush_GetOutputName(GIZMO *gizmo, int output_index) {
+char *GizPush_GetOutputName(GIZMO *gizmo, int output_index) {
     UNIMPLEMENTED();
 }
 
-static int GizPush_GetNumOutputs(GIZMO *gizmo) {
+int GizPush_GetNumOutputs(GIZMO *gizmo) {
     UNIMPLEMENTED();
 }
 

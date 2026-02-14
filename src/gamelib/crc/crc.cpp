@@ -3,7 +3,7 @@
 #include "nu2api.saga/nucore/nustring.h"
 
 static i32 g_crc_initialised = 0;
-static i32 *g_crc_table = NULL;
+i32 *g_crc_table = NULL;
 
 #define CRC32_POLY 0x04C11DB7
 

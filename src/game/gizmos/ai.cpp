@@ -18,7 +18,7 @@ static int AI_GetOutput(GIZMO *gizmo, int, int) {
     UNIMPLEMENTED();
 }
 
-static char *AI_GetOutputName(GIZMO *gizmo, int output_index) {
+char *AI_GetOutputName(GIZMO *gizmo, int output_index) {
     UNIMPLEMENTED();
 }
 
@@ -26,7 +26,7 @@ static int AI_GetNumOutputs(GIZMO *gizmo) {
     UNIMPLEMENTED();
 }
 
-static void AI_Activate(GIZMO *gizmo, int) {
+void AI_Activate(GIZMO *gizmo, int) {
     UNIMPLEMENTED();
 }
 

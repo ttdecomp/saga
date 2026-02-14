@@ -2,7 +2,7 @@
 
 #include <stddef.h>
 
-enum platforms_supported_e {
+typedef enum PLATFORMS_SUPPORTED_e {
     DEFAULT_PLATFORM = 0,
     XBOX_PLATFORM = 1,
     GAMECUBE_PLATFORM = 2,
@@ -17,8 +17,7 @@ enum platforms_supported_e {
     ANDROID_S3TC_PLATFORM = 11,
     ANDROID_ETC1_PLATFORM = 12,
     NUM_PLATFORMS_SUPPORTED = 13
-};
-typedef enum platforms_supported_e PLATFORMS_SUPPORTED;
+} PLATFORMS_SUPPORTED;
 
 #ifdef __cplusplus
 extern "C" {

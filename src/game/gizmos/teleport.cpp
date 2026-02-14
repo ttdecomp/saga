@@ -20,7 +20,7 @@ static int Teleport_GetOutput(GIZMO *gizmo, int, int) {
     UNIMPLEMENTED();
 }
 
-static char *Teleport_GetOutputName(GIZMO *gizmo, int output_index) {
+char *Teleport_GetOutputName(GIZMO *gizmo, int output_index) {
     UNIMPLEMENTED();
 }
 

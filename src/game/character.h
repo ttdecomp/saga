@@ -330,7 +330,14 @@ extern i32 CHARCOUNT;
 extern CHARACTERDATA *CDataList;
 extern GAMECHARACTERDATA *GCDataList;
 
+#ifdef __cplusplus
+
 i32 CharIDFromName(char *name);
 
-CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, i32 count, i32 *countDest,
-                                      i32 count2, GAMECHARACTERDATA **dest);
+extern "C" {
+#endif
+    CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, i32 count,
+                                          i32 *countDest, i32 count2, GAMECHARACTERDATA **dest);
+#ifdef __cplusplus
+}
+#endif

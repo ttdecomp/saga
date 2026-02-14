@@ -3,10 +3,9 @@
 #include "game/timer.h"
 #include "nu2api.saga/nucore/common.h"
 
-struct missionsave_s {
+typedef struct MISSIONSAVE_s {
     char data[0xc];
-};
-typedef struct missionsave_s MISSIONSAVE;
+} MISSIONSAVE;
 
 struct missionsys_s {
     int length;
