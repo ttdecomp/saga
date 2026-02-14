@@ -10,7 +10,6 @@ WORLDINFO *WORLD = &WorldInfo;
 
 /// @brief Pointer to the currently loading world info
 static WORLDINFO *LWORLD = &WorldInfo;
-extern bool g_BackgroundUsedFogColour;
 void WorldInfo_Activate(void) {
     WORLD = LWORLD;
     WorldInfo_Init(LWORLD);
