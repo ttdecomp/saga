@@ -1,4 +1,5 @@
 #include "game/world.h"
+#include "game/level.h"
 #include "nu2api.saga/nuandroid/ios_graphics.h"
 
 #include <string.h>
@@ -15,10 +16,10 @@ void WorldInfo_Activate(void) {
     int result = 0; 
     if (NuIOS_IsLowEndDevice()) {
         if (WORLD) {
-            char* inner_ptr = (char*)(WORLD->current_level);
-            if (inner_ptr) {
-                if (*(float*)(inner_ptr + 0x8C) < 20000.0f) {
-                    result = (*(float*)(inner_ptr + 0x90) < 20000.0f);
+            LEVELDATA* current_level = (LEVELDATA*)(WORLD->current_level);
+            if (current_level) {
+                if ((current_level->field12_0x84.level_width) < 20000.0f) {
+                    result = (current_level->field12_0x84.level_depth < 20000.0f);
                 }
             }
         }

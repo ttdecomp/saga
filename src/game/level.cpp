@@ -69,7 +69,8 @@ LAB_00484810:
                     level->draw_status_fn = (void *)0x0;
                     (level->field12_0x84).field10_0x14 = 20000;
                     *(i64 *)&level->field12_0x84 = 0x3e19999a3dcccccd;
-                    (level->field12_0x84).field8_0x8 = 0x469d0800469c4000;
+                    (level->field12_0x84).level_width = 0x469c4000;
+                    (level->field12_0x84).level_depth = 0x469d0800;
                     // if (iVar3 == 0) {
                     f32 fVar5 = 1.0;
                     //} else {

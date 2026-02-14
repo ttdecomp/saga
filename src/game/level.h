@@ -12,7 +12,8 @@ struct leveldatadisplay_s { /* PlaceHolder Structure */
     undefined field5_0x5;
     undefined field6_0x6;
     undefined field7_0x7;
-    i64 field8_0x8;
+    float level_width;
+    float level_depth;
     f32 field9_0x10;
     i16 field10_0x14;
     undefined field11_0x16;
