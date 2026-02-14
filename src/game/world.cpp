@@ -13,7 +13,7 @@ static WORLDINFO *LWORLD = &WorldInfo;
 void WorldInfo_Activate(void) {
     WORLD = LWORLD;
     WorldInfo_Init(LWORLD);
-    int result = 0; 
+    char result = 0; 
     if (NuIOS_IsLowEndDevice()) {
         if (WORLD) {
             LEVELDATA* current_level = (LEVELDATA*)(WORLD->current_level);
@@ -24,7 +24,9 @@ void WorldInfo_Activate(void) {
             }
         }
     }
-    g_BackgroundUsedFogColour = result;
+
+   g_BackgroundUsedFogColour = result;
+   return;
 }
 
 void WorldInfo_Init(WORLDINFO *info) {

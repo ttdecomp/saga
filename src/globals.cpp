@@ -16,7 +16,7 @@ VARIPTR original_permbuffer_base;
 VARIPTR superbuffer_end;
 VARIPTR permbuffer_ptr;
 VARIPTR permbuffer_end;
-bool g_BackgroundUsedFogColour;
+char g_BackgroundUsedFogColour;
 
 char prodcode[16] = {0};
 char *iconname = "lego.ico";
