@@ -1,7 +1,7 @@
 #pragma once
 
 #include "nu2api.saga/nu3d/numtl.h"
-#include "nu2api.saga/nu3d/nustream.h"
+#include "nu2api.saga/nu3d/nurndr.h"
 #include "nu2api.saga/nucore/common.h"
 
 typedef enum {

@@ -221,15 +221,14 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nuportal.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nuprim.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nuqfnt.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nurndr.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nurndr.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nushader.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nustream.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nutex.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nuwater.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/android/nuqfnt_android.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/android/nurenderthread.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/android/nurndr_android.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/android/nutex_android.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/android/nutex_ios_ex.cpp
 
@@ -385,7 +384,6 @@ else()
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nuqfnt.cpp PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nurndr.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nushader.cpp PROPERTIES COMPILE_OPTIONS "-O3")
-    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nustream.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nutex.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/android/nuqfnt_android.cpp PROPERTIES COMPILE_OPTIONS "-O2")
