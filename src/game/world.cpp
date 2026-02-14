@@ -10,13 +10,16 @@ WORLDINFO *WORLD = &WorldInfo;
 
 /// @brief Pointer to the currently loading world info
 static WORLDINFO *LWORLD = &WorldInfo;
+
 void WorldInfo_Activate(void) {
     WORLD = LWORLD;
     WorldInfo_Init(LWORLD);
-    char result = 0; 
+
+    char result = 0;
+
     if (NuIOS_IsLowEndDevice()) {
-        if (WORLD) {
-            LEVELDATA* current_level = (LEVELDATA*)(WORLD->current_level);
+        if (WORLD != NULL) {
+            LEVELDATA *current_level = WORLD->current_level;
             if (current_level) {
                 if (current_level->data_display.level_width < 20000.0f) {
                     result = current_level->data_display.level_depth < 20000.0f;
@@ -25,8 +28,9 @@ void WorldInfo_Activate(void) {
         }
     }
 
-   g_BackgroundUsedFogColour = result;
-   return;
+    g_BackgroundUsedFogColour = result;
+
+    return;
 }
 
 void WorldInfo_Init(WORLDINFO *info) {
