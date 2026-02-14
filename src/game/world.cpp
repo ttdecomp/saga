@@ -1,5 +1,6 @@
 #include "game/world.h"
 #include "game/level.h"
+#include "globals.h"
 #include "nu2api.saga/nuandroid/ios_graphics.h"
 
 #include <string.h>
