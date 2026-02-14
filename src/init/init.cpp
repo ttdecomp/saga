@@ -183,7 +183,7 @@ void InitGameAfterConfig(void) {
         i32 areaIndex;
         i32 areaId = 0;
         AREADATA *area = ADataList;
-        AREAFLAGS areaFlags;
+        u16 areaFlags;
         do {
             i32 episode = Episode_ContainsArea(areaId, &areaIndex);
             area->episode_index = episode;

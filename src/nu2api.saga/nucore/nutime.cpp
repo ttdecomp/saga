@@ -1,7 +1,7 @@
+#include "nu2api.saga/nucore/nutime.h"
+
 #include <sys/time.h>
 #include <time.h>
-
-#include "nu2api.saga/nucore/nutime.h"
 
 void NuTimeGetTicksPS(u32 *low, u32 *high) {
     struct timespec ts;
@@ -31,6 +31,9 @@ void NuTimeInitPS(void) {
 
 void NuTimeGet(NUTIME *t) {
     NuTimeGetTicksPS(&t->low, (u32 *)&t->high);
+}
+
+f32 NuTimeSeconds(NUTIME *t) {
 }
 
 void NuTimeSub(NUTIME *t, NUTIME *a, NUTIME *b) {

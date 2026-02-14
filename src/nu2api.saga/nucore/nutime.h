@@ -14,7 +14,11 @@ u64 NuGetCurrentTimeMilisecondsPS(void);
 extern "C" {
 #endif
     void NuTimeInitPS(void);
+
     void NuTimeGet(NUTIME *t);
+
+    f32 NuTimeSeconds(NUTIME *t);
+
     void NuTimeSub(NUTIME *t, NUTIME *a, NUTIME *b);
 #ifdef __cplusplus
 }
