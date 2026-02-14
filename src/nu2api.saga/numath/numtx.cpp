@@ -1317,6 +1317,3 @@ f32 NuMtxSSE(NUMTX *a, NUMTX *b) {
 
     return sse;
 }
-
-void NuMtx24BitCorrection(NUMTX *X, NUMTX *mtx) {
-}

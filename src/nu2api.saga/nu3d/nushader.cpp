@@ -67,8 +67,9 @@ void NuShaderObjectBaseSetWaterSpeed(f32 speed) {
 }
 
 int NuShaderObjectBindAttributeLocationsGLSL(GLuint program) {
+    static GLchar infoLog[0x2000];
+
     GLint params;
-    static GLchar info_log[8192];
 
     glBindAttribLocation(program, 0, "cg_Vertex");
     glBindAttribLocation(program, 1, "COLOR");
@@ -91,7 +92,7 @@ int NuShaderObjectBindAttributeLocationsGLSL(GLuint program) {
         return 1;
     }
 
-    glGetProgramInfoLog(program, sizeof(info_log), NULL, info_log);
+    glGetProgramInfoLog(program, sizeof(infoLog), NULL, infoLog);
     return 0;
 }
 

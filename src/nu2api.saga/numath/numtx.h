@@ -172,7 +172,6 @@ extern "C" {
     void NuMtxOrth(NUMTX *m);
     void NuMtxVecToEulerXYZ(NUVEC *XVec, NUVEC *ZVec, NUANG *x, NUANG *y, NUANG *z);
     f32 NuMtxSSE(NUMTX *a, NUMTX *b);
-    void NuMtx24BitCorrection(NUMTX *X, NUMTX *mtx);
 #ifdef __cplusplus
 }
 #endif
