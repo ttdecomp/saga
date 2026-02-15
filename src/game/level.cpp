@@ -4,6 +4,7 @@
 #include "nu2api.saga/nucore/common.h"
 #include "nu2api.saga/nucore/nustring.h"
 #include "nu2api.saga/nufile/nufpar.h"
+#include "nu2api.saga/numusic/numusic.h"
 
 LEVELDATA *LDataList = NULL;
 LEVELDATA *NEWGAME_LDATA = NULL;
@@ -279,5 +280,37 @@ void Level_Draw(WORLDINFO *world) {
     void (*drawFn)(WORLDINFO *) = (void (*)(WORLDINFO *))world->current_level->draw_fn;
     if (drawFn != NULL) {
         drawFn(world);
+    }
+}
+
+LEVELFIXUP LevFixUp;
+
+void FixUpLevels(LEVELFIXUP *fixup) {
+    // Levels_FixUp(fixup);
+
+    LEVELDATA *level = Level_FindByName("titles", NULL);
+    // TITLES_LDATA = level;
+    if (level != NULL) {
+        // level->init_fn = Titles_Init;
+        // level->update_fn = Titles_Update;
+        // level->draw_fn = Titles_Draw;
+        // level->flags = level->flags & 0xfffffff5;
+        // level->music_index = GetMusicIndex("titles", MusicInfo, -1);
+        level->music_index = -1;
+
+        i32 handle = music_man.GetTrackHandle(TRACK_CLASS_QUIET, "titles");
+        level->music_tracks[0][0] = handle;
+        level->music_tracks[0][1] = handle;
+
+        handle = music_man.GetTrackHandle(TRACK_CLASS_ACTION, "titles");
+        level->music_tracks[1][0] = handle;
+        level->music_tracks[1][1] = handle;
+
+        handle = music_man.GetTrackHandle(TRACK_CLASS_NOMUSIC, "titles");
+        level->music_tracks[2][0] = handle;
+        level->music_tracks[2][1] = handle;
+
+        LOG_DEBUG("Titles level track handles: %d, %d, %d, %d, %d, %d", level->music_tracks[0], level->music_tracks[1],
+                  level->music_tracks[2], level->music_tracks[3], level->music_tracks[4], level->music_tracks[5]);
     }
 }

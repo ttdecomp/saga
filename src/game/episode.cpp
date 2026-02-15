@@ -1,6 +1,7 @@
 #include "game/episode.h"
 
 #include "game/area.h"
+#include "globals.h"
 #include "nu2api.saga/nucore/nustring.h"
 #include "nu2api.saga/nufile/nufpar.h"
 
@@ -155,4 +156,27 @@ EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *b
         bVar3 = true;
         goto LAB_00488f90;
     }
+}
+
+i32 Episode_ContainsArea(i32 areaId, i32 *areaIndex) {
+    for (i32 i = 0; i < EPISODECOUNT; i++) {
+        EPISODEDATA *episode = &EDataList[i];
+
+        for (i32 j = 0; j < episode->area_count; j++) {
+            i16 id = episode->area_ids[j];
+            if (id == areaId) {
+                if (areaIndex != NULL) {
+                    *areaIndex = j;
+                }
+
+                return i;
+            }
+        }
+    }
+
+    if (areaIndex != NULL) {
+        *areaIndex = -1;
+    }
+
+    return -1;
 }

@@ -7,6 +7,8 @@
 
 #include <string.h>
 
+MISSIONSYS *MissionSys = NULL;
+
 MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, MISSIONSAVE *save) {
     i16 psVar2;
     i16 sVar1;

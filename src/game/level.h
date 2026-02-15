@@ -166,6 +166,8 @@ typedef struct LEVELDATA_s {
     i32 music_tracks[3][2];
 } LEVELDATA;
 
+struct LEVELFIXUP {};
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -173,6 +175,8 @@ extern "C" {
 
     extern LEVELDATA *NEWGAME_LDATA;
     extern LEVELDATA *LOADGAME_LDATA;
+
+    extern LEVELFIXUP LevFixUp;
 
     extern i32 LEVELCOUNT;
 #ifdef __cplusplus
@@ -188,5 +192,7 @@ void Level_SetDefaults(LEVELDATA *level);
 LEVELDATA *Level_FindByName(char *name, int *idx_out);
 
 void Level_Draw(WORLDINFO *world);
+
+void FixUpLevels(LEVELFIXUP *fixup);
 
 #endif

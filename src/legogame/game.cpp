@@ -1,37 +1,13 @@
-#include "init/init.hpp"
+#include "legogame/game.h"
 
-#include <stdarg.h>
-
-#include "decomp.h"
 #include "game/area.h"
-#include "game/character.h"
 #include "game/cheat.h"
 #include "game/collection.h"
 #include "game/episode.h"
 #include "game/level.h"
-#include "game/mission.h"
 #include "gameframework/saveload.h"
 #include "globals.h"
-#include "nu2api.saga/nu3d/nucamera.h"
-#include "nu2api.saga/nu3d/nutex.h"
-#include "nu2api.saga/nuandroid/ios_graphics.h"
-#include "nu2api.saga/nucore/bgproc.h"
-#include "nu2api.saga/nucore/nuapi.h"
-#include "nu2api.saga/nucore/numemory.h"
 #include "nu2api.saga/nucore/nustring.h"
-#include "nu2api.saga/nucore/nuvideo.h"
-#include "nu2api.saga/numusic/numusic.h"
-#include "nu2api.saga/numusic/sfx.h"
-#include "nu2api.saga/nusound/nusound.h"
-
-extern "C" {
-    void *DVD = NULL;
-
-    struct nupad_s;
-    nupad_s *Game_NuPad_Store[2];
-
-    nupad_s **Game_NuPad;
-};
 
 u16 MakeSaveHash(void) {
     return Game.completion;
@@ -46,7 +22,7 @@ void DrawAutoSaveIcon(void) {
 
 char SuperOptions[24] = {0};
 
-void InitGameBeforeConfig() {
+void InitGameBeforeConfig(void) {
     if (PAL == 0) {
         NuStrCpy(prodcode, "BASLUS-21409");
         FRAMETIME = 0.016666668;
@@ -66,88 +42,7 @@ void InitGameBeforeConfig() {
                          sizeof(SuperOptions));
 }
 
-void NuPhoneOSRegisterEventCallback(i32 param_1, void (*param_2)()) {
-}
-
-void DummyCallback() {
-}
-
-void InitOnce(i32 argc, char **param_2) {
-    NuPhoneOSRegisterEventCallback(1, /* TouchCallback */ DummyCallback);
-    NuPhoneOSRegisterEventCallback(3, /* SystemPauseCallback */ DummyCallback);
-    NuPhoneOSRegisterEventCallback(6, /* SystemDidBecomeActiveCallback */ DummyCallback);
-
-    if (NuIOS_IsLowEndDevice()) {
-        SUPERBUFFERSIZE -= 0x38370;
-    }
-
-    i32 size = SUPERBUFFERSIZE;
-
-    permbuffer_base.void_ptr = NU_ALLOC(size, 4, 1, "", NUMEMORY_CATEGORY_NONE);
-    superbuffer_end.void_ptr = (void *)(SUPERBUFFERSIZE + (usize)permbuffer_base.void_ptr);
-    original_permbuffer_base.void_ptr = permbuffer_base.void_ptr;
-    InitGameBeforeConfig();
-
-    Game_NuPad = &Game_NuPad_Store[0];
-
-#define SETUP(cmd, ...) cmd, ##__VA_ARGS__
-
-    NuInitHardware(&permbuffer_base, &superbuffer_end, 0,                      //
-                   SETUP(NUAPI_SETUP_HOSTFS, 0),                               //
-                   SETUP(NUAPI_SETUP_SWAPMODE, NUVIDEO_SWAPMODE_ASYNC),        //
-                   SETUP(NUAPI_SETUP_STREAMSIZE, 0x20000),                     //
-                   SETUP(NUAPI_SETUP_VIDEOMODE, (PAL == 0) ? 0xdeadbeef : 8),  //
-                   SETUP(NUAPI_SETUP_RESOLUTION, 512, (PAL == 0) ? 224 : 256), //
-                   SETUP(NUAPI_SETUP_GLASSRPLANE, 1),                          //
-                   SETUP(NUAPI_SETUP_CDDVDMODE, &DVD),                         //
-                   // (-(uint)(NOSOUND == 0) & 0xffffffee) + 0x1c, 0, 0x640, 0, 0,
-                   SETUP(NUAPI_SETUP_PAD0, &Game_NuPad_Store[0]), //
-                   SETUP(NUAPI_SETUP_PAD1, &Game_NuPad_Store[1]), //
-                   SETUP(NUAPI_SETUP_0x46, 1),                    //
-                   SETUP(NUAPI_SETUP_0x47, 1),                    //
-                   SETUP(NUAPI_SETUP_0x49, 1),                    //
-                   SETUP(NUAPI_SETUP_0x4b, 1),                    //
-                   NUAPI_SETUP_END                                //
-    );
-
-    pNuCam = NuCameraCreate();
-    // Game.optionsSave._11_1_ = NuIOS_IsWidescreen();
-    // WidescreenCode((uint)(byte)Game.optionsSave._11_1_);
-    // InitPanel((uint)(byte)Game.optionsSave._11_1_);
-
-    // app_tbgameset = NuTimeBarCreateSet(0);
-    // app_tbplayerset = NuTimeBarCreateSet(0);
-    // app_tbaiset = NuTimeBarCreateSet(0);
-    // app_tbdrawset = NuTimeBarCreateSet(0);
-}
-
-i32 Episode_ContainsArea(i32 areaId, i32 *areaIndex) {
-    for (i32 i = 0; i < EPISODECOUNT; i++) {
-        EPISODEDATA *episode = &EDataList[i];
-
-        for (i32 j = 0; j < episode->area_count; j++) {
-            i16 id = episode->area_ids[j];
-            if (id == areaId) {
-                if (areaIndex != NULL) {
-                    *areaIndex = j;
-                }
-
-                return i;
-            }
-        }
-    }
-
-    if (areaIndex != NULL) {
-        *areaIndex = -1;
-    }
-
-    return -1;
-}
-
-MISSIONSYS *MissionSys = NULL;
-
 void InitGameAfterConfig(void) {
-
     AREADATA *pAVar5 = ADataList;
 
     POINTS_PER_CHARACTER = 1;
@@ -633,109 +528,4 @@ void InitGameAfterConfig(void) {
     //      Reflections_On = 0;
     //      CharClipToBlobShadows = 1;
     //  }
-}
-
-struct LEVELFIXUP {};
-LEVELFIXUP LevFixUp;
-
-void FixUpLevels(LEVELFIXUP *fixup) {
-    // Levels_FixUp(fixup);
-
-    LEVELDATA *level = Level_FindByName("titles", NULL);
-    // TITLES_LDATA = level;
-    if (level != NULL) {
-        // level->init_fn = Titles_Init;
-        // level->update_fn = Titles_Update;
-        // level->draw_fn = Titles_Draw;
-        // level->flags = level->flags & 0xfffffff5;
-        // level->music_index = GetMusicIndex("titles", MusicInfo, -1);
-        level->music_index = -1;
-
-        i32 handle = music_man.GetTrackHandle(TRACK_CLASS_QUIET, "titles");
-        level->music_tracks[0][0] = handle;
-        level->music_tracks[0][1] = handle;
-
-        handle = music_man.GetTrackHandle(TRACK_CLASS_ACTION, "titles");
-        level->music_tracks[1][0] = handle;
-        level->music_tracks[1][1] = handle;
-
-        handle = music_man.GetTrackHandle(TRACK_CLASS_NOMUSIC, "titles");
-        level->music_tracks[2][0] = handle;
-        level->music_tracks[2][1] = handle;
-
-        LOG_DEBUG("Titles level track handles: %d, %d, %d, %d, %d, %d", level->music_tracks[0], level->music_tracks[1],
-                  level->music_tracks[2], level->music_tracks[3], level->music_tracks[4], level->music_tracks[5]);
-    }
-}
-
-extern "C" {
-    void RegisterMusic(nusound_filename_info_s *files) {
-        LOG_DEBUG("files=%p", files);
-
-        g_music = files;
-        SFX_MUSIC_COUNT = 0;
-
-        if (files != NULL) {
-            for (; files->filename != NULL; files = files + 1) {
-                NuStrLen(files->filename);
-                LOG_DEBUG("Registered music file: %s", files->filename);
-                SFX_MUSIC_COUNT++;
-            }
-        }
-    }
-}
-
-static void LoadPermData(BGPROCINFO *proc) {
-    VARIPTR legalTex;
-    legalTex.addr = superbuffer_end.addr + -0x400000;
-
-    i32 legal_tid = NuTexRead("stuff\\legal\\LEGAL_ENGLISH", &legalTex, &superbuffer_end);
-
-    MusicInfo = ConfigureMusic("audio\\music.txt", &permbuffer_ptr, &permbuffer_end);
-    RegisterMusic(MusicInfo);
-    InitSfx(&permbuffer_ptr, permbuffer_end, "Audio\\Audio.cfg");
-
-    CDataList =
-        ConfigureCharacterList("chars\\chars.txt", &permbuffer_ptr, &permbuffer_end, 340, &CHARCOUNT, 288, &GCDataList);
-    for (int i = 0; i < CHARCOUNT; i++) {
-        LOG_INFO("Character %d: %s / %s", i, CDataList[i].dir, CDataList[i].file);
-    }
-    LOG_INFO("Loaded %d characters", CHARCOUNT);
-
-    LDataList = Levels_ConfigureList("levels\\levels.txt", &permbuffer_ptr, &permbuffer_end, 365, &LEVELCOUNT,
-                                     Level_SetDefaults);
-    FixUpLevels(&LevFixUp);
-
-    for (int i = 0; i < LEVELCOUNT; i++) {
-        LOG_INFO("Level %d: %s / %s", i, LDataList[i].dir, LDataList[i].name);
-    }
-    LOG_INFO("Loaded %d levels", LEVELCOUNT);
-
-    ADataList = Areas_ConfigureList("levels\\areas.txt", &permbuffer_ptr, &permbuffer_end, 72, &AREACOUNT);
-    // FixUpAreas();
-
-    for (int i = 0; i < AREACOUNT; i++) {
-        LOG_INFO("Area %d: %s / %s", i, ADataList[i].dir, ADataList[i].file);
-    }
-    LOG_INFO("Loaded %d areas", AREACOUNT);
-
-    EDataList = Episodes_ConfigureList("levels\\episodes.txt", &permbuffer_ptr, &permbuffer_end, 6, &EPISODECOUNT);
-
-    for (int i = 0; i < EPISODECOUNT; i++) {
-        LOG_INFO("Episode %d: %hu areas", i, EDataList[i].area_count);
-    }
-    LOG_INFO("Loaded %d episodes", EPISODECOUNT);
-
-    InitGameAfterConfig();
-}
-
-void StartPerm() {
-    permbuffer_ptr = permbuffer_base;
-    permbuffer_end = superbuffer_end;
-}
-void LoadPerm() {
-    LoadPermData(NULL);
-}
-
-void EndPerm() {
 }

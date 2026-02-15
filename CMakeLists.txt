@@ -203,11 +203,13 @@ set(SAGA_SOURCE_FILES
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gamelib/nuwind/nuwind.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/init/init.cpp
-
     ${CMAKE_CURRENT_SOURCE_DIR}/src/java/jni_stub.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/qrand.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legogame/game.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legogame/startup.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legogame/target_android.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/NuRenderDevice.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/nucamera.cpp

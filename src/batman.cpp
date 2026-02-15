@@ -5,7 +5,8 @@
 #include "game/level.h"
 #include "gameframework/saveload.h"
 #include "globals.h"
-#include "init/init.hpp"
+#include "legogame/startup.h"
+#include "legogame/target.h"
 #include "nu2api.saga/numusic/numusic.h"
 #include "nu2api.saga/nuplatform/nuplatform.h"
 

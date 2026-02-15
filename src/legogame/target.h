@@ -3,7 +3,3 @@
 #include "nu2api.saga/nucore/common.h"
 
 void InitOnce(i32 argc, char **param_2);
-
-void StartPerm();
-void LoadPerm();
-void EndPerm();

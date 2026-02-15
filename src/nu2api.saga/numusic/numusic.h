@@ -3,10 +3,12 @@
 #include "game/level.h"
 #include "globals.h"
 #include "nu2api.saga/nufile/nufpar.h"
+#include "nu2api.saga/nusound/nusound.h"
 
 #ifdef __cplusplus
 
 struct Track;
+struct NuMusic;
 
 enum voice_status_e : u32 {
     VOICE_STATUS_1 = 1,
@@ -26,6 +28,7 @@ enum : u32 {
 typedef u32 TRACK_CLASS;
 typedef u32 TRACK_FLAGS;
 
+#ifdef __cplusplus
 class Track {
   public:
     char *path;
@@ -201,8 +204,13 @@ class NuMusic {
 };
 
 extern "C" {
-    extern NuMusic music_man;
-};
+#endif
+    extern struct NuMusic music_man;
+
+    void RegisterMusic(NUSOUND_FILENAME_INFO *files);
+#ifdef __cplusplus
+}
+#endif
 
 i32 GamePlayMusic(LEVELDATA *level, i32 zero, OPTIONSSAVE *options);
 

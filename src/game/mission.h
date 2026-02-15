@@ -23,4 +23,13 @@ struct missionsys_s {
 };
 typedef struct missionsys_s MISSIONSYS;
 
+#ifdef __cplusplus
+
 MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, MISSIONSAVE *save);
+
+extern "C" {
+#endif
+    extern MISSIONSYS *MissionSys;
+#ifdef __cplusplus
+}
+#endif

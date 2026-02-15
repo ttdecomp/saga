@@ -9,9 +9,7 @@
 
 static NuMusic *the_music_player = NULL;
 
-extern "C" {
-    NuMusic music_man;
-};
+NuMusic music_man;
 
 i32 NuMusic::ClassToIX(u32 i) {
     switch (i) {
@@ -773,4 +771,19 @@ i32 GamePlayMusic(LEVELDATA *level, i32 zero, OPTIONSSAVE *options) {
     music_man.SelectTrackByHandle(TRACK_CLASS_QUIET, level->music_tracks[0][0]);
 
     return music_man.PlayTrack(TRACK_CLASS_QUIET);
+}
+
+void RegisterMusic(NUSOUND_FILENAME_INFO *files) {
+    LOG_DEBUG("files=%p", files);
+
+    g_music = files;
+    SFX_MUSIC_COUNT = 0;
+
+    if (files != NULL) {
+        for (; files->filename != NULL; files = files + 1) {
+            NuStrLen(files->filename);
+            LOG_DEBUG("Registered music file: %s", files->filename);
+            SFX_MUSIC_COUNT++;
+        }
+    }
 }
