@@ -1,3 +1,3 @@
-void StartPerm();
-void LoadPerm();
-void EndPerm();
+void StartPerm(void);
+void LoadPerm(void);
+void EndPerm(void);

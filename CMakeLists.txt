@@ -232,6 +232,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nu3d/android/nutex_ios_ex.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nuandroid/ios_graphics.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nuandroid/nuphoneos.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/deflate.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/implode.cpp

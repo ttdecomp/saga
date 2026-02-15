@@ -6,6 +6,7 @@
 #include "legogame/game.h"
 #include "nu2api.saga/nu3d/nucamera.h"
 #include "nu2api.saga/nuandroid/ios_graphics.h"
+#include "nu2api.saga/nuandroid/nuphoneos.h"
 #include "nu2api.saga/nucore/nuapi.h"
 #include "nu2api.saga/nucore/numemory.h"
 #include "nu2api.saga/nucore/nuvideo.h"
@@ -19,16 +20,19 @@ extern "C" {
     nupad_s **Game_NuPad;
 };
 
-void NuPhoneOSRegisterEventCallback(i32 param_1, void (*param_2)()) {
+static void TouchCallback(const NuPhoneOSMessageData *) {
 }
 
-void DummyCallback() {
+static void SystemPauseCallback(const NuPhoneOSMessageData *) {
+}
+
+static void SystemDidBecomeActiveCallback(const NuPhoneOSMessageData *) {
 }
 
 void InitOnce(i32 argc, char **param_2) {
-    NuPhoneOSRegisterEventCallback(1, /* TouchCallback */ DummyCallback);
-    NuPhoneOSRegisterEventCallback(3, /* SystemPauseCallback */ DummyCallback);
-    NuPhoneOSRegisterEventCallback(6, /* SystemDidBecomeActiveCallback */ DummyCallback);
+    NuPhoneOSRegisterEventCallback(PHONE_EVENT_TOUCH, TouchCallback);
+    NuPhoneOSRegisterEventCallback(PHONE_EVENT_PAUSE, SystemPauseCallback);
+    NuPhoneOSRegisterEventCallback(PHONE_EVENT_BECOME_ACTIVE, SystemDidBecomeActiveCallback);
 
     if (NuIOS_IsLowEndDevice()) {
         SUPERBUFFERSIZE -= 0x38370;
