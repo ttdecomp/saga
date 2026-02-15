@@ -1,5 +1,5 @@
 #include "game/gizmo.h"
-#include "decomp.h"
+
 #include "game/gizmos/ai.h"
 #include "game/gizmos/door.h"
 #include "game/gizmos/edgizshadowmachine.h"

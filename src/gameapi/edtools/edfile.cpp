@@ -1,6 +1,7 @@
+#include "gameapi/edtools/edfile.h"
+
 #include <string.h>
 
-#include "gameapi.saga/edtools/edfile.h"
 #include "nu2api.saga/nufile/nufile.h"
 #include "nu2api.saga/nufile/nufilepak.h"
 

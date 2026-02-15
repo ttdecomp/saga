@@ -1,4 +1,5 @@
-#include "gameapi.saga/ai/aisys/aisys.h"
+#include "gameapi/ai/aisys/aisys.h"
+
 #include "nu2api.saga/nucore/nulist.h"
 #include "nu2api.saga/nucore/nustring.h"
 
