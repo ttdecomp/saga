@@ -1,6 +1,6 @@
 #pragma once
 
-#include "decomp.h"
+#include "nu2api.saga/nucore/common.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -142,8 +142,6 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/batman.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/globals.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/deflate/deflate.cpp
-
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game/area.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game/character.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/game/cheat.cpp
@@ -199,11 +197,11 @@ set(SAGA_SOURCE_FILES
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi.saga/gui/apimenu.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gamelib/nuwind/nuwind.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gameframework/saveload.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gamelib/crc/crc.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/implode/implode.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gamelib/nuwind/nuwind.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/init/init.cpp
 
@@ -233,6 +231,8 @@ set(SAGA_SOURCE_FILES
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nuandroid/ios_graphics.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/deflate.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/implode.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/NuMemoryManager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/NuMemoryPool.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/NuThreadManager.cpp
@@ -302,8 +302,6 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nusound/nusound_android.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nusound/nusound_system.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nusound/nusound_voice.cpp
-
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/saveload/saveload.cpp
 )
 
 set(SAGA_INCLUDE_DIRS
@@ -361,8 +359,6 @@ if(BUILD_FOR_HOST)
 
     add_saga_test(test/dat_file_read.cpp "Open DAT file and read badwords.txt")
 else()
-    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/deflate/deflate.cpp PROPERTIES COMPILE_OPTIONS "-O3")
-
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/area.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/gizmo.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/game/level.cpp PROPERTIES COMPILE_OPTIONS "-O3")
@@ -395,6 +391,7 @@ else()
 
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nuandroid/ios_graphics.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/deflate.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/NuMemoryManager.cpp PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/NuMemoryPool.cpp PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api.saga/nucore/NuThreadManager.cpp PROPERTIES COMPILE_OPTIONS "-O2")

@@ -4,9 +4,9 @@
 
 #include "decomp.h"
 
-#include "deflate/deflate.h"
-#include "implode/implode.h"
 #include "nu2api.saga/nucore/common.h"
+#include "nu2api.saga/nucore/deflate.h"
+#include "nu2api.saga/nucore/implode.h"
 #include "nu2api.saga/nucore/nustring.h"
 #include "nu2api.saga/nucore/nuthread.h"
 #include "nu2api.saga/nuplatform/nuplatform.h"

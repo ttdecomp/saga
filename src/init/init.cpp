@@ -10,6 +10,7 @@
 #include "game/episode.h"
 #include "game/level.h"
 #include "game/mission.h"
+#include "gameframework/saveload.h"
 #include "globals.h"
 #include "nu2api.saga/nu3d/nucamera.h"
 #include "nu2api.saga/nu3d/nutex.h"
@@ -22,7 +23,6 @@
 #include "nu2api.saga/numusic/numusic.h"
 #include "nu2api.saga/numusic/sfx.h"
 #include "nu2api.saga/nusound/nusound.h"
-#include "saveload/saveload.h"
 
 extern "C" {
     void *DVD = NULL;

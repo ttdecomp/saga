@@ -1,4 +1,4 @@
-#include "implode/implode.h"
+#include "nu2api.saga/nucore/implode.h"
 
 #include <stdarg.h>
 #include <stdio.h>
