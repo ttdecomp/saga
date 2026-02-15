@@ -32,6 +32,22 @@ f32 NuFsqrt(f32 f) {
     return sqrtf(f);
 }
 
+f32 NuFmax(f32 a, f32 b) {
+    if (a > b) {
+        return a;
+    }
+
+    return b;
+}
+
+f32 NuFmin(f32 a, f32 b) {
+    if (a < b) {
+        return a;
+    }
+
+    return b;
+}
+
 f32 NuFmod(f32 a, f32 b) {
     return a - (int)(a / b) * b;
 }

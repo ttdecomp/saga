@@ -55,6 +55,9 @@ extern "C" {
     /// @return The square root of the float
     f32 NuFsqrt(f32 f);
 
+    f32 NuFmax(f32 a, f32 b);
+    f32 NuFmin(f32 a, f32 b);
+
     /// @brief Compute the division of two floats
     /// @details Computes the division of the float a divided by b and returns the result. Returns 0 if b is 0.
     /// @param a The float to divide
