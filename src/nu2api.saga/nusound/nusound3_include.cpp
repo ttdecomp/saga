@@ -98,7 +98,8 @@ void NuSound3Init(i32 zero) {
     // NuSoundDecoder::Initialise();
 
     // NuMemoryGet()->GetThreadMem()->_BlockAlloc(0xa48, 4, 1, "", 7);
-    NuSoundStreamer *streamer = (NuSoundStreamer *)NU_ALLOC(0xa48, 4, 1, "", NUMEMORY_CATEGORY_NUSOUND);
+    NuSoundStreamer *streamer =
+        (NuSoundStreamer *)NU_ALLOC(sizeof(NuSoundStreamer), 4, 1, "", NUMEMORY_CATEGORY_NUSOUND);
     if (streamer != NULL) {
         new (streamer) NuSoundStreamer{};
     }
@@ -236,71 +237,16 @@ void NuSound3SetSampleTable(nusound_filename_info_s *info, variptr_u *buffer_sta
         return;
     }
 
-    i32 iVar5 = info->index;
-    while (iVar5 != -1) {
+    for (; info->index != -1; info++) {
         // TODO: dont cast classes
         if (info->index < 0x1000) {
-            info->sample = (NuSoundStreamingSample *)NuSound.AddSample(info->name, NuSoundSystem::FileType::OGG,
+            info->sample = (NuSoundStreamingSample *)NuSound.AddSample(info->filename, NuSoundSystem::FileType::OGG,
                                                                        NuSoundSource::FeedType::STREAMING);
         } else {
-            info->sample = (NuSoundStreamingSample *)NuSound.AddSample(info->name, NuSoundSystem::FileType::WAV,
+            info->sample = (NuSoundStreamingSample *)NuSound.AddSample(info->filename, NuSoundSystem::FileType::WAV,
                                                                        NuSoundSource::FeedType::ZERO);
         }
 
-        /*pnVar3 = g_NuSoundSamples.ptr;
-        uVar4 = g_NuSoundSamples.length + 1;
-        if ((uint)g_NuSoundSamples.capacity < uVar4) {
-            length = g_NuSoundSamples.length + 4U & 0xfffffffc;
-            pNVar1 = NuMemoryGet();
-            pNVar2 = NuMemory::GetThreadMem(pNVar1);
-            sound_info = NuMemoryManager::_BlockReAlloc(pNVar2, pnVar3, length << 5, 4, 0x41, "", 0);
-            pnVar3 = g_NuSoundSamples.ptr;
-            if (sound_info != g_NuSoundSamples.ptr) {
-                iVar5 = 0;
-                offset = g_NuSoundSamples.length << 5;
-                if (g_NuSoundSamples.length != 0) {
-                    do {
-                        *(undefined4 *)((int)&sound_info->name + iVar5) = *(undefined4 *)((int)&pnVar3->name + iVar5);
-                        *(undefined4 *)((int)&sound_info->field1_0x4 + iVar5) =
-                            *(undefined4 *)((int)&pnVar3->field1_0x4 + iVar5);
-                        *(undefined4 *)((int)&sound_info->index + iVar5) = *(undefined4 *)((int)&pnVar3->index + iVar5);
-                        *(undefined4 *)((int)&sound_info->field3_0xc + iVar5) =
-                            *(undefined4 *)((int)&pnVar3->field3_0xc + iVar5);
-                        *(undefined4 *)((int)&sound_info->field4_0x10 + iVar5) =
-                            *(undefined4 *)((int)&pnVar3->field4_0x10 + iVar5);
-                        *(undefined4 *)((int)&sound_info->field5_0x14 + iVar5) =
-                            *(undefined4 *)((int)&pnVar3->field5_0x14 + iVar5);
-                        *(undefined4 *)((int)&sound_info->streaming_sample + iVar5) =
-                            *(undefined4 *)((int)&pnVar3->streaming_sample + iVar5);
-                        *(undefined4 *)((int)&sound_info->field7_0x1c + iVar5) =
-                            *(undefined4 *)((int)&pnVar3->field7_0x1c + iVar5);
-                        iVar5 = iVar5 + 0x20;
-                    } while (iVar5 != offset);
-                }
-                pNVar1 = NuMemoryGet();
-                pNVar2 = NuMemory::GetThreadMem(pNVar1);
-                NuMemoryManager::BlockFree(pNVar2, pnVar3, 0);
-            }
-            uVar4 = g_NuSoundSamples.length + 1;
-            g_NuSoundSamples.ptr = sound_info;
-            g_NuSoundSamples.capacity = length;
-        }
-        pnVar3 = g_NuSoundSamples.ptr + g_NuSoundSamples.length;
-        pnVar3->name = info->name;
-        pnVar3->field1_0x4 = info->field1_0x4;
-        pnVar3->index = info->index;
-        pnVar3->field3_0xc = info->field3_0xc;
-        pnVar3->field4_0x10 = info->field4_0x10;
-        pnVar3->field5_0x14 = info->field5_0x14;
-        pnVar3->streaming_sample = info->streaming_sample;
-        pnVar3->field7_0x1c = info->field7_0x1c;
-        if (info + 1 == (nusound_filename_info_s *)0x0) {
-            g_NuSoundSamples.length = uVar4;
-            return;
-        }
-        iVar5 = info[1].index;
-        info = info + 1;
-        g_NuSoundSamples.length = uVar4;
-        */
+        g_NuSoundSamples.PushBack(*info);
     }
 }

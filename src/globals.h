@@ -249,7 +249,7 @@ extern "C" {
     struct nusound_filename_info_s;
     extern nusound_filename_info_s *MusicInfo;
     extern nusound_filename_info_s *g_music;
-    extern i32 SFX_MUSIC_COUNT;
+    extern u32 SFX_MUSIC_COUNT;
     extern u8 g_BackgroundUsedFogColour;
     extern NUCAMERA *pNuCam;
 

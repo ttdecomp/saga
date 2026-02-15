@@ -3,6 +3,10 @@
 #include "decomp.h"
 #include "nu2api.saga/nucore/common.h"
 
+#include "nu2api.saga/nucore/numemory.h"
+
+#include <cstring>
+
 template <typename T> class NuVector {
   public:
     T *data;
@@ -20,15 +24,25 @@ template <typename T> class NuVector {
         }
     }
 
-    void push_back(const T &value) {
+    void PushBack(const T &value) {
         if (length >= capacity) {
-            resize();
+            resize(length + 1);
         }
         data[length++] = value;
     }
 
   private:
-    void resize() {
-        UNIMPLEMENTED("NuVector::resize");
+    void resize(usize new_length) {
+        // T *new_data = (T *)NuMemoryGet()->GetThreadMem()->_BlockReAlloc(data, new_length * sizeof(T), 4, 0x31, "",
+        // NUMEMORY_CATEGORY_NONE);
+        T *new_data = (T *)NU_ALLOC(new_length * sizeof(T), 4, 1, "", NUMEMORY_CATEGORY_NONE);
+
+        if (new_data != data) {
+            memmove(new_data, data, length * sizeof(T));
+            NU_FREE(data);
+        }
+
+        data = new_data;
+        capacity = new_length;
     }
 };

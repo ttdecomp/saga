@@ -31,7 +31,9 @@ NuSoundStreamer::NuSoundStreamer() : semaphore1(0x20), semaphore2(0x20), semapho
 }
 
 void NuSoundStreamer::ThreadFunc(void *self) {
-    UNIMPLEMENTED("NuSoundStreamer::ThreadFunc");
+    LOG_WARN("NuSoundStreamer::ThreadFunc");
+    while (true) {
+    }
 }
 
 NuSoundStreamingSample::NuSoundStreamingSample(const char *file)

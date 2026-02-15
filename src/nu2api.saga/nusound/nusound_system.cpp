@@ -23,6 +23,7 @@ NuSoundMemoryManager *NuSoundSystem::s_mmDecoder = NULL;
 typeof(NuSoundSystem::g_handler) NuSoundSystem::g_handler = {};
 const char *NuSoundSystem::sFileExtensions[12] = {"wav", "adp", "ima", "caf", "xma", "ogg",
                                                   "dsp", "msf", "vag", "gcm", "wua", "cbx"};
+NuSoundSystem *NuSoundSystem::s_staticInstance = NULL;
 
 NuMemoryManager *NuSoundSystem::sScratchMemMgr = NULL;
 
@@ -46,6 +47,70 @@ extern "C" {
         LOG_WARN("NuSoundInitDefaultRoutingTables is not implemented");
     }
 };
+
+NuSoundSystem::NuSoundSystem() {
+
+    pthread_mutexattr_t attr;
+
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, 1);
+    pthread_mutex_init(&this->mutex, &attr);
+    pthread_mutexattr_destroy(&attr);
+
+    // NuSoundClock::NuSoundClock(&this->clock);
+    // clock_callbacks = &(this->clock).callbacks2;
+    // puVar1 = &(this->clock).field3_0xc;
+    // this->clock_callbacks = clock_callbacks;
+    // this->field7_0x44 = puVar1;
+    // this->clock_callbacks2 = clock_callbacks;
+    // this->field5_0x3c = puVar1;
+    // this->field3_0x34 = 0;
+    // this->field6_0x40 = 0;
+    // this->field9_0x4c = 0;
+    // NuSoundVoiceFactoryList::NuSoundVoiceFactoryList(&this->factory_list);
+    // this->field17_0x74 = (undefined1 *)&this->field6_0x40;
+    // this->field18_0x78 = &this->clock_callbacks;
+    // this->field14_0x68 = (undefined1 *)&this->clock_callbacks;
+    // this->field15_0x6c = (undefined1 *)&this->field6_0x40;
+    // this->list_start = (NuEListNode<> *)&this->field22_0x88;
+    // this->list_end = (NuEListNode<> *)&this->field20_0x80;
+    // this->field21_0x84 = &this->field22_0x88;
+    // this->field22_0x88 = &this->field20_0x80;
+    // this->tail_bus = (NuSoundBus *)&this->field29_0xa4;
+    // this->field31_0xac = (NuSoundBus *)&this->field27_0x9c;
+    // this->field28_0xa0 = (int)&this->field29_0xa4;
+    // this->field29_0xa4 = (NuSoundBus *)&this->field27_0x9c;
+    // this->field39_0xcc = (int)&this->field36_0xc0;
+    // this->field38_0xc8 = (int)&this->field34_0xb8;
+    // this->field35_0xbc = (int)&this->field36_0xc0;
+    // this->field36_0xc0 = (int)&this->field34_0xb8;
+    // this->field13_0x64 = 0;
+    // this->field45_0xe4 = (undefined1 *)&this->field41_0xd4;
+    // this->field16_0x70 = 0;
+    // this->voice_count = 0;
+    // this->field20_0x80 = 0;
+    // this->field23_0x8c = 0;
+    // this->field26_0x98 = 0;
+    // this->field27_0x9c = 0;
+    // this->field30_0xa8 = 0;
+    // this->field33_0xb4 = 0;
+    // this->field34_0xb8 = 0;
+    // this->field37_0xc4 = 0;
+    // this->field40_0xd0 = 0;
+    // this->field41_0xd4 = 0;
+    // this->field44_0xe0 = 0;
+    // this->field46_0xe8 = (undefined1 *)&this->field43_0xdc;
+    // this->field42_0xd8 = (undefined1 *)&this->field43_0xdc;
+    // this->field43_0xdc = (undefined1 *)&this->field41_0xd4;
+    // this->field47_0xec = 0;
+    // this->field48_0xf0 = 0;
+    // this->field49_0xf4 = 0;
+    this->samples = NULL;
+    // this->field50_0xf8 = 0;
+    this->sample_count = 0x100;
+    // this->field63_0x108 = 1;
+    s_staticInstance = this;
+}
 
 bool NuSoundSystem::Initialise(i32 size) {
     sTotalMemory[(i32)MemoryDiscipline::SCRATCH] = GetScratchMemorySize();
@@ -82,8 +147,11 @@ bool NuSoundSystem::Initialise(i32 size) {
     s_mmSample->EnableDefragOnAlloc(true);
     s_mmSample->Init("sample", sSampleMemory, sTotalMemory[(i32)MemoryDiscipline::SAMPLE], 4, 0x800);
 
-    this->samples = (NuSoundSample **)_AllocMemory(MemoryDiscipline::SCRATCH, this->sample_count * sizeof(void *), 4,
-                                                   "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound.cpp:348");
+    LOG_DEBUG("this->sample_count=%d", this->sample_count);
+
+    this->samples =
+        (NuSoundSample **)_AllocMemory(MemoryDiscipline::SCRATCH, this->sample_count * sizeof(NuSoundSample *), 4,
+                                       "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound.cpp:348");
     memset(this->samples, 0, this->sample_count * sizeof(void *));
 
     if (InitAudioDevice()) {
@@ -210,6 +278,7 @@ const char *NuSoundSystem::GetFileExtension(FileType type) {
 
 NuSoundSample *NuSoundSystem::GetSample(const char *path) {
     i32 hash = GenerateHash(path);
+    LOG_DEBUG("GetSample: path=%s, hash=%d", path, hash);
 
     if (this->samples != NULL) {
         for (NuSoundSample *sample = this->samples[hash]; sample != NULL; sample = sample->next) {

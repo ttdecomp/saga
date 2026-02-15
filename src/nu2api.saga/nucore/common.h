@@ -36,6 +36,7 @@ static_assert(sizeof(f64) == 8, "f64 is not 8 bytes");
 
 #define MAX(a, b) (a) > (b) ? (a) : (b)
 #define MIN(a, b) (a) < (b) ? (a) : (b)
+#define CLAMP(value, min, max) MIN(MAX((value), (min)), (max))
 
 #define ALIGN(value, alignment) (((value) + alignment - 1) & -alignment)
 

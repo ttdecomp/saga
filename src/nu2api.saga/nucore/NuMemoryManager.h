@@ -184,6 +184,7 @@ class NuMemoryManager {
 
     void *_BlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, u16 category);
     void BlockFree(void *ptr, u32 flags);
+    void *_BlockReAlloc(void *ptr, u32 size, u32 alignment, u32 flags, const char *name, u16 category);
 
     void AddPage(void *ptr, u32 size, bool _unknown);
 

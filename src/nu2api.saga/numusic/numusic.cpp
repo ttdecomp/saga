@@ -225,30 +225,30 @@ void NuMusic::BuildSoundTable(variptr_u *buffer_start, variptr_u buffer_end) {
     i += count;
 
     nusound_filename_info_s *puVar1 = &finfo[i];
-    puVar1->name = NULL;
+    puVar1->filename = NULL;
     puVar1->field1_0x4 = 0;
     puVar1->index = -1;
 
     buffer_start->void_ptr = &finfo[i + 1];
 }
 
-i32 NuMusic::FindOrCreateSoundFile(nusound_filename_info_s *files, i32 *count, const char *name, i32 param_4,
+i32 NuMusic::FindOrCreateSoundFile(nusound_filename_info_s *files, i32 *count, const char *filename, i32 param_4,
                                    i32 unused)
 
 {
-    if (name == NULL) {
+    if (filename == NULL) {
         return -1;
     }
 
     i32 index = 0;
     for (; index < *count; index++) {
-        if (NuStrICmp(files[index].name, name) == 0) {
+        if (NuStrICmp(files[index].filename, filename) == 0) {
             return index;
         }
     }
 
     nusound_filename_info_s *puVar1 = &files[index];
-    puVar1->name = name;
+    puVar1->filename = filename;
     puVar1->index = index;
     puVar1->field3_0xc = 0;
     puVar1->field1_0x4 = (param_4 == 0);

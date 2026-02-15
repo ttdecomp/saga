@@ -45,8 +45,9 @@ class NuSoundSystem {
   private:
     NuSoundSample **samples;
     u32 sample_count;
+    pthread_mutex_t mutex;
 
-  public:
+    public:
     static NuSoundBus *sMasterBus;
 
     static i32 sAllocdMemory[3];
@@ -60,6 +61,8 @@ class NuSoundSystem {
     static NuSoundMemoryManager *s_mmDecoder;
 
     static const char *sFileExtensions[12];
+
+    static NuSoundSystem *s_staticInstance;
 
     static struct : NuMemoryManager::IEventHandler {
         u32 unknown;
@@ -75,6 +78,8 @@ class NuSoundSystem {
     } g_handler;
 
     static NuMemoryManager *sScratchMemMgr;
+
+    NuSoundSystem();
 
   public:
     static NuSoundLoader *CreateFileLoader(FileType type);

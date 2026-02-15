@@ -304,6 +304,12 @@ void NuMemoryManager::SetZombie() {
 }
 
 void NuMemoryManager::BlockFree(void *ptr, u32 flags) {
+#ifdef HOST_BUILD
+    LOG_WARN("replacing BlockFree with free");
+    free(ptr);
+    return;
+#endif
+
     NuMemoryManager *manager;
 
     if (ptr == NULL) {
@@ -392,6 +398,13 @@ void NuMemoryManager::BlockFree(void *ptr, u32 flags) {
             manager = m_memoryManagers[manager_idx];
         }
     }
+}
+
+void *NuMemoryManager::_BlockReAlloc(void *ptr, u32 size, u32 alignment, u32 flags, const char *name, u16 category) {
+#ifdef HOST_BUILD
+    LOG_WARN("replacing _BlockReAlloc with realloc");
+    return realloc(ptr, size);
+#endif
 }
 
 inline void NuMemoryManager::MergeBlocks(Header *left, Header *right, const char *caller) {

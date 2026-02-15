@@ -53,7 +53,7 @@ i32 CompletionPointInfo[7] = {0};
 nusound_filename_info_s *MusicInfo = NULL;
 nusound_filename_info_s *g_music = NULL;
 u8 g_BackgroundUsedFogColour = 0;
-i32 SFX_MUSIC_COUNT = 0;
+u32 SFX_MUSIC_COUNT = 0;
 
 NUCAMERA *pNuCam = NULL;
 

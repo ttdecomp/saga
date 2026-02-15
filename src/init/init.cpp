@@ -676,9 +676,9 @@ extern "C" {
         SFX_MUSIC_COUNT = 0;
 
         if (files != NULL) {
-            for (; files->name != NULL; files = files + 1) {
-                NuStrLen(files->name);
-                LOG_DEBUG("Registered music file: %s", files->name);
+            for (; files->filename != NULL; files = files + 1) {
+                NuStrLen(files->filename);
+                LOG_DEBUG("Registered music file: %s", files->filename);
                 SFX_MUSIC_COUNT++;
             }
         }

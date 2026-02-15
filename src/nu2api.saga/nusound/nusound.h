@@ -6,7 +6,7 @@
 class NuSoundStreamingSample;
 
 typedef struct nusound_filename_info_s {
-    const char *name;
+    const char *filename;
     void *field4_0x4;
     i32 index;
     i32 field3_0xc;
