@@ -5,12 +5,12 @@
 #include <unistd.h>
 
 #include "decomp.h"
-#include "lostandfound/tmclient.h"
 #include "nu2api.saga/nuandroid/ios_graphics.h"
 #include "nu2api.saga/nucore/nuapi.h"
 #include "nu2api.saga/nucore/nustring.h"
 #include "nu2api.saga/nucore/nuthread.h"
 #include "nu2api.saga/nufile/nufile.h"
+#include "nu2api.saga/nufile/tmclient.h"
 
 char g_datfileMode = 1;
 
