@@ -9,7 +9,7 @@
 #include "nu2api/nucore/nupad.h"
 
 NuInputManager::NuInputManager() {
-    i32 i;
+    u32 i;
     u32 max_devices;
 
     max_devices = NuInputDevicePS::ClassInitPS();
@@ -23,7 +23,7 @@ NuInputManager::NuInputManager() {
     for (i = 0; i < this->max_devices; i++) {
         this->devices[i] = (NuInputDevice *)NU_ALLOC_T(NuInputDevice, NuMemoryManager::MEM_ALLOC_SET_TO_ZERO, "",
                                                        NUMEMORY_CATEGORY_NONE);
-        new (this->devices[i]) NuInputDevice(i);
+        new (this->devices[i]) NuInputDevice(i, 0);
     }
 }
 

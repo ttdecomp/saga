@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string.h>
+
 #include "nu2api/nucore/common.h"
 
 struct NuInputMouseData {
@@ -78,6 +80,25 @@ class NuInputDeviceTranslator {
 class NuInputDevice {
   public:
     NuInputDevice(u32 port);
+
+    // This constructor is theorized based on the inlining of a constructor
+    // without initialization of touch data in the `NuInputManager` ctor. Its
+    // signature and exact nature are unknown.
+    NuInputDevice(u32 port, u32 unknown) {
+        this->port = port;
+        this->translators[0] = NULL;
+        this->is_rumble_killed = false;
+
+        this->prev_valid_type = NUPADTYPE_UNKNOWN_7;
+        this->prev_valid_idx_by_type = 7;
+
+        this->translators[1] = NULL;
+
+        this->translator_count = 0;
+
+        SetDisconnected();
+        Clear();
+    }
 
     void Update(f32 delta_time, bool emulate_touch);
 
