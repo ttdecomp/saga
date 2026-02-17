@@ -25,6 +25,7 @@ typedef struct nuviewport_s {
 #ifdef __cplusplus
 
 void NuPs2GetViewport(NUVIEWPORT *vp);
+void NuVpSetScalingMtx(void);
 
 extern "C" {
 #endif
