@@ -19,7 +19,17 @@ extern bool g_disallowGlobalNew;
 
 class NuMemory {
   private:
-    class MemErrorHandler : public NuMemoryManager::IErrorHandler {};
+    class MemErrorHandler : public NuMemoryManager::IErrorHandler {
+      public:
+        MemErrorHandler() {
+        }
+
+      private:
+        // It isn't clear what fields this class has. Only its size can be
+        // determined from the `NuMemory` ctor, and that no initialization
+        // takes place.
+        u8 unknown_00[0x104];
+    };
 
     class FixedPoolEventHandler : NuMemoryPool::IEventHandler {
       public:
