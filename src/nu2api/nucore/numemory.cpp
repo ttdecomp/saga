@@ -3,8 +3,10 @@
 
 #include "nu2api/nucore/numemory.h"
 
+#include "nu2api/nucore/NuMemoryManager.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nucore/nucore.hpp"
+#include "nu2api/nucore/nuthread.h"
 
 static NuMemory *g_memory = NULL;
 
@@ -73,7 +75,7 @@ NuMemoryManager *NuMemory::GetThreadMem() {
         NuThreadBase *thread = NuCore::m_threadManager->GetCurrentThread();
 
         if (thread != NULL) {
-            NuMemoryManager *manager = thread->GetLocalStorage(this->tls_index);
+            NuMemoryManager *manager = (NuMemoryManager *)thread->GetLocalStorage(this->tls_index);
 
             if (manager != NULL) {
                 return manager;
@@ -82,6 +84,20 @@ NuMemoryManager *NuMemory::GetThreadMem() {
     }
 
     return this->mem1_manager;
+}
+
+NuMemoryManager *NuMemory::SetThreadMem(NuMemoryManager *manager) {
+    NuThreadBase *thread;
+    void *storage;
+
+    InitalizeThreadLocalStorage();
+
+    thread = NuCore::m_threadManager->GetCurrentThread();
+
+    storage = thread->GetLocalStorage(this->tls_index);
+    thread->SetLocalStorage(this->tls_index, manager);
+
+    return (NuMemoryManager *)storage;
 }
 
 static char g_memoryBuffer[0x10000];

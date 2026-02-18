@@ -57,12 +57,13 @@ class NuThreadBase {
     void (*thread_fn)(void *);
     void *fn_arg;
     char name[32];
-    NuMemoryManager *memory_managers[32];
+    void *local_storage[32];
 
   public:
     NuThreadBase(const NuThreadCreateParameters &params);
 
-    NuMemoryManager *GetLocalStorage(u32 index) const;
+    void *GetLocalStorage(u32 idx) const;
+    void SetLocalStorage(u32 idx, void *storage);
 
     void SetDebugName(const char *name);
 

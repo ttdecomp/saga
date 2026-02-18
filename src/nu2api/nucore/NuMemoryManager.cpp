@@ -450,6 +450,21 @@ void NuMemoryManager::AddPage(void *ptr, u32 size, bool _unknown) {
     page->end = 0;
 }
 
+void NuMemoryManager::SetBlockDebugCategory(void *ptr, u16 category) {
+    DebugHeader *header;
+
+    if (ptr != NULL && (m_flags & MEM_MANAGER_DEBUG) != 0) {
+        ValidateAddress(ptr, __FUNCTION__);
+
+        header = (DebugHeader *)((usize)ptr - m_headerSize);
+
+        ValidateBlockIsAllocated(&header->block_header, __FUNCTION__);
+        ValidateBlockEndTags(&header->block_header, __FUNCTION__);
+
+        header->category = category;
+    }
+}
+
 void NuMemoryManager::ReleaseUnreferencedPages() {
     Page *page;
 
@@ -758,12 +773,66 @@ void NuMemoryManager::ValidateAllocSize(u32 size) {
 }
 
 void NuMemoryManager::ValidateBlockEndTags(Header *header, const char *caller) {
+    u32 block_size;
+    u32 end_tag_size;
+    u32 header_size;
+    u8 *data;
+    char addr[19];
+
+    header_size = m_headerSize;
+    block_size = BLOCK_SIZE(header->value);
+    end_tag_size = BLOCK_SIZE(*END_TAG(header, block_size));
+    if (block_size != end_tag_size) {
+        data = (u8 *)header + header_size;
+
+        NuStrFormatAddress(addr, sizeof(addr), data);
+
+        pthread_mutex_lock(&this->error_mutex);
+
+        m_flags |= MEM_MANAGER_IN_ERROR_STATE;
+
+        snprintf(this->error_msg, sizeof(this->error_msg),
+                 "Memory corruption detected in %s (end tag mismatch). Possible corruption.\nAllocation: %s, Size: "
+                 "%u\nBlock Size: %u, Footer Size: 0x%08X\n[%02X %02X %02X %02X %02X %02X %02X %02X ...]\n",
+                 caller, addr, block_size - header_size - 4, block_size, end_tag_size, data[0], data[1], data[2],
+                 data[3], data[4], data[5], data[6], data[7]);
+
+        this->error_handler->HandleError(this, MEM_ERROR_CORRUPTION, this->error_msg);
+
+        pthread_mutex_unlock(&this->error_mutex);
+    }
 }
 
 void NuMemoryManager::ValidateBlockFlags(Header *header, u32 flags, const char *caller) {
 }
 
 void NuMemoryManager::ValidateBlockIsAllocated(Header *header, const char *caller) {
+    u32 block_size;
+    u32 alloc_size;
+    u8 *data;
+    char addr[19];
+
+    if ((header->value & ALLOC_MASK) == 0) {
+        block_size = BLOCK_SIZE(header->value);
+        alloc_size = block_size - m_headerSize - 4;
+        data = (u8 *)header + m_headerSize;
+
+        NuStrFormatAddress(addr, sizeof(addr), data);
+
+        pthread_mutex_lock(&this->error_mutex);
+
+        m_flags |= MEM_MANAGER_IN_ERROR_STATE;
+
+        snprintf(this->error_msg, sizeof(this->error_msg),
+                 "Expected allocated block in %s. Might be free already, or is corrupt.\nAllocation: %s, Size: "
+                 "%u\nBlock Size: %u\n[%02X %02X %02X %02X %02X %02X %02X %02X ...]\n",
+                 caller, addr, alloc_size, block_size, data[0], data[1], data[2], data[3], data[4], data[5], data[6],
+                 data[7]);
+
+        this->error_handler->HandleError(this, MEM_ERROR_UNALLOCATED_BLOCK, this->error_msg);
+
+        pthread_mutex_unlock(&this->error_mutex);
+    }
 }
 
 void NuMemoryManager::ValidateBlockIsPaged(void *block, const char *caller) {
@@ -892,7 +961,4 @@ void NuMemoryManager::IErrorHandler::CloseDump(NuMemoryManager *manager, u32 id)
 }
 
 void NuMemoryManager::IErrorHandler::Dump(NuMemoryManager *manager, u32 id, const char *msg) {
-}
-
-void NuMemoryManager::SetBlockDebugCategory(void *block, u16 category) {
 }

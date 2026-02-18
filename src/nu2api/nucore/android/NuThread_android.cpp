@@ -14,8 +14,12 @@ NuThreadBase *NuThreadGetCurrentThread() {
     return g_currentThread;
 }
 
-NuMemoryManager *NuThreadBase::GetLocalStorage(u32 index) const {
-    return this->memory_managers[index];
+void *NuThreadBase::GetLocalStorage(u32 idx) const {
+    return this->local_storage[idx];
+}
+
+void NuThreadBase::SetLocalStorage(u32 idx, void *storage) {
+    this->local_storage[idx] = storage;
 }
 
 NuThreadBase::NuThreadBase(const NuThreadCreateParameters &params) {
@@ -24,7 +28,7 @@ NuThreadBase::NuThreadBase(const NuThreadCreateParameters &params) {
 
     this->name[0] = '\0';
 
-    memset(this->memory_managers, 0, sizeof(this->memory_managers));
+    memset(this->local_storage, 0, sizeof(this->local_storage));
 }
 
 NuThreadBase::~NuThreadBase() {

@@ -53,25 +53,32 @@ class NuMemory {
         virtual void FreeLargeBlock(NuMemoryPool *pool, void *ptr) override;
     };
 
+  public:
+    NuMemory(void **buf);
+
+    NuMemoryManager *GetThreadMem();
+    NuMemoryManager *SetThreadMem(NuMemoryManager *manager);
+
+    NuMemoryManager *CreateMemoryManager(NuMemoryManager::IEventHandler *event_handler, const char *name);
+
+  private:
+    void InitalizeThreadLocalStorage();
+
+  private:
     MemErrorHandler *error_handler;
     NuMemoryPS::Mem1EventHandler *mem1_event_handler;
     NuMemoryPS::Mem2EventHandler *mem2_event_handler;
     NuMemoryManager *mem1_manager;
     NuMemoryManager *mem2_manager;
+
     int unknown;
+
     FixedPoolEventHandler *fixed_pool_event_handler;
     DynamicPoolEventHandler *dynamic_pool_event_handler;
-    int unknown2;
+
+    bool in_soak_test_mode;
 
     i32 tls_index;
-
-  public:
-    NuMemory(void **buf);
-    NuMemoryManager *GetThreadMem();
-    NuMemoryManager *CreateMemoryManager(NuMemoryManager::IEventHandler *event_handler, const char *name);
-
-  private:
-    void InitalizeThreadLocalStorage();
 };
 
 NuMemory *NuMemoryGet();

@@ -186,11 +186,11 @@ class NuMemoryManager {
     void BlockFree(void *ptr, u32 flags);
     void *_BlockReAlloc(void *ptr, u32 size, u32 alignment, u32 flags, const char *name, u16 category);
 
+    void *_TryBlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, u16 category);
+
     void AddPage(void *ptr, u32 size, bool _unknown);
 
-    void SetBlockDebugCategory(void *block, u16 category);
-
-    void *_TryBlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, u16 category);
+    void SetBlockDebugCategory(void *ptr, u16 category);
 
   private:
     static u32 GetLargeBinIndex(u32 size);
