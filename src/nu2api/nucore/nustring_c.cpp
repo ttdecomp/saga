@@ -1,6 +1,8 @@
 #include "nu2api/nucore/nustring.h"
 
 #include "decomp.h"
+#include "nu2api/nufile/nufile.h"
+#include "nu2api/nufile/nufpar.h"
 
 void NuStrCat(char *str, const char *ext) {
     while (*str != '\0') {
@@ -15,7 +17,7 @@ void NuStrCat(char *str, const char *ext) {
     }
 }
 
-int NuStrCmp(const char *a, const char *b) {
+i32 NuStrCmp(const char *a, const char *b) {
     char a_cursor;
     char b_cursor;
 
@@ -58,7 +60,7 @@ char *NuStrChr(char *src, char c) {
     return NULL;
 }
 
-int NuStrCpy(char *dst, const char *src) {
+i32 NuStrCpy(char *dst, const char *src) {
     char *dst_start = dst;
 
     if (src != NULL) {
@@ -74,7 +76,7 @@ int NuStrCpy(char *dst, const char *src) {
     return dst - dst_start;
 }
 
-void NuStrFixExtPlatform(char *dst, char *src, char *ext, int dst_size, char *platform_string) {
+void NuStrFixExtPlatform(char *dst, char *src, char *ext, i32 dst_size, char *platform_string) {
     LOG_DEBUG("dst=%p, src=%s, ext=%s, dst_size=%d, platform_string=%s", dst, src, ext, dst_size,
               platform_string != NULL ? platform_string : "NULL");
 
@@ -122,7 +124,7 @@ void NuStrFixExtPlatform(char *dst, char *src, char *ext, int dst_size, char *pl
     }
 }
 
-int NuStrICmp(const char *a, const char *b) {
+i32 NuStrICmp(const char *a, const char *b) {
     char a_cursor;
     char b_cursor;
 
@@ -184,8 +186,8 @@ char *NuStrIStr(char *str, char *sub) {
     return NULL;
 }
 
-int NuStrLen(const char *str) {
-    int count = 0;
+i32 NuStrLen(const char *str) {
+    i32 count = 0;
 
     while (*str != '\0') {
         count++;
@@ -195,18 +197,7 @@ int NuStrLen(const char *str) {
     return count;
 }
 
-int NuStrLenW(const NUWCHAR *str) {
-    int count = 0;
-
-    while (*str != 0) {
-        count++;
-        str++;
-    }
-
-    return count;
-}
-
-int NuStrNCmp(const char *a, const char *b, int n) {
+i32 NuStrNCmp(const char *a, const char *b, i32 n) {
     char a_cursor;
     char b_cursor;
 
@@ -248,7 +239,7 @@ int NuStrNCmp(const char *a, const char *b, int n) {
     return 0;
 }
 
-int NuStrNICmp(const char *a, const char *b, int n) {
+i32 NuStrNICmp(const char *a, const char *b, i32 n) {
     char a_cursor;
     char b_cursor;
 
@@ -290,8 +281,8 @@ int NuStrNICmp(const char *a, const char *b, int n) {
     return 0;
 }
 
-int NuStrNCpy(char *dst, const char *src, int n) {
-    int count = 0;
+i32 NuStrNCpy(char *dst, const char *src, i32 n) {
+    i32 count = 0;
 
     if (src == NULL) {
         *dst = '\0';
@@ -334,7 +325,7 @@ char *NuStrRChr(char *src, char c) {
     return NULL;
 }
 
-unsigned char NuToLower(unsigned char c) {
+u8 NuToLower(u8 c) {
     if (c >= 'A' && c <= 'Z') {
         c += 0x20;
     } else if (c > 0xbf && c < 0xe0) {
@@ -344,10 +335,30 @@ unsigned char NuToLower(unsigned char c) {
     return c;
 }
 
-unsigned char NuToUpper(unsigned char c) {
+u8 NuToUpper(u8 c) {
     if (c >= 'a' && c <= 'z') {
         c -= 0x20;
     } else if (c > 0xdf) {
+        c -= 0x20;
+    }
+
+    return c;
+}
+
+NUWCHAR NuToLowerW(NUWCHAR c) {
+    if (c >= 0x41 && c <= 0x5a) {
+        c += 0x20;
+    } else if (c > 0xbf && c < 0xe0) {
+        c += 0x20;
+    }
+
+    return c;
+}
+
+NUWCHAR NuToUpperW(NUWCHAR c) {
+    if (c >= 0x61 && c <= 0x7a) {
+        c -= 0x20;
+    } else if (c > 0xdf && c < 0x100) {
         c -= 0x20;
     }
 
@@ -393,9 +404,9 @@ f32 NuAToF(char *string) {
     return dividend / divisor;
 }
 
-int NuAToI(char *string) {
-    int value = 0;
-    int sign = 0;
+i32 NuAToI(char *string) {
+    i32 value = 0;
+    i32 sign = 0;
 
     char c = *string;
     string++;
@@ -409,7 +420,7 @@ int NuAToI(char *string) {
 
     while (c >= '0' && c <= '9') {
         value = (value << 3) + 2 * value;
-        value = value + (int)c - 0x30;
+        value = value + (i32)c - 0x30;
 
         c = *string;
         string++;
@@ -422,12 +433,12 @@ int NuAToI(char *string) {
     return value;
 }
 
-int NuHexStringToI(char *string) {
-    int value = 0;
+i32 NuHexStringToI(char *string) {
+    i32 value = 0;
 
     for (; *string != '\0'; string++) {
         value <<= 4;
-        int upper = (int)NuToUpper(*string);
+        i32 upper = (i32)NuToUpper(*string);
 
         if (upper <= '9' && upper >= '0') {
             value |= upper - 0x30;
@@ -441,8 +452,31 @@ int NuHexStringToI(char *string) {
     return value;
 }
 
+void NuAsciiToUnicode(NUWCHAR16 *dst, char *src) {
+    i32 pos;
+
+    pos = 0;
+    *dst = 0;
+
+    if (src == NULL) {
+        return;
+    }
+
+    if (dst == NULL) {
+        return;
+    }
+
+    for (; src[pos] != '\0'; pos++) {
+        dst[pos] = (u8)src[pos];
+    }
+
+    dst[pos] = '\0';
+}
+
 void NuUnicodeToAscii(char *dst, NUWCHAR16 *src) {
-    int pos = 0;
+    i32 pos;
+
+    pos = 0;
 
     if (src == NULL) {
         return;
@@ -481,11 +515,38 @@ void NuUnicodeToAscii(char *dst, NUWCHAR16 *src) {
                     dst[pos] = '?';
             }
         } else {
-            dst[pos] = (char)src[pos];
+            dst[pos] = src[pos];
         }
     }
 
     dst[pos] = '\0';
+}
+
+void NuUnicodeToUTF8(NUWCHAR8 *dst, NUWCHAR16 *src) {
+    if (src == NULL) {
+        return;
+    }
+
+    if (dst == NULL) {
+        return;
+    }
+
+    *dst = '\0';
+
+    for (; *src != 0; src++) {
+        if (*src < 0x80) {
+            *dst++ = *src;
+        } else if (*src < 0x800) {
+            *dst++ = ((*src >> 0x6) & 0x1f) | 0xc0;
+            *dst++ = (*src & 0x3f) | 0x80;
+        } else {
+            *dst++ = ((*src >> 0xc) & 0x1f) | 0xe0;
+            *dst++ = ((*src >> 0x6) & 0x3f) | 0x80;
+            *dst++ = (*src & 0x3f) | 0x80;
+        }
+    }
+
+    *dst = '\0';
 }
 
 void NuStrUpr(char *dst, const char *src) {
@@ -493,10 +554,71 @@ void NuStrUpr(char *dst, const char *src) {
         *dst = NuToUpper(*src);
         dst++;
     }
+
     *dst = *src;
 }
 
-int NuIsAlNum(char c) {
+i32 NuStrCpyW(NUWCHAR *dst, NUWCHAR *src) {
+    i32 len;
+
+    len = 0;
+
+    if (src == NULL) {
+        *dst = 0;
+    } else {
+        do {
+            *dst = *src;
+            dst++;
+            len++;
+        } while (*src++ != 0);
+    }
+
+    return len;
+}
+
+i32 NuStrICmpW(NUWCHAR *a, NUWCHAR *b) {
+    NUWCHAR a_cursor;
+    NUWCHAR b_cursor;
+
+    if (a == NULL) {
+        return -1;
+    }
+
+    if (b == NULL) {
+        return 1;
+    }
+
+    do {
+        a_cursor = NuToUpperW(*a);
+        b_cursor = NuToUpperW(*b);
+
+        if (a_cursor > b_cursor) {
+            return 1;
+        }
+
+        if (a_cursor < b_cursor) {
+            return -1;
+        }
+
+        a++;
+        b++;
+    } while (a_cursor != '\0' && b_cursor != '\0');
+
+    return 0;
+}
+
+i32 NuStrLenW(const NUWCHAR *str) {
+    i32 count = 0;
+
+    while (*str != 0) {
+        count++;
+        str++;
+    }
+
+    return count;
+}
+
+i32 NuIsAlNum(char c) {
     switch (c) {
         case 'A' ... 'Z':
         case 'a' ... 'z':
@@ -507,4 +629,216 @@ int NuIsAlNum(char c) {
         default:
             return 0;
     }
+}
+
+static NUSTRINGBANK StringBank[3];
+static i16 CurrentStringBank;
+static i32 nustring_format = 1;
+char *NuBlankString = " ";
+
+i32 NuStringTableLoadCSV(char *filepath, VARIPTR *buf, VARIPTR buf_end, char *label, char *language) {
+    i32 parse_buf_size;
+    NUSTRINGBANK *bank;
+    NUWCHAR label_utf16[0x40];
+    NUWCHAR lang_utf16[0x40];
+    void *mem_buf;
+    i32 bytes_read;
+    char *word_buf;
+    char *line_buf;
+    char *tmp_buf;
+    NUFILE mem_file;
+    NUFPAR *parser;
+    NUSTRING *strings;
+    i32 column;
+    i32 label_column;
+    i32 lang_column;
+    i32 len;
+    i32 i;
+    i32 max_strings;
+
+    label_column = -1;
+    lang_column = -1;
+    i = 0;
+    max_strings = 0;
+    word_buf = NULL;
+    line_buf = NULL;
+    tmp_buf = NULL;
+    parse_buf_size = 0x8000;
+    strings = NULL;
+    bank = &StringBank[CurrentStringBank];
+
+    NuAsciiToUnicode(label_utf16, label);
+    NuAsciiToUnicode(lang_utf16, language);
+
+    bank->strings = NULL;
+    bank->max_strings = 0;
+    bank->string_count = 0;
+
+    mem_buf = (void *)(buf_end.addr - 0x100000);
+
+    bytes_read = NuFileLoadBuffer(filepath, mem_buf, 0x100000);
+
+    word_buf = (char *)((usize)mem_buf + bytes_read);
+    line_buf = (char *)((usize)mem_buf + bytes_read + parse_buf_size);
+    tmp_buf = (char *)((usize)mem_buf + bytes_read + parse_buf_size + parse_buf_size);
+
+    mem_file = NuMemFileOpen(mem_buf, bytes_read, NUFILE_READ);
+
+    if (mem_file != 0) {
+        parser = NuFParOpen(mem_file);
+
+        if (parser != NULL) {
+            parser->word_buf = word_buf;
+            parser->line_buf = line_buf;
+
+            parser->line_buf_size = parse_buf_size;
+            parser->word_buf_size = parse_buf_size;
+
+            while (NuFParGetLine(parser) != 0) {
+                max_strings++;
+            }
+
+            NuFParClose(parser);
+        }
+
+        NuFileClose(mem_file);
+    }
+
+    strings = (NUSTRING *)ALIGN(buf->addr, 0x4);
+    buf->addr = ALIGN(buf->addr, 0x4);
+    buf->addr = buf->addr + max_strings * sizeof(NUSTRING);
+
+    mem_file = NuMemFileOpen(mem_buf, bytes_read, NUFILE_READ);
+
+    if (mem_file != 0) {
+        parser = NuFParOpen(mem_file);
+
+        if (parser != NULL) {
+            parser->word_buf = word_buf;
+            parser->line_buf = line_buf;
+
+            parser->line_buf_size = parse_buf_size;
+            parser->word_buf_size = parse_buf_size;
+
+            while (NuFParGetLine(parser) != 0) {
+                column = 0;
+
+                while (NuFParGetWord(parser) != 0) {
+                    if (NuStrICmpW((NUWCHAR *)parser->word_buf, label_utf16) == 0) {
+                        label_column = column;
+                    }
+
+                    if (NuStrICmpW((NUWCHAR *)parser->word_buf, lang_utf16) == 0) {
+                        lang_column = column;
+                    }
+
+                    column++;
+                }
+
+                if (label_column >= 0 && lang_column >= 0) {
+                    break;
+                }
+            }
+
+            if (label_column >= 0 && lang_column >= 0) {
+                while (NuFParGetLine(parser) != 0) {
+                    column = 0;
+
+                    while (NuFParGetWord(parser) != 0) {
+                        if (column == label_column) {
+                            len = NuStrLenW((NUWCHAR *)parser->word_buf) + 1;
+
+                            strings[i].id = buf->char_ptr;
+                            buf->addr += len * sizeof(char);
+
+                            NuUnicodeToAscii(strings[i].id, (NUWCHAR16 *)parser->word_buf);
+                        }
+
+                        if (column == lang_column) {
+                            if (nustring_format == 1) {
+                                len = NuStrLenW((NUWCHAR *)parser->word_buf) + 1;
+
+                                strings[i].str_utf16 = (NUWCHAR *)ALIGN(buf->addr, 0x2);
+                                buf->addr = ALIGN(buf->addr, 0x2);
+
+                                // Using `sizeof(NUWCHAR)` here causees this not
+                                // to match.
+                                buf->addr += len * 2;
+
+                                NuStrCpyW(strings[i].str_utf16, (NUWCHAR *)parser->word_buf);
+                            } else {
+                                NuUnicodeToUTF8((NUWCHAR8 *)tmp_buf, (NUWCHAR16 *)parser->word_buf);
+
+                                // We can only do this after conversion, as the
+                                // size in bytes of a UTF-8 string can't be
+                                // easily predicted from its UTF-16 equivalent.
+                                len = NuStrLen(tmp_buf) + 1;
+
+                                // There's no need here to align to 2 bytes, but
+                                // it's done anyhow.
+                                strings[i].str_utf8 = (NUWCHAR8 *)ALIGN(buf->addr, 0x2);
+                                buf->addr = ALIGN(buf->addr, 0x2);
+                                buf->addr += len * sizeof(NUWCHAR8);
+
+                                NuStrCpy((char *)strings[i].str_utf8, tmp_buf);
+                            }
+                        }
+
+                        column++;
+
+                        if (column > label_column && column > lang_column) {
+                            if (strings[i].id != NULL && strings[i].str_utf16 != NULL) {
+                                i++;
+                            } else {
+                                strings[i].id = NULL;
+                                strings[i].str_utf16 = NULL;
+                            }
+
+                            break;
+                        }
+                    }
+                }
+            }
+
+            NuFParClose(parser);
+
+            bank->strings = strings;
+            bank->string_count = i;
+            bank->max_strings = max_strings;
+        }
+
+        NuFileClose(mem_file);
+    }
+
+    return bank->string_count;
+}
+
+void NuStringTableSetBank(i32 bank) {
+    if (bank >= 0 && bank < 3) {
+        CurrentStringBank = bank;
+    }
+}
+
+void NuStringTableSetFormat(i32 format) {
+    nustring_format = format;
+}
+
+NUWCHAR *NuStringTableGetByName(char *name) {
+    i32 j;
+    i32 i;
+
+    for (i = 0; i < 3; i++) {
+        for (j = 0; j < StringBank[i].string_count; j++) {
+            if (StringBank[i].strings[j].id != NULL && StringBank[i].strings[j].str_utf16 != NULL) {
+                if (NuStrICmp(StringBank[i].strings[j].id, name) == 0) {
+                    return StringBank[i].strings[j].str_utf16;
+                }
+            }
+        }
+    }
+
+    // This is a little horrifying, as `NuBlankString` appears to be declared as
+    // a string literal. This works out largely because of alignment
+    // requirements.
+    return (NUWCHAR *)NuBlankString;
 }
