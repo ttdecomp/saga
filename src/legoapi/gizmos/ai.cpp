@@ -9,7 +9,7 @@ static int AI_GetMaxGizmos(void *ai) {
 
 static void AI_AddGizmos(GIZMOSYS *gizmo_sys, int gizmo_type, void *world_base_ptr, void *unused) {
     int current_offset;
-    i32 index;
+    intptr_t index;
 
     if ((world_base_ptr != (void *)0xffffd510) && (0 < WORLD->something)) {
         index = 0;
@@ -17,7 +17,7 @@ static void AI_AddGizmos(GIZMOSYS *gizmo_sys, int gizmo_type, void *world_base_p
             current_offset = index * 0xdc;
             // (91.66% match)
             //__asm__("" : "+r" (index));
-            current_offset = current_offset + (i32)world_base_ptr;
+            current_offset = current_offset + (intptr_t)world_base_ptr;
             index = index + 1;
             void *gizmo_addr = (void *)(current_offset + 0x2af0);
             AddGizmo(gizmo_sys, gizmo_type, NULL, gizmo_addr);
