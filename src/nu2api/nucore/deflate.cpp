@@ -137,15 +137,38 @@ void InitHuffmanDefaults() {
         (ctx)->bit_buffer & ((1 << (n)) - 1);                                                                          \
     })
 
+static void FillBits(DEFLATECONTEXT *ctx) {
+    u32 byte;
+
+    do {
+        if (ctx->read_buffer < ctx->read_buffer_end) {
+            byte = *ctx->read_buffer++;
+        } else {
+            byte = 0;
+        }
+
+        ctx->bit_buffer |= byte << ctx->num_bits_available;
+        ctx->num_bits_available += 8;
+    } while (ctx->num_bits_available < 25);
+}
+
 #define READBITS(ctx, n)                                                                                               \
     ({                                                                                                                 \
-        u32 bits = PEEKBITS(ctx, n);                                                                                   \
+        if ((ctx)->num_bits_available < (n)) {                                                                         \
+            FillBits((ctx));                                                                                           \
+        }                                                                                                              \
+                                                                                                                       \
+        u32 bits = (ctx)->bit_buffer & ((1 << (n)) - 1);                                                               \
         DROPBITS(ctx, n);                                                                                              \
         bits;                                                                                                          \
     })
 
 static inline i32 CtxReadHuffmanSymbol(DEFLATECONTEXT *ctx, DEFHUFFMAN *tree) {
-    u32 bits = PEEKBITS(ctx, 16);
+    if (ctx->num_bits_available < 0x10) {
+        FillBits(ctx);
+    }
+
+    u32 bits = ctx->bit_buffer & ((1 << 0x10) - 1);
 
     u32 lookupIndex = tree->fast_lookup[bits & 0x1ff];
 
