@@ -3,7 +3,7 @@
 #include "nu2api/numath/nuang.h"
 #include "nu2api/numath/nuvec.h"
 
-struct numtx_s {
+typedef struct numtx_s {
     f32 m00;
     f32 m01;
     f32 m02;
@@ -20,9 +20,7 @@ struct numtx_s {
     f32 m31;
     f32 m32;
     f32 m33;
-};
-
-typedef struct numtx_s NUMTX;
+} NUMTX;
 
 extern NUMTX numtx_zero;
 extern NUMTX numtx_identity;
