@@ -17,7 +17,7 @@ jobs:
               uses: lukka/get-cmake@latest
 
             - name: Configure CMake
-              run: cmake -B build .
+              run: cmake -B build --verbose .
 
             - name: Cache Android NDK
               uses: actions/cache@v4

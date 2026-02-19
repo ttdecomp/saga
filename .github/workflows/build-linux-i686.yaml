@@ -31,7 +31,7 @@ jobs:
               uses: lukka/get-cmake@latest
 
             - name: Configure CMake
-              run: cmake -B build -DBUILD_FOR_HOST=ON .
+              run: cmake -B build -DBUILD_FOR_HOST=ON --verbose .
               env:
                   PKG_CONFIG_PATH: /usr/lib/i386-linux-gnu/pkgconfig
 

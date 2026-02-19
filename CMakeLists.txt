@@ -331,7 +331,7 @@ else()
     find_package(PkgConfig REQUIRED)
     
     if (BUILD_FOR_HOST)
-        pkg_check_modules(VORBIS REQUIRED vorbis vorbisfile)
+        pkg_check_modules(VORBIS REQUIRED vorbisfile vorbis)
         message(STATUS "Found Vorbis: ${VORBIS_LIBRARIES} (include: ${VORBIS_INCLUDE_DIRS})")
 
         pkg_check_modules(GLES2 REQUIRED glesv2)
