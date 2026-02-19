@@ -82,7 +82,8 @@ extern "C" {
     f32 NuCameraDist(NUVEC *v);
     f32 NuCameraDistSqr(NUVEC *v);
 
-    i32 NuCameraClipTestSphere(NUVEC *pnt, float radius, NUMTX *wm);
+    i32 NuCameraClipTestExtents(NUVEC *min, NUVEC *max, NUMTX *world_mtx, f32 far_clip, i32 should_clip_to_screen);
+    i32 NuCameraClipTestSphere(NUVEC *pnt, float radius, NUMTX *world_mtx);
 
     void NuCameraCalcRay(float screen_x, float screen_y, NUVEC *ray_start, NUVEC *ray_end, NUCAMERA *cam);
     void NuCameraRayCast(NUVEC *pnt, f32 x, f32 y);

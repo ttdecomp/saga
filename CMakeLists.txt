@@ -226,6 +226,8 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/android/nutex_android.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/android/nutex_ios_ex.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/generic/nucamera_gen.cpp
+
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nuandroid/ios_graphics.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nuandroid/nuphoneos.cpp
 
@@ -331,7 +333,7 @@ if (CMAKE_HOST_WIN32)
     set(GLES2_LIBRARIES "GLESv2")
 else()
     find_package(PkgConfig REQUIRED)
-    
+
     if (BUILD_FOR_HOST)
         pkg_check_modules(VORBIS REQUIRED vorbis)
         pkg_check_modules(VORBISFILE REQUIRED vorbisfile)
@@ -463,7 +465,6 @@ else()
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/zipups.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/NuRenderDevice.cpp PROPERTIES COMPILE_OPTIONS "-O3")
-    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nucamera.cpp PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nugscn.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nuportal.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nuqfnt.cpp PROPERTIES COMPILE_OPTIONS "-O2")
@@ -475,6 +476,8 @@ else()
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/android/nuqfnt_android.cpp PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/android/nurenderthread.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/android/nutex_ios_ex.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/generic/nucamera_gen.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nuandroid/ios_graphics.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 
