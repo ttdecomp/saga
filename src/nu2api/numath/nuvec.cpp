@@ -278,3 +278,47 @@ void NuVecMtxTransformBlock(NUVEC *out, NUVEC *v, NUMTX *m, i32 count) {
         v++;
     }
 }
+
+i32 NuLineLineIntersect(NUVEC *pnt0, NUVEC *v0, NUVEC *pnt1, NUVEC *v1, f32 *s, f32 *t) {
+    NUVEC cross;
+    f32 len;
+    f32 inv_len;
+    NUMTX m;
+
+    NuVecCross(&cross, v0, v1);
+    len = NuVecMag(&cross);
+
+    if (len == 0.0f) {
+        inv_len = 0.0f;
+    } else {
+        inv_len = 1.0f / len;
+    }
+
+    inv_len *= inv_len;
+
+    m.m00 = pnt1->x - pnt0->x;
+    m.m01 = pnt1->y - pnt0->y;
+    m.m02 = pnt1->z - pnt0->z;
+
+    m.m10 = v1->x;
+    m.m11 = v1->y;
+    m.m12 = v1->z;
+
+    m.m20 = cross.x;
+    m.m21 = cross.y;
+    m.m22 = cross.z;
+
+    *s = NuMtxDet3(&m) * inv_len;
+
+    m.m10 = v0->x;
+    m.m11 = v0->y;
+    m.m12 = v0->z;
+
+    *t = NuMtxDet3(&m) * inv_len;
+
+    if (inv_len != 0.0f) {
+        return 1;
+    }
+
+    return 0;
+}

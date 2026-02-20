@@ -220,6 +220,8 @@ extern "C" {
     void NuVecMtxRotate(NUVEC *out, NUVEC *v, NUMTX *m);
     void NuVecMtxScale(NUVEC *out, NUVEC *v, NUMTX *m);
     void NuVecMtxTranslate(NUVEC *out, NUVEC *v, NUMTX *m);
+
+    i32 NuLineLineIntersect(NUVEC *pnt0, NUVEC *v0, NUVEC *pnt1, NUVEC *v1, f32 *s, f32 *t);
 #ifdef __cplusplus
 }
 
