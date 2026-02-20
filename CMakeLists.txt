@@ -283,6 +283,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numath/nufloat.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numath/numtx.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numath/nuquat.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numath/nuplane.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numath/nurand.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numath/nutrig.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numath/nutrig.cpp
