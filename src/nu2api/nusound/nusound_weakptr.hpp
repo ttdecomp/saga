@@ -4,13 +4,19 @@
 
 #include <pthread.h>
 
+struct NuSoundWeakPtrListNode;
+
+struct NuSoundWeakPtrListNodePayload {
+    NuSoundWeakPtrListNode *prev;
+    NuSoundWeakPtrListNode *next;
+};
+
 class NuSoundWeakPtrListNode {
   public:
-    NuSoundWeakPtrListNode *value;
-    NuSoundWeakPtrListNode *next;
-
     static pthread_mutex_t sPtrListLock;
     static pthread_mutex_t sPtrAccessLock;
+
+    struct NuSoundWeakPtrListNodePayload payload;
 
     virtual ~NuSoundWeakPtrListNode() = default;
 };
@@ -28,27 +34,27 @@ template <typename T> class NuSoundWeakPtrObj {
     void Link(NuSoundWeakPtrListNode *node) {
         pthread_mutex_lock(&NuSoundWeakPtrListNode::sPtrListLock);
 
-        NuSoundWeakPtrListNode *esi = list_node;
+        NuSoundWeakPtrListNode *list = this->list_node;
 
-        NuSoundWeakPtrListNode **node_value = node ? &node->value : NULL;
-        if (!node) {
+        NuSoundWeakPtrListNodePayload *node_payload = node != NULL ? &node->payload : NULL;
+        if (node == NULL) {
             node = INVALID_NODE;
         }
 
-        NuSoundWeakPtrListNode **list_value = list_node ? &list_node->value : NULL;
-        if (!list_node) {
-            esi = INVALID_NODE;
+        NuSoundWeakPtrListNodePayload *list_payload = list != NULL ? &list->payload : NULL;
+        if (list == NULL) {
+            list = INVALID_NODE;
         }
 
-        NuSoundWeakPtrListNode **list_value_ptr = *list_value ? &(*list_value)->value : NULL;
+        NuSoundWeakPtrListNodePayload *prev_payload = list_payload->prev != NULL ? &list_payload->prev->payload : NULL;
 
-        *list_value = node_value ? node : NULL;
+        list_payload->prev = node_payload != NULL ? node : NULL;
+        node_payload->prev = prev_payload != NULL ? (NuSoundWeakPtrListNode *)((usize)prev_payload - 4) : NULL;
 
-        *node_value = list_value_ptr ? (NuSoundWeakPtrListNode *)((char *)list_value_ptr - 4) : NULL;
-        *(void **)((char *)list_value_ptr + 4) = node;
-        *(void **)((char *)node_value + 4) = esi;
+        prev_payload->next = node;
+        node_payload->next = list;
 
-        ref_count++;
+        this->ref_count++;
 
         pthread_mutex_unlock(&NuSoundWeakPtrListNode::sPtrListLock);
     }
