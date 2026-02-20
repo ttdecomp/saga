@@ -23,6 +23,8 @@ struct CompileCommand {
 struct GonkConfig {
     #[serde(default)]
     ignore: Vec<String>,
+    #[serde(default)]
+    extra_units: HashMap<String, Vec<String>>,
 }
 
 /// construct a new object file containing only the specified symbols from the original object file
@@ -640,6 +642,35 @@ struct Lib<'data, 'file> {
     dyn_relocs_by_addr: HashMap<u64, object::Relocation>,
 }
 
+impl<'data, 'file> Lib<'data, 'file> {
+    fn from_elf(
+        file: &'data object::read::elf::ElfFile32<'file>,
+        ignore_set: &HashSet<&str>,
+    ) -> Self {
+        let symbols_by_name: HashMap<_, _> = file
+            .symbols()
+            .filter(|sym| matches!(sym.kind(), SymbolKind::Data | SymbolKind::Text))
+            .filter(|sym| !ignore_set.contains(sym.name().unwrap_or("")))
+            .map(|sym| (sym.name().unwrap(), sym))
+            .collect();
+
+        let symbols_by_address = file
+            .symbols()
+            .filter(|sym| matches!(sym.kind(), SymbolKind::Data | SymbolKind::Text))
+            .map(|sym| (sym.address(), sym))
+            .collect();
+
+        let dyn_relocs_by_addr = file.dynamic_relocations().unwrap().collect();
+
+        Self {
+            file,
+            symbols_by_name,
+            symbols_by_address,
+            dyn_relocs_by_addr,
+        }
+    }
+}
+
 pub fn split() -> anyhow::Result<()> {
     let config: GonkConfig = match std::fs::read_to_string("gonk.toml") {
         Ok(contents) => toml::from_str(&contents).context("Failed to parse gonk.toml")?,
@@ -657,27 +688,7 @@ pub fn split() -> anyhow::Result<()> {
     let orig_lib_file = object::read::elf::ElfFile32::parse(&*contents)
         .context("Failed to parse original libTTapp.so")?;
 
-    let orig_symbols: HashMap<_, _> = orig_lib_file
-        .symbols()
-        .filter(|sym| matches!(sym.kind(), SymbolKind::Data | SymbolKind::Text))
-        .filter(|sym| !ignore_set.contains(sym.name().unwrap_or("")))
-        .map(|sym| (sym.name().unwrap(), sym))
-        .collect();
-
-    let symbols_by_address = orig_lib_file
-        .symbols()
-        .filter(|sym| matches!(sym.kind(), SymbolKind::Data | SymbolKind::Text))
-        .map(|sym| (sym.address(), sym))
-        .collect();
-
-    let dyn_relocs_by_addr = orig_lib_file.dynamic_relocations().unwrap().collect();
-
-    let original_lib = Lib {
-        file: &orig_lib_file,
-        symbols_by_name: orig_symbols,
-        symbols_by_address,
-        dyn_relocs_by_addr,
-    };
+    let original_lib = Lib::from_elf(&orig_lib_file, &ignore_set);
 
     std::fs::create_dir_all("build/split").context("Failed to create build/split directory")?;
 
@@ -735,6 +746,65 @@ pub fn split() -> anyhow::Result<()> {
             name: name.display().to_string(),
             target_path: output_path,
             base_path: binary,
+            scratch: Some(ObjDiffScratch {
+                platform: String::from("android_x86"),
+                compiler: String::from("ndk-r8e-gcc-4.7"),
+                c_flags: String::from("-fno-exceptions -fno-rtti"),
+            }),
+        });
+    }
+
+    let saga_contents =
+        std::fs::read("build/saga").context("Failed to read saga build directory")?;
+    let saga_elf = object::read::elf::ElfFile32::parse(&*saga_contents)
+        .context("Failed to parse saga build ELF file")?;
+    let saga_lib = Lib::from_elf(&saga_elf, &ignore_set);
+
+    for (unit, symbols) in &config.extra_units {
+        println!("Processing extra unit '{unit}' with symbols {:?}", symbols);
+
+        let base_path = std::path::Path::new("build/split").join(format!("__extra_{unit}_base.o"));
+        let target_path =
+            std::path::Path::new("build/split").join(format!("__extra_{unit}_target.o"));
+
+        let (orig_text_symbols, orig_data_symbols): (Vec<_>, Vec<_>) = orig_lib_file
+            .symbols()
+            .filter(symbol_filter)
+            .filter(|sym| symbols.contains(&sym.name().unwrap().to_string()))
+            .filter_map(|sym| original_lib.symbols_by_name.get(sym.name().unwrap()))
+            .partition(|sym| {
+                orig_lib_file
+                    .section_by_index(sym.section_index().unwrap())
+                    .unwrap()
+                    .kind()
+                    == SectionKind::Text
+            });
+
+        let (saga_text_symbols, saga_data_symbols): (Vec<_>, Vec<_>) = saga_elf
+            .symbols()
+            .filter(symbol_filter)
+            .filter(|sym| symbols.contains(&sym.name().unwrap().to_string()))
+            .filter_map(|sym| saga_lib.symbols_by_name.get(sym.name().unwrap()))
+            .partition(|sym| {
+                saga_elf
+                    .section_by_index(sym.section_index().unwrap())
+                    .unwrap()
+                    .kind()
+                    == SectionKind::Text
+            });
+
+        let orig_obj = make_object(&original_lib, &orig_text_symbols, &orig_data_symbols, false)?;
+        let saga_obj = make_object(&saga_lib, &saga_text_symbols, &saga_data_symbols, false)?;
+
+        std::fs::write(&target_path, orig_obj.write()?)
+            .context("Failed to write extra unit base object file")?;
+        std::fs::write(&base_path, saga_obj.write()?)
+            .context("Failed to write extra unit target object file")?;
+
+        objdiff_units.push(ObjDiffUnit {
+            name: unit.clone(),
+            target_path,
+            base_path,
             scratch: Some(ObjDiffScratch {
                 platform: String::from("android_x86"),
                 compiler: String::from("ndk-r8e-gcc-4.7"),

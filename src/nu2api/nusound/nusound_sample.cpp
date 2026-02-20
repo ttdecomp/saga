@@ -92,3 +92,7 @@ u32 NuSoundSample::GetResourceCount() {
 void NuSoundSample::AddedToThreadQueue() {
     __sync_fetch_and_add(&thread_queue_count, 1);
 }
+
+void NuSoundSample::RemovedFromThreadQueue() {
+    __sync_fetch_and_sub(&thread_queue_count, 1);
+}

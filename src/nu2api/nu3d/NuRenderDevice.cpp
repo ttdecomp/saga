@@ -12,6 +12,7 @@ void NuRenderDevice::SetThisTreadAsRender() {
 
 int NuRenderDevice::BeginCriticalSection(const char *file, int line) {
     UNIMPLEMENTED();
+    return 0;
 }
 
 void NuRenderDevice::EndCriticalSection(const char *file, int line) {

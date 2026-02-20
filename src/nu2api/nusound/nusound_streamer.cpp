@@ -53,6 +53,8 @@ void NuSoundStreamer::ThreadFunc(void *self_) {
 
         element->streaming_sample->Open(0.0f, false, false);
 
+        element->streaming_sample->RemovedFromThreadQueue();
+
         __sync_fetch_and_add(&self->index, 1);
     }
 }

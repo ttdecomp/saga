@@ -28,6 +28,7 @@ class NuSoundSample : public NuSoundSource {
     NuSoundSample(const char *path, FeedType feed_type);
 
     void AddedToThreadQueue();
+    void RemovedFromThreadQueue();
 
     LoadState GetLoadState() const;
     ErrorState GetLastErrorState() const;

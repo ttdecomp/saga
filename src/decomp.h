@@ -35,10 +35,7 @@ typedef u16 word;
 #include <stdio.h>
 
 #define UNIMPLEMENTED(...)                                                                                             \
-    ({                                                                                                                 \
-        fprintf(stderr, "%s:%d: %s: UNIMPLEMENTED: %s\n", __FILE__, __LINE__, __func__, #__VA_ARGS__);                 \
-        exit(EXIT_FAILURE);                                                                                            \
-    })
+    ({ fprintf(stderr, "%s:%d: %s: UNIMPLEMENTED: %s\n", __FILE__, __LINE__, __func__, #__VA_ARGS__); })
 
 enum log_level {
     LOG_LEVEL_WARN,
