@@ -27,6 +27,25 @@ typedef struct GIZMOSYS_s {
     u8 flags;
 } GIZMOSYS;
 
+typedef struct {
+    char pad[8];
+    char *name_ptr; 
+} GIZMODEF;
+
+
+typedef struct {
+    char name_buffer[0x14]; 
+
+    GIZMODEF *def;
+
+    char _pad[152];
+
+    char *suffix_3; // 0xB0
+    char *suffix_2; // 0xB4
+    char *suffix_1; // 0xB8
+} GIZMOINTERNAL;
+
+
 typedef struct BOLT_s {
 
 } BOLT; // defined here for now, TODO: move to its own file

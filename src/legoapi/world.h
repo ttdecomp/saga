@@ -24,12 +24,14 @@ typedef struct WORLDINFO_s {
     char filler2[0x10];
     NUGSCN *current_gscn;
 
-    char filler3[0x4fbc];
+    char filler3[0x29b0-4];
+    int something;
+    char filler4[0x260c];
 
     struct GIZTIMER_s *giz_timers;
     i32 giz_timers_count;
 
-    char filler4[172];
+    char filler5[172];
 } WORLDINFO;
 
 #ifdef __cplusplus
