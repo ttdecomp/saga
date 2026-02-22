@@ -28,25 +28,29 @@ extern "C" {
 }
 
 class NuPlatform {
+  private:
+    static NuPlatform *ms_instance;
+
     char *name;
     char *texture_extension;
     char *font_extension;
     PLATFORMS_SUPPORTED current_platform;
 
   public:
-    static NuPlatform *ms_instance;
-
     static NuPlatform *Get(void) {
         return NuPlatform::ms_instance;
     }
+
     static void Create(void);
 
     char *GetCurrentTextureExtension() const {
         return this->texture_extension;
     }
+
     PLATFORMS_SUPPORTED GetCurrentPlatform() const {
         return this->current_platform;
     }
+
     void SetCurrentPlatform(PLATFORMS_SUPPORTED platform);
 };
 

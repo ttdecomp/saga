@@ -14,14 +14,18 @@ typedef enum {
 } NUQFNT_CSMODE;
 
 typedef struct vufnt_s {
-    char filler1[0x24]; // 0x00-0x23
+    char filler1[0x18];
+
+    f32 baseline;
+
+    char unknown_1c[0x8];
 
     f32 ic_gap; // 0x24
 
     char filler2[0x4]; // 0x28-0x2B
 
-    f32 *x_scale; // 0x2c
-    f32 *y_scale; // 0x30
+    f32 *x_scale;
+    f32 *y_scale;
 
     char filler3[0x8]; // 0x34-0x3B
 
@@ -53,14 +57,18 @@ extern "C" {
     extern f32 qfnt_len_scale;
     extern f32 qfnt_height_scale;
 
-    void NuQFntInit(VARIPTR *buffer, VARIPTR buffer_end);
-    NUQFNT *NuQFntReadBuffer(VARIPTR *font, VARIPTR *buffer, VARIPTR buffer_end);
+    void NuQFntInit(VARIPTR *buf, VARIPTR buf_end);
+
+    NUQFNT *NuQFntRead(char *filename, VARIPTR *buf, VARIPTR buf_end);
+    NUQFNT *NuQFntReadBuffer(VARIPTR *font, VARIPTR *buf, VARIPTR buf_end);
 
     NUQFNT_CSMODE NuQFntSetCoordinateSystem(NUQFNT_CSMODE mode);
     void NuQFntSetICGap(NUQFNT *font, float ic_gap);
     void NuQFntSetJustifiedTolerances(f32 squash, f32 stretch);
     void NuQFntSetMtx(NUQFNT *font, NUMTX *mtx);
     void NuQFntSetMtxRS(RNDRSTREAM *stream, NUQFNT *font, NUMTX *mtx);
+
+    f32 NuQFntBaseline(NUQFNT *font);
 #ifdef __cplusplus
 }
 #endif

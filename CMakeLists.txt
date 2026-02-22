@@ -251,6 +251,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/numouse.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nupad.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nupad_interface.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nuptrblock.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nurdpf.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nurdpi.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nustring.cpp

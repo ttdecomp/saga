@@ -4,6 +4,9 @@
 
 #include "decomp.h"
 #include "nu2api/nucore/common.h"
+#include "nu2api/nucore/nustring.h"
+#include "nu2api/nufile/nufile.h"
+#include "nu2api/nuplatform/nuplatform.h"
 
 static i32 nuqfnt_init;
 
@@ -439,22 +442,56 @@ f32 qfnt_height_scale = 1.0f;
 static f32 justify_stretch = 1.0f;
 static f32 justify_squash = 1.0f;
 
-void NuQFntInit(VARIPTR *buffer, VARIPTR buffer_end) {
+static i32 g_buttonsFont;
+
+void NuQFntInit(VARIPTR *buf, VARIPTR buf_end) {
+    VARIPTR sysfont_ptr;
+
     if (nuqfnt_init != 0) {
         return;
     }
 
     nuqfnt_init = 1;
-    VARIPTR sysfont_ptr;
     sysfont_ptr.u8_ptr = sysfont;
-    system_qfont = NuQFntReadBuffer(&sysfont_ptr, buffer, buffer_end);
+    system_qfont = NuQFntReadBuffer(&sysfont_ptr, buf, buf_end);
 
     if (system_qfont != NULL) {
         NuQFntSetICGap(system_qfont, 1.0f);
     }
 }
 
-NUQFNT *NuQFntReadBuffer(VARIPTR *font, VARIPTR *ptr, VARIPTR buffer_end) {
+NUQFNT *NuQFntRead(char *filepath, VARIPTR *buf, VARIPTR buf_end) {
+    char *platform;
+    char *ext;
+    VARIPTR aligned;
+    i32 bytes_read;
+    char fixed_path[1204];
+
+    if (NuPlatform::Get()->GetCurrentPlatform() == ANDROID_PVRTC_PLATFORM) {
+        // ORIG_BUG: While `fixed_path` is 1204 bytes, its size is passed as 1024.
+        NuStrFixExtPlatform(fixed_path, filepath, "fnt", 1024, "IOS");
+    } else {
+        // ORIG_BUG: While `fixed_path` is 1204 bytes, its size is passed as 1024.
+        NuStrFixExtPlatform(fixed_path, filepath, g_fontExtension, 1024, "MOB");
+    }
+
+    aligned.addr = ALIGN(buf->addr, 0x20);
+    buf->addr = aligned.addr;
+
+    g_datfileMode = 1;
+
+    bytes_read = NuFileLoadBufferVP(fixed_path, buf, &buf_end);
+
+    if (bytes_read == 0) {
+        return NULL;
+    }
+
+    g_buttonsFont = NuStrIStr(fixed_path, "BUTTONS_MOB.ANDROID") != 0 || NuStrIStr(fixed_path, "BUTTONS_IOS.FNT") != 0;
+
+    return NuQFntReadBuffer(&aligned, buf, buf_end);
+}
+
+NUQFNT *NuQFntReadBuffer(VARIPTR *font, VARIPTR *buf, VARIPTR buf_end) {
     UNIMPLEMENTED();
 }
 
@@ -539,4 +576,19 @@ void NuQFntSetMtx(NUQFNT *font, NUMTX *mtx) {
     if (font != NULL) {
         NuQFntSetMtxRS(NULL, font, mtx);
     }
+}
+
+f32 NuQFntBaseline(NUQFNT *font) {
+    VUFNT *vufnt;
+
+    if (font == NULL) {
+        font = system_qfont;
+    }
+
+    if (font != NULL) {
+        vufnt = (VUFNT *)font;
+        return *vufnt->y_scale * vufnt->baseline * qfnt_height_scale;
+    }
+
+    return 0.0f;
 }
