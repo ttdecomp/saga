@@ -8,9 +8,11 @@ typedef struct GIZMO_s {
         void *void_ptr;
         struct GIZTIMER_s *timer;
         struct nuportal_s *portal;
-    } object;
-    i16 unknown;
-    u8 type_id;
+    } object; 
+    i16 unknown;  
+    u8 type_id;         
+    u8 _pad_to_60[0x59]; 
+    u8 output; 
 } GIZMO;
 
 typedef struct GIZMOSET_s {
@@ -27,23 +29,6 @@ typedef struct GIZMOSYS_s {
     u8 flags;
 } GIZMOSYS;
 
-typedef struct {
-    char pad[8];
-    char *name_ptr; 
-} GIZMODEF;
-
-
-typedef struct {
-    char name_buffer[0x14]; 
-
-    GIZMODEF *def;
-
-    char _pad[152];
-
-    char *suffix_3; // 0xB0
-    char *suffix_2; // 0xB4
-    char *suffix_1; // 0xB8
-} GIZMOINTERNAL;
 
 
 typedef struct BOLT_s {

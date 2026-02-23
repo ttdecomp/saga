@@ -31,7 +31,7 @@ static char *AI_GetGizmoName(GIZMO *gizmo) {
         return 0;
     }
 
-    GIZMOINTERNAL *data = (GIZMOINTERNAL *)gizmo->object.void_ptr;
+    AIGIZMOINTERNAL *data = (AIGIZMOINTERNAL *)gizmo->object.void_ptr;
     if (NuStrLen((char *)data)) {
         return (char *)data;
     }
@@ -81,9 +81,9 @@ static char *AI_GetGizmoName(GIZMO *gizmo) {
 
 static int AI_GetOutput(GIZMO *gizmo, int param_2, int param_3) {
     if (gizmo && (gizmo = *(GIZMO **)gizmo)) {
-        return (*((unsigned char *)gizmo + 0x60) >> 1 ^ 1) & 1;
+        return ((gizmo->output) >> 1 ^ 1) & 1;
     }
-    //increases accuracy
+    //increases accuracy to 100%
     //__asm__("");
 
     return 0;
@@ -99,13 +99,13 @@ static int AI_GetNumOutputs(GIZMO *gizmo) {
 }
 
 void AI_Activate(GIZMO *gizmo, int param_2) {
-    int gizmo_internal;
+    GIZMO* gizmo_internal;
 
-    if ((gizmo) && (gizmo_internal = *(int *)gizmo)) {
+    if ((gizmo) && (gizmo_internal = gizmo)) {
         int flag = (param_2 == 0);
-        unsigned int val = *(unsigned char *)(gizmo_internal + 0x60);
+        unsigned int val = (gizmo_internal->output);
         flag += flag;
-        *(unsigned char *)(gizmo_internal + 0x60) = (val & 0xfd) | flag;
+        (gizmo_internal->output) = (val & 0xfd) | flag;
     }
 }
 
