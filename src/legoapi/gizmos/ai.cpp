@@ -90,7 +90,7 @@ static int AI_GetOutput(GIZMO *gizmo, int param_2, int param_3) {
 }
 
 char *AI_GetOutputName(GIZMO *gizmo, int output_index) {
-    static char name[] = "Processing";
+    static char name[0x40] = "Processing";
     return name;
 }
 
