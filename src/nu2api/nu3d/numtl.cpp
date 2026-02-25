@@ -1,6 +1,9 @@
 #include "nu2api/nu3d/numtl.h"
 
+#include <string.h>
+
 #include "decomp.h"
+#include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nufile/nufile.h"
 
 static int max_materials;
@@ -36,12 +39,28 @@ void DefaultMtl(NUMTL *mtl) {
     UNIMPLEMENTED();
 }
 
-void NuMtlCreatePS(NUMTL *mtl, i32 unk_flag) {
-    UNIMPLEMENTED();
-}
+void NuShaderMtlDescInit(NUSHADERMTLDESC *desc) {
+    i32 i;
 
-void NuShaderMtlDescInit(NUSHADERMTLDESC *shader_mtl_desc) {
-    UNIMPLEMENTED();
+    if (desc == NULL) {
+        return;
+    }
+
+    memset(desc, 0, sizeof(NUSHADERMTLDESC));
+
+    desc->unknown_24 = 1.0f;
+    desc->byte4 |= 0x10;
+
+    desc->flags = 0x1000;
+
+    desc->diffuse_color[0] = RGBA_TO_NUCOLOUR32(0xff, 0x80, 0x80, 0xff);
+
+    for (i = 0; i < 4; i++) {
+        desc->tex_anim_data[i] = -1;
+    }
+
+    desc->vtx_desc.has_position = 1;
+    desc->vtx_desc.has_diffuse = 1;
 }
 
 NUMTL *NuMtlCreate(i32 count) {
@@ -49,9 +68,5 @@ NUMTL *NuMtlCreate(i32 count) {
 }
 
 void NuMtlUpdate(NUMTL *mtl) {
-    UNIMPLEMENTED();
-}
-
-void NuMtlSetShaderDescPS(NUMTL *mtl, NUSHADERMTLDESC *shader_mtl_desc) {
     UNIMPLEMENTED();
 }

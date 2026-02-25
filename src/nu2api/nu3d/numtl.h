@@ -28,9 +28,28 @@ typedef struct numtlattrib_s {
 typedef struct nuvertexdescriptor_s {
     union {
         struct {
-            u32 unknown_0 : 8;
-            u32 unknown_1 : 8;
-            u32 unknown_2 : 8;
+            u32 has_position : 1;
+
+            u32 unknown_0 : 7;
+
+            u32 has_diffuse : 1;
+
+            u32 unknown_1_2_4 : 2;
+            u32 unknown_1_8_16_32 : 3;
+            u32 unknown_1_64 : 1;
+            u32 unknown_1_128 : 1;
+
+            u32 unknown_2_1 : 1;
+            u32 unknown_2_2 : 1;
+
+            u32 has_no_transform : 1;
+
+            u32 unknown_2_8 : 1;
+            u32 unknown_2_16 : 1;
+            u32 unknown_2_32 : 1;
+            u32 unknown_2_64 : 1;
+            u32 unknown_2_128 : 1;
+
             u32 unknown_3_1_2_3 : 3;
             u32 has_half_uvs : 1;
         };
@@ -40,19 +59,26 @@ typedef struct nuvertexdescriptor_s {
 } NUVERTEXDESCRIPTOR;
 
 typedef struct nushadermtldesc_s {
-    u32 flags;           // 0x0
-    i32 tex_id;          // 0x4
-    char filler1[0xC];   // 0x8-0x13
-    u32 mask;            // 0x14
-    char filler2[0xC];   // 0x18-0x23
-    float value;         // 0x24
-    char filler3[0x114]; // 0x28-0x13B
+    u32 flags;
+
+    i32 diffuse_map_tex_id[4];
+    NUCOLOUR32 diffuse_color[4];
+
+    f32 unknown_24;
+    u8 unknown_28[0x80];
+
+    u8 unknown_a8;
+
+    u8 unknown_a9[0x63];
+
+    i32 tex_anim_data[4];
+    f32 tex_anim_offsets[4][2];
 
     NUVERTEXDESCRIPTOR vtx_desc;
 
-    char filler4[0x79];  // 0x13F-0x1B8
-    u8 byte4;            // 0x1b9
-    char filler5[0x4E];  // 0x1BA-0x207
+    char filler4[0x79]; // 0x13F-0x1B8
+    u8 byte4;           // 0x1b9
+    char filler5[0x4E]; // 0x1BA-0x207
 } NUSHADERMTLDESC;
 
 typedef struct numtl_s {
@@ -76,7 +102,14 @@ typedef struct numtl_s {
     i16 tex_id;
     i16 sort_pri;
 
-    u8 unknown_78[0x3c];
+    // Types uncertain.
+    i32 unknown_78;
+    i32 unknown_7c;
+
+    f32 delta_u;
+    f32 delta_v;
+
+    u8 unknown_88[0x2c];
 
     NUSHADERMTLDESC shader_desc;
 
@@ -86,7 +119,7 @@ typedef struct numtl_s {
 #ifdef __cplusplus
 
 void DefaultMtl(NUMTL *mtl);
-void NuMtlCreatePS(NUMTL *mtl, int unk_flag);
+void NuMtlCreatePS(NUMTL *mtl, int is_3d);
 
 extern "C" {
 #endif
@@ -95,8 +128,8 @@ extern "C" {
 
     void NuMtlInitEx(VARIPTR *buf, i32 max_mtls);
 
-    void NuShaderMtlDescInit(NUSHADERMTLDESC *shader_mtl_desc);
-    void NuMtlSetShaderDescPS(NUMTL *mtl, NUSHADERMTLDESC *shader_mtl_desc);
+    void NuShaderMtlDescInit(NUSHADERMTLDESC *desc);
+    void NuMtlSetShaderDescPS(NUMTL *mtl, NUSHADERMTLDESC *desc);
     NUMTL *NuMtlCreate(int count);
     void NuMtlUpdate(NUMTL *mtl);
 #ifdef __cplusplus

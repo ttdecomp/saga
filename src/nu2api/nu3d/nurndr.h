@@ -10,6 +10,8 @@ typedef struct rndrstream_s {
 
 typedef i32 NUCOLOUR32;
 
+#define RGBA_TO_NUCOLOUR32(r, g, b, a) ((u8)(a) << 0x18) | ((u8)(b) << 0x10) | ((u8)(g) << 0x08) | ((u8)(r) << 0x00);
+
 typedef struct nucolour3_s {
     f32 r;
     f32 g;

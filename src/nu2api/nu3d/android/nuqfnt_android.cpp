@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "nu2api/nu3d/numtl.h"
+#include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/numath/numtx.h"
 
@@ -42,16 +43,17 @@ i32 NuQFntReadPS(VUFNT *font, int tex_id, int flags, int render_plane, VARIPTR *
 
     memset(&shader_desc, 0, sizeof(NUSHADERMTLDESC));
 
-    shader_desc.tex_id = tex_id;
+    shader_desc.diffuse_map_tex_id[0] = tex_id;
     shader_desc.byte4 = 0x10;
     shader_desc.flags = 0x1000;
-    shader_desc.mask = 0xffffffff;
+    shader_desc.diffuse_color[0] = RGBA_TO_NUCOLOUR32(0xff, 0xff, 0xff, 0xff);
 
-    shader_desc.vtx_desc.unknown_0 = 1;
-    shader_desc.vtx_desc.unknown_1 = 9;
-    shader_desc.vtx_desc.unknown_2 = 4;
+    shader_desc.vtx_desc.has_position = 1;
+    shader_desc.vtx_desc.has_diffuse = 1;
+    shader_desc.vtx_desc.unknown_1_8_16_32 = 1;
+    shader_desc.vtx_desc.has_no_transform = 1;
 
-    shader_desc.value = 1.0f;
+    shader_desc.unknown_24 = 1.0f;
 
     NuMtlSetShaderDescPS(mtl, &shader_desc);
     NuMtlUpdate(font->mtl);
