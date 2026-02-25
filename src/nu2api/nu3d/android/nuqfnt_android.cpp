@@ -5,7 +5,6 @@
 #include "nu2api/nu3d/numtl.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/numath/numtx.h"
-#include "nu2api/numath/nuvec.h"
 
 typedef struct vufnt_android_s {
     u32 color_abgr;
@@ -27,10 +26,12 @@ i32 NuQFntReadPS(VUFNT *font, int tex_id, int flags, int render_plane, VARIPTR *
     mtl = NuMtlCreate(1);
     font->mtl = mtl;
 
-    mtl->scale.x = 1.0f;
-    mtl->scale.y = 1.0f;
-    mtl->scale.z = 1.0f;
+    mtl->diffuse_color.r = 1.0f;
+    mtl->diffuse_color.g = 1.0f;
+    mtl->diffuse_color.b = 1.0f;
+
     mtl->opacity = 1.0f;
+
     mtl->attribs.alpha_mode = 1;
     mtl->attribs.unknown_2_4 = 1;
     mtl->tex_id = tex_id;
@@ -45,9 +46,11 @@ i32 NuQFntReadPS(VUFNT *font, int tex_id, int flags, int render_plane, VARIPTR *
     shader_desc.byte4 = 0x10;
     shader_desc.flags = 0x1000;
     shader_desc.mask = 0xffffffff;
-    shader_desc.byte1 = 1;
-    shader_desc.byte2 = 9;
-    shader_desc.byte3 = 4;
+
+    shader_desc.vtx_desc.unknown_0 = 1;
+    shader_desc.vtx_desc.unknown_1 = 9;
+    shader_desc.vtx_desc.unknown_2 = 4;
+
     shader_desc.value = 1.0f;
 
     NuMtlSetShaderDescPS(mtl, &shader_desc);

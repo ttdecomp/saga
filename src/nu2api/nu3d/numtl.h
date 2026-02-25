@@ -1,6 +1,6 @@
 #pragma once
 
-#include "nu2api/numath/nuvec.h"
+#include "nu2api/nu3d/nurndr.h"
 
 typedef struct numtlattrib_s {
     u32 alpha_mode : 4;
@@ -25,24 +25,19 @@ typedef struct numtlattrib_s {
     u32 unknown_4 : 30;
 } NUMTLATTRIB;
 
-typedef struct numtl_s {
-    struct numtl_s *next;
-    struct numtl_s *prev;
+typedef struct nuvertexdescriptor_s {
+    union {
+        struct {
+            u32 unknown_0 : 8;
+            u32 unknown_1 : 8;
+            u32 unknown_2 : 8;
+            u32 unknown_3_1_2_3 : 3;
+            u32 has_half_uvs : 1;
+        };
 
-    // Type uncertain.
-    i32 unknown_08;
-
-    char filler1[0x34];
-
-    NUMTLATTRIB attribs;
-
-    char filler2[0xc];   // 0x48-0x53
-    NUVEC scale;         // 0x54
-    char filler3[0x10];  // 0x60-0x6F
-    float opacity;       // 0x70
-    u16 tex_id;          // 0x74
-    char filler4[0x24E]; // 0x76-0x2C3
-} NUMTL;
+        u32 flags;
+    };
+} NUVERTEXDESCRIPTOR;
 
 typedef struct nushadermtldesc_s {
     u32 flags;           // 0x0
@@ -52,13 +47,41 @@ typedef struct nushadermtldesc_s {
     char filler2[0xC];   // 0x18-0x23
     float value;         // 0x24
     char filler3[0x114]; // 0x28-0x13B
-    u8 byte1;            // 0x13c
-    u8 byte2;            // 0x13d
-    u8 byte3;            // 0x13e
-    char filler4[0x7A];  // 0x13F-0x1B8
+
+    NUVERTEXDESCRIPTOR vtx_desc;
+
+    char filler4[0x79];  // 0x13F-0x1B8
     u8 byte4;            // 0x1b9
     char filler5[0x4E];  // 0x1BA-0x207
 } NUSHADERMTLDESC;
+
+typedef struct numtl_s {
+    u8 unknown_00[0x8];
+
+    // Type uncertain.
+    i32 unknown_08;
+
+    char filler1[0x34];
+
+    NUMTLATTRIB attribs;
+
+    char filler2[0xc]; // 0x48-0x53
+
+    NUCOLOUR3 diffuse_color;
+
+    char filler3[0x10]; // 0x60-0x6F
+
+    f32 opacity;
+
+    i16 tex_id;
+    i16 sort_pri;
+
+    u8 unknown_78[0x3c];
+
+    NUSHADERMTLDESC shader_desc;
+
+    char filler4[0x8];
+} NUMTL;
 
 #ifdef __cplusplus
 
@@ -67,6 +90,9 @@ void NuMtlCreatePS(NUMTL *mtl, int unk_flag);
 
 extern "C" {
 #endif
+    extern NUMTL *numtl_defaultmtl2d;
+    extern NUMTL *numtl_defaultmtl3d;
+
     void NuMtlInitEx(VARIPTR *buf, i32 max_mtls);
 
     void NuShaderMtlDescInit(NUSHADERMTLDESC *shader_mtl_desc);

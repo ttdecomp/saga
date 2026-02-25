@@ -1,12 +1,14 @@
 #include "nu2api/nu3d/numtl.h"
 
 #include "decomp.h"
-
 #include "nu2api/nufile/nufile.h"
 
 static int max_materials;
 static NUMTL *material_list;
 int numtl_renderplane;
+
+NUMTL *numtl_defaultmtl2d;
+NUMTL *numtl_defaultmtl3d;
 
 void NuMtlInitEx(VARIPTR *buf, i32 max_mtls) {
     // iVar2 = AndroidOBBUtils::LookupPackagePath(path, 1);
@@ -34,7 +36,7 @@ void DefaultMtl(NUMTL *mtl) {
     UNIMPLEMENTED();
 }
 
-void NuMtlCreatePS(NUMTL *mtl, int unk_flag) {
+void NuMtlCreatePS(NUMTL *mtl, i32 unk_flag) {
     UNIMPLEMENTED();
 }
 
@@ -42,7 +44,7 @@ void NuShaderMtlDescInit(NUSHADERMTLDESC *shader_mtl_desc) {
     UNIMPLEMENTED();
 }
 
-NUMTL *NuMtlCreate(int count) {
+NUMTL *NuMtlCreate(i32 count) {
     UNIMPLEMENTED();
 }
 
