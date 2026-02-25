@@ -1,11 +1,34 @@
 #include "nu2api/nu3d/nuprim.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/numtl.h"
 
-int NuPrimCSPos;
+char g_NuPrim_NeedsHalfUVs;
+char g_NuPrim_NeedsOverbrightening;
+
+i32 NuPrimCSPos;
 NUPRIMSCALEMODE NuPrimCoordSystemStack[16];
-float NuPrim_XScale = 1.0f;
-float NuPrim_YScale = 1.0f;
-float NuPrim_XBias;
-float NuPrim_YBias;
+f32 NuPrim_XScale = 1.0f;
+f32 NuPrim_YScale = 1.0f;
+f32 NuPrim_XBias;
+f32 NuPrim_YBias;
+
+extern "C" {
+    // It's not clear how this function is declared. It has local linkage and no
+    // C++ mangling, but appears to be part of the same translation unit as
+    // `NuPrim3DBegin`, which references functions (presumably drawn from the
+    // same header) with local linkage and a mix of mangling.
+    static void NuPrimPushCoordSystem(NUPRIMSCALEMODE scale_mode) {
+        NuPrimCSPos++;
+
+        NuPrimSetCoordinateSystem(scale_mode);
+    }
+}
+
+void NuPrimInit(VARIPTR *buffer, VARIPTR buffer_end) {
+    NuPrimCSPos = -1;
+
+    NuPrimPushCoordSystem(NUPRIM_SCALEMODE_PS2);
+}
 
 void NuPrimSetCoordinateSystem(NUPRIMSCALEMODE scale_mode) {
     NuPrimCoordSystemStack[NuPrimCSPos] = scale_mode;
@@ -32,12 +55,15 @@ void NuPrimSetCoordinateSystem(NUPRIMSCALEMODE scale_mode) {
     }
 }
 
-void NuPrimPushCoordSystem(NUPRIMSCALEMODE scale_mode) {
-    NuPrimCSPos++;
-    NuPrimSetCoordinateSystem(scale_mode);
-}
+void NuPrim3DBegin(u32 prim_type, u32 vtx_fmt, NUMTL *mtl, NUMTX *world_mtx) {
+    VARIPTR *buf;
 
-void NuPrimInit(VARIPTR *buffer, VARIPTR buffer_end) {
-    NuPrimCSPos = -1;
-    NuPrimPushCoordSystem(NUPRIM_SCALEMODE_PS2);
+    if (mtl == NULL) {
+        mtl = numtl_defaultmtl3d;
+    }
+
+    g_NuPrim_NeedsOverbrightening = mtl->tex_id != 0;
+    g_NuPrim_NeedsHalfUVs = mtl->shader_desc.vtx_desc.has_half_uvs;
+
+    buf = NuDisplayListGetBuffer();
 }
