@@ -4,10 +4,12 @@
 #include "nu2api/nucore/nuthread.h"
 #include "nu2api/nusound/nulist.hpp"
 #include "nu2api/nusound/nusound_sample.hpp"
+#include "nu2api/nusound/nusound_weakptr.hpp"
 
 #include "nu2api/nucore/nuvuvec.hpp"
 
 class NuSoundStreamer;
+class NuSoundBufferCallback;
 
 class NuSoundStreamingSample : public NuSoundSample {
   public:
@@ -22,18 +24,36 @@ class NuSoundStreamingSample : public NuSoundSample {
     i32 Open(float param_1, bool param_2, bool param_3);
 };
 
-class NuSoundWeakPtrListNode {
-  public:
-    static pthread_mutex_t sPtrListLock;
-    static pthread_mutex_t sPtrAccessLock;
-
-    NuSoundStreamingSample *streaming_sample;
-
-    virtual ~NuSoundWeakPtrListNode() = default;
-};
-
 class NuSoundStreamer {
   public:
+    struct QueueElement {
+        enum class Type : u32 {
+            OPEN_SAMPLE = 0,
+        } type;
+
+        NuSoundStreamingSample *sample;
+        bool loop;
+        float start_offset;
+        int field7_0x10;
+
+        NuSoundWeakPtr<NuSoundBufferCallback> weak_ptr;
+
+        QueueElement() = default;
+
+        QueueElement(NuSoundStreamingSample *sample, bool loop, float start_offset)
+            : type(Type::OPEN_SAMPLE), sample(sample), loop(loop), start_offset(start_offset) {
+        }
+
+        ~QueueElement() {
+            NuSoundWeakPtrListNode::sPtrListLock.Lock();
+            if (this->weak_ptr.obj != NULL) {
+                this->weak_ptr.obj->Unlink(&this->weak_ptr);
+                this->weak_ptr.obj = NULL;
+            }
+            NuSoundWeakPtrListNode::sPtrListLock.Unlock();
+        }
+    };
+
   public:
     static NuList<NuSoundStreamer *> sStreamers;
 
@@ -43,16 +63,19 @@ class NuSoundStreamer {
 
   private:
     NuThread *thread;
+    bool running;
 
-    NuSoundWeakPtrListNode queue[32];
-    i32 queue_length = 0;
-    i32 index = 0;
+    QueueElement queue1[32];
+    i32 queue1_length;
+    i32 queue1_index;
+    NuThreadSemaphore queue1_semaphore;
 
-    u8 buffer2[0x500];
+    QueueElement queue2[32];
+    i32 queue2_length;
+    i32 queue2_index;
+    NuThreadSemaphore queue2_semaphore;
 
-    NuThreadSemaphore semaphore1;
-    NuThreadSemaphore semaphore2;
-    NuThreadSemaphore semaphore3;
+    NuThreadSemaphore semaphore;
 
   public:
     NuSoundStreamer();

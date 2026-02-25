@@ -185,7 +185,8 @@ void *NuMemoryManager::_BlockAlloc(u32 size, u32 alignment, u32 flags, const cha
 
 void *NuMemoryManager::_TryBlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, u16 category) {
 #ifdef HOST_BUILD
-    LOG_WARN("replacing _TryBlockAlloc with malloc");
+    LOG_WARN("_TryBlockAlloc(size=%u, alignment=%u, flags=%u, name=%s, category=%u) - replacing with malloc", size,
+             alignment, flags, name, category);
     return malloc(size);
 #endif
 }

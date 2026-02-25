@@ -2,6 +2,8 @@
 
 #include "nu2api/nucore/common.h"
 
+#include <pthread.h>
+
 typedef enum NUTHREADCAFECORE {
     NUTHREADCAFECORE_UNKNOWN_1 = 1,
     NUTHREADCAFECORE_UNKNOWN_2 = 2,
@@ -102,6 +104,32 @@ class NuThreadManager {
                            NUTHREADCAFECORE cafe_core, NUTHREADXBOX360CORE xbox360_core);
 };
 
+class NuCriticalSection {
+    pthread_mutex_t mutex;
+
+    public:
+    NuCriticalSection(const char *name) {
+        pthread_mutexattr_t attr;
+
+        pthread_mutexattr_init(&attr);
+        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+        pthread_mutex_init(&this->mutex, &attr);
+        pthread_mutexattr_destroy(&attr);
+    }
+
+    ~NuCriticalSection() {
+        pthread_mutex_destroy(&this->mutex);
+    }
+
+    void Lock() {
+        pthread_mutex_lock(&this->mutex);
+    }
+
+    void Unlock() {
+        pthread_mutex_unlock(&this->mutex);
+    }
+};
+
 NuThreadBase *NuThreadGetCurrentThread();
 void NuThreadSleep(i32 seconds);
 NuThread *NuThreadInitPS();
@@ -113,7 +141,7 @@ NuThread *NuThreadInitPS();
 #ifdef __cplusplus
 extern "C" {
 #endif
-  void NuIOSThreadInit(void);
+    void NuIOSThreadInit(void);
 #ifdef __cplusplus
 }
 #endif

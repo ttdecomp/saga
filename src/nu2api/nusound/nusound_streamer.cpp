@@ -16,19 +16,30 @@ void NuSoundStreamer::RequestCue(NuSoundStreamingSample *streaming_sample, bool 
     streaming_sample->AddedToThreadQueue();
     streaming_sample->streamer = this;
 
-    NuSoundWeakPtrListNode *element = &queue[queue_length];
-    LOG_DEBUG("element=%p", element);
-    element->streaming_sample = streaming_sample;
+    QueueElement *element = &this->queue1[this->queue1_length % 32];
 
-    LOG_WARN("missing lots of stuff here");
+    new (element) QueueElement(streaming_sample, loop, start_offset);
 
-    __sync_fetch_and_add(&this->queue_length, 1);
-    this->semaphore1.Signal();
+    NuSoundWeakPtrListNode::sPtrListLock.Lock();
+    if (element->weak_ptr.obj != NULL) {
+        element->weak_ptr.obj->Unlink(&element->weak_ptr);
+        element->weak_ptr.obj = NULL;
+    }
+    NuSoundWeakPtrListNode::sPtrListLock.Unlock();
+
+    element->weak_ptr.bool_value = false;
+
+    __sync_fetch_and_add(&this->queue1_length, 1);
+
+    this->semaphore.Signal();
+
+    NuSoundWeakPtrListNode::sPtrListLock.Lock();
+    NuSoundWeakPtrListNode::sPtrListLock.Unlock();
 }
 
-NuSoundStreamer::NuSoundStreamer() : semaphore1(0x20), semaphore2(0x20), semaphore3(0x20), queue{}, buffer2{0} {
-    queue_length = 0;
-
+NuSoundStreamer::NuSoundStreamer()
+    : queue1_semaphore(32), queue2_semaphore(32), semaphore(32), queue1_length(0), queue1_index(0), queue2_length(0),
+      queue2_index(0), running(true) {
     thread =
         NuCore::m_threadManager->CreateThread(ThreadFunc, this, sThreadPriority, "NuSoundStreamThread",
                                               sThreadStackSize, sThreadCoreId.cafe_core, sThreadCoreId.xbox360_core);
@@ -39,24 +50,6 @@ NuSoundStreamer::NuSoundStreamer() : semaphore1(0x20), semaphore2(0x20), semapho
     }
 
     sStreamers.Append(node);
-}
-
-void NuSoundStreamer::ThreadFunc(void *self_) {
-    NuSoundStreamer *self = (NuSoundStreamer *)self_;
-
-    LOG_WARN("NuSoundStreamer::ThreadFunc");
-    while (true) {
-        self->semaphore1.Wait();
-        LOG_INFO("ThreadFunc: semaphore1 signaled, queue_length=%d", self->queue_length);
-
-        NuSoundWeakPtrListNode *element = &self->queue[self->index];
-
-        element->streaming_sample->Open(0.0f, false, false);
-
-        element->streaming_sample->RemovedFromThreadQueue();
-
-        __sync_fetch_and_add(&self->index, 1);
-    }
 }
 
 NuSoundStreamingSample::NuSoundStreamingSample(const char *file)

@@ -105,7 +105,7 @@ void NuSound3Init(i32 zero) {
     NuCore::Initialize();
 
     NuSound.Initialise(0x633333 + (is_crappy ? 0 : 0x1ccccd));
-    // NuSoundDecoder::Initialise();
+    // NuSoundDecodeThread::Initialise();
 
     // NuMemoryGet()->GetThreadMem()->_BlockAlloc(0xa48, 4, 1, "", 7);
     NuSoundStreamer *streamer = NU_ALLOC_T(NuSoundStreamer, 1, "", NUMEMORY_CATEGORY_NUSOUND);
