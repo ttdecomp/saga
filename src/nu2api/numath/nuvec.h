@@ -5,7 +5,7 @@
 
 #include "nu2api/nucore/common.h"
 
-typedef struct numtx_s NUMTX;
+struct numtx_s;
 
 /// @brief A vector in 3-dimensional space.
 typedef struct nuvec_s {
@@ -244,7 +244,7 @@ extern "C" {
     /// @param m The transformation matrix.
     /// @sa NuVecMtxRotate, NuVecMtxScale, NuVecMtxTranslate,
     //      NuVecMtxTransformBlock
-    void NuVecMtxTransform(NUVEC *out, NUVEC *v, NUMTX *m);
+    void NuVecMtxTransform(NUVEC *out, NUVEC *v, struct numtx_s *m);
 
     /// @relatesalso nuvec_s
     /// @relatesalso numtx_s
@@ -253,7 +253,7 @@ extern "C" {
     /// @param v The vector to rotate.
     /// @param m The transformation matrix.
     /// @sa NuVecMtxTransform
-    void NuVecMtxRotate(NUVEC *out, NUVEC *v, NUMTX *m);
+    void NuVecMtxRotate(NUVEC *out, NUVEC *v, struct numtx_s *m);
 
     /// @relatesalso nuvec_s
     /// @relatesalso numtx_s
@@ -262,7 +262,7 @@ extern "C" {
     /// @param v The vector to scale.
     /// @param m The transformation matrix.
     /// @sa NuVecMtxTransform
-    void NuVecMtxScale(NUVEC *out, NUVEC *v, NUMTX *m);
+    void NuVecMtxScale(NUVEC *out, NUVEC *v, struct numtx_s *m);
 
     /// @relatesalso nuvec_s
     /// @relatesalso numtx_s
@@ -271,7 +271,7 @@ extern "C" {
     /// @param v The vector to translate.
     /// @param m The transformation matrix.
     /// @sa NuVecMtxTransform
-    void NuVecMtxTranslate(NUVEC *out, NUVEC *v, NUMTX *m);
+    void NuVecMtxTranslate(NUVEC *out, NUVEC *v, struct numtx_s *m);
 
     /// @relatesalso nuvec_s
     /// @brief Computes the intersection of two lines, if any.
@@ -292,6 +292,6 @@ extern "C" {
 /// @param m The transformation matrix.
 /// @param count The number of vectors in the arrays `out` and `v`.
 /// @sa NuVecMtxTransform
-void NuVecMtxTransformBlock(NUVEC *out, NUVEC *v, NUMTX *m, i32 count);
+void NuVecMtxTransformBlock(NUVEC *out, NUVEC *v, struct numtx_s *m, i32 count);
 
 #endif

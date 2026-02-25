@@ -4,9 +4,6 @@
 
 #include "nu2api/nucore/common.h"
 
-// /// @brief The epsilon for float equivalence in NuEquiv
-// extern f32 fetol;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -36,26 +33,16 @@ extern "C" {
     /// @return The sign of the float v as a unit float (-1.0f or 1.0f)
     f32 NuFsign(f32 f);
 
-    // /// @brief Set the epsilon for float equivalence
-    // /// @details Sets the epsilon for float equivalence to the value of the float e.
-    // /// @param e The epsilon to set
-    // /// @return void
-    // void NuEquivTollerance(f32 f);
-
-    // /// @brief Compute if two floats are equivalent
-    // /// @details Computes if the floats f1 and f2 are equivalent within a small epsilon and returns the result.
-    // /// @param f1 The first float to compare
-    // /// @param f2 The second float to compare
-    // /// @return 1 if the floats are equivalent, 0 otherwise
-    // int NuEquiv(f32 f1, f32 f2);
-
     /// @brief Compute the square root of a float
-    /// @details Computes the square root of the f3float2 f and returns the result.
+    /// @details Computes the square root of the float f and returns the result.
     /// @param f The float to compute the square root of
     /// @return The square root of the float
     f32 NuFsqrt(f32 f);
 
+    /// @brief Returns the larger of two floating point values.
     f32 NuFmax(f32 a, f32 b);
+
+    /// @brief Returns the smaller of two floating point values.
     f32 NuFmin(f32 a, f32 b);
 
     /// @brief Compute the division of two floats
