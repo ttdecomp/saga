@@ -1,3 +1,4 @@
 *
 !.gitignore
 !build-ogg-vorbis.sh
+!build-ogg-vorbis-windows.sh
