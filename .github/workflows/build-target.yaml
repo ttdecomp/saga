@@ -16,9 +16,6 @@ jobs:
             - name: Install CMake 4.x
               uses: lukka/get-cmake@latest
 
-            - name: Configure CMake
-              run: cmake -B build .
-
             - name: Cache Android NDK
               uses: actions/cache@v4
               with:
@@ -30,5 +27,9 @@ jobs:
               with:
                   path: libs
                   key: libs-${{ hashFiles('**/CMakeLists.txt') }}
+
+            - name: Configure CMake
+              run: cmake -B build .
+
             - name: Build
               run: cmake --build build --verbose
