@@ -30,6 +30,12 @@ jobs:
               with:
                   path: ndk
                   key: android-ndk-r8e
+            
+            - name: Cache built libraries
+              uses: actions/cache@v4
+              with:
+                  path: libs
+                  key: libs-${{ hashFiles('**/CMakeLists.txt') }}
 
             - name: Build
               shell: msys2 {0}
