@@ -19,7 +19,7 @@ jobs:
               with:
                 msystem: UCRT64
                 update: true
-                install: base-devel mingw-w64-ucrt-x86_64-toolchain mingw-w64-ucrt-x86_64-cmake
+                install: base-devel mingw-w64-ucrt-x86_64-toolchain mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-libvorbis
             
             - name: Configure CMake
               shell: msys2 {0}
