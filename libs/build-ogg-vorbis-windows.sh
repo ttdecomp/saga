@@ -13,6 +13,15 @@ CFLAGS="--sysroot=${SYSROOT} -I${PREFIX}/include"
 CPPFLAGS="--sysroot=${SYSROOT} -I${PREFIX}/include"
 LDFLAGS="--sysroot=${SYSROOT} -L${PREFIX}/lib -lm"
 
+
+if [ -f "${PREFIX}/lib/libvorbis.a" ] && [ -f "${PREFIX}/lib/libogg.a" ]; then
+    echo "Libraries already built and cached. Skipping build."
+    exit 0
+fi
+
+
+
+
 mkdir -p "${PREFIX}"
 
 # build libogg
