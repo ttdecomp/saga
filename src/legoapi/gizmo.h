@@ -8,9 +8,12 @@ typedef struct GIZMO_s {
         void *void_ptr;
         struct GIZTIMER_s *timer;
         struct nuportal_s *portal;
-    } object;
-    i16 unknown;
-    u8 type_id;
+    } object; 
+    i16 unknown;  
+    u8 type_id;         
+    u8 _pad_to_60[0x59]; 
+    u8 output; 
+    u8 _unexplored_data[0x7B];
 } GIZMO;
 
 typedef struct GIZMOSET_s {
@@ -26,6 +29,8 @@ typedef struct GIZMOSYS_s {
     char *error_log;
     u8 flags;
 } GIZMOSYS;
+
+
 
 typedef struct BOLT_s {
 

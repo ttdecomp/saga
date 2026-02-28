@@ -1,33 +1,103 @@
 #include "legoapi/gizmos/ai.h"
-
 #include "decomp.h"
+#include "legoapi/world.h"
+#include "nu2api/nucore/nustring.h"
 
 static int AI_GetMaxGizmos(void *ai) {
-    UNIMPLEMENTED();
+    return 0x20;
 }
 
-static void AI_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
-    UNIMPLEMENTED();
+static void AI_AddGizmos(GIZMOSYS *gizmo_sys, int gizmo_type, void *world_base_ptr, void *unused) {
+    if ((world_base_ptr != INVALID_WORLD_PTR) && (0 < WORLD->gizmo_count)) {
+        WORLDINFO *local_world = (WORLDINFO *)world_base_ptr;
+        for (int index = 0; index < WORLD->gizmo_count; index++) {
+            AddGizmo(gizmo_sys, gizmo_type, NULL, &local_world->gizmos[index]);
+        }
+    }
+    return;
 }
 
 static char *AI_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
+    if (!gizmo || !gizmo->object.void_ptr) {
+        return 0;
+    }
+
+    AIGIZMOINTERNAL *data = (AIGIZMOINTERNAL *)gizmo->object.void_ptr;
+    if (NuStrLen((char *)data)) {
+        return (char *)data;
+    }
+
+    static char name[16];
+
+    if (data->def && data->def->name_ptr) {
+        NuStrNCpy(name, data->def->name_ptr, 16);
+    } else {
+        NuStrCpy(name, "");
+    }
+
+    int current_len = NuStrLen(name);
+    char *suffix = 0;
+    int check_len = 0;
+    if ((suffix = data->suffix_1) != 0) {
+        check_len = current_len + NuStrLen("()");
+        if (check_len + NuStrLen(suffix) > 15) {
+            return name;
+        }
+        NuStrCat(name, "(");
+    } else {
+        if ((suffix = data->suffix_2) != 0) {
+            check_len = current_len + NuStrLen("()");
+            if ((char)check_len + NuStrLen(suffix) > 15) {
+                return name;
+            }
+            NuStrCat(name, "(");
+        } else {
+            if ((suffix = data->suffix_3) == 0) {
+                return name;
+            }
+
+            check_len = (char)current_len + NuStrLen("()");
+            if (check_len + NuStrLen(suffix) > 15) {
+                return name;
+            }
+            NuStrCat(name, "(");
+        }
+    }
+
+    NuStrCat(name, suffix);
+    NuStrCat(name, ")");
+
+    return name;
 }
 
-static int AI_GetOutput(GIZMO *gizmo, int, int) {
-    UNIMPLEMENTED();
+static int AI_GetOutput(GIZMO *gizmo, int param_2, int param_3) {
+    if (gizmo && (gizmo = *(GIZMO **)gizmo)) {
+        return ((gizmo->output) >> 1 ^ 1) & 1;
+    }
+    // increases accuracy to 100%
+    //__asm__("");
+
+    return 0;
 }
 
 char *AI_GetOutputName(GIZMO *gizmo, int output_index) {
-    UNIMPLEMENTED();
+    static char name[0x40] = "Processing";
+    return name;
 }
 
 static int AI_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
+    return 0x1;
 }
 
-void AI_Activate(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
+void AI_Activate(GIZMO *gizmo, int param_2) {
+    GIZMO *gizmo_internal;
+
+    if ((gizmo) && (gizmo_internal = gizmo)) {
+        int flag = (param_2 == 0);
+        unsigned int val = (gizmo_internal->output);
+        flag += flag;
+        (gizmo_internal->output) = (val & 0xfd) | flag;
+    }
 }
 
 ADDGIZMOTYPE *AI_RegisterGizmo(int type_id) {

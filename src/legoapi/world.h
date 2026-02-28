@@ -1,8 +1,12 @@
 #pragma once
 
+#include "legoapi/gizmo.h"
 #include "nu2api/nu3d/nugscn.h"
 #include "nu2api/nucore/bgproc.h"
 #include "nu2api/nucore/common.h"
+
+
+#define INVALID_WORLD_PTR (WORLDINFO *)0xffffd510
 
 typedef struct WORLDINFO_s {
     char filler0[0x104];
@@ -24,12 +28,14 @@ typedef struct WORLDINFO_s {
     char filler2[0x10];
     NUGSCN *current_gscn;
 
-    char filler3[0x4fbc];
+    char filler3[0x29b0 - 4];
+    int gizmo_count;
+    GIZMO gizmos[44];
 
     struct GIZTIMER_s *giz_timers;
     i32 giz_timers_count;
 
-    char filler4[172];
+    char filler5[172];
 } WORLDINFO;
 
 #ifdef __cplusplus
