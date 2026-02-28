@@ -33,6 +33,9 @@ class NuMemory {
 
     class FixedPoolEventHandler : NuMemoryPool::IEventHandler {
       public:
+        FixedPoolEventHandler() {
+        }
+
         virtual int AllocatePage(NuMemoryPool *pool, unsigned int _unknown, unsigned int alignment,
                                  const char *name) override;
         virtual int ReleasePage(NuMemoryPool *pool, void *ptr) override;
@@ -40,10 +43,16 @@ class NuMemory {
         virtual void *AllocateLargeBlock(NuMemoryPool *pool, unsigned int size, unsigned int alignment,
                                          const char *name) override;
         virtual void FreeLargeBlock(NuMemoryPool *pool, void *ptr) override;
+
+      private:
+        u32 unknown;
     };
 
     class DynamicPoolEventHandler : NuMemoryPool::IEventHandler {
       public:
+        DynamicPoolEventHandler() {
+        }
+
         virtual int AllocatePage(NuMemoryPool *pool, unsigned int _unknown, unsigned int alignment,
                                  const char *name) override;
         virtual int ReleasePage(NuMemoryPool *pool, void *ptr) override;
@@ -51,6 +60,9 @@ class NuMemory {
         virtual void *AllocateLargeBlock(NuMemoryPool *pool, unsigned int size, unsigned int alignment,
                                          const char *name) override;
         virtual void FreeLargeBlock(NuMemoryPool *pool, void *ptr) override;
+
+      private:
+        u32 unknown;
     };
 
   public:

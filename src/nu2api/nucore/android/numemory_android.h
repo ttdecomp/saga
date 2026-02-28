@@ -21,6 +21,9 @@ class NuMemoryPS {
 
         virtual bool AllocatePage(NuMemoryManager *manager, u32 size, u32 _unknown) override;
         virtual bool ReleasePage(NuMemoryManager *manager, void *ptr, u32 _unknown) override;
+
+      private:
+        u32 unknown;
     };
 
     friend NuMemory;
