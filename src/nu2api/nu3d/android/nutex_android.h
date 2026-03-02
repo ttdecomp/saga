@@ -2,7 +2,7 @@
 
 #include <GLES2/gl2.h>
 
-typedef struct nunativetex_s NUNATIVETEX;
+struct nunativetex_s;
 
 typedef struct nunativetexps_s {
     GLuint gl_tex;
@@ -17,7 +17,7 @@ extern "C" {
     extern GLuint g_PhongEnvTexture;
     extern GLuint g_whiteTexture;
 
-    void NuTexSetTextureWithStagePS(NUNATIVETEX *tex, GLuint stage);
+    void NuTexSetTextureWithStagePS(struct nunativetex_s *tex, GLuint stage);
 #ifdef __cplusplus
 }
 #endif

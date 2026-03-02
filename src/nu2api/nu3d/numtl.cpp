@@ -4,6 +4,7 @@
 
 #include "decomp.h"
 #include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nucore/common.h"
 #include "nu2api/nufile/nufile.h"
 
 static int max_materials;
