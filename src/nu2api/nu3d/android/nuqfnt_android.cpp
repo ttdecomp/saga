@@ -50,7 +50,7 @@ i32 NuQFntReadPS(VUFNT *font, int tex_id, int flags, int render_plane, VARIPTR *
 
     shader_desc.vtx_desc.has_position = 1;
     shader_desc.vtx_desc.has_diffuse = 1;
-    shader_desc.vtx_desc.unknown_1_8_16_32 = 1;
+    shader_desc.vtx_desc.tex_coord_mode = 1;
     shader_desc.vtx_desc.has_no_transform = 1;
 
     shader_desc.unknown_24 = 1.0f;

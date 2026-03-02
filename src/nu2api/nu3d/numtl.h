@@ -1,5 +1,6 @@
 #pragma once
 
+#include "nu2api/nu3d/nudlist.h"
 #include "nu2api/nu3d/nurndr.h"
 
 typedef struct numtlattrib_s {
@@ -17,12 +18,31 @@ typedef struct numtlattrib_s {
     u32 unknown_2_1_2 : 2;
     u32 unknown_2_4 : 1;
     u32 unknown_2_8 : 1;
+
     u32 alpha_test : 3;
     u32 alpha_ref : 8;
-
     u32 alpha_fail : 2;
 
-    u32 unknown_4 : 30;
+    u32 uv_mode : 1;
+
+    u32 unknown_4_8 : 1;
+    u32 unknown_4_16 : 1;
+    u32 unknown_4_32 : 1;
+    u32 unknown_4_64 : 1;
+    u32 unknown_4_128 : 1;
+
+    u32 unknown_5_1 : 1;
+    u32 unknown_5_2 : 1;
+    u32 unknown_5_4 : 1;
+    u32 unknown_5_8_16 : 2;
+    u32 unknown_5_32 : 1;
+
+    u32 layers : 8;
+
+    u32 unknown_6_64 : 1;
+    u32 unknown_6_128 : 1;
+
+    u32 padding : 8;
 } NUMTLATTRIB;
 
 typedef struct nuvertexdescriptor_s {
@@ -30,12 +50,19 @@ typedef struct nuvertexdescriptor_s {
         struct {
             u32 has_position : 1;
 
-            u32 unknown_0 : 7;
+            u32 unknown_0_2 : 1;
+
+            u32 has_normal : 1;
+            u32 has_packed_normal : 1;
+            u32 has_tangent : 1;
+            u32 has_packed_tangent : 1;
+            u32 has_binormal : 1;
+            u32 has_packed_binormal : 1;
 
             u32 has_diffuse : 1;
 
             u32 unknown_1_2_4 : 2;
-            u32 unknown_1_8_16_32 : 3;
+            u32 tex_coord_mode : 3;
             u32 unknown_1_64 : 1;
             u32 unknown_1_128 : 1;
 
@@ -82,12 +109,25 @@ typedef struct nushadermtldesc_s {
 } NUSHADERMTLDESC;
 
 typedef struct numtl_s {
-    u8 unknown_00[0x8];
+    i16 is_used : 1;
+    i16 unknown_0_2 : 1;
+    i16 unknown_0_4 : 1;
+    i16 unknown_0_8 : 1;
+
+    i16 renderplane : 8;
+
+    struct numtl_s *unknown_04;
 
     // Type uncertain.
     i32 unknown_08;
 
-    char filler1[0x34];
+    char filler1[0x24];
+
+    struct numtl_s *next;
+
+    u8 unknown_34[0x8];
+
+    NUDISPLAYLIST *display_list;
 
     NUMTLATTRIB attribs;
 
@@ -126,7 +166,7 @@ extern "C" {
     extern NUMTL *numtl_defaultmtl2d;
     extern NUMTL *numtl_defaultmtl3d;
 
-    void NuMtlInitEx(VARIPTR *buf, i32 max_mtls);
+    void NuMtlInitEx(VARIPTR *buf, i32 mtl_count);
 
     void NuShaderMtlDescInit(NUSHADERMTLDESC *desc);
     void NuMtlSetShaderDescPS(NUMTL *mtl, NUSHADERMTLDESC *desc);
@@ -134,4 +174,7 @@ extern "C" {
     void NuMtlUpdate(NUMTL *mtl);
 #ifdef __cplusplus
 }
+
+void NuMtlInitExPS(VARIPTR *buf);
+
 #endif

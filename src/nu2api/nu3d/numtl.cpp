@@ -14,7 +14,11 @@ int numtl_renderplane;
 NUMTL *numtl_defaultmtl2d;
 NUMTL *numtl_defaultmtl3d;
 
-void NuMtlInitEx(VARIPTR *buf, i32 max_mtls) {
+void NuMtlInitEx(VARIPTR *buf, i32 mtl_count) {
+    max_materials = mtl_count;
+    material_list = (NUMTL *)ALIGN(buf->addr, 0x10);
+    buf->addr = (usize)material_list + mtl_count * sizeof(NUMTL);
+
     // iVar2 = AndroidOBBUtils::LookupPackagePath(path, 1);
     char *path = "res/main.1060.com.wb.lego.tcs.obb";
 
@@ -65,7 +69,39 @@ void NuShaderMtlDescInit(NUSHADERMTLDESC *desc) {
 }
 
 NUMTL *NuMtlCreate(i32 count) {
-    UNIMPLEMENTED();
+    i32 i;
+    i32 j;
+    NUMTL *mtl;
+    NUMTL *next;
+
+    next = NULL;
+
+    for (i = 0; i < count; i++) {
+        mtl = NULL;
+
+        for (j = 0; j < max_materials; j++) {
+            if (!material_list[j].is_used && material_list[j].display_list == NULL) {
+                mtl = &material_list[j];
+                break;
+            }
+        }
+
+        memset(mtl, 0, sizeof(NUMTL));
+
+        DefaultMtl(mtl);
+
+        mtl->is_used = true;
+        mtl->unknown_0_4 = true;
+        mtl->renderplane = numtl_renderplane;
+        mtl->attribs.unknown_6_128 = true;
+
+        mtl->next = next;
+        next = mtl;
+    }
+
+    NuMtlCreatePS(mtl, 0);
+
+    return mtl;
 }
 
 void NuMtlUpdate(NUMTL *mtl) {
