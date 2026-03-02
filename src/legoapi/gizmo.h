@@ -4,11 +4,7 @@
 #include "nu2api/numath/nuvec.h"
 
 typedef struct GIZMO_s {
-    union {
-        void *void_ptr;
-        struct GIZTIMER_s *timer;
-        struct nuportal_s *portal;
-    } object;
+    void *object;
     i16 unknown;
     u8 type_id;
 } GIZMO;

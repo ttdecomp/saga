@@ -6,7 +6,7 @@ typedef struct nuportal_s {
     u8 filler[0x1a];
     i8 id;
     u8 unknown;
-    u32 active;
+    u32 is_active;
 } NUPORTAL;
 
 #ifdef __cplusplus

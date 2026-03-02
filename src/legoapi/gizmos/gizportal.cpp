@@ -6,10 +6,11 @@
 
 #include "legoapi/world.h"
 #include "nu2api/nu3d/nugscn.h"
+#include "nu2api/nu3d/nuportal.h"
 
-int portal_gizmotype_id;
+i32 portal_gizmotype_id;
 
-static int Portal_GetMaxGizmos(void *world_info) {
+static i32 Portal_GetMaxGizmos(void *world_info) {
     WORLDINFO *world = (WORLDINFO *)world_info;
 
     if (world == NULL || world->current_gscn == NULL) {
@@ -19,70 +20,77 @@ static int Portal_GetMaxGizmos(void *world_info) {
     return world->current_gscn->max_portals;
 }
 
-static void Portal_AddGizmos(GIZMOSYS *gizmo_sys, int unknown, void *world_info, void *) {
+static void Portal_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_info, void *) {
     WORLDINFO *world = (WORLDINFO *)world_info;
 
-    if (world == NULL || world->current_gscn == NULL || world->current_gscn->max_portals <= 0) {
+    if (world == NULL || world->current_gscn == NULL) {
         return;
     }
 
     for (int i = 0; i < world->current_gscn->max_portals; i++) {
         NUPORTAL *portal = &world->current_gscn->portals[i];
+
         if (portal->id == 0) {
             continue;
         }
 
-        AddGizmo(gizmo_sys, unknown, NULL, portal);
+        AddGizmo(gizmo_sys, type_id, NULL, portal);
     }
 }
 
 static char *Portal_GetGizmoName(GIZMO *gizmo) {
     static char name[16];
 
-    if (gizmo == NULL || gizmo->object.portal == NULL) {
+    if (gizmo == NULL || gizmo->object == NULL) {
         return NULL;
     }
 
-    sprintf(name, "%s%d", "portal_", gizmo->object.portal->id);
+    NUPORTAL *portal = (NUPORTAL *)gizmo->object;
+
+    sprintf(name, "%s%d", "portal_", portal->id);
 
     return name;
 }
 
 static int Portal_GetOutput(GIZMO *gizmo, int, int) {
-    if (gizmo == NULL || gizmo->object.portal == NULL) {
+    if (gizmo == NULL || gizmo->object == NULL) {
         return 0;
     }
 
-    return gizmo->object.portal->active & 1;
+    NUPORTAL *portal = (NUPORTAL *)gizmo->object;
+
+    return portal->is_active & 1;
 }
 
-char *Portal_GetOutputName(GIZMO *gizmo, int output_index) {
+char *Portal_GetOutputName(GIZMO *gizmo, i32 output_index) {
     static char name[64] = "Active";
 
     return name;
 }
 
-static int Portal_GetNumOutputs(GIZMO *gizmo) {
+static i32 Portal_GetNumOutputs(GIZMO *gizmo) {
     return 1;
 }
 
-void Portal_Activate(GIZMO *gizmo, int active) {
-    if (gizmo == NULL || gizmo->object.portal == NULL) {
+void Portal_Activate(GIZMO *gizmo, i32 active) {
+    if (gizmo == NULL || gizmo->object == NULL) {
         return;
     }
 
-    NuPortalSetActiveDirect(gizmo->object.portal, active);
+    NuPortalSetActiveDirect((NUPORTAL *)gizmo->object, active);
 }
 
-static int Portal_ActivateRev(GIZMO *gizmo, int inactive, int unknown) {
-    if (gizmo == NULL || gizmo->object.portal == NULL) {
+static i32 Portal_ActivateRev(GIZMO *gizmo, i32 is_inactive, i32 unknown) {
+    if (gizmo == NULL || gizmo->object == NULL) {
         return 0;
     }
 
+    NUPORTAL *portal = (NUPORTAL *)gizmo->object;
+
     if ((unknown & 1) == 0) {
-        NuPortalSetActiveDirect(gizmo->object.portal, inactive == 0);
-    } else if (inactive != 0) {
-        if ((gizmo->object.portal->active & 1) == 0 || inactive != 1) {
+        NuPortalSetActiveDirect(portal, is_inactive == 0);
+    } else if (is_inactive != 0) {
+        if ((portal->is_active & 1) == 0 || is_inactive != 1) {
             return 0;
         }
     }
@@ -122,7 +130,7 @@ static void Portals_StoreProgress(void *world_info, void *, void *progress) {
     int index = 0;
     for (;;) {
         if (portal->id != 0 && index <= SIZEOF_BITS(portal_progress->progress_mask) - 1) {
-            if (portal->active & 1) {
+            if (portal->is_active & 1) {
                 portal_progress->progress_mask |= (1 << index);
             }
             index++;
@@ -160,7 +168,7 @@ static void Portals_Reset(void *world_info, void *, void *progress) {
         NuPortalSetActiveDirect(portal, 1);
         gscn = world->current_gscn;
         if (index <= SIZEOF_BITS(portal_progress->progress_mask) - 1 && portal_progress != NULL &&
-            (gscn->portals[i].active & 1)) {
+            (gscn->portals[i].is_active & 1)) {
             portal_progress->progress_mask |= (1 << index);
         }
 

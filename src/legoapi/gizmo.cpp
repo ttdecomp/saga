@@ -252,7 +252,7 @@ GIZMO *AddGizmo(GIZMOSYS *gizmo_sys, int type_id, char *name, void *object) {
             GIZMO *gizmo = &set->gizmos[set->count];
             if (gizmo != NULL) {
                 if (object != NULL) {
-                    gizmo->object.void_ptr = object;
+                    gizmo->object = object;
                 }
 
                 gizmo->unknown = 0;

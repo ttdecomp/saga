@@ -18,8 +18,8 @@ void NuPortalSetActiveDirect(NUPORTAL *portal, int active) {
     }
 
     if (active) {
-        portal->active |= 1;
+        portal->is_active |= 1;
     } else {
-        portal->active = 0;
+        portal->is_active = 0;
     }
 }

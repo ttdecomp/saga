@@ -5,9 +5,9 @@
 #include "legoapi/qrand.h"
 #include "nu2api/nucore/nustring.h"
 
-int giztimer_gizmotype_id = -1;
+i32 giztimer_gizmotype_id = -1;
 
-int GizTimer_GetMaxGizmos(void *world_info) {
+i32 GizTimer_GetMaxGizmos(void *world_info) {
     WORLDINFO *world = (WORLDINFO *)world_info;
 
     if (world == NULL || world->current_level == NULL) {
@@ -17,7 +17,7 @@ int GizTimer_GetMaxGizmos(void *world_info) {
     return world->current_level->max_giz_timers;
 }
 
-void GizTimer_AddGizmos(GIZMOSYS *gizmo_sys, int unknown1, void *world_info, void *unknown2) {
+void GizTimer_AddGizmos(GIZMOSYS *gizmo_sys, int type_id, void *world_info, void *unknown) {
     WORLDINFO *world = (WORLDINFO *)world_info;
 
     for (i32 i = 0; i < world->giz_timers_count; i++) {
@@ -25,13 +25,14 @@ void GizTimer_AddGizmos(GIZMOSYS *gizmo_sys, int unknown1, void *world_info, voi
             continue;
         }
 
-        AddGizmo(gizmo_sys, unknown1, NULL, &world->giz_timers[i]);
+        AddGizmo(gizmo_sys, type_id, NULL, &world->giz_timers[i]);
     }
 }
 
 void GizTimer_Update(void *world_info, void *, float delta_time) {
     WORLDINFO *world = (WORLDINFO *)world_info;
-    for (int i = 0; i < world->giz_timers_count; i++) {
+
+    for (i32 i = 0; i < world->giz_timers_count; i++) {
         GIZTIMER *timer = &world->giz_timers[i];
 
         if (timer->time_remaining >= 0.0f) {
@@ -42,15 +43,19 @@ void GizTimer_Update(void *world_info, void *, float delta_time) {
 
 char *GizTimer_GetGizmoName(GIZMO *gizmo) {
     if (gizmo == NULL) {
-        return 0;
+        return NULL;
     }
 
-    return gizmo->object.timer->name;
+    GIZTIMER *timer = (GIZTIMER *)gizmo->object;
+
+    return timer->name;
 }
 
-int GizTimer_GetOutput(GIZMO *gizmo, int, int) {
-    if (gizmo->object.timer->flags & 1) {
-        return gizmo->object.timer->time_remaining <= 0.0f;
+i32 GizTimer_GetOutput(GIZMO *gizmo, int, int) {
+    GIZTIMER *timer = (GIZTIMER *)gizmo->object;
+
+    if (timer->flags & 1) {
+        return timer->time_remaining <= 0.0f;
     }
 
     return 0;
@@ -66,7 +71,7 @@ int GizTimer_GetNumOutputs(GIZMO *gizmo) {
 
 void GizTimer_Activate(GIZMO *gizmo, int unknown) {
     // can't get this stupid function to match
-    GIZTIMER *timer = gizmo->object.timer;
+    GIZTIMER *timer = (GIZTIMER *)gizmo->object;
 
     if (timer->flags & 2) {
         timer->time_remaining = QRAND_FLOAT() * timer->start_time;
