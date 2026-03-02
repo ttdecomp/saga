@@ -430,6 +430,8 @@ i32 CHARCOUNT = 0;
 CHARACTERDATA *CDataList = NULL;
 GAMECHARACTERDATA *GCDataList = NULL;
 
+i32 g_loadingCharacterInHub;
+
 i32 CharIDFromName(char *name) {
     for (i32 i = 0; i < CHARCOUNT; i++) {
         if (NuStrICmp(CDataList[i].file, name) == 0) {

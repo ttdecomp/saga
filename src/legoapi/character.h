@@ -336,6 +336,8 @@ i32 CharIDFromName(char *name);
 
 extern "C" {
 #endif
+    extern i32 g_loadingCharacterInHub;
+
     CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, i32 count,
                                           i32 *countDest, i32 count2, GAMECHARACTERDATA **dest);
 #ifdef __cplusplus
