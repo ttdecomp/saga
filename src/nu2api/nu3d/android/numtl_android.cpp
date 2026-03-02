@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "decomp.h"
 #include "nu2api/nu3d/NuRenderDevice.h"
 #include "nu2api/nu3d/android/nuvertexformat_android.h"
