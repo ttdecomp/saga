@@ -167,7 +167,7 @@ enum NUTEXFORMAT : unsigned int {
     NUTEX_ATC = 25      // 0x19 (ATC)
 };
 
-enum DDSCaps2 : u32 {
+enum DDSCAPS : u32 {
     DDSCAPS2_CUBEMAP           = 0x200, // Required for a cubemap
     DDSCAPS2_CUBEMAP_POSITIVEX = 0x400,
     DDSCAPS2_CUBEMAP_NEGATIVEX = 0x800,
@@ -176,6 +176,9 @@ enum DDSCaps2 : u32 {
     DDSCAPS2_CUBEMAP_POSITIVEZ = 0x4000,
     DDSCAPS2_CUBEMAP_NEGATIVEZ = 0x8000
 };
+
+
+
 
 i32 NuDDSGetTextureDescription(const char *dds_data, NUTEXFORMAT &out_format, i32 &out_width, i32 &out_height, i32 &out_pitch_or_linear_size, i32 &out_mip_count, bool &out_is_cube_map, bool *out_has_four_cc)
 
