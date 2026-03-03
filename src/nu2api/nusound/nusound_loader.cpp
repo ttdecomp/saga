@@ -56,33 +56,32 @@ i32 NuSoundLoader::OpenForStreaming(const char *path, f64 length, NuSoundStreamD
 }
 
 void NuSoundLoader::FillStreamBuffer(NuSoundBuffer *buffer, bool param3) {
-    NuSoundBuffer::Context context{0};
+    NuSoundBuffer::Context context;
 
     if (this->file == 0) {
         return;
     }
 
     buffer->Lock();
-
     u8 *data = (u8 *)buffer->GetAddress();
     u64 buffer_size = buffer->GetBufferSize();
 
-    u64 uVar3 = context.size2;
+    u64 uVar3iVar2 = context.size2;
 
-    while (true) {
-        u64 read_size, size;
+    u64 read_size, size;
+
+    do {
         do {
-            if (buffer_size <= uVar3) {
+            if (buffer_size <= uVar3iVar2) {
             LAB_0033fce8:
                 buffer->SetCurrentContext(context);
                 buffer->Unlock();
                 return;
             }
+            read_size = buffer_size - uVar3iVar2;
+            u64 size = ReadData(data, read_size);
 
-            read_size = buffer_size - uVar3;
-            size = ReadData(data, read_size);
-
-            context.size1 += size;
+            context.read_size += size;
 
             data += size;
 
@@ -92,19 +91,30 @@ void NuSoundLoader::FillStreamBuffer(NuSoundBuffer *buffer, bool param3) {
 
         SeekRawData(0);
 
-        context.size3 = context.size1;
+        context.size3 = context.read_size;
 
-        if (this->desc->GetEncodedLengthBytes() <= buffer->GetBufferSize() || !param3) {
+        u32 uVar5 = buffer->GetBufferSize();
+
+        u32 uVar6 = this->desc->GetEncodedLengthBytes();
+
+        if ((uVar6 <= uVar5) || (!param3)) {
             context.flags |= 2;
             goto LAB_0033fce8;
         }
 
-        uVar3 = context.size2;
-    }
+        uVar3iVar2 = context.size2;
+
+    } while (true);
 }
 
-bool NuSoundLoader::SeekRawData(u64) {
-    UNIMPLEMENTED();
+bool NuSoundLoader::SeekRawData(u64 position) {
+    if (this->desc == NULL || this->desc->GetEncodedLengthBytes() < position || this->file == 0) {
+        return 0;
+    } else {
+        u64 data_offset = this->desc->GetDataOffset();
+        NuFileSeek(this->file, data_offset + position, NUFILE_SEEK_START);
+        return 1;
+    }
 }
 
 i32 NuSoundLoader::OpenFileForStreaming(char const *name, bool) {
@@ -118,6 +128,8 @@ void NuSoundLoader::Close() {
 }
 
 u64 NuSoundLoader::ReadData(void *dest, u64 size) {
+    LOG_DEBUG("NuSoundLoader::ReadData: dest=%p, size=%lu", dest, size);
+
     u64 read = 0;
 
     if (this->file != 0) {

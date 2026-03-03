@@ -96,3 +96,9 @@ void NuSoundSample::AddedToThreadQueue() {
 void NuSoundSample::RemovedFromThreadQueue() {
     __sync_fetch_and_sub(&thread_queue_count, 1);
 }
+
+void NuSoundSample::SetLoadState(LoadState state) {
+    pthread_mutex_lock(&sCriticalSection);
+    this->load_state = state;
+    pthread_mutex_unlock(&sCriticalSection);
+}

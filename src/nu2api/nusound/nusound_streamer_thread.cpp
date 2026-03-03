@@ -33,5 +33,12 @@ void NuSoundStreamer::ThreadFunc(void *self_) {
                 UNIMPLEMENTED();
                 break;
         }
+
+        NuSoundWeakPtrListNode::sPtrListLock.Lock();
+        if (element.weak_ptr.obj != NULL) {
+            element.weak_ptr.obj->Unlink(&element.weak_ptr);
+            element.weak_ptr.obj = NULL;
+        }
+        NuSoundWeakPtrListNode::sPtrListLock.Unlock();
     }
 }

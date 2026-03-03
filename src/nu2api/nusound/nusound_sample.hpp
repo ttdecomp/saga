@@ -39,5 +39,7 @@ class NuSoundSample : public NuSoundSource {
     void Reference();
     void Release();
 
+    void SetLoadState(LoadState state);
+
     ErrorState Load(void *param_1, int param_2, NuSoundOutOfMemCallback *oomCallback);
 };

@@ -5,7 +5,7 @@
 static NuCriticalSection sCriticalSection{""};
 
 NuSoundBuffer::NuSoundBuffer() {
-    this->context.size1 = 0;
+    this->context.read_size = 0;
     this->context.size2 = 0;
     this->context.flags &= 0xfc;
     this->context.field5_0x20 = 0;
@@ -21,7 +21,7 @@ NuSoundBuffer::NuSoundBuffer() {
 
 NuSoundBuffer::NuSoundBuffer(char *address, u64 size) {
     this->context.flags &= 0xfc;
-    this->context.size1 = 0;
+    this->context.read_size = 0;
     this->context.size2 = 0;
     this->context.field5_0x20 = 0;
     this->context.size3 = 0;
@@ -44,7 +44,7 @@ void NuSoundBuffer::Free() {
     this->memory_buffer = NULL;
 
     this->context.field5_0x20 = 0;
-    this->context.size1 = 0;
+    this->context.read_size = 0;
     this->context.size2 = 0;
     this->context.size3 = 0;
 }

@@ -7,12 +7,15 @@
 class NuSoundBuffer {
   public:
     struct Context {
-        u64 size1;
+        u64 read_size;
         u64 size2;
         u64 size3;
         i32 field5_0x18;
         i32 flags;
         i32 field5_0x20;
+
+        Context() : read_size(0), size2(0), size3(0), field5_0x18(0), flags(1), field5_0x20(0) {
+        }
     };
 
   private:

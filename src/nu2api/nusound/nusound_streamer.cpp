@@ -104,6 +104,8 @@ i32 NuSoundStreamingSample::Open(float param_1, bool param_2, bool param_3) {
         SetStreamDesc(desc);
 
         if (this->loader->OpenForStreaming(this->name, param_1, desc, param_3) == 1) {
+            NuSoundBuffer::Context context;
+
             this->loader->FillStreamBuffer(buffer1, param_2);
         } else {
             UNIMPLEMENTED("");
