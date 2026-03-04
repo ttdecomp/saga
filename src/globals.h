@@ -257,6 +257,21 @@ extern "C" {
 
     extern const char *theEmptyString;
 
+    struct ANativeWindow;
+    extern ANativeWindow *g_appWindow;
+
+    extern char g_deviceManufacturer[256];
+    extern char g_deviceModel[256];
+
+    extern i32 g_forceSysMemVbs;
+
+    extern i32 g_forceETC1;
+
+    extern i32 g_isLowestEndDevice;
+    extern i32 g_isLowEndDevice;
+    extern i32 g_isMidRangeDevice;
+    extern i32 g_lowEndLevelBehaviour;
+
 #ifdef __cplusplus
 }
 #endif

@@ -206,6 +206,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legogame/target_android.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/NuRenderDevice.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nuscreen.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nucamera.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nucamvu0.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nudlist.c
@@ -301,6 +302,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numusic/sfx.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nuplatform/nuplatform.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nuplatform/nudevicespecs.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound3_include.cpp
@@ -319,6 +321,13 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_voice.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_weakptr.cpp
 )
+
+if(BUILD_FOR_HOST)
+    list(APPEND SAGA_SOURCE_FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host.cpp
+    )
+endif()
+
 
 set(SAGA_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -367,8 +376,11 @@ else()
         message(STATUS "Found Ogg Vorbis: ${VORBIS_LIBRARIES} (include: ${VORBIS_INCLUDE_DIRS})")
 
         pkg_check_modules(GLES2 REQUIRED glesv2)
+        pkg_check_modules(EGL REQUIRED egl)
+        pkg_check_modules(SDL3 REQUIRED sdl3)
     else()
         set(GLES2_LIBRARIES "GLESv2")
+        set(EGL_LIBRARIES "EGL")
 
         # build Ogg Vorbis
         add_custom_command(
@@ -397,6 +409,12 @@ target_include_directories(saga SYSTEM PRIVATE ${GLES2_INCLUDE_DIRS})
 target_link_libraries(saga PRIVATE ${VORBIS_LIBRARIES})
 target_include_directories(saga SYSTEM PRIVATE ${VORBIS_INCLUDE_DIRS})
 
+target_link_libraries(saga PRIVATE ${EGL_LIBRARIES})
+target_include_directories(saga SYSTEM PRIVATE ${EGL_INCLUDE_DIRS})
+
+target_link_libraries(saga PRIVATE ${SDL3_LIBRARIES})
+target_include_directories(saga SYSTEM PRIVATE ${SDL3_INCLUDE_DIRS})
+
 # set __FILENAME__ macro to relative path from src/
 function(set_filename_macro f)
     get_filename_component(FILENAME_ABS ${f} ABSOLUTE)
@@ -405,35 +423,6 @@ function(set_filename_macro f)
 endfunction()
 
 if(BUILD_FOR_HOST)
-    add_library(saga_shared SHARED ${SAGA_SOURCE_FILES})
-    target_include_directories(saga_shared PUBLIC ${SAGA_INCLUDE_DIRS})
-    target_link_libraries(saga_shared PUBLIC ${GLES2_LIBRARIES})
-    target_link_libraries(saga_shared PUBLIC ${VORBIS_LIBRARIES})
-
-    include(CTest)
-    enable_testing()
-
-    function(add_saga_test file test_description)
-        get_filename_component(test_name ${file} NAME_WE)
-
-        add_executable(${test_name} ${file})
-        target_include_directories(${test_name} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
-        target_link_libraries(${test_name} PRIVATE saga_shared)
-
-        add_test(
-            NAME ${test_name}
-            COMMAND ${test_name}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        )
-
-        set_target_properties(${test_name} PROPERTIES CXX_STANDARD 23)
-        set_target_properties(${test_name} PROPERTIES CXX_STANDARD_REQUIRED ON)
-        set_tests_properties(${test_name} PROPERTIES LABELS "${test_description}")
-
-        set_filename_macro(${file})
-    endfunction()
-
-    add_saga_test(test/dat_file_read.cpp "Open DAT file and read badwords.txt")
 else()
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/ai/aisys/aiscript.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/ai/aisys/aistate.cpp PROPERTIES COMPILE_OPTIONS "-O3")
@@ -491,7 +480,8 @@ else()
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/tubes.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/zipups.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 
-    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/NuRenderDevice.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/NuRenderDevice.cpp PROPERTIES COMPILE_OPTIONS "-O2")
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nuscreen.cpp PROPERTIES COMPILE_OPTIONS "-O2")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nugscn.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/numtl.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nuportal.cpp PROPERTIES COMPILE_OPTIONS "-O3")

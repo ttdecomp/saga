@@ -34,6 +34,9 @@ extern "C" {
     extern i32 nurndr_pixel_width;
     extern i32 nurndr_pixel_height;
 
+    extern i32 g_backingWidth;
+    extern i32 g_backingHeight;
+
     void NuRndrInitEx(i32 stream_buffer_size, VARIPTR *buffer);
 
     i32 NuRndrSetViewMtx(NUMTX *vpcs_mtx, NUMTX *viewport_vpc_mtx, NUMTX *scissor_vpc_mtx);

@@ -15,6 +15,14 @@ void NuCore::Initialize() {
     m_threadManager = new NuThreadManager();
 }
 
+NuApplicationStatus NuApplicationState::GetStatus() const {
+    return this->status;
+}
+
+void NuApplicationState::SetStatus(NuApplicationStatus status) {
+    this->status = status;
+}
+
 NuApplicationState *NuCore::GetApplicationState(void) {
     if (m_applicationState != NULL) {
         return m_applicationState;
@@ -31,5 +39,5 @@ NuApplicationState *NuCore::GetApplicationState(void) {
 }
 
 NuApplicationState::NuApplicationState() {
-    this->field0_0x0 = 0;
+    this->status = NuApplicationStatus::ZERO;
 }

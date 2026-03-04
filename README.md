@@ -1,6 +1,8 @@
-[![Target build](https://github.com/ttdecomp/saga/actions/workflows/build-target.yaml/badge.svg)](https://github.com/ttdecomp/saga/actions/workflows/build-target.yaml)
-[![Linux i686 build](https://github.com/ttdecomp/saga/actions/workflows/build-linux-i686.yaml/badge.svg)](https://github.com/ttdecomp/saga/actions/workflows/build-linux-i686.yaml)
-![Progress](https://img.shields.io/badge/matching-4.55%25-red)
+[![Linux target cross build](https://github.com/ttdecomp/saga/actions/workflows/build-linux-target.yaml/badge.svg)](https://github.com/ttdecomp/saga/actions/workflows/build-linux-target.yaml)
+[![Linux i686 host build](https://github.com/ttdecomp/saga/actions/workflows/build-linux-i686.yaml/badge.svg)](https://github.com/ttdecomp/saga/actions/workflows/build-linux-i686.yaml)
+[![Windows (MSYS2) target cross build](https://github.com/ttdecomp/saga/actions/workflows/build-windows_msys2-target.yaml/badge.svg)](https://github.com/ttdecomp/saga/actions/workflows/build-windows_msys2-target.yaml)
+
+![Progress](https://img.shields.io/badge/matching-4.64%25-red)
 [![Discord](https://img.shields.io/discord/1467775700894224555?color=%235865F2&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/2HJuMtzA7q)
 
 # _saga_

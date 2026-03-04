@@ -61,3 +61,17 @@ NUCAMERA *pNuCam = NULL;
 i32 NOSOUND = 0;
 
 const char *theEmptyString = "";
+
+ANativeWindow *g_appWindow = NULL;
+
+char g_deviceManufacturer[256] = {0};
+char g_deviceModel[256] = {0};
+
+i32 g_forceSysMemVbs = 0;
+
+i32 g_forceETC1 = 0;
+
+i32 g_isLowestEndDevice = 0;
+i32 g_isLowEndDevice = 0;
+i32 g_isMidRangeDevice = 0;
+i32 g_lowEndLevelBehaviour = 0;

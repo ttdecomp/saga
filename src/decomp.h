@@ -38,17 +38,20 @@ typedef u16 word;
     ({ fprintf(stderr, "%s:%d: %s: UNIMPLEMENTED: %s\n", __FILE__, __LINE__, __func__, #__VA_ARGS__); })
 
 enum log_level {
+    LOG_LEVEL_ERROR,
     LOG_LEVEL_WARN,
     LOG_LEVEL_INFO,
     LOG_LEVEL_DEBUG,
 };
 
 static const char *log_level_names[] = {
+    [LOG_LEVEL_ERROR] = "ERROR",
     [LOG_LEVEL_WARN] = "WARN",
     [LOG_LEVEL_INFO] = "INFO",
     [LOG_LEVEL_DEBUG] = "DEBUG",
 };
 static const char *log_level_colors[] = {
+    [LOG_LEVEL_ERROR] = "\x1b[31m", // Red
     [LOG_LEVEL_WARN] = "\x1b[33m",  // Yellow
     [LOG_LEVEL_INFO] = "\x1b[32m",  // Green
     [LOG_LEVEL_DEBUG] = "\x1b[90m", // Bright Black (Gray)
@@ -73,6 +76,7 @@ static void _saga_log(enum log_level level, const char *file, int line, const ch
 }
 
 #define LOG(level, ...) _saga_log(level, __FILENAME__, __LINE__, __func__, __VA_ARGS__)
+#define LOG_ERR(...) LOG(LOG_LEVEL_ERROR, __VA_ARGS__)
 #define LOG_WARN(...) LOG(LOG_LEVEL_WARN, __VA_ARGS__)
 #define LOG_INFO(...) LOG(LOG_LEVEL_INFO, __VA_ARGS__)
 #define LOG_DEBUG(...) LOG(LOG_LEVEL_DEBUG, __VA_ARGS__)
@@ -82,6 +86,7 @@ static void _saga_log(enum log_level level, const char *file, int line, const ch
 #define UNIMPLEMENTED(...)
 
 #define LOG(_, ...)
+#define LOG_ERR(...)
 #define LOG_WARN(...)
 #define LOG_INFO(...)
 #define LOG_DEBUG(...)

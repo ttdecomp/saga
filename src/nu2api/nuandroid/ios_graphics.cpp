@@ -38,8 +38,6 @@ i32 NuCheckGLErrorsFL(const char *file, i32 line) {
     return 0; // nice
 }
 
-i32 g_isLowEndDevice = 0;
-
 i32 NuIOS_IsLowEndDevice(void) {
     return g_isLowEndDevice;
 }

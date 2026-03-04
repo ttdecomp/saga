@@ -17,7 +17,7 @@ jobs:
               run: sudo apt-get -y update && sudo apt-get install gcc-multilib g++-multilib
 
             - name: Install GLESv2 libs
-              run: sudo dpkg --add-architecture i386 && sudo apt-get -y update && sudo apt-get install libgles2-mesa-dev:i386
+              run: sudo dpkg --add-architecture i386 && sudo apt-get -y update && sudo apt-get install libgles2-mesa-dev:i386 libsdl3-dev:i386
 
             - name: Install OGG Vorbis libs
               run: sudo apt-get install libvorbis-dev:i386
