@@ -1,11 +1,11 @@
 #include "nu2api/nu3d/nutex.h"
 
-#include <pthread.h>
-#include <string.h>
-
+#include "decomp.h"
 #include "nu2api/nu3d/android/nutex_android.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nucore/nustring.h"
+#include <pthread.h>
+#include <string.h>
 
 void NuChecksumAsHex(u8 *checksum, char *out) {
     i32 i;
@@ -141,4 +141,197 @@ int NuTexWidth(int tex_id) {
 
 int NuTexHeight(int tex_id) {
     return texture_list[tex_id - 1]->height;
+}
+
+enum NUTEXFORMAT : i32 {
+    NUTEX_DXT1 = 1,
+    NUTEX_DX1A = 2, // DXT1 with Alpha (A1XD)
+    NUTEX_DXT2 = 3,
+    NUTEX_DXT3 = 4,
+    NUTEX_DXT4 = 5,
+    NUTEX_DXT5 = 6,
+    NUTEX_RGBA32 = 7,   // Calculated from (bVar3 * 8 + 7) for 32-bit
+    NUTEX_FLOAT16 = 8,  // 0x71 is D3DFMT_A16B16G16R16F
+    NUTEX_FLOAT32 = 9,  // 0x74 is D3DFMT_A32B32G32R32F
+    NUTEX_PAL8 = 12,    // 0xC  (PAL8)
+    NUTEX_PAL4 = 13,    // 0xD  (PAL4)
+    NUTEX_BANN = 14,    // 0xE  (BANN - likely a custom banner format)
+    NUTEX_RGB24 = 15,   // Calculated from (bVar3 * 8 + 7) for 24-bit
+    NUTEX_ETC1 = 17,    // 0x11 (ETC1)
+    NUTEX_ETCA = 18,    // 0x12 (ETC with Alpha)
+    NUTEX_PVRTC2 = 20,  // 0x14 (PT21)
+    NUTEX_PVRTC2A = 21, // 0x15 (PT2A)
+    NUTEX_PVRTC4 = 22,  // 0x16 (PTC1)
+    NUTEX_PVRTC4A = 23, // 0x17 (PTCA)
+    NUTEX_ATCA = 24,    // 0x18 (ACTA)
+    NUTEX_ATC = 25      // 0x19 (ATC)
+};
+
+enum DDSCAPS : u32 {
+    DDSCAPS2_CUBEMAP = 0x200, // Required for a cubemap
+    DDSCAPS2_CUBEMAP_POSITIVEX = 0x400,
+    DDSCAPS2_CUBEMAP_NEGATIVEX = 0x800,
+    DDSCAPS2_CUBEMAP_POSITIVEY = 0x1000,
+    DDSCAPS2_CUBEMAP_NEGATIVEY = 0x2000,
+    DDSCAPS2_CUBEMAP_POSITIVEZ = 0x4000,
+    DDSCAPS2_CUBEMAP_NEGATIVEZ = 0x8000
+};
+
+struct __attribute__((packed)) dds_pixelformat_s {
+    uint dw_size;
+    uint dw_flags;
+    uint dw_four_cc;
+    uint dw_rgb_bit_count;
+    uint dw_r_bit_mask;
+    uint dw_g_bit_mask;
+    uint dw_b_bit_mask;
+    uint dw_a_bit_mask;
+};
+
+struct __attribute__((packed)) dds_header_s {
+    char magic[4];
+    uint dw_size;
+    uint dw_flags;
+    uint dw_height;
+    uint dw_width;
+    uint dw_pitch_or_linear_size;
+    uint dw_depth;
+    uint dw_mip_map_count;
+    uint dw_reserved1[11];
+    struct dds_pixelformat_s ddspf;
+    uint dw_caps;
+    uint dw_caps2;
+    uint dw_caps3;
+    uint dw_caps4;
+    uint dw_reserved2;
+};
+
+i32 NuDDSGetTextureDescription(const char *dds_data, NUTEXFORMAT &out_format, i32 &out_width, i32 &out_height,
+                               i32 &out_depth, i32 &out_mip_count, bool &out_is_cube_map, bool *out_has_four_cc)
+
+{
+    dds_header_s *header = (dds_header_s *)dds_data;
+
+    if (header->magic[0] != 'D')
+        return 0;
+    if (header->magic[1] != 'D')
+        return 0;
+    if (header->magic[2] != 'S')
+        return 0;
+
+    u32 four_cc = header->ddspf.dw_four_cc;
+    *out_has_four_cc = (four_cc != 0);
+
+    u32 flags = header->ddspf.dw_flags;
+
+    if ((flags & 0x40) != 0) {
+        out_format = (NUTEXFORMAT)((header->ddspf.dw_four_cc == 0x18) * 8 + 7);
+    } else if ((flags & 0x20) != 0) {
+        out_format = NUTEX_PAL8;
+    } else if ((flags & 0x8) != 0) {
+        out_format = NUTEX_PAL4;
+    } else {
+        switch (four_cc) {
+            case 0x31545844:
+                out_format = NUTEX_DXT1;
+                break;
+            case 0x41315844:
+                out_format = NUTEX_DX1A;
+                break;
+            case 0x32545844:
+                out_format = NUTEX_DXT2;
+                break;
+            case 0x33545844:
+                out_format = NUTEX_DXT3;
+                break;
+            case 0x34545844:
+                out_format = NUTEX_DXT4;
+                break;
+            case 0x35545844:
+                out_format = NUTEX_DXT5;
+                break;
+            case 0x00000071:
+                out_format = NUTEX_FLOAT16;
+                break;
+            case 0x00000074:
+                out_format = NUTEX_FLOAT32;
+                break;
+            case 0x344c4150:
+                out_format = NUTEX_PAL4;
+                break;
+            case 0x384c4150:
+                out_format = NUTEX_PAL8;
+                break;
+            case 0x4e4e4142:
+                out_format = NUTEX_BANN;
+                break;
+            case 0x31435445:
+                out_format = NUTEX_ETC1;
+                break;
+            case 0x41435445:
+                out_format = NUTEX_ETCA;
+                break;
+            case 0x31325450:
+                out_format = NUTEX_PVRTC2;
+                break;
+            case 0x41325450:
+                out_format = NUTEX_PVRTC2A;
+                break;
+            case 0x31435450:
+                out_format = NUTEX_PVRTC4;
+                break;
+            case 0x41435450:
+                out_format = NUTEX_PVRTC4A;
+                break;
+            case 0x41435441:
+                out_format = NUTEX_ATCA;
+                break;
+            case 0x20435441:
+                out_format = NUTEX_ATC;
+                break;
+            case 0:
+                out_format = (NUTEXFORMAT)((header->ddspf.dw_rgb_bit_count != 0x20) * 8 + 7);
+                break;
+            default:
+                break;
+        }
+    }
+
+    out_is_cube_map = false;
+    out_width = 0;
+    out_height = 0;
+    out_depth = 0;
+
+    out_width = header->dw_width;
+    out_height = header->dw_height;
+
+    if ((header->dw_flags & 0x800000) != 0) {
+        out_depth = header->dw_depth;
+    }
+
+    u32 mipmap_count = header->dw_mip_map_count;
+    if (mipmap_count == 0) {
+        mipmap_count = header->dw_flags & 0x20000 ? 1 : 0;
+    }
+    out_mip_count = mipmap_count;
+
+    if ((header->dw_caps & 8) == 0)
+        return 1;
+    if ((header->dw_caps2 & DDSCAPS2_CUBEMAP) == 0)
+        return 1;
+    if ((header->dw_caps2 & DDSCAPS2_CUBEMAP_POSITIVEY) == 0)
+        return 1;
+    if ((header->dw_caps2 & DDSCAPS2_CUBEMAP_POSITIVEX) == 0)
+        return 1;
+    if ((header->dw_caps2 & DDSCAPS2_CUBEMAP_NEGATIVEX) == 0)
+        return 1;
+    if ((header->dw_caps2 & DDSCAPS2_CUBEMAP_POSITIVEZ) == 0)
+        return 1;
+    if ((header->dw_caps2 & DDSCAPS2_CUBEMAP_NEGATIVEZ) == 0)
+        return 1;
+    if ((header->dw_caps2 & DDSCAPS2_CUBEMAP_NEGATIVEY) == 0)
+        return 1;
+
+    out_is_cube_map = true;
+    return 1;
 }
