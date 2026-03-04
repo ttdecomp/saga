@@ -349,6 +349,8 @@ target_include_directories(saga PUBLIC ${SAGA_INCLUDE_DIRS})
 # find dependencies
 if (CMAKE_HOST_WIN32)
     set(GLES2_LIBRARIES "GLESv2")
+    set(EGL_LIBRARIES "EGL")
+
     add_custom_command(
         OUTPUT "${CMAKE_SOURCE_DIR}/libs/ogg-vorbis/build.txt"
         COMMAND echo "Building Ogg Vorbis for Android x86..."

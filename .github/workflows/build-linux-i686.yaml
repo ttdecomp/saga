@@ -13,19 +13,14 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
-            - name: install gcc for i686
-              run: sudo apt-get -y update && sudo apt-get install gcc-multilib g++-multilib
+            - name: Install requirements
+              run: >
+                  sudo dpkg --add-architecture i386 &&
+                  sudo apt-get -y update &&
+                  sudo apt-get install wget gcc-multilib g++-multilib libgles2-mesa-dev:i386 libvorbis-dev:i386
 
-            - name: Install GLESv2 libs
-              run: sudo dpkg --add-architecture i386 && sudo apt-get -y update && sudo apt-get install libgles2-mesa-dev:i386 libsdl3-dev:i386
-
-            - name: Install OGG Vorbis libs
-              run: sudo apt-get install libvorbis-dev:i386
-
-            - name: gcc versions
-              run: |
-                  gcc --version
-                  g++ --version
+            - name: Install SDL3
+              run: wget "http://mirrors.kernel.org/ubuntu/pool/universe/libs/libsdl3/libsdl3-dev_3.2.20+ds-2_i386.deb" && sudo dpkg -i libsdl3-dev_3.2.20+ds-2_i386.deb
 
             - name: Install CMake 4.x
               uses: lukka/get-cmake@latest
