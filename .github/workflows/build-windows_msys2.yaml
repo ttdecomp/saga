@@ -50,7 +50,7 @@ jobs:
 
             - name: Configure CMake
               shell: msys2 {0}
-              run: cmake -B build-host -DBUILD_FOR_HOST=ON -DCMAKE_CXX_FLAGS="-Duint=\"unsigned int\" -Wno-return-type -include wincompat.h -static-libgcc -static-libstdc++"
+              run: cmake -B build-host -DBUILD_FOR_HOST=ON -DCMAKE_CXX_FLAGS="-Duint=\"unsigned int\" -Wno-return-type -include D:/a/saga/saga/src/wincompat.h -static-libgcc -static-libstdc++"
 
             - name: Build
               shell: msys2 {0}
