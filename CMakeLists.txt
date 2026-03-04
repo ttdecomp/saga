@@ -87,9 +87,13 @@ if (BUILD_FOR_HOST)
     set(CMAKE_C_COMPILER "gcc")
     set(CMAKE_CXX_COMPILER "g++")
     set(CMAKE_SYSROOT "")
+    if (CMAKE_HOST_WIN32)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -fno-stack-protector  -msse2 ")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fno-stack-protector  -msse2 ")
+    else()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -fno-stack-protector -march=i686 -msse2 -fsanitize=address")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32 -fno-stack-protector -march=i686 -msse2 -fsanitize=address")
-
+    endif()
     add_compile_definitions(HOST_BUILD)
 else()
     message(STATUS "Building for Android x86")
@@ -337,7 +341,9 @@ add_executable(saga ${SAGA_SOURCE_FILES})
 if(CMAKE_HOST_WIN32)
     #Needed because msys adds incorrect flags to the linker
     set_target_properties(saga PROPERTIES ENABLE_EXPORTS TRUE)
+    if(NOT BUILD_FOR_HOST)
     set_target_properties(saga PROPERTIES LINK_FLAGS "-rdynamic")
+    endif()
     set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
     set(CMAKE_C_LINK_EXECUTABLE   "<CMAKE_C_COMPILER>   <FLAGS> <CMAKE_C_LINK_FLAGS>   <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
     set(CMAKE_C_STANDARD_LIBRARIES "")
@@ -350,7 +356,7 @@ target_include_directories(saga PUBLIC ${SAGA_INCLUDE_DIRS})
 if (CMAKE_HOST_WIN32)
     set(GLES2_LIBRARIES "GLESv2")
     set(EGL_LIBRARIES "EGL")
-
+    if(NOT BUILD_FOR_HOST)
     add_custom_command(
         OUTPUT "${CMAKE_SOURCE_DIR}/libs/ogg-vorbis/build.txt"
         COMMAND echo "Building Ogg Vorbis for Android x86..."
@@ -363,6 +369,8 @@ if (CMAKE_HOST_WIN32)
     add_dependencies(saga build_ogg_vorbis)
 
     target_link_directories(saga PRIVATE "${CMAKE_SOURCE_DIR}/libs/ogg-vorbis/lib")
+    endif()
+
     set(VORBIS_LIBRARIES
         vorbisfile vorbis ogg
     )
@@ -425,6 +433,20 @@ function(set_filename_macro f)
 endfunction()
 
 if(BUILD_FOR_HOST)
+
+if (CMAKE_HOST_WIN32)
+find_package(SDL3 REQUIRED)
+
+# Link it to your executable (add SDL3::SDL3 to your existing target_link_libraries)
+target_link_libraries(saga PUBLIC 
+    vorbisfile 
+    vorbis 
+    ogg
+    GLESv2 
+    EGL 
+    SDL3::SDL3
+)
+endif()
 else()
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/ai/aisys/aiscript.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/ai/aisys/aistate.cpp PROPERTIES COMPILE_OPTIONS "-O3")
