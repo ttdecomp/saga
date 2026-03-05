@@ -522,7 +522,7 @@ void InitGameAfterConfig(void) {
     //  iVar9 = CutScenePlayer_Available();
     //  CutScenePlayCount = 0;
     //  if (iVar9 != 0) {
-    //      CutScenePlayCount = (uint) * (ushort *)(iVar9 + 8);
+    //      CutScenePlayCount = (u32) * (ushort *)(iVar9 + 8);
     //  }
     //  if (g_lowEndLevelBehaviour != 0) {
     //      Reflections_On = 0;
