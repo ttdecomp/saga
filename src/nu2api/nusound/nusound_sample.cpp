@@ -71,7 +71,7 @@ ErrorState NuSoundSample::Load(void *param_1, i32 param_2, NuSoundOutOfMemCallba
                 if (iVar1 - 2U < 4) {
                     EVar3 = *(ErrorState *)(CSWTCH.185 + (iVar1 - 2U) * 4);
                 }
-                NuSoundSystem::FreeMemory(0, (uint)desc, 0);
+                NuSoundSystem::FreeMemory(0, (u32)desc, 0);
                 NuSoundSource::SetStreamDesc((NuSoundSource *)this, (NuSoundStreamDesc *)0x0);
                 LVar2 = 0;
             }

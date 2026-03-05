@@ -178,8 +178,16 @@ i32 TriggerExtraDataLoad(void) {
     return 0;
 }
 
+#if defined(HOST_BUILD) && defined(_WIN32)
+#include <io.h>
+#include <sys/stat.h>
+
+#define mkdir(path, mode) mkdir((path))
+#endif
+
 void createslotfolder(i32 slot) {
     char *path = slotfolder(slot);
+
     mkdir(path, 0777);
 }
 

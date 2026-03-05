@@ -20,22 +20,6 @@ jobs:
                   update: true
                   install: base-devel mingw-w64-ucrt-x86_64-make mingw-w64-ucrt-x86_64-pkgconf mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-libvorbis mingw-w64-ucrt-x86_64-gles-headers mingw-w64-ucrt-x86_64-angleproject mingw-w64-ucrt-x86_64-sdl3
 
-            - name: Fix angle
-              shell: msys2 {0}
-              run: |-
-                cat << 'EOF' > /ucrt64/lib/pkgconfig/glesv2.pc
-                prefix=/ucrt64
-                exec_prefix=${prefix}
-                libdir=${exec_prefix}/lib
-                includedir=${prefix}/include
-
-                Name: glesv2
-                Description: ANGLE OpenGL ES 2.0 library
-                Version: 2.0
-                Libs: -L${libdir} -lGLESv2
-                Cflags: -I${includedir}
-                EOF
-
             - name: Cache Android NDK
               uses: actions/cache@v4
               with:
@@ -50,7 +34,9 @@ jobs:
 
             - name: Configure CMake
               shell: msys2 {0}
-              run: cmake -B build-host -DBUILD_FOR_HOST=ON -DCMAKE_CXX_FLAGS="-Duint=\"unsigned int\" -Wno-return-type -include D:/a/saga/saga/src/wincompat.h -static-libgcc -static-libstdc++"
+              run: cmake -B build-host -DBUILD_FOR_HOST=ON
+              env:
+                  PKG_CONFIG_PATH: /ucrt64/lib/pkgconfig
 
             - name: Build
               shell: msys2 {0}

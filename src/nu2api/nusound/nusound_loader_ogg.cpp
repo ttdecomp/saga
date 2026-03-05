@@ -7,7 +7,7 @@
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nucore/numemory.h"
 
-i32 NuSoundLoaderOGG::OGGFileCallbacks::Read(void *dest, uint size) {
+i32 NuSoundLoaderOGG::OGGFileCallbacks::Read(void *dest, u32 size) {
     return NuFileRead(file, dest, size);
 }
 
@@ -87,7 +87,7 @@ i32 NuSoundLoaderOGG::ReadHeader(NuSoundStreamDesc *desc) {
             //         rate = rate + 1;
             //         uVar2 = uVar2 | 1 << (bVar3 & 0x1f);
             //     } while (rate != channels);
-            //     *(uint *)((header->parent).extended_data + 1) = uVar2;
+            //     *(u32 *)((header->parent).extended_data + 1) = uVar2;
             // }
 
             desc->file_size = NuFileOpenSize(file);

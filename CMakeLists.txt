@@ -7,129 +7,52 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 # add option to compile for host
 option(BUILD_FOR_HOST "Build for host system" OFF)
 
-function(get_ndk)
-    if (CMAKE_HOST_WIN32)
-        # Download Android NDK if not present
-        set(NDK_DIR "${CMAKE_SOURCE_DIR}/ndk")
-        set(NDK_EXTRACT_DIR "${NDK_DIR}/android-ndk-r8e")
-        set(NDK_ARCHIVE "${NDK_DIR}/android-ndk-r8e-windows-x86_64.zip")
-        set(NDK_URL "https://dl.google.com/android/ndk/android-ndk-r8e-windows-x86_64.zip")
+include("${CMAKE_SOURCE_DIR}/cmake/ndk.cmake")
+include("${CMAKE_SOURCE_DIR}/cmake/ogg-vorbis.cmake")
 
-        if(NOT EXISTS "${NDK_EXTRACT_DIR}")
-            file(MAKE_DIRECTORY "${NDK_DIR}")
+if (BUILD_FOR_HOST)  
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-stack-protector -msse2")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-stack-protector -msse2")
 
-            if(NOT EXISTS "${NDK_ARCHIVE}")
-                message(STATUS "Downloading Android NDK r8e...")
-                file(DOWNLOAD "${NDK_URL}" "${NDK_ARCHIVE}"
-                    SHOW_PROGRESS
-                    STATUS download_status)
-                list(GET download_status 0 download_code)
-                if(NOT download_code EQUAL 0)
-                    message(FATAL_ERROR "Failed to download NDK: ${download_status}")
-                endif()
-            endif()
-
-            message(STATUS "Extracting Android NDK r8e...")
-            execute_process(
-                COMMAND ${CMAKE_COMMAND} -E tar xf "${NDK_ARCHIVE}"
-                WORKING_DIRECTORY "${NDK_DIR}"
-                RESULT_VARIABLE extract_result)
-            if(NOT extract_result EQUAL 0)
-                message(FATAL_ERROR "Failed to extract NDK")
-            endif()
-
-            file(REMOVE "${NDK_ARCHIVE}")
-            message(STATUS "Android NDK r8e ready")
-        else()
-            message(STATUS "Android NDK r8e already present")
-        endif()
-    else()
-        # Download Android NDK if not present
-        set(NDK_DIR "${CMAKE_SOURCE_DIR}/ndk")
-        set(NDK_EXTRACT_DIR "${NDK_DIR}/android-ndk-r8e")
-        set(NDK_ARCHIVE "${NDK_DIR}/android-ndk-r8e-linux-x86_64.tar.bz2")
-        set(NDK_URL "https://dl.google.com/android/ndk/android-ndk-r8e-linux-x86_64.tar.bz2")
-
-        if(NOT EXISTS "${NDK_EXTRACT_DIR}")
-            file(MAKE_DIRECTORY "${NDK_DIR}")
-
-            if(NOT EXISTS "${NDK_ARCHIVE}")
-                message(STATUS "Downloading Android NDK r8e...")
-                file(DOWNLOAD "${NDK_URL}" "${NDK_ARCHIVE}"
-                    SHOW_PROGRESS
-                    STATUS download_status)
-                list(GET download_status 0 download_code)
-                if(NOT download_code EQUAL 0)
-                    message(FATAL_ERROR "Failed to download NDK: ${download_status}")
-                endif()
-            endif()
-
-            message(STATUS "Extracting Android NDK r8e...")
-            execute_process(
-                COMMAND ${CMAKE_COMMAND} -E tar xjf "${NDK_ARCHIVE}"
-                WORKING_DIRECTORY "${NDK_DIR}"
-                RESULT_VARIABLE extract_result)
-            if(NOT extract_result EQUAL 0)
-                message(FATAL_ERROR "Failed to extract NDK")
-            endif()
-
-            file(REMOVE "${NDK_ARCHIVE}")
-            message(STATUS "Android NDK r8e ready")
-        else()
-            message(STATUS "Android NDK r8e already present")
-        endif()
+    if (NOT CMAKE_HOST_WIN32)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -march=i686 -fsanitize=address")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32 -march=i686 -fsanitize=address")
     endif()
-endfunction()
-
-if (BUILD_FOR_HOST)
-    message(STATUS "Building for host system")
-
-    set(CMAKE_C_COMPILER "gcc")
-    set(CMAKE_CXX_COMPILER "g++")
-    set(CMAKE_SYSROOT "")
-    if (CMAKE_HOST_WIN32)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -fno-stack-protector  -msse2 ")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -fno-stack-protector  -msse2 ")
-    else()
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -fno-stack-protector -march=i686 -msse2 -fsanitize=address")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32 -fno-stack-protector -march=i686 -msse2 -fsanitize=address")
-    endif()
-    add_compile_definitions(HOST_BUILD)
 else()
-    message(STATUS "Building for Android x86")
-
     get_ndk()
 
+    message(STATUS "Using Android NDK toolchain: ${NDK_TOOLCHAIN}")
+
+    set(CMAKE_CROSSCOMPILING TRUE)
+    set(CMAKE_SYSROOT "${NDK_SYSROOT}")
+    set(CMAKE_C_COMPILER "${NDK_TOOLCHAIN}/bin/i686-linux-android-gcc")
+    set(CMAKE_CXX_COMPILER "${NDK_TOOLCHAIN}/bin/i686-linux-android-g++")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-function-sections -fno-data-sections")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-function-sections -fno-data-sections")
+    
     if (CMAKE_HOST_WIN32)
-        set(CMAKE_C_COMPILER "${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/windows-x86_64/bin/i686-linux-android-gcc")
-        set(CMAKE_CXX_COMPILER "${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/windows-x86_64/bin/i686-linux-android-g++")
-        set(CMAKE_SYSROOT "${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/platforms/android-9/arch-x86")
-        include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/sources/cxx-stl/system/include/")
-
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-function-sections -fno-data-sections")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-function-sections -fno-data-sections")
-
         set(CMAKE_SYSTEM_NAME Linux)
         set(CMAKE_SYSTEM_PROCESSOR i686)
         set(CMAKE_EXECUTABLE_SUFFIX "")
-        set(CMAKE_CROSSCOMPILING TRUE)
-    else()
-        set(CMAKE_C_COMPILER "${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/linux-x86_64/bin/i686-linux-android-gcc")
-        set(CMAKE_CXX_COMPILER "${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/linux-x86_64/bin/i686-linux-android-g++")
-        set(CMAKE_SYSROOT "${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/platforms/android-9/arch-x86")
-        include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/ndk/android-ndk-r8e/sources/cxx-stl/system/include/")
 
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-function-sections -fno-data-sections")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-function-sections -fno-data-sections")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-return-type -static-libgcc -static-libstdc++")
     endif()
 endif()
 
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+message(STATUS "Building for ${CMAKE_HOST_SYSTEM_NAME} on ${CMAKE_HOST_SYSTEM_PROCESSOR}")
+
 set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -fno-rtti -Wno-write-strings -DANDROID")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DANDROID")
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if(CMAKE_HOST_WIN32)
+    # needed because msys adds incorrect flags to the linker
+    set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
+    set(CMAKE_C_LINK_EXECUTABLE   "<CMAKE_C_COMPILER>   <FLAGS> <CMAKE_C_LINK_FLAGS>   <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
+    set(CMAKE_C_STANDARD_LIBRARIES "")
+    set(CMAKE_CXX_STANDARD_LIBRARIES "")
+endif()
 
 set(CMAKE_BUILD_TYPE Debug)
 
@@ -332,122 +255,46 @@ if(BUILD_FOR_HOST)
     )
 endif()
 
-
-set(SAGA_INCLUDE_DIRS
-    ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-
 add_executable(saga ${SAGA_SOURCE_FILES})
+
+target_include_directories(saga PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+target_compile_definitions(saga PRIVATE $<$<BOOL:${BUILD_FOR_HOST}>:HOST_BUILD>)
+target_compile_options(saga PRIVATE -fno-exceptions -fno-rtti -Wno-write-strings -DANDROID)
+
 if(CMAKE_HOST_WIN32)
-    #Needed because msys adds incorrect flags to the linker
     set_target_properties(saga PROPERTIES ENABLE_EXPORTS TRUE)
     if(NOT BUILD_FOR_HOST)
-    set_target_properties(saga PROPERTIES LINK_FLAGS "-rdynamic")
+        set_target_properties(saga PROPERTIES LINK_FLAGS "-rdynamic")
     endif()
-    set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
-    set(CMAKE_C_LINK_EXECUTABLE   "<CMAKE_C_COMPILER>   <FLAGS> <CMAKE_C_LINK_FLAGS>   <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
-    set(CMAKE_C_STANDARD_LIBRARIES "")
-    set(CMAKE_CXX_STANDARD_LIBRARIES "")
 endif()
-
-target_include_directories(saga PUBLIC ${SAGA_INCLUDE_DIRS})
 
 # find dependencies
-if (CMAKE_HOST_WIN32)
-    set(GLES2_LIBRARIES "GLESv2")
-    set(EGL_LIBRARIES "EGL")
-    if(NOT BUILD_FOR_HOST)
-    add_custom_command(
-        OUTPUT "${CMAKE_SOURCE_DIR}/libs/ogg-vorbis/build.txt"
-        COMMAND echo "Building Ogg Vorbis for Android x86..."
-        COMMAND env bash -c "${CMAKE_SOURCE_DIR}/libs/build-ogg-vorbis-windows.sh"
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/libs"
-        COMMENT "Building Ogg Vorbis library"
-        VERBATIM
-    )
-    add_custom_target(build_ogg_vorbis ALL DEPENDS "${CMAKE_SOURCE_DIR}/libs/ogg-vorbis/build.txt")
-    add_dependencies(saga build_ogg_vorbis)
+find_package(PkgConfig REQUIRED)
 
-    target_link_directories(saga PRIVATE "${CMAKE_SOURCE_DIR}/libs/ogg-vorbis/lib")
-    endif()
-
-    set(VORBIS_LIBRARIES
-        vorbisfile vorbis ogg
-    )
-    set(VORBIS_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/libs/ogg-vorbis/include")
-else()
-    find_package(PkgConfig REQUIRED)
-
-    if (BUILD_FOR_HOST)
-        pkg_check_modules(VORBIS REQUIRED vorbis)
-        pkg_check_modules(VORBISFILE REQUIRED vorbisfile)
-        set(VORBIS_LIBRARIES ${VORBIS_LIBRARIES} ${VORBISFILE_LIBRARIES})
-        set(VORBIS_INCLUDE_DIRS ${VORBIS_INCLUDE_DIRS} ${VORBISFILE_INCLUDE_DIRS})
-        message(STATUS "Found Ogg Vorbis: ${VORBIS_LIBRARIES} (include: ${VORBIS_INCLUDE_DIRS})")
-
-        pkg_check_modules(GLES2 REQUIRED glesv2)
-        pkg_check_modules(EGL REQUIRED egl)
-        pkg_check_modules(SDL3 REQUIRED sdl3)
+if (BUILD_FOR_HOST)
+    set(DEPENDENCIES vorbis vorbisfile sdl3)
+    
+    # use angle on windows
+    if(CMAKE_HOST_WIN32)
+        list(APPEND DEPENDENCIES angleproject)
     else()
-        set(GLES2_LIBRARIES "GLESv2")
-        set(EGL_LIBRARIES "EGL")
-
-        # build Ogg Vorbis
-        add_custom_command(
-            OUTPUT "${CMAKE_SOURCE_DIR}/libs/ogg-vorbis/build.txt"
-            COMMAND echo "Building Ogg Vorbis for Android x86..."
-            COMMAND env bash -c "${CMAKE_SOURCE_DIR}/libs/build-ogg-vorbis.sh"
-            WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/libs"
-            COMMENT "Building Ogg Vorbis library"
-            VERBATIM
-        )
-        add_custom_target(build_ogg_vorbis ALL DEPENDS "${CMAKE_SOURCE_DIR}/libs/ogg-vorbis/build.txt")
-        add_dependencies(saga build_ogg_vorbis)
-
-        target_link_directories(saga PRIVATE "${CMAKE_SOURCE_DIR}/libs/ogg-vorbis/lib")
-        set(VORBIS_LIBRARIES
-            vorbisfile vorbis ogg
-        )
-        set(VORBIS_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/libs/ogg-vorbis/include")
+        list(APPEND DEPENDENCIES glesv2 egl)
     endif()
-endif()
-
-# include & link dependencies
-target_link_libraries(saga PRIVATE ${GLES2_LIBRARIES})
-target_include_directories(saga SYSTEM PRIVATE ${GLES2_INCLUDE_DIRS})
-
-target_link_libraries(saga PRIVATE ${VORBIS_LIBRARIES})
-target_include_directories(saga SYSTEM PRIVATE ${VORBIS_INCLUDE_DIRS})
-
-target_link_libraries(saga PRIVATE ${EGL_LIBRARIES})
-target_include_directories(saga SYSTEM PRIVATE ${EGL_INCLUDE_DIRS})
-
-target_link_libraries(saga PRIVATE ${SDL3_LIBRARIES})
-target_include_directories(saga SYSTEM PRIVATE ${SDL3_INCLUDE_DIRS})
-
-# set __FILENAME__ macro to relative path from src/
-function(set_filename_macro f)
-    get_filename_component(FILENAME_ABS ${f} ABSOLUTE)
-    file(RELATIVE_PATH FILENAME_REL ${CMAKE_CURRENT_SOURCE_DIR}/src ${FILENAME_ABS})
-    set_source_files_properties(${f} PROPERTIES COMPILE_DEFINITIONS "__FILENAME__=\"src/${FILENAME_REL}\"")
-endfunction()
-
-if(BUILD_FOR_HOST)
-
-if (CMAKE_HOST_WIN32)
-find_package(SDL3 REQUIRED)
-
-# Link it to your executable (add SDL3::SDL3 to your existing target_link_libraries)
-target_link_libraries(saga PUBLIC 
-    vorbisfile 
-    vorbis 
-    ogg
-    GLESv2 
-    EGL 
-    SDL3::SDL3
-)
-endif()
+    
+    foreach(dep IN LISTS DEPENDENCIES)
+        pkg_check_modules(${dep} REQUIRED ${dep})
+        target_link_libraries(saga PRIVATE ${${dep}_LIBRARIES})
+        target_include_directories(saga SYSTEM PRIVATE ${${dep}_INCLUDE_DIRS})
+    endforeach()
 else()
+    add_ogg_vorbis()
+    target_link_libraries(saga PRIVATE custom_ogg_vorbis)
+    target_link_libraries(saga PRIVATE GLESv2 EGL)
+endif()
+
+# set optimization levels
+if(NOT BUILD_FOR_HOST)
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/ai/aisys/aiscript.cpp PROPERTIES COMPILE_OPTIONS "-O3")
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/ai/aisys/aistate.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 
@@ -565,10 +412,19 @@ else()
     set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_weakptr.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 endif()
 
+
+# set __FILENAME__ macro to relative path from src/
+function(set_filename_macro f)
+    get_filename_component(FILENAME_ABS ${f} ABSOLUTE)
+    file(RELATIVE_PATH FILENAME_REL ${CMAKE_CURRENT_SOURCE_DIR}/src ${FILENAME_ABS})
+    set_source_files_properties(${f} PROPERTIES COMPILE_DEFINITIONS "__FILENAME__=\"src/${FILENAME_REL}\"")
+endfunction()
+
 foreach(source_file IN LISTS SAGA_SOURCE_FILES)
     set_filename_macro(${source_file})
 endforeach()
 
+# use clang-tidy if available
 find_program(CLANG_TIDY_EXE NAMES "clang-tidy")
 if(CLANG_TIDY_EXE)
     message(STATUS "Found clang-tidy: ${CLANG_TIDY_EXE}")
@@ -584,5 +440,6 @@ if(CLANG_TIDY_EXE)
         COMMENT "Running clang-tidy"
     )
 else()
-    message(STATUS "clang-tidy not found")
+    message(WARNING "clang-tidy not found")
 endif()
+
