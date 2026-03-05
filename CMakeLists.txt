@@ -274,11 +274,15 @@ endif()
 find_package(PkgConfig REQUIRED)
 
 if (BUILD_FOR_HOST)
+    set(DEPENDENCIES vorbis vorbisfile sdl3)
+    
+    # use angle on windows
     if(CMAKE_HOST_WIN32)
-        set(DEPENDENCIES vorbis vorbisfile angleproject sdl3)
+        list(APPEND DEPENDENCIES angleproject)
     else()
-        set(DEPENDENCIES vorbis vorbisfile glesv2 egl sdl3)
+        list(APPEND DEPENDENCIES glesv2 egl)
     endif()
+    
     foreach(dep IN LISTS DEPENDENCIES)
         pkg_check_modules(${dep} REQUIRED ${dep})
         target_link_libraries(saga PRIVATE ${${dep}_LIBRARIES})

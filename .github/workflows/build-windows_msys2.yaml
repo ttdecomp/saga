@@ -34,7 +34,7 @@ jobs:
 
             - name: Configure CMake
               shell: msys2 {0}
-              run: cmake -B build-host -DBUILD_FOR_HOST=ON"
+              run: cmake -B build-host -DBUILD_FOR_HOST=ON
               env:
                   PKG_CONFIG_PATH: /ucrt64/lib/pkgconfig
 
