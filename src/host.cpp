@@ -33,7 +33,7 @@ void host_init() {
     SDL_PropertiesID prop_id = SDL_GetWindowProperties(window);
 
 #ifdef _WIN32
-    HWND handle = SDL_GetPointerProperty(prop_id, SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+    HWND handle = (HWND)SDL_GetPointerProperty(prop_id, SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
 #else
     i32 handle = SDL_GetNumberProperty(prop_id, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0);
 #endif
