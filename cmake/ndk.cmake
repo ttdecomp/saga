@@ -9,7 +9,7 @@ function(get_ndk)
         set(NDK_TOOLCHAIN "${NDK_EXTRACT_DIR}/toolchains/x86-4.7/prebuilt/windows-x86_64" PARENT_SCOPE)
     else()
         set(NDK "android-ndk-r8e-linux-x86_64.tar.bz2")
-        set(NDK_TOOLCHAIN "${NDK_EXTRACT_DIR}/toolchains/x86-4.7/prebuilt/linux-x86_64/" PARENT_SCOPE)
+        set(NDK_TOOLCHAIN "${NDK_EXTRACT_DIR}/toolchains/x86-4.7/prebuilt/linux-x86_64" PARENT_SCOPE)
     endif()
     
     set(NDK_URL "https://dl.google.com/android/ndk/${NDK}")
