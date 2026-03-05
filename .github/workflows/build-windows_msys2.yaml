@@ -23,18 +23,18 @@ jobs:
             - name: Fix angle
               shell: msys2 {0}
               run: |-
-                cat << 'EOF' > /ucrt64/lib/pkgconfig/glesv2.pc
-                prefix=/ucrt64
-                exec_prefix=${prefix}
-                libdir=${exec_prefix}/lib
-                includedir=${prefix}/include
+                  cat << 'EOF' > /ucrt64/lib/pkgconfig/glesv2.pc
+                  prefix=/ucrt64
+                  exec_prefix=${prefix}
+                  libdir=${exec_prefix}/lib
+                  includedir=${prefix}/include
 
-                Name: glesv2
-                Description: ANGLE OpenGL ES 2.0 library
-                Version: 2.0
-                Libs: -L${libdir} -lGLESv2
-                Cflags: -I${includedir}
-                EOF
+                  Name: glesv2
+                  Description: ANGLE OpenGL ES 2.0 library
+                  Version: 2.0
+                  Libs: -L${libdir} -lGLESv2
+                  Cflags: -I${includedir}
+                  EOF
 
             - name: Cache Android NDK
               uses: actions/cache@v4
@@ -51,6 +51,8 @@ jobs:
             - name: Configure CMake
               shell: msys2 {0}
               run: cmake -B build-host -DBUILD_FOR_HOST=ON -DCMAKE_CXX_FLAGS="-Duint=\"unsigned int\" -Wno-return-type -include D:/a/saga/saga/src/wincompat.h -static-libgcc -static-libstdc++"
+              env:
+                  PKG_CONFIG_PATH: /ucrt64/lib/pkgconfig/
 
             - name: Build
               shell: msys2 {0}
