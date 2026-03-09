@@ -21,7 +21,7 @@ jobs:
 
             - name: Build SDL3
               run: >
-                  git clone git@github.com:libsdl-org/SDL.git &&
+                  git clone https://github.com/libsdl-org/SDL.git &&
                   cd SDL &&
                   git checkout release-3.4.2 &&
                   mkdir build &&
