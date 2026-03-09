@@ -23,6 +23,7 @@ jobs:
             - name: Install SDL3
               run: >
                   echo "deb http://archive.ubuntu.com/ubuntu/ questing universe" | sudo tee /etc/apt/sources.list.d/questing.list &&
+                  echo "Package: *\nPin: release n=questing\nPin-Priority: 50" > /etc/apt/preferences.d/questing &&
                   sudo apt-get -y update &&
                   sudo apt-get install libsdl3-dev:i386
 
