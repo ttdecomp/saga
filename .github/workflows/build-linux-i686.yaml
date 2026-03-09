@@ -35,7 +35,8 @@ jobs:
                   sudo apt-get -y install libsquish0:i386 &&
                   wget "http://ftp.ca.debian.org/debian/pool/main/libs/libsquish/libsquish-dev_1.15-4+b1_i386.deb" &&
                   wget "http://ftp.ca.debian.org/debian/pool/main/libs/libsquish/libsquish0_1.15-4+b1_i386.deb" &&
-                  sudo apt-get install ./libsquish0_1.15-4+b1_i386.deb ./libsquish-dev_1.15-4+b1_i386.deb  
+                  sudo apt-get install ./libsquish0_1.15-4+b1_i386.deb &&
+                  sudo apt-get install ./libsquish-dev_1.15-4+b1_i386.deb  
             
 
             - name: Configure CMake
