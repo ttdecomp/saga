@@ -121,7 +121,7 @@ GLuint NuIOS_CreateGLTexFromMemoryDDS(void* ddsPointer, int* out_width, int* out
   if ((cVar1 != '\0') && (((*out_width != 0 || (*out_height != 0)) || (1 < out_mip_count)))) {
     uVar3 = CreateTexturePS();
     GetNativeTextureFormat(local_90,local_30,local_60,local_40,local_50,local_a0,local_20);
-    puVar2 = (uchar *)((int)ddsPointer + 0x80);
+    //puVar2 = (uchar *)((int)ddsPointer + 0x80);
     if (local_90 == NUTEX_DXT5) {
       local_14 = (uchar *)0x0;
       //DecompressTextureToRGBA(param_1,0,&local_14);
