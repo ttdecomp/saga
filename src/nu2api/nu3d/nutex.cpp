@@ -156,32 +156,32 @@ enum DDSCAPS : u32 {
 };
 
 struct __attribute__((packed)) dds_pixelformat_s {
-    uint dw_size;
-    uint dw_flags;
-    uint dw_four_cc;
-    uint dw_rgb_bit_count;
-    uint dw_r_bit_mask;
-    uint dw_g_bit_mask;
-    uint dw_b_bit_mask;
-    uint dw_a_bit_mask;
+    u32 dw_size;
+    u32 dw_flags;
+    u32 dw_four_cc;
+    u32 dw_rgb_bit_count;
+    u32 dw_r_bit_mask;
+    u32 dw_g_bit_mask;
+    u32 dw_b_bit_mask;
+    u32 dw_a_bit_mask;
 };
 
 struct __attribute__((packed)) dds_header_s {
     char magic[4];
-    uint dw_size;
-    uint dw_flags;
-    uint dw_height;
-    uint dw_width;
-    uint dw_pitch_or_linear_size;
-    uint dw_depth;
-    uint dw_mip_map_count;
-    uint dw_reserved1[11];
+    u32 dw_size;
+    u32 dw_flags;
+    u32 dw_height;
+    u32 dw_width;
+    u32 dw_pitch_or_linear_size;
+    u32 dw_depth;
+    u32 dw_mip_map_count;
+    u32 dw_reserved1[11];
     struct dds_pixelformat_s ddspf;
-    uint dw_caps;
-    uint dw_caps2;
-    uint dw_caps3;
-    uint dw_caps4;
-    uint dw_reserved2;
+    u32 dw_caps;
+    u32 dw_caps2;
+    u32 dw_caps3;
+    u32 dw_caps4;
+    u32 dw_reserved2;
 };
 
 i32 NuDDSGetTextureDescription(const char *dds_data, NUTEXFORMAT &out_format, i32 &out_width, i32 &out_height,

@@ -211,7 +211,7 @@ void InitSfx(variptr_u *buffer_start, variptr_u buffer_end, const char *file) {
     CRC_Init(buffer_start);
 
     // psVar5 = g_soundMap;
-    // uVar10 = -(((uint)g_soundMap & 0xf) >> 1) & 7;
+    // uVar10 = -(((u32)g_soundMap & 0xf) >> 1) & 7;
     memset(g_soundMap, -1, 0x100 * sizeof(u16));
 
     NumSfx = 0;
@@ -249,7 +249,7 @@ void InitSfx(variptr_u *buffer_start, variptr_u buffer_end, const char *file) {
     // piVar14 = GlobalSfxBits;
     // for (iVar12 = 0x32; iVar12 != 0; iVar12 = iVar12 + -1) {
     //     *piVar14 = 0;
-    //     piVar14 = piVar14 + (uint)bVar15 * -2 + 1;
+    //     piVar14 = piVar14 + (u32)bVar15 * -2 + 1;
     // }
 
     // if (0 < NumSfxInst) {
@@ -295,7 +295,7 @@ void LoadSfx(const char *file, variptr_u *buffer_start, variptr_u buffer_end) {
     // piVar3 = SfxBits;
     // for (iVar2 = 0x32; iVar2 != 0; iVar2 = iVar2 + -1) {
     // *piVar3 = 0;
-    // piVar3 = piVar3 + (uint)bVar4 * -2 + 1;
+    // piVar3 = piVar3 + (u32)bVar4 * -2 + 1;
     // }
 
     if (NOSOUND == 0) {

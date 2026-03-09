@@ -57,7 +57,7 @@ void InitOnce(i32 argc, char **param_2) {
                    SETUP(NUAPI_SETUP_RESOLUTION, 512, (PAL == 0) ? 224 : 256), //
                    SETUP(NUAPI_SETUP_GLASSRPLANE, 1),                          //
                    SETUP(NUAPI_SETUP_CDDVDMODE, &DVD),                         //
-                   // (-(uint)(NOSOUND == 0) & 0xffffffee) + 0x1c, 0, 0x640, 0, 0,
+                   // (-(u32)(NOSOUND == 0) & 0xffffffee) + 0x1c, 0, 0x640, 0, 0,
                    SETUP(NUAPI_SETUP_PAD0, &Game_NuPad_Store[0]), //
                    SETUP(NUAPI_SETUP_PAD1, &Game_NuPad_Store[1]), //
                    SETUP(NUAPI_SETUP_0x46, 1),                    //
@@ -69,8 +69,8 @@ void InitOnce(i32 argc, char **param_2) {
 
     pNuCam = NuCameraCreate();
     // Game.optionsSave._11_1_ = NuIOS_IsWidescreen();
-    // WidescreenCode((uint)(byte)Game.optionsSave._11_1_);
-    // InitPanel((uint)(byte)Game.optionsSave._11_1_);
+    // WidescreenCode((u32)(byte)Game.optionsSave._11_1_);
+    // InitPanel((u32)(byte)Game.optionsSave._11_1_);
 
     // app_tbgameset = NuTimeBarCreateSet(0);
     // app_tbplayerset = NuTimeBarCreateSet(0);
