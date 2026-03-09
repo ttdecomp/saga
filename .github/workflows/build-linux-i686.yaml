@@ -17,26 +17,24 @@ jobs:
               run: >
                   sudo dpkg --add-architecture i386 &&
                   sudo apt-get -y update &&
-                  sudo apt-get install wget gcc-multilib g++-multilib libgles2-mesa-dev:i386 libvorbis-dev:i386 
-
-            # add Ubuntu 25.10 questing mirror to get SDL3 packages
-            - name: Install SDL3
-              run: >
-                  echo "deb http://archive.ubuntu.com/ubuntu/ questing universe" | sudo tee /etc/apt/sources.list.d/questing.list &&
-                  sudo apt-get -y update &&
-                  sudo apt-get install libsdl3-dev:i386
-            - name: build and install squish
-              run: >
-                  wget https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/libsquish/squish-1.10.tar.gz &&
-                  tar -xf squish-1.10.tar.gz &&
-                  cd squish-1.10 &&
-                  make CXX=g++ CXXFLAGS="-m32 -O2 -fPIC" &&
-                  sudo make install INSTALL_DIR=/usr/local &&
-                  cd ..
-                  
-            
+                  sudo apt-get install git wget
+                  gcc-multilib g++-multilib
+                  libgles2-mesa-dev:i386 libvorbis-dev:i386
             - name: Install CMake 4.x
               uses: lukka/get-cmake@latest
+
+            - name: Install SDL3
+              run: >
+                  sudo apt-get -y install libibus-1.0-dev:i386 libpulse-dev:i386 &&
+                  wget "http://mirrors.kernel.org/ubuntu/pool/universe/libs/libsdl3/libsdl3-0_3.2.20+ds-2_i386.deb" &&
+                  wget "http://mirrors.kernel.org/ubuntu/pool/universe/libs/libsdl3/libsdl3-dev_3.2.20+ds-2_i386.deb" &&
+                  sudo apt-get install ./libsdl3-0_3.2.20+ds-2_i386.deb ./libsdl3-dev_3.2.20+ds-2_i386.deb
+
+            - name: Install squish
+              run: >
+                  wget "http://ftp.ca.debian.org/debian/pool/main/libs/libsquish/libsquish-dev_1.15-4+b1_i386.deb" &&
+                  sudo apt-get install ./libsquish-dev_1.15-4+b1_i386.deb
+            
 
             - name: Configure CMake
               run: cmake -B build -DBUILD_FOR_HOST=ON .
