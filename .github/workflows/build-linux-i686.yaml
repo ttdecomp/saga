@@ -19,24 +19,30 @@ jobs:
                   sudo apt-get -y update &&
                   sudo apt-get install git wget gcc-multilib g++-multilib libgles2-mesa-dev:i386 libvorbis-dev:i386
 
+            - name: Install CMake 4.x
+              uses: lukka/get-cmake@latest
+
             - name: Build SDL3
               run: >
+                  sudo apt-get install build-essential git make
+                  pkg-config cmake ninja-build gnome-desktop-testing libasound2-dev libpulse-dev
+                  libaudio-dev libfribidi-dev libjack-dev libsndio-dev libx11-dev libxext-dev
+                  libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev
+                  libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev
+                  libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libthai-dev
                   git clone https://github.com/libsdl-org/SDL.git &&
                   cd SDL &&
                   git checkout release-3.4.2 &&
                   mkdir build &&
                   cmake -S . -B build &&
-                  cmake --build . &&
-                  sudo cmake --install .
+                  cmake --build build &&
+                  sudo cmake --install build
               env:
                   CC: i686-linux-gnu-gcc
                   CXX: i686-linux-gnu-g++
                   AR: i686-linux-gnu-ar
                   RANLIB: i686-linux-gnu-ranlib
                   PKG_CONFIG: i686-linux-gnu-pkg-config
-
-            - name: Install CMake 4.x
-              uses: lukka/get-cmake@latest
 
             - name: Configure CMake
               run: cmake -B build -DBUILD_FOR_HOST=ON .
