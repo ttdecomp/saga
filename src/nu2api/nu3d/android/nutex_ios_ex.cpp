@@ -4,6 +4,7 @@
 #include <GLES2/gl2.h>
 #include <GLES/gl.h>
 #include <GLES/glext.h>
+#include <squish.h>
 
 #include "decomp.h"
 #include "nu2api/nu3d/NuRenderDevice.h"
@@ -153,14 +154,13 @@ GLuint CreateTexturePS(void)
 void GetNativeTextureFormat(
     NUTEXFORMAT inFormat,
     int& outBpp,
-    unsigned int& outInternalFormat,
-    unsigned int& outType,
-    unsigned int& outFormat,
+    u32& outInternalFormat,
+    u32& outType,
+    u32& outFormat,
     bool& outIsCompressed,
     NUTEXFORMAT& outFormatEnum) 
 {
-    // Declaring as int forces the compiler to allocate a unique local stack slot ([esp+0x4])
-    // preventing it from fusing with the inFormat enum parameter.
+
     int formatToCheck = inFormat;
 
     if (inFormat == NUTEX_DXT1) {
@@ -286,11 +286,89 @@ void GetNativeTextureFormat(
             return;
     }
 
-    // Capability check for compressed formats
     if (g_renderDevice.enabled_extensions[formatToCheck] == '\0') {
-        // FATAL ERROR: Format not supported! Engine hangs intentionally.
         while (true) {} 
     }
 
     outFormatEnum = inFormat;
+}
+
+
+
+
+void GetTextureFormatInfo(NUTEXFORMAT texture, u32& param_2, u32&param_3 ) {
+
+      param_2 = 1;
+  switch(texture) {
+  case 1:
+  case 2:
+    param_2 = 4;
+    param_3 = 4;
+    return;
+  case 3:
+  case 4:
+  case 5:
+    param_2 = 4;
+    param_3 = 8;
+    return;
+  case 6:
+    param_2 = 4;
+    param_3 = 8;
+    return;
+  case 7:
+    param_3 = 0x20;
+    return;
+  case 8:
+    param_3 = 0x40;
+    return;
+  case 9:
+    param_3 = 0x80;
+    return;
+  case 0x10:
+    param_3 = 8;
+    return;
+  case 0x14:
+  case 0x15:
+    param_2 = 8;
+    param_3 = 2;
+    return;
+  case 0x16:
+  case 0x17:
+    param_2 = 8;
+    param_3 = 4;
+    return;
+  case 0x6c:
+  case 0x76: 
+    param_3 = 0x10;
+  }
+  return;
+
+}
+
+int GetMipLevelSize(NUTEXFORMAT param_1, int unclamped_width, int unclamped_height) {
+    u32 block_size;
+    u32 bpp;
+    
+    GetTextureFormatInfo(param_1, block_size, bpp);
+    u32 width = 1;
+    if (unclamped_width > 0) {
+        width = unclamped_width;
+    }
+    u32 height = unclamped_height;
+    if (unclamped_height <= 0) {
+        height = 1;
+    }
+    u32 div_w = width / block_size;
+    u32 multiplier = (block_size * block_size * bpp) >> 3;
+    u32 m_w = 1;
+    if (div_w != 0) {
+        m_w = div_w;
+    }
+    u32 div_h = height / block_size;
+        u32 m_h = 1;
+    if (div_h != 0) {
+        m_h = div_h;
+    }
+    u32 base_area = m_w * m_h;
+    return base_area * multiplier;
 }

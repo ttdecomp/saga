@@ -2,3 +2,5 @@
 !.gitignore
 !build-ogg-vorbis.sh
 !build-ogg-vorbis-windows.sh
+!build-libsquish.sh
+!build-libsquish-windows.sh

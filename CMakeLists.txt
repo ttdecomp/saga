@@ -369,7 +369,26 @@ if (CMAKE_HOST_WIN32)
     add_dependencies(saga build_ogg_vorbis)
 
     target_link_directories(saga PRIVATE "${CMAKE_SOURCE_DIR}/libs/ogg-vorbis/lib")
+    add_custom_command(
+            OUTPUT "${CMAKE_SOURCE_DIR}/libs/squishlib/build.txt"
+            COMMAND echo "Building squish..."
+            COMMAND env bash -c "${CMAKE_SOURCE_DIR}/libs/build-libsquish-windows.sh"
+            WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/libs"
+            COMMENT "Building squish library"
+            VERBATIM
+        )
+
+        add_custom_target(build_squish ALL DEPENDS "${CMAKE_SOURCE_DIR}/libs/squishlib/build.txt")
+        add_dependencies(saga build_squish)
+        target_link_directories(saga PRIVATE "${CMAKE_SOURCE_DIR}/libs/squishlib/lib")
+        set(SQUISH_LIBRARIES
+            squish
+        )
+        set(SQUISH_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/libs/squishlib/include")
+    else()
+        pkg_check_modules(SQUISH REQUIRED squish)
     endif()
+    
 
     set(VORBIS_LIBRARIES
         vorbisfile vorbis ogg
@@ -388,6 +407,7 @@ else()
         pkg_check_modules(GLES2 REQUIRED glesv2)
         pkg_check_modules(EGL REQUIRED egl)
         pkg_check_modules(SDL3 REQUIRED sdl3)
+        pkg_check_modules(SQUISH REQUIRED squish)
     else()
         set(GLES2_LIBRARIES "GLESv2")
         set(EGL_LIBRARIES "EGL")
@@ -409,8 +429,28 @@ else()
             vorbisfile vorbis ogg
         )
         set(VORBIS_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/libs/ogg-vorbis/include")
+
+        add_custom_command(
+            OUTPUT "${CMAKE_SOURCE_DIR}/libs/squishlib/build.txt"
+            COMMAND echo "Building squish..."
+            COMMAND env bash -c "${CMAKE_SOURCE_DIR}/libs/build-libsquish.sh"
+            WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/libs"
+            COMMENT "Building squish library"
+            VERBATIM
+        )
+
+        add_custom_target(build_squish ALL DEPENDS "${CMAKE_SOURCE_DIR}/libs/squishlib/build.txt")
+        add_dependencies(saga build_squish)
+        target_link_directories(saga PRIVATE "${CMAKE_SOURCE_DIR}/libs/squishlib/lib")
+        set(SQUISH_LIBRARIES
+            squish
+        )
+        set(SQUISH_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/libs/squishlib/include")
+
     endif()
 endif()
+
+
 
 # include & link dependencies
 target_link_libraries(saga PRIVATE ${GLES2_LIBRARIES})
@@ -418,6 +458,9 @@ target_include_directories(saga SYSTEM PRIVATE ${GLES2_INCLUDE_DIRS})
 
 target_link_libraries(saga PRIVATE ${VORBIS_LIBRARIES})
 target_include_directories(saga SYSTEM PRIVATE ${VORBIS_INCLUDE_DIRS})
+
+target_link_libraries(saga PRIVATE ${SQUISH_LIBRARIES})
+target_include_directories(saga SYSTEM PRIVATE ${SQUISH_INCLUDE_DIRS})
 
 target_link_libraries(saga PRIVATE ${EGL_LIBRARIES})
 target_include_directories(saga SYSTEM PRIVATE ${EGL_INCLUDE_DIRS})
