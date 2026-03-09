@@ -18,7 +18,7 @@ jobs:
               with:
                   msystem: UCRT64
                   update: true
-                  install: base-devel mingw-w64-ucrt-x86_64-make mingw-w64-ucrt-x86_64-pkgconf mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-libvorbis mingw-w64-ucrt-x86_64-gles-headers mingw-w64-ucrt-x86_64-angleproject mingw-w64-ucrt-x86_64-sdl3
+                  install: base-devel mingw-w64-ucrt-x86_64-libsquish mingw-w64-ucrt-x86_64-make mingw-w64-ucrt-x86_64-pkgconf mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-libvorbis mingw-w64-ucrt-x86_64-gles-headers mingw-w64-ucrt-x86_64-angleproject mingw-w64-ucrt-x86_64-sdl3
 
             - name: Cache Android NDK
               uses: actions/cache@v4
