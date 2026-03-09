@@ -24,8 +24,17 @@ jobs:
               run: >
                   echo "deb http://archive.ubuntu.com/ubuntu/ questing universe" | sudo tee /etc/apt/sources.list.d/questing.list &&
                   sudo apt-get -y update &&
-                  sudo apt-get install libsdl3-dev:i386 libsquish-dev:i386
-
+                  sudo apt-get install libsdl3-dev:i386
+            - name: build and install squish
+              run: >
+                  wget https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/libsquish/squish-1.10.tar.gz &&
+                  tar -xf squish-1.10.tar.gz &&
+                  cd squish-1.10 &&
+                  make CXX=g++ CXXFLAGS="-m32 -O2 -fPIC" &&
+                  sudo make install INSTALL_DIR=/usr/local &&
+                  cd ..
+                  
+            
             - name: Install CMake 4.x
               uses: lukka/get-cmake@latest
 
