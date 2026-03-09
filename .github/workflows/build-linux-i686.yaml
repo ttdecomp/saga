@@ -8,8 +8,8 @@ on:
 
 jobs:
     build:
-        runs-on: ubuntu:questing
-
+        runs-on: ubuntu-latest
+        container: ubuntu:questing
         steps:
             - uses: actions/checkout@v4
 
