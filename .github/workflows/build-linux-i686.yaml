@@ -37,12 +37,6 @@ jobs:
                   cmake -S . -B build &&
                   cmake --build build &&
                   sudo cmake --install build
-              env:
-                  CC: i686-linux-gnu-gcc
-                  CXX: i686-linux-gnu-g++
-                  AR: i686-linux-gnu-ar
-                  RANLIB: i686-linux-gnu-ranlib
-                  PKG_CONFIG: i686-linux-gnu-pkg-config
 
             - name: Configure CMake
               run: cmake -B build -DBUILD_FOR_HOST=ON .
