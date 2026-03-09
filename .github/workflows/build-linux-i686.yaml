@@ -32,6 +32,7 @@ jobs:
 
             - name: Install squish
               run: >
+                  sudo apt-get -y install libsquish0:i386 &&
                   wget "http://ftp.ca.debian.org/debian/pool/main/libs/libsquish/libsquish-dev_1.15-4+b1_i386.deb" &&
                   sudo apt-get install ./libsquish-dev_1.15-4+b1_i386.deb
             
