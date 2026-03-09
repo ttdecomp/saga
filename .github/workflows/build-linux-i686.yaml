@@ -24,28 +24,12 @@ jobs:
             - name: Install CMake 4.x
               uses: lukka/get-cmake@latest
 
-            - name: Build SDL3 for i686
+            - name: Install SDL3
               run: >
-                  sudo apt-get install gcc-i686-linux-gnu g++-i686-linux-gnu &&
-                  sudo apt-get install build-essential git make
-                  pkg-config cmake ninja-build gnome-desktop-testing:i386 libasound2-dev:i386 libpulse-dev:i386
-                  libaudio-dev:i386 libfribidi-dev:i386 libjack-dev:i386 libsndio-dev:i386 libx11-dev:i386 libxext-dev:i386
-                  libxrandr-dev:i386 libxcursor-dev:i386 libxfixes-dev:i386 libxi-dev:i386 libxss-dev:i386 libxtst-dev:i386
-                  libxkbcommon-dev:i386 libdrm-dev:i386 libgbm-dev:i386 libgl1-mesa-dev:i386 libgles2-mesa-dev:i386
-                  libegl1-mesa-dev:i386 libdbus-1-dev:i386 libibus-1.0-dev:i386 libudev-dev:i386 libthai-dev:i386 &&
-                  git clone https://github.com/libsdl-org/SDL.git &&
-                  cd SDL &&
-                  git checkout release-3.4.2 &&
-                  mkdir build &&
-                  cmake -S . -B build &&
-                  cmake --build build -j &&
-                  sudo cmake --install build
-              env:
-                  CC: i686-linux-gnu-gcc
-                  CXX: i686-linux-gnu-g++
-                  AR: i686-linux-gnu-ar
-                  RANLIB: i686-linux-gnu-ranlib
-                  PKG_CONFIG: i686-linux-gnu-pkg-config
+                  sudo apt-get -y install libibus-1.0-dev:i386 libpulse-dev:i386 &&
+                  wget "http://mirrors.kernel.org/ubuntu/pool/universe/libs/libsdl3/libsdl3-0_3.2.20+ds-2_i386.deb" &&
+                  wget "http://mirrors.kernel.org/ubuntu/pool/universe/libs/libsdl3/libsdl3-dev_3.2.20+ds-2_i386.deb" &&
+                  sudo apt-get install ./libsdl3-0_3.2.20+ds-2_i386.deb ./libsdl3-dev_3.2.20+ds-2_i386.deb
 
             - name: Configure CMake
               run: cmake -B build -DBUILD_FOR_HOST=ON .
