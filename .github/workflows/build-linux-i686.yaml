@@ -8,7 +8,7 @@ on:
 
 jobs:
     build:
-        runs-on: ubuntu-latest
+        runs-on: ubuntu:questing
 
         steps:
             - uses: actions/checkout@v4
@@ -17,7 +17,7 @@ jobs:
               run: >
                   sudo dpkg --add-architecture i386 &&
                   sudo apt-get -y update &&
-                  sudo apt-get install wget gcc-multilib g++-multilib libgles2-mesa-dev:i386 libvorbis-dev:i386
+                  sudo apt-get install wget gcc-multilib g++-multilib libgles2-mesa-dev:i386 libvorbis-dev:i386 libsquish-dev:i386
 
             # add Ubuntu 25.10 questing mirror to get SDL3 packages
             - name: Install SDL3
