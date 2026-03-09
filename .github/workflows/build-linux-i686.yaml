@@ -17,15 +17,23 @@ jobs:
               run: >
                   sudo dpkg --add-architecture i386 &&
                   sudo apt-get -y update &&
-                  sudo apt-get install wget gcc-multilib g++-multilib libgles2-mesa-dev:i386 libvorbis-dev:i386
+                  sudo apt-get install git wget gcc-multilib g++-multilib libgles2-mesa-dev:i386 libvorbis-dev:i386
 
-            # add Ubuntu 25.10 questing mirror to get SDL3 packages
-            - name: Install SDL3
+            - name: Build SDL3
               run: >
-                  echo "deb http://archive.ubuntu.com/ubuntu/ questing universe" | sudo tee /etc/apt/sources.list.d/questing.list &&
-                  echo "Package: *\nPin: release n=questing\nPin-Priority: 50" | sudo tee /etc/apt/preferences.d/questing &&
-                  sudo apt-get -y update &&
-                  sudo apt-get install libsdl3-dev:i386
+                  git clone git@github.com:libsdl-org/SDL.git &&
+                  cd SDL &&
+                  git checkout release-3.4.2 &&
+                  mkdir build &&
+                  cmake -S . -B build &&
+                  cmake --build . &&
+                  sudo cmake --install .
+              env:
+                  CC: i686-linux-gnu-gcc
+                  CXX: i686-linux-gnu-g++
+                  AR: i686-linux-gnu-ar
+                  RANLIB: i686-linux-gnu-ranlib
+                  PKG_CONFIG: i686-linux-gnu-pkg-config
 
             - name: Install CMake 4.x
               uses: lukka/get-cmake@latest
