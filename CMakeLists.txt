@@ -274,7 +274,7 @@ endif()
 find_package(PkgConfig REQUIRED)
 
 if (BUILD_FOR_HOST)
-    set(DEPENDENCIES vorbis vorbisfile sdl3 squish)
+    set(DEPENDENCIES vorbis vorbisfile sdl3 libsquish)
     
     # use angle on windows
     if(CMAKE_HOST_WIN32)
