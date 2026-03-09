@@ -36,10 +36,17 @@ jobs:
                   sudo apt-get install ./libsquish-dev_1.15-4+b1_i386.deb
             
 
+            - name: Install SDL3
+              run: >
+                  sudo apt-get -y install libibus-1.0-dev:i386 libpulse-dev:i386 &&
+                  wget "http://mirrors.kernel.org/ubuntu/pool/universe/libs/libsdl3/libsdl3-0_3.2.20+ds-2_i386.deb" &&
+                  wget "http://mirrors.kernel.org/ubuntu/pool/universe/libs/libsdl3/libsdl3-dev_3.2.20+ds-2_i386.deb" &&
+                  sudo apt-get install ./libsdl3-0_3.2.20+ds-2_i386.deb ./libsdl3-dev_3.2.20+ds-2_i386.deb
+
             - name: Configure CMake
               run: cmake -B build -DBUILD_FOR_HOST=ON .
               env:
                   PKG_CONFIG_PATH: /usr/lib/i386-linux-gnu/pkgconfig
 
             - name: Build
-              run: cmake --build build --verbose
+              run: cmake --build build -j --verbose
