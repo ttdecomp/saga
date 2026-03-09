@@ -9,6 +9,7 @@ option(BUILD_FOR_HOST "Build for host system" OFF)
 
 include("${CMAKE_SOURCE_DIR}/cmake/ndk.cmake")
 include("${CMAKE_SOURCE_DIR}/cmake/ogg-vorbis.cmake")
+include("${CMAKE_SOURCE_DIR}/cmake/squish.cmake")
 
 if (BUILD_FOR_HOST)  
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-stack-protector -msse2")
@@ -273,7 +274,7 @@ endif()
 find_package(PkgConfig REQUIRED)
 
 if (BUILD_FOR_HOST)
-    set(DEPENDENCIES vorbis vorbisfile sdl3)
+    set(DEPENDENCIES vorbis vorbisfile sdl3 squish)
     
     # use angle on windows
     if(CMAKE_HOST_WIN32)
@@ -289,7 +290,9 @@ if (BUILD_FOR_HOST)
     endforeach()
 else()
     add_ogg_vorbis()
+    add_squish()
     target_link_libraries(saga PRIVATE custom_ogg_vorbis)
+    target_link_libraries(saga PRIVATE custom_squish)
     target_link_libraries(saga PRIVATE GLESv2 EGL)
 endif()
 
@@ -442,4 +445,3 @@ if(CLANG_TIDY_EXE)
 else()
     message(WARNING "clang-tidy not found")
 endif()
-
