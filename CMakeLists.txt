@@ -16,6 +16,7 @@ if (BUILD_FOR_HOST)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-stack-protector -msse2")
 
     if (NOT CMAKE_HOST_WIN32)
+        target_link_libraries(saga PRIVATE stdc++)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -march=i686 -fsanitize=address")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32 -march=i686 -fsanitize=address")
     endif()
