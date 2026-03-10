@@ -36,7 +36,7 @@ fi
 # 4. Set compilation flags
 CXX_INCLUDES="-I${STL_INC1} -I${STL_INC2}"
 CFLAGS="--sysroot=${SYSROOT} -I${PREFIX}/include"
-CPPFLAGS="--sysroot=${SYSROOT} ${CXX_INCLUDES} -I${PREFIX}/include -include climits"
+CPPFLAGS="--sysroot=${SYSROOT} ${CXX_INCLUDES} -I${PREFIX}/include -include climits -fno-rtti -fno-exceptions"
 LDFLAGS="--sysroot=${SYSROOT} -L${PREFIX}/lib"
 
 # 5. Download and extract
@@ -48,7 +48,7 @@ cd squish-1.10
 
 # 6. Build
 echo ">>> Verifying CPPFLAGS: ${CPPFLAGS}"
-make -j CXX="${CXX}" CPPFLAGS="${CPPFLAGS}" AR="${AR}" RANLIB="${RANLIB}"
+make -j CXX="${CXX}" CPPFLAGS="${CPPFLAGS} -fno-rtti -fno-exceptions" AR="${AR}" RANLIB="${RANLIB}"
 
 # 7. Install
 make install INSTALL_DIR="${PREFIX}"
