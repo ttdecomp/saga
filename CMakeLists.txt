@@ -436,10 +436,13 @@ if(CLANG_TIDY_EXE)
     endif()
 
     add_custom_target(lint
-        COMMAND ${CLANG_TIDY_EXE} -p=${CMAKE_BINARY_DIR} ${SAGA_SOURCE_FILES}
+        COMMAND ${CLANG_TIDY_EXE} -p=${CMAKE_BINARY_DIR} ${SAGA_SOURCE_FILES} --warnings-as-errors="*"
         COMMENT "Running clang-tidy"
     )
 else()
+    set(PATH $ENV{PATH})
     message(WARNING "clang-tidy not found")
+    execute_process(COMMAND "clang-tidy" "--version" OUTPUT RESULT_VARIABLE CLANG_TIDY_RESULT)
+    message(WARNING "clang-tidy result: ${CLANG_TIDY_RESULT}")
 endif()
 
