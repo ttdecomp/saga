@@ -10,20 +10,13 @@ void Cheat_SetArea(i32 cheat, i32 areaId) {
     }
 }
 
-int Cheat_FindByName(char *name) {
-    int iVar1;
-    int i;
-
-    i = 0;
-    if (0 < CheatSystem.cheats_count) {
-        do {
-            iVar1 = NuStrICmp(CheatSystem.cheats[i].name, name);
-            if (iVar1 == 0) {
-                return i;
-            }
-            i = i + 1;
-        } while (i < CheatSystem.cheats_count);
+i32 Cheat_FindByName(char *name) {
+    for (i32 i = 0; i < CheatSystem.cheats_count; i++) {
+        if (NuStrICmp(CheatSystem.cheats[i].name, name) == 0) {
+            return i;
+        }
     }
+
     return -1;
 }
 
@@ -36,5 +29,6 @@ u32 Cheat_CheckFlags(int cheat_index, u32 flag_mask) {
         CHEAT target_cheat = CheatSystem.cheats[cheat_index];
         return flag_mask & target_cheat.flag;
     }
+
     return 0;
 }
