@@ -36,8 +36,10 @@ jobs:
                   wget "http://ftp.ca.debian.org/debian/pool/main/libs/libsquish/libsquish-dev_1.15-4+b1_i386.deb" &&
                   wget "http://ftp.ca.debian.org/debian/pool/main/libs/libsquish/libsquish0_1.15-4+b1_i386.deb" &&
                   sudo apt-get install ./libsquish0_1.15-4+b1_i386.deb &&
-                  sudo apt-get install ./libsquish-dev_1.15-4+b1_i386.deb  
-            
+                  sudo apt-get install ./libsquish-dev_1.15-4+b1_i386.deb
+
+            - name: Install clang-tidy
+              run: sudo apt-get -y install clang-tidy
 
             - name: Configure CMake
               run: cmake -B build -DBUILD_FOR_HOST=ON .
@@ -45,4 +47,7 @@ jobs:
                   PKG_CONFIG_PATH: /usr/lib/i386-linux-gnu/pkgconfig
 
             - name: Build
-              run: cmake --build build --verbose
+              run: cmake --build build -j --verbose
+
+            - name: Lint
+              run: cmake --build build --target lint

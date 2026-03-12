@@ -13,6 +13,11 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
+            - name: Install requirements
+              run: >
+                  sudo apt-get -y update &&
+                  sudo apt-get install clang-tidy
+
             - name: Install CMake 4.x
               uses: lukka/get-cmake@latest
 
@@ -33,3 +38,6 @@ jobs:
 
             - name: Build
               run: cmake --build build --verbose
+
+            - name: Lint
+              run: cmake --build build --target lint

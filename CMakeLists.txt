@@ -441,7 +441,7 @@ if(CLANG_TIDY_EXE)
     endif()
 
     add_custom_target(lint
-        COMMAND ${CLANG_TIDY_EXE} -p=${CMAKE_BINARY_DIR} ${SAGA_SOURCE_FILES}
+        COMMAND ${CLANG_TIDY_EXE} -p=${CMAKE_BINARY_DIR} ${SAGA_SOURCE_FILES} --warnings-as-errors="*"
         COMMENT "Running clang-tidy"
     )
 else()
