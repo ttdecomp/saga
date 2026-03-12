@@ -440,6 +440,6 @@ if(CLANG_TIDY_EXE)
         COMMENT "Running clang-tidy"
     )
 else()
-    message(WARNING "clang-tidy not found")
+    message(WARNING "clang-tidy not found, PATH: ${PATH}")
 endif()
 
