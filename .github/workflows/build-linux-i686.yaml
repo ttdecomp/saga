@@ -19,6 +19,9 @@ jobs:
                   sudo apt-get -y update &&
                   sudo apt-get install git wget clang-tidy gcc-multilib g++-multilib libgles2-mesa-dev:i386 libvorbis-dev:i386
 
+            - name: Clang-tidy version
+              run: clang-tidy --version
+
             - name: Install CMake 4.x
               uses: lukka/get-cmake@latest
 
