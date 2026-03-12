@@ -440,7 +440,8 @@ if(CLANG_TIDY_EXE)
         COMMENT "Running clang-tidy"
     )
 else()
-    message(WARNING "clang-tidy not found, PATH: ${ENV{PATH}}")
+    set(PATH $ENV{PATH})
+    message(WARNING "clang-tidy not found, PATH: ${PATH}")
     execute_process(COMMAND "clang-tidy" "--version")
 endif()
 
