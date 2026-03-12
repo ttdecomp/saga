@@ -17,16 +17,16 @@ jobs:
               run: >
                   sudo dpkg --add-architecture i386 &&
                   sudo apt-get -y update &&
-                  sudo apt-get install git wget
-                  gcc-multilib g++-multilib
-                  libgles2-mesa-dev:i386 libvorbis-dev:i386
+                  sudo apt-get install git wget gcc-multilib g++-multilib libgles2-mesa-dev:i386 libvorbis-dev:i386
 
             - name: Install CMake 4.x
               uses: lukka/get-cmake@latest
 
             - name: Install SDL3
               run: >
-                  sudo apt-get -y install libibus-1.0-dev:i386 libpulse-dev:i386 &&
+                  sh -c "sudo apt-get -y install libglib2.0-dev-bin libibus-1.0-dev:i386 libpulse-dev:i386 || exit 0" &&
+                  sudo apt-get -f install &&
+                  sudo apt-get -y install libglib2.0-dev-bin libibus-1.0-dev:i386 libpulse-dev:i386 &&
                   wget "http://mirrors.kernel.org/ubuntu/pool/universe/libs/libsdl3/libsdl3-0_3.2.20+ds-2_i386.deb" &&
                   wget "http://mirrors.kernel.org/ubuntu/pool/universe/libs/libsdl3/libsdl3-dev_3.2.20+ds-2_i386.deb" &&
                   sudo apt-get install ./libsdl3-0_3.2.20+ds-2_i386.deb ./libsdl3-dev_3.2.20+ds-2_i386.deb
