@@ -61,7 +61,7 @@ typedef union variptr_u {
 #endif
 
 #ifndef __cplusplus
-#define alignof _Alignof
+#define alignof _Alignof // NOLINT
 #endif
 
 #define BUFFER_ALLOC(buffer_ptr, size, align)                                                                          \
