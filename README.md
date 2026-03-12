@@ -1,4 +1,4 @@
-![Progress](https://img.shields.io/badge/matching-4.64%25-red)
+![Progress](https://img.shields.io/badge/matching-4.70%25-red)
 [![Discord](https://img.shields.io/discord/1467775700894224555?color=%235865F2&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/2HJuMtzA7q)
 
 |                 | Target (Android x86)                                                                                                                                                                                  | Host                                                                                                                                                                                  |
