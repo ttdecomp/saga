@@ -415,11 +415,11 @@ int GetMipOffset(NuHardwareTexture *tex, int targetMip, int targetSlice, NUTEXFO
     return totalOffset;
 }
 
-#define SQUISH_KDxt1 (1 << 0) // 1
-#define SQUISH_KDxt3 (1 << 1) // 2
-#define SQUISH_KDxt5 (1 << 2) // 4
+#define SQUISH_KDXT1 (1 << 0) // 1
+#define SQUISH_KDXT3 (1 << 1) // 2
+#define SQUISH_KDXT5 (1 << 2) // 4
 
-static const int CSWTCH_249[] = {SQUISH_KDxt1, SQUISH_KDxt3, SQUISH_KDxt5};
+static const int CSWTCH_249[] = {SQUISH_KDXT1, SQUISH_KDXT3, SQUISH_KDXT5};
 
 void DecompressTextureToRGBA(unsigned char *ddsData, u32 size, unsigned char *&outBuffer) {
     int squishFlags;
@@ -449,10 +449,10 @@ void DecompressTextureToRGBA(unsigned char *ddsData, u32 size, unsigned char *&o
 
     tex.flags = (tex.flags & 0x80) | (isCubemap & 1);
 
-    tex.lpRawData = nullptr;
-    tex.lpDeviceResource = nullptr;
-    tex.dataSize = 0;
-    tex.refCount = 0;
+    tex.lp_raw_data = nullptr;
+    tex.lp_device_resource = nullptr;
+    tex.data_size = 0;
+    tex.ref_count = 0;
     tex.checksum = 0;
     tex.unknown = 0;
     tex.mips = mips;

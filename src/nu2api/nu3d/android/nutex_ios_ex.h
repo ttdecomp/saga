@@ -27,10 +27,10 @@ extern "C" {
 
 struct NuHardwareTexture {    
     NUTEXFORMAT format;           
-    void* lpRawData;              
-    void* lpDeviceResource;      
-    u32 dataSize;       
-    u32 refCount;       
+    void* lp_raw_data;              
+    void* lp_device_resource;      
+    u32 data_size;       
+    u32 ref_count;       
     u32 checksum;       
     u16 unknown;      
     u16 width;        
