@@ -33,16 +33,7 @@ extern "C" {
     };
     typedef struct cheat_s CHEAT;
 
-    struct cheatsystem_s {
-        CHEAT *cheats;
-        int cheats_count;
-        int flags;
-        undefined field3_0xc;
-        undefined field4_0xd;
-        undefined field5_0xe;
-        undefined field6_0xf;
-    };
-    typedef struct cheatsystem_s CHEATSYSTEM;
+    
 
     struct OPTIONSSAVE_s { /* PlaceHolder Structure */
         undefined field0_0x0;
@@ -200,7 +191,6 @@ extern "C" {
         char field39_0x7d08[336];
     };
 
-    extern CHEATSYSTEM CheatSystem;
 
     extern i32 PAL;
     extern f32 FRAMETIME;

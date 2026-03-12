@@ -22,13 +22,10 @@ char prodcode[16] = {0};
 char *iconname = "lego.ico";
 char unicodename[64] = "LEGO Star Wars Saga";
 
-CHEATSYSTEM CheatSystem = {0};
 
 i32 EPISODECOUNT = 0;
 i32 AREACOUNT = 0;
-
 GAMESAVE_s Game = {0};
-
 i32 COMPLETIONPOINTS = 0;
 i32 POINTS_PER_CHARACTER = 0;
 i32 POINTS_PER_SUPERBONUSCOMPLETE = 0;
