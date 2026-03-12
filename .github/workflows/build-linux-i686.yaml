@@ -35,7 +35,7 @@ jobs:
               run: sudo apt-get -y install clang-tidy
 
             - name: Configure CMake
-              run: cmake -B build -DBUILD_FOR_HOST=ON . --debug-find
+              run: cmake -B build -DBUILD_FOR_HOST=ON .
               env:
                   PKG_CONFIG_PATH: /usr/lib/i386-linux-gnu/pkgconfig
 
