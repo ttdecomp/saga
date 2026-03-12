@@ -24,8 +24,9 @@ jobs:
 
             - name: Install SDL3
               run: >
+                  sh -c "sudo apt-get -y install libglib2.0-dev-bin libibus-1.0-dev:i386 libpulse-dev:i386 || exit 0" &&
                   sudo apt-get -f install &&
-                  sudo apt-get -y install libglib2.0-dev-bin:i386=2.80.0-6ubuntu3.8 libibus-1.0-dev:i386 libpulse-dev:i386 &&
+                  sudo apt-get -y install libglib2.0-dev-bin libibus-1.0-dev:i386 libpulse-dev:i386 &&
                   wget "http://mirrors.kernel.org/ubuntu/pool/universe/libs/libsdl3/libsdl3-0_3.2.20+ds-2_i386.deb" &&
                   wget "http://mirrors.kernel.org/ubuntu/pool/universe/libs/libsdl3/libsdl3-dev_3.2.20+ds-2_i386.deb" &&
                   sudo apt-get install ./libsdl3-0_3.2.20+ds-2_i386.deb ./libsdl3-dev_3.2.20+ds-2_i386.deb
