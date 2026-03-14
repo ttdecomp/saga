@@ -38,7 +38,7 @@ struct NuHardwareTexture {
     u16 depth;        
     u8  mips;         
     u8  type;         
-    u8  flags;        
+    u8  flags; // 50/50 on this being a enum or a bitfield idk tbh        
     u8  pad;          
 };
 

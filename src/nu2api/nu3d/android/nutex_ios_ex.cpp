@@ -638,7 +638,7 @@ void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, 
                     if (mips - 1 == mip) {
                         nextOffset = GetMipOffset(width, height, format, depth, isCubemap, mips, -1, -1);
                         sizeOffset = mips - 1;
-                        targetSlice = ~-(i32)(isCubemap == false) & 5;
+                        targetSlice = isCubemap ? 5 : 0;
                     } else {
                         nextOffset = GetMipOffset(width, height, format, depth, isCubemap, mips, mip + 1, 0);
                         sizeOffset = mip;
@@ -652,8 +652,8 @@ void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, 
                         BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
                                                0x56e);
                         glBindTexture(GL_TEXTURE_2D, texID);
-                        glTexParameteri(GL_TEXTURE_2D, 0x2801, 0x2601);
-                        glTexParameteri(GL_TEXTURE_2D, 0x2800, 0x2601);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
                         if (g_loadDefaultTexture == 0) {
                             glCompressedTexImage2D(GL_TEXTURE_2D, mip, glInternalFormat, mipWidth, hLimit, 0, mipSize,
@@ -667,8 +667,8 @@ void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, 
                         BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
                                                0x54b);
                         glBindTexture(GL_TEXTURE_CUBE_MAP, texID);
-                        glTexParameteri(GL_TEXTURE_CUBE_MAP, 0x2801, 0x2601);
-                        glTexParameteri(GL_TEXTURE_CUBE_MAP, 0x2800, 0x2601);
+                        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
                         if (g_loadDefaultTexture == 0) {
                             glCompressedTexImage2D(faceTarget, mip, glInternalFormat, mipWidth, hLimit, 0, mipSize,
