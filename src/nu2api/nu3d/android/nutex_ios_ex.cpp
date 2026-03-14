@@ -11,8 +11,8 @@
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nucore/numemory.h"
 
-int g_currentTexUnit = -1;
-int g_loadDefaultTexture;
+i32 g_currentTexUnit = -1;
+i32 g_loadDefaultTexture;
 GLuint g_lastBound2DTexIds[16];
 GLuint g_lastBoundCubeTexIds[16];
 GLuint g_earlyColorFramebuffer;
@@ -24,7 +24,7 @@ GLuint NuIOS_CreateGLTexFromFile(const char *filename) {
     UNIMPLEMENTED();
 }
 
-GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, int *width, int *height, bool is_pvrtc) {
+GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, i32 *width, i32 *height, bool is_pvrtc) {
     UNIMPLEMENTED();
 }
 
@@ -95,14 +95,14 @@ GLuint loadDefaultTexture(GLuint texture, GLint level, GLsizei size, GLenum text
     return textures[0];
 }
 
-GLuint NuIOS_CreateGLTexFromMemoryDDS(void *ddsPointer, int *out_width, int *out_height) {
+GLuint NuIOS_CreateGLTexFromMemoryDDS(void *ddsPointer, i32 *out_width, i32 *out_height) {
     GLuint texID = 0;
     unsigned char *decompressedBuffer = nullptr;
     unsigned char *pixelData = nullptr;
 
     NUTEXFORMAT format;
-    int depth = 0;
-    int mipCount = 0;
+    i32 depth = 0;
+    i32 mipCount = 0;
     bool isCubemap = false;
     bool hasFourCC = false;
 
@@ -110,9 +110,8 @@ GLuint NuIOS_CreateGLTexFromMemoryDDS(void *ddsPointer, int *out_width, int *out
                                               isCubemap, &hasFourCC);
 
     if (success && (*out_width != 0 || *out_height != 0 || mipCount > 1)) {
-
         texID = CreateTexturePS();
-        int bpp;
+        i32 bpp;
         u32 glInternalFormat;
         u32 glType;
         u32 glFormat;
@@ -121,7 +120,7 @@ GLuint NuIOS_CreateGLTexFromMemoryDDS(void *ddsPointer, int *out_width, int *out
 
         GetNativeTextureFormat(format, bpp, glInternalFormat, glType, glFormat, isCompressed, nativeFormat);
 
-        pixelData = (unsigned char *)ddsPointer + 128;
+        pixelData = (unsigned char *)ddsPointer + sizeof(dds_header_s);
 
         if (format == NUTEX_DXT5) {
             decompressedBuffer = nullptr;
@@ -142,24 +141,23 @@ GLuint NuIOS_CreateGLTexFromMemoryDDS(void *ddsPointer, int *out_width, int *out
 }
 
 GLuint CreateTexturePS(void) {
-    GLuint local_10;
+    GLuint tex;
 
-    local_10 = 0;
+    tex = 0;
     BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp", 0x1ad);
-    glGenTextures(1, &local_10);
+    glGenTextures(1, &tex);
     EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp", 0x1b1);
-    return local_10;
+    return tex;
 }
 
-void GetNativeTextureFormat(NUTEXFORMAT inFormat, int &outBpp, u32 &outInternalFormat, u32 &outType, u32 &outFormat,
+void GetNativeTextureFormat(NUTEXFORMAT inFormat, i32 &outBpp, u32 &outInternalFormat, u32 &outType, u32 &outFormat,
                             bool &outIsCompressed, NUTEXFORMAT &outFormatEnum) {
-
-    int formatToCheck = inFormat;
+    i32 formatToCheck = inFormat;
 
     if (inFormat == NUTEX_DXT1) {
-        if (g_renderDevice.enabled_extensions[NUTEX_DXT1] != '\0') {
+        if (g_renderDevice.enabled_extensions[NUTEX_DXT1]) {
             outBpp = 0;
-        } else if (g_renderDevice.enabled_extensions[NUTEX_ETC1] != '\0') {
+        } else if (g_renderDevice.enabled_extensions[NUTEX_ETC1]) {
             inFormat = NUTEX_ETC1;
             formatToCheck = NUTEX_ETC1;
             outBpp = 0;
@@ -274,7 +272,7 @@ void GetNativeTextureFormat(NUTEXFORMAT inFormat, int &outBpp, u32 &outInternalF
             return;
     }
 
-    if (g_renderDevice.enabled_extensions[formatToCheck] == false) {
+    if (!g_renderDevice.enabled_extensions[formatToCheck]) {
         while (true) {
         }
     }
@@ -330,7 +328,7 @@ void GetTextureFormatInfo(NUTEXFORMAT texture, u32 &param_2, u32 &param_3) {
     return;
 }
 
-int GetMipLevelSize(NUTEXFORMAT param_1, int unclamped_width, int unclamped_height) {
+i32 GetMipLevelSize(NUTEXFORMAT param_1, i32 unclamped_width, i32 unclamped_height) {
     u32 block_size;
     u32 bpp;
 
@@ -358,37 +356,37 @@ int GetMipLevelSize(NUTEXFORMAT param_1, int unclamped_width, int unclamped_heig
     return base_area * multiplier;
 }
 
-int GetMipOffset(NuHardwareTexture *tex, int targetMip, int targetSlice, NUTEXFORMAT overrideFormat) {
+i32 GetMipOffset(NuHardwareTexture *tex, i32 targetMip, i32 targetSlice, NUTEXFORMAT overrideFormat) {
     if (tex->depth == 0) {
         tex->depth = 1;
     }
 
     NUTEXFORMAT format = (overrideFormat != 0) ? overrideFormat : tex->format;
     bool isAutoMode = (targetMip < 0 && targetSlice < 0);
-    int currentMipLimit = targetMip;
-    int currentSliceLimit = targetSlice;
+    i32 currentMipLimit = targetMip;
+    i32 currentSliceLimit = targetSlice;
 
     if (isAutoMode) {
         currentMipLimit = tex->mips;
         currentSliceLimit = (tex->flags & 1) ? 5 : tex->depth;
     }
 
-    int totalOffset = 0;
-    int currentSlice = 0;
+    i32 totalOffset = 0;
+    i32 currentSlice = 0;
 
     while (true) {
-        int innerMipLimit = currentMipLimit;
+        i32 innerMipLimit = currentMipLimit;
 
         if ((tex->flags & 1) && (currentSlice < targetSlice)) {
             innerMipLimit = tex->mips;
         }
 
-        int currentMip = 0;
+        i32 currentMip = 0;
         while (true) {
-            int w = tex->width >> currentMip;
-            int h = tex->height >> currentMip;
+            i32 w = tex->width >> currentMip;
+            i32 h = tex->height >> currentMip;
 
-            int levelSize = GetMipLevelSize(format, w, h);
+            i32 levelSize = GetMipLevelSize(format, w, h);
 
             if (currentMip == innerMipLimit) {
                 if (!isAutoMode && tex->depth > 1) {
@@ -397,7 +395,7 @@ int GetMipOffset(NuHardwareTexture *tex, int targetMip, int targetSlice, NUTEXFO
                 break;
             }
 
-            int d = tex->depth >> currentMip;
+            i32 d = tex->depth >> currentMip;
             if (d < 1)
                 d = 1;
 
@@ -419,10 +417,10 @@ int GetMipOffset(NuHardwareTexture *tex, int targetMip, int targetSlice, NUTEXFO
 #define SQUISH_KDXT3 (1 << 1) // 2
 #define SQUISH_KDXT5 (1 << 2) // 4
 
-static const int CSWTCH_249[] = {SQUISH_KDXT1, SQUISH_KDXT3, SQUISH_KDXT5};
+static const i32 CSWTCH_249[] = {SQUISH_KDXT1, SQUISH_KDXT3, SQUISH_KDXT5};
 
 void DecompressTextureToRGBA(unsigned char *ddsData, u32 size, unsigned char *&outBuffer) {
-    int squishFlags;
+    i32 squishFlags;
     NuMemory *v8;
     NuMemoryManager *threadMem;
     static unsigned char *buffer = nullptr;
@@ -430,8 +428,8 @@ void DecompressTextureToRGBA(unsigned char *ddsData, u32 size, unsigned char *&o
     NuHardwareTexture tex;
 
     NUTEXFORMAT format;
-    int width, height, depth;
-    int mips;
+    i32 width, height, depth;
+    i32 mips;
     bool isCubemap;
     bool unkDesc;
 
@@ -460,7 +458,7 @@ void DecompressTextureToRGBA(unsigned char *ddsData, u32 size, unsigned char *&o
 
     ddsData += 128;
 
-    GetMipOffset(&tex, -1, -1, (NUTEXFORMAT)7);
+    GetMipOffset(&tex, -1, -1, NUTEX_RGBA32);
 
     if (buffer == nullptr) {
         v8 = NuMemoryGet();
@@ -470,37 +468,33 @@ void DecompressTextureToRGBA(unsigned char *ddsData, u32 size, unsigned char *&o
 
     outBuffer = buffer;
 
-    int faceLimit = (-(int)(isCubemap == false) & 0xFFFFFFFB) + 6;
+    i32 faceLimit = isCubemap ? 6 : 1;
 
-    int face = 0;
-    do {
+    for (i32 face = 0; face < faceLimit; face++) {
         if (tex.mips != 0) {
-            int mip = 0;
-            do {
-                int mipOffset = GetMipOffset(&tex, mip, face, (NUTEXFORMAT)0);
-                int rgbaOffset = GetMipOffset(&tex, mip, face, (NUTEXFORMAT)7);
+            for (i32 mip = 0; mip < tex.mips; mip++) {
+                i32 mipOffset = GetMipOffset(&tex, mip, face, NUTEX_UNKNOWN);
+                i32 rgbaOffset = GetMipOffset(&tex, mip, face, NUTEX_RGBA32);
                 squish::DecompressImage(outBuffer + rgbaOffset, tex.width >> mip, tex.height >> mip,
                                         ddsData + mipOffset, squishFlags);
-                mip++;
-            } while (mip < tex.mips);
+            }
         }
-        face++;
-    } while (face < faceLimit);
+    }
 }
 
-int GetMipOffset(int width, int height, NUTEXFORMAT format, int depth, bool isCubemap, int mips, int targetMip,
-                 int targetSlice) {
-    int totalOffset = 0;
-    int currentSlice = 0;
-    int mipLimit;
-    int sliceLimit;
-    char isAuto;
+i32 GetMipOffset(i32 width, i32 height, NUTEXFORMAT format, i32 depth, bool isCubemap, i32 mips, i32 targetMip,
+                 i32 targetSlice) {
+    i32 totalOffset = 0;
+    i32 currentSlice = 0;
+    i32 mipLimit;
+    i32 sliceLimit;
+    bool isAuto;
 
     if (depth == 0) {
         depth = 1;
     }
 
-    isAuto = (char)((targetMip >> 31) & (targetSlice >> 31));
+    isAuto = targetMip < 0 || targetSlice < 0;
 
     if (isAuto != 0) {
         sliceLimit = 5;
@@ -514,11 +508,11 @@ int GetMipOffset(int width, int height, NUTEXFORMAT format, int depth, bool isCu
     }
 
     bool isCompressed;
-    int minBlocks;
-    int bytesPerBlockOrPixel;
-    int blockWidth;
+    i32 minBlocks;
+    i32 bytesPerBlockOrPixel;
+    i32 blockWidth;
 
-    if (format - 1 < 118) {
+    if (format < 119) {
         isCompressed = FormatIsCompressedTable[format];
         minBlocks = FormatMinBlocksYTable[format];
         bytesPerBlockOrPixel = FormatBytesPerElementTable[format];
@@ -531,33 +525,33 @@ int GetMipOffset(int width, int height, NUTEXFORMAT format, int depth, bool isCu
     }
 
     while (true) {
-        int innerMipLimit = mipLimit;
+        i32 innerMipLimit = mipLimit;
 
         if (isCubemap && (currentSlice < targetSlice)) {
             innerMipLimit = mips;
         }
 
-        int m = 0;
+        i32 m = 0;
 
         while (true) {
-            int w = width >> m;
+            i32 w = width >> m;
             if (w < 1)
                 w = 1;
 
-            int h = height >> m;
+            i32 h = height >> m;
             if (h < 1)
                 h = 1;
 
-            int levelSize;
+            i32 levelSize;
 
             if (!isCompressed) {
                 levelSize = w * h * bytesPerBlockOrPixel;
             } else {
-                int blocksY = h >> 2;
+                i32 blocksY = h >> 2;
                 if (blocksY < minBlocks)
                     blocksY = minBlocks;
 
-                int blocksX = w / blockWidth;
+                i32 blocksX = w / blockWidth;
                 if (blocksX < minBlocks)
                     blocksX = minBlocks;
 
@@ -571,7 +565,7 @@ int GetMipOffset(int width, int height, NUTEXFORMAT format, int depth, bool isCu
                 break;
             }
 
-            int d = depth >> m;
+            i32 d = depth >> m;
             if (d <= 0)
                 d = 1;
 
@@ -589,38 +583,35 @@ int GetMipOffset(int width, int height, NUTEXFORMAT format, int depth, bool isCu
     return totalOffset;
 }
 
-void UnlockTexturePS(u32 texID, void *pixels, int width, int height, int depth, bool isCubemap, int mips,
+void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, bool isCubemap, i32 mips,
                      NUTEXFORMAT format, u32 &glFormat, u32 &glInternalFormat, u32 glType, bool isCompressed) {
-    u32 faceTarget = 0x8515;
+    u32 faceTarget = GL_TEXTURE_CUBE_MAP_POSITIVE_X;
 
-    int loopCounter;
-
-    do {
+    for (i32 loopCounter; loopCounter < isCubemap ? 6 : 1; faceTarget++) {
         if (mips != 0) {
-
-            u32 texTarget = 0x0DE1;
+            u32 texTarget = GL_TEXTURE_2D;
             if (isCubemap) {
                 texTarget = faceTarget;
             }
 
-            int mip = 0;
-            int mipWidth;
-            int hLimit;
+            i32 mip = 0;
+            i32 mipWidth;
+            i32 hLimit;
 
-            do {
+            for (i32 mip = 0; mip < mips; ++mip) {
                 mipWidth = width >> mip;
                 if (mipWidth < 1) {
                     mipWidth = 1;
                 }
 
-                int mipHeight = height >> mip;
+                i32 mipHeight = height >> mip;
                 hLimit = 1;
                 if (mipHeight > 0) {
                     hLimit = mipHeight;
                 }
 
-                int currentOffset =
-                    GetMipOffset(width, height, format, depth, isCubemap, mips, mip, faceTarget - 0x8515);
+                i32 currentOffset = GetMipOffset(width, height, format, depth, isCubemap, mips, mip,
+                                                 faceTarget - GL_TEXTURE_CUBE_MAP_POSITIVE_X);
 
                 unsigned char *mipData = (unsigned char *)pixels + currentOffset;
 
@@ -628,26 +619,26 @@ void UnlockTexturePS(u32 texID, void *pixels, int width, int height, int depth, 
                     BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
                                            0x58e);
 
-                    u32 bindTarget = (-(int)(isCubemap == false) & 0xFFFF88CE) + 0x8513;
+                    u32 bindTarget = isCubemap ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D;
                     glBindTexture(bindTarget, texID);
 
                     if (g_loadDefaultTexture == 0) {
                         glTexImage2D(texTarget, mip, glInternalFormat, mipWidth, hLimit, 0, glFormat, glType, mipData);
                     } else {
-                        loadDefaultTexture(texID, mip, mipWidth, 0x0DE1, 0x0DE1);
+                        loadDefaultTexture(texID, mip, mipWidth, GL_TEXTURE_2D, GL_TEXTURE_2D);
                     }
                     EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
                                          0x5b3);
 
                 } else {
-                    int nextOffset;
-                    int sizeOffset;
-                    int targetSlice;
+                    i32 nextOffset;
+                    i32 sizeOffset;
+                    i32 targetSlice;
 
                     if (mips - 1 == mip) {
                         nextOffset = GetMipOffset(width, height, format, depth, isCubemap, mips, -1, -1);
                         sizeOffset = mips - 1;
-                        targetSlice = ~-(int)(isCubemap == false) & 5;
+                        targetSlice = ~-(i32)(isCubemap == false) & 5;
                     } else {
                         nextOffset = GetMipOffset(width, height, format, depth, isCubemap, mips, mip + 1, 0);
                         sizeOffset = mip;
@@ -655,35 +646,35 @@ void UnlockTexturePS(u32 texID, void *pixels, int width, int height, int depth, 
                     }
 
                     sizeOffset = GetMipOffset(width, height, format, depth, isCubemap, mips, sizeOffset, targetSlice);
-                    int mipSize = nextOffset - sizeOffset;
+                    i32 mipSize = nextOffset - sizeOffset;
 
                     if (!isCubemap) {
                         BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
                                                0x56e);
-                        glBindTexture(0x0DE1, texID);
-                        glTexParameteri(0x0DE1, 0x2801, 0x2601);
-                        glTexParameteri(0x0DE1, 0x2800, 0x2601);
+                        glBindTexture(GL_TEXTURE_2D, texID);
+                        glTexParameteri(GL_TEXTURE_2D, 0x2801, 0x2601);
+                        glTexParameteri(GL_TEXTURE_2D, 0x2800, 0x2601);
 
                         if (g_loadDefaultTexture == 0) {
-                            glCompressedTexImage2D(0x0DE1, mip, glInternalFormat, mipWidth, hLimit, 0, mipSize,
+                            glCompressedTexImage2D(GL_TEXTURE_2D, mip, glInternalFormat, mipWidth, hLimit, 0, mipSize,
                                                    mipData);
                         } else {
-                            loadDefaultTexture(texID, mip, mipWidth, 0x0DE1, 0x0DE1);
+                            loadDefaultTexture(texID, mip, mipWidth, GL_TEXTURE_2D, GL_TEXTURE_2D);
                         }
                         EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
                                              0x589);
                     } else {
                         BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
                                                0x54b);
-                        glBindTexture(0x8513, texID);
-                        glTexParameteri(0x8513, 0x2801, 0x2601);
-                        glTexParameteri(0x8513, 0x2800, 0x2601);
+                        glBindTexture(GL_TEXTURE_CUBE_MAP, texID);
+                        glTexParameteri(GL_TEXTURE_CUBE_MAP, 0x2801, 0x2601);
+                        glTexParameteri(GL_TEXTURE_CUBE_MAP, 0x2800, 0x2601);
 
                         if (g_loadDefaultTexture == 0) {
                             glCompressedTexImage2D(faceTarget, mip, glInternalFormat, mipWidth, hLimit, 0, mipSize,
                                                    mipData);
                         } else {
-                            loadDefaultTexture(texID, mip, mipWidth, 0x8513, faceTarget);
+                            loadDefaultTexture(texID, mip, mipWidth, GL_TEXTURE_CUBE_MAP, faceTarget);
                         }
                         EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
                                              0x566);
@@ -691,18 +682,18 @@ void UnlockTexturePS(u32 texID, void *pixels, int width, int height, int depth, 
                         g_loadDefaultTexture = 0;
                     }
                 }
-
-            } while (((hLimit != 1) || (mipWidth != 1)) && (++mip != mips));
+                if (mipWidth == 1 && hLimit == 1) {
+                    break;
+                }
+            }
         }
 
-        loopCounter = faceTarget - (0x8515 - 1);
-        faceTarget++;
-
-    } while (loopCounter < (-(int)(isCubemap == false) & 0xFFFFFFFB) + 6);
+        loopCounter = faceTarget - (GL_TEXTURE_CUBE_MAP_POSITIVE_X - 1);
+    }
 
     if (!isCompressed) {
         BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp", 0x5bf);
-        u32 bindTarget = (-(int)(isCubemap == false) & 0xFFFF88CE) + 0x8513;
+        u32 bindTarget = isCubemap ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D;
         glGenerateMipmap(bindTarget);
         EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp", 0x5c1);
     }

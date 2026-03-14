@@ -16,7 +16,6 @@ class NuRenderDeviceGen {
 };
 
 class NuRenderDevice : NuRenderDeviceGen {
-  
     bool focus;
     bool field48_0x45;
     EGLDisplay egl_display;
@@ -46,7 +45,6 @@ class NuRenderDevice : NuRenderDeviceGen {
 
     u32 width, height;
 
-
     bool oes_packed_depth_stencil;
     bool oes_depth24;
     bool oes_depth_texture;
@@ -63,7 +61,7 @@ class NuRenderDevice : NuRenderDeviceGen {
 
   public:
     NuRenderDevice();
-    
+
     void Initialize();
 
     void SetThisTreadAsRender();
@@ -75,8 +73,7 @@ class NuRenderDevice : NuRenderDeviceGen {
 
     void InitialiseOpenGLContext(ANativeWindow *window);
     void CheckForRenderWindowInitialisation();
-    u8 enabled_extensions[26]; //NEEDS TO BE AT 0x28
-
+    u8 enabled_extensions[26]; // NEEDS TO BE AT 0x28
 };
 
 extern NuRenderDevice g_renderDevice;

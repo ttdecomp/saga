@@ -43,7 +43,7 @@ struct NuHardwareTexture {
 };
 
 
-
+// clang-format off
 static const u8 FormatIsCompressedTable[128] = {
     1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
     1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 
@@ -54,7 +54,6 @@ static const u8 FormatIsCompressedTable[128] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
-
 
 static const u8 FormatBytesPerElementTable[128] = {
     8, 8, 16, 16, 16, 16, 4, 8, 16, 0, 0, 0, 0, 0, 0, 1, 
@@ -67,7 +66,6 @@ static const u8 FormatBytesPerElementTable[128] = {
     0, 4, 0,  4,  8,  8,  0, 0,  0, 0, 0, 0, 0, 0, 0, 0 
 };
 
-
 static const u8 FormatBlockWidthTable[128] = {
     4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
     4, 4, 4, 8, 8, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 
@@ -78,7 +76,6 @@ static const u8 FormatBlockWidthTable[128] = {
     4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 
     4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  
 };
-
 
 static const u8 FormatMinBlocksYTable[128] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 
@@ -91,7 +88,7 @@ static const u8 FormatMinBlocksYTable[128] = {
     1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0  
 };
 
-
+// clang-format on
 
 GLuint NuIOS_CreateGLTexFromFile(const char *filename);
 GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, int *width, int *height, bool is_pvrtc);

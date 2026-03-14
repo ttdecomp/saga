@@ -281,8 +281,6 @@ if (BUILD_FOR_HOST)
         list(APPEND DEPENDENCIES angleproject)
     else()
         list(APPEND DEPENDENCIES glesv2 egl)
-        target_link_libraries(saga PRIVATE stdc++)
-
     endif()
     
     foreach(dep IN LISTS DEPENDENCIES)

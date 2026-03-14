@@ -155,34 +155,7 @@ enum DDSCAPS : u32 {
     DDSCAPS2_CUBEMAP_NEGATIVEZ = 0x8000
 };
 
-struct __attribute__((packed)) dds_pixelformat_s {
-    u32 dw_size;
-    u32 dw_flags;
-    u32 dw_four_cc;
-    u32 dw_rgb_bit_count;
-    u32 dw_r_bit_mask;
-    u32 dw_g_bit_mask;
-    u32 dw_b_bit_mask;
-    u32 dw_a_bit_mask;
-};
 
-struct __attribute__((packed)) dds_header_s {
-    char magic[4];
-    u32 dw_size;
-    u32 dw_flags;
-    u32 dw_height;
-    u32 dw_width;
-    u32 dw_pitch_or_linear_size;
-    u32 dw_depth;
-    u32 dw_mip_map_count;
-    u32 dw_reserved1[11];
-    struct dds_pixelformat_s ddspf;
-    u32 dw_caps;
-    u32 dw_caps2;
-    u32 dw_caps3;
-    u32 dw_caps4;
-    u32 dw_reserved2;
-};
 
 i32 NuDDSGetTextureDescription(const char *dds_data, NUTEXFORMAT &out_format, i32 &out_width, i32 &out_height,
                                i32 &out_depth, i32 &out_mip_count, bool &out_is_cube_map, bool *out_has_four_cc)

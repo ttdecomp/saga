@@ -23,9 +23,10 @@ function(add_squish)
 
     add_library(custom_squish INTERFACE)
     add_dependencies(custom_squish build_squish)
-
-    target_include_directories(custom_squish INTERFACE "${CMAKE_SOURCE_DIR}/libs/squishlib/include")
+    target_link_libraries(custom_squish INTERFACE "stdc++")
+    target_include_directories(custom_squish SYSTEM INTERFACE "${CMAKE_SOURCE_DIR}/libs/squishlib/include")
     target_link_directories(custom_squish INTERFACE "${CMAKE_SOURCE_DIR}/libs/squishlib/lib")
+
     target_link_libraries(custom_squish INTERFACE "squish")
 
 endfunction()
