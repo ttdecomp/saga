@@ -25,7 +25,7 @@ extern "C" {
     f32 NuTimeSeconds(NUTIME *t);
     f32 NuTimeMilliSeconds(NUTIME *t);
     f32 NuTimeMicroSeconds(NUTIME *t);
-
+    
     void NuTimeSub(NUTIME *t, NUTIME *a, NUTIME *b);
 #ifdef __cplusplus
 }

@@ -4,6 +4,7 @@
 
 enum class NuApplicationStatus {
     ZERO = 0,
+    NUSTATUS_ERROR = 1
 };
 
 class NuApplicationState {

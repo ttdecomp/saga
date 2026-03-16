@@ -89,7 +89,7 @@ static const u8 FormatMinBlocksYTable[128] = {
 };
 
 // clang-format on
-
+GLuint NuIOS_CreateGLTexFromMemoryDDS(void *ddsPointer, i32 *out_width, i32 *out_height);
 GLuint NuIOS_CreateGLTexFromFile(const char *filename);
 GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, int *width, int *height, bool is_pvrtc);
 GLuint loadDefaultTexture(GLuint texture, GLint level, GLsizei size, GLenum texture_type, GLenum target);

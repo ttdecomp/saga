@@ -8,7 +8,7 @@
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nuplatform/nudevicespecs.hpp"
 #include "nu2api/nuplatform/nuplatform.h"
-
+#include "nu2api/nu3d/nutex.h"
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
 #include <math.h>
@@ -172,13 +172,14 @@ void NuRenderDevice::Initialize() {
     this->enabled_extensions[1] = dxt1;
     this->enabled_extensions[2] = dxt1;
     this->enabled_extensions[6] = dxt1;
-    this->enabled_extensions[17] = etc1;
+    this->enabled_extensions[17] = 1;// etc1;
     this->enabled_extensions[20] = pvrtc;
     this->enabled_extensions[21] = pvrtc;
     this->enabled_extensions[22] = pvrtc;
     this->enabled_extensions[23] = pvrtc;
     this->enabled_extensions[24] = atc;
     this->enabled_extensions[25] = atc;
+    this->enabled_extensions[NUTEX_ETC1] = 1;
 
     if (this->extensions != NULL) {
         this->oes_packed_depth_stencil = IsExtensionSupported("GL_OES_packed_depth_stencil");
@@ -188,6 +189,7 @@ void NuRenderDevice::Initialize() {
 
     if (g_forceETC1 == 0 || !etc1) {
         if (dxt1 != 0) {
+
             NuPlatform::Get()->SetCurrentPlatform(ANDROID_S3TC_PLATFORM);
         } else if (pvrtc != 0) {
             NuPlatform::Get()->SetCurrentPlatform(ANDROID_PVRTC_PLATFORM);
@@ -199,7 +201,9 @@ void NuRenderDevice::Initialize() {
     } else {
         NuPlatform::Get()->SetCurrentPlatform(ANDROID_ETC1_PLATFORM);
     }
-
+    //DELETE LATER
+    LOG_ERR("THIS IS FOR DEBUGGING AND MUST BE REMOVED LATER");
+    NuPlatform::Get()->SetCurrentPlatform(ANDROID_ETC1_PLATFORM);
     NuDeviceSpecs::Create();
     EndCriticalSection("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/NuRenderDevice_gles2.cpp", 0x194);
 
@@ -240,11 +244,29 @@ void NuRenderDevice::BeginCriticalSection(const char *file, i32 line) {
 }
 
 void NuRenderDevice::EndCriticalSection(const char *file, i32 line) {
-    UNIMPLEMENTED();
+    if (--this->lock_count == 0) {
+        i32 ctx_idx = gt_glContextIndex;
+        bool cVar1 = this->field54_0x54;
+        u32 iVar3 = this->field_0x50;
+        bool cond1 = (iVar3 - 2U <= 1);
+        NuApplicationStatus status = NuCore::GetApplicationState()->GetStatus();
+
+        if (cond1 || !cVar1 || (ctx_idx != 0) || (status == NuApplicationStatus::NUSTATUS_ERROR)) {
+            eglMakeCurrent(this->egl_display, nullptr, nullptr, nullptr);
+        }
+    }
+
+    pthread_mutex_unlock(&this->mutex2);
 }
 
 void NuRenderDevice::SwapBuffers() {
-    UNIMPLEMENTED();
+    if (NuCore::GetApplicationState()->GetStatus() != NuApplicationStatus::NUSTATUS_ERROR) {
+        g_renderDevice.BeginCriticalSection("none", -1);
+        eglSwapBuffers(this->egl_display, this->pbuffers[3]);
+        g_renderDevice.EndCriticalSection(
+            "i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/NuRenderDevice_gles2.cpp", 1157);
+    }
+    return;
 }
 
 void NuRenderDevice::OnWindowCreated(ANativeWindow *window) {

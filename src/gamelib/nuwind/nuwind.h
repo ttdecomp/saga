@@ -12,6 +12,7 @@ typedef struct nuwind_s {
 #ifdef __cplusplus
 extern "C" {
 #endif
+    void NuWindAnimate(NUWIND *param_1,float param_2);
     void NuWindInitialise(NUWIND *wind);
 #ifdef __cplusplus
 }

@@ -9,8 +9,9 @@
 #include "decomp.h"
 #include "nu2api/nu3d/NuRenderDevice.h"
 #include "nu2api/nuandroid/ios_graphics.h"
+#include "nu2api/nu3d/android/rg_etc1.h"
 #include "nu2api/nucore/numemory.h"
-
+#include "nu2api/nuplatform/nuplatform.h"
 i32 g_currentTexUnit = -1;
 i32 g_loadDefaultTexture;
 GLuint g_lastBound2DTexIds[16];
@@ -24,8 +25,41 @@ GLuint NuIOS_CreateGLTexFromFile(const char *filename) {
     UNIMPLEMENTED();
 }
 
-GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, i32 *width, i32 *height, bool is_pvrtc) {
+GLuint NuIOS_CreateGLTexFromPVRInMemory(void *data, i32 *width, i32 *height) {
     UNIMPLEMENTED();
+}
+
+GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, i32 *width, i32 *height, bool is_pvrtc) {
+    GLuint texture_id = 0;
+
+    u32 platform_id = NuPlatform::ms_instance->current_platform;
+
+    // Invert: check !is_pvrtc first so the compiler lays out the
+    // platform_id block as the fall-through (je forward), and puts
+    // the PVR call at a higher address — matching jne-to-PVR layout.
+    if (!is_pvrtc) {
+        if (platform_id <= 12) {
+            u32 mask = 1u << platform_id;
+
+            if (mask & 0x1A00) {
+                LOG_INFO("Texmemdds");
+                texture_id = NuIOS_CreateGLTexFromMemoryDDS(data, width, height);
+            }
+            else if (mask & 0x500) {
+                // This must be structurally identical to the is_pvrtc==true
+                // call below so the compiler merges them via jmp
+                texture_id = NuIOS_CreateGLTexFromPVRInMemory(data, width, height);
+            }
+        }
+    } else {
+        texture_id = NuIOS_CreateGLTexFromPVRInMemory(data, width, height);
+    }
+
+    if (texture_id != 0) {
+        return texture_id;
+    }
+
+    return loadDefaultTexture(0, 0, 0x20, GL_TEXTURE_2D, GL_TEXTURE_2D);
 }
 
 GLuint loadDefaultTexture(GLuint texture, GLint level, GLsizei size, GLenum texture_type, GLenum target) {
@@ -95,6 +129,42 @@ GLuint loadDefaultTexture(GLuint texture, GLint level, GLsizei size, GLenum text
     return textures[0];
 }
 
+
+void DecodeETC1ToRGBA(const unsigned char* etc1Data, i32 width, i32 height, unsigned char* outRgbaBuffer) {
+    static bool isRgInit = false;
+    if (!isRgInit) {
+        rg_etc1::pack_etc1_block_init();
+        isRgInit = true;
+    }
+    i32 blocksX = (width + 3) / 4;
+    i32 blocksY = (height + 3) / 4;
+    unsigned int decodedBlock[16];
+    for (i32 by = 0; by < blocksY; by++) {
+        for (i32 bx = 0; bx < blocksX; bx++) {
+            i32 blockIndex = (by * blocksX) + bx;
+            const unsigned char* currentBlockData = etc1Data + (blockIndex * 8);
+            rg_etc1::unpack_etc1_block(currentBlockData, decodedBlock, false);
+            for (i32 py = 0; py < 4; py++) {
+                for (i32 px = 0; px < 4; px++) {
+                    i32 globalX = (bx * 4) + px;
+                    i32 globalY = (by * 4) + py;
+                    if (globalX < width && globalY < height) {
+                        i32 outIndex = ((globalY * width) + globalX) * 4;
+                        unsigned char* pixelBytes = (unsigned char*)&decodedBlock[py * 4 + px];
+                        outRgbaBuffer[outIndex + 0] = pixelBytes[0]; 
+                        outRgbaBuffer[outIndex + 1] = pixelBytes[1]; 
+                        outRgbaBuffer[outIndex + 2] = pixelBytes[2]; 
+                        outRgbaBuffer[outIndex + 3] = 255;           
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+
+
 GLuint NuIOS_CreateGLTexFromMemoryDDS(void *ddsPointer, i32 *out_width, i32 *out_height) {
     GLuint texID = 0;
     unsigned char *decompressedBuffer = nullptr;
@@ -105,12 +175,13 @@ GLuint NuIOS_CreateGLTexFromMemoryDDS(void *ddsPointer, i32 *out_width, i32 *out
     i32 mipCount = 0;
     bool isCubemap = false;
     bool hasFourCC = false;
-
+    LOG_INFO("ddsGetTexDesc");
     bool success = NuDDSGetTextureDescription((char *)ddsPointer, format, *out_width, *out_height, depth, mipCount,
                                               isCubemap, &hasFourCC);
-
+    LOG_INFO("ddsGetTexDesc success");
     if (success && (*out_width != 0 || *out_height != 0 || mipCount > 1)) {
         texID = CreateTexturePS();
+        LOG_INFO("CreateTexturePS success");
         i32 bpp;
         u32 glInternalFormat;
         u32 glType;
@@ -119,7 +190,7 @@ GLuint NuIOS_CreateGLTexFromMemoryDDS(void *ddsPointer, i32 *out_width, i32 *out
         NUTEXFORMAT nativeFormat;
 
         GetNativeTextureFormat(format, bpp, glInternalFormat, glType, glFormat, isCompressed, nativeFormat);
-
+        LOG_INFO("GetNativeTextureFormat success format = %d",format);
         pixelData = (unsigned char *)ddsPointer + sizeof(dds_header_s);
 
         if (format == NUTEX_DXT5) {
@@ -132,9 +203,26 @@ GLuint NuIOS_CreateGLTexFromMemoryDDS(void *ddsPointer, i32 *out_width, i32 *out
             glFormat = GL_RGBA;
 
             pixelData = decompressedBuffer;
+        } 
+        #ifdef _WIN32
+        if (format == NUTEX_ETC1) {
+            LOG_INFO("Software decoding ETC1 to RGBA...");
+            i32 uncompressedSize = (*out_width) * (*out_height) * 4;
+            decompressedBuffer = (unsigned char*)malloc(uncompressedSize);
+            unsigned char* compressedData = (unsigned char*)ddsPointer + 128;
+            DecodeETC1ToRGBA(compressedData, *out_width, *out_height, decompressedBuffer);
+            format = NUTEX_RGBA32;
+            isCompressed = false;
+            glInternalFormat = GL_RGBA;
+            glFormat = GL_RGBA;
+            glType = GL_UNSIGNED_BYTE;
+            pixelData = decompressedBuffer;
+            mipCount = 1; 
         }
+        #endif
         UnlockTexturePS(texID, pixelData, *out_width, *out_height, depth, isCubemap, mipCount, format, glFormat,
                         glInternalFormat, glType, isCompressed);
+        LOG_INFO("UnlockTexturePS success");
     }
 
     return texID;
@@ -153,7 +241,6 @@ GLuint CreateTexturePS(void) {
 void GetNativeTextureFormat(NUTEXFORMAT inFormat, i32 &outBpp, u32 &outInternalFormat, u32 &outType, u32 &outFormat,
                             bool &outIsCompressed, NUTEXFORMAT &outFormatEnum) {
     i32 formatToCheck = inFormat;
-
     if (inFormat == NUTEX_DXT1) {
         if (g_renderDevice.enabled_extensions[NUTEX_DXT1]) {
             outBpp = 0;
@@ -272,10 +359,10 @@ void GetNativeTextureFormat(NUTEXFORMAT inFormat, i32 &outBpp, u32 &outInternalF
             return;
     }
 
-    if (!g_renderDevice.enabled_extensions[formatToCheck]) {
-        while (true) {
-        }
-    }
+    //if (!g_renderDevice.enabled_extensions[formatToCheck]) {
+    //    while (true) {
+    //    }
+    //}
 
     outFormatEnum = inFormat;
 }
@@ -586,9 +673,13 @@ i32 GetMipOffset(i32 width, i32 height, NUTEXFORMAT format, i32 depth, bool isCu
 void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, bool isCubemap, i32 mips,
                      NUTEXFORMAT format, u32 &glFormat, u32 &glInternalFormat, u32 glType, bool isCompressed) {
     u32 faceTarget = GL_TEXTURE_CUBE_MAP_POSITIVE_X;
+    
+    for (i32 loopCounter=0; loopCounter < (isCubemap ? 6 : 1); ++loopCounter) {
+        u32 faceTarget = GL_TEXTURE_CUBE_MAP_POSITIVE_X + loopCounter;
 
-    for (i32 loopCounter; loopCounter < isCubemap ? 6 : 1; faceTarget++) {
+
         if (mips != 0) {
+            LOG_INFO("MIPS NOT 0");
             u32 texTarget = GL_TEXTURE_2D;
             if (isCubemap) {
                 texTarget = faceTarget;
@@ -614,16 +705,18 @@ void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, 
                                                  faceTarget - GL_TEXTURE_CUBE_MAP_POSITIVE_X);
 
                 unsigned char *mipData = (unsigned char *)pixels + currentOffset;
-
+                
                 if (!isCompressed) {
                     BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
                                            0x58e);
 
                     u32 bindTarget = isCubemap ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D;
+                    LOG_INFO("BindTexture");
                     glBindTexture(bindTarget, texID);
 
                     if (g_loadDefaultTexture == 0) {
                         glTexImage2D(texTarget, mip, glInternalFormat, mipWidth, hLimit, 0, glFormat, glType, mipData);
+                        LOG_INFO("LoggedToGPU");
                     } else {
                         loadDefaultTexture(texID, mip, mipWidth, GL_TEXTURE_2D, GL_TEXTURE_2D);
                     }
@@ -647,15 +740,18 @@ void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, 
 
                     sizeOffset = GetMipOffset(width, height, format, depth, isCubemap, mips, sizeOffset, targetSlice);
                     i32 mipSize = nextOffset - sizeOffset;
-
+                    
                     if (!isCubemap) {
-                        BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
-                                               0x56e);
+                        
+                        BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp", 0x56e);
+                        
                         glBindTexture(GL_TEXTURE_2D, texID);
+                        LOG_INFO("binded to %d ", texID);
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
+                        
                         if (g_loadDefaultTexture == 0) {
+                            LOG_INFO("glCompressedTexImage2D");
                             glCompressedTexImage2D(GL_TEXTURE_2D, mip, glInternalFormat, mipWidth, hLimit, 0, mipSize,
                                                    mipData);
                         } else {
@@ -663,7 +759,9 @@ void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, 
                         }
                         EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
                                              0x589);
+                        
                     } else {
+                        
                         BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp",
                                                0x54b);
                         glBindTexture(GL_TEXTURE_CUBE_MAP, texID);
@@ -685,12 +783,12 @@ void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, 
                 if (mipWidth == 1 && hLimit == 1) {
                     break;
                 }
+                
             }
         }
-
-        loopCounter = faceTarget - (GL_TEXTURE_CUBE_MAP_POSITIVE_X - 1);
+        LOG_INFO("Loading loopCounter out %d", loopCounter);
     }
-
+    
     if (!isCompressed) {
         BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nutex_ios_ex.cpp", 0x5bf);
         u32 bindTarget = isCubemap ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D;
