@@ -10,7 +10,7 @@ struct NuButtonLayout {
 class NuVirtualTouchDevice : public NuInputDeviceTranslator {
   public:
     NuVirtualTouchDevice(u32 unknown);
-
+    void Render();
     virtual void Execute(u32 port, NUPADTYPE in_type, NUPADATTACHMENTTYPE in_attch_type, u32 in_caps, u32 in_buttons,
                          const float *in_analog, const float *in_motion, const NuInputTouchData *in_touch_data,
                          const NuInputMouseData *in_mouse_data, NUPADTYPE &out_pad_type,

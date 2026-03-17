@@ -174,7 +174,6 @@ int NuRndrSwapScreen() {
 
 
 i32 NuHasError(void)
-
 {
   return bHaveErr;
 }
@@ -211,7 +210,7 @@ i32 NuFrameEnd(void) {
   //NuOcclusionManagerEndFrame();
   //NuPadRecordEndFrame();
   //NuTimeBarSetRender(0xffffffff);
-  //NuPad_Interface_Render();
+  NuPad_Interface_Render();
   local_10 = 1;
  // if (preRenderFlashingHack != (code *)0x0) {
   //  (*preRenderFlashingHack)();
