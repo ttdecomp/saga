@@ -19,3 +19,7 @@ void NuDisplayListReset(NUDISPLAYLIST *list) {
     state->unk32 = 0xffff;
     list->current = list->head;
 }
+
+int NuDisplayListAddRenderScene(void) {
+    UNIMPLEMENTED();
+}

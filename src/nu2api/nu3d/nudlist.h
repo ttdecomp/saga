@@ -40,6 +40,7 @@ extern "C" {
     extern VARIPTR *display_list_buffer;
     void NuDisplayListAnimateMtls(float param_1);
     void NuDisplayListReset(NUDISPLAYLIST *list);
+    int NuDisplayListAddRenderScene(void);
     static VARIPTR *NuDisplayListGetBuffer(void) {
         display_list_buffer->addr = ALIGN(display_list_buffer->addr, 0x10);
 

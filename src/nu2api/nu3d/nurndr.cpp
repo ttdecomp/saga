@@ -13,13 +13,16 @@
 #include "nu2api/nu3d/nudlist.h"
 #include "nu2api/nu3d/numtl.h"
 #include "gamelib/nuwind/nuwind.h"
-
-
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/nudynamiclight.h"
 
 i32 nurndr_pixel_width;
 i32 nurndr_pixel_height;
 i32 unknown_timer;
 
+
+NUINTERNALSCENE sceneParameters[64];
+i32 sceneParametersCount = 0;
 
 
 void NuRndrInitEx(i32 stream_buffer_size, VARIPTR *buffer) {
@@ -103,6 +106,43 @@ int NuRndrBeginScene() {
     
     return 1;
 }
+
+
+
+
+NUINTERNALSCENE* NuRndrEndScene(void)
+{
+    int newSceneId = NuDisplayListAddRenderScene();
+    int hasDynamicLights = currentScene->field_38; 
+    currentScene->field_00 = newSceneId;
+    if (hasDynamicLights != 0)
+    {
+        if (newSceneId != -1)
+        {
+            if (NuDynamicLightIsEnabled(currentScene->field_3C))
+            {
+                NuDynamicLightAddRenderScene(
+                    currentScene->field_3C, 
+                    currentScene->field_40, 
+                    currentScene->field_00  
+                );
+            }
+            else
+            {
+                currentScene->field_38 = 0; 
+            }
+            
+            currentScene->field_00 = -1; 
+        }
+    }
+    NUINTERNALSCENE* savedScene = &sceneParameters[sceneParametersCount++];
+    *savedScene = *currentScene; 
+    return savedScene;
+}
+
+
+
+
 
 int NuRndrSwapScreen() {
   NuApplicationState *ApplicationState; // eax

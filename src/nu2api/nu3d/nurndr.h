@@ -2,7 +2,7 @@
 
 #include "nu2api/nucore/common.h"
 #include "nu2api/numath/numtx.h"
-
+#include "nu2api/nu3d/nudynamiclight.h"
 #define NURNDR_STREAM_MAX_BUFFERS 2
 
 typedef struct rndrstream_s {
@@ -25,6 +25,8 @@ typedef struct nucolour4_s {
     f32 a;
 } NUCOLOUR4;
 
+
+
 typedef struct nuinternalscene_s {
     i32 field_00;         // 0x00 (Index 0)
     i32 field_04;         // 0x04 (Index 1)
@@ -42,7 +44,7 @@ typedef struct nuinternalscene_s {
     i32 _pad2C[3]; // 0x2C (Indices 11-13)
 
     i32 field_38; // 0x38 (Index 14)
-    i32 field_3C; // 0x3C (Index 15)
+    NUDYNAMICLIGHTS* field_3C; // Dynamic light
     i32 field_40; // 0x40 (Index 16)
 
     i32 _pad44; // 0x44 (Index 17)
@@ -80,7 +82,6 @@ typedef struct nuinternalscene_s {
 
     i32 field_214; // 0x214 (Index 133)
 
-    i32 _pad218[2]; // 0x218 (Indices 134-135)
 } NUINTERNALSCENE;
 
 #ifdef __cplusplus
@@ -105,6 +106,8 @@ extern "C" {
     i32 NuHasError(void);
     i32 NuFrameEnd(void);
     int NuRndrBeginScene();
+    NUINTERNALSCENE* NuRndrEndScene(void);
+    
 #ifdef __cplusplus
 }
 #endif
