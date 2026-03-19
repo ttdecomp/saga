@@ -57,6 +57,20 @@ f32 NuFloor(f32 f) {
     return (f32)(i32)f;
 }
 
-f64 NuPowFast(float param_1, float param_2) {
+f32 NuLog10(float x) {
     return UNIMPLEMENTED();
+}
+
+f32 NuExp10(float x) {
+    return UNIMPLEMENTED();
+}
+
+f32 NuPowFast(f32 base, f32 exponent) {
+    if (base == 0.0) {
+        return 0.0;
+    }
+
+    f32 result;
+    result = NuExp10(NuLog10(base) * exponent);
+    return result;
 }
