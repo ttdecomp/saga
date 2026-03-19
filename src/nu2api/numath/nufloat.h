@@ -62,7 +62,7 @@ extern "C" {
 
     f32 NuFloor(f32 f);
 
-    f32 NuPowFast(f32 param_1, f32 param_2);
+    f32 NuPowFast(f32 base, f32 exponent);
 #ifdef __cplusplus
 }
 #endif
