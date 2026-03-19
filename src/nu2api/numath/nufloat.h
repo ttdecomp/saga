@@ -61,6 +61,8 @@ extern "C" {
     f32 NuFmod(f32 a, f32 b);
 
     f32 NuFloor(f32 f);
+
+    f64 NuPowFast(float param_1, float param_2);
 #ifdef __cplusplus
 }
 #endif
