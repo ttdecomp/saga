@@ -1,5 +1,6 @@
 #include "nu2api/numath/nufloat.h"
 
+#include "decomp.h"
 #include "nu2api/nucore/common.h"
 
 f32 NuFnabs(f32 f) {
@@ -54,4 +55,22 @@ f32 NuFmod(f32 a, f32 b) {
 
 f32 NuFloor(f32 f) {
     return (f32)(i32)f;
+}
+
+f32 NuLog10(float x) {
+    UNIMPLEMENTED();
+}
+
+f32 NuExp10(float x) {
+    UNIMPLEMENTED();
+}
+
+f32 NuPowFast(f32 base, f32 exponent) {
+    if (base == 0.0) {
+        return 0.0;
+    }
+
+    f32 result;
+    result = NuExp10(NuLog10(base) * exponent);
+    return result;
 }
