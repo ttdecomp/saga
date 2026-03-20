@@ -58,11 +58,11 @@ f32 NuFloor(f32 f) {
 }
 
 f32 NuLog10(float x) {
-    return UNIMPLEMENTED();
+    UNIMPLEMENTED();
 }
 
 f32 NuExp10(float x) {
-    return UNIMPLEMENTED();
+    UNIMPLEMENTED();
 }
 
 f32 NuPowFast(f32 base, f32 exponent) {
