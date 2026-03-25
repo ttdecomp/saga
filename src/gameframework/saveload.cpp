@@ -107,7 +107,7 @@ i32 saveloadLoadSlot(i32 slot, void *buffer, usize size) {
     }
 }
 
-void saveloadSaveSlot(i32 param_1, void *param_2, i32 param_3) {
+i32 saveloadSaveSlot(i32 param_1, void *param_2, i32 param_3) {
     UNIMPLEMENTED();
 }
 
@@ -167,7 +167,16 @@ i32 ChecksumSaveData(void *buffer, i32 size) {
 }
 
 bool TriggerExtraDataSave(void) {
-    UNIMPLEMENTED();
+    void *pvVar1;
+    undefined4 uVar2;
+    int iVar3;
+
+    memmove(memcard_extra_savedatabuffer, memcard_extra_savedata, memcard_extra_savedatasize);
+    uVar2 = ChecksumSaveData(memcard_extra_savedatabuffer, memcard_extra_savedatasize);
+    pvVar1 = memcard_extra_savedatabuffer;
+    *(undefined4 *)((char *)memcard_extra_savedatabuffer + memcard_extra_savedatasize) = uVar2;
+    iVar3 = saveloadSaveSlot(SAVESLOTS, pvVar1, memcard_extra_savedatasize + 4);
+    return iVar3 != 0;
 }
 
 i32 TriggerExtraDataLoad(void) {
