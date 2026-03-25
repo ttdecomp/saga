@@ -6,14 +6,14 @@
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nufile/nufile.h"
-
+#include "nu2api/nu3d/nudlist.h"
 static int max_materials;
 static NUMTL *material_list;
 int numtl_renderplane;
 
 NUMTL *numtl_defaultmtl2d;
 NUMTL *numtl_defaultmtl3d;
-
+i32 mtl_animation_speed_scale = 1;
 void NuMtlInitEx(VARIPTR *buf, i32 mtl_count) {
     max_materials = mtl_count;
     material_list = (NUMTL *)ALIGN(buf->addr, 0x10);
@@ -66,6 +66,11 @@ void NuShaderMtlDescInit(NUSHADERMTLDESC *desc) {
 
     desc->vtx_desc.has_position = 1;
     desc->vtx_desc.has_diffuse = 1;
+}
+
+void NuMtlAnimate(float speed) {
+    NuDisplayListAnimateMtls(speed * mtl_animation_speed_scale);
+    return;
 }
 
 NUMTL *NuMtlCreate(i32 count) {

@@ -43,6 +43,14 @@ void NuVpUpdate(void) {
     UNIMPLEMENTED();
 }
 
+void NuVpGetPosition2(float*,float*) {
+    UNIMPLEMENTED();
+}
+void NuVpGetSize2(float *, float *) {
+    UNIMPLEMENTED();
+
+}
+
 void NuVpSetScalingMtx(void) {
     f32 vp_x = (f32)(vpCurrent.x >> 4);
     f32 vp_y = (f32)(vpCurrent.y >> 4);

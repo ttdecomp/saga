@@ -2,10 +2,24 @@
 #include "nu2api/nucore/NuInputManager.h"
 #include "nu2api/nucore/NuVirtualTouchDevice.h"
 #include "nu2api/nucore/nupad.h"
+#include "nu2api/nu3d/nurndr.h"
 
 NuInputManager *inputManager;
 NuVirtualTouchDevice *inputTouchDevice;
 bool used_touch_IDs[10];
+
+
+void NuPad_Interface_Render(void) {
+  NuRndrBeginScene();
+  if (inputTouchDevice != (NuVirtualTouchDevice *)0x0) {
+    inputTouchDevice->Render();
+  }
+  NuRndrEndScene();
+  return;
+}
+
+
+
 
 void NuPad_Interface_InputManagerInitialise(void) {
     NuInputDevice *touch_dev;

@@ -165,7 +165,7 @@ extern "C" {
 #endif
     extern NUMTL *numtl_defaultmtl2d;
     extern NUMTL *numtl_defaultmtl3d;
-
+    void NuMtlAnimate(float speed);
     void NuMtlInitEx(VARIPTR *buf, i32 mtl_count);
 
     void NuShaderMtlDescInit(NUSHADERMTLDESC *desc);

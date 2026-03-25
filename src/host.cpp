@@ -37,6 +37,7 @@ void host_init() {
 #else
     i32 handle = SDL_GetNumberProperty(prop_id, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0);
 #endif
+    LOG_INFO("HOST BUILD");
 
     g_renderDevice.OnWindowCreated((ANativeWindow *)handle);
 }

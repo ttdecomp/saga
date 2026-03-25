@@ -22,6 +22,10 @@ void NuTimeGetTicksPS(u32 *low, u32 *high) {
     *low = ticks;
 }
 
+
+
+
+
 void NuTimeGetTicksPerSecondPS(u32 *low, u32 *high) {
     i32 micros_per_sec;
     i32 remainder;

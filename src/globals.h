@@ -4,7 +4,7 @@
 #include "legoapi/mission.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nucore/common.h"
-
+#include "nu2api/nu3d/nurndr.h"
 #ifdef __cplusplus
 
 extern "C" {
@@ -240,7 +240,7 @@ extern "C" {
     extern struct nusound_filename_info_s *MusicInfo;
     extern struct nusound_filename_info_s *g_music;
     extern u32 SFX_MUSIC_COUNT;
-    extern u8 g_BackgroundUsedFogColour;
+    extern bool g_BackgroundUsedFogColour;
     extern NUCAMERA *pNuCam;
 
     extern i32 NOSOUND;
@@ -261,7 +261,9 @@ extern "C" {
     extern i32 g_isLowEndDevice;
     extern i32 g_isMidRangeDevice;
     extern i32 g_lowEndLevelBehaviour;
-
+    extern NUINTERNALSCENE currentScene[1];
+    extern i32 g_BackgroundColour;
+    extern i32 bHaveErr;
 #ifdef __cplusplus
 }
 #endif

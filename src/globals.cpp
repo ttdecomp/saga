@@ -4,7 +4,7 @@
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nusound/nusound.h"
-
+#include "nu2api/nu3d/nurndr.h"
 i32 PAL = 0;
 f32 FRAMETIME = 0;
 f32 DEFAULTFPS = 0;
@@ -45,12 +45,13 @@ i32 GOLDBRICKFORSUPERSTORY = 0;
 i32 GOLDBRICKFORCHALLENGE = 0;
 i32 POINTS_PER_SUPERSTORY = 0;
 i32 GOLDBRICKPOINTS = 0;
-
+NUINTERNALSCENE  currentScene[1];
+i32 g_BackgroundColour;
 i32 CompletionPointInfo[7] = {0};
 
 NUSOUND_FILENAME_INFO *MusicInfo = NULL;
 NUSOUND_FILENAME_INFO *g_music = NULL;
-u8 g_BackgroundUsedFogColour = 0;
+bool g_BackgroundUsedFogColour = 0;
 u32 SFX_MUSIC_COUNT = 0;
 
 NUCAMERA *pNuCam = NULL;
@@ -72,3 +73,4 @@ i32 g_isLowestEndDevice = 0;
 i32 g_isLowEndDevice = 0;
 i32 g_isMidRangeDevice = 0;
 i32 g_lowEndLevelBehaviour = 0;
+i32 bHaveErr = 0;

@@ -20,6 +20,7 @@ extern "C" {
     u32 NuIOS_YieldThread(void);
 
     void NuIOS_InitRenderThread();
+    i32 NuIOS_WakeRenderThread();
     i32 NuIOS_ShouldUseMSAA(void);
     void NuIOSInitOpenGLES(void);
     void NuIOS_AllocateSystemFramebuffers(void);
