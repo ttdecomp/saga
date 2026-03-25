@@ -33,10 +33,6 @@ GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, i32 *width, i32 *height
     GLuint texture_id = 0;
 
     u32 platform_id = NuPlatform::ms_instance->current_platform;
-
-    // Invert: check !is_pvrtc first so the compiler lays out the
-    // platform_id block as the fall-through (je forward), and puts
-    // the PVR call at a higher address — matching jne-to-PVR layout.
     if (!is_pvrtc) {
         if (platform_id <= 12) {
             u32 mask = 1u << platform_id;
@@ -46,8 +42,6 @@ GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, i32 *width, i32 *height
                 texture_id = NuIOS_CreateGLTexFromMemoryDDS(data, width, height);
             }
             else if (mask & 0x500) {
-                // This must be structurally identical to the is_pvrtc==true
-                // call below so the compiler merges them via jmp
                 texture_id = NuIOS_CreateGLTexFromPVRInMemory(data, width, height);
             }
         }
