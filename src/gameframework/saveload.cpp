@@ -107,6 +107,10 @@ i32 saveloadLoadSlot(i32 slot, void *buffer, usize size) {
     }
 }
 
+void saveloadSaveSlot(i32 param_1, void *param_2, i32 param_3) {
+    UNIMPLEMENTED();
+}
+
 typedef i16 (*hashfn_t)(void);
 
 i32 SAVESLOTS = 3;
@@ -160,6 +164,10 @@ i32 ChecksumSaveData(void *buffer, i32 size) {
     }
 
     return sum;
+}
+
+bool TriggerExtraDataSave(void) {
+    UNIMPLEMENTED();
 }
 
 i32 TriggerExtraDataLoad(void) {
