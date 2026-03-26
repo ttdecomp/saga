@@ -166,7 +166,7 @@ i32 ChecksumSaveData(void *buffer, i32 size) {
     return sum;
 }
 
-__attribute__((optimize("omit-frame-pointer"))) __attribute__((optimize("O2"))) bool TriggerExtraDataSave(void) {
+bool TriggerExtraDataSave(void) {
     memmove(memcard_extra_savedatabuffer, memcard_extra_savedata, memcard_extra_savedatasize);
     i32 checksum = ChecksumSaveData(memcard_extra_savedatabuffer, memcard_extra_savedatasize);
     *(i32 *)((char *)memcard_extra_savedatabuffer + memcard_extra_savedatasize) = checksum;
