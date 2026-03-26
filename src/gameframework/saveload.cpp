@@ -107,6 +107,10 @@ i32 saveloadLoadSlot(i32 slot, void *buffer, usize size) {
     }
 }
 
+i32 saveloadSaveSlot(i32 slot, void *buffer, usize size) {
+    UNIMPLEMENTED();
+}
+
 typedef i16 (*hashfn_t)(void);
 
 i32 SAVESLOTS = 3;
@@ -160,6 +164,16 @@ i32 ChecksumSaveData(void *buffer, i32 size) {
     }
 
     return sum;
+}
+
+bool TriggerExtraDataSave(void) {
+    memmove(memcard_extra_savedatabuffer, memcard_extra_savedata, memcard_extra_savedatasize);
+
+    i32 checksum = ChecksumSaveData(memcard_extra_savedatabuffer, memcard_extra_savedatasize);
+    *(i32 *)((char *)memcard_extra_savedatabuffer + memcard_extra_savedatasize) = checksum;
+
+    i32 save_error = saveloadSaveSlot(SAVESLOTS, memcard_extra_savedatabuffer, memcard_extra_savedatasize + 4);
+    return save_error != 0;
 }
 
 i32 TriggerExtraDataLoad(void) {
