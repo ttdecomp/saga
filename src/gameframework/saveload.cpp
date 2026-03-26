@@ -166,17 +166,11 @@ i32 ChecksumSaveData(void *buffer, i32 size) {
     return sum;
 }
 
-bool TriggerExtraDataSave(void) {
-    void *pvVar1;
-    undefined4 uVar2;
-    int iVar3;
-
+__attribute__((optimize("omit-frame-pointer"))) __attribute__((optimize("O2"))) bool TriggerExtraDataSave(void) {
     memmove(memcard_extra_savedatabuffer, memcard_extra_savedata, memcard_extra_savedatasize);
-    uVar2 = ChecksumSaveData(memcard_extra_savedatabuffer, memcard_extra_savedatasize);
-    pvVar1 = memcard_extra_savedatabuffer;
-    *(undefined4 *)((char *)memcard_extra_savedatabuffer + memcard_extra_savedatasize) = uVar2;
-    iVar3 = saveloadSaveSlot(SAVESLOTS, pvVar1, memcard_extra_savedatasize + 4);
-    return iVar3 != 0;
+    i32 checksum = ChecksumSaveData(memcard_extra_savedatabuffer, memcard_extra_savedatasize);
+    *(i32 *)((char *)memcard_extra_savedatabuffer + memcard_extra_savedatasize) = checksum;
+    return saveloadSaveSlot(SAVESLOTS, memcard_extra_savedatabuffer, memcard_extra_savedatasize + 4) != 0;
 }
 
 i32 TriggerExtraDataLoad(void) {
