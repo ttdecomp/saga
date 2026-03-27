@@ -34,6 +34,9 @@ else()
         set(CMAKE_SYSTEM_PROCESSOR i686)
         set(CMAKE_EXECUTABLE_SUFFIX "")
 
+        set(CMAKE_C_COMPILER "${CMAKE_C_COMPILER}.exe")
+        set(CMAKE_CXX_COMPILER "${CMAKE_CXX_COMPILER}.exe")
+
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-return-type -static-libgcc -static-libstdc++")
     endif()
 endif()
