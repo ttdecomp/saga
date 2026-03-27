@@ -1,8 +1,7 @@
 #include "nu2api/nu3d/android/nutex_ios_ex.h"
 #include "nu2api/nu3d/nutex.h"
-#include <GLES/gl.h>
-#include <GLES/glext.h>
 #include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
 #include <squish.h>
 #include <stdlib.h>
 
