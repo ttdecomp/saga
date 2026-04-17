@@ -24,7 +24,7 @@ else()
     message(STATUS "Using Android NDK toolchain: ${NDK_TOOLCHAIN}")
 
     set(CMAKE_SYSTEM_NAME Android-Custom)
-    
+    set(CMAKE_CROSSCOMPILING TRUE)
     set(CMAKE_SYSROOT "${NDK_SYSROOT}")
     set(CMAKE_C_COMPILER "${NDK_TOOLCHAIN}/bin/i686-linux-android-gcc")
     set(CMAKE_CXX_COMPILER "${NDK_TOOLCHAIN}/bin/i686-linux-android-g++")
@@ -43,6 +43,11 @@ else()
     endif()
 endif()
 
+# set C(++) standard to C++11
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 
 if(CMAKE_HOST_WIN32)
     # needed because msys adds incorrect flags to the linker
@@ -272,9 +277,8 @@ endif()
 # set common compile options and definitions
 target_include_directories(saga PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_compile_options(saga PRIVATE -fno-exceptions -fno-rtti -Wno-write-strings -DANDROID)
-set_target_properties(saga PROPERTIES CXX_STANDARD 11)
-set_target_properties(saga PROPERTIES C_STANDARD 11)
 if(CMAKE_HOST_WIN32)
+    set_target_properties(saga PROPERTIES ENABLE_EXPORTS TRUE)
     if(NOT BUILD_FOR_HOST)
         set_target_properties(saga PROPERTIES LINK_FLAGS "-rdynamic")
     endif()
