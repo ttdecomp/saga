@@ -35,7 +35,10 @@ typedef u16 word;
 #include <stdio.h>
 
 #define UNIMPLEMENTED(...)                                                                                             \
-    ({ fprintf(stderr, "%s:%d: %s: UNIMPLEMENTED: %s\n", __FILE__, __LINE__, __func__, #__VA_ARGS__); })
+    ({                                                                                                                 \
+        fprintf(stderr, "%s%s:%d: %s: UNIMPLEMENTED: %s%s\n", log_level_colors[LOG_LEVEL_ERROR], __FILENAME__,         \
+                __LINE__, __func__, #__VA_ARGS__, __ansi_reset);                                                       \
+    })
 
 enum log_level {
     LOG_LEVEL_ERROR,
@@ -56,7 +59,7 @@ static const char *log_level_colors[] = {
     [LOG_LEVEL_INFO] = "\x1b[32m",  // Green
     [LOG_LEVEL_DEBUG] = "\x1b[90m", // Bright Black (Gray)
 };
-static const char *reset = "\x1b[0m";
+static const char *__ansi_reset = "\x1b[0m";
 
 #include <stdarg.h>
 
@@ -71,7 +74,7 @@ static void _saga_log(enum log_level level, const char *file, int line, const ch
     va_start(args, fmt);
     fprintf(stderr, "%s[%s] %s:%d: %s: ", log_level_colors[level], log_level_names[level], file, line, func);
     vfprintf(stderr, fmt, args);
-    fprintf(stderr, "%s\n", reset);
+    fprintf(stderr, "%s\n", __ansi_reset);
     va_end(args);
 }
 

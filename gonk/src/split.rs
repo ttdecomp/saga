@@ -754,8 +754,7 @@ pub fn split() -> anyhow::Result<()> {
         });
     }
 
-    let saga_contents =
-        std::fs::read("build/saga").context("Failed to read saga build directory")?;
+    let saga_contents = std::fs::read("build/saga").context("Failed to read saga lib")?;
     let saga_elf = object::read::elf::ElfFile32::parse(&*saga_contents)
         .context("Failed to parse saga build ELF file")?;
     let saga_lib = Lib::from_elf(&saga_elf, &ignore_set);
