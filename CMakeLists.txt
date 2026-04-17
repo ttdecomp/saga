@@ -275,7 +275,6 @@ target_compile_options(saga PRIVATE -fno-exceptions -fno-rtti -Wno-write-strings
 set_target_properties(saga PROPERTIES CXX_STANDARD 11)
 set_target_properties(saga PROPERTIES C_STANDARD 11)
 if(CMAKE_HOST_WIN32)
-    set_target_properties(saga PROPERTIES ENABLE_EXPORTS TRUE)
     if(NOT BUILD_FOR_HOST)
         set_target_properties(saga PROPERTIES LINK_FLAGS "-rdynamic")
     endif()
