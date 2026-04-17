@@ -1,5 +1,3 @@
-add_executable(saga ${SAGA_SOURCE_FILES})
-
 find_package(PkgConfig REQUIRED)
 
 # find and link dependencies

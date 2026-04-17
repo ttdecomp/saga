@@ -1,5 +1,3 @@
-add_library(saga SHARED ${SAGA_SOURCE_FILES})
-
 # set optimization levels
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/ai/aisys/aiscript.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/ai/aisys/aistate.cpp PROPERTIES COMPILE_OPTIONS "-O3")

@@ -53,12 +53,12 @@ if(CMAKE_HOST_WIN32)
     set(CMAKE_CXX_STANDARD_LIBRARIES "")
 endif()
 
+set(CMAKE_BUILD_TYPE Debug)
+
 # disable --dependency-file argument on ld which is too old to support it
 set(CMAKE_LINK_DEPENDS_NO_SHARED ON)
 
 message(STATUS "Building for ${CMAKE_HOST_SYSTEM_NAME} on ${CMAKE_HOST_SYSTEM_PROCESSOR} with ${CMAKE_CXX_COMPILER} ${CMAKE_CXX_COMPILER_VERSION}")
-
-set(CMAKE_BUILD_TYPE Debug)
 
 # source files for both host and target builds
 set(SAGA_SOURCE_FILES
@@ -258,6 +258,8 @@ if (BUILD_FOR_HOST)
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/nutex_host.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/nutex_ios_ex.cpp
     )
+
+    add_executable(saga ${SAGA_SOURCE_FILES})
     
     include(src/host.cmake)
 else()
@@ -266,6 +268,8 @@ else()
         ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/android/nutex_ios_ex.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nuandroid/ios_graphics.cpp
     )
+
+    add_executable(saga ${SAGA_SOURCE_FILES})
 
     include(src/target.cmake)
 endif()

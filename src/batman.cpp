@@ -12,6 +12,10 @@
 #include "nu2api/nuplatform/nudevicespecs.hpp"
 #include "nu2api/nuplatform/nuplatform.h"
 
+int main(int argc, char **argv) {
+    UNIMPLEMENTED();
+}
+
 extern "C" i32 NuMain(i32 argc, char **argv) {
     InitOnce(argc, argv);
     TriggerExtraDataLoad();
