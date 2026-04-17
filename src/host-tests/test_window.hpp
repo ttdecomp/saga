@@ -50,7 +50,7 @@ void host_init() {
     g_renderDevice.OnWindowCreated((ANativeWindow *)handle);
 }
 
-int main(int argc, char **argv) {
+int test_window(int argc, char **argv) {
     host_init();
 
     NuPlatform::Create();

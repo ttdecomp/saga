@@ -16,8 +16,8 @@
 
 char buf[0x1000000];
 
-int main(int argc, char **argv) {
-    VARIPTR buf_ptr = (VARIPTR)&buf;
+int test_load(int argc, char **argv) {
+    VARIPTR buf_ptr = VARIPTR{.void_ptr = &buf};
     NUDATHDR *dat = NuDatOpen("res/main.1060.com.wb.lego.tcs.obb", &buf_ptr, 0);
     NuDatSet(dat);
 

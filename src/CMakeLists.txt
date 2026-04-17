@@ -201,22 +201,43 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/nu2api/nusound/nusound_weakptr.cpp
 )
 
-if(NOT BUILD_FOR_HOST)
+# switch platform implementation of nuios for host and android builds
+if(BUILD_FOR_HOST)
+    list(APPEND SAGA_SOURCE_FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/host-tests/main.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/host-tests/nuios/ios_graphics.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/host-tests/nuios/nutex_host.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/host-tests/nuios/nutex_ios_ex.cpp
+    )
+
+    add_executable(saga ${SAGA_SOURCE_FILES})
+
+    find_package(PkgConfig REQUIRED)
+    set(DEPENDENCIES vorbis vorbisfile sdl3 # libsquish
+    )
+    # use angle on windows
+    if(CMAKE_HOST_WIN32)
+        list(APPEND DEPENDENCIES angleproject)
+    else()
+        list(APPEND DEPENDENCIES glesv2 egl)
+    endif()
+
+    foreach(dep IN LISTS DEPENDENCIES)
+        pkg_check_modules(${dep} REQUIRED ${dep})
+    endforeach()
+
+    foreach(dep IN LISTS DEPENDENCIES)
+        target_include_directories(saga PRIVATE ${${dep}_INCLUDE_DIRS})
+        target_link_libraries(saga PRIVATE ${${dep}_LIBRARIES})
+    endforeach()
+else()
     list(APPEND SAGA_SOURCE_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/nu2api/nu3d/android/nutex_android.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/nu2api/nu3d/android/nutex_ios_ex.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/nu2api/nuandroid/ios_graphics.cpp
     )
-endif()
 
-
-add_library(saga_headers INTERFACE)
-target_include_directories(saga_headers INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-
-add_library(saga SHARED ${SAGA_SOURCE_FILES})
-
-if(BUILD_FOR_HOST)
-    target_link_libraries(saga PRIVATE nuios)
+    add_library(saga SHARED ${SAGA_SOURCE_FILES})
 endif()
 
 target_compile_features(saga PRIVATE c_std_11)

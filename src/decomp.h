@@ -36,8 +36,8 @@ typedef u16 word;
 
 #define UNIMPLEMENTED(...)                                                                                             \
     ({                                                                                                                 \
-        fprintf(stderr, "%s%s:%d: %s: UNIMPLEMENTED: %s%s\n", log_level_colors[LOG_LEVEL_ERROR], __FILE__, __LINE__,   \
-                __func__, #__VA_ARGS__, __ansi_reset);                                                                 \
+        fprintf(stderr, "%s%s:%d: %s: UNIMPLEMENTED: %s%s\n", log_level_colors[LOG_LEVEL_ERROR], __FILENAME__,         \
+                __LINE__, __func__, #__VA_ARGS__, __ansi_reset);                                                       \
     })
 
 enum log_level {
@@ -77,10 +77,6 @@ static void _saga_log(enum log_level level, const char *file, int line, const ch
     fprintf(stderr, "%s\n", __ansi_reset);
     va_end(args);
 }
-
-#ifndef __FILENAME__
-#define __FILENAME__ __FILE__
-#endif
 
 #define LOG(level, ...) _saga_log(level, __FILENAME__, __LINE__, __func__, __VA_ARGS__)
 #define LOG_ERR(...) LOG(LOG_LEVEL_ERROR, __VA_ARGS__)
