@@ -15,6 +15,7 @@ add_library(nuios SHARED
 target_include_directories(nuios PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/nuios")
 target_link_libraries(nuios PRIVATE saga_headers)
 target_compile_definitions(nuios PRIVATE HOST_BUILD)
+target_compile_definitions(nuios PRIVATE NUIOS_BUILD)
 if (CMAKE_HOST_WIN32)
     # allow undefined references to be resolved at runtime
     target_link_options(nuios PRIVATE "-Wl,--allow-shlib-undefined")

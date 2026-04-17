@@ -78,11 +78,23 @@ class NuRenderDevice : NuRenderDeviceGen {
 
 extern NuRenderDevice g_renderDevice;
 
+// TEST
+#ifdef _WIN32
+#ifdef NUIOS_BUILD
+#define MY_API __declspec(dllimport)
+#else
+#define MY_API __declspec(dllexport)
+#endif
+#else
+#define MY_API
+#endif
+//
+
 extern "C" {
 #endif
     void NuRenderSetThisTreadAsRender(void);
-    void BeginCriticalSectionGL(const char *file, i32 line);
-    void EndCriticalSectionGL(const char *file, i32 line);
+    MY_API void BeginCriticalSectionGL(const char *file, i32 line);
+    MY_API void EndCriticalSectionGL(const char *file, i32 line);
     void NuRenderDeviceSwapBuffers(void);
 #ifdef __cplusplus
 }
