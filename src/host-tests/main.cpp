@@ -30,5 +30,6 @@ int main(int argc, char **argv) {
         }
     }
 
+    printf("Unknown test: %s\n", argv[1]);
     return 1;
 }
