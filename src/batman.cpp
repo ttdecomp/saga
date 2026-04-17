@@ -12,9 +12,11 @@
 #include "nu2api/nuplatform/nudevicespecs.hpp"
 #include "nu2api/nuplatform/nuplatform.h"
 
+#ifndef HOST_BUILD
 int main(int argc, char **argv) {
     UNIMPLEMENTED();
 }
+#endif
 
 extern "C" i32 NuMain(i32 argc, char **argv) {
     InitOnce(argc, argv);
