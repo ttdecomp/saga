@@ -6,7 +6,7 @@
 #include "decomp.h"
 
 #include "nu2api/nu3d/numtl.h"
-
+#include "nu2api/nu3d/nutex.h"
 NUAPI nuapi;
 
 int nuapi_use_target_manager;
@@ -122,9 +122,13 @@ i32 NuInitHardware(VARIPTR *buf, VARIPTR *buf_end, int heap_size, ...) {
     } while (setup_tok != NUAPI_SETUP_END);
 
     va_end(args);
+    NuMtlInitEx(buf, 512);
+    NuTexInitEx(buf,512);
 
     NuInitHardwarePS(buf, buf_end, heap_size);
-    NuMtlInitEx(buf, 512);
 
+    
+    //NuRndrSwapScreen();
+    
     return 0;
 }

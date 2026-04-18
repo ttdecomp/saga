@@ -50,6 +50,7 @@ class NuRenderDevice : NuRenderDeviceGen {
     bool oes_depth_texture;
 
     i32 lock_count;
+    i32 field_0x50;
 
   private:
     i32 DetermineNominalAspectRatio(u32 width, u32 height);

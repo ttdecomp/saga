@@ -29,7 +29,8 @@ void NuVpSetScalingMtx(void);
 
 extern "C" {
 #endif
-
+    void NuVpGetPosition2(float*,float*);
+    void NuVpGetSize2(float *, float *);
     void NuVpRestore(void);
     void NuVpGetScalingMtx(NUMTX *dest);
     void NuVpUpdate(void);

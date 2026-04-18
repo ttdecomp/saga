@@ -1,5 +1,5 @@
 #include "nu2api/nucore/NuVirtualTouchDevice.h"
-
+#include "decomp.h"
 NuVirtualTouchDevice::NuVirtualTouchDevice(u32 unknown) {
     u32 i;
 
@@ -10,6 +10,10 @@ NuVirtualTouchDevice::NuVirtualTouchDevice(u32 unknown) {
     }
 
     this->unknown_04 = 0;
+}
+
+void NuVirtualTouchDevice::Render() {
+    UNIMPLEMENTED();
 }
 
 void NuVirtualTouchDevice::Execute(u32 port, NUPADTYPE in_type, NUPADATTACHMENTTYPE in_attch_type, u32 in_caps,

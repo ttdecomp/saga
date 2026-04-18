@@ -47,6 +47,33 @@ struct nushaderobject_s {
 
 typedef nushaderobject_s NUSHADEROBJECT;
 
+
+
+typedef struct NuUniformRecord_s {
+    unsigned short registerInfo; 
+    unsigned short locationInfo; 
+} NUUNIFORMRECORD;
+
+typedef struct nushaderprogram_s {
+    GLuint vertexShader;        
+    GLuint fragmentShader;      
+    GLuint program;            
+    GLint numUniforms;          
+    NUUNIFORMRECORD *uniforms;  
+    int unk14;                  
+    int unk18;                  
+    int unk1C;               
+} NUSHADERPROGRAM;
+
+
+
+typedef struct GLSLTypeInfo_s {
+    int unk00;         
+    int typeClass;     
+    int typeEnum;     
+    int unk0C;         
+} GLSLTYPEINFO;
+
 #ifdef __cplusplus
 int NuShaderObjectBindAttributeLocationsGLSL(GLuint program);
 int NuShaderObjectCombineGLSLShadersIntoProgram(GLuint *program_dest, GLuint vertex_shader, GLuint fragment_shader);
@@ -65,6 +92,8 @@ extern "C" {
     void NuShaderObjectUnInit(NUSHADEROBJECT *shader);
     void NuShaderObjectBaseUnInit(NUSHADEROBJECTBASE *shader);
     void NuShaderObjectBaseSetWaterSpeed(f32 speed);
+    NUSHADERPROGRAM* NuShaderProgramCreateIOS(const GLchar *vtxSource, const GLchar *fragSource);
+    GLSLTYPEINFO* GetGLSLTypeInfo(GLenum glType);
 #ifdef __cplusplus
 }
 #endif

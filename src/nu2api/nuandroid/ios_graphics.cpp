@@ -19,11 +19,13 @@ void NuIOSInitOpenGLES(void) {
 }
 
 void NuIOS_AllocateSystemFramebuffers(void) {
+
     BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nuandroid/ios_graphics.cpp", 106);
     NuCheckGLErrorsFL("i:/SagaTouch-Android_9176564/nu2api.saga/nuandroid/ios_graphics.cpp", 108);
 
     memset(g_lastBound2DTexIds, 0, sizeof(g_lastBound2DTexIds));
     memset(g_lastBoundCubeTexIds, 0, sizeof(g_lastBoundCubeTexIds));
+        
 
     g_earlyColorFramebuffer = 0;
     if (NuIOS_ShouldUseMSAA()) {
@@ -73,7 +75,7 @@ static pthread_cond_t g_awaitingRenderWakeCondition;
 static i32 g_awaitingRenderWake;
 static i32 g_wakeRenderThread;
 static i32 g_renderThreadDoneThread;
-
+static i32 g_renderStartTime;
 void NuIOS_InitRenderThread() {
     pthread_mutex_init(&g_wakeRenderMutex, NULL);
     pthread_cond_init(&g_wakeRenderCondition, NULL);
@@ -112,4 +114,14 @@ void NuIOS_SetRenderComplete(void) {
         pthread_cond_signal(&g_renderThreadDoneThreadCondition);
     }
     pthread_mutex_unlock(&g_renderThreadDoneThreadMutex);
+}
+
+int NuIOS_WakeRenderThread() {
+    g_renderStartTime = 1; // getCurrentTime();
+    pthread_mutex_lock((pthread_mutex_t *)&g_wakeRenderMutex);
+    if (!g_wakeRenderThread) {
+        g_wakeRenderThread = 1;
+        pthread_cond_signal((pthread_cond_t *)&g_wakeRenderCondition);
+    }
+    return pthread_mutex_unlock((pthread_mutex_t *)&g_wakeRenderMutex);
 }
