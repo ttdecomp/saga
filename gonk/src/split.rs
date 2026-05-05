@@ -239,6 +239,23 @@ fn build_data_sections<'data, E: object::Endian>(
         orig_sym_idx_to_new_offset.insert(orig_sym.index(), new_offset as u32);
     }
 
+    // Copy rodata
+    let orig_rodata = lib
+        .file
+        .section_by_name(".rodata")
+        .expect("lib does not contain rodata");
+    let orig_rodata_bytes = orig_rodata.data().expect("couldn't read rodata");
+    let new_rodata = sections
+        .entry(orig_rodata.name().context("Failed to get rodata name")?)
+        .or_insert_with(|| {
+            obj.add_section(
+                Vec::new(),
+                orig_rodata.name().unwrap().as_bytes().to_vec(),
+                orig_rodata.kind(),
+            )
+        });
+    obj.append_section_data(*new_rodata, orig_rodata_bytes, orig_rodata.align());
+
     Ok(orig_sym_idx_to_new_offset)
 }
 
@@ -572,10 +589,19 @@ fn generate_rewrite<'data, 'file: 'data>(
         .contains(&orig_addr)
     {
         // The address falls within the .rodata section
+        let offset = orig_addr - orig_rodata_section.address();
 
-        println!("😎 rodata {:x}", orig_addr);
+        // OffsetTarget::Section needs an owned Section, which we can't
+        // get from orig_rodata_section, which is only a reference
+        let rodata_section_for_rewrite = lib
+            .file
+            .section_by_name(".rodata")
+            .expect("rodata not found");
 
-        None
+        Some(Rewrite::GotOffset(
+            Some(offset as u32),
+            OffsetTarget::Section(rodata_section_for_rewrite),
+        ))
     } else {
         None
     }
