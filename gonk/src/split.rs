@@ -239,22 +239,13 @@ fn build_data_sections<'data, E: object::Endian>(
         orig_sym_idx_to_new_offset.insert(orig_sym.index(), new_offset as u32);
     }
 
-    // Copy rodata
-    let orig_rodata = lib
-        .file
-        .section_by_name(".rodata")
-        .expect("lib does not contain rodata");
-    let orig_rodata_bytes = orig_rodata.data().expect("couldn't read rodata");
-    let new_rodata = sections
-        .entry(orig_rodata.name().context("Failed to get rodata name")?)
-        .or_insert_with(|| {
-            obj.add_section(
-                Vec::new(),
-                orig_rodata.name().unwrap().as_bytes().to_vec(),
-                orig_rodata.kind(),
-            )
-        });
-    obj.append_section_data(*new_rodata, orig_rodata_bytes, orig_rodata.align());
+    sections.entry(".rodata").or_insert_with(|| {
+        obj.add_section(
+            Vec::new(),
+            ".rodata".as_bytes().to_vec(),
+            SectionKind::ReadOnlyData,
+        )
+    });
 
     Ok(orig_sym_idx_to_new_offset)
 }
