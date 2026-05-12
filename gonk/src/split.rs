@@ -272,7 +272,7 @@ enum Rewrite<'data, 'file> {
 #[derive(Debug)]
 enum OffsetTarget<'data, 'file> {
     Symbol(read::elf::ElfSymbol<'data, 'file, FileHeader32<Endianness>>),
-    Section(read::elf::ElfSection32<'data, 'file, Endianness>),
+    Section(&'file str),
 }
 
 #[derive(Debug)]
@@ -438,9 +438,9 @@ fn rewrite_text_symbol<'data, 'file, E: object::Endian>(
                             (R_386_GOTOFF, RelocTarget::Symbol(orig_sym), new_addr)
                         }
 
-                        OffsetTarget::Section(orig_section) => (
+                        OffsetTarget::Section(orig_section_name) => (
                             R_386_GOTOFF,
-                            RelocTarget::Section(orig_section.name().unwrap()),
+                            RelocTarget::Section(orig_section_name),
                             new_addr,
                         ),
                     },
@@ -542,7 +542,7 @@ fn generate_rewrite<'data, 'file: 'data>(
     lib: &Lib<'_, 'file>,
     orig_sym_idx_to_new_offset: &HashMap<read::SymbolIndex, u32>,
     orig_got_section: &read::elf::ElfSection<'_, '_, FileHeader32<Endianness>>,
-    orig_rodata_section: &read::elf::ElfSection<'_, '_, FileHeader32<Endianness>>,
+    orig_rodata_section: &read::elf::ElfSection<'file, '_, FileHeader32<Endianness>>,
     orig_addr: u64,
 ) -> Option<Rewrite<'data, 'file>> {
     if let Some(orig_sym) = lib.symbols_by_address.get(&orig_addr) {
@@ -555,7 +555,10 @@ fn generate_rewrite<'data, 'file: 'data>(
                 .section_by_index(orig_sym.section_index().unwrap())
                 .unwrap();
 
-            Rewrite::GotOffset(new_addr, OffsetTarget::Section(orig_section))
+            Rewrite::GotOffset(
+                new_addr,
+                OffsetTarget::Section(orig_section.name().unwrap()),
+            )
         } else {
             Rewrite::Got(*orig_sym)
         };
@@ -591,16 +594,9 @@ fn generate_rewrite<'data, 'file: 'data>(
         // The address falls within the .rodata section
         let offset = orig_addr - orig_rodata_section.address();
 
-        // OffsetTarget::Section needs an owned Section, which we can't
-        // get from orig_rodata_section, which is only a reference
-        let rodata_section_for_rewrite = lib
-            .file
-            .section_by_name(".rodata")
-            .expect("rodata not found");
-
         Some(Rewrite::GotOffset(
             Some(offset as u32),
-            OffsetTarget::Section(rodata_section_for_rewrite),
+            OffsetTarget::Section(orig_rodata_section.name().unwrap()),
         ))
     } else {
         None
