@@ -33,10 +33,10 @@ jobs:
 
             - name: Install squish
               run: >
-                  wget "http://ftp.ca.debian.org/debian/pool/main/libs/libsquish/libsquish-dev_1.15-4+b1_i386.deb" &&
-                  wget "http://ftp.ca.debian.org/debian/pool/main/libs/libsquish/libsquish0_1.15-4+b1_i386.deb" &&
-                  sudo apt-get install ./libsquish0_1.15-4+b1_i386.deb &&
-                  sudo apt-get install ./libsquish-dev_1.15-4+b1_i386.deb
+                  wget "https://archive.debian.org/debian/pool/main/libs/libsquish/libsquish-dev_1.15-1+b11_i386.deb" &&
+                  wget "https://archive.debian.org/debian/pool/main/libs/libsquish/libsquish0_1.15-1+b11_i386.deb" &&
+                  sudo apt-get install ./libsquish0_1.15-1+b11_i386.deb &&
+                  sudo apt-get install ./libsquish-dev_1.15-1+b11_i386.deb
 
             - name: Install clang-tidy
               run: sudo apt-get -y install clang-tidy
