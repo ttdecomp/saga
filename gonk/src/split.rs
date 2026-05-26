@@ -850,6 +850,7 @@ pub fn split() -> anyhow::Result<()> {
             units: objdiff_units,
             custom_make: String::from("sh"),
             custom_args: vec![
+                "-l".to_owned(),
                 "-c".to_owned(),
                 "cmake -B build && cmake --build build -j -- ".to_owned(),
             ],
