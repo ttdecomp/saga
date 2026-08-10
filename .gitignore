@@ -1,5 +1,6 @@
 # Generated documentation.
 doc/html/*
+.DS_Store
 
 # Binary resources.
 res/*
