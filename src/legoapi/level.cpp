@@ -475,3 +475,39 @@ void GoToNewLevel(i32 levelIdx) {
         waiting_for_new_level = 1;
     }
 }
+
+void LevelConfig_BeforeLoad(LEVELDATA *level, char *buffer, nufpcomjmp_s *keywords) {
+    // NUFPAR *fp = NuFParCreateMem("levelbeforeload", buffer, 0xffff);
+    // if (fp != NULL) {
+    //     levelconfig_ldata = level;
+    //     NuFParPushCom2(fp, LevelConfig_BeforeLoad_GenericKeywords, keywords);
+    //     while (NuFParGetLine(fp) != 0) {
+    //         if (NuFParGetWord(fp) != 0) {
+    //             NuFParInterpretWord(fp);
+    //         }
+    //     }
+    //     NuFParDestroy(fp);
+    // }
+}
+
+void LevelConfig_AfterLoad(LEVELDATA *level, char *buffer, nufpcomjmp_s *keywords) {
+    // NUFPAR *fp = NuFParCreateMem("levelafterload", buffer, 0xffff);
+    // if (fp != NULL) {
+    //     levelconfig_ldata = level;
+    //     NuFParPushCom2(fp, LevelConfig_AfterLoad_GenericKeywords, keywords);
+    //     while (NuFParGetLine(fp) != 0) {
+    //         if (NuFParGetWord(fp) != 0) {
+    //             NuFParInterpretWord(fp);
+    //         }
+    //     }
+    //     NuFParDestroy(fp);
+    //     if (level->blob_shadow_fade_far < level->blob_shadow_fade_near) {
+    //         level->blob_shadow_fade_near = level->blob_shadow_fade_far;
+    //     }
+    //     level->flags |= 1;
+    // }
+}
+
+void Level_LoadConfigFile(WORLDINFO *world) {
+    // Load level config file
+}

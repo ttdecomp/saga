@@ -29,7 +29,11 @@ typedef struct WORLDINFO_s {
     char filler2[0xc];
     NUGSCN *current_gscn;
 
-    char unknown_0140[0x29a8];
+    i32 char_icons[3];
+
+    char config_file[0x8c];
+
+    char unknown_0140[0x2960];
 
     AISYS *ai_sys;
     i32 processor_count;
@@ -73,5 +77,16 @@ WORLDINFO *WorldInfo_CurrentlyActive(void);
 WORLDINFO *WorldInfo_CurrentlyLoading(void);
 
 i32 WorldInfo_OtherLevel(WORLDINFO *world);
+
+void WorldInfo_Register(WORLDINFO *world);
+
+void WorldInfo_ClearAllIfScreenFaded(void);
+
+void WorldInfo_LoadObjectAnimFile(WORLDINFO *world);
+
+void WorldInfo_DrawScene(WORLDINFO *world);
+
+void WorldInfo_UpdateRoomVisibility(WORLDINFO *world, i32 param);
+void WorldInfo_ReArrangeBuffers(i32 area1, i32 area2);
 
 #endif

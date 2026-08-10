@@ -63,6 +63,7 @@ extern "C" {
     void NuFParClose(NUFPAR *parser);
 
     NUFPAR *NuFParCreate(char *filename);
+    NUFPAR *NuFParCreateMem(char *name, char *buffer, i32 bufferSize);
     void NuFParDestroy(NUFPAR *parser);
 
     void NuFParSuspend(NUFPAR *parser);

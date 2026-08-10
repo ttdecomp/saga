@@ -114,6 +114,11 @@ NUFPAR *NuFParCreate(char *filename) {
     return NULL;
 }
 
+NUFPAR *NuFParCreateMem(char *name, char *buffer, i32 bufferSize) {
+    // Stub
+    return NULL;
+}
+
 void NuFParDestroy(NUFPAR *parser) {
     NUFILE file_handle = parser->file_handle;
 
