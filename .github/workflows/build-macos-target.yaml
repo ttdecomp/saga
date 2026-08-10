@@ -1,0 +1,35 @@
+name: macOS Target build
+
+on:
+    push:
+        branches: ["main"]
+    pull_request:
+        branches: ["main"]
+
+jobs:
+    build:
+        runs-on: macos-15-intel
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Install CMake 4.x
+              uses: lukka/get-cmake@latest
+
+            - name: Cache Android NDK
+              uses: actions/cache@v4
+              with:
+                  path: ndk
+                  key: macos-android-ndk-r8e
+
+            - name: Cache built libraries
+              uses: actions/cache@v4
+              with:
+                  path: libs
+                  key: macos-libs-${{ hashFiles('**/CMakeLists.txt') }}
+
+            - name: Configure CMake
+              run: cmake -B build .
+
+            - name: Build
+              run: cmake --build build --verbose
