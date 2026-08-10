@@ -410,3 +410,36 @@ AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferE
     }
     goto LAB_00486340;
 }
+
+struct LEVELDATA_s *Area_FindStatusLevel(AREADATA *area, i32 *indexDest) {
+    i32 i;
+    LEVELDATA *result;
+    i32 levelIdx;
+
+    if (indexDest != NULL) {
+        *indexDest = -1;
+    }
+
+    if (area == NULL || area->field28_0x7d == 0) {
+        return NULL;
+    }
+
+    levelIdx = area->field2_0x60[0];
+    i = 0;
+    result = &LDataList[levelIdx];
+
+    while ((result->flags & LEVEL_STATUS) == 0) {
+        if (i == (u32)area->field28_0x7d * 2 - 2) {
+            return NULL;
+        }
+        levelIdx = area->field2_0x60[i / 2 + 1];
+        i += 2;
+        result = &LDataList[levelIdx];
+    }
+
+    if (indexDest != NULL) {
+        *indexDest = levelIdx;
+    }
+
+    return result;
+}

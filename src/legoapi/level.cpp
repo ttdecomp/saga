@@ -1,9 +1,15 @@
 #include "legoapi/level.h"
 
+#include <string.h>
+
+#include "globals.h"
+#include "legoapi/cheat.h"
+#include "legoapi/gizmo.h"
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufpar.h"
+#include "nu2api/numath/nuvec.h"
 #include "nu2api/numusic/numusic.h"
 
 LEVELDATA *LDataList = NULL;
@@ -313,4 +319,105 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         LOG_DEBUG("Titles level track handles: %d, %d, %d, %d, %d, %d", level->music_tracks[0], level->music_tracks[1],
                   level->music_tracks[2], level->music_tracks[3], level->music_tracks[4], level->music_tracks[5]);
     }
+}
+
+void Level_Update(WORLDINFO *world) {
+    void (*updateFn)(WORLDINFO *) = (void (*)(WORLDINFO *))world->current_level->update_fn;
+    if (updateFn != NULL) {
+        updateFn(world);
+    }
+
+    {
+        volatile f32 *dsTime = &DoubleScoreTime;
+        if (*dsTime > 0.0f) {
+            if ((i32)(GameTimer[0] + GameTimer[0]) != (i32)(GameTimer[1] + GameTimer[1])) {
+                // GameAudio_PlaySfxAndSetVolume(0x35, NULL, DoubleScoreTime);
+            }
+        }
+    }
+
+    if (AreaGlobals == 0) {
+        if (Cheats_CheckFlags(0x2000) != 0) {
+            AreaGlobals = 1;
+        }
+    }
+}
+
+i32 LevelObject_GetReflection(i32 objId) {
+    if (objId != -1 && LevObjRef_FirstObj <= objId && objId <= LevObjRef_LastObj) {
+        objId = (objId - LevObjRef_FirstObj) + LevObjRef_FirstRefObj;
+    }
+    return objId;
+}
+
+char *LevelObject_FindNameFromIndex(i32 index) {
+    char *name = (char *)"";
+    if (ObjTabList != NULL && index >= 0 && index < LEVELOBJECTCOUNT) {
+        name = ObjTabList[index].name;
+    }
+    return name;
+}
+
+i32 LevelObject_FindIndexFromName(char *name) {
+    if (ObjTabList != NULL && LEVELOBJECTCOUNT > 0) {
+        for (i32 i = 0; i < LEVELOBJECTCOUNT; i++) {
+            if (NuStrICmp(ObjTabList[i].name, name) == 0) {
+                return i;
+            }
+        }
+    }
+    return -1;
+}
+
+i32 LevelObject_AddExtra(char *name, i32 kind) {
+    if (LEVELOBJECTCOUNT < LEVELOBJECTMAX && ExtraLevelObject_NameTable != NULL) {
+        i32 nameLen = NuStrLen(name);
+        if (nameLen + 1 + ExtraLevelObject_NameTableIndex < ExtraLevelObject_NameTableSize) {
+            i32 index = LEVELOBJECTCOUNT;
+            LEVELOBJECT *obj = &ObjTabList[index];
+            char *nameDest = ExtraLevelObject_NameTable + ExtraLevelObject_NameTableIndex;
+
+            obj->kind = (u8)kind;
+            obj->name = nameDest;
+            LEVELOBJECTCOUNT = index + 1;
+            EXTRALEVELOBJECTCOUNT++;
+            NuStrCpy(nameDest, name);
+            ExtraLevelObject_NameTableIndex += nameLen + 1;
+
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void GameAnimSys_ClearProgress(i32 idx) {
+    if (idx < 0) {
+        return;
+    }
+    i32 *progress = (i32 *)&gameanimsysprogress;
+    if (idx >= progress[0]) {
+        return;
+    }
+    u8 *data = ((u8 **)(progress + 2))[idx];
+    i32 size = progress[1];
+    if (size <= 0) {
+        return;
+    }
+    for (i32 i = 0; i < size; i++) {
+        data[i] = 0;
+    }
+}
+
+void ClearLevelProgress(i32 index, WORLDINFO *world) {
+    if (index >= 0) {
+        u8 *entry = (u8 *)LevelProgressData + index * 0x2e24;
+        memset(entry, 0, 0x2e24);
+        *(u32 *)(entry + 0x281c) = 0;
+        *(u32 *)(entry + 0x2810) = 0x49f42400;
+        if (world != NULL) {
+            memcpy(entry, (u8 *)world + 0x15c, 0xa00 * 4);
+        }
+    }
+    GizmoSysClearLevelProgress(NULL, index);
+    GameAnimSys_ClearProgress(index);
 }

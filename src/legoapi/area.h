@@ -1,6 +1,7 @@
 #pragma once
 
 #include "decomp.h"
+#include "legoapi/level.h"
 
 #include "nu2api/nucore/common.h"
 
@@ -23,7 +24,7 @@ enum {
     AREAFLAG_NO_FREEPLAY = 0x1000,
 };
 
-typedef struct areadata_s {
+typedef struct AREADATA_s {
     char dir[64];
     char file[32];
     i16 field2_0x60[1];
@@ -83,5 +84,7 @@ extern "C" {
 AREADATA *Area_FindByName(char *name, i32 *indexDest);
 
 AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, int count, int *countDest);
+
+struct LEVELDATA_s *Area_FindStatusLevel(AREADATA *area, i32 *indexDest);
 
 #endif

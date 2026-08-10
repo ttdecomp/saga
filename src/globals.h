@@ -1,6 +1,7 @@
 #pragma once
 
 #include "decomp.h"
+#include "legoapi/level.h"
 #include "legoapi/mission.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nucore/common.h"
@@ -32,8 +33,6 @@ extern "C" {
         u32 flag;
     };
     typedef struct cheat_s CHEAT;
-
-    
 
     struct OPTIONSSAVE_s { /* PlaceHolder Structure */
         undefined field0_0x0;
@@ -191,7 +190,6 @@ extern "C" {
         char field39_0x7d08[336];
     };
 
-
     extern i32 PAL;
     extern f32 FRAMETIME;
     extern f32 DEFAULTFPS;
@@ -261,6 +259,38 @@ extern "C" {
     extern i32 g_isLowEndDevice;
     extern i32 g_isMidRangeDevice;
     extern i32 g_lowEndLevelBehaviour;
+
+    extern f32 DoubleScoreTime;
+    extern f32 GameTimer[2];
+    extern i32 AreaGlobals;
+
+    extern i32 LevObjRef_FirstObj;
+    extern i32 LevObjRef_LastObj;
+    extern i32 LevObjRef_FirstRefObj;
+
+    extern struct LEVELOBJECT_s *ObjTabList;
+    extern i32 LEVELOBJECTCOUNT;
+    extern i32 LEVELOBJECTMAX;
+    extern i32 EXTRALEVELOBJECTCOUNT;
+
+    extern char *ExtraLevelObject_NameTable;
+    extern i32 ExtraLevelObject_NameTableSize;
+    extern i32 ExtraLevelObject_NameTableIndex;
+
+    extern struct LEVELDATA_s *NewLData;
+    extern struct LEVELDATA_s *HUB_LDATA;
+    extern i32 grab_screen_image;
+    extern i32 FreePlay;
+    extern i32 waiting_for_new_level;
+
+    extern void *LevelProgressData;
+
+    struct GameAnimSysProgress {
+        i32 count;
+        i32 entry_size;
+        u8 **entries;
+    };
+    extern GameAnimSysProgress gameanimsysprogress;
 
 #ifdef __cplusplus
 }

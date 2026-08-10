@@ -5,6 +5,7 @@
 #include "nu2api/nucore/bgproc.h"
 #include "nu2api/nucore/common.h"
 
+struct AREADATA_s;
 typedef struct WORLDINFO_s {
     char filler0[0x104];
 
@@ -22,7 +23,10 @@ typedef struct WORLDINFO_s {
     i32 unknown_0124;
 
     struct LEVELDATA_s *current_level;
-    char filler2[0x10];
+
+    AREADATA_s *area;
+
+    char filler2[0xc];
     NUGSCN *current_gscn;
 
     char unknown_0140[0x29a8];

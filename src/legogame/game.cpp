@@ -529,3 +529,25 @@ void InitGameAfterConfig(void) {
     //      CharClipToBlobShadows = 1;
     //  }
 }
+
+void CompleteLevel(WORLDINFO *world) {
+    grab_screen_image = 1;
+
+    if (NewLData == NULL || ((NewLData->flags & 0xe0) != 0 && FreePlay != 0)) {
+        LEVELDATA *statusLevel = Area_FindStatusLevel(world->area, NULL);
+        NewLData = statusLevel;
+        if (statusLevel == NULL) {
+            NewLData = HUB_LDATA;
+        }
+    }
+
+    if (waiting_for_level != -1) {
+        waiting_for_new_level = 1;
+    }
+}
+
+void StoreLevelProgress(WORLDINFO *world) {
+    if (world != NULL) {
+        // StoreLevelProgressFn(world, world->field277_0x130, 0);
+    }
+}
