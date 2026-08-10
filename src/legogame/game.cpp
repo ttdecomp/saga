@@ -555,16 +555,3 @@ void StoreLevelProgress(WORLDINFO *world) {
 void NewAreaMusicChanges(void) {
     BeenAttacked = 0;
 }
-
-void Game_WorldInfo_InitLast(WORLDINFO *world) {
-    // GizSpinners_InitTerrain(world);
-    // Signals_InitTerrain(world);
-    // Attractos_InitTerrain(world);
-    // SecurityDoors_InitTerrain(world);
-    // Levers_InitTerrain(world);
-    // GizPanel_InitTerrain(world);
-    // HatMachines_InitTerrain(world);
-    // GizmoBlowupsFinalSetup(world);
-    // InitClimbObjectSys(world);
-    // GizmoPushBlockInitAndReset(world, NULL);
-}

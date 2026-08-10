@@ -234,9 +234,4 @@ void SetLevelExBlowupFlags(u32 flags);
 u32 GetLevelExBlowupFlags(void);
 void GoToNewLevel(i32 levelIdx);
 
-void LevelConfig_BeforeLoad(LEVELDATA *level, char *buffer, nufpcomjmp_s *keywords);
-void LevelConfig_AfterLoad(LEVELDATA *level, char *buffer, nufpcomjmp_s *keywords);
-
-void Level_LoadConfigFile(WORLDINFO *world);
-
 #endif

@@ -105,4 +105,5 @@ void Areas_FixUp(AREAFIXUP *fixup);
 struct LEVELDATA_s *Area_FindNextPlayLevel(i32 levelIdx);
 
 i32 AreaFromMiniKitID(i32 minikitId);
+
 #endif

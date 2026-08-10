@@ -105,24 +105,3 @@ nufpcomjmp_s *Level_ConfigAfterLoad_GameKeywords = NULL;
 u32 EXBLOWUPFLAGS = 0;
 
 i32 BeenAttacked = 0;
-
-i32 last_area = -1;
-LEVELDATA *LastLData = NULL;
-LEVELDATA *TITLES_LDATA = NULL;
-i32 new_level_from_menu = 0;
-i32 BGLOAD = 0;
-
-i32 Reflections_On = 1;
-i32 disable_narrow_socks = 0;
-i32 script_spline_selected = 0;
-f32 character_farclip = 0.0f;
-i32 LevMusicAction = 0;
-i32 LevMusicAmbient = 0;
-i32 LevMusicOtherAction = 0;
-i32 LevMusicOtherAmbient = 0;
-u32 ResetBits = 0;
-
-i32 reset_restart = 0;
-i32 newlevelfrommenu_newmenuid = -1;
-i32 newlevelfrommenu_newmenuy = -1;
-i32 NextArea_FreePlay = 0;

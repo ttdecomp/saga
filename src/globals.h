@@ -299,26 +299,6 @@ extern "C" {
 
     extern i32 BeenAttacked;
 
-    extern i32 last_area;
-    extern LEVELDATA *LastLData;
-    extern LEVELDATA *TITLES_LDATA;
-    extern i32 new_level_from_menu;
-    extern i32 BGLOAD;
-
-    extern i32 Reflections_On;
-    extern i32 disable_narrow_socks;
-    extern i32 script_spline_selected;
-    extern f32 character_farclip;
-    extern i32 LevMusicAction;
-    extern i32 LevMusicAmbient;
-    extern i32 LevMusicOtherAction;
-    extern i32 LevMusicOtherAmbient;
-    extern u32 ResetBits;
-
-    extern i32 reset_restart;
-    extern i32 newlevelfrommenu_newmenuid;
-    extern i32 newlevelfrommenu_newmenuy;
-    extern i32 NextArea_FreePlay;
 #ifdef __cplusplus
 }
 #endif
