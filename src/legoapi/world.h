@@ -72,4 +72,6 @@ void WorldInfo_StreamLevel(BGPROCINFO *bg_info);
 WORLDINFO *WorldInfo_CurrentlyActive(void);
 WORLDINFO *WorldInfo_CurrentlyLoading(void);
 
+i32 WorldInfo_OtherLevel(WORLDINFO *world);
+
 #endif

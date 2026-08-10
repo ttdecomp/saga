@@ -291,8 +291,47 @@ void Level_Draw(WORLDINFO *world) {
 
 LEVELFIXUP LevFixUp;
 
+void Levels_FixUp(LEVELFIXUP *fixup) {
+    if (fixup != NULL) {
+        for (; fixup->name != NULL; fixup++) {
+            if (fixup->level != NULL) {
+                LEVELDATA *level = Level_FindByName(fixup->name, NULL);
+                *fixup->level = level;
+                if (level != NULL) {
+                    if (fixup->load_fn != NULL) {
+                        level->load_fn = fixup->load_fn;
+                    }
+                    if (fixup->init_fn != NULL) {
+                        level->init_fn = fixup->init_fn;
+                    }
+                    if (fixup->reset_fn != NULL) {
+                        level->reset_fn = fixup->reset_fn;
+                    }
+                    if (fixup->update_fn != NULL) {
+                        level->update_fn = fixup->update_fn;
+                    }
+                    if (fixup->always_update_fn != NULL) {
+                        level->always_update_fn = fixup->always_update_fn;
+                    }
+                    if (fixup->draw_fn != NULL) {
+                        level->draw_fn = fixup->draw_fn;
+                    }
+                    if (fixup->draw_status_fn != NULL) {
+                        level->draw_status_fn = fixup->draw_status_fn;
+                    }
+                }
+            }
+        }
+    }
+}
+
+void Level_RegisterGameConfigKeywords(nufpcomjmp_s *beforeLoadKeywords, nufpcomjmp_s *afterLoadKeywords) {
+    Level_ConfigBeforeLoad_GameKeywords = beforeLoadKeywords;
+    Level_ConfigAfterLoad_GameKeywords = afterLoadKeywords;
+}
+
 void FixUpLevels(LEVELFIXUP *fixup) {
-    // Levels_FixUp(fixup);
+    Levels_FixUp(fixup);
 
     LEVELDATA *level = Level_FindByName("titles", NULL);
     // TITLES_LDATA = level;
@@ -420,4 +459,19 @@ void ClearLevelProgress(i32 index, WORLDINFO *world) {
     }
     GizmoSysClearLevelProgress(NULL, index);
     GameAnimSys_ClearProgress(index);
+}
+
+void SetLevelExBlowupFlags(u32 flags) {
+    EXBLOWUPFLAGS = flags;
+}
+
+u32 GetLevelExBlowupFlags(void) {
+    return EXBLOWUPFLAGS;
+}
+
+void GoToNewLevel(i32 levelIdx) {
+    NewLData = (LEVELDATA *)((u8 *)LDataList + levelIdx * 0x144);
+    if (waiting_for_level != -1) {
+        waiting_for_new_level = 1;
+    }
 }

@@ -174,7 +174,17 @@ typedef struct LEVELOBJECT_s {
     char *name;
 } LEVELOBJECT;
 
-struct LEVELFIXUP {};
+typedef struct LEVELFIXUP {
+    char *name;
+    LEVELDATA **level;
+    void *load_fn;
+    void *init_fn;
+    void *reset_fn;
+    void *update_fn;
+    void *always_update_fn;
+    void *draw_fn;
+    void *draw_status_fn;
+} LEVELFIXUP;
 
 #ifdef __cplusplus
 extern "C" {
@@ -213,5 +223,15 @@ i32 LevelObject_AddExtra(char *name, i32 kind);
 void ClearLevelProgress(i32 index, WORLDINFO *world);
 
 void FixUpLevels(LEVELFIXUP *fixup);
+
+void Levels_FixUp(LEVELFIXUP *fixup);
+
+typedef struct nufpcomjmp_s nufpcomjmp_s;
+
+void Level_RegisterGameConfigKeywords(nufpcomjmp_s *beforeLoadKeywords, nufpcomjmp_s *afterLoadKeywords);
+
+void SetLevelExBlowupFlags(u32 flags);
+u32 GetLevelExBlowupFlags(void);
+void GoToNewLevel(i32 levelIdx);
 
 #endif

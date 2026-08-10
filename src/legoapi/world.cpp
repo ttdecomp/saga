@@ -84,3 +84,17 @@ WORLDINFO *WorldInfo_CurrentlyActive(void) {
 WORLDINFO *WorldInfo_CurrentlyLoading(void) {
     return LWORLD;
 }
+
+i32 WorldInfo_OtherLevel(WORLDINFO *world) {
+    WORLDINFO *other = &WorldInfo[0];
+
+    if (world == &WorldInfo[0]) {
+        other = &WorldInfo[1];
+    }
+
+    if (other->unknown_0110 != 0) {
+        return other->unknown_011c;
+    }
+
+    return -1;
+}

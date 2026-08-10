@@ -551,3 +551,7 @@ void StoreLevelProgress(WORLDINFO *world) {
         // StoreLevelProgressFn(world, world->field277_0x130, 0);
     }
 }
+
+void NewAreaMusicChanges(void) {
+    BeenAttacked = 0;
+}

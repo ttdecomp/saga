@@ -81,10 +81,29 @@ extern "C" {
 #ifdef __cplusplus
 }
 
+typedef struct AREAFIXUP {
+    char *name;
+    AREADATA **area;
+    void *load_fn;
+    void *init_fn;
+    void *reset_fn;
+    void *update_fn;
+    void *draw_fn;
+} AREAFIXUP;
+
+extern AREAFIXUP AreaFixUp_LSW[];
+
 AREADATA *Area_FindByName(char *name, i32 *indexDest);
 
 AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, int count, int *countDest);
 
 struct LEVELDATA_s *Area_FindStatusLevel(AREADATA *area, i32 *indexDest);
+
+void FixUpAreas(void);
+void Areas_FixUp(AREAFIXUP *fixup);
+
+struct LEVELDATA_s *Area_FindNextPlayLevel(i32 levelIdx);
+
+i32 AreaFromMiniKitID(i32 minikitId);
 
 #endif

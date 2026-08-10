@@ -98,3 +98,10 @@ i32 waiting_for_new_level = 0;
 void *LevelProgressData = NULL;
 
 GameAnimSysProgress gameanimsysprogress = {0, 0, NULL};
+
+nufpcomjmp_s *Level_ConfigBeforeLoad_GameKeywords = NULL;
+nufpcomjmp_s *Level_ConfigAfterLoad_GameKeywords = NULL;
+
+u32 EXBLOWUPFLAGS = 0;
+
+i32 BeenAttacked = 0;

@@ -292,6 +292,13 @@ extern "C" {
     };
     extern GameAnimSysProgress gameanimsysprogress;
 
+    extern nufpcomjmp_s *Level_ConfigBeforeLoad_GameKeywords;
+    extern nufpcomjmp_s *Level_ConfigAfterLoad_GameKeywords;
+
+    extern u32 EXBLOWUPFLAGS;
+
+    extern i32 BeenAttacked;
+
 #ifdef __cplusplus
 }
 #endif
