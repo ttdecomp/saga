@@ -1,12 +1,33 @@
 cmake_minimum_required(VERSION 3.10)
 
-project(saga)
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
 
 option(BUILD_FOR_HOST "Build for host system" OFF)
 
 include("${CMAKE_SOURCE_DIR}/cmake/ndk.cmake")
+
+if(NOT BUILD_FOR_HOST)
+    get_ndk()
+
+    if(CMAKE_HOST_WIN32)
+        set(NDK_TOOL_SUFFIX ".exe")
+    else()
+        set(NDK_TOOL_SUFFIX "")
+    endif()
+
+    set(CMAKE_SYSTEM_NAME Linux)
+    set(CMAKE_SYSTEM_PROCESSOR i686)
+    set(CMAKE_SYSROOT "${NDK_SYSROOT}")
+    set(CMAKE_C_COMPILER "${NDK_TOOLCHAIN}/bin/i686-linux-android-gcc${NDK_TOOL_SUFFIX}")
+    set(CMAKE_CXX_COMPILER "${NDK_TOOLCHAIN}/bin/i686-linux-android-g++${NDK_TOOL_SUFFIX}")
+endif()
+
+project(saga)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
+
 include("${CMAKE_SOURCE_DIR}/cmake/ogg-vorbis.cmake")
 include("${CMAKE_SOURCE_DIR}/cmake/squish.cmake")
 
@@ -19,20 +40,12 @@ if (BUILD_FOR_HOST)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32 -march=i686 -fsanitize=address")
     endif()
 else()
-    get_ndk()
-
     message(STATUS "Using Android NDK toolchain: ${NDK_TOOLCHAIN}")
 
-    set(CMAKE_CROSSCOMPILING TRUE)
-    set(CMAKE_SYSROOT "${NDK_SYSROOT}")
-    set(CMAKE_C_COMPILER "${NDK_TOOLCHAIN}/bin/i686-linux-android-gcc")
-    set(CMAKE_CXX_COMPILER "${NDK_TOOLCHAIN}/bin/i686-linux-android-g++")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-function-sections -fno-data-sections")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-function-sections -fno-data-sections")
     
     if (CMAKE_HOST_WIN32)
-        set(CMAKE_SYSTEM_NAME Linux)
-        set(CMAKE_SYSTEM_PROCESSOR i686)
         set(CMAKE_EXECUTABLE_SUFFIX "")
 
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-return-type -static-libgcc -static-libstdc++")
