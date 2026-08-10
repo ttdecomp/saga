@@ -98,16 +98,23 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/java/jni_stub.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/area.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/animation.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/bolts.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/character.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cheat.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/collection.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episode.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gameobjects.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gamepads.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/level.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/mission.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/move.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/players.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/qrand.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/store.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/timer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/touchhacks.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/ai.cpp

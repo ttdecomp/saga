@@ -545,7 +545,7 @@ CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR 
         bufferStart->void_ptr = (void *)((usize)bufferStart->void_ptr + 3U & 0xfffffffc);
         if (0 < count2) {
             if (dataList != NULL) {
-                *dataList = (gamecharacterdata_s *)bufferStart->void_ptr;
+                *dataList = (GAMECHARACTERDATA_s *)bufferStart->void_ptr;
             }
             for (j = 0; j < i; j = j + 1) {
                 characterdata[j].field11_0x24 = bufferStart->void_ptr;

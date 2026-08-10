@@ -173,7 +173,7 @@ extern "C" {
         char field21_0x7bfc[36];
         u32 coins;
         u16 completion; /* Created by retype action */
-        undefined field24_0x7c26;
+        u8 gold_bricks;
         undefined field25_0x7c27;
         undefined field26_0x7c28;
         undefined field27_0x7c29;

@@ -1,6 +1,65 @@
 #include "legoapi/gizmos/tubes.h"
 
 #include "decomp.h"
+#include "legoapi/gameobject.h"
+
+extern i32 LEGOCONTEXT_GLIDE;
+extern i32 LEGOCONTEXT_TUBE;
+
+namespace TouchHacks {
+    extern u8 TouchControlsActive;
+}
+
+i32 Tube_InCylinder(GameObject_s *object, TUBE *tube, f32 *distance_squared, i32 ignore_height) {
+    if (tube == NULL || object == NULL) {
+        return 0;
+    }
+
+    if (ignore_height == 0 && (object->bounds_max.y < tube->position.y || tube->top_y < object->bounds_min.y)) {
+        return 0;
+    }
+
+    f32 delta_x = object->position.x - tube->position.x;
+    f32 delta_z = object->position.z - tube->position.z;
+    f32 object_distance_squared = delta_x * delta_x + delta_z * delta_z;
+    f32 maximum_distance_squared = tube->radius_squared;
+    if ((tube->flags & 0x10) != 0 && TouchHacks::TouchControlsActive != 0) {
+        maximum_distance_squared *= 0.8f;
+    }
+
+    if (object_distance_squared > maximum_distance_squared) {
+        return 0;
+    }
+    if (distance_squared != NULL) {
+        *distance_squared = object_distance_squared;
+    }
+    return 1;
+}
+
+TUBE *Tube_InAnyCylinder(WORLDINFO_s *world, GameObject_s *object, i32 ignore_height) {
+    TUBE *tubes = *(TUBE **)((u8 *)world + 0x4694);
+    i32 tube_count = *(i32 *)((u8 *)world + 0x4698);
+    if (tubes != NULL) {
+        for (i32 i = 0; i < tube_count; i++) {
+            if ((tubes[i].flags & 7) == 3 && Tube_InCylinder(object, &tubes[i], NULL, ignore_height)) {
+                return &tubes[i];
+            }
+        }
+    }
+    return NULL;
+}
+
+i32 ObjInTube(GameObject_s *object) {
+    i8 character_state = object->player_packet.character_state;
+    if (LEGOCONTEXT_TUBE != -1 && character_state == LEGOCONTEXT_TUBE) {
+        return 1;
+    }
+    if (LEGOCONTEXT_GLIDE != -1 && character_state == LEGOCONTEXT_GLIDE &&
+        *(GameObject_s **)((u8 *)object + 0x788) != NULL) {
+        return 1;
+    }
+    return 0;
+}
 
 static int Tubes_GetMaxGizmos(void *tube) {
     UNIMPLEMENTED();
