@@ -127,33 +127,6 @@ hashfn_t memcard_hashfn = NULL;
 void *memcard_drawasiconfn = NULL;
 i32 memcard_autosave = 0;
 
-void SaveSystemInitialise(i32 slots, void *makeSaveHash, void *save, i32 saveSize, i32 saveCount, void *drawSaveIcon,
-                          void *extradata, i32 extradataSize) {
-    if (extradata == NULL) {
-        SAVESLOTS = 6;
-        if (slots < 7) {
-            SAVESLOTS = slots;
-        }
-    } else {
-        SAVESLOTS = 5;
-        if (slots < 6) {
-            SAVESLOTS = slots;
-        }
-    }
-
-    memcard_hashfn = (hashfn_t)makeSaveHash;
-    memcard_savedata = save;
-    memcard_savedatasize = saveSize;
-    memcard_extra_savedata = extradata;
-    memcard_extra_savedatasize = extradataSize;
-
-    memcard_savedatabuffer = NU_ALLOC(saveSize + 4, 4, 1, "", NUMEMORY_CATEGORY_NONE);
-    memcard_extra_savedatabuffer = NU_ALLOC(extradataSize + 4, 4, 1, "", NUMEMORY_CATEGORY_NONE);
-
-    memcard_autosave = saveCount;
-    memcard_drawasiconfn = drawSaveIcon;
-}
-
 i32 ChecksumSaveData(void *buffer, i32 size) {
     i32 n = size / 4;
 

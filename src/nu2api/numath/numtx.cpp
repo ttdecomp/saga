@@ -1073,8 +1073,6 @@ void NuMtxInvRSSH(NUMTX *inv, NUMTX *T) {
 }
 
 void NuMtxInvH(NUMTX *mi, NUMTX *m0) {
-    // there's some weird stack alignment stuff going on here...
-    // also not sure if this semantically matches the original implementation
     int p[4];
     int j;
     int k;
@@ -1085,6 +1083,7 @@ void NuMtxInvH(NUMTX *mi, NUMTX *m0) {
     f32 localm20;
     f32 localm28;
     f32 localm30;
+    f32 f;
 
     n = 4;
 
@@ -1130,8 +1129,6 @@ void NuMtxInvH(NUMTX *mi, NUMTX *m0) {
 
         if (p[i] != i) {
             for (k = 0; k < n; k++) {
-                f32 f;
-
                 f = a[i][k];
                 a[i][k] = a[p[i]][k];
                 a[p[i]][k] = f;
@@ -1161,8 +1158,6 @@ void NuMtxInvH(NUMTX *mi, NUMTX *m0) {
     for (i = n - 1; i >= 0; i--) {
         if (p[i] != i) {
             for (j = 0; j < n; j++) {
-                f32 f;
-
                 f = a[j][i];
                 a[j][i] = a[j][p[i]];
                 a[j][p[i]] = f;

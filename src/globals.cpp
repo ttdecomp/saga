@@ -22,7 +22,6 @@ char prodcode[16] = {0};
 char *iconname = "lego.ico";
 char unicodename[64] = "LEGO Star Wars Saga";
 
-
 i32 EPISODECOUNT = 0;
 i32 AREACOUNT = 0;
 GAMESAVE_s Game = {0};
@@ -52,6 +51,8 @@ NUSOUND_FILENAME_INFO *MusicInfo = NULL;
 NUSOUND_FILENAME_INFO *g_music = NULL;
 u8 g_BackgroundUsedFogColour = 0;
 u32 SFX_MUSIC_COUNT = 0;
+i32 SfxBits[50] = {0};
+i32 GlobalSfxBits[50] = {0};
 
 NUCAMERA *pNuCam = NULL;
 

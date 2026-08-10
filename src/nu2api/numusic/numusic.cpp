@@ -92,12 +92,22 @@ i32 NuMusic::Initialise(const char *file, char *null, VARIPTR *buffer_start, VAR
 
 void NuMusic::InitVoiceManager() {
     memset(&this->voices[0], 0, sizeof(Voice));
+    this->voices[0].flags &= ~1;
     this->voices[0].stream_index = 0;
     this->voices[0].status = VOICE_STATUS_1;
+    this->voices[0].field10_0x28 = 0.0f;
+    this->voices[0].field7_0x1c = 1.0f;
+    this->voices[0].field9_0x24 = -1.0f;
+    this->voices[0].field16_0x2c = 0.0f;
 
     memset(&this->voices[1], 0, sizeof(Voice));
+    this->voices[1].field10_0x28 = 0.0f;
+    this->voices[1].field7_0x1c = 1.0f;
+    this->voices[1].field9_0x24 = -1.0f;
+    this->voices[1].field16_0x2c = 0.0f;
     this->voices[1].stream_index = 1;
     this->voices[1].status = VOICE_STATUS_1;
+    this->voices[1].flags &= ~1;
 }
 
 void NuMusic::GetSoundFiles(nusound_filename_info_s **finfo, int *null) {
@@ -429,7 +439,7 @@ i32 NuMusic::GetTrackHandle(TRACK_CLASS clazz, const char *name) {
 
 void NuMusic::Voice::SetStatusFn(VOICE_STATUS status) {
     if (this->status != status) {
-        this->field16_0x2c = NULL;
+        this->field16_0x2c = 0.0f;
         this->status = status;
     }
 }

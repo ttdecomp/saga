@@ -60,8 +60,8 @@ class NuMusic {
         f32 field8_0x20;
         f32 field9_0x24;
         f32 field10_0x28;
-        void *field16_0x2c;
-        u32 flags;
+        f32 field16_0x2c;
+        u8 flags;
 
         bool Load(Track *track, int trackIndex);
         void SetStatusFn(VOICE_STATUS status);

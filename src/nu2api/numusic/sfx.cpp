@@ -9,20 +9,17 @@
 #include <cstring>
 
 static float g_audioVersion;
+static i32 NumSfxInst = 0;
+static char sfx_name[1601][32] = {0};
+static i32 NumSfx = 0;
+static i32 sfx_refcount[1601] = {0};
+static u32 NumSfxNames = 0;
+static char sfx_filename[1601][64];
 
 NUSOUNDINFO *g_soundInfo;
 NUSOUNDINFO *g_revertSoundInfo;
-
-static u16 *g_soundMap;
+i16 *g_soundMap;
 nusound_filename_info_s *SfxInfo = NULL;
-
-static i32 NumSfx = 0;
-static i32 NumSfxInst = 0;
-static u32 NumSfxNames = 0;
-
-static char sfx_name[1600][32] = {0};
-static char sfx_filename[1600][64];
-static i32 sfx_refcount[1600] = {0};
 
 static char cfgfile_name[256] = "Audio/audio.cfg";
 
@@ -36,13 +33,12 @@ void InitSoundInfo(i32 index) {
     info->pitch_rnd = 0.0;
     info->rumble_strength = 0;
     info->sfx_name = sfx_name[NumSfxInst];
+    info->loop = 0;
+    u8 flags = info->flag_bytes[2] & 0x88;
     info->category = 0;
     info->field29_0x40 = 0;
     info->volume_rnd = 0.0;
-
-    // info->field_0x6 = info->field_0x6 & 0x88;
-    info->dirty = 1;
-    info->disabled = 1;
+    info->flag_bytes[2] = flags;
 
     info->falloff_near = 0.0;
     info->falloff_far = 0.0;
@@ -50,7 +46,7 @@ void InitSoundInfo(i32 index) {
     info->rumble_sustain = 0.0;
     info->rumble_release = 0.0;
 
-    memcpy(&g_revertSoundInfo[index], info, sizeof(NUSOUNDINFO));
+    g_revertSoundInfo[index] = *info;
 }
 
 void fnAudioAudio(nufpar_s *fpar) {
@@ -81,7 +77,13 @@ void fnAudioSample(nufpar_s *fpar) {
             return;
         }
 
-        if (NuStrICmp(fpar->word_buf, "name") == 0) {
+        if (NuStrICmp(fpar->word_buf, "disable") == 0) {
+            g_soundInfo[NumSfxInst].disabled = 1;
+            if (finfo == NULL) {
+                continue;
+            }
+            sinfo = &g_soundInfo[NumSfxInst];
+        } else if (NuStrICmp(fpar->word_buf, "name") == 0) {
             NuFParGetWord(fpar);
             NuStrNCpy(sfx_name[NumSfxInst], fpar->word_buf, 0x20);
 
@@ -89,7 +91,7 @@ void fnAudioSample(nufpar_s *fpar) {
             g_soundInfo[NumSfxInst].sfx_name = str;
             u32 hash = CRC_ProcessStringIgnoreCase(str);
 
-            u16 *id = &g_soundMap[hash & 0xff];
+            i16 *id = &g_soundMap[hash & 0xff];
             if (*id == -1) {
                 *id = NumSfxInst;
                 g_soundInfo[NumSfxInst].next = -1;
@@ -186,47 +188,36 @@ static NUFPCOMJMP audioCom[] = {
 };
 
 void InitSfx(variptr_u *buffer_start, variptr_u buffer_end, const char *file) {
-    // bVar15 = 0;
-    // g_soundMap = (short *)((int)buffer_start->voidptr + 3U & 0xfffffffc);
-    g_soundMap = BUFFER_ALLOC_ARRAY(buffer_start, 0x100, u16);
+    g_soundMap = reinterpret_cast<i16 *>(ALIGN(buffer_start->addr, 4));
+    usize sfx_info_address = reinterpret_cast<usize>(g_soundMap + 0x100);
+    sfx_info_address = ALIGN(sfx_info_address, alignof(NUSOUND_FILENAME_INFO));
+    SfxInfo = reinterpret_cast<NUSOUND_FILENAME_INFO *>(sfx_info_address);
+    buffer_start->addr = reinterpret_cast<usize>(SfxInfo + 1600);
+    memset(SfxInfo, 0, sizeof(NUSOUND_FILENAME_INFO) * 1600);
 
-    // sfx_info = (nusound_filename_info_s *)(g_soundMap + 0x100);
-    // SfxInfo = sfx_info;
-    // buffer_start->voidptr = g_soundMap + 0x6500;
-    // memset(sfx_info, 0, 0xc800);
-    SfxInfo = BUFFER_ALLOC_ARRAY(buffer_start, 1600, nusound_filename_info_s);
+    NUSOUNDINFO *sound_info = reinterpret_cast<NUSOUNDINFO *>(ALIGN(buffer_start->addr, 4));
+    g_soundInfo = sound_info;
+    buffer_start->addr = reinterpret_cast<usize>(sound_info + 1600);
+    memset(sound_info, 0, sizeof(NUSOUNDINFO) * 1600);
 
-    // sound_info = (SoundInfo *)((int)buffer_start->voidptr + 3U & 0xfffffffc);
-    // g_soundInfo = sound_info;
-    // buffer_start->voidptr = sound_info + 0x640;
-    // memset(sound_info, 0, 0x1a900);
-    g_soundInfo = BUFFER_ALLOC_ARRAY(buffer_start, 1600, NUSOUNDINFO);
+    NUSOUNDINFO *revert_sound_info = reinterpret_cast<NUSOUNDINFO *>(ALIGN(buffer_start->addr, 4));
+    g_revertSoundInfo = revert_sound_info;
+    buffer_start->addr = reinterpret_cast<usize>(revert_sound_info + 1600);
+    memset(revert_sound_info, 0, sizeof(NUSOUNDINFO) * 1600);
 
-    //__s = (void *)((int)buffer_start->voidptr + 3U & 0xfffffffc);
-    // g_revertSoundInfo = __s;
-    // buffer_start->voidptr = (void *)((int)__s + 0x1a900);
-    // memset(__s, 0, 0x1a900);
-    g_revertSoundInfo = BUFFER_ALLOC_ARRAY(buffer_start, 1600, NUSOUNDINFO);
+    CRC_Init(buffer_start, buffer_end);
 
-    CRC_Init(buffer_start);
-
-    // psVar5 = g_soundMap;
-    // uVar10 = -(((u32)g_soundMap & 0xf) >> 1) & 7;
-    memset(g_soundMap, -1, 0x100 * sizeof(u16));
+    for (i32 i = 0; i < 0x100; i++) {
+        g_soundMap[i] = -1;
+    }
 
     NumSfx = 0;
-    // NumSfxInst = 0;
+    NumSfxInst = 0;
 
-    for (i32 i = 0; i < SFX_MUSIC_COUNT; i++) {
+    i32 i;
+    for (i = 0; i < static_cast<i32>(SFX_MUSIC_COUNT); i++) {
+        SfxInfo[i] = g_music[i];
         SfxInfo[i].index = i;
-        SfxInfo[i].filename = g_music[i].filename;
-        SfxInfo[i].index = g_music[i].index;
-        SfxInfo[i].sample = g_music[i].sample;
-        SfxInfo[i].field1_0x4 = g_music[i].field1_0x4;
-        SfxInfo[i].field3_0xc = g_music[i].field3_0xc;
-        // SfxInfo[i].field4_0x10 = g_music[i].field4_0x10;
-        // SfxInfo[i].field5_0x14 = g_music[i].field5_0x14;
-        // SfxInfo[i].field7_0x1c = g_music[i].field7_0x1c;
 
         NuStrCpy(sfx_filename[i], SfxInfo[i].filename);
         SfxInfo[i].filename = sfx_filename[i];
@@ -237,36 +228,36 @@ void InitSfx(variptr_u *buffer_start, variptr_u buffer_end, const char *file) {
         LOG_DEBUG("SfxInfo[%d]: name=%s", i, SfxInfo[i].filename);
     }
 
-    // puVar1 = (undefined4 *)((int)&sfx_info->name + iVar12);
-    //*puVar1 = 0;
-    // puVar1[1] = 0;
-    // puVar1[2] = 0xffffffff;
+    NUSOUND_FILENAME_INFO *last = &SfxInfo[i];
+    last->filename = NULL;
+    last->field1_0x4 = 0;
+    last->index = -1;
 
     NuStrCpy(cfgfile_name, file);
 
     LoadSfx(file, buffer_start, buffer_end);
 
-    // piVar14 = GlobalSfxBits;
-    // for (iVar12 = 0x32; iVar12 != 0; iVar12 = iVar12 + -1) {
-    //     *piVar14 = 0;
-    //     piVar14 = piVar14 + (u32)bVar15 * -2 + 1;
-    // }
+    memset(GlobalSfxBits, 0, sizeof(GlobalSfxBits));
 
-    // if (0 < NumSfxInst) {
-    //     end = g_soundInfo + NumSfxInst;
-    //     sound_info = g_soundInfo;
-    //     do {
-    //         if ((sound_info->flags & 2) != 0) {
-    //             sVar7 = (short)(*(short *)&sound_info->field_0x4 * 2) >> 1;
-    //             local_14 = (byte)sVar7 & 0xf;
-    //             puVar2 = (ushort *)((int)GlobalSfxBits + ((int)sVar7 >> 4) * 2);
-    //             *puVar2 = *puVar2 | (ushort)(1 << local_14);
-    //         }
-    //         sound_info = sound_info + 1;
-    //     } while (sound_info != end);
-    // }
+    if (NumSfxInst > 0) {
+        NUSOUNDINFO *info = g_soundInfo;
+        NUSOUNDINFO *end = info + NumSfxInst;
+        do {
+            if (info->global) {
+                reinterpret_cast<u16 *>(GlobalSfxBits)[info->index >> 4] |= static_cast<u16>(1 << (info->index & 0xf));
+            }
+            info++;
+            if (info == end) {
+                break;
+            }
+        } while (true);
+    }
 
-    // ResetSounds();
+    ResetSounds();
+}
+
+void ResetSounds() {
+    memcpy(SfxBits, GlobalSfxBits, sizeof(SfxBits));
 }
 
 void LoadSfx(const char *file, variptr_u *buffer_start, variptr_u buffer_end) {
@@ -305,9 +296,9 @@ void LoadSfx(const char *file, variptr_u *buffer_start, variptr_u buffer_end) {
 
 i32 GetSfxId(const char *name) {
     if (name != NULL) {
-        u32 hash = CRC_ProcessStringIgnoreCase(name);
+        u32 hash = CRC_ProcessStringIgnoreCase(name) & 0xff;
         if (g_soundMap != NULL) {
-            for (i32 index = g_soundMap[hash & 0xff]; index != -1; index = g_soundInfo[index].next) {
+            for (i32 index = g_soundMap[hash]; index != -1; index = g_soundInfo[index].next) {
                 if (NuStrNICmp(name, g_soundInfo[index].sfx_name, 32) == 0) {
                     return index;
                 }

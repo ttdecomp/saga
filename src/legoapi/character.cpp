@@ -444,25 +444,24 @@ i32 CharIDFromName(char *name) {
 
 CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, int count, int *countDest,
                                       int count2, GAMECHARACTERDATA **dataList) {
-    bool bVar1;
-    bool bVar2;
-    nufpar_s *fp;
+    CHARACTERDATA *cdata;
+    int i;
+    int bVar2;
+    int offset;
+    int j;
     CHARACTERDATA *characterdata;
+    nufpar_s *fp = NuFParCreate(file);
+    i32 len;
     i16 dirnameOffsets[500];
     i16 filenameOffsets[500];
     char buf[10000];
-    CHARACTERDATA *cdatas;
-    int j;
-    usize offset;
-    int i;
-    CHARACTERDATA *cdata;
 
-    fp = NuFParCreate(file);
     if (500 < count) {
         count = 500;
     }
-    bufferStart->void_ptr = (void *)(bufferStart->addr + 3U & 0xfffffffc);
+    bufferStart->addr = (bufferStart->addr + 3U) & 0xfffffffc;
     characterdata = (CHARACTERDATA *)bufferStart->void_ptr;
+    cdata = characterdata;
     i = 0;
 
     memset(buf, 0, 10000);
@@ -470,7 +469,6 @@ CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR 
     buf[0] = '\0';
     offset = 0;
     bVar2 = false;
-    cdata = characterdata;
     while (NuFParGetLine(fp) != 0) {
         NuFParGetWord(fp);
         if (*fp->word_buf != '\0') {
@@ -481,29 +479,27 @@ CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR 
                         i = i + 1;
                         cdata = cdata + 1;
                     }
-                } else if (NuStrICmp(fp->word_buf, "dir") == 0 && NuFParGetWord(fp) != 0) {
-                    i32 len = NuStrLen(fp->word_buf);
-                    if ((len + offset + 1) < 10000) {
-                        NuStrCpy(buf + offset, fp->word_buf);
-                        dirnameOffsets[i] = (i16)offset;
-                        offset = offset + len + 1;
+                } else if (NuStrICmp(fp->word_buf, "dir") == 0) {
+                    if (NuFParGetWord(fp) != 0) {
+                        len = NuStrLen(fp->word_buf);
+                        if ((offset + len + 1) < 10000) {
+                            NuStrCpy(&buf[offset], fp->word_buf);
+                            dirnameOffsets[i] = (i16)offset;
+                            offset += len + 1;
+                        }
                     }
-                } else if (NuStrICmp(fp->word_buf, "file") == 0 && NuFParGetWord(fp) != 0) {
-                    i32 len = NuStrLen(fp->word_buf);
-                    if ((len + offset + 1) < 10000) {
-                        NuStrCpy(buf + offset, fp->word_buf);
-                        filenameOffsets[i] = (i16)offset;
-                        offset = offset + len + 1;
+                } else if (NuStrICmp(fp->word_buf, "file") == 0) {
+                    if (NuFParGetWord(fp) != 0) {
+                        len = NuStrLen(fp->word_buf);
+                        if ((offset + len + 1) < 10000) {
+                            NuStrCpy(&buf[offset], fp->word_buf);
+                            filenameOffsets[i] = (i16)offset;
+                            offset += len + 1;
+                        }
                     }
                 }
             } else {
                 if (NuStrICmp(fp->word_buf, "char_start") == 0 && i < count) {
-                    bVar1 = true;
-                } else {
-                    bVar1 = false;
-                }
-
-                if (bVar1) {
                     bVar2 = true;
                     dirnameOffsets[i] = -1;
                     filenameOffsets[i] = -1;
@@ -523,7 +519,7 @@ CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR 
                     cdata->field15_0x34 = -0.5f;
                     cdata->field16_0x38 = 0.5f;
                     cdata->field17_0x3c = 1.0f;
-                    cdata->flags = cdata->flags & 0xfe;
+                    cdata->field18_0x40_bit0 = 0;
                     cdata->field20_0x42 = -1;
                     cdata->field21_0x44 = 0;
                     cdata->field22_0x48 = 0;
@@ -532,30 +528,29 @@ CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR 
         }
     }
     NuFParDestroy(fp);
-    if (i < 1) {
-        characterdata = NULL;
-    } else {
+    if (i > 0) {
         bufferStart->void_ptr = cdata;
         memmove(bufferStart->void_ptr, buf, offset);
         for (j = 0; j < i; j = j + 1) {
-            characterdata[j].dir = (char *)((int)dirnameOffsets[j] + (usize)bufferStart->void_ptr);
-            characterdata[j].file = (char *)((int)filenameOffsets[j] + (usize)bufferStart->void_ptr);
+            characterdata[j].dir = bufferStart->char_ptr + dirnameOffsets[j];
+            characterdata[j].file = bufferStart->char_ptr + filenameOffsets[j];
         }
-        bufferStart->void_ptr = (void *)((usize)bufferStart->void_ptr + offset);
-        bufferStart->void_ptr = (void *)((usize)bufferStart->void_ptr + 3U & 0xfffffffc);
+        bufferStart->addr += offset;
+        bufferStart->addr = (bufferStart->addr + 3U) & 0xfffffffc;
         if (0 < count2) {
             if (dataList != NULL) {
                 *dataList = (gamecharacterdata_s *)bufferStart->void_ptr;
             }
             for (j = 0; j < i; j = j + 1) {
                 characterdata[j].field11_0x24 = bufferStart->void_ptr;
-                bufferStart->void_ptr = (void *)((usize)bufferStart->void_ptr + count2);
+                bufferStart->addr += count2;
             }
         }
-        bufferStart->void_ptr = (void *)((usize)bufferStart->void_ptr + 3U & 0xfffffffc);
+        bufferStart->addr = (bufferStart->addr + 3U) & 0xfffffffc;
         if (countDest != (int *)0x0) {
             *countDest = i;
         }
+        return characterdata;
     }
-    return characterdata;
+    return NULL;
 }
