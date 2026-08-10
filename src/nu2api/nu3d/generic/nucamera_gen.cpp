@@ -136,23 +136,26 @@ i32 NuCameraClipTestSphere(NUVEC *pnt, f32 radius, NUMTX *world_mtx) {
     NUCAMERA *cam = NuCameraGetCam();
     NUMTX *view = NuCameraGetViewMtx();
 
-    NUVEC pnt2;
-    if (world_mtx != NULL) {
-        NuVecMtxTransform(&pnt2, pnt, world_mtx);
-        NuVecMtxTransform(&pnt2, &pnt2, view);
-    } else {
-        NuVecMtxTransform(&pnt2, pnt, view);
-    }
-
-    if (0.0f > (pnt2.z - cam->near_clip) + radius) {
-        return 1;
-    }
-    if (0.0f > (cam->far_clip - pnt2.z) + radius) {
-        return 1;
-    }
-
+    union {
+        NUVEC vec;
+        NUVEC4 vec4;
+    } pnt2;
     NUVEC4 g_dot;
-    NuVec4MtxTransform(&g_dot, &pnt2, NuCameraGetClipPlanes());
+    if (world_mtx != NULL) {
+        NuVecMtxTransform(&pnt2.vec, pnt, world_mtx);
+        NuVecMtxTransform(&pnt2.vec, &pnt2.vec, view);
+    } else {
+        NuVecMtxTransform(&pnt2.vec, pnt, view);
+    }
+
+    if (0.0f > (pnt2.vec.z - cam->near_clip) + radius) {
+        return 1;
+    }
+    if (0.0f > (cam->far_clip - pnt2.vec.z) + radius) {
+        return 1;
+    }
+
+    NuVec4MtxTransform(&g_dot, &pnt2.vec, NuCameraGetClipPlanes());
     if (-radius > g_dot.x) {
         return 1;
     }

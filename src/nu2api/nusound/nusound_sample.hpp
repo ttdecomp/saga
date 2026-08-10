@@ -8,11 +8,17 @@
 
 class NuSoundSample : public NuSoundSource {
   protected:
+    struct Fields {
+        i32 field1_0x20;
+        i32 field2_0x24;
+
+        Fields() {
+            field2_0x24 = 0;
+            field1_0x20 = 0;
+        }
+    } fields;
     NuSoundBuffer buffer;
     NuSoundSystem::FileType file_type;
-
-    i32 field1_0x20;
-    i32 field2_0x24;
 
   public:
     NuSoundSample *next;

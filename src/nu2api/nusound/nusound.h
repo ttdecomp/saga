@@ -7,11 +7,13 @@ struct NuSoundStreamingSample;
 
 typedef struct nusound_filename_info_s {
     const char *filename;
-    void *field4_0x4;
+    u32 field1_0x4;
     i32 index;
     i32 field3_0xc;
-    u32 field1_0x4;
+    void *field4_0x10;
+    void *field5_0x14;
     struct NuSoundStreamingSample *sample;
+    void *field7_0x1c;
 } NUSOUND_FILENAME_INFO;
 
 typedef enum {

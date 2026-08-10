@@ -6,8 +6,6 @@ pthread_mutex_t NuSoundSample::sCriticalSection = PTHREAD_MUTEX_INITIALIZER;
 
 NuSoundSample::NuSoundSample(const char *path, FeedType feed_type)
     : NuSoundSource(path, SourceType::ZERO, feed_type), buffer{} {
-    this->field2_0x24 = 0;
-    this->field1_0x20 = 0;
     this->file_type = NuSoundSystem::DetermineFileType(path);
     this->load_state = LoadState::NOT_LOADED;
     this->last_error = ErrorState::NONE;

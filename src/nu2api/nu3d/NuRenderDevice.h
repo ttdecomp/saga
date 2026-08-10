@@ -16,40 +16,49 @@ class NuRenderDeviceGen {
 };
 
 class NuRenderDevice : NuRenderDeviceGen {
-    bool focus;
-    bool field48_0x45;
-    EGLDisplay egl_display;
+    i32 lock_count;
     pthread_mutex_t mutex;
     pthread_mutex_t mutex2;
+    u32 field10_0x10;
+    u32 field11_0x14;
+    const char *extensions;
     bool is_not_amazon_kf;
-    volatile bool context_valid;
-    EGLConfig egl_config;
+    u8 field13_0x1d[3];
+    i32 max_texture_units;
+    i32 max_texture_size;
+
+  public:
+    u8 enabled_extensions[26];
+
+  private:
+    bool oes_packed_depth_stencil;
+    bool oes_depth24;
+    bool oes_depth_texture;
+    bool field48_0x45;
+    bool focus;
+    u8 field50_0x47;
     EGLNativeWindowType native_window;
+    u32 field52_0x4c;
+    i32 field53_0x50;
+    bool field54_0x54;
+    u8 field55_0x55[3];
+    EGLint attrib_list[8];
+    EGLDisplay egl_display;
+    EGLConfig egl_config;
+    i32 field61_0x80;
 
     EGLSurface pbuffers[4];
     EGLContext contexts[4];
 
+    volatile bool context_valid;
+    u8 field76_0xa5[3];
+    EGLint surface_width;
+    EGLint surface_height;
+    u32 width, height;
     u32 backing_width, backing_height;
 
     i32 nominal_aspect_ratio;
     f32 aspect_ratio;
-
-    i32 max_texture_units;
-    i32 max_texture_size;
-
-    const char *extensions;
-
-    bool field54_0x54;
-
-    EGLint attrib_list[16];
-
-    u32 width, height;
-
-    bool oes_packed_depth_stencil;
-    bool oes_depth24;
-    bool oes_depth_texture;
-
-    i32 lock_count;
 
   private:
     i32 DetermineNominalAspectRatio(u32 width, u32 height);
@@ -73,7 +82,6 @@ class NuRenderDevice : NuRenderDeviceGen {
 
     void InitialiseOpenGLContext(ANativeWindow *window);
     void CheckForRenderWindowInitialisation();
-    u8 enabled_extensions[26]; // NEEDS TO BE AT 0x28
 };
 
 extern NuRenderDevice g_renderDevice;
