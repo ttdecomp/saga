@@ -5,16 +5,25 @@
 
 typedef struct nusound_info_s {
     const char *sfx_name;
-    i32 index : 15;
-    u32 loop : 1;
-    u32 seq : 1;
-    u32 global : 1;
-    u32 disabled : 1;
-    u32 comment : 1;
-    u32 dirty : 1;
-    u32 revertable : 1;
+    union {
+        struct {
+            i32 index : 15;
+            u32 loop : 1;
+            u32 seq : 1;
+            u32 global : 1;
+            u32 disabled : 1;
+            u32 comment : 1;
+            u32 dirty : 1;
+            u32 revertable : 1;
+            u32 field_bit22 : 1;
+            u32 field_bit23 : 1;
+        };
+        u8 flag_bytes[4];
+    };
     i32 pitch;
     u8 priority;
+    u8 field_0xd;
+    u8 field_0xe;
     i16 next;
     i16 volume;
     i16 group;
@@ -43,10 +52,12 @@ extern "C" {
 
     void InitSfx(variptr_u *buffer_start, variptr_u buffer_end, const char *file);
 
-    void LoadSfx(const char *file, variptr_u *buffer_start, variptr_u buffer_end);
-
     i32 GetSfxId(const char *name);
+
+    void ResetSounds();
 
 #ifdef __cplusplus
 }
+
+void LoadSfx(const char *file, variptr_u *buffer_start, variptr_u buffer_end);
 #endif

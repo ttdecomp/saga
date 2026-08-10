@@ -31,7 +31,12 @@ typedef struct WORLDINFO_s {
     i32 processor_count;
     LEVELSCRIPTPROCESS processors[32];
 
-    char unknown_4670[0xa8c];
+    char unknown_4670[0xa3c];
+
+    struct LEDGE_s *ledges;
+    i32 ledges_count;
+
+    char unknown_50b4[0x48];
 
     struct GIZTIMER_s *giz_timers;
     i32 giz_timers_count;

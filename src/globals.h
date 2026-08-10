@@ -33,8 +33,6 @@ extern "C" {
     };
     typedef struct cheat_s CHEAT;
 
-    
-
     struct OPTIONSSAVE_s { /* PlaceHolder Structure */
         undefined field0_0x0;
         undefined field1_0x1;
@@ -191,7 +189,6 @@ extern "C" {
         char field39_0x7d08[336];
     };
 
-
     extern i32 PAL;
     extern f32 FRAMETIME;
     extern f32 DEFAULTFPS;
@@ -240,6 +237,8 @@ extern "C" {
     extern struct nusound_filename_info_s *MusicInfo;
     extern struct nusound_filename_info_s *g_music;
     extern u32 SFX_MUSIC_COUNT;
+    extern i32 SfxBits[50];
+    extern i32 GlobalSfxBits[50];
     extern u8 g_BackgroundUsedFogColour;
     extern NUCAMERA *pNuCam;
 

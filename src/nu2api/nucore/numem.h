@@ -5,7 +5,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    void NuMemSet128(void *ptr, u32 value, isize size);
+    void NuMemSet128(void *ptr, u8 value, isize size);
 #ifdef __cplusplus
 }
 #endif

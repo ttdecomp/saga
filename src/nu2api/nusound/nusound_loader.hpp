@@ -89,6 +89,9 @@ class NuSoundStreamDesc {
     double length_seconds;
 
   public:
+    virtual ~NuSoundStreamDesc() {
+    }
+
     virtual DataFormat GetDecodedDataFormat() = 0;
     virtual u64 GetEncodedLengthBytes() = 0;
     virtual u64 GetLengthSamples() = 0;

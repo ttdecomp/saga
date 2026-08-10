@@ -7,33 +7,23 @@
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufpar.h"
 
-static COLLECTID *TempCollectID = NULL;
+COLLECTID *TempCollectID = NULL;
 
-i32 CollectCount = 0;
-COLLECTID *CollectList = NULL;
+static i32 CollectCount = 0;
+static COLLECTID *CollectList = NULL;
 i32 COLLECTION_COMPLETIONCOUNT = 0;
 
 i32 InCollectList_Index(i32 id, COLLECTID *list, i32 count) {
-    i32 i;
-    i32 charId;
+    TempCollectID = NULL;
 
     if (list == NULL && (list = CollectList, count = CollectCount, CollectList == NULL)) {
         return id;
     }
 
-    if (0 < count) {
-        charId = list->id;
-        i = 0;
-        while (true) {
-            if (charId == id) {
-                TempCollectID = list;
-                return i;
-            }
-            i = i + 1;
-            list = list + 1;
-            if (i == count)
-                break;
-            charId = list->id;
+    for (i32 i = 0; i < count; i++, list++) {
+        if (list->id == id) {
+            TempCollectID = list;
+            return i;
         }
     }
 

@@ -53,11 +53,15 @@ class Track {
 class NuMusic {
     struct Voice {
         i32 stream_index;
-        Track *tracks[2];
+        Track *tracks[4];
         i32 track_index;
         VOICE_STATUS status;
-        u32 flags;
-        void *field16_0x2c;
+        f32 field7_0x1c;
+        f32 field8_0x20;
+        f32 field9_0x24;
+        f32 field10_0x28;
+        f32 field16_0x2c;
+        u8 flags;
 
         bool Load(Track *track, int trackIndex);
         void SetStatusFn(VOICE_STATUS status);
@@ -76,27 +80,39 @@ class NuMusic {
     };
 
   private:
-    nusound_filename_info_s *fileinfo;
-    i32 field346_0x1e0;
-
-    f32 *indexes;
-    i32 index_count;
-
-    char current_path[256];
-    char *string_pool_start;
-    char *string_pool_end;
-    bool strict_mode;
     Album *albums;
     i32 album_count;
-    Album *current_album;
     Track *tracks;
     i32 track_count;
+    f32 *indexes;
+    i32 index_count;
+    i32 string_pool_size;
+    Album *current_album;
     Track *current_track;
+    char current_path[256];
+    bool strict_mode;
+    char *string_pool_start;
+    char *string_pool_end;
     Voice voices[2];
-    char *language;
-
-    Album *album;
+    f32 field108_0x198;
+    f32 field109_0x19c;
+    f32 field110_0x1a0;
+    i32 field111_0x1a4;
+    f32 field112_0x1a8;
+    f32 field113_0x1ac;
+    f32 field114_0x1b0;
+    u32 field115_0x1b4;
+    u32 field116_0x1b8;
+    u32 field117_0x1bc;
+    u32 field118_0x1c0;
+    u32 field119_0x1c4;
+    u32 field120_0x1c8;
+    f32 field139_0x1cc;
     i32 track_index;
+    char *language;
+    Album *album;
+    nusound_filename_info_s *fileinfo;
+    i32 field346_0x1e0;
 
   public:
     i32 Initialise(const char *file, char *null, VARIPTR *buffer_start, VARIPTR buffer_end);
@@ -171,36 +187,8 @@ class NuMusic {
     static void GlobalParseErrorFn(nufpar_s *param_1);
     static void TrackParseErrorFn(nufpar_s *param_1);
 
-    NUFPCOMJMPCTX top_jmp_tab[11] = {
-        {"ALBUM", NuMusic::xsAlbum},
-        {"ACTION", NuMusic::xsAction},
-        {"QUIET", NuMusic::xsQuiet},
-        {"OVERLAY", NuMusic::xsOverlay},
-        {"SIGNATURE", NuMusic::xsSignature},
-        {"CUTSCENE", NuMusic::xsCutscene},
-        {"NOMUSIC", NuMusic::xsNoMusicC},
-        {"GLOBALATTENUATION", NuMusic::xsGlobalAttenuation},
-        {"PATH", NuMusic::xsPath},
-        {"STRICT", NuMusic::xsStrict},
-        {NULL, NULL},
-    };
-
-    NUFPCOMJMPCTX track_jmp_tab[15] = {
-        {"IDENT", NuMusic::xsIdent},
-        {"ID", NuMusic::xsIdent},
-        {"INDEX", NuMusic::xsIndex},
-        {"IX", NuMusic::xsIndex},
-        {"NOMUSIC", NuMusic::xsNoMusic},
-        {"STARTPOINT", NuMusic::xsIndex},
-        {"NODUCK", NuMusic::xsNoDuck},
-        {"DUCK", NuMusic::xsDuck},
-        {"LOOPING", NuMusic::xsLooping},
-        {"LOOP", NuMusic::xsLooping},
-        {"NONLOOPING", NuMusic::xsNonLooping},
-        {"NOLOOP", NuMusic::xsNonLooping},
-        {"ATTENUATION", NuMusic::xsAttenuation},
-        {NULL, NULL},
-    };
+    static NUFPCOMJMPCTX top_jmp_tab[11];
+    static NUFPCOMJMPCTX track_jmp_tab[15];
 };
 
 extern "C" {

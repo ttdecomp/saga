@@ -8,6 +8,17 @@
 
 pthread_mutex_t NuSoundMemoryBuffer::s_cs = PTHREAD_MUTEX_INITIALIZER;
 
+NuSoundMemoryManager::NuSoundMemoryManager()
+    : memory(NULL), size(0), align(0), field3_0xc(0), name_length(0), name_length2(0), name(NULL),
+      sound_memory_buffer(NULL), memory2(NULL), size2(0), size3(0), unknown_0x30(0) {
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, 1);
+    pthread_mutex_init(&mutex, &attr);
+    pthread_mutexattr_destroy(&attr);
+    flags &= 0xf8;
+}
+
 void NuSoundMemoryBuffer::SetNext(NuSoundMemoryBuffer *next) {
     this->next = next;
 }

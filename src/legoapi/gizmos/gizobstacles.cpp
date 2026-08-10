@@ -4,6 +4,11 @@
 
 int obstacle_gizmotype_id = -1;
 
+typedef struct GIZOBSTACLEPROGRESS_s {
+    u32 active[8];
+    u32 used[20];
+} GIZOBSTACLEPROGRESS;
+
 static int GizObstacles_GetMaxGizmos(void *obstacle) {
     UNIMPLEMENTED();
 }
@@ -36,8 +41,27 @@ static int GizmoObstacle_GetNumOutputs(GIZMO *gizmo) {
     UNIMPLEMENTED();
 }
 
-static void GizmoObstacle_Activate(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
+static void GizmoObstacle_Activate(GIZMO *gizmo, int active) {
+    if (gizmo == NULL) {
+        return;
+    }
+
+    GIZOBSTACLE *obstacle = (GIZOBSTACLE *)gizmo->object;
+    if (active == 0) {
+        obstacle->flags_098 &= ~1;
+        obstacle->unknown_09c = 0;
+        return;
+    }
+
+    if ((obstacle->flags_098 & 1) == 0) {
+        GameAnimSet_JumpToStart(obstacle->anim_set);
+    }
+
+    obstacle->flags_098 |= 1;
+    obstacle->unknown_09c = 0;
+    obstacle->flags_0a0 &= ~0x80;
+    obstacle->flags_099 &= ~1;
+    GameAnimSet_EvaluateState(obstacle->anim_set);
 }
 
 static int GizmoObstacle_ActivateRev(GIZMO *gizmo, int, int) {
@@ -70,8 +94,41 @@ static void *GizObstacles_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 
-static void GizObstacles_ClearProgress(void *, void *) {
-    UNIMPLEMENTED();
+static void GizObstacles_ClearProgress(void *, void *progress_data) {
+    GIZOBSTACLEPROGRESS *progress = (GIZOBSTACLEPROGRESS *)progress_data;
+
+    if (progress == NULL) {
+        return;
+    }
+
+    progress->active[0] = ~0u;
+    progress->active[1] = ~0u;
+    progress->active[2] = ~0u;
+    progress->active[3] = ~0u;
+    progress->active[4] = ~0u;
+    progress->active[5] = ~0u;
+    progress->active[6] = ~0u;
+    progress->active[7] = ~0u;
+    progress->used[0] = 0;
+    progress->used[1] = 0;
+    progress->used[2] = 0;
+    progress->used[3] = 0;
+    progress->used[4] = 0;
+    progress->used[5] = 0;
+    progress->used[6] = 0;
+    progress->used[7] = 0;
+    progress->used[8] = 0;
+    progress->used[9] = 0;
+    progress->used[10] = 0;
+    progress->used[11] = 0;
+    progress->used[12] = 0;
+    progress->used[13] = 0;
+    progress->used[14] = 0;
+    progress->used[15] = 0;
+    progress->used[16] = 0;
+    progress->used[17] = 0;
+    progress->used[18] = 0;
+    progress->used[19] = 0;
 }
 
 static void GizObstacles_StoreProgress(void *, void *, void *) {

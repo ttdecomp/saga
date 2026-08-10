@@ -19,33 +19,26 @@ void *NuSoundSystem::sSampleMemory = NULL;
 void *NuSoundSystem::sDecoderMemory = NULL;
 NuSoundMemoryManager *NuSoundSystem::s_mmSample = NULL;
 NuSoundMemoryManager *NuSoundSystem::s_mmDecoder = NULL;
-typeof(NuSoundSystem::g_handler) NuSoundSystem::g_handler = {};
 const char *NuSoundSystem::sFileExtensions[12] = {"wav", "adp", "ima", "caf", "xma", "ogg",
                                                   "dsp", "msf", "vag", "gcm", "wua", "cbx"};
 NuSoundSystem *NuSoundSystem::s_staticInstance = NULL;
 
 NuMemoryManager *NuSoundSystem::sScratchMemMgr = NULL;
 
-static struct : NuMemoryManager::IEventHandler {
-    u32 unknown;
+struct NuSoundSystemCallbacks : NuMemoryManager::IEventHandler {
     void *scratch;
     u32 scratch_size;
 
-    virtual bool AllocatePage(NuMemoryManager *manager, u32 size, u32 _unknown) {
-        UNIMPLEMENTED("g_handler::AllocatePage");
-    }
-    virtual bool ReleasePage(NuMemoryManager *manager, void *ptr, u32 _unknown) {
-        UNIMPLEMENTED("g_handler::ReleasePage");
-    }
-} g_handler;
-
-static NuMemoryManager *sScratchMemMgr;
+    virtual bool AllocatePage(NuMemoryManager *manager, u32 size, u32 _unknown) { return false; }
+    virtual bool ReleasePage(NuMemoryManager *manager, void *ptr, u32 _unknown) { return false; }
+};
 
 extern "C" {
-    void NuSoundInitDefaultRoutingTables(void) {
-        LOG_WARN("NuSoundInitDefaultRoutingTables is not implemented");
-    }
-};
+    NuSoundSystemCallbacks g_handler = {};
+}
+void NuSoundInitDefaultRoutingTables() {
+    LOG_WARN("NuSoundInitDefaultRoutingTables is not implemented");
+}
 
 NuSoundSystem::NuSoundSystem() {
 
@@ -113,12 +106,14 @@ NuSoundSystem::NuSoundSystem() {
 
 bool NuSoundSystem::Initialise(i32 size) {
     sTotalMemory[(i32)MemoryDiscipline::SCRATCH] = GetScratchMemorySize();
-    sTotalMemory[(i32)MemoryDiscipline::DECODER] = GetDecoderMemorySize();
+    i32 decoder_size = GetDecoderMemorySize();
+    i32 scratch_size = sTotalMemory[(i32)MemoryDiscipline::SCRATCH];
 
     sTotalMemory[(i32)MemoryDiscipline::SAMPLE] =
-        size - sTotalMemory[(i32)MemoryDiscipline::SCRATCH] - sTotalMemory[(i32)MemoryDiscipline::DECODER];
+        size - sTotalMemory[(i32)MemoryDiscipline::SCRATCH] - decoder_size;
+    sTotalMemory[(i32)MemoryDiscipline::DECODER] = decoder_size;
 
-    sScratchMemory = NU_ALLOC(sTotalMemory[(i32)MemoryDiscipline::SCRATCH], 4, 1, "", NUMEMORY_CATEGORY_NONE);
+    sScratchMemory = NU_ALLOC(scratch_size, 4, 1, "", NUMEMORY_CATEGORY_NONE);
     sSampleMemory = NU_ALLOC(sTotalMemory[(i32)MemoryDiscipline::SAMPLE], 0x800, 1, "", NUMEMORY_CATEGORY_NONE);
     sDecoderMemory = NU_ALLOC(sTotalMemory[(i32)MemoryDiscipline::DECODER], 0x800, 1, "", NUMEMORY_CATEGORY_NONE);
 
@@ -130,18 +125,20 @@ bool NuSoundSystem::Initialise(i32 size) {
     sScratchMemMgr = NuMemoryGet()->CreateMemoryManager(&g_handler, "NuSoundSystem Memory");
 
     if (sTotalMemory[(i32)MemoryDiscipline::DECODER] != 0) {
-        s_mmDecoder = NU_ALLOC_T(NuSoundMemoryManager, 1, "", 0);
-        if (s_mmDecoder != NULL) {
-            new (s_mmDecoder) NuSoundMemoryManager{};
+        NuSoundMemoryManager *mm_decoder = NU_ALLOC_T(NuSoundMemoryManager, 1, "", 0);
+        if (mm_decoder != NULL) {
+            new (mm_decoder) NuSoundMemoryManager;
         }
+        s_mmDecoder = mm_decoder;
 
         s_mmDecoder->Init("decoder", sDecoderMemory, sTotalMemory[(i32)MemoryDiscipline::DECODER], 4, 0x800);
     }
 
-    s_mmSample = NU_ALLOC_T(NuSoundMemoryManager, 1, "", 0);
-    if (s_mmSample != NULL) {
-        new (s_mmSample) NuSoundMemoryManager{};
+    NuSoundMemoryManager *mm_sample = NU_ALLOC_T(NuSoundMemoryManager, 1, "", 0);
+    if (mm_sample != NULL) {
+        new (mm_sample) NuSoundMemoryManager;
     }
+    s_mmSample = mm_sample;
 
     s_mmSample->EnableDefragOnAlloc(true);
     s_mmSample->Init("sample", sSampleMemory, sTotalMemory[(i32)MemoryDiscipline::SAMPLE], 4, 0x800);

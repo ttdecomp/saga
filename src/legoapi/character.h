@@ -318,7 +318,8 @@ struct characterdata_s { /* PlaceHolder Structure */
     f32 field15_0x34;
     f32 field16_0x38;
     f32 field17_0x3c;
-    byte flags;
+    byte field18_0x40_bit0 : 1;
+    byte field18_0x40_bits1_7 : 7;
     undefined field19_0x41;
     i16 field20_0x42;
     undefined4 field21_0x44;

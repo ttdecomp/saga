@@ -4,6 +4,37 @@
 
 int turret_gizmotype_id = -1;
 
+typedef struct GIZTURRETPROGRESS_s {
+    u32 active_0;
+    u32 active_1;
+    u32 active_2;
+    u32 active_3;
+    u32 used_0;
+    u32 used_1;
+    u32 used_2;
+    u32 used_3;
+    u32 used_4;
+    u32 used_5;
+    u32 used_6;
+    u32 used_7;
+    u32 available_0;
+    u32 available_1;
+    u32 available_2;
+    u32 available_3;
+    u32 available_4;
+    u32 available_5;
+    u32 available_6;
+    u32 available_7;
+    u32 available_8;
+    u32 available_9;
+    u32 available_10;
+    u32 available_11;
+    u32 available_12;
+    u32 available_13;
+    u32 available_14;
+    u32 available_15;
+} GIZTURRETPROGRESS;
+
 static int GizTurrets_GetMaxGizmos(void *turret) {
     UNIMPLEMENTED();
 }
@@ -70,8 +101,41 @@ static void *GizTurrets_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
 }
 
-static void GizTurrets_ClearProgress(void *, void *) {
-    UNIMPLEMENTED();
+static void GizTurrets_ClearProgress(void *, void *progress_data) {
+    GIZTURRETPROGRESS *progress = (GIZTURRETPROGRESS *)progress_data;
+
+    if (progress == NULL) {
+        return;
+    }
+
+    progress->active_0 = ~0u;
+    progress->active_1 = ~0u;
+    progress->active_2 = ~0u;
+    progress->active_3 = ~0u;
+    progress->used_0 = 0;
+    progress->used_1 = 0;
+    progress->used_2 = 0;
+    progress->used_3 = 0;
+    progress->used_4 = 0;
+    progress->used_5 = 0;
+    progress->used_6 = 0;
+    progress->used_7 = 0;
+    progress->available_0 = ~0u;
+    progress->available_1 = ~0u;
+    progress->available_2 = ~0u;
+    progress->available_3 = ~0u;
+    progress->available_4 = ~0u;
+    progress->available_5 = ~0u;
+    progress->available_6 = ~0u;
+    progress->available_7 = ~0u;
+    progress->available_8 = ~0u;
+    progress->available_9 = ~0u;
+    progress->available_10 = ~0u;
+    progress->available_11 = ~0u;
+    progress->available_12 = ~0u;
+    progress->available_13 = ~0u;
+    progress->available_14 = ~0u;
+    progress->available_15 = ~0u;
 }
 
 static void GizTurrets_StoreProgress(void *, void *, void *) {

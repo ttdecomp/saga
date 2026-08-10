@@ -43,9 +43,13 @@ class NuSoundMemoryManager {
     void *memory2;
     u32 size2;
     u32 size3;
+    pthread_mutex_t mutex;
     u8 flags;
+    u32 unknown_0x30;
 
   public:
+    NuSoundMemoryManager();
+
     u32 Init(const char *name, void *memory, u32 size, u32 align, u32 param_5);
 
     static NuSoundMemoryBuffer *PopFreeBuffer();

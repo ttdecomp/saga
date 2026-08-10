@@ -7,23 +7,33 @@ i32 *g_crc_table = NULL;
 
 #define CRC32_POLY 0x04C11DB7
 
-void CRC_Init(VARIPTR *buffer_start) {
+static u32 CRC_CalculateTableValue(u32 crc) {
+    if (crc & 0x80000000) {
+        return (crc << 1) ^ CRC32_POLY;
+    }
+    return crc << 1;
+}
+
+void CRC_Init(VARIPTR *buffer_start, VARIPTR) {
     if (g_crc_initialised) {
         return;
     }
 
-    g_crc_table = BUFFER_ALLOC_ARRAY(buffer_start, 0x100, i32);
+    i32 *table = (i32 *)ALIGN(buffer_start->addr, alignof(i32));
+    g_crc_table = table;
+    buffer_start->addr = (usize)(table + 0x100);
 
     for (u32 i = 0; i < 0x100; i++) {
         u32 crc = i << 24;
 
-        for (i32 bit = 0; bit < 8; bit++) {
-            if (crc & 0x80000000) {
-                crc = (crc << 1) ^ CRC32_POLY;
-            } else {
-                crc <<= 1;
-            }
-        }
+        crc = CRC_CalculateTableValue(crc);
+        crc = CRC_CalculateTableValue(crc);
+        crc = CRC_CalculateTableValue(crc);
+        crc = CRC_CalculateTableValue(crc);
+        crc = CRC_CalculateTableValue(crc);
+        crc = CRC_CalculateTableValue(crc);
+        crc = CRC_CalculateTableValue(crc);
+        crc = CRC_CalculateTableValue(crc);
 
         g_crc_table[i] = crc;
     }

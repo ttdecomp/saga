@@ -88,6 +88,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/gui/apimenu.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameframework/saveload.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gameframework/savesystem.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gamelib/NewTerrain.cpp
 
@@ -102,6 +103,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cheat.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/collection.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episode.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gameanim.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/level.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/mission.cpp
@@ -166,6 +168,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nutex.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nutexanm.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nuvport.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nuvport_ps2.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nuwater.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/android/nugscn_android.cpp

@@ -2,6 +2,9 @@
 
 #include "decomp.h"
 
+#include "gameapi/edtools/edfile.h"
+#include "legoapi/world.h"
+
 static int Ledges_GetMaxGizmos(void *ledge) {
     UNIMPLEMENTED();
 }
@@ -58,8 +61,36 @@ static void *Ledges_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
 }
 
-static int Ledges_Load(void *, void *) {
-    UNIMPLEMENTED();
+static int Ledges_Load(void *world_info, void *) {
+    WORLDINFO *world = (WORLDINFO *)world_info;
+
+    if (world->ledges_count != 0) {
+        return 0;
+    }
+
+    int version = EdFileReadInt();
+    world->ledges_count = EdFileReadInt();
+    for (int i = 0; i < world->ledges_count; i++) {
+        EdFileRead(world->ledges[i].unknown_00, 8);
+        EdFileReadNuVec(&world->ledges[i].position);
+        world->ledges[i].unknown_14 = EdFileReadShort();
+        world->ledges[i].unknown_16 = EdFileReadChar();
+
+        if (version > 1) {
+            world->ledges[i].unknown_1c = EdFileReadShort();
+            world->ledges[i].unknown_1e = EdFileReadShort();
+            if (version != 2) {
+                world->ledges[i].unknown_19 = EdFileReadUnsignedChar();
+                continue;
+            }
+        } else {
+            world->ledges[i].unknown_1c = -1;
+            world->ledges[i].unknown_1e = -1;
+        }
+        world->ledges[i].unknown_19 = 0;
+    }
+
+    return 1;
 }
 
 ADDGIZMOTYPE *Ledges_RegisterGizmo(int type_id) {

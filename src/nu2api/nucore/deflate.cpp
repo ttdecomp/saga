@@ -264,16 +264,6 @@ int DecodeDeflated(DEFLATECONTEXT *ctx) {
         type = READBITS(ctx, 2);
 
         switch (type) {
-            default:
-                if (!DecompressHuffmanTrees(ctx)) {
-                    return 0;
-                }
-
-                if (!DecodeDeflatedBlock(ctx)) {
-                    LOG_WARN("failed to decode deflated block");
-                    return 0;
-                }
-                break;
             case BLOCK_FIXED_HUFFMAN:
                 if (DefaultDistances[0x1f] == '\0') {
                     InitHuffmanDefaults();
@@ -286,7 +276,15 @@ int DecodeDeflated(DEFLATECONTEXT *ctx) {
                 if (!BuildHuffmanTree(&ctx->distance_tree, DefaultDistances, 0x20)) {
                     return 0;
                 }
+                if (!DecodeDeflatedBlock(ctx)) {
+                    LOG_WARN("failed to decode deflated block");
+                    return 0;
+                }
                 break;
+            default:
+                if (!DecompressHuffmanTrees(ctx)) {
+                    return 0;
+                }
 
                 if (!DecodeDeflatedBlock(ctx)) {
                     LOG_WARN("failed to decode deflated block");

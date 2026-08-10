@@ -11,6 +11,37 @@ static NuMusic *the_music_player = NULL;
 
 NuMusic music_man;
 
+NUFPCOMJMPCTX NuMusic::top_jmp_tab[11] = {
+    {"ALBUM", NuMusic::xsAlbum},
+    {"ACTION", NuMusic::xsAction},
+    {"QUIET", NuMusic::xsQuiet},
+    {"OVERLAY", NuMusic::xsOverlay},
+    {"SIGNATURE", NuMusic::xsSignature},
+    {"CUTSCENE", NuMusic::xsCutscene},
+    {"NOMUSIC", NuMusic::xsNoMusicC},
+    {"GLOBALATTENUATION", NuMusic::xsGlobalAttenuation},
+    {"PATH", NuMusic::xsPath},
+    {"STRICT", NuMusic::xsStrict},
+    {NULL, NULL},
+};
+
+NUFPCOMJMPCTX NuMusic::track_jmp_tab[15] = {
+    {"IDENT", NuMusic::xsIdent},
+    {"ID", NuMusic::xsIdent},
+    {"INDEX", NuMusic::xsIndex},
+    {"IX", NuMusic::xsIndex},
+    {"NOMUSIC", NuMusic::xsNoMusic},
+    {"STARTPOINT", NuMusic::xsIndex},
+    {"NODUCK", NuMusic::xsNoDuck},
+    {"DUCK", NuMusic::xsDuck},
+    {"LOOPING", NuMusic::xsLooping},
+    {"LOOP", NuMusic::xsLooping},
+    {"NONLOOPING", NuMusic::xsNonLooping},
+    {"NOLOOP", NuMusic::xsNonLooping},
+    {"ATTENUATION", NuMusic::xsAttenuation},
+    {NULL, NULL},
+};
+
 i32 NuMusic::ClassToIX(u32 i) {
     switch (i) {
         case TRACK_CLASS_QUIET:
@@ -42,31 +73,41 @@ Track *NuMusic::Album::GetTrack(u32 clazz) {
 i32 NuMusic::Initialise(const char *file, char *null, VARIPTR *buffer_start, VARIPTR buffer_end) {
     the_music_player = this;
     this->language = null;
-    // this->field6_0x18 = 0x1000;
+    this->string_pool_size = 0x1000;
     this->current_path[0] = '\0';
     this->strict_mode = 0;
     InitVoiceManager();
     InitData(file, buffer_start, buffer_end);
-    // this->field111_0x1a4 = 0;
-    // this->field114_0x1b0 = 0.5;
-    // this->field108_0x198 = 1.0;
+    this->field111_0x1a4 = 0;
+    this->field114_0x1b0 = 0.5;
+    this->field108_0x198 = 1.0;
     this->album = this->albums;
-    // this->field109_0x19c = 1.0;
-    // this->field110_0x1a0 = 1.0;
-    // this->field112_0x1a8 = 1.0;
-    // this->field113_0x1ac = 1.0;
-    // this->field139_0x1cc = 1.0;
+    this->field109_0x19c = 1.0;
+    this->field110_0x1a0 = 1.0;
+    this->field112_0x1a8 = 1.0;
+    this->field113_0x1ac = 1.0;
+    this->field139_0x1cc = 1.0;
     return 1;
 }
 
 void NuMusic::InitVoiceManager() {
     memset(&this->voices[0], 0, sizeof(Voice));
+    this->voices[0].flags &= ~1;
     this->voices[0].stream_index = 0;
     this->voices[0].status = VOICE_STATUS_1;
+    this->voices[0].field10_0x28 = 0.0f;
+    this->voices[0].field7_0x1c = 1.0f;
+    this->voices[0].field9_0x24 = -1.0f;
+    this->voices[0].field16_0x2c = 0.0f;
 
     memset(&this->voices[1], 0, sizeof(Voice));
+    this->voices[1].field10_0x28 = 0.0f;
+    this->voices[1].field7_0x1c = 1.0f;
+    this->voices[1].field9_0x24 = -1.0f;
+    this->voices[1].field16_0x2c = 0.0f;
     this->voices[1].stream_index = 1;
     this->voices[1].status = VOICE_STATUS_1;
+    this->voices[1].flags &= ~1;
 }
 
 void NuMusic::GetSoundFiles(nusound_filename_info_s **finfo, int *null) {
@@ -398,7 +439,7 @@ i32 NuMusic::GetTrackHandle(TRACK_CLASS clazz, const char *name) {
 
 void NuMusic::Voice::SetStatusFn(VOICE_STATUS status) {
     if (this->status != status) {
-        this->field16_0x2c = NULL;
+        this->field16_0x2c = 0.0f;
         this->status = status;
     }
 }

@@ -12,6 +12,11 @@
 class NuSoundLoader;
 class NuSoundBus;
 class NuSoundSample;
+class NuSoundVoice;
+class NuSoundEffect {
+  public:
+    enum class EffectType : u32;
+};
 
 class NuSoundSystem {
   public:
@@ -44,6 +49,7 @@ class NuSoundSystem {
     };
 
   private:
+    u8 unknown_0x4[0x4c];
     NuSoundSample **samples;
     u32 sample_count;
     pthread_mutex_t mutex;
@@ -64,19 +70,6 @@ class NuSoundSystem {
     static const char *sFileExtensions[12];
 
     static NuSoundSystem *s_staticInstance;
-
-    static struct : NuMemoryManager::IEventHandler {
-        u32 unknown;
-        void *scratch;
-        u32 scratch_size;
-
-        virtual bool AllocatePage(NuMemoryManager *manager, u32 size, u32 _unknown) {
-            UNIMPLEMENTED("g_handler::AllocatePage");
-        }
-        virtual bool ReleasePage(NuMemoryManager *manager, void *ptr, u32 _unknown) {
-            UNIMPLEMENTED("g_handler::ReleasePage");
-        }
-    } g_handler;
 
     static NuMemoryManager *sScratchMemMgr;
 
@@ -106,24 +99,22 @@ class NuSoundSystem {
 
     i32 GenerateHash(const char *str);
 
-    // vtable:
-    // create_effect
-    // release_effect
-    // release_bus
-    // is_user_playing_music
-    // pause_user_music
-    // resume_user_music
-    // title_has_user_music_control
-    // on_enter_system_menu
-    // on_exit_system_menu
-    // init_audio_device
-    // shutdown_audio_device
-    // update_audio_device
-
     virtual ~NuSoundSystem() = default;
-    virtual bool InitAudioDevice() = 0;
+    virtual NuSoundEffect *CreateEffect(NuSoundEffect::EffectType type) = 0;
+    virtual void ReleaseEffect(NuSoundEffect *effect) {}
     virtual NuSoundBus *CreateBus(const char *name, bool is_master);
     virtual NuSoundBus *GetBus(const char *name);
+    virtual void ReleaseBus(NuSoundBus *bus) {}
+    virtual bool IsUserPlayingMusic() { return false; }
+    virtual void PauseUserMusic() {}
+    virtual void ResumeUserMusic() {}
+    virtual bool TitleHasUserMusicControl() { return true; }
+    virtual void OnEnterSystemMenu() {}
+    virtual void OnExitSystemMenu() {}
+    virtual bool InitAudioDevice() = 0;
+    virtual void ShutdownAudioDevice() = 0;
+    virtual void UpdateAudioDevice() = 0;
+    virtual NuSoundVoice *CreateVoice(NuSoundSource *source, bool flag) = 0;
 
 }; // namespace NuSoundSystem
 
