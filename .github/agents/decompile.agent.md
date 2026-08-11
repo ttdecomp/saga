@@ -5,102 +5,170 @@ tools: [read, edit, search, execute, todo, "ghidra-mcp/*"]
 argument-hint: "Function, symbol, or binary behavior to investigate and implement"
 user-invocable: true
 ---
-You are a specialist in decompiling and matching the LEGO Star Wars: The Complete Saga Android x86 shared object. Your primary workspace is Ghidra — do the heavy lifting there first. Only write C++ when the decompilation is clean and the function's intent is clear.
 
 ## File Locations
 
-| What                   | Where                                                               |
-| ---------------------- | ------------------------------------------------------------------- |
-| Source code            | `src/`                                                              |
-| Original binary        | `res/libTTapp.so`                                                   |
-| Split original objects | `build/split/*.o`                                                   |
-| Our build output       | `build/saga` (final), `build/CMakeFiles/saga.dir/src/...` (objects) |
-| Ghidra project         | MCP-connected program                                               |
+| What                   | Where                            |
+| ---------------------- | -------------------------------- |
+| Source                 | `src/`                           |
+| Original binary        | `res/libTTapp.so`                |
+| Split original objects | `build/split/*.o`                |
+| Our objects            | `build/CMakeFiles/saga.dir/src/` |
+| Ghidra                 | MCP-connected program            |
 
-## Constraints
+## Hard Rules
 
-- **Ghidra first, always.** Do the majority of the analysis work inside Ghidra. Apply struct types, define enums, rename variables, resolve pointer chains, complete the data type graph. Do NOT write C++ code while the decompiler still shows raw offsets, `undefined*` casts, or `FUN_` names for called functions.
-- **Treat the original binary as the sole source of truth.** Decompiler output is a hint, not an answer. Verify against the original disassembly with `disassemble-symbol` when in doubt.
-- **Do not add symbols that don't exist in the original binary.** Never remove existing symbols.
-- **Prefer real logic over boilerplate**, but leave genuinely uncertain functions as safe stubs with `UNIMPLEMENTED()`.
-- **Preserve ABI.** Function signatures, struct layouts, global variable sizes and alignments must match the original exactly.
-- **Prefer manual edits** over generating python script to work on source code. Only use scripts for repetitive tasks that are too tedious to do by hand. Use `clang-format` to format all code before committing.
-- **Separate C and C++ files.** Preferably, implement C++ in `.cpp` files and C in `.c` files. Avoid mixing languages in the same file and having many `extern "C"` blocks. Occasional use is fine, but prefer to keep the language consistent within a file.
-- **Linkage, visibility, static, and inline** — Prefer header declarations and inclusion over forward declarations or extern or static declarations. For private items do not defined them in the header, but also DO NOT define them as `static`.
+- **Ghidra before C++.** Resolve all types, structs, and names in Ghidra first. If the decompiler shows raw offsets, `undefined*`, or `FUN_` names, you are not done.
+- **Original binary is truth.** Verify with `objdump` when the decompiler is ambiguous.
+- **Never add or remove symbols** vs the original.
+- **Stub uncertain logic** with `UNIMPLEMENTED()`. Do not invent behavior.
+- **Match ABI exactly** — signatures, struct layouts, global sizes and alignment.
+- **Prefer manual edits** over scripts. Run `clang-format` before committing.
+- **C in `.c`, C++ in `.cpp`.** Avoid mixing or many `extern "C"` blocks.
+- **Linkage:** prefer header inclusion over `extern`/`static`. Private items must NOT be `static` (the original didn't use it), but also don't declare them in the header.
+- **Name symbols exactly as in the original.** Only rename to fix a known mismatch.
 
-## Approach
+---
 
-### Phase 1: Investigate in Ghidra (most of the work)
+## Symbol Placement
 
-1. **Identify** the target symbol. Locate it in Ghidra via symbol search, cross-reference, or caller context.
-2. **Map the neighborhood.** Inspect callers, callees, referenced globals, and data regions. Understand how the function fits into the larger system.
-3. **Complete the types.** For every pointer the function touches:
-   - Apply the correct struct type so field accesses show as `ptr->fieldName` not `*(type *)(ptr + offset)`
-   - If the struct doesn't exist in Ghidra yet, define it using `add_struct_field`
-   - Resolve `undefined*` to real pointer types
-4. **Name everything.** Rename local variables to reflect their purpose. Rename globals. Create enums for known constants.
-5. **Verify with disassembly.** When the decompiler output is ambiguous, use the `disassemble-symbol` skill to inspect the original instruction sequence directly. Cross-check Ghidra's interpretation against raw objdump.
-6. **Don't stop until the decompilation is clean.** If you still see raw memory access patterns (`*(u32*)(x + 0x8000)`) in the decompiler, you haven't finished the Ghidra work. Keep applying types until field names appear.
+| Path                     | Domain              | Key Prefixes                                                                   |
+| ------------------------ | ------------------- | ------------------------------------------------------------------------------ |
+| `src/batman.cpp`         | Entry point         | `NuMain`                                                                       |
+| `src/globals.cpp`        | Shared globals      | —                                                                              |
+| `src/gameapi/ai/aisys/`  | AI / state machines | `AI`, `AISYS`, `AISCRIPT`                                                      |
+| `src/gameapi/edtools/`   | Editor (**stubs**)  | `ed`, `Ed`                                                                     |
+| `src/gameapi/gui/`       | GUI / menus         | `api`, `Api`, `Menu`                                                           |
+| `src/gameframework/`     | Save/load           | `saveload`, `SaveLoad`                                                         |
+| `src/gamelib/`           | Utilities           | `CRC`, `Terrain`, `NuWind`                                                     |
+| `src/legoapi/`           | Core game objects   | `Area`, `Char`, `Level`, `Mission`, `World`, `Gizmo`, `Episode`, `Collection`… |
+| `src/legoapi/gizmos/`    | Gizmo types         | `GizmoType_*`                                                                  |
+| `src/legogame/`          | Game state          | `Game`, `Startup`                                                              |
+| `src/java/`              | JNI (**stubs**)     | `Java_`, `JNI_`                                                                |
+| `src/nu2api/nu3d/`       | 3D / rendering      | `NuRender`, `NuTex`, `NuShader`, `NuMtl`, `NuGScn`, `NuCamera`…                |
+| `src/nu2api/nucore/`     | Core systems        | `NuMemory`, `NuInput`, `NuThread`, `NuString`, `NuTime`…                       |
+| `src/nu2api/nufile/`     | File I/O / PAK      | `NuFile`, `NuFPar`, `NuMC`, `NuDatFile`, `TMClient`                            |
+| `src/nu2api/numath/`     | Math                | `NuVec`, `NuMtx`, `NuQuat`, `NuTrig`, `NuRand`…                                |
+| `src/nu2api/numusic/`    | Music / SFX         | `NuMusic`, `SFX`                                                               |
+| `src/nu2api/nuplatform/` | Platform            | `NuPlatform`, `NuDeviceSpecs`                                                  |
+| `src/nu2api/nusound/`    | Sound               | `NuSound`                                                                      |
 
-### Phase 2: Implement in C++
+**Rules:** Match symbol prefix → place in that file. Gizmo type → `src/legoapi/gizmos/<name>.cpp`. New subsystem (3+ related symbols with new prefix) → create dir + `.cpp`/`.h` + add to `CMakeLists.txt` and `objdiff.json`. Editor prefix (`ed`/`Ed`) → always stub with `UNIMPLEMENTED()`.
 
-7. **Only proceed when Phase 1 is complete.** The decompiler should show meaningful names, no raw offsets, no `undefined*` casts in the function body.
-8. **Read the target file.** Inspect the existing code in the appropriate `src/` file. Understand the conventions, naming style, and existing declarations.
-9. **Write the smallest evidence-based change.** Implement exactly what the original does — no more, no less. Match the original's control flow, not the decompiler's approximation. Use the standard patterns table in the no-ghidra-artifacts instruction.
-10. **Preserve all existing symbols.** Don't remove, rename (unless correcting a known mismatch), or reorder globals.
+---
 
-### Phase 3: Build and Verify
+## Forbidden Ghidra Artifacts
 
-11. **Build:** `cmake --build build`
-12. **Fix compile errors** from the build output only. Don't guess.
-13. **Diff:** Use the `objdiff-diff` skill to compare the compiled object against the original split object.
-14. **If mismatch:** Use `disassemble-symbol` to inspect the original instructions. Return to Phase 1 if the Ghidra context is still incomplete. Adjust the C++ only when you have actionable evidence from the diff or disassembly.
-15. **If match good enough (depending on size of function):** Move on. Report the result.
+Never transcribe decompiler output. Recover struct fields, arrays, and idiomatic C++.
 
-### Phase 4: Progress Tracking
+| ❌ Forbidden                          | ✅ Replace with                |
+| ------------------------------------ | ----------------------------- |
+| `*(u32 *)((char *)ptr + 0x8000) = v` | `ptr->field_8000 = v`         |
+| `*(u32 *)((int)&s + off)`            | Named field access via struct |
+| `CONCAT31 / SUB41 / ZEXT24 / SEXT14` | Never appear in source        |
+| `volatile` on ordinary vars          | Remove — decompiler guess     |
+| `*(byte *)(buf + 9) = c`             | `buf[9] = c` or struct field  |
+| `**(u32 **)(*(u32 *)(p + 4) + 8)`    | `p->manager->config`          |
 
-16. **Format:** format all your changes with `clang-format`
-17. **Build for host:** `cmake --build build-host` to verify the code compiles on the host system too.
-18. **Generate report:** `objdiff-cli report generate -p .` after a batch of implementations to update overall progress metrics.
+**Common translations:**
+
+| Ghidra                                    | Likely original           |
+| ----------------------------------------- | ------------------------- |
+| `*(u32 *)(p + 4) = *(u32 *)(p + 4) + 1`   | `p->count++`              |
+| `if (*(int *)(p + 8) == 0)`               | `if (!p->data)`           |
+| `*(type **)(p + 12) = *(type **)(o + 16)` | `p->next = o->prev`       |
+| `*(u32 *)(this + 4) = param_1`            | `this->field_4 = param_1` |
+
+Do NOT invent `#define OFFSET_8000` or fake enums. If truly unknown, use `ptr->unk_<hex>` with a `// TODO` comment.
+
+---
+
+## Workflow
+
+### 1. Ghidra (most of the work)
+
+Identify the symbol → map callers/callees/globals → apply struct types (`add_struct_field`) → resolve `undefined*` → rename locals/globals → create enums. **Do not proceed until the decompiler shows named fields, not raw offsets.**
+
+### 2. Implement
+
+Read the target file first. Match the original's control flow exactly. When uncertain, `UNIMPLEMENTED()`.
+
+### 3. Build & Diff
+
+```bash
+cmake --build build                          # Android NDK (for diffing)
+cmake --build build-host                     # Host GCC (compile check only)
+objdiff-cli diff -p . -u <unit> <mangled>    # Unit from objdiff.json, symbol from nm
+objdiff-cli report generate -p .             # Project-wide progress → report.json
+```
+
+- **100%** → done. **>50%** → try minor tweaks. **<50%** → back to Ghidra.
+- If diff errors: check unit name in `objdiff.json`, confirm symbol with `nm`, ensure `gonk split` ran.
+
+### 4. Finalize
+
+```bash
+clang-format -i <changed files>
+cmake --build build-host    # verify host compile
+```
+
+---
+
+## Disassembly Reference
+
+NDK tools at: `ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/linux-x86_64/bin/`
+
+Set `NDK_BIN` for convenience. All tools accept `--demangle`.
+
+| Tool                         | Use                                             |
+| ---------------------------- | ----------------------------------------------- |
+| `i686-linux-android-nm`      | Symbols: `-n` sort by addr, `--print-size`      |
+| `i686-linux-android-objdump` | Disasm: `-d`, data: `-s -j .data`, relocs: `-r` |
+| `i686-linux-android-readelf` | Headers: `-S` (sections), `-h` (file)           |
+
+Split object name = source stem: `src/legoapi/mission.cpp` → `build/split/mission.cpp.o`.
+
+```bash
+# Find object containing a symbol
+for f in build/split/*.o; do
+    "$NDK_BIN/i686-linux-android-nm" --demangle "$f" 2>/dev/null | grep -q 'Sym' && echo "$f"
+done
+
+# Symbol address & size (T=code, t=local code, D=data, B=BSS)
+"$NDK_BIN/i686-linux-android-nm" --demangle -n build/split/<file>.o | grep 'MyFunction'
+
+# Disassemble between addresses
+"$NDK_BIN/i686-linux-android-objdump" -d --demangle \
+    --start-address=0xS --stop-address=0xE build/split/<file>.o
+
+# Compare with our build
+objdump -d --demangle build/CMakeFiles/saga.dir/src/<file>.o | head -200
+```
+
+Use `-M intel` for Intel syntax. Relocations appear as `00 00 00 00` — use `-r` to resolve.
+
+---
 
 ## Decision Flow
 
 ```
-Symbol identified
-  │
-  ├─ In Ghidra: types complete? structs defined? no raw offsets?
-  │    └─ NO → Stay in Ghidra. Apply types, define structs, rename.
-  │
-  ├─ Decompiler output is clean and intent is clear?
-  │    └─ YES → Implement in correct src/ file
-  │
-  ├─ Symbol starts with "ed" or "Ed"?
-  │    └─ YES → Place in edtools/ or ed gizmo file, stub with UNIMPLEMENTED()
-  │
-  ├─ Function body has uncertain logic?
-  │    └─ YES → Stub with UNIMPLEMENTED(), document what's unknown
-  │
-  └─ Build + diff
-       ├─ 100% match → Done. Report.
-       ├─ 90-99% → Inspect mismatch, minor adjustment likely
-       └─ <90% → Return to Ghidra, something is structurally wrong
+Symbol found
+  ├─ Raw offsets / undefined* in Ghidra? → Fix types first
+  ├─ ed/Ed prefix? → Stub with UNIMPLEMENTED()
+  ├─ Uncertain logic? → UNIMPLEMENTED()
+  ├─ Raw pointer cast? → Struct field, array[index], or global name
+  └─ Build + diff → <90% = back to Ghidra; ≥90% = iterate; 100% = done
 ```
 
-## Output Format
-
-After each implementation cycle, report:
+## Report Template
 
 ```
-## Symbol: <demangled name>
-**File:** `src/path/to/file.cpp`
-**Binary evidence:** <Ghidra analysis summary, objdump verification, cross-references used>
-**Implementation:** <what was implemented, key decisions>
-**Build:** <compile result>
-**Diff:** <fuzzy_match_percent, any remaining differences>
-**Status:** ✅ 100% match / ⚠️ partial match (XX%) / ❌ mismatch — next steps
+## Symbol: <demangled>
+**File:** `src/path/file.cpp`
+**Evidence:** <Ghidra summary, objdump checks, xrefs>
+**Implementation:** <key decisions>
+**Build:** <result>
+**Diff:** <fuzzy_match_percent>
+**Status:** ✅ / ⚠️ XX% / ❌
 ```
 
-## Skills Reference
-
-- `objdiff-diff` — build the project and diff a specific function against the original
-- `disassemble-symbol` — inspect original assembly with NDK objdump/nm/readelf
