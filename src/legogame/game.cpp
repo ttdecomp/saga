@@ -529,3 +529,42 @@ void InitGameAfterConfig(void) {
     //      CharClipToBlobShadows = 1;
     //  }
 }
+
+void CompleteLevel(WORLDINFO *world) {
+    grab_screen_image = 1;
+
+    if (NewLData == NULL || ((NewLData->flags & 0xe0) != 0 && FreePlay != 0)) {
+        LEVELDATA *statusLevel = Area_FindStatusLevel(world->area, NULL);
+        NewLData = statusLevel;
+        if (statusLevel == NULL) {
+            NewLData = HUB_LDATA;
+        }
+    }
+
+    if (waiting_for_level != -1) {
+        waiting_for_new_level = 1;
+    }
+}
+
+void StoreLevelProgress(WORLDINFO *world) {
+    if (world != NULL) {
+        // StoreLevelProgressFn(world, world->field277_0x130, 0);
+    }
+}
+
+void NewAreaMusicChanges(void) {
+    BeenAttacked = 0;
+}
+
+void Game_WorldInfo_InitLast(WORLDINFO *world) {
+    // GizSpinners_InitTerrain(world);
+    // Signals_InitTerrain(world);
+    // Attractos_InitTerrain(world);
+    // SecurityDoors_InitTerrain(world);
+    // Levers_InitTerrain(world);
+    // GizPanel_InitTerrain(world);
+    // HatMachines_InitTerrain(world);
+    // GizmoBlowupsFinalSetup(world);
+    // InitClimbObjectSys(world);
+    // GizmoPushBlockInitAndReset(world, NULL);
+}

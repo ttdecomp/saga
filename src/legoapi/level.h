@@ -166,7 +166,25 @@ typedef struct LEVELDATA_s {
     i32 music_tracks[3][2];
 } LEVELDATA;
 
-struct LEVELFIXUP {};
+typedef struct LEVELOBJECT_s {
+    u8 kind;
+    u8 pad_01;
+    u8 pad_02;
+    u8 pad_03;
+    char *name;
+} LEVELOBJECT;
+
+typedef struct LEVELFIXUP {
+    char *name;
+    LEVELDATA **level;
+    void *load_fn;
+    void *init_fn;
+    void *reset_fn;
+    void *update_fn;
+    void *always_update_fn;
+    void *draw_fn;
+    void *draw_status_fn;
+} LEVELFIXUP;
 
 #ifdef __cplusplus
 extern "C" {
@@ -193,6 +211,32 @@ LEVELDATA *Level_FindByName(char *name, int *idx_out);
 
 void Level_Draw(WORLDINFO *world);
 
+void Level_Update(WORLDINFO *world);
+
+i32 LevelObject_GetReflection(i32 objId);
+
+char *LevelObject_FindNameFromIndex(i32 index);
+i32 LevelObject_FindIndexFromName(char *name);
+
+i32 LevelObject_AddExtra(char *name, i32 kind);
+
+void ClearLevelProgress(i32 index, WORLDINFO *world);
+
 void FixUpLevels(LEVELFIXUP *fixup);
+
+void Levels_FixUp(LEVELFIXUP *fixup);
+
+typedef struct nufpcomjmp_s nufpcomjmp_s;
+
+void Level_RegisterGameConfigKeywords(nufpcomjmp_s *beforeLoadKeywords, nufpcomjmp_s *afterLoadKeywords);
+
+void SetLevelExBlowupFlags(u32 flags);
+u32 GetLevelExBlowupFlags(void);
+void GoToNewLevel(i32 levelIdx);
+
+void LevelConfig_BeforeLoad(LEVELDATA *level, char *buffer, nufpcomjmp_s *keywords);
+void LevelConfig_AfterLoad(LEVELDATA *level, char *buffer, nufpcomjmp_s *keywords);
+
+void Level_LoadConfigFile(WORLDINFO *world);
 
 #endif
