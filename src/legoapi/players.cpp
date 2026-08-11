@@ -530,10 +530,10 @@ void FixUpCharacters(CHARFIXUP *fixups) {
             character_data->field0_0x0 = tUNKNOWN;
         }
         if (character_data->field8_0x18 == 0) {
-            character_data->field8_0x18 = (u32)Move_CHARACTER;
+            character_data->field8_0x18 = (u32)(usize)Move_CHARACTER;
         }
         if (character_data->field9_0x1c == 0) {
-            character_data->field9_0x1c = (u32)Animate_CHARACTER;
+            character_data->field9_0x1c = (u32)(usize)Animate_CHARACTER;
         }
     }
 
@@ -567,58 +567,58 @@ void ExtraCharacterFixUpAfterConfig() {
 
     for (i32 index = 0; index < CHARCOUNT; index++) {
         if ((GCDataList[index].field148_0x97 & 0x10) != 0) {
-            CDataList[index].field8_0x18 = (u32)Move_GEONOSIAN;
-            CDataList[index].field9_0x1c = (u32)Animate_GEONOSIAN;
+            CDataList[index].field8_0x18 = (u32)(usize)Move_GEONOSIAN;
+            CDataList[index].field9_0x1c = (u32)(usize)Animate_GEONOSIAN;
         }
     }
 
     if (id_DROIDEKA != -1) {
-        CDataList[id_DROIDEKA].field8_0x18 = (u32)Move_DROIDEKA;
-        CDataList[id_DROIDEKA].field9_0x1c = (u32)Animate_DROIDEKA;
+        CDataList[id_DROIDEKA].field8_0x18 = (u32)(usize)Move_DROIDEKA;
+        CDataList[id_DROIDEKA].field9_0x1c = (u32)(usize)Animate_DROIDEKA;
     }
     if (id_MINIDROIDEKA != -1) {
-        CDataList[id_MINIDROIDEKA].field8_0x18 = (u32)Move_DROIDEKA;
-        CDataList[id_MINIDROIDEKA].field9_0x1c = (u32)Animate_DROIDEKA;
+        CDataList[id_MINIDROIDEKA].field8_0x18 = (u32)(usize)Move_DROIDEKA;
+        CDataList[id_MINIDROIDEKA].field9_0x1c = (u32)(usize)Animate_DROIDEKA;
     }
     if (id_SUPERBATTLEDROID != -1) {
-        CDataList[id_SUPERBATTLEDROID].field8_0x18 = (u32)Move_SUPERBATTLEDROID;
-        CDataList[id_SUPERBATTLEDROID].field9_0x1c = (u32)Animate_SUPERBATTLEDROID;
+        CDataList[id_SUPERBATTLEDROID].field8_0x18 = (u32)(usize)Move_SUPERBATTLEDROID;
+        CDataList[id_SUPERBATTLEDROID].field9_0x1c = (u32)(usize)Animate_SUPERBATTLEDROID;
     }
     if (id_BARMAN != -1) {
-        CDataList[id_BARMAN].field8_0x18 = (u32)Move_BARMAN;
-        CDataList[id_BARMAN].field9_0x1c = (u32)Animate_BARMAN;
+        CDataList[id_BARMAN].field8_0x18 = (u32)(usize)Move_BARMAN;
+        CDataList[id_BARMAN].field9_0x1c = (u32)(usize)Animate_BARMAN;
     }
     if (id_JAWA != -1) {
-        CDataList[id_JAWA].field8_0x18 = (u32)Move_JAWA;
+        CDataList[id_JAWA].field8_0x18 = (u32)(usize)Move_JAWA;
     }
     if (id_UGNAUGHT != -1) {
-        CDataList[id_UGNAUGHT].field8_0x18 = (u32)Move_JAWA;
+        CDataList[id_UGNAUGHT].field8_0x18 = (u32)(usize)Move_JAWA;
     }
     if (id_DRAGBOMB != -1) {
-        CDataList[id_DRAGBOMB].field8_0x18 = (u32)Move_DRAGBOMB;
+        CDataList[id_DRAGBOMB].field8_0x18 = (u32)(usize)Move_DRAGBOMB;
     }
     if (id_REPUBLICGUNSHIP != -1) {
-        CDataList[id_REPUBLICGUNSHIP].field8_0x18 = (u32)Move_REPUBLICGUNSHIP;
-        CDataList[id_REPUBLICGUNSHIP].field9_0x1c = (u32)Animate_REPUBLICGUNSHIP;
+        CDataList[id_REPUBLICGUNSHIP].field8_0x18 = (u32)(usize)Move_REPUBLICGUNSHIP;
+        CDataList[id_REPUBLICGUNSHIP].field9_0x1c = (u32)(usize)Animate_REPUBLICGUNSHIP;
     }
     if (id_REPUBLICGUNSHIP_GREEN != -1) {
-        CDataList[id_REPUBLICGUNSHIP_GREEN].field8_0x18 = (u32)Move_REPUBLICGUNSHIP;
-        CDataList[id_REPUBLICGUNSHIP_GREEN].field9_0x1c = (u32)Animate_REPUBLICGUNSHIP;
+        CDataList[id_REPUBLICGUNSHIP_GREEN].field8_0x18 = (u32)(usize)Move_REPUBLICGUNSHIP;
+        CDataList[id_REPUBLICGUNSHIP_GREEN].field9_0x1c = (u32)(usize)Animate_REPUBLICGUNSHIP;
     }
     if (id_SPEEDERBIKE != -1) {
-        CDataList[id_SPEEDERBIKE].field8_0x18 = (u32)Move_SPEEDERBIKE;
-        CDataList[id_SPEEDERBIKE].field9_0x1c = (u32)Animate_SPEEDERBIKE;
+        CDataList[id_SPEEDERBIKE].field8_0x18 = (u32)(usize)Move_SPEEDERBIKE;
+        CDataList[id_SPEEDERBIKE].field9_0x1c = (u32)(usize)Animate_SPEEDERBIKE;
     }
     if (id_PROBEDROID != -1) {
-        CDataList[id_PROBEDROID].field9_0x1c = (u32)Animate_DEFAULT;
+        CDataList[id_PROBEDROID].field9_0x1c = (u32)(usize)Animate_DEFAULT;
     }
     if (id_BODYGUARD != -1) {
-        CDataList[id_BODYGUARD].field8_0x18 = (u32)Move_JEDI;
-        CDataList[id_BODYGUARD].field9_0x1c = (u32)Animate_JEDI;
+        CDataList[id_BODYGUARD].field8_0x18 = (u32)(usize)Move_JEDI;
+        CDataList[id_BODYGUARD].field9_0x1c = (u32)(usize)Animate_JEDI;
     }
     if (id_IMPERIALGUARD != -1) {
-        CDataList[id_IMPERIALGUARD].field8_0x18 = (u32)Move_JEDI;
-        CDataList[id_IMPERIALGUARD].field9_0x1c = (u32)Animate_JEDI;
+        CDataList[id_IMPERIALGUARD].field8_0x18 = (u32)(usize)Move_JEDI;
+        CDataList[id_IMPERIALGUARD].field9_0x1c = (u32)(usize)Animate_JEDI;
     }
 }
 
