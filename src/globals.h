@@ -319,7 +319,6 @@ extern "C" {
     extern i32 newlevelfrommenu_newmenuid;
     extern i32 newlevelfrommenu_newmenuy;
     extern i32 NextArea_FreePlay;
-
 #ifdef __cplusplus
 }
 #endif

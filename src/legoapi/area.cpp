@@ -420,7 +420,6 @@ void Areas_FixUp(AREAFIXUP *fixup) {
 void FixUpAreas(void) {
     Areas_FixUp(AreaFixUp_LSW);
 }
-
 struct LEVELDATA_s *Area_FindStatusLevel(AREADATA *area, i32 *indexDest) {
     i32 i;
     LEVELDATA *result;
@@ -453,7 +452,6 @@ struct LEVELDATA_s *Area_FindStatusLevel(AREADATA *area, i32 *indexDest) {
 
     return result;
 }
-
 LEVELDATA *Area_FindNextPlayLevel(i32 levelIdx) {
     LEVELDATA *level = &LDataList[levelIdx];
     LEVELDATA *result = level;
