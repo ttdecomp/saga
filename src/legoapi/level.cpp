@@ -1,5 +1,6 @@
 #include "legoapi/level.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include "globals.h"
@@ -18,14 +19,25 @@ extern "C" char *ConfigBuffer;
 // Declared in nu2api/nusound/nusound.cpp
 extern "C" void GameAudio_PlaySfxAndSetVolume(i32 sfx_id, void *pos, f32 volume);
 
-// Stubs for LevelConfig functions
-static LEVELDATA *levelconfig_ldata = NULL;
-static void LevelConfig_AfterLoad_GenericKeywords(NUFPAR *fp, nufpcomjmp_s *keywords) {
-    (void)fp;
-    (void)keywords;
-}
+// These are extern (U) in the original level.cpp.o — defined here as stubs
+// until the original defining file is decompiled.
+LEVELDATA *levelconfig_ldata = NULL;
 
-static i32 LevelConfig_StripComments(char *text, char *dest) {
+// Keyword tables for generic level configuration keywords.
+// These are combined with game-specific keyword tables by LevelConfig_BeforeLoad
+// and LevelConfig_AfterLoad via NuFParPushCom2.
+// Both tables exist in the original binary (defined in a separate compilation unit)
+// and are terminated by {NULL, NULL}.
+// TODO: Populate with actual keyword entries once extracted from the binary.
+NUFPCOMJMP LevelConfig_BeforeLoad_GenericKeywords[] = {
+    {NULL, NULL},
+};
+
+NUFPCOMJMP LevelConfig_AfterLoad_GenericKeywords[] = {
+    {NULL, NULL},
+};
+
+i32 Text_StripComments(char *text, char *dest) {
     char *start = text;
     i32 length = NuStrLen(text);
     char *out = dest;
@@ -457,18 +469,15 @@ i32 LevelObject_FindIndexFromName_RefOnly(char *name) {
 i32 LevelObject_AddExtra(char *name, i32 kind) {
     if (LEVELOBJECTCOUNT < LEVELOBJECTMAX && ExtraLevelObject_NameTable != NULL) {
         i32 nameLen = NuStrLen(name);
+        char *nameDest = ExtraLevelObject_NameTable + ExtraLevelObject_NameTableIndex;
+        LEVELOBJECT *obj = &ObjTabList[LEVELOBJECTCOUNT];
         if (nameLen + 1 + ExtraLevelObject_NameTableIndex < ExtraLevelObject_NameTableSize) {
-            i32 index = LEVELOBJECTCOUNT;
-            LEVELOBJECT *obj = &ObjTabList[index];
-            char *nameDest = ExtraLevelObject_NameTable + ExtraLevelObject_NameTableIndex;
-
             obj->kind = (u8)kind;
             obj->name = nameDest;
-            LEVELOBJECTCOUNT = index + 1;
+            LEVELOBJECTCOUNT++;
             EXTRALEVELOBJECTCOUNT++;
             NuStrCpy(nameDest, name);
             ExtraLevelObject_NameTableIndex += nameLen + 1;
-
             return 1;
         }
     }
@@ -500,7 +509,11 @@ void ClearLevelProgress(i32 index, WORLDINFO *world) {
         *(u32 *)(entry + 0x281c) = 0;
         *(u32 *)(entry + 0x2810) = 0x49f42400;
         if (world != NULL) {
-            memcpy(entry, (u8 *)world + 0x15c, 0xa00 * 4);
+            u32 *src = (u32 *)((u8 *)world + 0x15c);
+            u32 *dst = (u32 *)entry;
+            for (i32 i = 0xa00; i != 0; i--) {
+                *dst++ = *src++;
+            }
         }
     }
     GizmoSysClearLevelProgress(NULL, index);
@@ -516,7 +529,7 @@ u32 GetLevelExBlowupFlags(void) {
 }
 
 void GoToNewLevel(i32 levelIdx) {
-    NewLData = (LEVELDATA *)((u8 *)LDataList + levelIdx * 0x144);
+    NewLData = &LDataList[levelIdx];
     if (waiting_for_level != -1) {
         waiting_for_new_level = 1;
     }
@@ -526,9 +539,7 @@ void LevelConfig_BeforeLoad(LEVELDATA *level, char *buffer, nufpcomjmp_s *keywor
     NUFPAR *fp = NuFParCreateMem("levelbeforeload", buffer, 0xffff);
     if (fp != NULL) {
         levelconfig_ldata = level;
-        if (Level_ConfigBeforeLoad_GameKeywords != NULL) {
-            NuFParPushCom2(fp, Level_ConfigBeforeLoad_GameKeywords, keywords);
-        }
+        NuFParPushCom2(fp, LevelConfig_BeforeLoad_GenericKeywords, keywords);
         while (NuFParGetLine(fp) != 0) {
             if (NuFParGetWord(fp) != 0) {
                 NuFParInterpretWord(fp);
@@ -542,9 +553,7 @@ void LevelConfig_AfterLoad(LEVELDATA *level, char *buffer, nufpcomjmp_s *keyword
     NUFPAR *fp = NuFParCreateMem("levelafterload", buffer, 0xffff);
     if (fp != NULL) {
         levelconfig_ldata = level;
-        if (Level_ConfigAfterLoad_GameKeywords != NULL) {
-            NuFParPushCom2(fp, Level_ConfigAfterLoad_GameKeywords, keywords);
-        }
+        NuFParPushCom2(fp, LevelConfig_AfterLoad_GenericKeywords, keywords);
         while (NuFParGetLine(fp) != 0) {
             if (NuFParGetWord(fp) != 0) {
                 NuFParInterpretWord(fp);
@@ -560,17 +569,17 @@ void LevelConfig_AfterLoad(LEVELDATA *level, char *buffer, nufpcomjmp_s *keyword
 }
 
 void Level_LoadConfigFile(WORLDINFO *world) {
-    char path[140];
-    NuStrCpy(path, world->config_file);
-    NuStrCat(path, ".txt");
+    char name[140];
 
-    world->unknown_0108.void_ptr = (void *)ALIGN((usize)world->giz_buffer.void_ptr, 4);
-    i32 bytes_read = NuFileLoadBuffer(path, world->giz_buffer.void_ptr, 0x10000);
-    world->unknown_010c = bytes_read;
-    if (bytes_read > 0) {
-        char *buf = (char *)world->giz_buffer.void_ptr;
-        buf[bytes_read] = '\0';
-        ConfigBuffer = buf + 0x10000;
-        world->unknown_010c = LevelConfig_StripComments(buf, ConfigBuffer);
+    ConfigBuffer[0] = '\0';
+    sprintf(name, "%s.txt", world->config_file);
+
+    world->giz_buffer.void_ptr = (void *)((usize)world->giz_buffer.void_ptr + 3U & ~3U);
+    i32 bytesRead = NuFileLoadBuffer(name, world->giz_buffer.void_ptr, 0x10000);
+    world->unknown_010c = bytesRead;
+    if (bytesRead > 0) {
+        ((char *)world->giz_buffer.void_ptr)[bytesRead] = '\0';
+        bytesRead = Text_StripComments((char *)world->giz_buffer.void_ptr, ConfigBuffer);
+        world->unknown_010c = bytesRead;
     }
 }
