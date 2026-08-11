@@ -11,7 +11,6 @@ ndk/
 gonk/target/
 gonk/Cargo.lock
 objdiff.json
-report.json
 build-*/
 vgcore.*
 *.bin
