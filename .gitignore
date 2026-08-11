@@ -18,3 +18,4 @@ vgcore.*
 *.dds
 .vscode/
 *.ogg
+report_old.json

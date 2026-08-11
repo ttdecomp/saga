@@ -102,264 +102,281 @@ i32 PDEBCOUNT = 0;
 i32 CharScene_Area = 0;
 void *PDebNameList = NULL;
 
-// Stub implementations for functions not yet implemented in their respective modules
+// Stub implementations for functions not yet implemented in their respective modules.
+// NOTE: Functions that have C++ linkage in the original libTTapp.so are kept
+// outside extern "C" so their mangled names match.  Functions with true C
+// linkage in the original are individually marked `extern "C"`.
+
 extern "C" {
     void ResetSounds(void) {
     }
-    void SetLevelSfxBits(WORLDINFO *world) {
-        (void)world;
+} // extern "C"
+
+// --- C++ linkage stubs (original uses C++ mangling) ---
+
+void SetLevelSfxBits(WORLDINFO *world) {
+    (void)world;
+}
+void ResetLevSfx(WORLDINFO *world) {
+    // SFX bit array and counter in the unknown_4670[] filler region.
+    // TODO: these offsets must be replaced with typed struct fields.
+    //   0x4720 → unknown_4670[0xb0]: SFX bit array (0x400 bytes, stride 0x10)
+    //   0x4b14 → unknown_4670[0x4a4]: SFX counter
+    i16 *sfx = (i16 *)&world->unknown_4670[0xb0];
+    for (i32 i = 0; i < 0x40; i++) {
+        sfx[i] = -1;
     }
-    void ResetLevSfx(WORLDINFO *world) {
-        // SFX bit array and counter in the unknown_4670[] filler region.
-        // TODO: these offsets must be replaced with typed struct fields.
-        //   0x4720 → unknown_4670[0xb0]: SFX bit array (0x400 bytes, stride 0x10)
-        //   0x4b14 → unknown_4670[0x4a4]: SFX counter
-        i16 *sfx = (i16 *)&world->unknown_4670[0xb0];
-        for (i32 i = 0; i < 0x40; i++) {
-            sfx[i] = -1;
+    *(i32 *)&world->unknown_4670[0x4a4] = 0;
+}
+
+extern "C" void noterraininit(void) {
+}
+extern "C" void TerrainSetCur(void *terrain) {
+    (void)terrain;
+}
+extern "C" void TerrSetPlatScanDist(f32 dist) {
+    (void)dist;
+}
+extern "C" void TerrainPlatformOldUpdate(void) {
+}
+extern "C" void TerrainPlatformNewUpdate(void) {
+}
+extern "C" void TerrainSetWallDeflectYScale(f32 scale) {
+    (void)scale;
+}
+
+// --- More C++ linkage stubs ---
+
+void LevObj_FixUpPlatIDs(WORLDINFO *world) {
+    (void)world;
+}
+extern "C" void NuRndrInitWorld(void); // Defined in nurndr_android.c
+
+extern "C" void NuGScnUpdate(NUGSCN *gscn, i32 param) {
+    (void)gscn;
+    (void)param;
+}
+
+void Doors_Init(WORLDINFO *world) {
+    (void)world;
+}
+void Players_InitPositions(WORLDINFO *world) {
+    (void)world;
+}
+void ClearGameObjects(void *api_object_sys) {
+    (void)api_object_sys;
+}
+void PlayerItemTypes_Reset(WORLDINFO *world) {
+    (void)world;
+}
+void Players_Init(void) {
+}
+
+extern "C" void rtlResetDynamic(void) {
+}
+extern "C" void SetPartRTLSet(i32 rtl_set) {
+    (void)rtl_set;
+}
+
+void InitGameObjectLights(void) {
+}
+void NewMenu(i32 menu_id, i32 menu_y, i32 param3) {
+    (void)menu_id;
+    (void)menu_y;
+    (void)param3;
+}
+
+// Global variables needed by loading functions
+
+// Stubs for WorldInfo_Load dependencies
+void *TerrainInitEx(i32 param1, void *buf, void *buf_end, i32 param2, char *path, void *gscn, i32 param3, u32 param4,
+                    u32 param5, u32 param6) {
+    (void)param1;
+    (void)buf;
+    (void)buf_end;
+    (void)param2;
+    (void)path;
+    (void)gscn;
+    (void)param3;
+    (void)param4;
+    (void)param5;
+    (void)param6;
+    return NULL;
+}
+void *InitPartDebris(void *buf, void *buf_end, i32 param1, i32 param2, void *param3, i32 page) {
+    (void)buf;
+    (void)buf_end;
+    (void)param1;
+    (void)param2;
+    (void)param3;
+    (void)page;
+    return NULL;
+}
+void LoadTerrainFile(WORLDINFO *world) {
+    char path[256];
+    *(i32 *)&world->unknown_0140[0x281c] = 0;
+    if ((world->current_level->flags & LEVEL_UNKNOWN_FLAG_8) != 0) {
+        NuStrCpy(path, world->config_file);
+        LEVELDATA *level = world->current_level;
+        if (level == (LEVELDATA *)PLATFORM_LDATA) {
+            NuStrCpy(path, "levels\\episode_v\\cloudcityescape\\cloudcityescape_b\\cloudcityescape_b");
+            level = world->current_level;
         }
-        *(i32 *)&world->unknown_4670[0x4a4] = 0;
+        world->giz_buffer.addr = ALIGN(world->giz_buffer.addr, 4);
+        void *terrain = TerrainInitEx(*(i32 *)&world->unknown_0140[0x011c], &world->giz_buffer, &world->unknown_0108, 0,
+                                      path, world->current_gscn, 0, (u32)(u16)level->max_ter_groups,
+                                      (u32)(u16)level->max_ter_groups, (u32)(u16)level->max_ter_platforms);
+        *(void **)&world->unknown_0140[0x281c] = terrain;
     }
-    void noterraininit(void) {
-    }
-    void TerrainSetCur(void *terrain) {
-        (void)terrain;
-    }
-    void TerrSetPlatScanDist(f32 dist) {
-        (void)dist;
-    }
-    void TerrainPlatformOldUpdate(void) {
-    }
-    void TerrainPlatformNewUpdate(void) {
-    }
-    void TerrainSetWallDeflectYScale(f32 scale) {
-        (void)scale;
-    }
-    void LevObj_FixUpPlatIDs(WORLDINFO *world) {
-        (void)world;
-    }
-    void NuRndrInitWorld(void); // Defined in nurndr_android.c
-    void NuGScnUpdate(NUGSCN *gscn, i32 param) {
-        (void)gscn;
-        (void)param;
-    }
-    void Doors_Init(WORLDINFO *world) {
-        (void)world;
-    }
-    void Players_InitPositions(WORLDINFO *world) {
-        (void)world;
-    }
-    void ClearGameObjects(void *api_object_sys) {
-        (void)api_object_sys;
-    }
-    void PlayerItemTypes_Reset(WORLDINFO *world) {
-        (void)world;
-    }
-    void Players_Init(void) {
-    }
-    void rtlResetDynamic(void) {
-    }
-    void SetPartRTLSet(i32 rtl_set) {
-        (void)rtl_set;
-    }
-    void InitGameObjectLights(void) {
-    }
-    void NewMenu(i32 menu_id, i32 menu_y, i32 param3) {
-        (void)menu_id;
-        (void)menu_y;
-        (void)param3;
-    }
+}
+void LoadGrassFile(WORLDINFO *world) {
+    char path[268];
+    *(i32 *)&world->unknown_0140[0x2964] = -1;
+    Grass_Available = 1;
+    char *config = world->config_file;
 
-    // Global variables needed by loading functions
+    if (g_isLowEndDevice != 0) {
+        char *found = NuStrIStr(config, "Gungan");
+        if (found == NULL)
+            found = NuStrIStr(config, "SpeederChase");
+        if (found == NULL)
+            found = NuStrIStr(config, "EndorBattle");
+        if (found == NULL)
+            found = NuStrIStr(config, "Retake");
 
-    // Stubs for WorldInfo_Load dependencies
-    void *TerrainInitEx(i32 param1, void *buf, void *buf_end, i32 param2, char *path, void *gscn, i32 param3,
-                        u32 param4, u32 param5, u32 param6) {
-        (void)param1;
-        (void)buf;
-        (void)buf_end;
-        (void)param2;
-        (void)path;
-        (void)gscn;
-        (void)param3;
-        (void)param4;
-        (void)param5;
-        (void)param6;
-        return NULL;
-    }
-    void *InitPartDebris(void *buf, void *buf_end, i32 param1, i32 param2, void *param3, i32 page) {
-        (void)buf;
-        (void)buf_end;
-        (void)param1;
-        (void)param2;
-        (void)param3;
-        (void)page;
-        return NULL;
-    }
-    void LoadTerrainFile(WORLDINFO *world) {
-        char path[256];
-        *(i32 *)&world->unknown_0140[0x281c] = 0;
-        if ((world->current_level->flags & LEVEL_UNKNOWN_FLAG_8) != 0) {
-            NuStrCpy(path, world->config_file);
-            LEVELDATA *level = world->current_level;
-            if (level == (LEVELDATA *)PLATFORM_LDATA) {
-                NuStrCpy(path, "levels\\episode_v\\cloudcityescape\\cloudcityescape_b\\cloudcityescape_b");
-                level = world->current_level;
-            }
-            world->giz_buffer.addr = ALIGN(world->giz_buffer.addr, 4);
-            void *terrain =
-                TerrainInitEx(*(i32 *)&world->unknown_0140[0x011c], &world->giz_buffer, &world->unknown_0108, 0, path,
-                              world->current_gscn, 0, (u32)(u16)level->max_ter_groups, (u32)(u16)level->max_ter_groups,
-                              (u32)(u16)level->max_ter_platforms);
-            *(void **)&world->unknown_0140[0x281c] = terrain;
-        }
-    }
-    void LoadGrassFile(WORLDINFO *world) {
-        char path[268];
-        *(i32 *)&world->unknown_0140[0x2964] = -1;
-        Grass_Available = 1;
-        char *config = world->config_file;
-
-        if (g_isLowEndDevice != 0) {
-            char *found = NuStrIStr(config, "Gungan");
-            if (found == NULL)
-                found = NuStrIStr(config, "SpeederChase");
-            if (found == NULL)
-                found = NuStrIStr(config, "EndorBattle");
-            if (found == NULL)
-                found = NuStrIStr(config, "Retake");
-
-            if (found != NULL) {
-                Grass_Available = 0;
-            } else {
-                Grass_Available = 1;
-            }
-        }
-
-        if (g_isMidRangeDevice != 0 && NuStrIStr(config, "GunGan_A") != NULL) {
-            Grass_Available = 0;
-            return;
-        }
-
-        char *found = NuStrIStr(config, "SpeederChase");
         if (found != NULL) {
             Grass_Available = 0;
-        }
-
-        if (Grass_Available != 0) {
-            sprintf(path, "%s.gra", config);
-            if (NuFileExists(path)) {
-                i32 page = edgraLoadPage(path, world->current_gscn, *(i32 *)&world->unknown_0140[0x281c],
-                                         &world->giz_buffer, &world->unknown_0108);
-                *(i32 *)&world->unknown_0140[0x2964] = page;
-            }
+        } else {
+            Grass_Available = 1;
         }
     }
-    void LoadBridgeFile(WORLDINFO *world) {
-        char path[256];
-        *(i32 *)&world->unknown_0140[0x2968] = -1;
-        sprintf(path, "%s.bri", world->config_file);
+
+    if (g_isMidRangeDevice != 0 && NuStrIStr(config, "GunGan_A") != NULL) {
+        Grass_Available = 0;
+        return;
+    }
+
+    char *found = NuStrIStr(config, "SpeederChase");
+    if (found != NULL) {
+        Grass_Available = 0;
+    }
+
+    if (Grass_Available != 0) {
+        sprintf(path, "%s.gra", config);
         if (NuFileExists(path)) {
-            i32 page = edbriLoadPage(path, world->current_gscn);
-            *(i32 *)&world->unknown_0140[0x2968] = page;
+            i32 page = edgraLoadPage(path, world->current_gscn, *(i32 *)&world->unknown_0140[0x281c],
+                                     &world->giz_buffer, &world->unknown_0108);
+            *(i32 *)&world->unknown_0140[0x2964] = page;
         }
     }
-    void LoadPartFile(WORLDINFO *world) {
-        char path[256];
-        *(i32 *)&world->unknown_0140[0x295c] = -1;
-        edpartSetParticlePage(*(i32 *)&world->unknown_0140[0x2958]);
+}
+void LoadBridgeFile(WORLDINFO *world) {
+    char path[256];
+    *(i32 *)&world->unknown_0140[0x2968] = -1;
+    sprintf(path, "%s.bri", world->config_file);
+    if (NuFileExists(path)) {
+        i32 page = edbriLoadPage(path, world->current_gscn);
+        *(i32 *)&world->unknown_0140[0x2968] = page;
+    }
+}
+void LoadPartFile(WORLDINFO *world) {
+    char path[256];
+    *(i32 *)&world->unknown_0140[0x295c] = -1;
+    edpartSetParticlePage(*(i32 *)&world->unknown_0140[0x2958]);
 
-        if ((world->current_level->flags & (LEVEL_OUTRO | LEVEL_MIDTRO | LEVEL_INTRO)) == 0) {
-            sprintf(path, "%s.par", world->config_file);
-            i32 page = -1;
-            if (NuFileExists(path)) {
-                page = edpartLoadPage(path, 1, world->current_gscn);
-                *(i32 *)&world->unknown_0140[0x295c] = page;
-            }
-            void *partDebrisSys =
-                InitPartDebris(&world->giz_buffer, &world->unknown_0108, 0x40, PDEBCOUNT, PDebNameList, page);
-            *(void **)&world->unknown_0140[0x2960] = partDebrisSys;
+    if ((world->current_level->flags & (LEVEL_OUTRO | LEVEL_MIDTRO | LEVEL_INTRO)) == 0) {
+        sprintf(path, "%s.par", world->config_file);
+        i32 page = -1;
+        if (NuFileExists(path)) {
+            page = edpartLoadPage(path, 1, world->current_gscn);
+            *(i32 *)&world->unknown_0140[0x295c] = page;
         }
+        void *partDebrisSys =
+            InitPartDebris(&world->giz_buffer, &world->unknown_0108, 0x40, PDEBCOUNT, PDebNameList, page);
+        *(void **)&world->unknown_0140[0x2960] = partDebrisSys;
     }
-    void Particles_Load(WORLDINFO *world, char **debris_name, i32 count, i32 flags) {
-        (void)world;
-        (void)debris_name;
-        (void)count;
-        (void)flags;
-    }
-    void *CreateGizmoSys(void *world, void *buf, void *buf_end) {
-        (void)world;
-        (void)buf;
-        (void)buf_end;
-        return NULL;
-    }
-    void LoadGizmoSys(void *gizmo_sys, void *world, char *config_file) {
-        (void)gizmo_sys;
-        (void)world;
-        (void)config_file;
-    }
-    void LoadEditorSplines(char *path, void *buf, void *buf_end) {
-        (void)path;
-        (void)buf;
-        (void)buf_end;
-    }
-    void GizmoBlowupResetNameTable(void) {
-    }
-    void Hub_LoadAndFixUpMiniKits(WORLDINFO *world, void *buf, void *buf_end) {
-        (void)world;
-        (void)buf;
-        (void)buf_end;
-    }
-    void MiniKit_Load(void *minikit, i32 id, void *buf, void *buf_end, void *param) {
-        (void)minikit;
-        (void)id;
-        (void)buf;
-        (void)buf_end;
-        (void)param;
-    }
-    void MiniKit_InitPieces(void *minikit, i32 count, void *buf) {
-        (void)minikit;
-        (void)count;
-        (void)buf;
-    }
-    struct CUTINFO_LOAD {
-        void *cutscene;
-        void *instance;
-        char data[0x13c];
-    };
+}
+void Particles_Load(WORLDINFO *world, char **debris_name, i32 count, i32 flags) {
+    (void)world;
+    (void)debris_name;
+    (void)count;
+    (void)flags;
+}
+void *CreateGizmoSys(void *world, void *buf, void *buf_end) {
+    (void)world;
+    (void)buf;
+    (void)buf_end;
+    return NULL;
+}
+void LoadGizmoSys(void *gizmo_sys, void *world, char *config_file) {
+    (void)gizmo_sys;
+    (void)world;
+    (void)config_file;
+}
+void LoadEditorSplines(char *path, void *buf, void *buf_end) {
+    (void)path;
+    (void)buf;
+    (void)buf_end;
+}
+void GizmoBlowupResetNameTable(void) {
+}
+void Hub_LoadAndFixUpMiniKits(WORLDINFO *world, void *buf, void *buf_end) {
+    (void)world;
+    (void)buf;
+    (void)buf_end;
+}
+void MiniKit_Load(void *minikit, i32 id, void *buf, void *buf_end, void *param) {
+    (void)minikit;
+    (void)id;
+    (void)buf;
+    (void)buf_end;
+    (void)param;
+}
+void MiniKit_InitPieces(void *minikit, i32 count, void *buf) {
+    (void)minikit;
+    (void)count;
+    (void)buf;
+}
+struct CUTINFO_LOAD {
+    void *cutscene;
+    void *instance;
+    char data[0x13c];
+};
 
-    struct CUTSYS_LOAD {
-        void *entries;
-        i32 count;
-        void *end;
-    };
+struct CUTSYS_LOAD {
+    void *entries;
+    i32 count;
+    void *end;
+};
 
-    i32 CUTCOUNT = 0;
-    CUTINFO_LOAD *CutList = NULL;
-    i32 ACTIVECUTCOUNT = 0;
-    i32 CS_area = 0;
-    CUTSYS_LOAD *CS_cutsys = NULL;
-    WORLDINFO *CS_worldinfo = NULL;
-    f32 CutSceneScale = 1.0f;
-    extern i32 InStory(void) {
-    }
+i32 CUTCOUNT = 0;
+CUTINFO_LOAD *CutList = NULL;
+i32 ACTIVECUTCOUNT = 0;
+i32 CS_area = 0;
+CUTSYS_LOAD *CS_cutsys = NULL;
+WORLDINFO *CS_worldinfo = NULL;
+f32 CutSceneScale = 1.0f;
+i32 CUTCAM = 0;
+extern i32 InStory(void) {
+}
 
-    // These routines are implemented by the cutscene subsystem.  Keep the
-    // declarations here rather than hiding the calls behind local no-ops:
-    // CutScenes_Load is part of the original loader and its ABI calls these
-    // entry points directly.
+// These routines are implemented by the cutscene subsystem.  Keep the
+// declarations here rather than hiding the calls behind local no-ops:
+// CutScenes_Load is part of the original loader and its ABI calls these
+// entry points directly.
+extern "C" {
     extern void *NuGCutSceneLoad(char *name, NUGSCN *gscn1, NUGSCN *gscn2, i32 flags);
     extern void NuGCutSceneFixUp(void *cutscene, char *name, i32 flags, VARIPTR *end);
     extern void NuGCutSceneFixUpExtra(void *cutscene, i32 area);
     extern void *instNuGCutSceneCreate(void *cutscene, i32 flags, i32 param, char *name);
+}
 
-    __attribute__((noinline)) static void CutScene_Configure_Load(CUTINFO_LOAD *cut, char *name, VARIPTR *buf,
-                                                                  VARIPTR *buf_end) {
-        (void)buf;
-        (void)buf_end;
-        memset(cut, 0, sizeof(*cut));
-        NuStrCpy((char *)cut->data, name);
-    }
+__attribute__((noinline)) static void CutScene_Configure_Load(CUTINFO_LOAD *cut, char *name, VARIPTR *buf,
+                                                              VARIPTR *buf_end) {
+    (void)buf;
+    (void)buf_end;
+    memset(cut, 0, sizeof(*cut));
+    NuStrCpy((char *)cut->data, name);
 }
 
 void *CutScenes_Load(char *config, NUGSCN *gscn1, NUGSCN *gscn2, i32 param1, VARIPTR *buf, VARIPTR *buf_end, i32 param2,
@@ -496,6 +513,7 @@ void CharScenes_LevelLoad(WORLDINFO *world) {
     }
 }
 
+// --- Extern "C" block: functions with confirmed C linkage in original libTTapp.so ---
 extern "C" {
 
     void *NuGCutSceneLoad(char *name, NUGSCN *gscn1, NUGSCN *gscn2, i32 flags) {
@@ -522,64 +540,71 @@ extern "C" {
         (void)name;
         return NULL;
     }
-    void NuSpecialFind(NUGSCN *scene, void **dest, char *name) {
-        (void)scene;
-        (void)dest;
-        (void)name;
-    }
-    void LevelSplines_InitForLevel(WORLDINFO *world) {
-        (void)world;
-    }
-    void LevelObjects_InitForLevel(WORLDINFO *world) {
-        (void)world;
-    }
-    void BoltTypes_Init(WORLDINFO *world) {
-        (void)world;
-    }
-    void BoltTypes_Configure(WORLDINFO *world, char *config) {
-        (void)world;
-        (void)config;
-    }
-    void EquivalentObjects_Configure(WORLDINFO *world, char *config) {
-        (void)world;
-        (void)config;
-    }
-    void Teleports_Configure(WORLDINFO *world, char *config) {
-        (void)world;
-        (void)config;
-    }
-    void Doors_Configure(WORLDINFO *world, char *config) {
-        (void)world;
-        (void)config;
-    }
-    void Faders_Configure(WORLDINFO *world, char *config) {
-        (void)world;
-        (void)config;
-    }
-    void CharPlatforms_Configure(WORLDINFO *world, char *config) {
-        (void)world;
-        (void)config;
-    }
-    void Grabber_Configure(WORLDINFO *world, char *config) {
-        (void)world;
-        (void)config;
-    }
-    void Pulses_Configure(WORLDINFO *world, char *config) {
-        (void)world;
-        (void)config;
-    }
-    void TrafficAnimSys_Configure(WORLDINFO *world, char *config) {
-        (void)world;
-        (void)config;
-    }
-    void SpecialMiniKits_Configure(WORLDINFO *world, char *config) {
-        (void)world;
-        (void)config;
-    }
-    void GizForceSFX_Configure(WORLDINFO *world, char *config) {
-        (void)world;
-        (void)config;
-    }
+} // extern "C"
+
+// --- C++ linkage stubs (original uses C++ mangling for these) ---
+
+void NuSpecialFind(NUGSCN *scene, void **dest, char *name) {
+    (void)scene;
+    (void)dest;
+    (void)name;
+}
+void LevelSplines_InitForLevel(WORLDINFO *world) {
+    (void)world;
+}
+void LevelObjects_InitForLevel(WORLDINFO *world) {
+    (void)world;
+}
+void BoltTypes_Init(WORLDINFO *world) {
+    (void)world;
+}
+void BoltTypes_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void EquivalentObjects_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void Teleports_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void Doors_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void Faders_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void CharPlatforms_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void Grabber_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void Pulses_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void TrafficAnimSys_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void SpecialMiniKits_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void GizForceSFX_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+
+// --- Extern "C": SockSys functions have C linkage in original ---
+extern "C" {
     void SockSys_Configure(void *sock_sys, char *config, i32 param, void *buf, void *buf_end, void *gscn) {
         (void)sock_sys;
         (void)config;
@@ -593,59 +618,66 @@ extern "C" {
         (void)buf;
         (void)buf_end;
     }
-    void CharacterMiniKits_Load(void *collection, WORLDINFO *world, void *buf, void *buf_end) {
-        (void)collection;
-        (void)world;
-        (void)buf;
-        (void)buf_end;
-    }
-    void *AISysLoad(void *buf, void *buf_end, i32 size, void *gscn, char *dir, char *name, char *param) {
-        (void)buf;
-        (void)buf_end;
-        (void)size;
-        (void)gscn;
-        (void)dir;
-        (void)name;
-        (void)param;
-        return NULL;
-    }
-    void *AIPathCnxControlSysCreate(void *buf, void *buf_end, i32 count) {
-        (void)buf;
-        (void)buf_end;
-        (void)count;
-        return NULL;
-    }
-    void *AIPathCnxHelperSysCreate(void *buf, void *buf_end, i32 count) {
-        (void)buf;
-        (void)buf_end;
-        (void)count;
-        return NULL;
-    }
-    void *AITriggerSetSysCreate(void *buf, void *buf_end) {
-        (void)buf;
-        (void)buf_end;
-        return NULL;
-    }
-    void GameAIScriptAddLevelSfx(WORLDINFO *world, void *scripts) {
-        (void)world;
-        (void)scripts;
-    }
-    void *CreateClimbObjectSys(void *buf, void *buf_end, i32 count) {
-        (void)buf;
-        (void)buf_end;
-        (void)count;
-        return NULL;
-    }
-    void *APIObjectSysInit(i32 size, void *buf, void *buf_end) {
-        (void)size;
-        (void)buf;
-        (void)buf_end;
-        return NULL;
-    }
-    void LoadLights(WORLDINFO *world, char *path) {
-        (void)world;
-        (void)path;
-    }
+} // extern "C"
+
+// --- More C++ linkage stubs ---
+
+void CharacterMiniKits_Load(void *collection, WORLDINFO *world, void *buf, void *buf_end) {
+    (void)collection;
+    (void)world;
+    (void)buf;
+    (void)buf_end;
+}
+void *AISysLoad(void *buf, void *buf_end, i32 size, void *gscn, char *dir, char *name, char *param) {
+    (void)buf;
+    (void)buf_end;
+    (void)size;
+    (void)gscn;
+    (void)dir;
+    (void)name;
+    (void)param;
+    return NULL;
+}
+void *AIPathCnxControlSysCreate(void *buf, void *buf_end, i32 count) {
+    (void)buf;
+    (void)buf_end;
+    (void)count;
+    return NULL;
+}
+void *AIPathCnxHelperSysCreate(void *buf, void *buf_end, i32 count) {
+    (void)buf;
+    (void)buf_end;
+    (void)count;
+    return NULL;
+}
+void *AITriggerSetSysCreate(void *buf, void *buf_end) {
+    (void)buf;
+    (void)buf_end;
+    return NULL;
+}
+void GameAIScriptAddLevelSfx(WORLDINFO *world, void *scripts) {
+    (void)world;
+    (void)scripts;
+}
+void *CreateClimbObjectSys(void *buf, void *buf_end, i32 count) {
+    (void)buf;
+    (void)buf_end;
+    (void)count;
+    return NULL;
+}
+void *APIObjectSysInit(i32 size, void *buf, void *buf_end) {
+    (void)size;
+    (void)buf;
+    (void)buf_end;
+    return NULL;
+}
+void LoadLights(WORLDINFO *world, char *path) {
+    (void)world;
+    (void)path;
+}
+
+// --- Extern "C": rtl functions have C linkage in original ---
+extern "C" {
     i32 rtlFindByUserId(i32 rtl_set, i32 user_id) {
         (void)rtl_set;
         (void)user_id;
@@ -656,59 +688,73 @@ extern "C" {
         (void)id;
         (void)out;
     }
-    void RippleEffects_Configure(WORLDINFO *world, char *config) {
-        (void)world;
-        (void)config;
-    }
-    void PortalDoors_Configure(WORLDINFO *world, char *config) {
-        (void)world;
-        (void)config;
-    }
-    void GizmoSysAddGizmos(void *gizmo_sys, void *giz_flow, void *world) {
-        (void)gizmo_sys;
-        (void)giz_flow;
-        (void)world;
-    }
-    void *LoadGizFlow(void *world, void *gizmo_sys, char *path, void *buf, void *buf_end) {
-        (void)world;
-        (void)gizmo_sys;
-        (void)path;
+} // extern "C"
+
+// --- More C++ linkage stubs ---
+
+void RippleEffects_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void PortalDoors_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void GizmoSysAddGizmos(void *gizmo_sys, void *giz_flow, void *world) {
+    (void)gizmo_sys;
+    (void)giz_flow;
+    (void)world;
+}
+void *LoadGizFlow(void *world, void *gizmo_sys, char *path, void *buf, void *buf_end) {
+    (void)world;
+    (void)gizmo_sys;
+    (void)path;
+    (void)buf;
+    (void)buf_end;
+    return NULL;
+}
+void InitSpecialSfx(WORLDINFO *world) {
+    (void)world;
+}
+void LoadSpecialSfxFile(WORLDINFO *world) {
+    (void)world;
+}
+void WorldInfo_Dump(WORLDINFO *world) {
+    (void)world;
+}
+void StoreSceneProgress(void *gscn, void *progress, i32 param) {
+    (void)gscn;
+    (void)progress;
+    (void)param;
+}
+void SaveSceneObjectAnimTFactors(void *gscn) {
+    (void)gscn;
+}
+void CalculateWorldSize(WORLDINFO *world) {
+    (void)world;
+}
+void *GameAnimSys_Create(void *buf, void *buf_end) {
+    (void)buf;
+    (void)buf_end;
+    return NULL;
+}
+void *GameAntnode_CreateSys(WORLDINFO *world, void *buf, void *buf_end, i32 count) {
+    (void)world;
+    (void)buf;
+    (void)buf_end;
+    (void)count;
+    return NULL;
+}
+
+// --- Extern "C": NuGScn functions have C linkage in original ---
+extern "C" {
+    i32 NuGScnUploadGfxDataFromFilePS(NUFILE file, VARIPTR *buf, VARIPTR buf_end) {
+        (void)file;
         (void)buf;
         (void)buf_end;
-        return NULL;
+        return 0;
     }
-    void InitSpecialSfx(WORLDINFO *world) {
-        (void)world;
-    }
-    void LoadSpecialSfxFile(WORLDINFO *world) {
-        (void)world;
-    }
-    void WorldInfo_Dump(WORLDINFO *world) {
-        (void)world;
-    }
-    void StoreSceneProgress(void *gscn, void *progress, i32 param) {
-        (void)gscn;
-        (void)progress;
-        (void)param;
-    }
-    void SaveSceneObjectAnimTFactors(void *gscn) {
-        (void)gscn;
-    }
-    void CalculateWorldSize(WORLDINFO *world) {
-        (void)world;
-    }
-    void *GameAnimSys_Create(void *buf, void *buf_end) {
-        (void)buf;
-        (void)buf_end;
-        return NULL;
-    }
-    void *GameAntnode_CreateSys(WORLDINFO *world, void *buf, void *buf_end, i32 count) {
-        (void)world;
-        (void)buf;
-        (void)buf_end;
-        (void)count;
-        return NULL;
-    }
+
     void *NuGScnRead(VARIPTR *buf, VARIPTR buf_end, char *path) {
         extern NUGSCN *NuReadGraphicsData(VARIPTR *, VARIPTR *, char *, NUGSCN *);
         RemoveDirectionalMaps = 1;
@@ -724,12 +770,6 @@ extern "C" {
     }
     void NuGHGFixup(NUGSCN *scene) {
         NuGScnReadFromMemory(scene);
-    }
-    i32 NuGScnUploadGfxDataFromFilePS(NUFILE file, VARIPTR *buf, VARIPTR buf_end) {
-        (void)file;
-        (void)buf;
-        (void)buf_end;
-        return 0;
     }
 
     NUGSCN *NuReadGraphicsData(VARIPTR *buf, VARIPTR *buf_end, char *path, NUGSCN *scene) {
@@ -753,10 +793,10 @@ extern "C" {
         NuFileClose(file);
         return loaded;
     }
-    void SetAreaPickupGravity(i32 area, i32 level) {
-        (void)area;
-        (void)level;
-    }
+} // extern "C"
+void SetAreaPickupGravity(i32 area, i32 level) {
+    (void)area;
+    (void)level;
 }
 
 // Placeholder for LEVEL_PROGRESS structure
@@ -1432,7 +1472,6 @@ void WorldInfo_LoadObjectAnimFile(WORLDINFO *world) {
 }
 
 void WorldInfo_DrawScene(WORLDINFO *world) {
-    static i32 CUTCAM = 0;
     if (world->current_gscn == NULL) {
         return;
     }
