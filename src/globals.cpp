@@ -22,7 +22,6 @@ char prodcode[16] = {0};
 char *iconname = "lego.ico";
 char unicodename[64] = "LEGO Star Wars Saga";
 
-
 i32 EPISODECOUNT = 0;
 i32 AREACOUNT = 0;
 GAMESAVE_s Game = {0};
@@ -72,3 +71,58 @@ i32 g_isLowestEndDevice = 0;
 i32 g_isLowEndDevice = 0;
 i32 g_isMidRangeDevice = 0;
 i32 g_lowEndLevelBehaviour = 0;
+
+f32 DoubleScoreTime = 0.0f;
+f32 GameTimer[2] = {0.0f, 0.0f};
+i32 AreaGlobals = 0;
+
+i32 LevObjRef_FirstObj = 0;
+i32 LevObjRef_LastObj = 0;
+i32 LevObjRef_FirstRefObj = 0;
+
+LEVELOBJECT *ObjTabList = NULL;
+i32 LEVELOBJECTCOUNT = 0;
+i32 LEVELOBJECTMAX = 0;
+i32 EXTRALEVELOBJECTCOUNT = 0;
+
+char *ExtraLevelObject_NameTable = NULL;
+i32 ExtraLevelObject_NameTableSize = 0;
+i32 ExtraLevelObject_NameTableIndex = 0;
+
+LEVELDATA *NewLData = NULL;
+LEVELDATA *HUB_LDATA = NULL;
+i32 grab_screen_image = 0;
+i32 FreePlay = 0;
+i32 waiting_for_new_level = 0;
+
+void *LevelProgressData = NULL;
+
+GameAnimSysProgress gameanimsysprogress = {0, 0, NULL};
+
+nufpcomjmp_s *Level_ConfigBeforeLoad_GameKeywords = NULL;
+nufpcomjmp_s *Level_ConfigAfterLoad_GameKeywords = NULL;
+
+u32 EXBLOWUPFLAGS = 0;
+
+i32 BeenAttacked = 0;
+
+i32 last_area = -1;
+LEVELDATA *LastLData = NULL;
+LEVELDATA *TITLES_LDATA = NULL;
+i32 new_level_from_menu = 0;
+i32 BGLOAD = 0;
+
+i32 Reflections_On = 1;
+i32 disable_narrow_socks = 0;
+i32 script_spline_selected = 0;
+f32 character_farclip = 0.0f;
+i32 LevMusicAction = 0;
+i32 LevMusicAmbient = 0;
+i32 LevMusicOtherAction = 0;
+i32 LevMusicOtherAmbient = 0;
+u32 ResetBits = 0;
+
+i32 reset_restart = 0;
+i32 newlevelfrommenu_newmenuid = -1;
+i32 newlevelfrommenu_newmenuy = -1;
+i32 NextArea_FreePlay = 0;
