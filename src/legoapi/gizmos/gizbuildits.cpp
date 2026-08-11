@@ -1,6 +1,62 @@
 #include "legoapi/gizmos/gizbuildits.h"
 
 #include "decomp.h"
+#include "legoapi/gameobject.h"
+#include "legoapi/players.h"
+
+extern i32 LEGOCONTEXT_BUILDIT;
+
+GIZBUILDIT_s *LevBuildIt;
+i8 HubBuildItsCompleted = -1;
+bool (*GizBuildIt_CanStartBuildingFn)(GIZBUILDIT_s *build_it, GameObject_s *object);
+void (*GizBuildIt_FinishFn)(GIZBUILDIT_s *build_it);
+i32 (*GizBuildit_AutoBuildPosFn)(void *world, NUVEC *position, NUVEC *build_position, u16 *id);
+
+struct GAMECAMERA_s;
+extern GAMECAMERA_s *GameCam;
+void GameCam_Blend(GAMECAMERA_s *camera, f32 blend_time, f32 hold_time, i32 restore);
+
+void GizBuildIt_SetHeadTarget(GIZBUILDIT *buildit, GameObject_s *object) {
+    if (buildit->part_count != 0) {
+        i32 part_index = buildit->current_part;
+        if (part_index >= buildit->part_count) {
+            part_index = buildit->part_count - 1;
+        }
+        SetHeadTarget(object, &buildit->parts[part_index]->target->head_target, 0, 2.0f, 1.0f, 2.0f);
+    }
+}
+
+f32 GizBuildItMul(GameObject_s *object) {
+    if ((i8)object->state_flags < 0 && Player_HasFastBuild(object)) {
+        return 3.0f;
+    }
+
+    i32 progress = object->player_packet.buildit_step;
+    GIZBUILDIT *buildit = object->player_packet.buildit;
+    i32 current_part = buildit->current_part;
+    i32 part_count = buildit->part_count;
+    if ((current_part - progress + part_count) / 2 <= current_part) {
+        progress = part_count - current_part;
+    }
+    progress = MAX(progress, 0);
+    progress = MIN(progress, 10);
+    return (f32)progress / 10.0f + 1.0f;
+}
+
+void GizBuildIt_SetStepTime(GIZBUILDIT *buildit, GameObject_s *object) {
+    buildit->step_time = 0.3f;
+    if (object != NULL) {
+        buildit->step_time /= GizBuildItMul(object);
+    }
+    buildit->previous_step_time = buildit->step_time;
+}
+
+void ReleaseBuildIt(GameObject_s *object, i32 complete) {
+    if (LEGOCONTEXT_BUILDIT != -1 && object->player_packet.character_state == LEGOCONTEXT_BUILDIT) {
+        object->player_packet.character_state = -1;
+        GameCam_Blend(GameCam, 0.5f, complete != 0 ? 0.6f : 0.0f, 1);
+    }
+}
 
 int gizbuildit_gizmotype_id = -1;
 

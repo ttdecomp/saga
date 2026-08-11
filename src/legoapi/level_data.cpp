@@ -1,0 +1,19 @@
+#include "legoapi/level.h"
+#include "legoapi/gameobject.h"
+
+struct AREADATA_s;
+
+f32 CurrentSpeed;
+f32 AreaPickupScale = 1.0f;
+void *PODSPRINT_ADATA;
+AREADATA_s *PODRACE_ADATA;
+LEVELDATA_s *DOGFIGHTA_LDATA;
+LEVELDATA_s *BONUS_GUNSHIPA_LDATA;
+LEVELDATA_s *BONUS_GUNSHIPB_LDATA;
+LEVELDATA_s *SPEEDERCHASEA_LDATA;
+LEVELDATA_s *HOTHBATTLEA_LDATA;
+LEVELDATA_s *DEATHSTARBATTLED_LDATA;
+void *HUB_LDATA;
+void *NEWTOWN_LDATA;
+void *NewLData;
+GameObject_s *LevGameObject;

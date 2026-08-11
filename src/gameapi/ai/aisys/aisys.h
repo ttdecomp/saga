@@ -405,3 +405,4 @@ f32 AiParseExpression(char *expr);
 
 void AIScriptOpenPakFileParse(AISCRIPT **script_ref, void *pak, char *filename, char *path, VARIPTR *buf,
                               VARIPTR *buf_end);
+#pragma once

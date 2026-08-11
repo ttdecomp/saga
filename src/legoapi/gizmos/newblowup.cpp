@@ -2,6 +2,13 @@
 
 #include "decomp.h"
 
+struct GameObject_s;
+struct WORLDINFO_s;
+struct GIZMOBLOWUP_s;
+
+bool (*GizmoBlowUp_NoTargetFn)(WORLDINFO_s *world, GameObject_s *object);
+void (*GizmoBlowUp_SfxFn)(GIZMOBLOWUP_s *blow_up, NUVEC *position);
+
 int blowup_gizmotype_id = -1;
 
 static int Blowup_GetMaxGizmos(void *blowup) {

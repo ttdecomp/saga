@@ -254,6 +254,11 @@ extern "C" {
     /// @param m The transformation matrix.
     /// @sa NuVecMtxTransform
     void NuVecMtxRotate(NUVEC *out, NUVEC *v, struct numtx_s *m);
+    void NuVecInvMtxRotate(NUVEC *out, NUVEC *v, struct numtx_s *m);
+    void NuVecInvMtxTransform(NUVEC *out, NUVEC *v, struct numtx_s *m);
+    void NuVecRotateX(NUVEC *out, NUVEC *v, i32 angle);
+    void NuVecRotateY(NUVEC *out, NUVEC *v, i32 angle);
+    void NuVecRotateYValZ(NUVEC *out, f32 length, i32 angle);
 
     /// @relatesalso nuvec_s
     /// @relatesalso numtx_s

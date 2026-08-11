@@ -10,7 +10,7 @@ struct charfixup_s {
 
 typedef struct charfixup_s CHARFIXUP;
 
-struct gamecharacterdata_s { /* PlaceHolder Structure */
+struct GAMECHARACTERDATA_s { /* PlaceHolder Structure */
     undefined field0_0x0;
     undefined field1_0x1;
     undefined field2_0x2;
@@ -297,9 +297,9 @@ struct gamecharacterdata_s { /* PlaceHolder Structure */
     undefined field283_0x11e;
     undefined field284_0x11f;
 };
-typedef struct gamecharacterdata_s GAMECHARACTERDATA;
+typedef struct GAMECHARACTERDATA_s GAMECHARACTERDATA;
 
-struct characterdata_s { /* PlaceHolder Structure */
+struct CHARACTERDATA_s { /* PlaceHolder Structure */
     int field0_0x0;
     undefined4 field1_0x4;
     char *dir;
@@ -324,7 +324,7 @@ struct characterdata_s { /* PlaceHolder Structure */
     undefined4 field21_0x44;
     undefined4 field22_0x48;
 };
-typedef struct characterdata_s CHARACTERDATA;
+typedef struct CHARACTERDATA_s CHARACTERDATA;
 
 extern i32 CHARCOUNT;
 extern CHARACTERDATA *CDataList;

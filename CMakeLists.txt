@@ -81,11 +81,13 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/globals.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/ai/aisys/aiscript.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/ai/aisys/airuntime.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/ai/aisys/aistate.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/edtools/edfile.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/gui/apimenu.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/gui/messages.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameframework/saveload.cpp
 
@@ -98,16 +100,54 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/java/jni_stub.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/area.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/areastate.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/animation.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/animation_runtime.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/apiobject.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/bolts.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/character.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/character_animation.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/character_data.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/character_ids.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/character_movement.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/characterdata.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cheat.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/collection.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/collision.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/combat.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/customiser.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cutscene.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/debris.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episode.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gameaudio.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gamecamera.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gamemessage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gameobjects.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gamepads.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gamepad_feedback.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gameplay_constants.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo_collision.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo_runtime.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/icon_scenes.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/level.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/level_data.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/levelobjects.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/mech.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/mission.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/move.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/move_callbacks.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/player_actions.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/players.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/player_runtime.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/qrand.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/rumble.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/shadow.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/store.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/timer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/touch_input.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/touchhacks.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/terrain.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/ai.cpp
@@ -147,6 +187,10 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/zipups.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legogame/game.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legogame/game_state.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legogame/level_events.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legogame/localization.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legogame/progression.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legogame/startup.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legogame/target_android.cpp
 
@@ -156,6 +200,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nucamvu0.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nudlist.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nugscn.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nuspecial.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/numtl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nuocclusion.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nuportal.cpp
@@ -222,6 +267,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/nufilebase.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/nufilepak.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/nufpar.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/nufpar_mem.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/numc.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/nudatfile.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/tmclient.cpp
@@ -231,6 +277,7 @@ set(SAGA_SOURCE_FILES
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numath/nufloat.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numath/numtx.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numath/numtx_vu0.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numath/nuquat.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numath/nuplane.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numath/nurand.cpp

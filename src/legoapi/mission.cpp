@@ -9,6 +9,10 @@
 
 MISSIONSYS *MissionSys = NULL;
 
+i32 Mission_Active(MISSIONSYS *mission) {
+    return mission != NULL;
+}
+
 MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, MISSIONSAVE *save) {
     i16 psVar2;
     i16 sVar1;

@@ -1,6 +1,51 @@
 #include "legoapi/gizmos/gizmopickups.h"
 
 #include "decomp.h"
+#include "globals.h"
+#include "legoapi/gameobject.h"
+#include "legoapi/gamepads.h"
+#include "legoapi/qrand.h"
+
+void CollectPowerUp(GameObject_s *object, NUVEC *position, u16 powerup_id, i32 player_index);
+void GizmoPickup_CollectCoin(WORLDINFO_s *world, NUVEC *position, i32 pickup_index, i32 coin_type, GameObject_s *object,
+                             i32 player_index);
+void CollectMinikit(NUVEC *position, char *pickup, i32 player_index);
+void CollectHitPoint(GameObject_s *object, NUVEC *position, i32 player_index);
+void GameAudio_PlaySfx(i32 sfx_id, NUVEC *position, i32 unknown_2, i32 unknown_3);
+
+f32 (*GizmoPickups_Collide2DFn)(GameObject_s *object);
+
+void Pup_CollectPowerUp(WORLDINFO_s *, GIZMOPICKUP *pickup, i32, GameObject_s *object, i32 player_index) {
+    CollectPowerUp(object, &pickup->position, pickup->powerup_id, player_index);
+}
+
+void PowerUp_Update(GameObject_s *object) {
+    if (object->player_packet.cheat_powerup_time > 0.0f) {
+        object->player_packet.cheat_powerup_time -= FRAMETIME;
+        if (object->player_packet.cheat_powerup_time <= 0.0f) {
+            GameAudio_PlaySfx(0x52, NULL, 0, 0);
+            return;
+        }
+
+        GameAudio_PlaySfx(0x51, NULL, 0, 0);
+        ConstantRumble(object, QRAND_FLOAT() * 0.5f, 0.0f);
+    }
+}
+
+void Pup_CollectCoin(WORLDINFO_s *world, GIZMOPICKUP *pickup, i32 pickup_index, GameObject_s *object,
+                     i32 player_index) {
+    GizmoPickup_CollectCoin(world, &pickup->position, pickup_index, pickup->coin_type, object, player_index);
+}
+
+void Pup_CollectMinikit(WORLDINFO_s *, GIZMOPICKUP *pickup, i32, GameObject_s *object, i32 player_index) {
+    CollectMinikit(&pickup->position, (char *)pickup, player_index);
+    GAMEPAD_s *game_pad = (GAMEPAD_s *)object->player_packet.game_pad;
+    NewBuzz(game_pad->pad, 0.2f, 0);
+}
+
+void Pup_CollectHeart(WORLDINFO_s *, GIZMOPICKUP *pickup, i32, GameObject_s *object, i32 player_index) {
+    CollectHitPoint(object, &pickup->position, player_index);
+}
 
 int gizmopickup_typeid = -1;
 

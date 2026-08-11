@@ -4,6 +4,9 @@
 
 STOREPACK StorePack[11] = {0};
 
+void BuyAllShopExtras() {
+}
+
 i32 Store_FindPack(i32 id, char *name) {
     if (id == -1) {
         if (name == NULL) {

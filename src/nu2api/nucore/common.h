@@ -21,6 +21,7 @@ typedef int64_t i64;
 typedef size_t usize;
 #ifdef HOST_BUILD
 #include <stdlib.h>
+#include <sys/types.h>
 typedef ssize_t isize;
 #else
 typedef int32_t isize;
