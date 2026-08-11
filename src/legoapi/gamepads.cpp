@@ -70,28 +70,28 @@ f32 GamePad_Rotate(GameObject_s *object) {
 }
 
 void DieRumble(GameObject_s *object) {
-    if (object != NULL && (i8)object->state_flags < 0) {
+    if (object != NULL && (object->state_flags & 0x80) != 0) {
         NewRumble(GetGamePad(object)->pad, 1.0f, 0);
         NewBuzz(GetGamePad(object)->pad, 0.3f, 0);
     }
 }
 
 void KillRumble(GameObject_s *object) {
-    if (object != NULL && (i8)object->state_flags < 0) {
+    if (object != NULL && (object->state_flags & 0x80) != 0) {
         NewRumble(GetGamePad(object)->pad, 0.7f, 0);
         NewBuzz(GetGamePad(object)->pad, 0.1f, 0);
     }
 }
 
 void HitRumble(GameObject_s *object) {
-    if (object != NULL && (i8)object->state_flags < 0) {
+    if (object != NULL && (object->state_flags & 0x80) != 0) {
         NewRumble(GetGamePad(object)->pad, 0.5f, 0);
         NewBuzzFrames(GetGamePad(object)->pad, 2, 0);
     }
 }
 
 void TakeHitRumble(GameObject_s *object, f32 strength) {
-    if (object != NULL && (i8)object->state_flags < 0) {
+    if (object != NULL && (object->state_flags & 0x80) != 0) {
         NewRumble(GetGamePad(object)->pad, strength, 0);
         NewBuzz(GetGamePad(object)->pad, 0.1f, 0);
     }
@@ -120,13 +120,13 @@ void ConstantRumble(GameObject_s *object, f32 strength, f32 time_offset) {
 
     if (object == NULL) {
         NewRumbleAllPlayers(amplitude, 0.0f, 0, 0);
-    } else if ((i8)object->state_flags < 0) {
+    } else if ((object->state_flags & 0x80) != 0) {
         NewRumble(GetGamePad(object)->pad, amplitude, 0);
     }
 }
 
 u16 GamePad_InputAngle(GameObject_s *object, GAMEPAD_s *game_pad) {
-    if ((i8)object->state_flags < 0 && object->sock_index != -1) {
+    if ((object->state_flags & 0x80) != 0 && object->sock_index != -1) {
         SocketData *socket = *WORLD->socket_data + object->sock_index;
         if ((socket->flags & 0x40) != 0) {
             return *(u16 *)((u8 *)object + 0x686) + game_pad->direction + socket->angle_offset;

@@ -138,7 +138,7 @@ void AddFootSteps(GameObject_s *object) {
         return;
     }
 
-    bool moving_forward;
+    i32 moving_forward;
     if ((object->animation_flags & 2) == 0) {
         moving_forward = object->previous_animation_frame < object->animation_frame;
     } else {
@@ -148,13 +148,27 @@ void AddFootSteps(GameObject_s *object) {
         return;
     }
 
-    i32 first_frame = (animation->flags & 0x10000) != 0 ? 0 : 2;
-    for (i32 i = first_frame; i < 4; i++) {
+    i32 crossed_frame = false;
+    if ((animation->flags & 0x10000) != 0) {
         if (CrossedAnimationFrame(object->previous_animation_frame, object->animation_frame,
-                                  animation->footstep_frames[i])) {
-            PlayFootStepSfx(object);
-            return;
+                                  animation->footstep_frames[0])) {
+            crossed_frame = true;
         }
+        if (CrossedAnimationFrame(object->previous_animation_frame, object->animation_frame,
+                                  animation->footstep_frames[1])) {
+            crossed_frame = true;
+        }
+    }
+    if (CrossedAnimationFrame(object->previous_animation_frame, object->animation_frame,
+                              animation->footstep_frames[2])) {
+        crossed_frame = true;
+    }
+    if (CrossedAnimationFrame(object->previous_animation_frame, object->animation_frame,
+                              animation->footstep_frames[3])) {
+        crossed_frame = true;
+    }
+    if (crossed_frame) {
+        PlayFootStepSfx(object);
     }
 }
 
@@ -168,17 +182,25 @@ void SetHeadTarget(GameObject_s *object, NUVEC *target, i8 priority, f32 time, f
         return;
     }
 
-    NUVEC *position = target;
-    if (object->head_target == NULL || (target != object->head_target && object->head_target_priority <= priority)) {
+    bool set_target = false;
+    if (object->head_target == NULL) {
+        set_target = true;
+    } else if (target != object->head_target) {
+        if (object->head_target_priority <= priority) {
+            set_target = true;
+        } else {
+            target = object->head_target;
+        }
+    }
+    if (set_target) {
+        f32 random = QRAND_FLOAT();
+        f32 duration = maximum_duration * random + (1.0f - random) * minimum_duration;
         object->head_target = target;
         object->head_target_priority = priority;
-        f32 random = QRAND_FLOAT();
-        object->head_target_duration = maximum_duration * random + (1.0f - random) * minimum_duration;
-        object->head_target_time = time + object->head_target_duration;
-    } else if (target != object->head_target) {
-        position = object->head_target;
+        object->head_target_time = time + duration;
+        object->head_target_duration = duration;
     }
-    object->head_target_position = *position;
+    object->head_target_position = *target;
 }
 
 void SetObjAsHeadTarget(GameObject_s *object, GameObject_s *target, i8, f32, f32, f32) {
@@ -363,8 +385,8 @@ void CloakMovement(GameObject_s *object) {
         modifier->flags = 0;
     } else {
         modifier->flags = 0x21;
-        f32 maximum = runtime->cloak_maximum_angle;
         f32 minimum = runtime->cloak_minimum_angle;
+        f32 maximum = runtime->cloak_maximum_angle;
         if (minimum <= maximum) {
             modifier->maximum_z_angle = (i16)(maximum * 10430.378f);
             modifier->minimum_z_angle = (i16)(minimum * 10430.378f);
@@ -386,17 +408,32 @@ void HairMovement(GameObject_s *object) {
         return;
     }
 
-    AnimationModifier *modifier = GetAnimationModifier(object);
-    f32 phase = NuFsqrt(modifier->z_angle / -1.8325958f);
+    f32 phase = NuFsqrt(GetAnimationModifier(object)->z_angle / -1.8325958f);
+    f32 maximum_weight;
+    f32 minimum_weight;
     if (LEGOACT_FALL != -1 && GetCurrentAnimation(object) == LEGOACT_FALL) {
         phase += FRAMETIME + FRAMETIME;
-        modifier->z_angle = phase <= 1.0f ? phase * phase * -1.8325958f : -1.8325958f;
+        if (phase <= 1.0f) {
+            maximum_weight = phase * phase;
+            minimum_weight = 1.0f - maximum_weight;
+        } else {
+            maximum_weight = 1.0f;
+            minimum_weight = 0.0f;
+        }
     } else {
         phase -= FRAMETIME + FRAMETIME;
-        modifier->z_angle = phase < 0.0f ? 0.0f : phase * phase * -1.8325958f;
+        if (phase < 0.0f) {
+            minimum_weight = 1.0f;
+            maximum_weight = 0.0f;
+        } else {
+            maximum_weight = phase * phase;
+            minimum_weight = 1.0f - maximum_weight;
+        }
     }
 
+    AnimationModifier *modifier = GetAnimationModifier(object);
     modifier->joint_index = runtime->hair_joint_index;
+    modifier->z_angle = maximum_weight * -1.8325958f + minimum_weight * 0.0f;
     if (modifier->z_angle != 0.0f) {
         modifier->flags = 0x21;
         modifier->maximum_z_angle = 0;

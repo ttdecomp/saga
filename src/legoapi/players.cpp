@@ -449,7 +449,6 @@ void AnimatePlayer(GameObject_s *object) {
     PlayerGamePad *game_pad = (PlayerGamePad *)object->player_packet.game_pad;
     GAMECHARACTERDATA *game_character_data = object->game_character_data;
     ObjectField<i16>(object, 0x7e0) = ObjectField<i16>(object, 0x7de);
-    (void)WorldInfo_CurrentlyActive();
 
     if ((ObjectField<u8>(object, 0x1f6) & 4) == 0) {
         ((void (*)(GameObject_s *))object->character_data->field9_0x1c)(object);
@@ -461,17 +460,18 @@ void AnimatePlayer(GameObject_s *object) {
         object->previous_animation_state = ObjectField<i16>(object, 0x3e8);
     }
 
-    if (game_character_data == NULL ||
-        (object->death_state != 0 && (object->reflection_plane_y == 0.0f || object->death_state == 1))) {
+    if (game_character_data == NULL) {
+        return;
+    }
+    if (object->death_state != 0 &&
+        (ObjectField<f32>(object, 0x1018) == 0.0f || object->death_state == 1)) {
         return;
     }
 
     f32 direction = (object->unknown_efd & 0x40) == 0 ? 1.0f : -1.0f;
-    void **animation_table = *(void ***)((u8 *)game_character_data + 0xc);
     f32 speed;
-    u8 *runtime = (u8 *)object->character_data->field11_0x24;
-    if (animation_table[1] == NULL) {
-        if ((runtime[0x92] & 0x10) == 0) {
+    if ((*(void ***)((u8 *)game_character_data + 0xc))[1] == NULL) {
+        if ((((u8 *)object->character_data->field11_0x24)[0x92] & 0x10) == 0) {
             speed = game_pad->magnitude;
         } else {
             f32 forward_speed = object->velocity.x * ObjectField<NUVEC>(object, 0xf3c).x +
@@ -481,7 +481,7 @@ void AnimatePlayer(GameObject_s *object) {
     } else {
         speed = *(f32 *)((u8 *)game_pad + 0x34);
         if (speed > 0.0f && object->character_id == id_GONKDROID && Cheat_IsOn(8) == 0) {
-            speed = *(f32 *)(runtime + 0x18);
+            speed = *(f32 *)((u8 *)object->character_data->field11_0x24 + 0x18);
         }
     }
 
@@ -490,34 +490,36 @@ void AnimatePlayer(GameObject_s *object) {
         time_scale = GizBuildItMul(object);
     }
     UpdateAnimPacket(game_character_data, (u8 *)object + 8, FRAMETIME * 30.0f * time_scale, speed * direction,
-                     time_scale * FRAMETIME, *(f32 *)(runtime + 0x20));
+                     time_scale * FRAMETIME, *(f32 *)((u8 *)object->character_data->field11_0x24 + 0x20));
 
     if ((object->animation_flags & 4) != 0) {
-        i16 animation;
         f32 *frame;
         if (object->animation_suppressed == 0) {
-            animation = object->animation_index;
+            if (object->animation_index != 0x5f) {
+                goto animation_complete;
+            }
             frame = &object->animation_frame;
         } else {
-            animation = object->fallback_animation_index;
+            if (ObjectField<i16>(object, 0x3c) != 0x5f) {
+                goto animation_complete;
+            }
             frame = (f32 *)((u8 *)object + 0x1c);
         }
 
-        if (animation == 0x5f) {
-            f32 duration = AnimDuration(object->character_id, 0x5f, 0.0f, 0.0f, 0);
-            i32 frame_count = (i32)(duration / 0.3f);
-            if (NuFmod(duration, 3.0f) > 0.15f) {
-                frame_count++;
-            }
-            u32 frame_index = qrand() / ((0xffff / frame_count) + 1);
-            void **animation_info = *(void ***)((u8 *)game_character_data + 8);
-            f32 selected_frame = frame_index * (*(f32 *)((u8 *)animation_info[0x5f] + 0x18) * 0.3f) + 1.0f;
-            if (selected_frame < NuAnimEndFrame(animation_table[0x5f])) {
-                *frame = selected_frame;
-            }
-            ObjectField<u8>(object, 0xe21) = ObjectField<u8>(object, 0xe21) & 0xbf | (frame_index & 1) << 6;
+        f32 duration = AnimDuration(object->character_id, 0x5f, 0.0f, 0.0f, 0);
+        i32 frame_count = (i32)(duration / 0.3f);
+        if (NuFmod(duration, 3.0f) > 0.15f) {
+            frame_count++;
         }
+        i32 frame_index = qrand() / ((0xffff / frame_count) + 1);
+        void **animation_info = *(void ***)((u8 *)game_character_data + 8);
+        f32 selected_frame = frame_index * (*(f32 *)((u8 *)animation_info[0x5f] + 0x18) * 0.3f) + 1.0f;
+        if (selected_frame < NuAnimEndFrame((*(void ***)((u8 *)game_character_data + 0xc))[0x5f])) {
+            *frame = selected_frame;
+        }
+        ObjectField<u8>(object, 0xe21) = ObjectField<u8>(object, 0xe21) & 0xbf | (frame_index & 1) << 6;
     }
+animation_complete:
     AutoWeaponOnOff(object);
     AddFootSteps(object);
 }
@@ -790,6 +792,7 @@ void InitPlayerAI(GameObject_s *object) {
 
     ObjectField<u8>(object, 0x370) = 0;
     u8 flags_ef8 = ObjectField<u8>(object, 0xef8);
+    ObjectField<u8>(object, 0xef8) = flags_ef8 | 2;
     u32 character_flags = *(u32 *)((u8 *)object->character_data + 4);
     ObjectField<u32>(object, 0xf20) = 0;
     u8 flag_ef8_bit2 = ((character_flags >> 7) & 1) << 2;
@@ -1017,19 +1020,18 @@ void DeactivateGameObject(GameObject_s *object) {
 
     GameObject_s *takeover_object = object->player_packet.takeover_object;
     if (takeover_object != NULL) {
-        if ((object->object_flags & 0x4000) == 0) {
-            KillGameObject(takeover_object, 4, 0);
-        } else {
+        if ((object->object_flags & 0x4000) != 0) {
             ReleaseTakeOver(object, 1);
+        } else {
+            KillGameObject(takeover_object, 4, 0);
         }
     }
 
-    object->state_flags &= ~0x1000;
-    i8 spawn_index = object->ai_spawn_index;
-    if (spawn_index != -1 &&
+    ObjectField<u8>(object, 0x1f9) &= 0xef;
+    if (object->ai_spawn_index != -1 &&
         AIScriptSetBaseScriptStateByName((AISCRIPTPROCESS *)((u8 *)object + 0x2c0), (char *)"InActive") != 0) {
         object->ai_lifecycle_state = 0;
-        *((u8 *)&WORLD->ai_system->creatures[(u8)spawn_index] + 0x87) = 2;
+        *((u8 *)&WORLD->ai_system->creatures[(u8)object->ai_spawn_index] + 0x87) = 2;
     } else {
         object->ai_lifecycle_state = 4;
     }
@@ -1526,17 +1528,19 @@ i32 AvailableToPlayer(u32 character_flags, i32 character_type, i32 detail, i32 r
             continue;
         }
 
-        u32 object_flags = object->character_data->field1_0x4;
-        i8 object_type = *((i8 *)object->character_data->field11_0x24 + 0x116);
-        u8 object_detail = ObjectField<u8>(object, 0x108e);
         if (require_all == 0) {
-            if (detail == 0 || (character_flags != 0 && (object_flags & character_flags) == character_flags) ||
-                (character_type != -1 && object_type == character_type) || object_detail == detail) {
+            if ((character_flags != 0 &&
+                 (object->character_data->field1_0x4 & character_flags) == character_flags) ||
+                (character_type != -1 &&
+                 *((i8 *)object->character_data->field11_0x24 + 0x116) == character_type) ||
+                detail == 0 || ObjectField<u8>(object, 0x108e) == detail) {
                 return 1;
             }
-        } else if ((character_flags == 0 || (object_flags & character_flags) == character_flags) &&
-                   (character_type == -1 || object_type == character_type) &&
-                   (detail == 0 || object_detail == detail)) {
+        } else if ((character_flags == 0 ||
+                    (object->character_data->field1_0x4 & character_flags) == character_flags) &&
+                   (character_type == -1 ||
+                    *((i8 *)object->character_data->field11_0x24 + 0x116) == character_type) &&
+                   (detail == 0 || ObjectField<u8>(object, 0x108e) == detail)) {
             return 1;
         }
     }
@@ -1609,17 +1613,12 @@ bool FindFurthestPlayerFromVec(NUVEC *position, GameObject_s **furthest, f32 &di
         }
 
         f32 distance = NuVecDistSqr(&object->position, position, NULL);
-        if (distance <= distance_squared && *furthest != NULL) {
-            continue;
+        if ((distance > distance_squared || *furthest == NULL) &&
+            (!check_character_flags ||
+             (*(u32 *)((u8 *)object->character_data->field11_0x24 + 0x90) & character_flags) != 0)) {
+            distance_squared = distance;
+            *furthest = object;
         }
-        if (check_character_flags) {
-            u32 flags = *(u32 *)((u8 *)object->character_data->field11_0x24 + 0x90);
-            if ((flags & character_flags) == 0) {
-                continue;
-            }
-        }
-        distance_squared = distance;
-        *furthest = object;
     }
     return *furthest != NULL;
 }
@@ -1701,14 +1700,14 @@ i32 DeactivatePlayer(GameObject_s *object, f32 duration, GameObject_s *attacker)
         return 0;
     }
 
-    u32 effect_duration = PacketField<u32>(&object->player_packet, 0x670);
+    f32 effect_duration = PacketField<f32>(&object->player_packet, 0x670);
     Player_ClearContext(object, 1);
     if (object->player_packet.character_state == 0x3e) {
         return 0;
     }
     Player_ResetContexts(&object->player_packet);
     object->player_packet.character_state = 0x17;
-    PacketField<u32>(&object->player_packet, 0x670) = effect_duration;
+    PacketField<f32>(&object->player_packet, 0x670) = effect_duration;
 
     AISCRIPTPROCESS *process = &object->ai_script_process;
     if (AIScriptSetBaseScriptStateByName(process, (char *)"BeenDeactivated") != 0) {

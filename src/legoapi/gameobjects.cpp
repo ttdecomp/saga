@@ -62,7 +62,7 @@ extern i16 id_ATST;
 extern i16 id_BASKETCANNON;
 extern i16 id_BIGGUN;
 extern i16 id_TRAININGREMOTE;
-extern GameObject_s *LevGameObject;
+extern GameObject_s *Player[8];
 extern void *NEWTOWN_LDATA;
 extern i32 LEGOCONTEXT_DOOMED;
 extern i32 LEGOCONTEXT_BEENTAKENOVER;
@@ -202,18 +202,22 @@ void RemoveGameObject(GameObject_s *object, i32) {
     object->ClearAddons();
     object->ClearMechObjectInterface();
 
-    u8 mask_index = object->mask_bit_index;
-    u32 low_mask = (mask_index & 0x20) == 0 ? 1 << (mask_index & 0x1f) : 0;
-    u32 high_mask = (mask_index & 0x20) != 0 ? 1 << (mask_index & 0x1f) : 0;
-    for (i32 i = 0; i < HIGHGAMEOBJECT; i++) {
-        Obj[i].collision_mask_low &= ~object->self_mask_low;
-        Obj[i].collision_mask_high &= ~object->self_mask_high;
-        Obj[i].opponent_mask_low &= ~low_mask;
-        Obj[i].opponent_mask_high &= ~high_mask;
-        Obj[i].seen_mask_low &= ~low_mask;
-        Obj[i].seen_mask_high &= ~high_mask;
-        Obj[i].can_see_mask_low &= ~low_mask;
-        Obj[i].can_see_mask_high &= ~high_mask;
+    if (HIGHGAMEOBJECT > 0) {
+        u8 mask_index = object->mask_bit_index;
+        bool low_bit = (mask_index & 0x20) == 0;
+        u32 low_mask = ~((u32)low_bit << (mask_index & 0x1f));
+        u32 high_mask = ~((u32)!low_bit << (mask_index & 0x1f));
+        GameObject_s *other = Obj;
+        for (i32 i = 0; i < HIGHGAMEOBJECT; i++, other++) {
+            other->collision_mask_low &= ~object->self_mask_low;
+            other->collision_mask_high &= ~object->self_mask_high;
+            other->opponent_mask_low &= low_mask;
+            other->opponent_mask_high &= high_mask;
+            other->seen_mask_low &= low_mask;
+            other->seen_mask_high &= high_mask;
+            other->can_see_mask_low &= low_mask;
+            other->can_see_mask_high &= high_mask;
+        }
     }
 
     if (object->player_packet.game_pad != NULL) {
@@ -230,8 +234,10 @@ void RemoveGameObject(GameObject_s *object, i32) {
         }
     }
 
-    if (LevGameObject == object) {
-        LevGameObject = NULL;
+    for (i32 i = 0; i < 8; i++) {
+        if (Player[i] == object) {
+            Player[i] = NULL;
+        }
     }
 }
 
@@ -304,15 +310,15 @@ i32 UnderPlayerControl(GameObject_s *object) {
 }
 
 GameObject_s *FindGameObject(i32 character_id, u32 object_flags, i32 alive_only, i32 vehicle_only, i32 non_level_only) {
-    for (i32 i = 0; i < HIGHGAMEOBJECT; i++) {
-        GameObject_s *object = &Obj[i];
-
+    GameObject_s *object = Obj;
+    for (i32 i = 0; i < HIGHGAMEOBJECT; i++, object++) {
         if ((object->state_flags & 1) != 0 &&
+            (vehicle_only == 0 || (object->state_flags_low & 0x1000) != 0) &&
             (object_flags == 0 || (object->object_flags & object_flags) == object_flags) &&
-            (vehicle_only == 0 || (object->state_flags & 0x1000) != 0) &&
             (character_id == -1 || object->character_id == character_id) &&
             (alive_only == 0 ||
-             (object->death_state == 0 && (CInfo[object->player_packet.character_state].flags_1 & 0x80) == 0)) &&
+             (object->death_state == 0 &&
+              (CInfo[object->player_packet.character_state].flags & 0x8000) == 0)) &&
             (non_level_only == 0 || object->level_object_index == -1)) {
             return object;
         }
@@ -329,11 +335,11 @@ GameObject_s *FindNearestGameObject(NUVEC *position, GameObject_s *source, u32 c
     f32 best_distance_squared = 100000000.0f;
     GameObject_s *nearest = NULL;
 
-    for (i32 i = 0; i < HIGHGAMEOBJECT; i++) {
-        GameObject_s *candidate = &Obj[i];
+    GameObject_s *candidate = Obj;
+    for (i32 i = 0; i < HIGHGAMEOBJECT; i++, candidate++) {
         if ((candidate->state_flags & 0x1001) != 0x1001 || candidate->death_state != 0 ||
             (candidate->player_packet.runtime_flags_0 & 0x20) != 0 ||
-            (CInfo[candidate->player_packet.character_state].flags_1 & 0x80) != 0 ||
+            (CInfo[candidate->player_packet.character_state].flags & 0x8000) != 0 ||
             (character_id != -1 && candidate->character_id != character_id)) {
             continue;
         }
@@ -460,15 +466,14 @@ void GameObjectOrigin(GameObject_s *object) {
     u32 original_flags = object->object_flags;
     object->object_flags |= 0x100;
 
-    f32 delta_x = object->frame_offset.x * FRAMETIME;
-    f32 delta_y = object->frame_offset.y * FRAMETIME;
-    f32 delta_z = object->frame_offset.z * FRAMETIME;
+    f32 delta_x;
+    f32 delta_y;
+    f32 delta_z;
     f32 origin_x;
     f32 origin_y;
     f32 origin_z;
     f32 predicted_x;
     f32 predicted_z;
-    bool found_origin = false;
 
     if (object->terrain_contact_age != 0) {
         CharacterRuntimeData *runtime = (CharacterRuntimeData *)object->character_data->field11_0x24;
@@ -481,23 +486,33 @@ void GameObjectOrigin(GameObject_s *object) {
                 object->origin.z = 0.0f;
                 NuVecMtxRotate(&object->origin, &object->origin, &object->transform);
                 NuVecAdd(&object->origin, &object->origin, &object->position);
+
+                delta_x = object->frame_offset.x * FRAMETIME;
+                delta_y = object->frame_offset.y * FRAMETIME;
+                origin_x = object->origin.x;
+                origin_y = object->origin.y;
+                origin_z = object->origin.z;
+                delta_z = FRAMETIME * object->frame_offset.z;
             } else {
+                delta_y = object->frame_offset.y * FRAMETIME;
+                delta_x = object->frame_offset.x * FRAMETIME;
+                delta_z = FRAMETIME * object->frame_offset.z;
                 NUMTX *joint = &object->player_packet.joint_matrices[origin_joint];
-                object->origin.x = joint->m30 + delta_x;
-                object->origin.y =
-                    joint->m31 + delta_y + (object->model_bottom + object->model_top) * object->scale * 0.5f;
-                object->origin.z = joint->m32 + delta_z;
+                origin_x = joint->m30 + delta_x;
+                origin_y = joint->m31 + delta_y +
+                           (object->model_bottom + object->model_top) * object->scale * 0.5f;
+                origin_z = joint->m32 + delta_z;
             }
 
-            object->origin.x += delta_x;
-            object->origin.y += delta_y;
-            object->origin.z += delta_z;
-            origin_x = object->origin.x;
-            origin_y = object->origin.y;
-            origin_z = object->origin.z;
+            origin_x += delta_x;
+            origin_y += delta_y;
+            origin_z += delta_z;
+            object->origin.x = origin_x;
+            object->origin.y = origin_y;
+            object->origin.z = origin_z;
             predicted_x = object->position.x + delta_x;
             predicted_z = object->position.z + delta_z;
-            found_origin = true;
+            goto set_bounds;
         } else {
             i32 bounds_joint = runtime->bounds_joint_index;
             if (object->player_packet.damage_scale == 1.0f && bounds_joint != -1 &&
@@ -510,27 +525,29 @@ void GameObjectOrigin(GameObject_s *object) {
                 origin_x = object->origin.x;
                 origin_y = object->origin.y;
                 origin_z = object->origin.z;
-                predicted_x = object->position.x + delta_x;
-                predicted_z = object->position.z + delta_z;
-                found_origin = true;
+                delta_y = FRAMETIME * object->frame_offset.y;
+                predicted_x = object->frame_offset.x * FRAMETIME + object->position.x;
+                predicted_z = object->frame_offset.z * FRAMETIME + object->position.z;
+                goto set_bounds;
             }
         }
     }
 
-    if (!found_origin) {
-        object->object_flags = original_flags;
-        origin_x = object->position.x + delta_x;
-        origin_y = object->position.y + delta_y + (object->model_bottom + object->model_top) * object->scale * 0.5f;
-        origin_z = object->position.z + delta_z;
-        object->origin.x = origin_x;
-        object->origin.y = origin_y;
-        object->origin.z = origin_z;
-        predicted_x = origin_x;
-        predicted_z = origin_z;
-    }
+    delta_y = object->frame_offset.y * FRAMETIME;
+    object->object_flags = (original_flags | 0x100) ^ 0x100;
+    origin_x = object->frame_offset.x * FRAMETIME + object->position.x;
+    origin_z = FRAMETIME * object->frame_offset.z + object->position.z;
+    origin_y = object->position.y + delta_y +
+               (object->model_bottom + object->model_top) * object->scale * 0.5f;
+    object->origin.x = origin_x;
+    object->origin.y = origin_y;
+    object->origin.z = origin_z;
+    predicted_x = origin_x;
+    predicted_z = origin_z;
 
+set_bounds:
     object->predicted_bottom_center.x = predicted_x;
-    object->ground_position.x = predicted_x;
+    object->ground_position.x = object->predicted_bottom_center.x;
     object->predicted_bottom_center.z = predicted_z;
     object->bounds_top_center.x = predicted_x;
     object->bounds_max.x = origin_x + object->bounds_radius;
@@ -549,7 +566,7 @@ void GameObjectOrigin(GameObject_s *object) {
     object->bounds_bottom_center.y = bottom;
     object->predicted_bottom_center.y = bottom + delta_y;
     object->ground_position.y = object->predicted_bottom_center.y;
-    object->ground_position.z = predicted_z;
+    object->ground_position.z = object->predicted_bottom_center.z;
 
     u32 character_flags = CInfo[object->player_packet.character_state].flags;
     if ((character_flags & 0x80000) != 0 && (object->player_packet.combat_flags_0 & 8) != 0) {
@@ -617,17 +634,16 @@ void UpdateLastSafePosition(GameObject_s *object) {
     u8 *raw = (u8 *)object;
     raw[0xf02] &= ~0x40;
 
-    i32 context = object->player_packet.character_state;
-    bool eligible = object->death_state == 0 && (LEGOCONTEXT_DOOMED == -1 || context != LEGOCONTEXT_DOOMED) &&
+    bool eligible = object->death_state == 0 &&
+                    (LEGOCONTEXT_DOOMED == -1 || object->player_packet.character_state != LEGOCONTEXT_DOOMED) &&
                     (object->state_flags & 4) == 0;
-    bool accepted_safe_position = false;
 
     if (eligible) {
         object->position_history_0 = object->position;
 
         GameObject_s *surface_object = object;
         if (object->player_packet.takeover_object != NULL && LEGOCONTEXT_BEENTAKENOVER != -1 &&
-            context == LEGOCONTEXT_BEENTAKENOVER) {
+            object->player_packet.character_state == LEGOCONTEXT_BEENTAKENOVER) {
             surface_object = object->player_packet.takeover_object;
         }
 
@@ -648,21 +664,26 @@ void UpdateLastSafePosition(GameObject_s *object) {
             bad_surface = true;
         }
 
-        bool may_update = (raw[0xf00] & 4) == 0 && (((u8 *)&CInfo[context])[0xc] & 8) == 0;
-        if (may_update && object->ground_contact_flags == 0 &&
-            (context == -1 ||
-             (context != LEGOCONTEXT_BEENTAKENOVER && context != LEGOCONTEXT_EATEN && context != LEGOCONTEXT_GETIN)) &&
+        if ((raw[0xf00] & 4) != 0 ||
+            (((u8 *)&CInfo[(i32)object->player_packet.character_state])[0xc] & 8) != 0) {
+            goto unsafe_position;
+        }
+
+        if (object->ground_contact_flags == 0 &&
+            (object->player_packet.character_state == -1 ||
+             (object->player_packet.character_state != LEGOCONTEXT_BEENTAKENOVER &&
+              object->player_packet.character_state != LEGOCONTEXT_EATEN &&
+              object->player_packet.character_state != LEGOCONTEXT_GETIN)) &&
             VehicleArea == 0 && object->character_id != id_TRAININGREMOTE) {
             u32 character_flags = (u32)object->character_data->field1_0x4;
-            bool vehicle_exception =
-                (character_flags & 0x2000) != 0 && *(f32 *)((u8 *)object->character_data->field11_0x24 + 0x28) > 0.0f;
-            bool player_exception = (character_flags & 0x8000) != 0 && raw[0xe31] == 1;
-            if (!vehicle_exception && !player_exception) {
-                may_update = false;
+            if (((character_flags & 0x2000) == 0 ||
+                 *(f32 *)((u8 *)object->character_data->field11_0x24 + 0x28) <= 0.0f) &&
+                ((character_flags & 0x8000) == 0 || raw[0xe31] != 1)) {
+                goto unsafe_position;
             }
         }
 
-        if (may_update && *(f32 *)(raw + 0xf34) > 0.9f && object->floor_height != 2000000.0f) {
+        if (*(f32 *)(raw + 0xf34) > 0.9f && object->floor_height != 2000000.0f) {
             bool safe_platforms = (object->ground_platform_id == -1 || object->ground_platform_id == LevSafePlatID[0] ||
                                    object->ground_platform_id == LevSafePlatID[1]) &&
                                   (object->shadow_platform_id == -1 || object->shadow_platform_id == LevSafePlatID[0] ||
@@ -677,10 +698,12 @@ void UpdateLastSafePosition(GameObject_s *object) {
                 object->last_safe_position = object->position;
                 *(f32 *)(raw + 0xd9c) = 0.0f;
 
-                bool can_clear_takeover = (LEGOCONTEXT_GETIN == -1 || context != LEGOCONTEXT_GETIN) &&
-                                          (LEGOCONTEXT_BEENTAKENOVER == -1 || context != LEGOCONTEXT_BEENTAKENOVER);
-                if ((((u8 *)&object->path_info)[0xe] & 1) != 0 && ((u32 *)object->path_info.connection)[0] == 0 &&
-                    ((u32 *)object->path_info.connection)[1] == 0) {
+                bool can_clear_takeover =
+                    (LEGOCONTEXT_GETIN == -1 || object->player_packet.character_state != LEGOCONTEXT_GETIN) &&
+                    (LEGOCONTEXT_BEENTAKENOVER == -1 ||
+                     object->player_packet.character_state != LEGOCONTEXT_BEENTAKENOVER);
+                if ((((u8 *)&object->path_info)[0xe] & 1) != 0 && ((u32 *)object->path_info.connection)[1] == 0 &&
+                    ((u32 *)object->path_info.connection)[0] == 0) {
                     if (*(GameObject_s **)(raw + 0xcc4) != NULL && can_clear_takeover) {
                         *(GameObject_s **)(raw + 0xcc4) = NULL;
                     }
@@ -695,32 +718,34 @@ void UpdateLastSafePosition(GameObject_s *object) {
                     }
                     *(NUVEC *)(raw + 0xc64) = object->last_safe_position;
                 }
-                accepted_safe_position = true;
+                goto final_position_check;
             }
         }
 
-        if (!accepted_safe_position) {
-            if ((i8)object->state_flags < 0 && object->edge_surface_type != -1 &&
-                (TerLayer[object->edge_surface_type].flags & 1) != 0 && !NoLayerKill(object)) {
-                if (*(f32 *)(raw + 0xd9c) <= 0.0f) {
-                    *(f32 *)(raw + 0xdb4) = object->position.y;
-                }
-                *(f32 *)(raw + 0xd9c) += FRAMETIME;
-            } else {
-                *(f32 *)(raw + 0xd9c) = 0.0f;
+    unsafe_position:
+        if ((i8)object->state_flags < 0 && object->edge_surface_type != -1 &&
+            (TerLayer[object->edge_surface_type].flags & 1) != 0 && !NoLayerKill(object)) {
+            if (*(f32 *)(raw + 0xd9c) <= 0.0f) {
+                *(f32 *)(raw + 0xdb4) = object->position.y;
             }
+            *(f32 *)(raw + 0xd9c) += FRAMETIME;
+        } else {
+            *(f32 *)(raw + 0xd9c) = 0.0f;
+        }
 
-            if ((((u8 *)WORLD->current_level)[0x66] & 4) != 0) {
-                object->last_safe_position = object->position;
-            }
+        if ((((u8 *)WORLD->current_level)[0x66] & 4) != 0) {
+            object->last_safe_position = object->position;
         }
     }
 
-    context = object->player_packet.character_state;
+final_position_check:
     if ((raw[0xf03] & 1) == 0 && (i8)object->state_flags >= 0 &&
-        (LEGOCONTEXT_EATEN == -1 || context != LEGOCONTEXT_EATEN) && (object->state_flags & 0x2000) != 0) {
-        bool can_clear_takeover = (LEGOCONTEXT_GETIN == -1 || context != LEGOCONTEXT_GETIN) &&
-                                  (LEGOCONTEXT_BEENTAKENOVER == -1 || context != LEGOCONTEXT_BEENTAKENOVER);
+        (LEGOCONTEXT_EATEN == -1 || object->player_packet.character_state != LEGOCONTEXT_EATEN) &&
+        (object->state_flags & 0x2000) != 0) {
+        bool can_clear_takeover =
+            (LEGOCONTEXT_GETIN == -1 || object->player_packet.character_state != LEGOCONTEXT_GETIN) &&
+            (LEGOCONTEXT_BEENTAKENOVER == -1 ||
+             object->player_packet.character_state != LEGOCONTEXT_BEENTAKENOVER);
         if ((((u8 *)&object->path_info)[0xe] & 1) != 0 && *(GameObject_s **)(raw + 0xcc4) != NULL &&
             can_clear_takeover) {
             *(GameObject_s **)(raw + 0xcc4) = NULL;

@@ -207,37 +207,34 @@ namespace TouchHacks {
 
     bool CanThrowBountyBomb(GameObject_s &object) {
         u8 *game_state = *(u8 **)((u8 *)WORLD + 0x2ac0);
-        u8 special_state = *((u8 *)&object + 0x108e);
-        u8 takeover_state = *((u8 *)&object + 0xe31);
         TouchCharacterData *character = GetCharacterData(object);
-        if (game_state[0xe9e] == 0 || (i8)object.state_flags >= 0 ||
-            ((character->flags & 0x1000000) == 0 && special_state != 6 && SuperWeirdo(&object) == 0) ||
-            (object.ground_contact_flags == 0 && takeover_state != 1)) {
-            return false;
-        }
-
-        i8 character_state = object.player_packet.character_state;
-        if (character_state == 6 || character_state == -1 || character_state == 7) {
+        if (game_state[0xe9e] != 0 && (i8)object.state_flags < 0 &&
+            ((character->flags & 0x1000000) != 0 || *((u8 *)&object + 0x108e) == 6 || SuperWeirdo(&object) != 0) &&
+            (object.ground_contact_flags != 0 || *((u8 *)&object + 0xe31) == 1)) {
+            i8 character_state = object.player_packet.character_state;
+            if (character_state != 6 && character_state != -1 && character_state != 7) {
+                return (CInfo[character_state * 0x10 + 8] >> 2) & 1;
+            }
             return true;
         }
-        return (CInfo[character_state * 0x10 + 8] & 4) != 0;
+        return false;
     }
 
     bool CheckJumpForLandingSpot(GameObject_s &object, f32 distance) {
-        NUVEC position = object.position;
+        VuVec position(object.position.x, object.position.y, object.position.z, 1.0f);
         f32 minimum_y = object.position.y - distance;
         TouchMovementRuntime *runtime = (TouchMovementRuntime *)GetCharacterData(object)->runtime;
         f32 velocity_y = runtime->jump_velocity + object.velocity.y;
 
         do {
-            NUVEC next_position = {position.x + object.velocity.x * 0.2f, position.y + velocity_y * 0.2f,
-                                   position.z + object.velocity.z * 0.2f};
+            VuVec next_position(position.x + object.velocity.x * 0.2f, position.y + velocity_y * 0.2f,
+                                position.z + object.velocity.z * 0.2f, 0.0f);
             NUVEC direction = {next_position.x - position.x, next_position.y - position.y,
                                next_position.z - position.z};
-            if (GameRayCast(&position, &direction, 0.0f, 0) != 0) {
-                NUVEC normal = {0.0f, 0.0f, 0.0f};
-                NewRayCastGetImpactNormal(&normal);
-                if (normal.y > 0.8f && GameShadow(&object, &position, 5.0f, -1) != 2000000.0f) {
+            if (GameRayCast((NUVEC *)&position, &direction, 0.0f, 0) != 0) {
+                VuVec normal = VuVec_Zero;
+                NewRayCastGetImpactNormal((NUVEC *)&normal);
+                if (normal.y > 0.8f && GameShadow(&object, (NUVEC *)&position, 5.0f, -1) != 2000000.0f) {
                     i32 terrain = EShadowInfo();
                     if (terrain < 17 && (TerLayer[terrain].flags & 1) == 0) {
                         return true;
@@ -257,9 +254,9 @@ namespace TouchHacks {
             return false;
         }
 
-        NUVEC position = {object.position.x + object.velocity.x * distance, object.position.y + 0.3f,
-                          object.position.z + object.velocity.z * distance};
-        if (GameShadow(&object, &position, 5.0f, -1) == 2000000.0f) {
+        VuVec position(object.position.x + object.velocity.x * distance, object.position.y + 0.3f,
+                       object.position.z + object.velocity.z * distance, 1.0f);
+        if (GameShadow(&object, (NUVEC *)&position, 5.0f, -1) == 2000000.0f) {
             return false;
         }
 
@@ -268,13 +265,13 @@ namespace TouchHacks {
             return false;
         }
 
-        NUVEC direction = {object.velocity.x, 0.0f, object.velocity.z};
-        NuVecNorm(&direction, &direction);
+        VuVec direction(object.velocity.x, 0.0f, object.velocity.z, 1.0f);
+        NuVecNorm((NUVEC *)&direction, (NUVEC *)&direction);
         f32 radius = object.collision_radius * 0.8f;
         position.x += direction.x * radius;
         position.z += direction.z * radius;
 
-        if (GameShadow(&object, &position, 5.0f, -1) == 0.0f) {
+        if (GameShadow(&object, (NUVEC *)&position, 5.0f, -1) == 0.0f) {
             return true;
         }
         terrain = EShadowInfo();
@@ -282,19 +279,20 @@ namespace TouchHacks {
     }
 
     bool CheckForAboutToRunOffAnEdge(GameObject_s &object, f32 distance) {
-        NUVEC position = {object.position.x + object.velocity.x * distance, object.position.y + 0.3f,
-                          object.position.z + object.velocity.z * distance};
-        f32 minimum_height = object.position.y - 0.3f;
-        if (GameShadow(&object, &position, 5.0f, -1) >= minimum_height) {
-            return false;
+        VuVec position(object.position.x, object.position.y + 0.3f, object.position.z, 1.0f);
+        position.x += object.velocity.x * distance;
+        position.z += object.velocity.z * distance;
+        bool result = false;
+        if (GameShadow(&object, (NUVEC *)&position, 5.0f, -1) < object.position.y - 0.3f) {
+            VuVec direction(object.velocity.x, 0.0f, object.velocity.z, 1.0f);
+            NuVecNorm((NUVEC *)&direction, (NUVEC *)&direction);
+            f32 radius = object.collision_radius * 0.8f;
+            position.x += direction.x * radius;
+            position.z += direction.z * radius;
+            f32 shadow = GameShadow(&object, (NUVEC *)&position, 5.0f, -1);
+            result = shadow < object.position.y - 0.3f;
         }
-
-        NUVEC direction = {object.velocity.x, 0.0f, object.velocity.z};
-        NuVecNorm(&direction, &direction);
-        f32 radius = object.collision_radius * 0.8f;
-        position.x += direction.x * radius;
-        position.z += direction.z * radius;
-        return GameShadow(&object, &position, 5.0f, -1) < minimum_height;
+        return result;
     }
 
     bool SolveRoot(f32 a, f32 b, f32 c, f32 &root1, f32 &root2) {
@@ -313,9 +311,11 @@ namespace TouchHacks {
     VuVec CalculateXZVelForArcToHitPoint(const VuVec &origin, const VuVec &target, f32 vertical_velocity, f32 gravity) {
         f32 root1;
         f32 root2;
-        f32 vertical_distance = -fabsf(origin.y - target.y);
+        f32 vertical_distance = origin.y <= target.y ? origin.y - target.y : target.y - origin.y;
         if (SolveRoot(gravity * 0.5f, vertical_velocity, -vertical_distance, root1, root2)) {
-            return VuVec((target.x - origin.x) / root1, 0.0f, (target.z - origin.z) / root1, 0.0f);
+            f32 x_velocity = (target.x - origin.x) / root1;
+            f32 z_velocity = (target.z - origin.z) / root1;
+            return VuVec(x_velocity, VuVec_Zero.y, z_velocity, VuVec_Zero.w);
         }
         return VuVec_Zero;
     }
@@ -466,38 +466,39 @@ namespace TouchHacks {
     }
 
     bool CanUseGizForce(GameObject_s &object, GIZFORCE_s &force) {
-        if (force.state_38 != 0 || force.state_3c != 0 || (force.flags_aa & 1) != 0) {
-            return false;
-        }
-
-        TouchCharacterData *character = GetCharacterData(object);
-        bool can_override = SuperWeirdo(&object) != 0 || ((i8)object.state_flags < 0 && Cheat_IsOn(0x19) != 0);
-        if ((force.flags_78 & 0x10) != 0 && (character->flags & 4) == 0 && !can_override) {
-            return false;
-        }
-
-        if (force.link == NULL) {
-            if (GizForce_Complete(&force) == 0) {
-                return GizForce_StoodOnForce(&force, &object) == 0;
+        if (force.state_38 == 0 && force.state_3c == 0 && (force.flags_aa & 1) == 0) {
+            TouchCharacterData *character = GetCharacterData(object);
+            bool can_override;
+            if (SuperWeirdo(&object) == 0 && ((i8)object.state_flags >= 0 || Cheat_IsOn(0x19) == 0)) {
+                can_override = false;
+            } else {
+                can_override = true;
             }
-            return false;
-        }
+            if ((force.flags_78 & 0x10) != 0 && (character->flags & 4) == 0 && !can_override) {
+                return false;
+            }
 
-        u8 count = force.link[0x25];
-        GIZFORCE_s *linked_force = count == 0 ? NULL : *(GIZFORCE_s **)(force.link - 4 + count * 4);
-        if (count == 0 || linked_force == &force) {
-            return GizForce_StoodOnForce(&force, &object) == 0;
-        }
-        if ((force.link[0x24] & 1) != 0 || *(i32 *)(force.type + 0xc) == 2) {
-            return false;
-        }
-        if (linked_force == NULL) {
-            return GizForce_StoodOnForce(&force, &object) == 0;
-        }
-        if ((linked_force->type[0xa] & 7) != 0) {
-            return false;
-        }
-        if (linked_force->state_38 == 0) {
+            if (force.link == NULL) {
+                if (GizForce_Complete(&force) != 0) {
+                    return false;
+                }
+            } else {
+                u8 count = force.link[0x25];
+                GIZFORCE_s *linked_force = count == 0 ? NULL : *(GIZFORCE_s **)(force.link - 4 + count * 4);
+                if (count != 0 && linked_force != &force) {
+                    if ((force.link[0x24] & 1) != 0 || *(i32 *)(force.type + 0xc) == 2) {
+                        return false;
+                    }
+                    if (linked_force != NULL) {
+                        if ((linked_force->type[0xa] & 7) != 0) {
+                            return false;
+                        }
+                        if (linked_force->state_38 != 0) {
+                            return false;
+                        }
+                    }
+                }
+            }
             return GizForce_StoodOnForce(&force, &object) == 0;
         }
         return false;

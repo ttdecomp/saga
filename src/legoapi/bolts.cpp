@@ -42,8 +42,8 @@ extern "C" i32 TerrainPlatId();
 extern "C" i8 NewRayCastGetImpactTerrainType();
 i32 LineIntersectSphere(NUVEC *line_start, NUVEC *line_end, NUVEC *center, f32 radius_squared, NUVEC *hit);
 bool LineIntersectCircle(NUVEC *line_start, NUVEC *line_end, NUVEC *center, f32 radius_squared);
-bool SphereSphereOverlapScaleY(NUVEC *first, f32 first_radius, f32 first_y_radius, NUVEC *second, f32 second_radius,
-                               f32 second_y_radius);
+i32 SphereSphereOverlapScaleY(NUVEC *first, f32 first_radius, f32 first_y_radius, NUVEC *second, f32 second_radius,
+                              f32 second_y_radius);
 void FindAnglesXY(NUVEC *direction, u16 *x_angle, u16 *y_angle);
 extern "C" void NuMtxSetRotationXYVU0(NUMTX *matrix, i32 *angles);
 void CalculateInterceptVector(NUVEC *origin, NUVEC *target, NUVEC *velocity, f32 speed, NUVEC *direction,
@@ -528,6 +528,7 @@ BOLT *Bolt_Add(GameObject_s *source, NUVEC *position, NUMTX *matrix, i32 type_id
         return NULL;
     }
 
+    i16 source_index = source == NULL ? -1 : source - Obj;
     u8 *data = NULL;
     for (i32 i = 0; i < 512; i++) {
         u8 *candidate = NetMessage::sm_poolMessageData + i * 0x4b4;
@@ -540,30 +541,42 @@ BOLT *Bolt_Add(GameObject_s *source, NUVEC *position, NUMTX *matrix, i32 type_id
     }
 
     NetMessage message = {1, data, 0x20, 0x20};
-    i16 source_index = source == NULL ? -1 : source - Obj;
     if (data != NULL) {
-        memmove(data + message.write_position, &source_index, sizeof(source_index));
+        *(i16 *)(data + message.write_position) = source_index;
         EdFileSwapEndianess16(data + message.write_position);
-        message.write_position += sizeof(source_index);
+        message.write_position += 2;
 
         memmove(data + message.write_position, position, sizeof(*position));
-        for (i32 offset = 0; offset < (i32)sizeof(*position); offset += 4) {
-            EdFileSwapEndianess32(data + message.write_position + offset);
-        }
+        EdFileSwapEndianess32(data + message.write_position);
+        EdFileSwapEndianess32(data + message.write_position + 4);
+        EdFileSwapEndianess32(data + message.write_position + 8);
         message.write_position += sizeof(*position);
 
         memmove(data + message.write_position, matrix, sizeof(*matrix));
-        for (i32 offset = 0; offset < (i32)sizeof(*matrix); offset += 4) {
-            EdFileSwapEndianess32(data + message.write_position + offset);
-        }
+        EdFileSwapEndianess32(data + message.write_position);
+        EdFileSwapEndianess32(data + message.write_position + 4);
+        EdFileSwapEndianess32(data + message.write_position + 8);
+        EdFileSwapEndianess32(data + message.write_position + 12);
+        EdFileSwapEndianess32(data + message.write_position + 16);
+        EdFileSwapEndianess32(data + message.write_position + 20);
+        EdFileSwapEndianess32(data + message.write_position + 24);
+        EdFileSwapEndianess32(data + message.write_position + 28);
+        EdFileSwapEndianess32(data + message.write_position + 32);
+        EdFileSwapEndianess32(data + message.write_position + 36);
+        EdFileSwapEndianess32(data + message.write_position + 40);
+        EdFileSwapEndianess32(data + message.write_position + 44);
+        EdFileSwapEndianess32(data + message.write_position + 48);
+        EdFileSwapEndianess32(data + message.write_position + 52);
+        EdFileSwapEndianess32(data + message.write_position + 56);
+        EdFileSwapEndianess32(data + message.write_position + 60);
         message.write_position += sizeof(*matrix);
 
-        memmove(data + message.write_position, &type_id, sizeof(type_id));
+        *(i32 *)(data + message.write_position) = type_id;
         EdFileSwapEndianess32(data + message.write_position);
-        message.write_position += sizeof(type_id);
-        memmove(data + message.write_position, &hit_flags, sizeof(hit_flags));
+        message.write_position += 4;
+        *(i32 *)(data + message.write_position) = hit_flags;
         EdFileSwapEndianess32(data + message.write_position);
-        message.write_position += sizeof(hit_flags);
+        message.write_position += 4;
     }
 
     Bolt_Init(bolt, message);
@@ -844,7 +857,7 @@ void Bolt_Shoot(GameObject_s *object, i32 type_id, i32 joint_mode) {
     f32 speed = type->speed;
     f32 target_distance = type->duration;
 
-    if ((object->state_flags & 0x80) != 0) {
+    if ((i8)object->state_flags < 0) {
         if (object->player_index == 0) {
             flags |= 0x21;
         } else if (object->player_index == 1) {
@@ -874,10 +887,10 @@ void Bolt_Shoot(GameObject_s *object, i32 type_id, i32 joint_mode) {
         }
     }
 
-    u8 runtime_flags_1 = ((u8 *)&object->player_packet.runtime_flags_0)[1];
-    if ((runtime_flags_1 & 8) == 0) {
+    if ((((u8 *)&object->player_packet.runtime_flags_0)[1] & 8) == 0) {
         target_distance = 0.0f;
-    } else if ((((u8 *)object)[0xef9] & 0x80) != 0 || object->unknown_ecc != NULL || object->player_index == -1 ||
+    } else if ((((u8 *)object)[0xef9] & 0x80) != 0 || *(GameObject_s **)((u8 *)object + 0xeac) != NULL ||
+               object->player_index == -1 ||
                (*(NUVEC *)((u8 *)object + 0xc80)).x == 0.0f && (*(NUVEC *)((u8 *)object + 0xc80)).y == 0.0f &&
                    (*(NUVEC *)((u8 *)object + 0xc80)).z == 0.0f) {
         target_distance = NuVecDist(&shoot_origin, &target_position, NULL);
@@ -891,32 +904,36 @@ void Bolt_Shoot(GameObject_s *object, i32 type_id, i32 joint_mode) {
     }
 
     NUVEC *target = NULL;
+    NUVEC *intercept_target = NULL;
     NUVEC *target_velocity = NULL;
     NUVEC adjusted_target;
     NUVEC ai_velocity;
     if ((((u8 *)object)[0xef9] & 0x80) != 0) {
         target = (NUVEC *)((u8 *)object + 0xe58);
+        intercept_target = target;
         if ((object->portal_flags & 3) == 2) {
             NuVecSub(&ai_velocity, target, (NUVEC *)((u8 *)object + 0xe64));
             NuVecScale(&ai_velocity, &ai_velocity, 1.0f / FRAMETIME);
             target_velocity = &ai_velocity;
         }
-    } else if (object->unknown_ecc != NULL) {
-        GameObject_s *previous_target = (GameObject_s *)object->unknown_ecc;
+    } else if (*(GameObject_s **)((u8 *)object + 0xeac) != NULL) {
+        GameObject_s *previous_target = *(GameObject_s **)((u8 *)object + 0xeac);
         target = &previous_target->origin;
+        intercept_target = target;
         target_velocity = &previous_target->velocity;
         if ((((u8 *)object->character_data)[5] & 0x20) == 0 && (object->object_flags & 1) != 0) {
             adjusted_target = previous_target->origin;
             adjusted_target.y += Bolt_ObjTargetPosYAdjust(previous_target);
             target = &adjusted_target;
         }
-    } else if ((runtime_flags_1 & 8) != 0) {
+    } else if ((((u8 *)&object->player_packet.runtime_flags_0)[1] & 8) != 0) {
         target = &target_position;
+        intercept_target = target;
     }
 
     i16 shoot_sfx[8];
     NUVEC shoot_sfx_positions[8];
-    u8 new_bolts[5];
+    u32 new_bolts[5];
     i32 shoot_sfx_count = 0;
     i32 bolt_count = 0;
     bool found_joint = false;
@@ -957,7 +974,7 @@ void Bolt_Shoot(GameObject_s *object, i32 type_id, i32 joint_mode) {
                 if (target_velocity == NULL || (object->portal_flags & 2) == 0) {
                     NuVecSub(&aim_direction, target, origin);
                 } else {
-                    CalculateInterceptVector(origin, target, target_velocity, speed, &aim_direction, NULL);
+                    CalculateInterceptVector(origin, intercept_target, target_velocity, speed, &aim_direction, NULL);
                 }
                 FindAnglesXY(&aim_direction, NULL, NULL);
                 i32 angles[2] = {i_temp_xrot, (u16)temp_yrot};
@@ -967,12 +984,30 @@ void Bolt_Shoot(GameObject_s *object, i32 type_id, i32 joint_mode) {
                 i32 angles[2] = {i_temp_xrot, (u16)temp_yrot};
                 NuMtxSetRotationXYVU0(&matrix, angles);
             } else {
-                NuMtxSetRotationY(&matrix, shoot_heading);
+                f32 sin_heading = NU_SIN_LUT(shoot_heading);
+                f32 cos_heading = NU_COS_LUT(shoot_heading);
+                matrix.m00 = cos_heading;
+                matrix.m01 = 0.0f;
+                matrix.m02 = -sin_heading;
+                matrix.m03 = 0.0f;
+                matrix.m10 = 0.0f;
+                matrix.m11 = 1.0f;
+                matrix.m12 = 0.0f;
+                matrix.m13 = 0.0f;
+                matrix.m20 = sin_heading;
+                matrix.m21 = 0.0f;
+                matrix.m22 = cos_heading;
+                matrix.m23 = 0.0f;
+                matrix.m30 = 0.0f;
+                matrix.m31 = 0.0f;
+                matrix.m32 = 0.0f;
+                matrix.m33 = 1.0f;
             }
         } else {
             u16 pitch;
-            if ((flags & 0x80000000) != 0 && (object->state_flags & 0x80) == 0 && object->unknown_ecc != NULL) {
-                GameObject_s *previous_target = (GameObject_s *)object->unknown_ecc;
+            if ((flags & 0x80000000) != 0 && (i8)object->state_flags >= 0 &&
+                *(GameObject_s **)((u8 *)object + 0xeac) != NULL) {
+                GameObject_s *previous_target = *(GameObject_s **)((u8 *)object + 0xeac);
                 f32 distance = NuVecXZDist(&previous_target->origin, &object->origin, NULL);
                 if (distance > 2.0f) {
                     distance = 2.0f;
@@ -994,7 +1029,7 @@ void Bolt_Shoot(GameObject_s *object, i32 type_id, i32 joint_mode) {
 
         addbolt_nosfx = 1;
         BOLT *bolt = Bolt_Add(object, origin, &matrix, type_id, 0);
-        if (bolt != NULL && bolt_count < 5) {
+        if (bolt != NULL) {
             new_bolts[bolt_count++] = bolt->index;
         }
         if (addbolt_newsfx != -1 && shoot_sfx_count < 8) {
@@ -1016,7 +1051,7 @@ void Bolt_Shoot(GameObject_s *object, i32 type_id, i32 joint_mode) {
         GameAudio_PlaySfxById(shoot_sfx[sound], &shoot_sfx_positions[sound], 0, 0);
     }
 
-    if ((runtime_flags_1 & 8) != 0 && bolt_count > 1) {
+    if ((((u8 *)&object->player_packet.runtime_flags_0)[1] & 8) != 0 && bolt_count > 1) {
         for (i32 i = 0; i < bolt_count; i++) {
             BOLT *bolt = &Bolt[new_bolts[i]];
             f32 maximum_distance = bolt->speed * bolt->duration;
@@ -1477,14 +1512,16 @@ i32 Bolt_HitPlat(BOLT *bolt, u8 *hit_bolts, WORLDINFO *) {
 }
 
 void Bolt_HitGameObjectRC(NetMessage &message) {
-    i16 bolt_index;
-    i16 object_index;
+    u16 bolt_index;
+    u16 object_index;
     NUVEC hit_positions[3];
     i32 hit_index;
     i32 client;
     BoltMessage_Read(message, &bolt_index, sizeof(bolt_index));
     BoltMessage_Read(message, &object_index, sizeof(object_index));
-    BoltMessage_Read(message, hit_positions, sizeof(hit_positions));
+    BoltMessage_Read(message, &hit_positions[0], sizeof(NUVEC));
+    BoltMessage_Read(message, &hit_positions[1], sizeof(NUVEC));
+    BoltMessage_Read(message, &hit_positions[2], sizeof(NUVEC));
     BoltMessage_Read(message, &hit_index, sizeof(hit_index));
     BoltMessage_Read(message, &client, sizeof(client));
 
@@ -1506,12 +1543,12 @@ void Bolt_HitGameObjectRC(NetMessage &message) {
     NewRumble(*(NUPAD **)object->player_packet.game_pad, 0.5f, 0);
     u32 character_flags = CInfo[object->player_packet.character_state].flags;
     u8 combat_flags_1 = ((u8 *)&object->player_packet)[0xfa];
-    bool can_deflect = (character_flags & 0x04000000) != 0 ||
-                       ((character_flags & 0x08000000) != 0 && (combat_flags_1 & 2) != 0) || deflected ||
-                       (character_flags & 0x00800000) != 0 ||
-                       ((character_flags & 0x01000000) != 0 && (combat_flags_1 & 1) != 0) || CannotKill(object) != 0;
 
-    if (((bolt->flags & 0x100) == 0 || deflected) && can_deflect) {
+    if (((bolt->flags & 0x100) == 0 || deflected) &&
+        ((character_flags & 0x04000000) != 0 ||
+         ((character_flags & 0x08000000) != 0 && (combat_flags_1 & 2) != 0) || deflected ||
+         (character_flags & 0x00800000) != 0 ||
+         ((character_flags & 0x01000000) != 0 && (combat_flags_1 & 1) != 0) || CannotKill(object) != 0)) {
         BoltSys->debris_fn(bolt, hit_positions, hit_index, &object->velocity, 1);
         if (LEGOCONTEXT_HOLD != -1 && object->player_packet.character_state == LEGOCONTEXT_HOLD) {
             NewBlockAction(object);
@@ -1523,7 +1560,7 @@ void Bolt_HitGameObjectRC(NetMessage &message) {
               bolt->elapsed < 0.1f)) {
             NUVEC direction;
             if (bolt->source == NULL || (bolt->source->state_flags & 1) == 0) {
-                NuVecSub(&direction, &bolt->position, &hit_positions[hit_index]);
+                NuVecSub(&direction, &bolt->previous_position, &hit_positions[hit_index]);
             } else {
                 CalculateInterceptVector(&hit_positions[hit_index], &bolt->source->origin, &bolt->source->velocity,
                                          bolt->speed, &direction, NULL);
@@ -1537,7 +1574,7 @@ void Bolt_HitGameObjectRC(NetMessage &message) {
                   !cannot_kill)) ||
                 ((*(u32 *)((u8 *)object->character_data + 4) & 8) == 0) ||
                 (bolt->source != NULL && (bolt->source->state_flags & 1) != 0 &&
-                 ((bolt->source->state_flags & 0x1001) != 0x1001 || bolt->source->death_state != 0));
+                 (((u16)bolt->source->state_flags & 0x1001) != 0x1001 || bolt->source->death_state != 0));
             if (randomize && !TouchHacks::TouchControlsActive) {
                 temp_yrot += (i16)(i32)((f32)qrand() * (1.0f / 65535.0f) * 16384.0f - 8192.0f);
                 i_temp_xrot += (i32)((f32)qrand() * (1.0f / 65535.0f) * 16384.0f - 5461.0f);
@@ -1571,7 +1608,8 @@ void Bolt_HitGameObjectRC(NetMessage &message) {
             BoltSys->debris_fn(bolt, hit_positions, hit_index, &object->velocity, 0);
             u32 damage = 0;
             if ((bolt->flags & 0x00800000) == 0) {
-                damage = bolt->type->damage;
+                BOLTTYPE *hit_type = BoltType_FindByID(bolt->type_id, WORLD);
+                damage = hit_type->damage;
                 if (Player_HasDoubleBoltDamage_FromBolt(bolt) != 0) {
                     damage *= 2;
                 }
@@ -1698,11 +1736,21 @@ i32 Bolt_HitGameObject(BOLT *bolt, GameObject_s *object, NUVEC *hit_positions, N
         EdFileSwapEndianess16(data + message.write_position);
         message.write_position += sizeof(object_index);
 
-        memmove(data + message.write_position, hit_positions, sizeof(NUVEC) * 3);
-        for (i32 offset = 0; offset < (i32)(sizeof(NUVEC) * 3); offset += 4) {
-            EdFileSwapEndianess32(data + message.write_position + offset);
-        }
-        message.write_position += sizeof(NUVEC) * 3;
+        memmove(data + message.write_position, &hit_positions[0], sizeof(NUVEC));
+        EdFileSwapEndianess32(data + message.write_position);
+        EdFileSwapEndianess32(data + message.write_position + 4);
+        EdFileSwapEndianess32(data + message.write_position + 8);
+        message.write_position += sizeof(NUVEC);
+        memmove(data + message.write_position, &hit_positions[1], sizeof(NUVEC));
+        EdFileSwapEndianess32(data + message.write_position);
+        EdFileSwapEndianess32(data + message.write_position + 4);
+        EdFileSwapEndianess32(data + message.write_position + 8);
+        message.write_position += sizeof(NUVEC);
+        memmove(data + message.write_position, &hit_positions[2], sizeof(NUVEC));
+        EdFileSwapEndianess32(data + message.write_position);
+        EdFileSwapEndianess32(data + message.write_position + 4);
+        EdFileSwapEndianess32(data + message.write_position + 8);
+        message.write_position += sizeof(NUVEC);
         memmove(data + message.write_position, &hit_index, sizeof(hit_index));
         EdFileSwapEndianess32(data + message.write_position);
         message.write_position += sizeof(hit_index);
@@ -1781,7 +1829,7 @@ void Bolts_Update(WORLDINFO *world) {
             continue;
         }
 
-        if (bolt->source != NULL && (bolt->source->state_flags & 0x1001) != 0x1001) {
+        if (bolt->source != NULL && ((u16)bolt->source->state_flags & 0x1001) != 0x1001) {
             bolt->source = NULL;
         }
 
@@ -1822,7 +1870,7 @@ void Bolts_Update(WORLDINFO *world) {
                     if (terrain < 32 && (TerSurface[terrain * 12 + 4] & 2) != 0) {
                         bolt->reflection_plane_y = shadow_height;
                         frame_time = FRAMETIME;
-                    } else if (NewShadowOnPlatform() != -1) {
+                    } else if ((f32)NewShadowOnPlatform() != -1.0f) {
                         bolt->reflection_plane_y = FindReflectionNoPlatforms(&bolt->position);
                         frame_time = FRAMETIME;
                     }
