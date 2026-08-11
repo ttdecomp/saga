@@ -28,6 +28,8 @@ extern "C" GamePadWorld *WORLD;
 extern u8 *GameCam;
 extern TIMER GameTimer;
 
+bool (*GamePads_IgnoreInputFn)();
+
 i32 RotDiff(u16 first, u16 second);
 void NewRumble(NUPAD *pad, f32 strength, i32 frames);
 void NewBuzz(NUPAD *pad, f32 strength, i32 frames);

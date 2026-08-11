@@ -21,7 +21,7 @@ struct GrapplePlayerData {
     i8 character_state;
 };
 
-#ifndef __x86_64__
+#if UINTPTR_MAX != UINT64_MAX
 static_assert(offsetof(GrapplePlayerData, rope_length) == 0x30, "GrapplePlayerData rope_length offset");
 static_assert(offsetof(GrapplePlayerData, climb_progress) == 0x3c, "GrapplePlayerData climb_progress offset");
 static_assert(offsetof(GrapplePlayerData, grapple) == 0x50, "GrapplePlayerData grapple offset");

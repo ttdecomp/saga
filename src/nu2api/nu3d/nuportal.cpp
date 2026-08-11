@@ -1,4 +1,7 @@
 #include "nu2api/nu3d/nuportal.h"
+#include "nu2api/numath/nuvec.h"
+
+struct nugscn_s;
 
 static VARIPTR fstack;
 static i8 fstackmem[12288];
@@ -22,4 +25,8 @@ void NuPortalSetActiveDirect(NUPORTAL *portal, int active) {
     } else {
         portal->is_active = 0;
     }
+}
+
+extern "C" i32 NuPortalWhichRoom(struct nugscn_s *, NUVEC *) {
+    return -1;
 }

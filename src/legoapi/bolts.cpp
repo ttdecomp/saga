@@ -58,6 +58,8 @@ class NetMessage {
     static u8 sm_poolMessageData[];
 };
 
+u8 NetMessage::sm_poolMessageData[512 * 0x4b4];
+
 void Bolt_Init(void *bolt, NetMessage &message);
 extern "C" void EdFileSwapEndianess16(u8 *data);
 extern "C" void EdFileSwapEndianess32(u8 *data);
@@ -174,6 +176,16 @@ static BOLTSYS BoltSys_Default = {
 BOLTSYS *BoltSys = &BoltSys_Default;
 f32 BOLT_OVERRIDE_PLAYERBOLTDURATION;
 f32 BOLT_OVERRIDE_PLAYERBOLTSPEED;
+i32 addbolt_nosfx;
+i32 addbolt_newsfx = -1;
+i32 addbolt_noobjmom;
+NUVEC addbolt_newpos;
+f32 BOLT_SHOOTFLASHTIME;
+i32 netclient;
+i32 (*BoltInitSfxFn)(GameObject_s *object);
+i32 (*InitBolt_AddMomentumType)(BOLT *bolt, GameObject_s *object, NUVEC *momentum);
+void (*Bolt_HitCustomFn)(BOLT *bolt, NUVEC *hit_positions);
+i32 (*Bolt_HitPlatFn)(BOLT *bolt);
 i32 i_bolt;
 BOLT Bolt[32];
 
@@ -1332,7 +1344,7 @@ struct BoltPart {
     u8 unknown_145[0xdf];
 };
 
-#ifndef __x86_64__
+#if UINTPTR_MAX != UINT64_MAX
 static_assert(sizeof(BoltPart) == 0x224, "BoltPart size");
 #endif
 
@@ -1369,10 +1381,10 @@ i32 Bolt_HitParts(BOLT *bolt, NUVEC *hit_positions, NUVEC *bounds_min, NUVEC *bo
         }
         Bolt_End(bolt, 1);
         if (BoltSys->part_hit_fn != NULL && BoltSys->part_hit_fn(bolt, part) == 1) {
-            return (i32)part;
+            return (i32)(usize)part;
         }
         KillPart(part, kill_mode);
-        return (i32)part;
+        return (i32)(usize)part;
     }
     return 0;
 }

@@ -2,6 +2,21 @@
 
 #include "decomp.h"
 
+struct GameObject_s;
+struct WORLDINFO_s;
+
+ATTRACTO *Attracto_FindNearest(WORLDINFO_s *, NUVEC *, GameObject_s *, f32 *) {
+    return NULL;
+}
+
+void Attracto_GetPos_Top(ATTRACTO *, NUVEC *position) {
+    if (position != NULL) {
+        position->x = 0.0f;
+        position->y = 0.0f;
+        position->z = 0.0f;
+    }
+}
+
 static int Attractos_GetMaxGizmos(void *attracto) {
     UNIMPLEMENTED();
 }

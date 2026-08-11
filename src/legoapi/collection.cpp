@@ -13,6 +13,12 @@ i32 CollectCount = 0;
 COLLECTID *CollectList = NULL;
 i32 COLLECTION_COMPLETIONCOUNT = 0;
 
+int InCollectList_Index(i32 id, COLLECTID *list, i32 count);
+
+u8 Collection_Got(i32 character_id) {
+    return InCollectList_Index(character_id, CollectList, CollectCount) != -1;
+}
+
 i32 InCollectList_Index(i32 id, COLLECTID *list, i32 count) {
     i32 i;
     i32 charId;

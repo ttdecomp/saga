@@ -6,6 +6,12 @@
 
 extern i32 LEGOCONTEXT_BUILDIT;
 
+GIZBUILDIT_s *LevBuildIt;
+i8 HubBuildItsCompleted = -1;
+bool (*GizBuildIt_CanStartBuildingFn)(GIZBUILDIT_s *build_it, GameObject_s *object);
+void (*GizBuildIt_FinishFn)(GIZBUILDIT_s *build_it);
+i32 (*GizBuildit_AutoBuildPosFn)(void *world, NUVEC *position, NUVEC *build_position, u16 *id);
+
 struct GAMECAMERA_s;
 extern GAMECAMERA_s *GameCam;
 void GameCam_Blend(GAMECAMERA_s *camera, f32 blend_time, f32 hold_time, i32 restore);

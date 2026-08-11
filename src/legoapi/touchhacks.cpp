@@ -82,7 +82,7 @@ struct AIPATHNODE_s {
 
 struct GAMECAMERA_s;
 
-#ifndef __x86_64__
+#if UINTPTR_MAX != UINT64_MAX
 static_assert(offsetof(TouchCharacterRuntime, poo_flags) == 0x97, "poo flags offset");
 static_assert(offsetof(TouchCharacterRuntime, can_lunge) == 0x116, "lunge flag offset");
 static_assert(offsetof(TouchCharacterData, flags) == 0x4, "character flags offset");
@@ -125,7 +125,7 @@ extern CHARACTERDATA *CDataList;
 extern "C" void PlaySfxAndSetVolume(char *name, NUVEC *position, f32 volume);
 extern "C" i32 PlaySfx(const char *name, NUVEC *position);
 void AddExplosion(NUVEC *position, f32 radius, f32 scale, i32 unknown, i32 character_id, i32 flags);
-i32 AnimPlaying(void *object_instance, i32 animation, i32 unknown1, i32 unknown2);
+extern "C" i32 AnimPlaying(void *object_instance, i32 animation, i32 unknown1, i32 unknown2);
 i32 Cheat_IsOn(i32 cheat);
 i32 InCollectList_Index(i32 id, i16 *list, i32 count);
 GameObject_s **GameObjIsCableTied(GameObject_s *object);

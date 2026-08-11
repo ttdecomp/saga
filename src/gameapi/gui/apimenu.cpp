@@ -35,6 +35,13 @@ NUMTL *MenuFadeMtl;
 
 i32 MenuDrawDropShadows;
 
+void (*PauseGame_ExtraCodeFn)();
+i32 (*PauseRenderOffFn)();
+
+i32 GetMenuID() {
+    return -1;
+}
+
 char *apiGameName = "Game";
 char *apiGameTitle = "Game";
 char *apiGameSubTitle = "";

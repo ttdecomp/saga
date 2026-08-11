@@ -32,12 +32,14 @@ typedef struct GIZBUILDIT_s {
     u8 current_part;
 } GIZBUILDIT;
 
+#if UINTPTR_MAX != UINT64_MAX
 static_assert(offsetof(GIZBUILDIT, parts) == 0x14, "GIZBUILDIT parts offset");
 static_assert(offsetof(GIZBUILDIT, position) == 0x38, "GIZBUILDIT position offset");
 static_assert(offsetof(GIZBUILDIT, previous_step_time) == 0x48, "GIZBUILDIT previous step time offset");
 static_assert(offsetof(GIZBUILDIT, step_time) == 0x4c, "GIZBUILDIT step time offset");
 static_assert(offsetof(GIZBUILDIT, part_count) == 0x74, "GIZBUILDIT part count offset");
 static_assert(offsetof(GIZBUILDIT, current_part) == 0x77, "GIZBUILDIT current part offset");
+#endif
 
 ADDGIZMOTYPE *GizBuildIts_RegisterGizmo(int type_id);
 void GizBuildIt_SetHeadTarget(GIZBUILDIT *buildit, GameObject_s *object);

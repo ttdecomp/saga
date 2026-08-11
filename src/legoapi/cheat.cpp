@@ -4,6 +4,10 @@
 
 CHEATSYSTEM CheatSystem = {0};
 
+i32 Cheat_PowerUpActive(i32) {
+    return 0;
+}
+
 void Cheat_SetArea(i32 cheat, i32 areaId) {
     if (cheat >= 0 && cheat < CheatSystem.cheats_count && areaId >= 0 && areaId < AREACOUNT) {
         CheatSystem.cheats[cheat].area = areaId;
@@ -31,4 +35,11 @@ u32 Cheat_CheckFlags(int cheat_index, u32 flag_mask) {
     }
 
     return 0;
+}
+
+i32 Cheat_IsOn(i32 cheat) {
+    if (cheat < 0 || cheat >= CheatSystem.cheats_count || CheatSystem.cheats == NULL) {
+        return 0;
+    }
+    return CheatSystem.cheats[cheat].enabled != 0;
 }

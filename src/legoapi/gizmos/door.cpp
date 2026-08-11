@@ -2,6 +2,9 @@
 
 #include "decomp.h"
 
+struct WORLDINFO_s;
+void (*Door_GoThrough_ExtraCodeFn)(WORLDINFO_s *world, DOOR_s *door);
+
 static char door_gizmotype_id = -1;
 
 static int Door_GetMaxGizmos(void *door) {

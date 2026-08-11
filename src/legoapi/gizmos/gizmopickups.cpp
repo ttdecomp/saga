@@ -13,6 +13,8 @@ void CollectMinikit(NUVEC *position, char *pickup, i32 player_index);
 void CollectHitPoint(GameObject_s *object, NUVEC *position, i32 player_index);
 void GameAudio_PlaySfx(i32 sfx_id, NUVEC *position, i32 unknown_2, i32 unknown_3);
 
+f32 (*GizmoPickups_Collide2DFn)(GameObject_s *object);
+
 void Pup_CollectPowerUp(WORLDINFO_s *, GIZMOPICKUP *pickup, i32, GameObject_s *object, i32 player_index) {
     CollectPowerUp(object, &pickup->position, pickup->powerup_id, player_index);
 }

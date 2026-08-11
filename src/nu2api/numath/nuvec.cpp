@@ -4,6 +4,7 @@
 
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/numtx.h"
+#include "nu2api/numath/nutrig.h"
 
 NUVEC v000 = {0};
 NUVEC v100 = {1.0f, 0.0f, 0.0f};
@@ -252,6 +253,54 @@ void NuVecMtxRotate(NUVEC *out, NUVEC *v, NUMTX *m) {
     out->x = v->x * m->m00 + v->y * m->m10 + v->z * m->m20;
     out->y = y;
     out->z = z;
+}
+
+void NuVecInvMtxRotate(NUVEC *out, NUVEC *v, NUMTX *m) {
+    f32 x = v->x * m->m00 + v->y * m->m01 + v->z * m->m02;
+    f32 y = v->x * m->m10 + v->y * m->m11 + v->z * m->m12;
+    f32 z = v->x * m->m20 + v->y * m->m21 + v->z * m->m22;
+
+    out->x = x;
+    out->y = y;
+    out->z = z;
+}
+
+void NuVecInvMtxTransform(NUVEC *out, NUVEC *v, NUMTX *m) {
+    NUVEC translated;
+    translated.x = v->x - m->m30;
+    translated.y = v->y - m->m31;
+    translated.z = v->z - m->m32;
+    NuVecInvMtxRotate(out, &translated, m);
+}
+
+void NuVecRotateX(NUVEC *out, NUVEC *v, i32 angle) {
+    f32 x = v->x;
+    f32 y = v->y;
+    f32 z = v->z;
+    f32 sine = NU_SIN_LUT(angle);
+    f32 cosine = NU_COS_LUT(angle);
+
+    out->x = x;
+    out->y = y * cosine - z * sine;
+    out->z = y * sine + z * cosine;
+}
+
+void NuVecRotateY(NUVEC *out, NUVEC *v, i32 angle) {
+    f32 x = v->x;
+    f32 y = v->y;
+    f32 z = v->z;
+    f32 sine = NU_SIN_LUT(angle);
+    f32 cosine = NU_COS_LUT(angle);
+
+    out->x = x * cosine + z * sine;
+    out->y = y;
+    out->z = z * cosine - x * sine;
+}
+
+void NuVecRotateYValZ(NUVEC *out, f32 length, i32 angle) {
+    out->x = NU_SIN_LUT(angle) * length;
+    out->y = 0.0f;
+    out->z = NU_COS_LUT(angle) * length;
 }
 
 void NuVecMtxScale(NUVEC *out, NUVEC *v, NUMTX *m) {

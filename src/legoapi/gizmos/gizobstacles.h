@@ -22,7 +22,7 @@ typedef struct GIZOBSTACLE_s {
     u8 unknown_0a1[3];
 } GIZOBSTACLE;
 
-#ifndef __x86_64__
+#if UINTPTR_MAX != UINT64_MAX
 static_assert(sizeof(GIZOBSTACLE) == 0xa4, "GIZOBSTACLE size");
 static_assert(offsetof(GIZOBSTACLE, animation_set) == 0x34, "GIZOBSTACLE animation set offset");
 static_assert(offsetof(GIZOBSTACLE, score) == 0x8a, "GIZOBSTACLE score offset");
