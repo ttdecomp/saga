@@ -12,7 +12,7 @@
 AREADATA *ADataList = NULL;
 AREADATA *HUB_ADATA = NULL;
 
-AREAFIXUP AreaFixUp_LSW[1] = {{NULL, NULL, NULL, NULL, NULL, NULL, NULL}};
+AREAFIXUP AreaFixUp_LSW[1] = {{NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}};
 
 i32 Area = -1;
 
@@ -414,7 +414,13 @@ AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferE
 }
 
 void Areas_FixUp(AREAFIXUP *fixup) {
-    // Stub - implementation not yet matched
+    if (fixup != NULL) {
+        for (; fixup->name != NULL; fixup++) {
+            if (fixup->area != NULL) {
+                *fixup->area = Area_FindByName(fixup->name, NULL);
+            }
+        }
+    }
 }
 
 void FixUpAreas(void) {
@@ -422,9 +428,8 @@ void FixUpAreas(void) {
 }
 
 struct LEVELDATA_s *Area_FindStatusLevel(AREADATA *area, i32 *indexDest) {
-    i32 i;
-    LEVELDATA *result;
     i32 levelIdx;
+    i32 i = 0;
 
     if (indexDest != NULL) {
         *indexDest = -1;
@@ -435,42 +440,37 @@ struct LEVELDATA_s *Area_FindStatusLevel(AREADATA *area, i32 *indexDest) {
     }
 
     levelIdx = area->field2_0x60[0];
-    i = 0;
-    result = &LDataList[levelIdx];
 
-    while ((result->flags & LEVEL_STATUS) == 0) {
+    while ((LDataList[levelIdx].flags & LEVEL_STATUS) == 0) {
         if (i == (u32)area->field28_0x7d * 2 - 2) {
             return NULL;
         }
         levelIdx = area->field2_0x60[i / 2 + 1];
         i += 2;
-        result = &LDataList[levelIdx];
     }
 
     if (indexDest != NULL) {
         *indexDest = levelIdx;
     }
 
-    return result;
+    return &LDataList[levelIdx];
 }
 
 LEVELDATA *Area_FindNextPlayLevel(i32 levelIdx) {
     LEVELDATA *level = &LDataList[levelIdx];
     LEVELDATA *result = level;
-    i32 areaIdx = level->unknown_0af;
+    i32 areaIdx = (i8)level->unknown_0af;
 
     if (areaIdx != -1) {
         AREADATA *area = &ADataList[areaIdx];
-        i32 areaLevelIdx = level->unknown_0d4;
-
-        if (areaLevelIdx < (i32)(area->field28_0x7d - 1)) {
+        i32 areaLevelIdx = (i8)level->unknown_0d4;
+        if (areaLevelIdx < (i32)area->field28_0x7d - 1) {
             result = &LDataList[area->field2_0x60[areaLevelIdx]];
-
-            if ((result->flags & 0xe0) != 0) {
-                while (areaLevelIdx != area->field28_0x7d - 2) {
-                    areaLevelIdx++;
+            if ((result->flags & (LEVEL_INTRO | LEVEL_MIDTRO | LEVEL_OUTRO | LEVEL_STATUS)) != 0) {
+                while (areaLevelIdx != (i32)area->field28_0x7d - 2) {
+                    ++areaLevelIdx;
                     result = &LDataList[area->field2_0x60[areaLevelIdx]];
-                    if ((result->flags & 0xe0) == 0) {
+                    if ((result->flags & (LEVEL_INTRO | LEVEL_MIDTRO | LEVEL_OUTRO | LEVEL_STATUS)) == 0) {
                         return result;
                     }
                 }
@@ -478,7 +478,6 @@ LEVELDATA *Area_FindNextPlayLevel(i32 levelIdx) {
             }
         }
     }
-
     return result;
 }
 

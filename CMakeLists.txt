@@ -84,6 +84,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/ai/aisys/aistate.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/edtools/edfile.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/edtools/edstubs.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/gui/apimenu.cpp
 

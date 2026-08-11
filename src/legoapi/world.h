@@ -6,6 +6,12 @@
 #include "nu2api/nucore/common.h"
 
 struct AREADATA_s;
+typedef struct MINIKIT_s {
+    void *gscn;
+    char filler[0x14];
+    i32 field_0x18;
+} MINIKIT;
+
 typedef struct WORLDINFO_s {
     char filler0[0x104];
 
@@ -26,7 +32,8 @@ typedef struct WORLDINFO_s {
 
     AREADATA_s *area;
 
-    char filler2[0xc];
+    void *level_progress;
+    char filler2[0x8];
     NUGSCN *current_gscn;
 
     i32 char_icons[3];
@@ -34,6 +41,22 @@ typedef struct WORLDINFO_s {
     char config_file[0x8c];
 
     char unknown_0140[0x2960];
+
+    void *game_anim_sys;
+    void *game_antinode_sys;
+    void *gizmo_sys;
+    void *sock_sys;
+    void *cutscene_sys;
+    void *api_object_sys;
+    void *ai_path_cnx_control_sys;
+    void *ai_path_cnx_helper_sys;
+    void *ai_trigger_set_sys;
+    void *climb_object_sys;
+    void *mech_auto_jump_manager;
+    void *giz_flow;
+    NUGSCN *icons_gscn;
+    NUGSCN *unknown_0140_ptr;
+    MINIKIT minikit;
 
     AISYS *ai_sys;
     i32 processor_count;

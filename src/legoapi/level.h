@@ -104,6 +104,11 @@ typedef struct LEVELDATA_s {
     char unknown_0da;
     char unknown_0db;
 
+    char unknown_0dc;
+    char unknown_0dd;
+    char unknown_0de;
+    char unknown_0df;
+
     f32 conveyor_x_speed;
     f32 conveyor_z_speed;
 
@@ -156,14 +161,25 @@ typedef struct LEVELDATA_s {
     i16 field91_0x118;
     u8 field92_0x11a;
     u8 field93_0x11b;
+    i16 field94_0x11c;
+    i16 field95_0x11e;
 
     f32 unknown_11c;
     f32 unknown_120;
+
+    f32 unknown_124;
 
     f32 wind_speed;
     f32 wind_size;
 
     i32 music_tracks[3][2];
+
+    // Additional fields referenced by WorldInfo_Load
+    char filler_0x80[0x2c]; // padding from 0x80 to 0xac
+    char unknown_0ac;       // mipmap mode for scene loading
+    char filler_0xad[0x53]; // padding to 0x103
+    u8 unknown_103;         // max climb objects
+    u16 max_gameantinodes;  // at some offset after 0x103
 } LEVELDATA;
 
 typedef struct LEVELOBJECT_s {
@@ -217,6 +233,7 @@ i32 LevelObject_GetReflection(i32 objId);
 
 char *LevelObject_FindNameFromIndex(i32 index);
 i32 LevelObject_FindIndexFromName(char *name);
+i32 LevelObject_FindIndexFromName_RefOnly(char *name);
 
 i32 LevelObject_AddExtra(char *name, i32 kind);
 

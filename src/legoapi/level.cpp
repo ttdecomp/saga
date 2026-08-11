@@ -8,9 +8,47 @@
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nucore/nustring.h"
+#include "nu2api/nufile/nufile.h"
 #include "nu2api/nufile/nufpar.h"
 #include "nu2api/numath/nuvec.h"
 #include "nu2api/numusic/numusic.h"
+
+extern "C" char *ConfigBuffer;
+
+// Declared in nu2api/nusound/nusound.cpp
+extern "C" void GameAudio_PlaySfxAndSetVolume(i32 sfx_id, void *pos, f32 volume);
+
+// Stubs for LevelConfig functions
+static LEVELDATA *levelconfig_ldata = NULL;
+static void LevelConfig_AfterLoad_GenericKeywords(NUFPAR *fp, nufpcomjmp_s *keywords) {
+    (void)fp;
+    (void)keywords;
+}
+
+static i32 LevelConfig_StripComments(char *text, char *dest) {
+    char *start = text;
+    i32 length = NuStrLen(text);
+    char *out = dest;
+    while (text <= start + length) {
+        char c = *text;
+        if (c == '#' || c == ';' || (c == '/' && text[1] == '/')) {
+            if (c == '/') {
+                text++;
+            }
+            do {
+                c = *++text;
+            } while (c != '\r' && c != '\n' && c != '\0');
+        } else {
+            if (c == ',' || c == '=') {
+                c = ' ';
+            }
+            *out++ = c;
+        }
+        text++;
+    }
+    *out = '\0';
+    return (i32)(out - dest);
+}
 
 LEVELDATA *LDataList = NULL;
 LEVELDATA *NEWGAME_LDATA = NULL;
@@ -366,12 +404,9 @@ void Level_Update(WORLDINFO *world) {
         updateFn(world);
     }
 
-    {
-        volatile f32 *dsTime = &DoubleScoreTime;
-        if (*dsTime > 0.0f) {
-            if ((i32)(GameTimer[0] + GameTimer[0]) != (i32)(GameTimer[1] + GameTimer[1])) {
-                // GameAudio_PlaySfxAndSetVolume(0x35, NULL, DoubleScoreTime);
-            }
+    if (DoubleScoreTime > 0.0f) {
+        if ((i32)(GameTimer[0] + GameTimer[0]) != (i32)(GameTimer[1] + GameTimer[1])) {
+            GameAudio_PlaySfxAndSetVolume(0x35, NULL, DoubleScoreTime);
         }
     }
 
@@ -400,6 +435,17 @@ char *LevelObject_FindNameFromIndex(i32 index) {
 i32 LevelObject_FindIndexFromName(char *name) {
     if (ObjTabList != NULL && LEVELOBJECTCOUNT > 0) {
         for (i32 i = 0; i < LEVELOBJECTCOUNT; i++) {
+            if (NuStrICmp(ObjTabList[i].name, name) == 0) {
+                return i;
+            }
+        }
+    }
+    return -1;
+}
+
+i32 LevelObject_FindIndexFromName_RefOnly(char *name) {
+    if (ObjTabList != NULL && LevObjRef_FirstObj != -1 && LevObjRef_FirstObj <= LevObjRef_LastObj) {
+        for (i32 i = LevObjRef_FirstObj; i <= LevObjRef_LastObj; ++i) {
             if (NuStrICmp(ObjTabList[i].name, name) == 0) {
                 return i;
             }
@@ -437,7 +483,7 @@ void GameAnimSys_ClearProgress(i32 idx) {
     if (idx >= progress[0]) {
         return;
     }
-    u8 *data = ((u8 **)(progress + 2))[idx];
+    u8 *data = gameanimsysprogress.entries[idx];
     i32 size = progress[1];
     if (size <= 0) {
         return;
@@ -477,37 +523,54 @@ void GoToNewLevel(i32 levelIdx) {
 }
 
 void LevelConfig_BeforeLoad(LEVELDATA *level, char *buffer, nufpcomjmp_s *keywords) {
-    // NUFPAR *fp = NuFParCreateMem("levelbeforeload", buffer, 0xffff);
-    // if (fp != NULL) {
-    //     levelconfig_ldata = level;
-    //     NuFParPushCom2(fp, LevelConfig_BeforeLoad_GenericKeywords, keywords);
-    //     while (NuFParGetLine(fp) != 0) {
-    //         if (NuFParGetWord(fp) != 0) {
-    //             NuFParInterpretWord(fp);
-    //         }
-    //     }
-    //     NuFParDestroy(fp);
-    // }
+    NUFPAR *fp = NuFParCreateMem("levelbeforeload", buffer, 0xffff);
+    if (fp != NULL) {
+        levelconfig_ldata = level;
+        if (Level_ConfigBeforeLoad_GameKeywords != NULL) {
+            NuFParPushCom2(fp, Level_ConfigBeforeLoad_GameKeywords, keywords);
+        }
+        while (NuFParGetLine(fp) != 0) {
+            if (NuFParGetWord(fp) != 0) {
+                NuFParInterpretWord(fp);
+            }
+        }
+        NuFParDestroy(fp);
+    }
 }
 
 void LevelConfig_AfterLoad(LEVELDATA *level, char *buffer, nufpcomjmp_s *keywords) {
-    // NUFPAR *fp = NuFParCreateMem("levelafterload", buffer, 0xffff);
-    // if (fp != NULL) {
-    //     levelconfig_ldata = level;
-    //     NuFParPushCom2(fp, LevelConfig_AfterLoad_GenericKeywords, keywords);
-    //     while (NuFParGetLine(fp) != 0) {
-    //         if (NuFParGetWord(fp) != 0) {
-    //             NuFParInterpretWord(fp);
-    //         }
-    //     }
-    //     NuFParDestroy(fp);
-    //     if (level->blob_shadow_fade_far < level->blob_shadow_fade_near) {
-    //         level->blob_shadow_fade_near = level->blob_shadow_fade_far;
-    //     }
-    //     level->flags |= 1;
-    // }
+    NUFPAR *fp = NuFParCreateMem("levelafterload", buffer, 0xffff);
+    if (fp != NULL) {
+        levelconfig_ldata = level;
+        if (Level_ConfigAfterLoad_GameKeywords != NULL) {
+            NuFParPushCom2(fp, Level_ConfigAfterLoad_GameKeywords, keywords);
+        }
+        while (NuFParGetLine(fp) != 0) {
+            if (NuFParGetWord(fp) != 0) {
+                NuFParInterpretWord(fp);
+            }
+        }
+        NuFParDestroy(fp);
+        if (level->blob_shadow_fade_far < level->blob_shadow_fade_near) {
+            level->blob_shadow_fade_near = level->blob_shadow_fade_far;
+        }
+        level->field91_0x118 = level->data_display.unknown_14;
+        level->flags |= 1;
+    }
 }
 
 void Level_LoadConfigFile(WORLDINFO *world) {
-    // Load level config file
+    char path[140];
+    NuStrCpy(path, world->config_file);
+    NuStrCat(path, ".txt");
+
+    world->unknown_0108.void_ptr = (void *)ALIGN((usize)world->giz_buffer.void_ptr, 4);
+    i32 bytes_read = NuFileLoadBuffer(path, world->giz_buffer.void_ptr, 0x10000);
+    world->unknown_010c = bytes_read;
+    if (bytes_read > 0) {
+        char *buf = (char *)world->giz_buffer.void_ptr;
+        buf[bytes_read] = '\0';
+        ConfigBuffer = buf + 0x10000;
+        world->unknown_010c = LevelConfig_StripComments(buf, ConfigBuffer);
+    }
 }

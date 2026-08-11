@@ -91,6 +91,7 @@ typedef struct nugscn_s { /* PlaceHolder Structure */
     undefined field83_0x6b;
     int max_portals;
     NUPORTAL *portals;
+    int portal_depth;
     undefined field92_0x74;
     undefined field93_0x75;
     undefined field94_0x76;
@@ -478,6 +479,8 @@ typedef struct nugscn_s { /* PlaceHolder Structure */
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+    void NuGScnRndr3(NUGSCN *scene);
 
 #ifdef __cplusplus
 }
