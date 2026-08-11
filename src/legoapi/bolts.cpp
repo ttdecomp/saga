@@ -1344,7 +1344,7 @@ struct BoltPart {
     u8 unknown_145[0xdf];
 };
 
-#if UINTPTR_MAX != UINT64_MAX
+#ifndef __x86_64__
 static_assert(sizeof(BoltPart) == 0x224, "BoltPart size");
 #endif
 

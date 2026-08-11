@@ -428,7 +428,7 @@ struct GameObject_s {
     void ClearAddons();
 };
 
-#if UINTPTR_MAX != UINT64_MAX
+#ifndef __x86_64__
 static_assert(sizeof(MechAddon) == 0x18, "MechAddon size");
 static_assert(sizeof(MechAddonCollection) == 0x14, "MechAddonCollection size");
 static_assert(sizeof(MechEdgeStopAddon) == 0x28, "MechEdgeStopAddon size");

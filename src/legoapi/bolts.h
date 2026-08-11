@@ -112,7 +112,7 @@ typedef struct BOLTSYS_s {
     BOLTSHOOTJOINTFN shoot_joint_fn;
 } BOLTSYS;
 
-#if UINTPTR_MAX != UINT64_MAX
+#ifndef __x86_64__
 static_assert(sizeof(BOLTTYPE) == 0xa4, "BOLTTYPE size");
 static_assert(offsetof(BOLTTYPE, object_id) == 0x28, "BOLTTYPE object id offset");
 static_assert(offsetof(BOLTTYPE, damage) == 0x3c, "BOLTTYPE damage offset");

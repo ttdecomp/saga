@@ -32,7 +32,7 @@ typedef struct GIZBUILDIT_s {
     u8 current_part;
 } GIZBUILDIT;
 
-#if UINTPTR_MAX != UINT64_MAX
+#ifndef __x86_64__
 static_assert(offsetof(GIZBUILDIT, parts) == 0x14, "GIZBUILDIT parts offset");
 static_assert(offsetof(GIZBUILDIT, position) == 0x38, "GIZBUILDIT position offset");
 static_assert(offsetof(GIZBUILDIT, previous_step_time) == 0x48, "GIZBUILDIT previous step time offset");

@@ -4,7 +4,7 @@
 
 #include "nu2api/nucore/common.h"
 
-#if UINTPTR_MAX != UINT64_MAX
+#ifndef __x86_64__
 #ifdef __cplusplus
 static_assert(sizeof(void *) == 4, "Unsupported pointer size");
 #endif

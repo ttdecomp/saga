@@ -10,7 +10,7 @@ struct GAMEPAD_s {
     f32 speed;
 };
 
-#if UINTPTR_MAX != UINT64_MAX
+#ifndef __x86_64__
 static_assert(offsetof(GAMEPAD_s, direction) == 0x26, "GAMEPAD_s direction offset");
 static_assert(offsetof(GAMEPAD_s, speed) == 0x28, "GAMEPAD_s speed offset");
 #endif

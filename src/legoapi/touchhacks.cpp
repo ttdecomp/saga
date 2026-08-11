@@ -82,7 +82,7 @@ struct AIPATHNODE_s {
 
 struct GAMECAMERA_s;
 
-#if UINTPTR_MAX != UINT64_MAX
+#ifndef __x86_64__
 static_assert(offsetof(TouchCharacterRuntime, poo_flags) == 0x97, "poo flags offset");
 static_assert(offsetof(TouchCharacterRuntime, can_lunge) == 0x116, "lunge flag offset");
 static_assert(offsetof(TouchCharacterData, flags) == 0x4, "character flags offset");

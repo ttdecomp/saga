@@ -15,7 +15,7 @@ typedef struct GRAPPLE_s {
     f32 swing_angle_scale;
 } GRAPPLE;
 
-#if UINTPTR_MAX != UINT64_MAX
+#ifndef __x86_64__
 static_assert(offsetof(GRAPPLE, look_at_position) == 0x30, "GRAPPLE look_at_position offset");
 static_assert(offsetof(GRAPPLE, target_position) == 0x3c, "GRAPPLE target_position offset");
 static_assert(offsetof(GRAPPLE, swing_angle_scale) == 0x4c, "GRAPPLE swing_angle_scale offset");
