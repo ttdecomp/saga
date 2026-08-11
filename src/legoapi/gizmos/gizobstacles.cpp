@@ -173,7 +173,7 @@ static int GizmoObstacle_GetPos(GIZMO *gizmo) {
     if (gizmo == NULL || gizmo->object == NULL) {
         return 0;
     }
-    return (i32) & ((GIZOBSTACLE *)gizmo->object)->position;
+    return (i32)(usize) & ((GIZOBSTACLE *)gizmo->object)->position;
 }
 
 static int GizObstacles_BoltHitPlat(void *, void *, BOLT *, unsigned char *) {
