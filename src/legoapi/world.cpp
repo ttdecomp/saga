@@ -9,6 +9,7 @@
 #include "legoapi/area.h"
 #include "legoapi/character.h"
 #include "legoapi/level.h"
+#include "legoapi/socksys.h"
 #include "legoapi/timer.h"
 #include "legogame/game.h"
 #include "nu2api/nu3d/nutex.h"
@@ -16,6 +17,7 @@
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nucore/nutime.h"
 #include "nu2api/nufile/nufile.h"
+#include "nu2api/nufile/nufpar.h"
 
 extern "C" {
     void NuDisplaySceneRndr(void *scene) {
@@ -40,13 +42,13 @@ f32 CameraZoom;
 i32 RemoveDirectionalMaps = 0;
 i32 RemoveNormalMaps = 0;
 
-void DebrisSetThinningLevel(f32 level) {
+extern "C" void DebrisSetThinningLevel(f32 level) {
     debris_thinning_level = level < 1.0f ? 1.0f : level;
 }
-void DebrisSetForcedThinning(i32 forced) {
+extern "C" void DebrisSetForcedThinning(i32 forced) {
     forced_debris_thinning = forced;
 }
-void DebrisSetDetailLevel(i32 level) {
+extern "C" void DebrisSetDetailLevel(i32 level) {
     debris_detail_level = level;
 }
 void SetCameraZoom(f32 zoom) {
@@ -97,6 +99,7 @@ u32 Text_Language = 0;
 nufpcomjmp_s *LevelConfigKeywords_AfterLoad = NULL;
 i32 Grass_Available = 1;
 i32 PDEBCOUNT = 0;
+i32 CharScene_Area = 0;
 void *PDebNameList = NULL;
 
 // Stub implementations for functions not yet implemented in their respective modules
@@ -319,27 +322,210 @@ extern "C" {
         (void)count;
         (void)buf;
     }
-    void *CutScenes_Load(char *config, void *gscn1, void *gscn2, i32 param1, void *buf, void *buf_end, i32 param2,
-                         i32 param3, void *world) {
-        (void)config;
+    struct CUTINFO_LOAD {
+        void *cutscene;
+        void *instance;
+        char data[0x13c];
+    };
+
+    struct CUTSYS_LOAD {
+        void *entries;
+        i32 count;
+        void *end;
+    };
+
+    i32 CUTCOUNT = 0;
+    CUTINFO_LOAD *CutList = NULL;
+    i32 ACTIVECUTCOUNT = 0;
+    i32 CS_area = 0;
+    CUTSYS_LOAD *CS_cutsys = NULL;
+    WORLDINFO *CS_worldinfo = NULL;
+    f32 CutSceneScale = 1.0f;
+    extern i32 InStory(void) {
+    }
+
+    // These routines are implemented by the cutscene subsystem.  Keep the
+    // declarations here rather than hiding the calls behind local no-ops:
+    // CutScenes_Load is part of the original loader and its ABI calls these
+    // entry points directly.
+    extern void *NuGCutSceneLoad(char *name, NUGSCN *gscn1, NUGSCN *gscn2, i32 flags);
+    extern void NuGCutSceneFixUp(void *cutscene, char *name, i32 flags, VARIPTR *end);
+    extern void NuGCutSceneFixUpExtra(void *cutscene, i32 area);
+    extern void *instNuGCutSceneCreate(void *cutscene, i32 flags, i32 param, char *name);
+
+    __attribute__((noinline)) static void CutScene_Configure_Load(CUTINFO_LOAD *cut, char *name, VARIPTR *buf,
+                                                                  VARIPTR *buf_end) {
+        (void)buf;
+        (void)buf_end;
+        memset(cut, 0, sizeof(*cut));
+        NuStrCpy((char *)cut->data, name);
+    }
+}
+
+void *CutScenes_Load(char *config, NUGSCN *gscn1, NUGSCN *gscn2, i32 param1, VARIPTR *buf, VARIPTR *buf_end, i32 param2,
+                     i32 param3, WORLDINFO *world) {
+    NUFPAR *fp;
+    CUTSYS_LOAD *sys;
+    void *initial;
+    CUTINFO_LOAD *cut;
+    char name[128];
+    char path[128];
+    char full_path[128];
+    CUTINFO_LOAD *entries[32];
+
+    if (CutList != NULL && CUTCOUNT > 0) {
+        sys = (CUTSYS_LOAD *)ALIGN(buf->addr, 4);
+        sys->entries = sys + 1;
+        sys->count = CUTCOUNT;
+        CS_area = param2;
+        CS_worldinfo = world;
+        CS_cutsys = sys;
+        buf->void_ptr = (char *)sys->entries + CUTCOUNT * 0x144;
+        return sys;
+    }
+    if (config == NULL) {
+        return NULL;
+    }
+
+    fp = NuFParCreateMem((char *)"cutscenes", config, 0xffff);
+    if (fp == NULL) {
+        return NULL;
+    }
+
+    initial = buf->void_ptr;
+    sys = (CUTSYS_LOAD *)ALIGN((usize)initial, 4);
+    sys->entries = sys + 1;
+    sys->count = 0;
+    sys->end = (char *)sys + 0xc;
+    CS_area = param2;
+    CS_worldinfo = world;
+    CS_cutsys = sys;
+    buf->void_ptr = (char *)sys->entries + ((CHARCOUNT + 0x1f) >> 5) * 4;
+
+    while (NuFParGetLine(fp) != 0) {
+        if (NuFParGetWord(fp) == 0 || NuStrICmp(fp->word_buf, "cutscene") != 0 || sys->count > 0x1f ||
+            NuFParGetWord(fp) == 0) {
+            continue;
+        }
+
+        cut = (CUTINFO_LOAD *)buf->void_ptr;
+        entries[sys->count] = cut;
+        buf->void_ptr = (char *)cut + 0x144;
+        NuStrCpy(name, fp->word_buf);
+        for (char *lower = name; *lower != '\0'; ++lower) {
+            *lower = (char)NuToLower((u8)*lower);
+        }
+        i32 len = NuStrLen(name);
+        while (len > 0 && name[len - 1] != '.') {
+            --len;
+        }
+        if (len > 0) {
+            name[len - 1] = '\0';
+        }
+
+        if (name[0] == 'c' && name[1] == 'u' && name[2] == 't' && name[3] == '\\') {
+            NuStrCpy(path, name);
+        } else {
+            NuStrCpy(path, "cut\\");
+            NuStrCat(path, name);
+            NuStrCat(path, ".cut");
+        }
+        NuStrCpy(full_path, "cutscenes");
+        NuStrCat(full_path, "\\");
+        NuStrCat(full_path, path);
+        CutScene_Configure_Load(cut, full_path, buf, buf_end);
+
+        if ((cut->data[0x51] & 8) == 0 && !InStory()) {
+            continue;
+        }
+        buf->void_ptr = (char *)ALIGN(buf->addr, 0x40);
+        NuStrCpy(full_path, "cutscenes");
+        NuStrCat(full_path, "\\");
+        NuStrCat(full_path, path);
+        cut->cutscene = NuGCutSceneLoad(full_path, gscn1, gscn2, 0);
+        if (cut->cutscene == NULL) {
+            continue;
+        }
+        NuGCutSceneFixUp(cut->cutscene, name, 0, buf_end);
+        NuGCutSceneFixUpExtra(cut->cutscene, param1);
+        cut->instance = instNuGCutSceneCreate(cut->cutscene, 0, 0, name);
+        if (cut->instance != NULL) {
+            *(f32 *)((char *)cut->instance + 0x98) = *(f32 *)((char *)cut + 0x5c) * CutSceneScale;
+            buf->void_ptr = (char *)ALIGN(buf->addr, 0x10);
+        }
+        sys->count++;
+    }
+    NuFParDestroy(fp);
+    if (sys->count == 0) {
+        buf->void_ptr = initial;
+        return NULL;
+    }
+    buf->void_ptr = initial;
+    memmove(initial, entries, sys->count * sizeof(void *));
+    buf->void_ptr = (void *)ALIGN((usize)initial + sys->count * 4, 4);
+    sys->entries = initial;
+    return sys;
+}
+void CharScenes_LevelLoad(WORLDINFO *world) {
+    if (CHARCOUNT <= 0) {
+        return;
+    }
+
+    for (int i = 0; i < CHARCOUNT; i++) {
+        void **entry = (void **)(*(i32 *)&world->char_scene_info.minikit.field_0x18 + i * 0x10);
+        *entry = NULL;
+
+        // Check if we should load this character scene
+        if ((CharScene_Area == 0 || *(i32 *)(CharScene_Area + i * 0x10) == 0) && (CDataList[i].flags & 1) != 0 &&
+            world->cutscene_sys != NULL) {
+            // Check if this character is in a cutscene
+            u32 *cutscene_flags = *(u32 **)((char *)world->cutscene_sys + 8);
+            u32 flag = (cutscene_flags[i >> 5] >> (i & 0x1f)) & 1;
+            if (flag != 0) {
+                // Load the character scene
+                char path[136];
+                VARIPTR buf_end = world->unknown_0108;
+                sprintf(path, "chars\\%s\\%s.gsc", CDataList[i].dir, CDataList[i].file);
+                NUGSCN *scene = (NUGSCN *)NuGScnRead(&world->giz_buffer, buf_end, path);
+                *entry = scene;
+                if (scene != NULL) {
+                    NuSpecialFind(scene, (void **)(entry + 1), CDataList[i].file);
+                }
+            }
+        }
+    }
+}
+
+extern "C" {
+
+    void *NuGCutSceneLoad(char *name, NUGSCN *gscn1, NUGSCN *gscn2, i32 flags) {
+        (void)name;
         (void)gscn1;
         (void)gscn2;
-        (void)param1;
-        (void)buf;
-        (void)buf_end;
-        (void)param2;
-        (void)param3;
-        (void)world;
+        (void)flags;
         return NULL;
     }
-    void CharScenes_LevelLoad(WORLDINFO *world) {
-        (void)world;
+    void NuGCutSceneFixUp(void *cutscene, char *name, i32 flags, VARIPTR *end) {
+        (void)cutscene;
+        (void)name;
+        (void)flags;
+        (void)end;
     }
-    void *SockSysInit(void *buf, void *buf_end, void *gscn) {
-        (void)buf;
-        (void)buf_end;
-        (void)gscn;
+    void NuGCutSceneFixUpExtra(void *cutscene, i32 area) {
+        (void)cutscene;
+        (void)area;
+    }
+    void *instNuGCutSceneCreate(void *cutscene, i32 flags, i32 param, char *name) {
+        (void)cutscene;
+        (void)flags;
+        (void)param;
+        (void)name;
         return NULL;
+    }
+    void NuSpecialFind(NUGSCN *scene, void **dest, char *name) {
+        (void)scene;
+        (void)dest;
+        (void)name;
     }
     void LevelSplines_InitForLevel(WORLDINFO *world) {
         (void)world;
@@ -895,10 +1081,10 @@ void WorldInfo_Load(WORLDINFO *world) {
         goto after_area;
     }
     if ((level->flags & LEVEL_STATUS) != 0 && world->area->minikit_id != -1) {
-        MiniKit_Load(&world->minikit, (i32)(i16)world->area->minikit_id, &world->giz_buffer, &world->unknown_0108,
-                     NULL);
-        if (world->minikit.gscn != NULL) {
-            MiniKit_InitPieces(&world->minikit, 10, &world->giz_buffer);
+        MiniKit_Load(&world->char_scene_info.minikit, (i32)(i16)world->area->minikit_id, &world->giz_buffer,
+                     &world->unknown_0108, NULL);
+        if (world->char_scene_info.minikit.gscn != NULL) {
+            MiniKit_InitPieces(&world->char_scene_info.minikit, 10, &world->giz_buffer);
         }
         if (abort_load != 0)
             goto abort;
@@ -919,7 +1105,7 @@ after_area:
 
     // Load cutscenes
     page_handles = (i32 *)&world->unknown_0140[0x2958];
-    world->cutscene_sys = CutScenes_Load(ConfigBuffer, world->current_gscn, cutscene_scene, page_handles[0],
+    world->cutscene_sys = CutScenes_Load(ConfigBuffer, world->current_gscn, (NUGSCN *)cutscene_scene, page_handles[0],
                                          &world->giz_buffer, &world->unknown_0108, *(i32 *)&world->unknown_0140[0x011c],
                                          *(i32 *)&world->unknown_0140[0x0120], world);
     if (abort_load != 0)
@@ -927,13 +1113,13 @@ after_area:
 
     // Character scenes
     aligned_buf = ALIGN((i32)world->giz_buffer.addr, 4);
-    *(i32 *)&world->minikit.field_0x18 = aligned_buf;
+    *(i32 *)&world->char_scene_info.minikit.field_0x18 = aligned_buf;
     world->giz_buffer.addr = (usize)(aligned_buf + CHARCOUNT * 0x10);
     CharScenes_LevelLoad(world);
 
     // SockSys for certain level types
     if ((level->flags & 0xe2) == 2) {
-        world->sock_sys = SockSysInit(&world->giz_buffer, &world->unknown_0108, world->current_gscn);
+        world->sock_sys = SockSysInit(&world->giz_buffer, world->unknown_0108, world->current_gscn);
     }
 
     LevelSplines_InitForLevel(world);

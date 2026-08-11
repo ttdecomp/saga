@@ -12,6 +12,12 @@ typedef struct MINIKIT_s {
     i32 field_0x18;
 } MINIKIT;
 
+// Struct at offset 0x2968 in WORLDINFO_s (0x148 bytes)
+typedef struct CHARSCENEINFO_s {
+    MINIKIT minikit;
+    char filler[0x148 - sizeof(MINIKIT)];
+} CHARSCENEINFO;
+
 typedef struct WORLDINFO_s {
     char filler0[0x104];
 
@@ -40,13 +46,14 @@ typedef struct WORLDINFO_s {
 
     char config_file[0x8c];
 
-    char unknown_0140[0x2960];
+    char unknown_0140[0x2788];
 
+    CHARSCENEINFO char_scene_info;
+    void *cutscene_sys;
     void *game_anim_sys;
     void *game_antinode_sys;
     void *gizmo_sys;
     void *sock_sys;
-    void *cutscene_sys;
     void *api_object_sys;
     void *ai_path_cnx_control_sys;
     void *ai_path_cnx_helper_sys;
@@ -56,7 +63,6 @@ typedef struct WORLDINFO_s {
     void *giz_flow;
     NUGSCN *icons_gscn;
     NUGSCN *unknown_0140_ptr;
-    MINIKIT minikit;
 
     AISYS *ai_sys;
     i32 processor_count;
