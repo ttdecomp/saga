@@ -12,6 +12,8 @@ fi
 
 objdiff-cli report generate -o report.json || exit 1
 
+git add report.json
+
 # get fuzzy match progress from report
 PROGRESS=$(grep -o '"fuzzy_match_percent":[^,}]*' report.json | head -1 | cut -d: -f2)
 PROGRESS=$(printf "%.2f" "$PROGRESS")
