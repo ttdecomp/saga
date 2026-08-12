@@ -177,6 +177,18 @@ def main():
 
         print(f"| | |")
 
+        print("| _Sections_ | |")
+
+        for (unit_, section), (old, new) in sorted(
+            sections.items(), key=lambda x: x[0]
+        ):
+            if unit_ != unit:
+                continue
+
+            print(f"| {section} | {format_change(old, new, percent=True)} |")
+
+        print(f"| | |")
+
         print("| _Functions_ | |")
         for (unit_, function), (old, new) in sorted(
             functions.items(), key=lambda x: x[0]
@@ -185,16 +197,6 @@ def main():
                 continue
 
             print(f"| {function} | {format_change(old, new, percent=True)} |")
-
-        print(f"| | |")
-
-        for (unit_, section), (old, new) in sorted(
-            sections.items(), key=lambda x: x[0]
-        ):
-            if unit_ != unit:
-                continue
-
-            print(f"| _Section_ {section} | {format_change(old, new, percent=True)} |")
 
     print("\n---\n")
     print("\n## Total Changes:\n")
