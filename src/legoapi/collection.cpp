@@ -7,7 +7,7 @@
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufpar.h"
 
-static COLLECTID *TempCollectID = NULL;
+COLLECTID *TempCollectID = NULL;
 
 i32 CollectCount = 0;
 COLLECTID *CollectList = NULL;

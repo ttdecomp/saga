@@ -1451,6 +1451,33 @@ i32 NuPPLoadBuffer(NUFILE file, void *buf, i32 buf_size) {
 static FILEEXTINFO extensions[64];
 static i32 num_extensions;
 
+i32 NuFileExtConvert(char *dest, char *path, i32 path_len) {
+    i32 length = path_len != 0x400 ? path_len : NuStrLen(path);
+    NuStrCpy(dest, path);
+
+    FILEEXTINFO *source = NULL;
+    for (i32 i = 0; i < num_extensions; ++i) {
+        i32 ext_len = extensions[i].len;
+        if (length >= ext_len && NuStrICmp(dest + length - ext_len, extensions[i].extension) == 0) {
+            source = &extensions[i];
+            break;
+        }
+    }
+    if (source == NULL || source->platform == PC_PLATFORM) {
+        return source != NULL;
+    }
+
+    for (i32 i = 0; i < num_extensions; ++i) {
+        FILEEXTINFO *target = &extensions[i];
+        if (target->platform == PC_PLATFORM && target->type == source->type) {
+            i32 base_len = length - source->len;
+            NuStrCpy(dest + base_len, target->extension);
+            return 1;
+        }
+    }
+    return 0;
+}
+
 static void AddExtension(char *extension, i32 type, i32 platform) {
     char *ext;
     i32 len;

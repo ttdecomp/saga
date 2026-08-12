@@ -27,49 +27,28 @@ enum {
 typedef struct AREADATA_s {
     char dir[64];
     char file[32];
-    i16 field2_0x60[1];
-    undefined field3_0x62;
-    undefined field4_0x63;
-    undefined field5_0x64;
-    undefined field6_0x65;
-    undefined field7_0x66;
-    undefined field8_0x67;
-    undefined field9_0x68;
-    undefined field10_0x69;
-    undefined field11_0x6a;
-    undefined field12_0x6b;
-    undefined field13_0x6c;
-    undefined field14_0x6d;
-    undefined field15_0x6e;
-    undefined field16_0x6f;
-    undefined field17_0x70;
-    undefined field18_0x71;
-    undefined field19_0x72;
-    undefined field20_0x73;
-    undefined field21_0x74;
-    undefined field22_0x75;
-    undefined field23_0x76;
-    undefined field24_0x77;
-    undefined2 field25_0x78;
+    i16 field2_0x60[12];
+
+    i16 field25_0x78;
 
     u16 flags;
 
-    undefined1 field27_0x7c;
+    byte field27_0x7c;
     byte field28_0x7d;
     byte cheat;
-    undefined1 field30_0x7f;
-    int field31_0x80;
+    byte field30_0x7f;
+    i32 field31_0x80;
     i16 challenge_trial_time;
     byte episode_index;
     byte area_index;
     i16 area_music;
-    undefined2 minikit_id;
-    undefined4 field37_0x8c;
-    undefined4 field38_0x90;
-    undefined2 field39_0x94;
+    i16 minikit_id;
+    i32 field37_0x8c;
+    i32 field38_0x90;
+    i16 field39_0x94;
     byte field40_0x96;
-    undefined field41_0x97;
-    undefined4 field42_0x98;
+    byte field41_0x97;
+    i16 *field42_0x98;
 } AREADATA;
 
 #ifdef __cplusplus
@@ -89,6 +68,7 @@ typedef struct AREAFIXUP {
     void *reset_fn;
     void *update_fn;
     void *draw_fn;
+    void *draw_status_fn;
 } AREAFIXUP;
 
 extern AREAFIXUP AreaFixUp_LSW[];

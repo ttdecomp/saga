@@ -84,6 +84,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/ai/aisys/aistate.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/edtools/edfile.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/edtools/edstubs.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/gui/apimenu.cpp
 
@@ -106,6 +107,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/level.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/mission.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/qrand.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/socksysall.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/store.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/timer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world.cpp

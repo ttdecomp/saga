@@ -272,6 +272,7 @@ extern "C" {
     i32 NuFileLoadBufferVP(char *filepath, VARIPTR *buf, VARIPTR *buf_end);
     i32 NuFileExists(char *name);
     i64 NuFileSize(char *filepath);
+    i32 NuFileExtConvert(char *dest, char *path, i32 path_len);
     i64 NuFilePos(NUFILE file);
     void NuFileUpCase(NUFILE_DEVICE *device, char *filepath);
 
