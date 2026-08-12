@@ -76,18 +76,15 @@ f32 DoubleScoreTime = 0.0f;
 f32 GameTimer[2] = {0.0f, 0.0f};
 i32 AreaGlobals = 0;
 
-i32 LevObjRef_FirstObj = 0;
-i32 LevObjRef_LastObj = 0;
-i32 LevObjRef_FirstRefObj = 0;
+i32 LEVOBJREF_FIRSTOBJ = -1;
+i32 LEVOBJREF_LASTOBJ = -1;
+i32 LEVOBJREF_FIRSTREFOBJ = -1;
+i32 LEVOBJREF_LASTREFOBJ = -1;
 
 LEVELOBJECT *ObjTabList = NULL;
 i32 LEVELOBJECTCOUNT = 0;
-i32 LEVELOBJECTMAX = 0;
 i32 EXTRALEVELOBJECTCOUNT = 0;
-
-char *ExtraLevelObject_NameTable = NULL;
-i32 ExtraLevelObject_NameTableSize = 0;
-i32 ExtraLevelObject_NameTableIndex = 0;
+i32 LEVELSPLINECOUNT = 0;
 
 LEVELDATA *NewLData = NULL;
 LEVELDATA *HUB_LDATA = NULL;

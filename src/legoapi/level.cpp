@@ -26,14 +26,13 @@ LEVELDATA *levelconfig_ldata = NULL;
 // Keyword tables for generic level configuration keywords.
 // These are combined with game-specific keyword tables by LevelConfig_BeforeLoad
 // and LevelConfig_AfterLoad via NuFParPushCom2.
-// Both tables exist in the original binary (defined in a separate compilation unit)
-// and are terminated by {NULL, NULL}.
+// Both tables exist in the original binary and are terminated by {NULL, NULL}.
 // TODO: Populate with actual keyword entries once extracted from the binary.
-NUFPCOMJMP LevelConfig_BeforeLoad_GenericKeywords[] = {
+static NUFPCOMJMP LevelConfig_BeforeLoad_GenericKeywords[] = {
     {NULL, NULL},
 };
 
-NUFPCOMJMP LevelConfig_AfterLoad_GenericKeywords[] = {
+static NUFPCOMJMP LevelConfig_AfterLoad_GenericKeywords[] = {
     {NULL, NULL},
 };
 
@@ -69,6 +68,11 @@ LEVELDATA *LOADGAME_LDATA = NULL;
 static i32 MAXLDATA = 0x64;
 
 i32 LEVELCOUNT;
+
+static i32 LEVELOBJECTMAX;
+static char *ExtraLevelObject_NameTable;
+static i32 ExtraLevelObject_NameTableSize;
+static i32 ExtraLevelObject_NameTableIndex;
 
 LEVELDATA *Levels_ConfigureList(char *file, VARIPTR *buf, VARIPTR *buf_end, i32 max_level_count, i32 *level_count_out,
                                 LEVELSETDEFAULTSFN *set_defaults_fn) {
@@ -430,8 +434,8 @@ void Level_Update(WORLDINFO *world) {
 }
 
 i32 LevelObject_GetReflection(i32 objId) {
-    if (objId != -1 && LevObjRef_FirstObj <= objId && objId <= LevObjRef_LastObj) {
-        objId = (objId - LevObjRef_FirstObj) + LevObjRef_FirstRefObj;
+    if (objId != -1 && LEVOBJREF_FIRSTOBJ <= objId && objId <= LEVOBJREF_LASTOBJ) {
+        objId = (objId - LEVOBJREF_FIRSTOBJ) + LEVOBJREF_FIRSTREFOBJ;
     }
     return objId;
 }
@@ -456,14 +460,66 @@ i32 LevelObject_FindIndexFromName(char *name) {
 }
 
 i32 LevelObject_FindIndexFromName_RefOnly(char *name) {
-    if (ObjTabList != NULL && LevObjRef_FirstObj != -1 && LevObjRef_FirstObj <= LevObjRef_LastObj) {
-        for (i32 i = LevObjRef_FirstObj; i <= LevObjRef_LastObj; ++i) {
+    if (ObjTabList != NULL && LEVOBJREF_FIRSTOBJ != -1 && LEVOBJREF_FIRSTOBJ <= LEVOBJREF_LASTOBJ) {
+        for (i32 i = LEVOBJREF_FIRSTOBJ; i <= LEVOBJREF_LASTOBJ; ++i) {
             if (NuStrICmp(ObjTabList[i].name, name) == 0) {
                 return i;
             }
         }
     }
     return -1;
+}
+
+void LevelObjects_InitForGame(LEVELOBJECT *objects, VARIPTR *buf, VARIPTR *, i32 max_objects,
+                              i32 extra_name_table_size) {
+    LEVOBJREF_FIRSTOBJ = -1;
+    LEVOBJREF_LASTOBJ = -1;
+    LEVOBJREF_FIRSTREFOBJ = -1;
+    LEVOBJREF_LASTREFOBJ = -1;
+    LEVELOBJECTMAX = max_objects;
+    ObjTabList = objects;
+    LEVELSPLINECOUNT = 0;
+
+    if (objects[0].kind != 0xff) {
+        i32 obj_start = -1;
+        i32 ref_obj_start = -1;
+        i32 count = LEVELOBJECTCOUNT;
+        LEVELOBJECT *object = objects;
+
+        while (object->kind != 0xff) {
+            if (object->ref_kind == 1) {
+                if (LEVOBJREF_FIRSTOBJ == -1) {
+                    LEVOBJREF_FIRSTOBJ = count;
+                    obj_start = count;
+                }
+                LEVOBJREF_LASTOBJ = count;
+            } else if (object->ref_kind == 2) {
+                if (LEVOBJREF_FIRSTREFOBJ == -1) {
+                    LEVOBJREF_FIRSTREFOBJ = count;
+                    ref_obj_start = count;
+                }
+                LEVOBJREF_LASTREFOBJ = count;
+            }
+            object++;
+            count++;
+        }
+
+        LEVELOBJECTCOUNT = count;
+
+        i32 obj_range = LEVOBJREF_LASTOBJ - obj_start;
+        i32 ref_range = LEVOBJREF_LASTREFOBJ - ref_obj_start;
+        if (obj_range > ref_range) {
+            LEVOBJREF_LASTOBJ = obj_start + ref_range;
+        } else if (obj_range < ref_range) {
+            LEVOBJREF_LASTREFOBJ = ref_obj_start + obj_range;
+        }
+    }
+
+    if (extra_name_table_size > 0) {
+        ExtraLevelObject_NameTable = buf->char_ptr;
+        ExtraLevelObject_NameTableSize = extra_name_table_size;
+        buf->addr += extra_name_table_size;
+    }
 }
 
 i32 LevelObject_AddExtra(char *name, i32 kind) {
