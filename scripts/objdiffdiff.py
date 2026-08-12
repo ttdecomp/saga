@@ -12,6 +12,12 @@ def try_parse(value):
 
 
 def diff_dict(a, b):
+    if isinstance(a, (int, float)) or isinstance(b, (int, float)):
+        return (a, b) if a != b else None
+
+    if a == {} or b == {}:
+        print(f"Warning: One of the dictionaries is empty: a={a}, b={b}")
+
     if a == b:
         return None
     elif a is None:
@@ -28,32 +34,29 @@ def diff(a: dict, b: dict):
     bUnits = {unit["name"]: unit["measures"] for unit in b.get("units", [])}
 
     aSections = {
-        (unit["name"], section["name"]): {
-            "fuzzy_match_percent": section.get("fuzzy_match_percent")
-        }
+        (unit["name"], section["name"]): section.get("fuzzy_match_percent")
         for unit in a.get("units", [])
         for section in unit.get("sections", [])
     }
     bSections = {
-        (unit["name"], section["name"]): {
-            "fuzzy_match_percent": section.get("fuzzy_match_percent")
-        }
+        (unit["name"], section["name"]): section.get("fuzzy_match_percent")
         for unit in b.get("units", [])
         for section in unit.get("sections", [])
     }
 
     aFunctions = {
-        (unit["name"], function["name"]): function["measures"]
+        (unit["name"], function["name"]): function.get("fuzzy_match_percent", None)
         for unit in a.get("units", [])
         for function in unit.get("functions", [])
     }
     bFunctions = {
-        (unit["name"], function["name"]): function["measures"]
+        (unit["name"], function["name"]): function.get("fuzzy_match_percent", None)
         for unit in b.get("units", [])
         for function in unit.get("functions", [])
     }
 
     return (
+        diff_dict(a["measures"], b["measures"]),
         {
             k: diff
             for k in set(aUnits.keys()).union(set(bUnits.keys()))
@@ -62,39 +65,41 @@ def diff(a: dict, b: dict):
         {
             k: diff
             for k in set(aSections.keys()).union(set(bSections.keys()))
-            if (diff := diff_dict(aSections.get(k, {}), bSections.get(k, {})))
+            if (diff := diff_dict(aSections.get(k, None), bSections.get(k, None)))
             is not None
         },
         {
             k: diff
             for k in set(aFunctions.keys()).union(set(bFunctions.keys()))
-            if (diff := diff_dict(aFunctions.get(k, {}), bFunctions.get(k, {})))
+            if (diff := diff_dict(aFunctions.get(k, None), bFunctions.get(k, None)))
             is not None
         },
     )
 
 
-def format_item(x) -> str:
-    if isinstance(x, float):
-        return f"{x:.2f}"
-    elif isinstance(x, int):
-        return f"{x}"
-    else:
-        return str(x)
+def formatter(x) -> str:
+    return ("%.3f" % x).rstrip("0").rstrip(".")
 
 
-def format_change(x, y) -> str:
+def format_change(x, y, percent: bool = False) -> str:
     if x is None and y is None:
         return ""
 
+    unit = "%" if percent else ""
+
     if x is None:
-        return f"+{format_item(y)}"
+        return f"<span style='color: green;'>+ {formatter(y)}{unit}</span>"
     elif y is None:
-        return f"-{format_item(x)}"
+        return f"<span style='color: red;'>- {formatter(x)}{unit}</span>"
     elif x == y:
-        return f"{format_item(x)}"
+        return f"<span style='color: gray;'>= {formatter(x)}{unit}</span>"
+    elif isinstance(x, (int, float)) and isinstance(y, (int, float)):
+        d = y - x
+        sign = "+" if d > 0 else ""
+        color = "green" if d > 0 else "red" if d < 0 else "gray"
+        return f"<span style='color: {color};'>{sign}{formatter(d)}{unit} ({formatter(x)}{unit} -> {formatter(y)}{unit})</span>"
     else:
-        return f"{format_item(x)} -> {format_item(y)} ({format_item(y - x)})"
+        return f"<span style='color: gray;'>{formatter(x)}{unit} -> {formatter(y)}{unit} ({formatter(y - x)}{unit})</span>"
 
 
 def print_table(data: list[list], headers: list[str]):
@@ -132,36 +137,49 @@ def main():
         new = json.load(f1)
         old = json.load(f2)
 
-    print("Differences between the two JSON files:")
-
-    units, sections, functions = diff(old, new)
+    total, units, sections, functions = diff(old, new)
 
     # table of units
-    for unit, changes in units.items():
-        print(f"{unit}:")
-        print("  Total:")
-        for measure, (old_value, new_value) in changes.items():
-            print(f"    {measure:<25} {format_change(old_value, new_value)}")
+    for unit, changes in sorted(units.items(), key=lambda x: x[0], reverse=True):
+        print(f"### `{unit}`\n")
+        print("| **Measure** | **Change** |")
+        print("|-------------|------------|")
+        print("| _Total_ | |")
+        for measure, (old_value, new_value) in sorted(
+            changes.items(), key=lambda x: x[0]
+        ):
+            print(
+                f"| {measure} | {format_change(old_value, new_value, percent=measure.endswith('percent'))} |"
+            )
 
-        for (unit_, section), changes in sections.items():
+        for (unit_, section), (old, new) in sorted(
+            sections.items(), key=lambda x: x[0]
+        ):
             if unit_ != unit:
                 continue
 
-            print(f"  Section {section}:")
-            print("    Total:")
-            for measure, (old_value, new_value) in changes.items():
-                print(f"      {measure}: {format_change(old_value, new_value)}")
+            print(f"| | |")
+            print(f"| _Section_ {section} | {format_change(old, new, percent=True)} |")
 
-            print(f"    Functions:")
-            for (unit_, function), changes in functions.items():
+            for (unit_, function), (old, new) in sorted(
+                functions.items(), key=lambda x: x[0]
+            ):
                 if unit_ != unit:
                     continue
 
-                print(f"      Function {function}:")
-                for measure, (old_value, new_value) in changes.items():
-                    print(f"      {measure}: {format_change(old_value, new_value)}")
+                print(f"| {function} | {format_change(old, new, percent=True)} |")
 
-    print(functions)
+    print("\n---\n")
+    print("\n## Total Changes:\n")
+
+    print("| **Measure** | **Change** |")
+    print("|-------------|------------|")
+    for measure, (old_value, new_value) in sorted(total.items(), key=lambda x: x[0]):
+        print(
+            f"| {measure} | {format_change(old_value, new_value, percent=measure.endswith('percent'))} |"
+        )
+
+    print()
 
 
 if __name__ == "__main__":
