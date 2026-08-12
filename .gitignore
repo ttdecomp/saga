@@ -19,3 +19,4 @@ vgcore.*
 .vscode/
 *.ogg
 report_old.json
+report.md

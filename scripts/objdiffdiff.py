@@ -85,21 +85,44 @@ def format_change(x, y, percent: bool = False) -> str:
     if x is None and y is None:
         return ""
 
-    unit = "%" if percent else ""
+    unit = r"\\% " if percent else ""
+
+    single = (
+        lambda sign, color, s: r"$\color{"
+        + color
+        + r"}\textbf{"
+        + sign
+        + formatter(s)
+        + unit
+        + r"}$"
+    )
+    double = (
+        lambda sign, color, delta, old, new: r"$\color{"
+        + color
+        + r"}\textbf{"
+        + sign
+        + formatter(delta)
+        + unit
+        + r" \("
+        + formatter(old)
+        + unit
+        + r"} \\; \rightarrow \\; \textbf{"
+        + formatter(new)
+        + unit
+        + r"\)}$"
+    )
 
     if x is None:
-        return f"<span style='color: green;'>+ {formatter(y)}{unit}</span>"
+        return single("+", "green", y)
     elif y is None:
-        return f"<span style='color: red;'>- {formatter(x)}{unit}</span>"
+        return single("-", "red", x)
     elif x == y:
-        return f"<span style='color: gray;'>= {formatter(x)}{unit}</span>"
+        return single("=", "gray", x)
     elif isinstance(x, (int, float)) and isinstance(y, (int, float)):
         d = y - x
-        sign = "+" if d > 0 else ""
         color = "green" if d > 0 else "red" if d < 0 else "gray"
-        return f"<span style='color: {color};'>{sign}{formatter(d)}{unit} ({formatter(x)}{unit} -> {formatter(y)}{unit})</span>"
-    else:
-        return f"<span style='color: gray;'>{formatter(x)}{unit} -> {formatter(y)}{unit} ({formatter(y - x)}{unit})</span>"
+        sign = "+" if d > 0 else ""
+        return double(sign, color, d, x, y)
 
 
 def print_table(data: list[list], headers: list[str]):
@@ -174,10 +197,13 @@ def main():
 
     print("| **Measure** | **Change** |")
     print("|-------------|------------|")
-    for measure, (old_value, new_value) in sorted(total.items(), key=lambda x: x[0]):
-        print(
-            f"| {measure} | {format_change(old_value, new_value, percent=measure.endswith('percent'))} |"
-        )
+    if total:
+        for measure, (old_value, new_value) in sorted(
+            total.items(), key=lambda x: x[0]
+        ):
+            print(
+                f"| {measure} | {format_change(old_value, new_value, percent=measure.endswith('percent'))} |"
+            )
 
     print()
 
