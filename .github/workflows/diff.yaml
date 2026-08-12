@@ -28,7 +28,7 @@ jobs:
                   # Push -> previous commit SHA
                   BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
               run: |
-                  git show HEAD^:report.json > report_old.json
+                  git show ${{ env.BASE_SHA }}:report.json > report_old.json
                   {
                     echo 'report<<EOF'
                     python scripts/objdiffdiff.py report.json report_old.json
