@@ -175,15 +175,9 @@ def main():
                 f"| {measure} | {format_change(old_value, new_value, percent=measure.endswith('percent'))} |"
             )
 
-        for (unit_, section), (old, new) in sorted(
-            sections.items(), key=lambda x: x[0]
-        ):
-            if unit_ != unit:
-                continue
+        print(f"| | |")
 
-            print(f"| | |")
-            print(f"| _Section_ {section} | {format_change(old, new, percent=True)} |")
-
+        print("| _Functions_ | |")
         for (unit_, function), (old, new) in sorted(
             functions.items(), key=lambda x: x[0]
         ):
@@ -191,6 +185,16 @@ def main():
                 continue
 
             print(f"| {function} | {format_change(old, new, percent=True)} |")
+
+        print(f"| | |")
+
+        for (unit_, section), (old, new) in sorted(
+            sections.items(), key=lambda x: x[0]
+        ):
+            if unit_ != unit:
+                continue
+
+            print(f"| _Section_ {section} | {format_change(old, new, percent=True)} |")
 
     print("\n---\n")
     print("\n## Total Changes:\n")
