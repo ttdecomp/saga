@@ -264,18 +264,15 @@ extern "C" {
     extern f32 GameTimer[2];
     extern i32 AreaGlobals;
 
-    extern i32 LevObjRef_FirstObj;
-    extern i32 LevObjRef_LastObj;
-    extern i32 LevObjRef_FirstRefObj;
+    extern i32 LEVOBJREF_FIRSTOBJ;
+    extern i32 LEVOBJREF_LASTOBJ;
+    extern i32 LEVOBJREF_FIRSTREFOBJ;
+    extern i32 LEVOBJREF_LASTREFOBJ;
 
-    extern struct LEVELOBJECT_s *ObjTabList;
+    extern struct LEVELOBJECT *ObjTabList;
     extern i32 LEVELOBJECTCOUNT;
-    extern i32 LEVELOBJECTMAX;
     extern i32 EXTRALEVELOBJECTCOUNT;
-
-    extern char *ExtraLevelObject_NameTable;
-    extern i32 ExtraLevelObject_NameTableSize;
-    extern i32 ExtraLevelObject_NameTableIndex;
+    extern i32 LEVELSPLINECOUNT;
 
     extern struct LEVELDATA_s *NewLData;
     extern struct LEVELDATA_s *HUB_LDATA;

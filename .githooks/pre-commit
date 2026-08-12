@@ -33,7 +33,8 @@ fi
 
 # update badge in README
 BADGE_URL="https://img.shields.io/badge/matching-${PROGRESS}%25-${COLOR}"
-sed -i "s|https://img.shields.io/badge/matching-[^)]*|${BADGE_URL}|g" README.md
+sed -i.bak "s|https://img.shields.io/badge/matching-[^)]*|${BADGE_URL}|g" README.md || exit 1
+rm -f README.md.bak
 
 git add report.json README.md
 

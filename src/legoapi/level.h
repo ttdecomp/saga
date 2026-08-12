@@ -182,11 +182,10 @@ typedef struct LEVELDATA_s {
     u16 max_gameantinodes;  // at some offset after 0x103
 } LEVELDATA;
 
-typedef struct LEVELOBJECT_s {
+typedef struct LEVELOBJECT {
     u8 kind;
     u8 pad_01;
-    u8 pad_02;
-    u8 pad_03;
+    u16 ref_kind;
     char *name;
 } LEVELOBJECT;
 
@@ -235,6 +234,8 @@ char *LevelObject_FindNameFromIndex(i32 index);
 i32 LevelObject_FindIndexFromName(char *name);
 i32 LevelObject_FindIndexFromName_RefOnly(char *name);
 
+void LevelObjects_InitForGame(LEVELOBJECT *objects, VARIPTR *buf, VARIPTR *buf_end, i32 max_objects,
+                              i32 extra_name_table_size);
 i32 LevelObject_AddExtra(char *name, i32 kind);
 
 void ClearLevelProgress(i32 index, WORLDINFO *world);
