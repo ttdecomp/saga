@@ -184,13 +184,13 @@ def main():
             print(f"| | |")
             print(f"| _Section_ {section} | {format_change(old, new, percent=True)} |")
 
-            for (unit_, function), (old, new) in sorted(
-                functions.items(), key=lambda x: x[0]
-            ):
-                if unit_ != unit:
-                    continue
+        for (unit_, function), (old, new) in sorted(
+            functions.items(), key=lambda x: x[0]
+        ):
+            if unit_ != unit:
+                continue
 
-                print(f"| {function} | {format_change(old, new, percent=True)} |")
+            print(f"| {function} | {format_change(old, new, percent=True)} |")
 
     print("\n---\n")
     print("\n## Total Changes:\n")
