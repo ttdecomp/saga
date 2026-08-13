@@ -1,5 +1,6 @@
 import sys
 import json
+from os.path import dirname
 
 
 def try_parse(value):
@@ -11,12 +12,24 @@ def try_parse(value):
     return value
 
 
+def _group_dir(unit):
+    """Parent directory of a unit, normalized to a project-relative path.
+
+    objdiff unit names carry inconsistent path prefixes ("saga/src/...",
+    "src/...", or bare "nu2api/..."), so strip a leading "saga/" and "src/"
+    component to group related functions under one stable directory.
+    """
+    parts = dirname(unit).split("/")
+    if parts and parts[0] == "saga":
+        parts = parts[1:]
+    if parts and parts[0] == "src":
+        parts = parts[1:]
+    return "/".join(parts) or "(root)"
+
+
 def diff_dict(a, b):
     if isinstance(a, (int, float)) or isinstance(b, (int, float)):
         return (a, b) if a != b else None
-
-    if a == {} or b == {}:
-        print(f"Warning: One of the dictionaries is empty: a={a}, b={b}")
 
     if a == b:
         return None
@@ -162,41 +175,79 @@ def main():
 
     total, units, sections, functions = diff(old, new)
 
-    # table of units
-    for unit, changes in sorted(units.items(), key=lambda x: x[0], reverse=True):
-        print(f"### `{unit}`\n")
-        print("| **Measure** | **Change** |")
-        print("|-------------|------------|")
-        print("| _Total_ | |")
-        for measure, (old_value, new_value) in sorted(
-            changes.items(), key=lambda x: x[0]
-        ):
-            print(
-                f"| {measure} | {format_change(old_value, new_value, percent=measure.endswith('percent'))} |"
+    # Per-function absolute sizes, keyed by (unit, function). Built before the
+    # reporting loops below (which reuse the names `old`/`new` as loop vars).
+    sizes = {}
+    for report_data in (old, new):
+        for unit in report_data.get("units", []):
+            for fn in unit.get("functions", []):
+                try:
+                    size = int(fn.get("size") or 0)
+                except (TypeError, ValueError):
+                    size = 0
+                sizes[(unit["name"], fn["name"])] = size
+
+    # Per-unit matched code bytes, keyed by unit name. Used to weight each
+    # directory's average fuzzy_match by how much code is actually matched;
+    # units with no matched code get weight 0.
+    matched = {}
+    for report_data in (old, new):
+        for unit in report_data.get("units", []):
+            try:
+                value = int(unit.get("measures", {}).get("matched_code") or 0)
+            except (TypeError, ValueError):
+                value = 0
+            matched.setdefault(unit["name"], value)
+
+    # Group function-level changes by the parent directory of their unit.
+    # Larger commits touch too many functions to list individually, so we
+    # average the per-function match percentages and sum the absolute code
+    # sizes for each directory.
+    dirs = {}
+    for (unit, function), (a, b) in functions.items():
+        key = _group_dir(unit)
+        entry = dirs.setdefault(key, [])
+        size = sizes.get((unit, function), 0)
+        weight = matched.get(unit, 0) or size
+        entry.append((size, weight, a, b))
+
+    print("\n---\n")
+    print("\n## Functions by directory\n")
+    if not dirs:
+        print("No function-level changes.")
+    else:
+        def weighted_avg(pairs):
+            if not pairs:
+                return None
+            total = sum(weight for weight, _ in pairs)
+            if total == 0:
+                return None
+            return sum(weight * value for weight, value in pairs) / total
+
+        rows = []
+        for key in sorted(dirs):
+            entry = dirs[key]
+            sizes_ = [size for size, _, _, _ in entry]
+            old_pairs = [
+                (weight, old) for _, weight, old, _ in entry if old is not None
+            ]
+            new_pairs = [
+                (weight, new) for _, weight, _, new in entry if new is not None
+            ]
+            rows.append(
+                [
+                    f"`{key}`",
+                    str(len(entry)),
+                    str(sum(sizes_)),
+                    format_change(
+                        weighted_avg(old_pairs), weighted_avg(new_pairs), percent=True
+                    ),
+                ]
             )
-
-        print(f"| | |")
-
-        print("| _Sections_ | |")
-
-        for (unit_, section), (old, new) in sorted(
-            sections.items(), key=lambda x: x[0]
-        ):
-            if unit_ != unit:
-                continue
-
-            print(f"| {section} | {format_change(old, new, percent=True)} |")
-
-        print(f"| | |")
-
-        print("| _Functions_ | |")
-        for (unit_, function), (old, new) in sorted(
-            functions.items(), key=lambda x: x[0]
-        ):
-            if unit_ != unit:
-                continue
-
-            print(f"| `{function}` | {format_change(old, new, percent=True)} |")
+        print("| Directory | Functions | Code size (bytes) | Avg fuzzy_match (matched-wtd) |")
+        print("|---|---|---|---|")
+        for row in rows:
+            print("| " + " | ".join(row) + " |")
 
     print("\n---\n")
     print("\n## Total Changes:\n")
