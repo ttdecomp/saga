@@ -24,6 +24,13 @@
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nufile/nufpar.h"
 
+struct MechTouchUIElement;
+struct PLAYERITEM_s;
+struct PLAYERITEMTYPE_s;
+struct PLAYERPACKET_s;
+struct SOCKPOSITION_s;
+struct TouchHolder;
+
 void Players_Init(void) {
     memset(Player, 0, sizeof(Player));
     GameObject_s **p = Player;
@@ -646,7 +653,7 @@ void *CutScenePlayer_Available(void) {
     return NULL;
 }
 
-void ChatterSfx(GameObject_s *g, int a, float b) {
+void ChatterSfx(GameObject_s *g, i32 a, float b) {
     (void)g;
     (void)a;
     (void)b;
@@ -656,13 +663,13 @@ void Move_VEHICLE(GameObject_s *g) {
     (void)g;
 }
 
-void DrawOffsetCode(GameObject_s *obj, int param) {
+void DrawOffsetCode(GameObject_s *obj, i32 param) {
     (void)obj;
     (void)param;
 }
 
 // rtlDynamicEnable uses C linkage in the original binary (plain symbol name).
-extern "C" void rtlDynamicEnable(int id, int param) {
+extern "C" void rtlDynamicEnable(i32 id, i32 param) {
     (void)id;
     (void)param;
 }
@@ -681,9 +688,77 @@ float GetHoverPosY(GameObject_s *obj) {
     return 0.0f;
 }
 
-int Player_HasPurpleForce(GameObject_s *obj) {
+i32 Player_HasPurpleForce(GameObject_s *obj) {
     (void)obj;
     return 0;
 }
 
 unsigned GAMEPAD_ACTION = 0;
+void PlayerTakeHit(GameObject_s *, GameObject_s *) {
+}
+
+void PlayerItem_Set(PLAYERITEM_s *, PLAYERITEMTYPE_s *) {
+}
+
+void Player_FindByID(i32) {
+}
+
+void Player_StartPos(GameObject_s *) {
+}
+
+void PlayersDropInOut() {
+}
+
+void PlayerItem_GotAmmo(PLAYERITEM_s *) {
+}
+
+void Players_AveragePos(nuvec_s *, SOCKPOSITION_s *) {
+}
+
+void Players_BothActive() {
+}
+
+void PlayerItemType_Find(i32) {
+}
+
+void Player_ClearContext(GameObject_s *, i32) {
+}
+
+void Player_HasFastBuild(GameObject_s *) {
+}
+
+void PlayerItemTypes_Init(PLAYERITEMTYPE_s *) {
+}
+
+void Player_ResetContexts(PLAYERPACKET_s *) {
+}
+
+void Player_CopyEssentials(GameObject_s *, GameObject_s *) {
+}
+
+void Player_HasDeflectBolts(GameObject_s *) {
+}
+
+void Player_ToggleCharacter(GameObject_s *, i32, i32) {
+}
+
+void Player_HasInvincibility(GameObject_s *) {
+}
+
+void Player_HasDoubleBoltDamage(GameObject_s *) {
+}
+
+void PlayerButton_OnHold_Callback(MechTouchUIElement &, TouchHolder &) {
+}
+
+void Player_HasDoubleWeaponDamage(GameObject_s *) {
+}
+
+void PlayerButton_OnLeave_Callback(MechTouchUIElement &, TouchHolder &) {
+}
+
+void Player_HasDoubleBoltDamage_FromBolt(BOLT_s *) {
+}
+
+void PlayerButton_OnClick_Callback_NextButton(MechTouchUIElement &, TouchHolder &) {
+}

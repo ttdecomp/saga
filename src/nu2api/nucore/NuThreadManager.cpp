@@ -16,9 +16,9 @@ i32 NuThreadManager::AllocTLS() {
     return -1;
 }
 
-NuThread *NuThreadManager::CreateThread(void (*thread_fn)(void *), void *fn_arg, int priority, const char *name,
-                                        int stack_size, NUTHREADCAFECORE cafe_core, NUTHREADXBOX360CORE xbox360_core) {
-    static int ThreadPriorityMap[] = {0, 1, 2, 3, 4};
+NuThread *NuThreadManager::CreateThread(void (*thread_fn)(void *), void *fn_arg, i32 priority, const char *name,
+                                        i32 stack_size, NUTHREADCAFECORE cafe_core, NUTHREADXBOX360CORE xbox360_core) {
+    static i32 ThreadPriorityMap[] = {0, 1, 2, 3, 4};
 
     NuThreadCreateParameters params;
 
@@ -45,4 +45,14 @@ NuThread *NuThreadManager::CreateThread(void (*thread_fn)(void *), void *fn_arg,
 
 NuThreadBase *NuThreadManager::GetCurrentThread() {
     return NuThreadGetCurrentThread();
+}
+
+void NuThreadManager::CreateThreadSuspended(void (*)(void *), void *, i32, char const *, i32, NUTHREADCAFECORE,
+                                            NUTHREADXBOX360CORE) {
+}
+
+void NuThreadManager::FreeTLS(i32) {
+}
+
+void NuThreadManager::GetMainThread() {
 }

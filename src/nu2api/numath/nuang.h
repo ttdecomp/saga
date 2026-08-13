@@ -1,6 +1,8 @@
 #pragma once
 
-typedef int NUANG;
+#include "nu2api/nucore/common.h"
+
+typedef i32 NUANG;
 
 #define NUANG_90DEG (NUANG)(0x4000)
 #define NUANG_180DEG (NUANG)(0x8000)
@@ -14,3 +16,13 @@ struct nuangvec_s {
 };
 
 typedef struct nuangvec_s NUANGVEC;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+    NUANG NuAngAdd(NUANG a, NUANG b);
+    NUANG NuAngSub(NUANG a, NUANG b);
+    NUANG NuAng2AltSol(NUANG theta);
+#ifdef __cplusplus
+}
+#endif

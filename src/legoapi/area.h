@@ -75,7 +75,7 @@ extern AREAFIXUP AreaFixUp_LSW[];
 
 AREADATA *Area_FindByName(char *name, i32 *indexDest);
 
-AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, int count, int *countDest);
+AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, i32 count, i32 *countDest);
 
 struct LEVELDATA_s *Area_FindStatusLevel(AREADATA *area, i32 *indexDest);
 

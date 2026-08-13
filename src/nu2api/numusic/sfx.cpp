@@ -53,11 +53,11 @@ void InitSoundInfo(i32 index) {
     memcpy(&g_revertSoundInfo[index], info, sizeof(NUSOUNDINFO));
 }
 
-void fnAudioAudio(nufpar_s *fpar) {
+static void fnAudioAudio(nufpar_s *fpar) {
     g_audioVersion = NuFParGetFloat(fpar);
 }
 
-void fnAudioSample(nufpar_s *fpar) {
+static void fnAudioSample(nufpar_s *fpar) {
     InitSoundInfo(NumSfxInst);
 
     NUSOUND_FILENAME_INFO *finfo = NULL;
@@ -67,7 +67,7 @@ void fnAudioSample(nufpar_s *fpar) {
     while (true) {
         if (NuFParGetWord(fpar) == 0) {
             sinfo = &g_soundInfo[NumSfxInst];
-            // *(byte *)((int)&sinfo->flags + 2) = *(byte *)((int)&sinfo->flags + 2) & 0xef | 0x20;
+            // *(byte *)((i32)&sinfo->flags + 2) = *(byte *)((i32)&sinfo->flags + 2) & 0xef | 0x20;
             sinfo->dirty = 0;
 
             LOG_DEBUG("fpar->line_buf=%s", fpar->line_buf);
@@ -149,10 +149,10 @@ void fnAudioSample(nufpar_s *fpar) {
     }
 }
 
-void fnAudioGroup(nufpar_s *fpar) {
+static void fnAudioGroup(nufpar_s *fpar) {
     bool bVar1;
-    int iVar2;
-    int iVar3;
+    i32 iVar2;
+    i32 iVar3;
 
     iVar3 = -1;
     bVar1 = true;
@@ -185,9 +185,11 @@ static NUFPCOMJMP audioCom[] = {
     {NULL, NULL},
 };
 
+static void LoadSfx(const char *file, variptr_u *buffer_start, variptr_u buffer_end);
+
 void InitSfx(variptr_u *buffer_start, variptr_u buffer_end, const char *file) {
     // bVar15 = 0;
-    // g_soundMap = (short *)((int)buffer_start->voidptr + 3U & 0xfffffffc);
+    // g_soundMap = (short *)((i32)buffer_start->voidptr + 3U & 0xfffffffc);
     g_soundMap = BUFFER_ALLOC_ARRAY(buffer_start, 0x100, u16);
 
     // sfx_info = (nusound_filename_info_s *)(g_soundMap + 0x100);
@@ -196,15 +198,15 @@ void InitSfx(variptr_u *buffer_start, variptr_u buffer_end, const char *file) {
     // memset(sfx_info, 0, 0xc800);
     SfxInfo = BUFFER_ALLOC_ARRAY(buffer_start, 1600, nusound_filename_info_s);
 
-    // sound_info = (SoundInfo *)((int)buffer_start->voidptr + 3U & 0xfffffffc);
+    // sound_info = (SoundInfo *)((i32)buffer_start->voidptr + 3U & 0xfffffffc);
     // g_soundInfo = sound_info;
     // buffer_start->voidptr = sound_info + 0x640;
     // memset(sound_info, 0, 0x1a900);
     g_soundInfo = BUFFER_ALLOC_ARRAY(buffer_start, 1600, NUSOUNDINFO);
 
-    //__s = (void *)((int)buffer_start->voidptr + 3U & 0xfffffffc);
+    //__s = (void *)((i32)buffer_start->voidptr + 3U & 0xfffffffc);
     // g_revertSoundInfo = __s;
-    // buffer_start->voidptr = (void *)((int)__s + 0x1a900);
+    // buffer_start->voidptr = (void *)((i32)__s + 0x1a900);
     // memset(__s, 0, 0x1a900);
     g_revertSoundInfo = BUFFER_ALLOC_ARRAY(buffer_start, 1600, NUSOUNDINFO);
 
@@ -237,7 +239,7 @@ void InitSfx(variptr_u *buffer_start, variptr_u buffer_end, const char *file) {
         LOG_DEBUG("SfxInfo[%d]: name=%s", i, SfxInfo[i].filename);
     }
 
-    // puVar1 = (undefined4 *)((int)&sfx_info->name + iVar12);
+    // puVar1 = (undefined4 *)((i32)&sfx_info->name + iVar12);
     //*puVar1 = 0;
     // puVar1[1] = 0;
     // puVar1[2] = 0xffffffff;
@@ -259,7 +261,7 @@ void InitSfx(variptr_u *buffer_start, variptr_u buffer_end, const char *file) {
     //         if ((sound_info->flags & 2) != 0) {
     //             sVar7 = (short)(*(short *)&sound_info->field_0x4 * 2) >> 1;
     //             local_14 = (byte)sVar7 & 0xf;
-    //             puVar2 = (ushort *)((int)GlobalSfxBits + ((int)sVar7 >> 4) * 2);
+    //             puVar2 = (ushort *)((i32)GlobalSfxBits + ((i32)sVar7 >> 4) * 2);
     //             *puVar2 = *puVar2 | (ushort)(1 << local_14);
     //         }
     //         sound_info = sound_info + 1;
@@ -269,7 +271,7 @@ void InitSfx(variptr_u *buffer_start, variptr_u buffer_end, const char *file) {
     // ResetSounds();
 }
 
-void LoadSfx(const char *file, variptr_u *buffer_start, variptr_u buffer_end) {
+static void LoadSfx(const char *file, variptr_u *buffer_start, variptr_u buffer_end) {
     nufpar_s *fp = NuFParCreate(const_cast<char *>(file));
     if (fp != NULL) {
         NuFParPushCom(fp, audioCom);

@@ -45,7 +45,7 @@ i32 NuThreadCreateCriticalSection(void) {
     return index;
 }
 
-void NuThreadDestroyCriticalSection(int index) {
+void NuThreadDestroyCriticalSection(i32 index) {
     pthread_mutex_destroy(&NuThread_CriticalSections[index]);
 
     NuThread_CriticalSectionsUsed[index] = false;
@@ -91,3 +91,12 @@ void NuIOSThreadInit() {
     pthread_setspecific(g_currentThreadSpecificKey, data);
 }
 #endif
+
+void NuThread::Resume() {
+}
+
+void NuThread::SetDebugName(char const *) {
+}
+
+void NuThreadBase::GetDebugName() const {
+}

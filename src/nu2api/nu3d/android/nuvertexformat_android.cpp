@@ -5,4 +5,5 @@
 static i32 g_allocatedDescriptorCount;
 
 NuVertexFormatPS *NuGetVertexDeclaration(NUVERTEXDESCRIPTOR vtx_desc) {
+    return NULL;
 }

@@ -2,7 +2,7 @@
 
 #include "nu2api/nucore/common.h"
 
-struct episodedata_s {
+typedef struct EPISODEDATA {
     i16 name_id;
     i16 text_id;
     i16 area_ids[10];
@@ -10,8 +10,7 @@ struct episodedata_s {
     u8 regular_areas;
     u8 index;
     u8 field6_0x1b;
-};
-typedef struct episodedata_s EPISODEDATA;
+} EPISODEDATA;
 
 #ifdef __cplusplus
 extern "C" {

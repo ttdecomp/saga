@@ -25,3 +25,4 @@ vgcore.*
 *.ogg
 report_old.json
 report.md
+opencode.jsonc

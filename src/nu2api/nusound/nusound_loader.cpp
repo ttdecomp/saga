@@ -15,6 +15,20 @@ NuSoundLoader::NuSoundLoader() {
 NuSoundLoader::~NuSoundLoader() {
 }
 
+i32 NuSoundLoader::CloseStream() {
+    return 0;
+}
+
+u64 NuSoundLoader::Deinterleave(char *data, i32 length, char **dest, i32 count, NuSoundSystem::ChannelConfig config) {
+    return 0;
+}
+
+void NuSoundLoader::GetChannelAddress(NuSoundBuffer *, NuSoundStreamDesc *, NuSoundSystem::AudioChannel) {
+}
+
+void NuSoundLoader::ReleaseHeader(NuSoundStreamDesc *) {
+}
+
 i32 NuSoundLoader::LoadFromFile(const char *name, NuSoundStreamDesc *desc, NuSoundBuffer *buffer,
                                 NuSoundOutOfMemCallback *oom) {
     this->oom = oom;
@@ -32,6 +46,7 @@ i32 NuSoundLoader::LoadFromFile(const char *name, NuSoundStreamDesc *desc, NuSou
 
 i32 NuSoundLoader::Load(NuSoundStreamDesc *desc, NuSoundBuffer *buffer) {
     UNIMPLEMENTED();
+    return {};
 }
 
 i32 NuSoundLoader::OpenForStreaming(const char *path, f64 length, NuSoundStreamDesc *desc, bool param4) {

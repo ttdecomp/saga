@@ -2,13 +2,14 @@
 
 #include "decomp.h"
 
-int lever_gizmotype_id = -1;
+i32 lever_gizmotype_id = -1;
 
-static int Levers_GetMaxGizmos(void *lever) {
+static i32 Levers_GetMaxGizmos(void *lever) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void Levers_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void Levers_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
@@ -22,13 +23,15 @@ static void Levers_Draw(void *, void *, float) {
 
 static char *Lever_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int Lever_GetOutput(GIZMO *gizmo, int, int) {
+static i32 Lever_GetOutput(GIZMO *gizmo, i32, i32) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static char *Lever_GetOutputName(GIZMO *gizmo, int output_index) {
+static char *Lever_GetOutputName(GIZMO *gizmo, i32 output_index) {
     if (output_index == 1) {
         return "Down(Goodie)";
     }
@@ -44,24 +47,26 @@ static char *Lever_GetOutputName(GIZMO *gizmo, int output_index) {
     return "Down(Baddie)";
 }
 
-static int Lever_GetNumOutputs(GIZMO *gizmo) {
+static i32 Lever_GetNumOutputs(GIZMO *gizmo) {
     return 3;
 }
 
-static void Lever_Activate(GIZMO *gizmo, int) {
+static void Lever_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static int Lever_ActivateRev(GIZMO *gizmo, int, int) {
+static i32 Lever_ActivateRev(GIZMO *gizmo, i32, i32) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void Lever_SetVisibility(GIZMO *gizmo, int) {
+static void Lever_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
 static void *Levers_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void Levers_ClearProgress(void *, void *) {
@@ -78,13 +83,15 @@ static void Levers_Reset(void *, void *, void *) {
 
 static void *Levers_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int Levers_Load(void *, void *) {
+static i32 Levers_Load(void *, void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-ADDGIZMOTYPE *Levers_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *Levers_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

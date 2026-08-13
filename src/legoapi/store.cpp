@@ -2,6 +2,10 @@
 
 #include "nu2api/nucore/nustring.h"
 
+struct GameObject_s;
+struct LEVEL_PROGRESS_s;
+struct WORLDINFO_s;
+
 STOREPACK StorePack[11] = {0};
 
 i32 Store_FindPack(i32 id, char *name) {
@@ -90,4 +94,43 @@ i32 Store_FindPack(i32 id, char *name) {
     } else {
         return -1;
     }
+}
+
+void StorePlatImpact() {
+}
+
+void Store_UnlockPack(i32, bool) {
+}
+
+void StoreLevelProgressFn(WORLDINFO_s *, LEVEL_PROGRESS_s *, i32) {
+}
+
+void Store_IsPackUnlocked(i32) {
+}
+
+void Store_IsPackAvailable(i32, char *) {
+}
+
+void StoreBundle_FindByName(char *) {
+}
+
+void Store_RestorePurchases() {
+}
+
+void Store_RootPackCustodian(i32, GameObject_s *) {
+}
+
+void StoreProgressAICharacter(LEVEL_PROGRESS_s *) {
+}
+
+void Store_HubDrawFloorTargets(WORLDINFO_s *) {
+}
+
+void Store_HubInitFloorTargets(WORLDINFO_s *) {
+}
+
+void Store_UprootPackCustodian(i32, GameObject_s *) {
+}
+
+void StoreStatusTakeOverObjectSys() {
 }

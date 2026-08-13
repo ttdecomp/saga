@@ -22,7 +22,7 @@
 struct NuSoundStream {
     NuSoundStreamingSample *stream;
     bool paused;
-    int ps2volume;
+    i32 ps2volume;
     bool loop;
     u8 status;
 };
@@ -66,7 +66,7 @@ nusound_filename_info_s *ConfigureMusic(char *file, VARIPTR *bufferStart, VARIPT
     audio_ps2_music_ext = ".mib";
 
     // MusicConfig *musicConfig;
-    // musicConfig = (MusicConfig *)((int)bufferStart->voidptr + 3U & 0xfffffffc);
+    // musicConfig = (MusicConfig *)((i32)bufferStart->voidptr + 3U & 0xfffffffc);
 
     // musicConfig->field0_0x0 = 0;
     // ActionPairTab = &musicConfig->actionTab;
@@ -140,9 +140,7 @@ i32 NuSound3InitV(VARIPTR *bufferStart, VARIPTR bufferEnd, i32 zero1, i32 zero2)
     return 1;
 }
 
-void NuSound3StopStereoStream(i32 streamIndex) {
-    UNIMPLEMENTED("NuSound3StopStereoStream");
-}
+extern "C" void NuSound3StopStereoStream(i32);
 
 i32 NuSound3PlayStereoV(NUSOUNDPLAYTOK token, ...) {
     va_list args;
@@ -209,8 +207,8 @@ i32 NuSound3PlayStereoV(NUSOUNDPLAYTOK token, ...) {
                 stream = stream_ptr->stream;
             }
 
-            LoadState load_state = stream->GetLoadState();
-            if ((load_state == LoadState::NOT_LOADED) && stream_ptr->stream->GetResourceCount() == 0) {
+            NuSoundSample::LoadState load_state = stream->GetLoadState();
+            if ((load_state == NuSoundSample::LoadState::NOT_LOADED) && stream_ptr->stream->GetResourceCount() == 0) {
                 delete stream_ptr;
                 g_NuSoundStreams[stream_index] = NULL;
             } else if (g_NuSoundStreams[stream_index] != NULL) {
@@ -225,7 +223,7 @@ i32 NuSound3PlayStereoV(NUSOUNDPLAYTOK token, ...) {
             g_NuSoundStreams[stream_index] = node;
             node->paused = false;
             node->stream = streaming_sample;
-            node->ps2volume = (int)volume;
+            node->ps2volume = (i32)volume;
             node->loop = loop_type != 0;
 
             streaming_sample->buffer1 = &g_NuSoundStreamBuffers[stream_index * 2];

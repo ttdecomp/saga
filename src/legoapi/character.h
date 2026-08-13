@@ -288,7 +288,7 @@ struct gamecharacterdata_s { /* PlaceHolder Structure */
 typedef struct gamecharacterdata_s GAMECHARACTERDATA;
 
 struct characterdata_s { /* PlaceHolder Structure */
-    int field0_0x0;
+    i32 field0_0x0;
     undefined4 field1_0x4;
     char *dir;
     char *file;

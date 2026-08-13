@@ -1,5 +1,7 @@
 #pragma once
 
+#include "nu2api/nucore/common.h"
+
 #include <GLES2/gl2.h>
 
 struct nunativetex_s;
@@ -11,7 +13,7 @@ typedef struct nunativetexps_s {
 #ifdef __cplusplus
 extern "C" {
 #endif
-    extern int g_textureLoadBufferCriticalSection;
+    extern i32 g_textureLoadBufferCriticalSection;
 
     extern GLuint g_LegoEnvTexture;
     extern GLuint g_PhongEnvTexture;

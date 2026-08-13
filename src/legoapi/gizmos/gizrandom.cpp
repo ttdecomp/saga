@@ -2,41 +2,47 @@
 
 #include "decomp.h"
 
-int gizrandom_gizmotype_id = -1;
+i32 gizrandom_gizmotype_id = -1;
 
-int GizRandom_GetMaxGizmos(void *random) {
+i32 GizRandom_GetMaxGizmos(void *random) {
     UNIMPLEMENTED();
+    return {};
 }
 
-void GizRandom_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+void GizRandom_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
 char *GizRandom_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-int GizRandom_GetOutput(GIZMO *gizmo, int, int) {
+i32 GizRandom_GetOutput(GIZMO *gizmo, i32, i32) {
     UNIMPLEMENTED();
+    return {};
 }
 
-char *GizRandom_GetOutputName(GIZMO *gizmo, int output_index) {
+char *GizRandom_GetOutputName(GIZMO *gizmo, i32 output_index) {
     UNIMPLEMENTED();
+    return {};
 }
 
-int GizRandom_GetNumOutputs(GIZMO *gizmo) {
+i32 GizRandom_GetNumOutputs(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-void GizRandom_Activate(GIZMO *gizmo, int) {
+void GizRandom_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
 void *GizRandom_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-ADDGIZMOTYPE *GizRandom_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *GizRandom_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

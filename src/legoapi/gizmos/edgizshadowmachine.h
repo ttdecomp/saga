@@ -2,14 +2,14 @@
 
 #include "legoapi/gizmo.h"
 
-extern int edGizShadow_gizmotype_id;
+extern i32 edGizShadow_gizmotype_id;
 
 #ifdef __cplusplus
 
 typedef struct EDGIZSHADOW_s {
 } EDGIZSHADOW;
 
-ADDGIZMOTYPE* EdGizShadowMachine_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* EdGizShadowMachine_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

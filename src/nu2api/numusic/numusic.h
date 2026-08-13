@@ -7,15 +7,7 @@
 
 #ifdef __cplusplus
 
-struct Track;
 struct NuMusic;
-
-enum voice_status_e : u32 {
-    VOICE_STATUS_1 = 1,
-    VOICE_STATUS_6 = 6,
-    VOICE_STATUS_7 = 7,
-};
-typedef enum voice_status_e VOICE_STATUS;
 
 enum : u32 {
     TRACK_CLASS_QUIET = 0x1,
@@ -29,28 +21,34 @@ typedef u32 TRACK_CLASS;
 typedef u32 TRACK_FLAGS;
 
 #ifdef __cplusplus
-class Track {
-  public:
-    char *path;
-    char *name;
-    char *ident;
-    i32 file_indexes[2];
-    TRACK_CLASS clazz;
-    void *field12_0x18;
-    i32 index_count;
-    u8 field17_0x20;
-    u8 field18_0x21;
-    u8 field19_0x22;
-    u8 field20_0x23;
-    f32 field21_0x24;
-    i32 pitch;
-    f32 field23_0x2c;
-    f32 field24_0x30;
-    f32 field25_0x34;
-    TRACK_FLAGS flags;
-};
-
 class NuMusic {
+  public:
+    enum VOICE_STATUS : u32 {
+        VOICE_STATUS_1 = 1,
+        VOICE_STATUS_6 = 6,
+        VOICE_STATUS_7 = 7,
+    };
+
+    struct Track {
+        char *path;
+        char *name;
+        char *ident;
+        i32 file_indexes[2];
+        TRACK_CLASS clazz;
+        void *field12_0x18;
+        i32 index_count;
+        u8 field17_0x20;
+        u8 field18_0x21;
+        u8 field19_0x22;
+        u8 field20_0x23;
+        f32 field21_0x24;
+        i32 pitch;
+        f32 field23_0x2c;
+        f32 field24_0x30;
+        f32 field25_0x34;
+        TRACK_FLAGS flags;
+    };
+
     struct Voice {
         i32 stream_index;
         Track *tracks[2];
@@ -59,8 +57,8 @@ class NuMusic {
         u32 flags;
         void *field16_0x2c;
 
-        bool Load(Track *track, int trackIndex);
-        void SetStatusFn(VOICE_STATUS status);
+        bool Load(Track *track, i32 trackIndex);
+        void SetStatusFn(i32 status, i32 unused);
         i32 Play();
     };
 
@@ -99,6 +97,9 @@ class NuMusic {
     i32 track_index;
 
   public:
+    NuMusic();
+    ~NuMusic();
+
     i32 Initialise(const char *file, char *null, VARIPTR *buffer_start, VARIPTR buffer_end);
     void GetSoundFiles(nusound_filename_info_s **finfo, i32 *null);
 
@@ -117,7 +118,7 @@ class NuMusic {
     Voice *FindVoiceByClass(TRACK_CLASS class_);
     i32 StopAll(i32 toggle);
     Voice *FindIdleVoice();
-    i32 PlayTrackI(TRACK_CLASS track);
+    i32 PlayTrackI(TRACK_CLASS track, u32 unused);
 
     static i32 ClassToIX(u32 i);
 

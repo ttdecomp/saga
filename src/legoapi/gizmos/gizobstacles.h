@@ -2,14 +2,14 @@
 
 #include "legoapi/gizmo.h"
 
-extern int obstacle_gizmotype_id;
+extern i32 obstacle_gizmotype_id;
 
 #ifdef __cplusplus
 
 typedef struct GIZOBSTACLE_s {
 } GIZOBSTACLE;
 
-ADDGIZMOTYPE* GizObstacles_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* GizObstacles_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

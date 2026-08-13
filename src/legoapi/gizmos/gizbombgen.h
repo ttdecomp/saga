@@ -2,14 +2,14 @@
 
 #include "legoapi/gizmo.h"
 
-extern int bombgen_gizmotype_id;
+extern i32 bombgen_gizmotype_id;
 
 #ifdef __cplusplus
 
 typedef struct GIZBOMBGEN_s {
 } GIZBOMBGEN;
 
-ADDGIZMOTYPE* GizBombGen_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* GizBombGen_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

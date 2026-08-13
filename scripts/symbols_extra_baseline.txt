@@ -1,0 +1,10 @@
+# Baseline for the "extra (in build only)" count reported by check_symbols.py.
+#
+# check_symbols.py (and the check_symbols CI workflow) fail when the build
+# implements MORE extra symbols than this number. Missing symbols are always
+# an error; this baseline only guards against the extra-symbol count creeping
+# upward, so new unreplicated symbols must be documented before merging.
+#
+# To update after a deliberate, documented change, bump the number below to
+# the new expected "extra (in build only)" count.
+144

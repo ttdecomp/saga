@@ -2,13 +2,14 @@
 
 #include "decomp.h"
 
-int plug_gizmotype_id = -1;
+i32 plug_gizmotype_id = -1;
 
-static int Plugs_GetMaxGizmos(void *plug) {
+static i32 Plugs_GetMaxGizmos(void *plug) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void Plugs_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void Plugs_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
@@ -22,34 +23,40 @@ static void Plugs_Draw(void *, void *, float) {
 
 static char *Plug_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int Plug_GetOutput(GIZMO *gizmo, int, int) {
+static i32 Plug_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static char *Plug_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static i32 Plug_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void Plug_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static char *Plug_GetOutputName(GIZMO *gizmo, int output_index) {
+static void Plug_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static int Plug_GetNumOutputs(GIZMO *gizmo) {
+static i32 Plug_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
-}
-
-static void Plug_Activate(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static void Plug_SetVisibility(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static int Plug_GetPos(GIZMO *gizmo) {
-    UNIMPLEMENTED();
+    return {};
 }
 
 static void *Plugs_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void Plugs_ClearProgress(void *, void *) {
@@ -66,13 +73,15 @@ static void Plugs_Reset(void *, void *, void *) {
 
 static void *Plugs_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int Plugs_Load(void *, void *) {
+static i32 Plugs_Load(void *, void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-ADDGIZMOTYPE *Plugs_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *Plugs_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

@@ -1,5 +1,14 @@
 #include "legoapi/gizmo.h"
 
+#include "GizBlowupObjectInterface.h"
+#include "GizBuildItObjectInterface.h"
+#include "GizForceObjectInterface.h"
+#include "GizLeverObjectInterface.h"
+#include "GizObstacleObjectInterface.h"
+#include "GizPanelObjectInterface.h"
+#include "GizTurretObjectInterface.h"
+#include "HatMachineObjectInterface.h"
+#include "TeleportObjectInterface.h"
 #include "legoapi/gizmos/ai.h"
 #include "legoapi/gizmos/door.h"
 #include "legoapi/gizmos/edgizshadowmachine.h"
@@ -32,15 +41,15 @@
 
 #include <string.h>
 
-static int DefaultGizmo_GetOutput(GIZMO *, int, int) {
+static i32 DefaultGizmo_GetOutput(GIZMO *, i32, i32) {
     return 0;
 }
 
-static char *DefaultGizmo_GetOutputName(GIZMO *, int) {
+static char *DefaultGizmo_GetOutputName(GIZMO *, i32) {
     return "default";
 }
 
-static int DefaultGizmo_GetNumOutputs(GIZMO *) {
+static i32 DefaultGizmo_GetNumOutputs(GIZMO *) {
     return 1;
 }
 
@@ -116,7 +125,7 @@ static REGISTERGIZMOTYPEFN GizmoTypesLSW[] = {GizObstacles_RegisterGizmo,
 
 GIZMOTYPES *gizmotypes;
 
-VARIPTR *GizmoBufferAlloc(VARIPTR *buffer, VARIPTR *buffer_end, int size) {
+VARIPTR *GizmoBufferAlloc(VARIPTR *buffer, VARIPTR *buffer_end, i32 size) {
     VARIPTR *ptr = NULL;
 
     if (buffer_end != NULL && buffer != NULL) {
@@ -131,19 +140,19 @@ VARIPTR *GizmoBufferAlloc(VARIPTR *buffer, VARIPTR *buffer_end, int size) {
 }
 
 void RegisterGizmoTypes(VARIPTR *buffer, VARIPTR *buffer_end, REGISTERGIZMOTYPEFN *register_gizmo_type_fns,
-                        int unknown) {
+                        i32 unknown) {
     ADDGIZMOTYPE *addgizmo;
     GIZMOTYPES *types;
     GIZMOTYPE *gizmo;
     void *pvVar4;
     VARIPTR *pvVar3;
-    int i;
+    i32 i;
 
     if (gizmotypes != NULL || register_gizmo_type_fns == NULL || *register_gizmo_type_fns == NULL) {
         return;
     }
 
-    int ntypes = 0;
+    i32 ntypes = 0;
     for (; register_gizmo_type_fns[ntypes] != NULL; ntypes++) {
     }
 
@@ -163,7 +172,7 @@ void RegisterGizmoTypes(VARIPTR *buffer, VARIPTR *buffer_end, REGISTERGIZMOTYPEF
 
     gizmotypes->count = ntypes;
 
-    for (int n = 0; n < gizmotypes->count; n++, gizmo++) {
+    for (i32 n = 0; n < gizmotypes->count; n++, gizmo++) {
         addgizmo = register_gizmo_type_fns[n](n);
 
         if (*addgizmo->prefix != '\0' && n != 0) {
@@ -237,7 +246,7 @@ void RegisterGizmoTypes_LSW(VARIPTR *buffer, VARIPTR *buffer_end) {
     RegisterGizmoTypes(buffer, buffer_end, gizmo_types, 12);
 }
 
-GIZMO *AddGizmo(GIZMOSYS *gizmo_sys, int type_id, char *name, void *object) {
+GIZMO *AddGizmo(GIZMOSYS *gizmo_sys, i32 type_id, char *name, void *object) {
     if (gizmotypes == NULL || gizmo_sys == NULL) {
         return NULL;
     }
@@ -267,12 +276,12 @@ GIZMO *AddGizmo(GIZMOSYS *gizmo_sys, int type_id, char *name, void *object) {
     return NULL;
 }
 
-int GizmoGetTypeIDByName(GIZMOSYS_s *gizmo_sys, char *name) {
+i32 GizmoGetTypeIDByName(GIZMOSYS_s *gizmo_sys, char *name) {
     if (gizmotypes == NULL || name == NULL || gizmo_sys == NULL || gizmotypes->count <= 0) {
         return -1;
     }
 
-    for (int i = 0; i < gizmotypes->count; i++) {
+    for (i32 i = 0; i < gizmotypes->count; i++) {
         if (NuStrCmp(gizmotypes->types[i].name, name) == 0) {
             return i;
         }
@@ -281,7 +290,7 @@ int GizmoGetTypeIDByName(GIZMOSYS_s *gizmo_sys, char *name) {
     return -1;
 }
 
-void GizmoSetVisibility(GIZMOSYS *gizmo_sys, GIZMO *gizmo, int visibility, int unknown) {
+void GizmoSetVisibility(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 visibility, i32 unknown) {
     if (gizmotypes == NULL || gizmo == NULL || gizmo_sys == NULL || gizmo->type_id >= gizmotypes->count ||
         gizmotypes->types[gizmo->type_id].fns.set_visibility_fn == NULL) {
         return;
@@ -294,7 +303,7 @@ void GizmoSetVisibility(GIZMOSYS *gizmo_sys, GIZMO *gizmo, int visibility, int u
     gizmotypes->types[gizmo->type_id].fns.set_visibility_fn(gizmo, visibility);
 }
 
-int GizmoGetVisibility(GIZMOSYS *gizmo_sys, GIZMO *gizmo) {
+i32 GizmoGetVisibility(GIZMOSYS *gizmo_sys, GIZMO *gizmo) {
 
     if (gizmotypes == NULL || gizmo == NULL || gizmo_sys == NULL || gizmo->type_id >= gizmotypes->count ||
         gizmotypes->types[gizmo->type_id].fns.get_visibility_fn == NULL) {
@@ -304,7 +313,7 @@ int GizmoGetVisibility(GIZMOSYS *gizmo_sys, GIZMO *gizmo) {
     return gizmotypes->types[gizmo->type_id].fns.get_visibility_fn(gizmo);
 }
 
-void GizmoActivate(GIZMOSYS *gizmo_sys, GIZMO *gizmo, int unknown1, int unknown2) {
+void GizmoActivate(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 unknown1, i32 unknown2) {
     if (gizmotypes == NULL || gizmo == NULL || gizmo_sys == NULL || gizmo->type_id >= gizmotypes->count) {
         return;
     }
@@ -321,7 +330,7 @@ void GizmoActivate(GIZMOSYS *gizmo_sys, GIZMO *gizmo, int unknown1, int unknown2
     type->fns.activate_fn(gizmo, unknown1);
 }
 
-char *GizmoGetOutputName(GIZMOSYS *gizmo_sys, GIZMO *gizmo, int output_index) {
+char *GizmoGetOutputName(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 output_index) {
     if (gizmotypes == NULL || gizmo == NULL || gizmo_sys == NULL) {
         return NULL;
     }
@@ -333,7 +342,7 @@ char *GizmoGetOutputName(GIZMOSYS *gizmo_sys, GIZMO *gizmo, int output_index) {
     return gizmotypes->types[gizmo->type_id].fns.get_output_name_fn(gizmo, output_index);
 }
 
-int GizmoGetOutput(GIZMOSYS *gizmo_sys, GIZMO *gizmo, int unknown1, int unknown2) {
+i32 GizmoGetOutput(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 unknown1, i32 unknown2) {
     if (gizmotypes == NULL || gizmo == NULL || gizmo_sys == NULL) {
         return 0;
     }
@@ -401,7 +410,7 @@ void GizmoSysPanelDraw(GIZMOSYS *gizmo_sys, void *world_info, float delta_time) 
     }
 }
 
-int GizmoSys_BoltHitPlat(GIZMOSYS *gizmo_sys, void *world_info, BOLT *bolt, unsigned char *unknown) {
+i32 GizmoSys_BoltHitPlat(GIZMOSYS *gizmo_sys, void *world_info, BOLT *bolt, unsigned char *unknown) {
     if (gizmotypes == NULL || bolt == NULL || gizmo_sys == NULL) {
         return 0;
     }
@@ -420,7 +429,7 @@ int GizmoSys_BoltHitPlat(GIZMOSYS *gizmo_sys, void *world_info, BOLT *bolt, unsi
     return 0;
 }
 
-int ResetGizmoType(GIZMOSYS *gizmo_sys, int type_id, char *name) {
+i32 ResetGizmoType(GIZMOSYS *gizmo_sys, i32 type_id, char *name) {
     if (name != NULL && type_id == -1) {
         type_id = GizmoGetTypeIDByName(gizmo_sys, name);
     }
@@ -435,7 +444,7 @@ int ResetGizmoType(GIZMOSYS *gizmo_sys, int type_id, char *name) {
     return 1;
 }
 
-void GizmoSysClearLevelProgress(void *unknown, int type_id) {
+void GizmoSysClearLevelProgress(void *unknown, i32 type_id) {
     GIZMOTYPE *type = gizmotypes->types;
     if (gizmotypes == NULL || gizmotypes->count <= 0) {
         return;
@@ -459,4 +468,178 @@ void GizmoSysClearLevelProgress(void *unknown, int type_id) {
             }
         }
     }
+}
+
+void GizForceObjectInterface::GetPos(VuVec &, i32) const {
+}
+
+void GizForceObjectInterface::GetRadius() const {
+}
+
+void GizForceObjectInterface::GetTargetName() const {
+}
+
+void GizForceObjectInterface::GetTgtVoidPtr() {
+}
+
+GizForceObjectInterface::GizForceObjectInterface(GIZFORCE_s &) {
+}
+
+void GizForceObjectInterface::TargetedFlash() {
+}
+
+GizForceObjectInterface::~GizForceObjectInterface() {
+}
+
+void GizLeverObjectInterface::GetPos(VuVec &, i32) const {
+}
+
+void GizLeverObjectInterface::GetRadius() const {
+}
+
+void GizLeverObjectInterface::GetTargetName() const {
+}
+
+GizLeverObjectInterface::GizLeverObjectInterface(LEVER_s &) {
+}
+
+void GizLeverObjectInterface::TargetedFlash() {
+}
+
+GizLeverObjectInterface::~GizLeverObjectInterface() {
+}
+
+void GizPanelObjectInterface::GetFloorTargetPos(VuVec &, i32) const {
+}
+
+void GizPanelObjectInterface::GetPos(VuVec &, i32) const {
+}
+
+void GizPanelObjectInterface::GetRadius() const {
+}
+
+void GizPanelObjectInterface::GetTargetName() const {
+}
+
+GizPanelObjectInterface::GizPanelObjectInterface(GIZPANEL_s &) {
+}
+
+void GizPanelObjectInterface::TargetedFlash() {
+}
+
+GizPanelObjectInterface::~GizPanelObjectInterface() {
+}
+
+void TeleportObjectInterface::GetPos(VuVec &, i32) const {
+}
+
+void TeleportObjectInterface::GetRadius() const {
+}
+
+void TeleportObjectInterface::GetTargetName() const {
+}
+
+void TeleportObjectInterface::TargetedFlash() {
+}
+
+TeleportObjectInterface::TeleportObjectInterface(TELEPORT_s &, i32) {
+}
+
+TeleportObjectInterface::~TeleportObjectInterface() {
+}
+
+void GizBlowupObjectInterface::GetPos(VuVec &, i32) const {
+}
+
+void GizBlowupObjectInterface::GetRadius() const {
+}
+
+void GizBlowupObjectInterface::GetTargetName() const {
+}
+
+GizBlowupObjectInterface::GizBlowupObjectInterface(GIZMOBLOWUP_s &) {
+}
+
+void GizBlowupObjectInterface::IsDead() {
+}
+
+void GizBlowupObjectInterface::TargetedFlash() {
+}
+
+GizBlowupObjectInterface::~GizBlowupObjectInterface() {
+}
+
+void GizTurretObjectInterface::GetPos(VuVec &, i32) const {
+}
+
+void GizTurretObjectInterface::GetRadius() const {
+}
+
+void GizTurretObjectInterface::GetTargetName() const {
+}
+
+GizTurretObjectInterface::GizTurretObjectInterface(GIZTURRET_s &) {
+}
+
+void GizTurretObjectInterface::TargetedFlash() {
+}
+
+GizTurretObjectInterface::~GizTurretObjectInterface() {
+}
+
+void GizBuildItObjectInterface::GetPos(VuVec &, i32) const {
+}
+
+void GizBuildItObjectInterface::GetRadius() const {
+}
+
+void GizBuildItObjectInterface::GetTargetName() const {
+}
+
+GizBuildItObjectInterface::GizBuildItObjectInterface(GIZBUILDIT_s &) {
+}
+
+void GizBuildItObjectInterface::TargetedFlash() {
+}
+
+GizBuildItObjectInterface::~GizBuildItObjectInterface() {
+}
+
+void HatMachineObjectInterface::GetPos(VuVec &, i32) const {
+}
+
+void HatMachineObjectInterface::GetRadius() const {
+}
+
+void HatMachineObjectInterface::GetTargetName() const {
+}
+
+HatMachineObjectInterface::HatMachineObjectInterface(HATMACHINE_s &) {
+}
+
+void HatMachineObjectInterface::TargetedFlash() {
+}
+
+HatMachineObjectInterface::~HatMachineObjectInterface() {
+}
+
+void GizObstacleObjectInterface::GetPos(VuVec &, i32) const {
+}
+
+void GizObstacleObjectInterface::GetRadius() const {
+}
+
+void GizObstacleObjectInterface::GetTargetName() const {
+}
+
+GizObstacleObjectInterface::GizObstacleObjectInterface(GIZOBSTACLE_s &) {
+}
+
+void GizObstacleObjectInterface::IsDead() {
+}
+
+void GizObstacleObjectInterface::TargetedFlash() {
+}
+
+GizObstacleObjectInterface::~GizObstacleObjectInterface() {
 }

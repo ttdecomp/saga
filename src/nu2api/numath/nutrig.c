@@ -46,3 +46,39 @@ static short NuASin(f32 sin) {
 short NuACos(f32 cos) {
     return 0x4000 - NuASin(cos);
 }
+
+NUANG NuAngAdd(NUANG a, NUANG b) {
+    return a + b;
+}
+
+NUANG NuAngSub(NUANG a, NUANG b) {
+    return a - b;
+}
+
+NUANG NuAng2AltSol(NUANG theta) {
+    return theta + NUANG_180DEG;
+}
+
+f32 NuAtanf(f32 x) {
+    return atanf(x);
+}
+
+NUANG NuAtani(f32 x) {
+    return (NUANG)(NuAtanf(x) * MAX_SHORT_OVER_PI);
+}
+
+NUANG NuAtan2DA(f32 dx, f32 dy) {
+    return (NUANG)(NuAtan2(dx, dy) * MAX_SHORT_OVER_PI);
+}
+
+f32 NuAtan2DAF(f32 dx, f32 dy) {
+    return NuAtan2(dx, dy);
+}
+
+f32 NuSinf(NUANG ang) {
+    return NU_SIN_LUT(ang);
+}
+
+f32 NuCosf(NUANG ang) {
+    return NU_COS_LUT(ang);
+}

@@ -129,7 +129,7 @@ void InitGameAfterConfig(void) {
                 }
             LAB_0012ca68:
                 if (area->cheat != 0xff) {
-                    Cheat_SetArea((int)(char)area->cheat, areaId);
+                    Cheat_SetArea((i32)(char)area->cheat, areaId);
                 }
             }
             areaId = areaId + 1;
@@ -140,11 +140,11 @@ void InitGameAfterConfig(void) {
     // char cVar1;
     // char cVar2;
     // ushort uVar3;
-    // int iVar8;
+    // i32 iVar8;
 
-    // int local_28;
-    // int local_24;
-    // int local_20[3];
+    // i32 local_28;
+    // i32 local_24;
+    // i32 local_20[3];
 
     // i16 uVar4 = tUNKNOWN;
 
@@ -484,7 +484,7 @@ void InitGameAfterConfig(void) {
     //  CheckMusicOtherFn = CheckMusicOther;
     //  GizBuildIt_CanStartBuildingFn = GizBuildIt_CanStartBuildingFn_Game;
     //  GizBuildIt_FinishFn = GizBuildIt_FinishFn_Game;
-    //  POWERUP_TEXTID = (int)tPOWERUP;
+    //  POWERUP_TEXTID = (i32)tPOWERUP;
     //  BackDrop_AlphaFn = BackDrop_Alpha;
     //  Game_100PercentFn = LEGO_100PercentFn;
     //  Game_AllGoldBricksFn = LEGO_AllGoldBricksFn;

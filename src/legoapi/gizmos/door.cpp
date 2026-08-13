@@ -4,35 +4,40 @@
 
 static char door_gizmotype_id = -1;
 
-static int Door_GetMaxGizmos(void *door) {
+static i32 Door_GetMaxGizmos(void *door) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void Door_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void Door_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
 static char *Door_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int Door_GetOutput(GIZMO *gizmo, int, int) {
+static i32 Door_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+char *Door_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static i32 Door_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+void Door_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-char *Door_GetOutputName(GIZMO *gizmo, int output_index) {
-    UNIMPLEMENTED();
-}
-
-static int Door_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-}
-
-void Door_Activate(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-ADDGIZMOTYPE *Door_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *Door_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

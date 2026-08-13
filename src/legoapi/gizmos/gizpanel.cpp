@@ -2,13 +2,14 @@
 
 #include "decomp.h"
 
-int gizpanel_gizmotype_id = -1;
+i32 gizpanel_gizmotype_id = -1;
 
-static int GizPanel_GetMaxGizmos(void *panel) {
+static i32 GizPanel_GetMaxGizmos(void *panel) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void GizPanel_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void GizPanel_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
@@ -22,30 +23,35 @@ static void GizPanel_Draw(void *, void *, float) {
 
 static char *GizPanel_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizPanel_GetOutput(GIZMO *gizmo, int, int) {
+static i32 GizPanel_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static char *GizPanel_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static i32 GizPanel_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void GizPanel_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static char *GizPanel_GetOutputName(GIZMO *gizmo, int output_index) {
-    UNIMPLEMENTED();
-}
-
-static int GizPanel_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-}
-
-static void GizPanel_Activate(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static void GizPanel_SetVisibility(GIZMO *gizmo, int) {
+static void GizPanel_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
 static void *GizPanels_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void GizPanels_ClearProgress(void *, void *) {
@@ -62,13 +68,15 @@ static void GizPanels_Reset(void *, void *, void *) {
 
 static void *GizPanels_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizPanel_Load(void *, void *) {
+static i32 GizPanel_Load(void *, void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-ADDGIZMOTYPE *GizPanel_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *GizPanel_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

@@ -7,15 +7,15 @@
 #include "nu2api/nucore/nuvideo.h"
 
 typedef struct nuapi_s {
-    int field0_0x0;
-    int video_mode;
+    i32 field0_0x0;
+    i32 video_mode;
     NUVIDEO_SWAPMODE video_swap_mode;
-    int video_aspect;
-    int screen_width;
-    int screen_height;
-    int video_is_pal;
+    i32 video_aspect;
+    i32 screen_width;
+    i32 screen_height;
+    i32 video_is_pal;
     f32 fps;
-    int nuframe_begin_cnt;
+    i32 nuframe_begin_cnt;
     char field12_0x24;
     char field13_0x25;
     char field14_0x26;
@@ -54,7 +54,7 @@ typedef struct nuapi_s {
     char field74_0x85;
     char field75_0x86;
     char field76_0x87;
-    int disable_os_menu_freeze;
+    i32 disable_os_menu_freeze;
     f32 video_brightness;
 } NUAPI;
 
@@ -77,7 +77,7 @@ enum {
     NUAPI_SETUP_0x4b = 0x4b,
 };
 
-extern int nuapi_use_target_manager;
+extern i32 nuapi_use_target_manager;
 extern char *nuapi_target_manager_mac_address;
 
 #ifdef __cplusplus
@@ -87,7 +87,7 @@ extern "C" {
 #endif
     i32 NuInitHardware(VARIPTR *buf, VARIPTR *buf_end, i32 heap_size, ...);
 
-    void NuCommandLine(int argc, char **argv);
+    void NuCommandLine(i32 argc, char **argv);
     void NuDisableOSMenuFreeze(void);
 
     void NudxFw_D3DBeginCriticalSection(void);

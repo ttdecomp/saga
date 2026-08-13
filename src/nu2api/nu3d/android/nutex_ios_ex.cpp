@@ -21,10 +21,12 @@ GLuint g_earlyColorMSAAFramebuffer;
 
 GLuint NuIOS_CreateGLTexFromFile(const char *filename) {
     UNIMPLEMENTED();
+    return {};
 }
 
 GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, i32 *width, i32 *height, bool is_pvrtc) {
     UNIMPLEMENTED();
+    return {};
 }
 
 GLuint loadDefaultTexture(GLuint texture, GLint level, GLsizei size, GLenum texture_type, GLenum target) {

@@ -22,3 +22,12 @@ void NuVirtualTouchDevice::Execute(u32 port, NUPADTYPE in_type, NUPADATTACHMENTT
 
 void NuVirtualTouchDevice::CreateDefaultLayout(u32 unknown) {
 }
+
+void NuVirtualTouchDevice::GetAspectRatio() {
+}
+
+void NuVirtualTouchDevice::Render() {
+}
+
+void NuVirtualTouchDevice::SetCurrentLayoutIndex(u32) {
+}

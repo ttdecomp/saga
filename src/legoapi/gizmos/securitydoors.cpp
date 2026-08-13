@@ -2,11 +2,12 @@
 
 #include "decomp.h"
 
-static int SecurityDoors_GetMaxGizmos(void *door) {
+static i32 SecurityDoors_GetMaxGizmos(void *door) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void SecurityDoors_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void SecurityDoors_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
@@ -20,34 +21,40 @@ static void SecurityDoors_Draw(void *, void *, float) {
 
 static char *SecurityDoor_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int SecurityDoor_GetOutput(GIZMO *gizmo, int, int) {
+static i32 SecurityDoor_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static char *SecurityDoor_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static i32 SecurityDoor_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void SecurityDoor_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static char *SecurityDoor_GetOutputName(GIZMO *gizmo, int output_index) {
+static void SecurityDoor_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static int SecurityDoor_GetNumOutputs(GIZMO *gizmo) {
+static i32 SecurityDoor_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
-}
-
-static void SecurityDoor_Activate(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static void SecurityDoor_SetVisibility(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static int SecurityDoor_GetPos(GIZMO *gizmo) {
-    UNIMPLEMENTED();
+    return {};
 }
 
 static void *SecurityDoors_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void SecurityDoors_ClearProgress(void *, void *) {
@@ -64,13 +71,15 @@ static void SecurityDoors_Reset(void *, void *, void *) {
 
 static void *SecurityDoors_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int SecurityDoors_Load(void *, void *) {
+static i32 SecurityDoors_Load(void *, void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-ADDGIZMOTYPE *SecurityDoors_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *SecurityDoors_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

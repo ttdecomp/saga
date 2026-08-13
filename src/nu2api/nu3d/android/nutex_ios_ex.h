@@ -6,7 +6,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-    extern int g_currentTexUnit;
+    extern i32 g_currentTexUnit;
     extern GLuint g_lastBound2DTexIds[16];
     extern GLuint g_lastBoundCubeTexIds[16];
     extern GLuint g_earlyColorFramebuffer;
@@ -91,12 +91,12 @@ static const u8 FormatMinBlocksYTable[128] = {
 // clang-format on
 
 GLuint NuIOS_CreateGLTexFromFile(const char *filename);
-GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, int *width, int *height, bool is_pvrtc);
+GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, i32 *width, i32 *height, bool is_pvrtc);
 GLuint loadDefaultTexture(GLuint texture, GLint level, GLsizei size, GLenum texture_type, GLenum target);
 GLuint CreateTexturePS(void);
-void GetNativeTextureFormat(NUTEXFORMAT inFormat, int &outBpp, u32 &outInternalFormat, u32 &outType, u32 &outFormat, bool &outIsCompressed, NUTEXFORMAT &outFormatEnum);
+void GetNativeTextureFormat(NUTEXFORMAT inFormat, i32 &outBpp, u32 &outInternalFormat, u32 &outType, u32 &outFormat, bool &outIsCompressed, NUTEXFORMAT &outFormatEnum);
 void GetTextureFormatInfo(NUTEXFORMAT texture, u32 &param_2, u32 &param_3);
-int GetMipLevelSize(NUTEXFORMAT param_1, int unclamped_width, int unclamped_height);
-int GetMipOffset(NuHardwareTexture *tex, int targetMip, int targetSlice, NUTEXFORMAT overrideFormat);
+i32 GetMipLevelSize(NUTEXFORMAT param_1, i32 unclamped_width, i32 unclamped_height);
+i32 GetMipOffset(NuHardwareTexture *tex, i32 targetMip, i32 targetSlice, NUTEXFORMAT overrideFormat);
 void DecompressTextureToRGBA(u8 *ddsData, u32 size, u8 *&outBuffer);
-void UnlockTexturePS(u32 texID, void *pixels, int width, int height, int depth, bool isCubemap, int mips, NUTEXFORMAT format, u32 &glFormat, u32 &glInternalFormat, u32 glType, bool isCompressed);
+void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, bool isCubemap, i32 mips, NUTEXFORMAT format, u32 &glFormat, u32 &glInternalFormat, u32 glType, bool isCompressed);

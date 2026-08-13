@@ -21,6 +21,15 @@ class NuSoundStreamingSample : public NuSoundSample {
 
     NuSoundStreamingSample(const char *file);
 
+    void Close();
+    void ReCue(float, bool);
+    bool IsLocked() const;
+    void Lock();
+    void Unlock();
+    void RequestBuffer(bool, NuSoundWeakPtr<NuSoundBufferCallback>);
+
+    ~NuSoundStreamingSample();
+
     i32 Open(float param_1, bool param_2, bool param_3);
 };
 
@@ -81,6 +90,14 @@ class NuSoundStreamer {
     NuSoundStreamer();
 
     void RequestCue(NuSoundStreamingSample *streaming_sample, bool loop, float start_offset, bool always_false);
+
+    void RequestClose(NuSoundStreamingSample *);
+    void RequestReCue(NuSoundStreamingSample *, bool, float);
+    void RequestFill(NuSoundStreamingSample *, NuSoundBuffer *, bool, NuSoundWeakPtr<NuSoundBufferCallback>);
+    void ShutdownAll();
+    void ShutdownThread();
+
+    ~NuSoundStreamer();
 
   private:
     static void ThreadFunc(void *self);

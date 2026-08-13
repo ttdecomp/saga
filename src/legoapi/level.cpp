@@ -16,8 +16,8 @@
 
 extern "C" char *ConfigBuffer;
 
-// Declared in nu2api/nusound/nusound.cpp
-extern "C" void GameAudio_PlaySfxAndSetVolume(i32 sfx_id, void *pos, f32 volume);
+// Defined in legoapi/gameobjects.cpp
+void GameAudio_PlaySfxAndSetVolume(i32, nuvec_s *, float);
 
 // These are extern (U) in the original level.cpp.o — defined here as stubs
 // until the original defining file is decompiled.
@@ -37,7 +37,7 @@ NUFPCOMJMP LevelConfig_AfterLoad_GenericKeywords[] = {
     {NULL, NULL},
 };
 
-i32 Text_StripComments(char *text, char *dest) {
+i32 Text_StripComments(char *text, char *dest, i32) {
     char *start = text;
     i32 length = NuStrLen(text);
     char *out = dest;
@@ -314,8 +314,8 @@ void Level_SetDefaults(LEVELDATA *level) {
     level->max_plugs = 10;
 }
 
-LEVELDATA *Level_FindByName(char *name, int *idx_out) {
-    for (int i = 0; i < LEVELCOUNT; i++) {
+LEVELDATA *Level_FindByName(char *name, i32 *idx_out) {
+    for (i32 i = 0; i < LEVELCOUNT; i++) {
         if (NuStrICmp(LDataList[i].name, name) == 0) {
             if (idx_out != NULL) {
                 *idx_out = i;
@@ -579,7 +579,7 @@ void Level_LoadConfigFile(WORLDINFO *world) {
     world->unknown_010c = bytesRead;
     if (bytesRead > 0) {
         ((char *)world->giz_buffer.void_ptr)[bytesRead] = '\0';
-        bytesRead = Text_StripComments((char *)world->giz_buffer.void_ptr, ConfigBuffer);
+        bytesRead = Text_StripComments((char *)world->giz_buffer.void_ptr, ConfigBuffer, 0);
         world->unknown_010c = bytesRead;
     }
 }

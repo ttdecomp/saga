@@ -2,11 +2,12 @@
 
 #include "decomp.h"
 
-static int Shards_GetMaxGizmos(void *shard) {
+static i32 Shards_GetMaxGizmos(void *shard) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void Shards_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void Shards_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
@@ -24,30 +25,35 @@ static void Shards_Draw(void *, void *, float) {
 
 static char *Shard_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int Shard_GetOutput(GIZMO *gizmo, int, int) {
+static i32 Shard_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static char *Shard_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static i32 Shard_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void Shard_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static char *Shard_GetOutputName(GIZMO *gizmo, int output_index) {
-    UNIMPLEMENTED();
-}
-
-static int Shard_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-}
-
-static void Shard_Activate(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static void Shard_SetVisibility(GIZMO *gizmo, int) {
+static void Shard_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
 static void *Shards_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void Shards_ClearProgress(void *, void *) {
@@ -64,13 +70,15 @@ static void Shards_Reset(void *, void *, void *) {
 
 static void *Shards_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int Shards_Load(void *, void *) {
+static i32 Shards_Load(void *, void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-ADDGIZMOTYPE *Shards_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *Shards_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

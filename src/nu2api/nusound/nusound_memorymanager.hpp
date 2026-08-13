@@ -16,19 +16,28 @@ class NuSoundMemoryBuffer {
   private:
     static pthread_mutex_t s_cs;
 
-    void BeginCriticalSection() {
-        pthread_mutex_lock(&s_cs);
-    }
-    void EndCriticalSection() {
-        pthread_mutex_unlock(&s_cs);
-    }
+    void BeginCriticalSection();
+    void EndCriticalSection();
 
   public:
+    NuSoundMemoryBuffer();
+    ~NuSoundMemoryBuffer();
+
     void SetNext(NuSoundMemoryBuffer *next);
     void SetSize(u32 size);
     void SetAddress(void *address);
+    void SetAlloced(bool);
+    void SetPrev(NuSoundMemoryBuffer *);
     void *Lock(const char *name);
     void Unlock();
+
+    void GetAddress();
+    void GetLockReason();
+    void GetNext();
+    void GetPrev();
+    void GetSize();
+    bool IsAlloced();
+    bool IsLocked();
 };
 
 class NuSoundMemoryManager {
@@ -46,6 +55,9 @@ class NuSoundMemoryManager {
     u8 flags;
 
   public:
+    NuSoundMemoryManager();
+    ~NuSoundMemoryManager();
+
     u32 Init(const char *name, void *memory, u32 size, u32 align, u32 param_5);
 
     static NuSoundMemoryBuffer *PopFreeBuffer();
@@ -53,4 +65,28 @@ class NuSoundMemoryManager {
     void EnableDefragOnAlloc(bool value);
 
     NuSoundMemoryBuffer *Alloc(u32 size);
+
+    void AllocAddress(unsigned int);
+    void CheckAndMergeFreeBufferNext(NuSoundMemoryBuffer *);
+    void CheckAndMergeFreeBufferPrev(NuSoundMemoryBuffer *);
+    void CheckList();
+    void CountAdjacentFreeBuffers(NuSoundMemoryBuffer *);
+    void Defragment(unsigned int);
+    void EnableDebug(bool);
+    void EnableDefragOnFree(bool);
+    void Free(NuSoundMemoryBuffer *);
+    void FreeAddress(void *);
+    void GetFree();
+    void GetSize();
+    void GetUsed();
+    void MergeFreeBuffer(NuSoundMemoryBuffer *);
+    void MoveLargestTrailingBufferIntoBuffer(NuSoundMemoryBuffer *, NuSoundMemoryBuffer **, NuSoundMemoryBuffer **);
+    void OutputList();
+    void OutputMap();
+    void PushFreeBuffer(NuSoundMemoryBuffer *);
+    void Release();
+    void RenderMap(float, float, float);
+    void SplitFreeBuffer(NuSoundMemoryBuffer *, unsigned int, NuSoundMemoryBuffer **);
+    void SwapOrMergeAdjacentBuffers(NuSoundMemoryBuffer *);
+    void SwapSimilarBuffers(NuSoundMemoryBuffer *, NuSoundMemoryBuffer *);
 };

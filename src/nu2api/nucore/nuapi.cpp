@@ -9,13 +9,13 @@
 
 NUAPI nuapi;
 
-int nuapi_use_target_manager;
+i32 nuapi_use_target_manager;
 char *nuapi_target_manager_mac_address;
 
 float nuapi_forced_frame_time;
 i32 nuapi_max_fps = 60;
 
-static int NUAPI_PADREC_DEFAULT_BUFFERSIZE = 0x500000;
+static i32 NUAPI_PADREC_DEFAULT_BUFFERSIZE = 0x500000;
 
 void NuAPIInit(void) {
     memset(&nuapi, 0, sizeof(NUAPI));
@@ -38,14 +38,14 @@ void NuAPIInit(void) {
     NuWindInitialise(nuapi.wind);
 }
 
-void NuCommandLine(int argc, char **argv) {
+void NuCommandLine(i32 argc, char **argv) {
 }
 
 void NuDisableOSMenuFreeze(void) {
     nuapi.disable_os_menu_freeze = 1;
 }
 
-i32 NuInitHardware(VARIPTR *buf, VARIPTR *buf_end, int heap_size, ...) {
+i32 NuInitHardware(VARIPTR *buf, VARIPTR *buf_end, i32 heap_size, ...) {
     i32 hostfs = 0;
     i32 streamsize = 0x200000;
     NUPAD *pad0 = NULL;

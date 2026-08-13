@@ -2,41 +2,47 @@
 
 #include "decomp.h"
 
-int teleport_gizmotype_id = -1;
+i32 teleport_gizmotype_id = -1;
 
-static int Teleport_GetMaxGizmos(void *teleport) {
+static i32 Teleport_GetMaxGizmos(void *teleport) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void Teleport_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void Teleport_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
 static char *Teleport_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int Teleport_GetOutput(GIZMO *gizmo, int, int) {
+static i32 Teleport_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+char *Teleport_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static i32 Teleport_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void Teleport_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-char *Teleport_GetOutputName(GIZMO *gizmo, int output_index) {
+static i32 Teleport_ActivateRev(GIZMO *gizmo, i32, i32) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int Teleport_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-}
-
-static void Teleport_Activate(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static int Teleport_ActivateRev(GIZMO *gizmo, int, int) {
-    UNIMPLEMENTED();
-}
-
-ADDGIZMOTYPE *Teleport_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *Teleport_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

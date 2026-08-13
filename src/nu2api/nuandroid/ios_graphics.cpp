@@ -58,6 +58,7 @@ char *NuIOS_GetAppBundlePath(void) {
 
 u32 NuIOS_YieldThread(void) {
     UNIMPLEMENTED();
+    return {};
 }
 
 i32 NuIOS_ShouldUseMSAA(void) {

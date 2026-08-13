@@ -176,6 +176,9 @@ extern "C" {
     /// @param v0 The vector to rotate.
     /// @param a The rotation angle in NUANG units.
     void NuVecRotateY(NUVEC *v, NUVEC *v0, NUANG a);
+    void NuVecRotateX(NUVEC *v, NUVEC *v0, NUANG a);
+    void NuVecRotateZ(NUVEC *v, NUVEC *v0, NUANG a);
+    f32 NuVecRotateYValZ(NUVEC *v0, NUANG a);
 
     /// @relatesalso nuvec_s
     /// @brief Computes the surface normal of a triangle.
@@ -242,7 +245,7 @@ extern "C" {
     /// @param tolerance The difference in values vector components may exhibit
     ///                  and still be considered equivalent.
     /// @return 1 if the vectors are equivalent, 0 otherwise.
-    int NuVecCompareTolerance(NUVEC *a, NUVEC *b, f32 tolerance);
+    i32 NuVecCompareTolerance(NUVEC *a, NUVEC *b, f32 tolerance);
 
     /// @relatesalso nuvec_s
     /// @relatesalso numtx_s
@@ -253,6 +256,9 @@ extern "C" {
     /// @sa NuVecMtxRotate, NuVecMtxScale, NuVecMtxTranslate,
     //      NuVecMtxTransformBlock
     void NuVecMtxTransform(NUVEC *out, NUVEC *v, struct numtx_s *m);
+    void NuVecMtxTransformH(NUVEC *out, NUVEC *v, struct numtx_s *m);
+    void NuVecInvMtxRotate(NUVEC *out, NUVEC *v, struct numtx_s *m);
+    void NuVecInvMtxTransform(NUVEC *out, NUVEC *v, struct numtx_s *m);
 
     /// @relatesalso nuvec_s
     /// @relatesalso numtx_s

@@ -32,22 +32,22 @@ EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *b
     char *a;
     bool bVar3;
     nufpar_s *fp;
-    int iVar4;
+    i32 iVar4;
     u32 uVar5;
     EPISODEDATA *episodePtr;
     u32 i;
     EPISODEDATA *episodePtr2;
     u32 uVar6;
     EPISODEDATA *episode;
-    int j;
+    i32 j;
     i16 areaId;
-    int count;
-    int areaIndex;
+    i32 count;
+    i32 areaIndex;
     AREADATA *area;
 
     fp = NuFParCreate(file);
     if (fp == (nufpar_s *)0x0) {
-        if (countDest != (int *)0x0) {
+        if (countDest != (i32 *)0x0) {
             *countDest = 0;
         }
     } else {
@@ -125,7 +125,7 @@ EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *b
             NuFParDestroy(fp);
             if (count != 0) {
                 bufferStart->void_ptr = episode;
-                if (countDest == (int *)0x0) {
+                if (countDest == (i32 *)0x0) {
                     return episodePtr;
                 }
                 *countDest = count;

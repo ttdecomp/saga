@@ -2,11 +2,11 @@
 
 #include "nu2api/nucore/nuapi.h"
 
-int NuVideoGetMode(void) {
+i32 NuVideoGetMode(void) {
     return nuapi.video_mode;
 }
 
-void NuVideoSetMode(int mode) {
+void NuVideoSetMode(i32 mode) {
     nuapi.video_mode = mode;
 
     switch (nuapi.video_mode) {
@@ -24,7 +24,7 @@ void NuVideoSetMode(int mode) {
     }
 }
 
-int NuVideoGetAspect(void) {
+i32 NuVideoGetAspect(void) {
     return nuapi.video_aspect;
 }
 
@@ -41,7 +41,7 @@ void NuVideoSetBrightness(f32 brightness) {
     NuVideoSetBrightnessPS();
 }
 
-void NuVideoSetResolution(int width, int height) {
+void NuVideoSetResolution(i32 width, i32 height) {
     // It's unclear exactly what was here, but this matches and makes a sort of
     // sense.
     if (width == 0 | height == 0) {

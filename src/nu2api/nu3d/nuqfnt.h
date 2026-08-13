@@ -42,7 +42,7 @@ typedef void NUQFNT;
 
 #ifdef __cplusplus
 
-i32 NuQFntReadPS(VUFNT *font, int tex_id, int flags, int render_plane, VARIPTR *buf, VARIPTR buf_end);
+i32 NuQFntReadPS(VUFNT *font, i32 tex_id, i32 flags, i32 render_plane, VARIPTR *buf, VARIPTR buf_end);
 
 extern "C" {
 #endif

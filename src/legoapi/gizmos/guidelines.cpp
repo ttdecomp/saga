@@ -2,11 +2,12 @@
 
 #include "decomp.h"
 
-static int GuideLines_GetMaxGizmos(void *guideline) {
+static i32 GuideLines_GetMaxGizmos(void *guideline) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void GuideLines_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void GuideLines_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
@@ -16,30 +17,35 @@ static void GuideLines_Draw(void *, void *, float) {
 
 static char *GuideLine_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GuideLine_GetOutput(GIZMO *gizmo, int, int) {
+static i32 GuideLine_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static char *GuideLine_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static i32 GuideLine_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void GuideLine_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static char *GuideLine_GetOutputName(GIZMO *gizmo, int output_index) {
-    UNIMPLEMENTED();
-}
-
-static int GuideLine_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-}
-
-static void GuideLine_Activate(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static void GuideLine_SetVisibility(GIZMO *gizmo, int) {
+static void GuideLine_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
 static void *GuideLines_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void GuideLines_ClearProgress(void *, void *) {
@@ -56,13 +62,15 @@ static void GuideLines_Reset(void *, void *, void *) {
 
 static void *GuideLines_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GuideLines_Load(void *, void *) {
+static i32 GuideLines_Load(void *, void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-ADDGIZMOTYPE *GuideLines_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *GuideLines_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

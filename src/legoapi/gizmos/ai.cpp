@@ -4,8 +4,9 @@
 #include "legoapi/gizmo.h"
 #include "legoapi/world.h"
 
-static int AI_GetMaxGizmos(void *ai) {
+static i32 AI_GetMaxGizmos(void *ai) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void AI_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_ptr, void *unused) {
@@ -24,25 +25,29 @@ static void AI_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_ptr, void
 
 static char *AI_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int AI_GetOutput(GIZMO *gizmo, int, int) {
+static i32 AI_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+char *AI_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static i32 AI_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+void AI_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-char *AI_GetOutputName(GIZMO *gizmo, int output_index) {
-    UNIMPLEMENTED();
-}
-
-static int AI_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-}
-
-void AI_Activate(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-ADDGIZMOTYPE *AI_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *AI_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

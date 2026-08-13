@@ -2,39 +2,45 @@
 
 #include "decomp.h"
 
-static int GizMiniCut_GetMaxGizmos(void *minicut) {
+static i32 GizMiniCut_GetMaxGizmos(void *minicut) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void GizMiniCut_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void GizMiniCut_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
 static char *GizMiniCut_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizMiniCut_GetOutput(GIZMO *gizmo, int, int) {
+static i32 GizMiniCut_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static char *GizMiniCut_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static i32 GizMiniCut_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+void GizMiniCut_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static char *GizMiniCut_GetOutputName(GIZMO *gizmo, int output_index) {
+static i32 GizMiniCut_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizMiniCut_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-}
-
-void GizMiniCut_Activate(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static int GizMiniCut_GetPos(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-}
-
-static void GizMiniCut_UsingSpecial(GIZMO **, void *, int, char *) {
+static void GizMiniCut_UsingSpecial(GIZMO **, void *, i32, char *) {
     UNIMPLEMENTED();
 }
 
@@ -44,13 +50,15 @@ void GizMiniCut_Reset(void *, void *, void *) {
 
 static void *GizMiniCut_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-int GizMiniCut_Load(void *, void *) {
+i32 GizMiniCut_Load(void *, void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-ADDGIZMOTYPE *MiniCut_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *MiniCut_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

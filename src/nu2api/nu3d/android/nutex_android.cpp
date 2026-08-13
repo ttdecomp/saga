@@ -17,11 +17,11 @@
 
 #define TEX_PATH "mnt/sdcard/TTGames/com.wb.lego.tcs/files/androidTextures/"
 
-int NuTexCreate(NUTEX *tex) {
+i32 NuTexCreate(NUTEX *tex) {
     return 0;
 }
 
-int NuTexRead(char *name, VARIPTR *buf, VARIPTR *buf_end) {
+i32 NuTexRead(char *name, VARIPTR *buf, VARIPTR *buf_end) {
     i32 file_size;
     char *ext;
     bool is_pvrtc_supported;
@@ -29,12 +29,12 @@ int NuTexRead(char *name, VARIPTR *buf, VARIPTR *buf_end) {
     char filepath[1024];
     FILE *file;
     NUFILE file_handle;
-    int extra_bytes;
+    i32 extra_bytes;
     NUNATIVETEX *tex;
     char *tex_data_ptr;
     char *data;
-    int bytes_read;
-    int tex_id;
+    i32 bytes_read;
+    i32 tex_id;
 
     bytes_read = 0;
     file = NULL;
@@ -60,7 +60,7 @@ int NuTexRead(char *name, VARIPTR *buf, VARIPTR *buf_end) {
 
         file_size = NuFileOpenSize(file_handle);
     } else {
-        int path_len;
+        i32 path_len;
 
         memcpy(filepath, TEX_PATH, sizeof(filepath));
 
@@ -69,7 +69,7 @@ int NuTexRead(char *name, VARIPTR *buf, VARIPTR *buf_end) {
         path_len = strlen(filepath);
         strcat(filepath, filename);
 
-        for (int i = path_len; i < strlen(filepath); i++) {
+        for (i32 i = path_len; i < strlen(filepath); i++) {
             filepath[i] = toupper(filepath[i]);
 
             if (filepath[i] == '\\') {
@@ -139,7 +139,7 @@ void NuTexDestroyPS(NUNATIVETEX *tex) {
     }
 }
 
-int g_textureLoadBufferCriticalSection;
+i32 g_textureLoadBufferCriticalSection;
 
 GLuint g_LegoEnvTexture;
 GLuint g_PhongEnvTexture;
@@ -166,14 +166,14 @@ void NuTexInitExPS(VARIPTR *buf) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 }
 
-void NuTexDisplayTexturePage(int page, f32 depth, int alpha) {
+void NuTexDisplayTexturePage(i32 page, f32 depth, i32 alpha) {
 }
 
-int NuTexGetReqSize(int tex_id, int level) {
+i32 NuTexGetReqSize(i32 tex_id, i32 level) {
     return 0;
 }
 
-int NuTexReserve(int size) {
+i32 NuTexReserve(i32 size) {
     return -1;
 }
 

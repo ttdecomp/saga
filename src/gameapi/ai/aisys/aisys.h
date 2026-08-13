@@ -31,7 +31,7 @@ typedef struct AISTATE_s {
 typedef struct AIACTION_s {
     NULISTLNK list_node;
     char **params;
-    int param_count;
+    i32 param_count;
     struct AISCRIPTACTIONDEF_s *def;
 } AIACTION;
 
@@ -336,7 +336,7 @@ typedef struct AISYS_s {
 typedef struct AIPACKET_s {
 } AIPACKET;
 
-typedef int AIACTIONFN(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, int, int, f32);
+typedef i32 AIACTIONFN(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
 typedef f32 AICONDITIONFN(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char *, void *);
 typedef void *AICONDITIONINITFN(AISYS *, char *, AISCRIPT *);
 
@@ -354,7 +354,7 @@ typedef struct AISCRIPTCONDITIONDEF_s {
     AICONDITIONINITFN *init_fn;
 } AICONDITIONDEF;
 
-typedef int GAMEPARAMTOFLOAT(AIPACKET *, AISCRIPTPROCESS *, char *, f32 *);
+typedef i32 GAMEPARAMTOFLOAT(AIPACKET *, AISCRIPTPROCESS *, char *, f32 *);
 
 #ifdef __cplusplus
 extern "C" {

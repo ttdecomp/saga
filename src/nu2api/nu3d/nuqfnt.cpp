@@ -493,6 +493,7 @@ NUQFNT *NuQFntRead(char *filepath, VARIPTR *buf, VARIPTR buf_end) {
 
 NUQFNT *NuQFntReadBuffer(VARIPTR *font, VARIPTR *buf, VARIPTR buf_end) {
     UNIMPLEMENTED();
+    return NULL;
 }
 
 NUQFNT_CSMODE NuQFntSetCoordinateSystem(NUQFNT_CSMODE mode) {

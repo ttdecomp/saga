@@ -8,6 +8,14 @@
 
 pthread_mutex_t NuSoundMemoryBuffer::s_cs = PTHREAD_MUTEX_INITIALIZER;
 
+void NuSoundMemoryBuffer::BeginCriticalSection() {
+    pthread_mutex_lock(&s_cs);
+}
+
+void NuSoundMemoryBuffer::EndCriticalSection() {
+    pthread_mutex_unlock(&s_cs);
+}
+
 void NuSoundMemoryBuffer::SetNext(NuSoundMemoryBuffer *next) {
     this->next = next;
 }
@@ -102,4 +110,115 @@ void NuSoundMemoryBuffer::Unlock() {
     BeginCriticalSection();
     this->flags = this->flags & 0x7f;
     EndCriticalSection();
+}
+
+NuSoundMemoryBuffer::NuSoundMemoryBuffer() {
+}
+
+NuSoundMemoryBuffer::~NuSoundMemoryBuffer() {
+}
+
+void NuSoundMemoryBuffer::SetAlloced(bool) {
+}
+
+void NuSoundMemoryBuffer::SetPrev(NuSoundMemoryBuffer *) {
+}
+
+void NuSoundMemoryBuffer::GetAddress() {
+}
+
+void NuSoundMemoryBuffer::GetLockReason() {
+}
+
+void NuSoundMemoryBuffer::GetNext() {
+}
+
+void NuSoundMemoryBuffer::GetPrev() {
+}
+
+void NuSoundMemoryBuffer::GetSize() {
+}
+
+bool NuSoundMemoryBuffer::IsAlloced() {
+    return false;
+}
+
+bool NuSoundMemoryBuffer::IsLocked() {
+    return false;
+}
+
+NuSoundMemoryManager::NuSoundMemoryManager() {
+}
+
+NuSoundMemoryManager::~NuSoundMemoryManager() {
+}
+
+void NuSoundMemoryManager::AllocAddress(u32) {
+}
+
+void NuSoundMemoryManager::CheckAndMergeFreeBufferNext(NuSoundMemoryBuffer *) {
+}
+
+void NuSoundMemoryManager::CheckAndMergeFreeBufferPrev(NuSoundMemoryBuffer *) {
+}
+
+void NuSoundMemoryManager::CheckList() {
+}
+
+void NuSoundMemoryManager::CountAdjacentFreeBuffers(NuSoundMemoryBuffer *) {
+}
+
+void NuSoundMemoryManager::Defragment(u32) {
+}
+
+void NuSoundMemoryManager::EnableDebug(bool) {
+}
+
+void NuSoundMemoryManager::EnableDefragOnFree(bool) {
+}
+
+void NuSoundMemoryManager::Free(NuSoundMemoryBuffer *) {
+}
+
+void NuSoundMemoryManager::FreeAddress(void *) {
+}
+
+void NuSoundMemoryManager::GetFree() {
+}
+
+void NuSoundMemoryManager::GetSize() {
+}
+
+void NuSoundMemoryManager::GetUsed() {
+}
+
+void NuSoundMemoryManager::MergeFreeBuffer(NuSoundMemoryBuffer *) {
+}
+
+void NuSoundMemoryManager::MoveLargestTrailingBufferIntoBuffer(NuSoundMemoryBuffer *, NuSoundMemoryBuffer **,
+                                                               NuSoundMemoryBuffer **) {
+}
+
+void NuSoundMemoryManager::OutputList() {
+}
+
+void NuSoundMemoryManager::OutputMap() {
+}
+
+void NuSoundMemoryManager::PushFreeBuffer(NuSoundMemoryBuffer *) {
+}
+
+void NuSoundMemoryManager::Release() {
+}
+
+void NuSoundMemoryManager::RenderMap(float, float, float) {
+}
+
+void NuSoundMemoryManager::SplitFreeBuffer(NuSoundMemoryBuffer *, u32, NuSoundMemoryBuffer **) {
+}
+
+void NuSoundMemoryManager::SwapOrMergeAdjacentBuffers(NuSoundMemoryBuffer *) {
+}
+
+void NuSoundMemoryManager::SwapSimilarBuffers(NuSoundMemoryBuffer *, NuSoundMemoryBuffer *) {
 }

@@ -1446,6 +1446,7 @@ void *NuMemFileAddr(NUFILE file) {
 
 i32 NuPPLoadBuffer(NUFILE file, void *buf, i32 buf_size) {
     UNIMPLEMENTED("PP");
+    return {};
 }
 
 static FILEEXTINFO extensions[64];

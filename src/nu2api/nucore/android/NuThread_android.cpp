@@ -172,7 +172,7 @@ void NuThreadSemaphore::Wait() {
 
 NuThread *NuThreadInitPS() {
     pthread_t current;
-    int policy;
+    i32 policy;
     sched_param scheduling;
     NuThreadCreateParameters params;
     NuThread *thread;

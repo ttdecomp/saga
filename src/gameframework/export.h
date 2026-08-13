@@ -3,12 +3,12 @@
 typedef struct SaveLoad SaveLoad, *PSaveLoad;
 
 struct SaveLoad {
-    int field0_0x0;
-    int field1_0x4;
-    int size;
-    int field3_0xc;
-    int field4_0x10;
-    int extradata_offset;
+    i32 field0_0x0;
+    i32 field1_0x4;
+    i32 size;
+    i32 field3_0xc;
+    i32 field4_0x10;
+    i32 extradata_offset;
     char field6_0x18[16];
     short field7_0x28;
     char field8_0x2a[2046];

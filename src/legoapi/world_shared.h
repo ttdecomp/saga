@@ -116,8 +116,8 @@ i32 InitCreature(GameObject_s *obj, i32 id, i32 param);
 void InitGameObjectLights(void);
 
 // --- cutscene.cpp — cutscenes / character scenes ---
+i32 InStory(void);
 extern "C" {
-    i32 InStory(void);
     void *NuGCutSceneLoad(char *name, NUGSCN *gscn1, NUGSCN *gscn2, i32 flags);
     void NuGCutSceneFixUp(void *cutscene, char *name, i32 flags, VARIPTR *end);
     void NuGCutSceneFixUpExtra(void *cutscene, i32 area);

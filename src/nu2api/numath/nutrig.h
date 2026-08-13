@@ -12,9 +12,9 @@
 /// @details The sine lookup table is a table of the sine function for the angles 0 to 2π.
 extern f32 NuTrigTable[NUTRIGTABLE_COUNT];
 
-#define NU_SIN_LUT(ang) NuTrigTable[(int)(ang) >> 1 & 0x7fff]
-#define NU_COS_LUT(ang) NuTrigTable[((int)(ang) + NUANG_90DEG) >> 1 & 0x7fff]
-#define NU_TAN_LUT(ang) (NuTrigTable[(int)(ang) >> 1 & 0x7fff] / NuTrigTable[((int)(ang) + NUANG_90DEG) >> 1 & 0x7fff])
+#define NU_SIN_LUT(ang) NuTrigTable[(i32)(ang) >> 1 & 0x7fff]
+#define NU_COS_LUT(ang) NuTrigTable[((i32)(ang) + NUANG_90DEG) >> 1 & 0x7fff]
+#define NU_TAN_LUT(ang) (NuTrigTable[(i32)(ang) >> 1 & 0x7fff] / NuTrigTable[((i32)(ang) + NUANG_90DEG) >> 1 & 0x7fff])
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,8 +25,21 @@ extern "C" {
     void NuTrigInit(void);
 
     i16 NuACos(f32 cos);
-    int NuAtan2D(f32 dx, f32 dy);
+    i32 NuAtan2D(f32 dx, f32 dy);
     f32 NuAtan2(f32 dx, f32 dy);
+
+    f32 NuAtanf(f32 x);
+    NUANG NuAtani(f32 x);
+    NUANG NuAtan2DA(f32 dx, f32 dy);
+    f32 NuAtan2DAF(f32 dx, f32 dy);
+
+    f32 NuSinf(NUANG ang);
+    f32 NuCosf(NUANG ang);
 #ifdef __cplusplus
 }
+
+f32 NuSinApprox2(i32 ang);
+f32 NuCosApprox2(i32 ang);
+f32 NuSin_Accurate(f32 x);
+
 #endif

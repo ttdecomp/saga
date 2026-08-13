@@ -7,6 +7,9 @@
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufpar.h"
 
+struct APICHARACTERMODELLIST_s;
+struct COLLECTION_s;
+
 COLLECTID *TempCollectID = NULL;
 
 i32 CollectCount = 0;
@@ -45,9 +48,9 @@ void Collection_Configure(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd) 
     ushort uVar2;
     i16 sVar3;
     COLLECTID *collect;
-    int iVar4;
+    i32 iVar4;
     AREADATA *pAVar5;
-    int i;
+    i32 i;
     char *buf;
 
     nufpar_s *fp = NuFParCreate(file);
@@ -69,7 +72,7 @@ void Collection_Configure(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd) 
 
                 collect->id = sVar3;
 
-                if (sVar3 != -1 && InCollectList_Index((int)sVar3, CollectList, CollectCount) == -1) {
+                if (sVar3 != -1 && InCollectList_Index((i32)sVar3, CollectList, CollectCount) == -1) {
                     collect->type = 0;
                     collect->field2_0x3 = 0xff;
                     collect->can_buy = 0;
@@ -189,4 +192,23 @@ LAB_004eb920:
     }
 
     goto LAB_004eb886;
+}
+
+void Collection_Draw(COLLECTION_s *, float, float, float, APICHARACTERMODELLIST_s *, float, i32) {
+}
+
+void Collection_GetPos(COLLECTION_s *, i32, float *, float *) {
+}
+
+void Collection_GetIDList(COLLECTION_s *, u32, u32, i16 *, i32 *, i32 *, i32) {
+}
+
+void Collection_CreateCustom(char *, i16 *, COLLECTION_s *, u32, u32, u32, i32, i32,
+                             variptr_u *, variptr_u *, i32, float) {
+}
+
+void Collection_CreateMaster(char *, i16 *, COLLECTION_s *, i32, float) {
+}
+
+void Collection_GotAnyOfType(i32, u32) {
 }

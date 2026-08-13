@@ -32,13 +32,13 @@ typedef struct nufilepakitemattr_s {
 
 // There are no known uses of functions of this type, so their parameters are
 // unknown.
-typedef int NuFilePakMemMoveFn();
+typedef i32 NuFilePakMemMoveFn();
 
 typedef struct nufilepakitem_s {
-    int name_offset;
-    int data_offset;
-    int size;
-    int alignment;
+    i32 name_offset;
+    i32 data_offset;
+    i32 size;
+    i32 alignment;
     NUFILEPAKITEMATTR attr;
     NuFilePakMemMoveFn *pre_move_fn;
     NuFilePakMemMoveFn *post_move_fn;
@@ -58,12 +58,12 @@ typedef enum {
 #ifdef __cplusplus
 extern "C" {
 #endif
-    void *NuFilePakLoad(char *filepath, VARIPTR *buf, VARIPTR buf_end, int alignment);
-    void *NuFilePakLoadKey(char *filepath, VARIPTR *buf, VARIPTR buf_end, int alignment, unsigned char *key,
+    void *NuFilePakLoad(char *filepath, VARIPTR *buf, VARIPTR buf_end, i32 alignment);
+    void *NuFilePakLoadKey(char *filepath, VARIPTR *buf, VARIPTR buf_end, i32 alignment, unsigned char *key,
                            u32 key_len);
 
-    int NuFilePakGetItem(void *hdr, char *item_name);
-    int NuFilePakGetItemInfo(void *hdr, int item_handle, void **addr, int *size);
+    i32 NuFilePakGetItem(void *hdr, char *item_name);
+    i32 NuFilePakGetItemInfo(void *hdr, i32 item_handle, void **addr, i32 *size);
 #ifdef __cplusplus
 }
 #endif

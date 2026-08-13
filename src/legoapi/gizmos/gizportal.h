@@ -3,7 +3,7 @@
 #include "legoapi/gizmo.h"
 #include "legoapi/world.h"
 
-extern int portal_gizmotype_id;
+extern i32 portal_gizmotype_id;
 
 typedef struct gizportalprogress_s {
     u32 progress_mask;
@@ -11,9 +11,9 @@ typedef struct gizportalprogress_s {
 
 #ifdef __cplusplus
 
-ADDGIZMOTYPE *Portal_RegisterGizmo(int type_id);
-char *Portal_GetOutputName(GIZMO *gizmo, int output_index);
-void Portal_Activate(GIZMO *gizmo, int active);
+ADDGIZMOTYPE *Portal_RegisterGizmo(i32 type_id);
+char *Portal_GetOutputName(GIZMO *gizmo, i32 output_index);
+void Portal_Activate(GIZMO *gizmo, i32 active);
 void PortalDoors_Reset(WORLDINFO *world_info);
 
 extern "C" {

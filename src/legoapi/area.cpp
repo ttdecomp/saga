@@ -38,20 +38,20 @@ AREADATA *Area_FindByName(char *name, i32 *indexDest) {
     return NULL;
 }
 
-AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, int count, int *countDest) {
+AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, i32 count, i32 *countDest) {
     byte bVar3;
     undefined2 uVar4;
     i16 sVar5;
     nufpar_s *fp;
-    int iVar6;
+    i32 iVar6;
     u32 uVar7;
     undefined4 uVar8;
     u32 uVar9;
     AREADATA *area2;
     i16 index;
     AREADATA *area;
-    int i;
-    int j;
+    i32 i;
+    i32 j;
     undefined4 uStack_14;
     char *a;
     bool bVar2;
@@ -60,7 +60,7 @@ AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferE
     uStack_14 = 0x4862eb;
     fp = NuFParCreate(file);
     if (fp == (nufpar_s *)0x0) {
-        if (countDest != (int *)0x0) {
+        if (countDest != (i32 *)0x0) {
             *countDest = 0;
         }
     } else {
@@ -255,7 +255,7 @@ AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferE
                                                                                                             uVar8 = NuAToI(
                                                                                                                 fp->word_buf);
                                                                                                             bVar3 =
-                                                                                                                (byte)((int)
+                                                                                                                (byte)((i32)
                                                                                                                            uVar8 >>
                                                                                                                        0x1f);
                                                                                                             area->field40_0x96 =
@@ -361,7 +361,7 @@ AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferE
         NuFParDestroy(fp);
         if (i != 0) {
             bufferStart->void_ptr = area;
-            if (countDest != (int *)0x0) {
+            if (countDest != (i32 *)0x0) {
                 *countDest = i;
             }
             j = 0;
@@ -376,7 +376,7 @@ AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferE
                             }
                         }
                         if (area2[j].cheat != 0xff) {
-                            Cheat_SetArea((int)(char)area2[j].cheat, j);
+                            Cheat_SetArea((i32)(char)area2[j].cheat, j);
                         }
                         if ((area2[j].challenge_trial_time != 0) && ((area2[j].flags & 0x114) == 0x10))
                             break;

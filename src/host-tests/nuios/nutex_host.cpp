@@ -4,7 +4,7 @@
 
 #include "decomp.h"
 
-int NuTexRead(char *name, VARIPTR *buf, VARIPTR *buf_end) {
+i32 NuTexRead(char *name, VARIPTR *buf, VARIPTR *buf_end) {
     UNIMPLEMENTED();
 }
 

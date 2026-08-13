@@ -23,9 +23,11 @@ NuFileAndroidAPK::~NuFileAndroidAPK() {
 }
 
 i64 NuFileAndroidAPK::Seek(i64 offset, NuFile::SeekOrigin::T) {
+    return {};
 }
 
 isize NuFileAndroidAPK::Read(void *buf, usize size) {
+    return {};
 }
 
 isize NuFileAndroidAPK::Write(const void *buf, usize size) {
@@ -37,26 +39,32 @@ void NuFileAndroidAPK::Close() {
 
 SAGA_NOMATCH i32 NuFileAndroidAPK::OpenFile(const char *filepath, NuFile::OpenMode::T mode) {
     UNIMPLEMENTED("android specific");
+    return {};
 }
 
 SAGA_NOMATCH i32 NuFileAndroidAPK::CloseFile(NUFILE file) {
     UNIMPLEMENTED("android specific");
+    return {};
 }
 
 SAGA_NOMATCH i64 NuFileAndroidAPK::SeekFile(NUFILE file, i64 offset, NuFile::SeekOrigin::T mode) {
     UNIMPLEMENTED("android specific");
+    return {};
 }
 
 SAGA_NOMATCH i32 NuFileAndroidAPK::ReadFile(NUFILE file, void *buf, u32 size) {
     UNIMPLEMENTED("android specific");
+    return {};
 }
 
 SAGA_NOMATCH i64 NuFileAndroidAPK::GetFilePos(NUFILE file) {
     UNIMPLEMENTED("android specific");
+    return {};
 }
 
 SAGA_NOMATCH i64 NuFileAndroidAPK::GetFileSize(NUFILE file) {
     UNIMPLEMENTED("android specific");
+    return {};
 }
 
 static FILE *g_fileHandles[32] = {NULL};
@@ -159,7 +167,7 @@ i64 NuPSFileLSeek(NUPSFILE index, i64 offset, NUFILESEEK seekMode) {
     return value;
 }
 
-void NuPSFileInitDevices(int device_id, int reboot_iop, int eject) {
+void NuPSFileInitDevices(i32 device_id, i32 reboot_iop, i32 eject) {
     if (nuapi_use_target_manager) {
         the_tm_client = new TMClient(nuapi_use_target_manager, nuapi_target_manager_mac_address);
     }

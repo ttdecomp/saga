@@ -1,5 +1,7 @@
 #include <stdlib.h>
 
+#include "nu2api/nucore/common.h"
+
 #include "nu2api/nuplatform/nuplatform.h"
 
 NuPlatform *NuPlatform::ms_instance = NULL;
@@ -77,7 +79,7 @@ void NuPlatform::SetCurrentPlatform(PLATFORMS_SUPPORTED platform) {
             goto LAB_001010e6;
         }
 
-        if (8 < (int)platform) {
+        if (8 < (i32)platform) {
             if (platform == ANDROID_PVRTC_PLATFORM)
                 goto LAB_00101158;
             if (platform == ANDROID_S3TC_PLATFORM) {

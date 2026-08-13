@@ -6,6 +6,30 @@
 
 class NuSoundBufferCallback;
 
+class NuSoundSource;
+
+class NuSoundBuffer;
+
+class NuSoundDecoder {
+  public:
+    NuSoundDecoder(char const *, NuSoundSource *);
+    virtual ~NuSoundDecoder();
+
+    void CloseStream();
+    void Initialise();
+    bool IsLocked() const;
+    bool IsStreamOpen() const;
+    void Lock();
+    void OpenStream(bool);
+    void Shutdown();
+    void Unlock();
+    void VoiceReference();
+    void VoiceRelease();
+    unsigned int GetNumInitialBuffers() const;
+    unsigned int GetNumRingBuffers() const;
+    void RequestBuffer(bool, NuSoundWeakPtr<NuSoundBufferCallback>);
+};
+
 class NuSoundDecodeThread {
     NuThreadSemaphore semaphore;
     NuSoundWeakPtr<NuSoundBufferCallback> loaders[128];
@@ -17,6 +41,9 @@ class NuSoundDecodeThread {
 
   public:
     NuSoundDecodeThread();
+    ~NuSoundDecodeThread();
 
     static void ThreadFunc(void *self_);
+    void Shutdown();
+    void RequestDecode(NuSoundDecoder &, NuSoundBuffer &, NuSoundWeakPtr<NuSoundBufferCallback>, bool);
 };

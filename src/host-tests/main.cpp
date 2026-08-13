@@ -5,7 +5,7 @@
 
 struct Test {
     std::string name;
-    int (*func)(int argc, char **argv);
+    i32 (*func)(i32 argc, char **argv);
 };
 
 const Test tests[] = {
@@ -13,7 +13,7 @@ const Test tests[] = {
     {"window", test_window},
 };
 
-int main(int argc, char **argv) {
+i32 main(i32 argc, char **argv) {
     if (argc != 2) {
         printf("Usage: %s <test>\n", argv[0]);
         printf("Available tests:\n");

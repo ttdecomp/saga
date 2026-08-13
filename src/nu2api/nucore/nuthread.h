@@ -31,7 +31,7 @@ extern "C" {
     extern nuthreaddisableswapfn *NuThreadDisableThreadSwap;
 
     i32 NuThreadCreateCriticalSection();
-    void NuThreadDestroyCriticalSection(int index);
+    void NuThreadDestroyCriticalSection(i32 index);
 
     i32 NuThreadCriticalSectionBegin(i32 index);
     i32 NuThreadCriticalSectionEnd(i32 index);
@@ -67,6 +67,7 @@ class NuThreadBase {
     void SetLocalStorage(u32 idx, void *storage);
 
     void SetDebugName(const char *name);
+    void GetDebugName() const;
 
     void (*GetThreadFn() const)(void *);
     void *GetParam() const;
@@ -84,6 +85,9 @@ class NuThread : public NuThreadBase {
   public:
     NuThread(const NuThreadCreateParameters &params);
 
+    void Resume();
+    void SetDebugName(const char *name);
+
   protected:
     ~NuThread();
 };
@@ -99,9 +103,13 @@ class NuThreadManager {
   public:
     i32 AllocTLS();
     NuThreadBase *GetCurrentThread();
+    void GetMainThread();
+    void FreeTLS(i32 idx);
 
-    NuThread *CreateThread(void (*thread_fn)(void *), void *fn_arg, int priority, const char *name, int stack_size,
+    NuThread *CreateThread(void (*thread_fn)(void *), void *fn_arg, i32 priority, const char *name, i32 stack_size,
                            NUTHREADCAFECORE cafe_core, NUTHREADXBOX360CORE xbox360_core);
+    void CreateThreadSuspended(void (*thread_fn)(void *), void *fn_arg, i32 priority, const char *name, i32 stack_size,
+                               NUTHREADCAFECORE cafe_core, NUTHREADXBOX360CORE xbox360_core);
 };
 
 class NuCriticalSection {

@@ -2,13 +2,14 @@
 
 #include "decomp.h"
 
-int spinner_gizmotype_id = -1;
+i32 spinner_gizmotype_id = -1;
 
-static int GizSpinner_GetMaxGizmos(void *spinner) {
+static i32 GizSpinner_GetMaxGizmos(void *spinner) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void GizSpinner_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void GizSpinner_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
@@ -25,52 +26,61 @@ static void GizSpinner_PanelDraw(void *, void *, float) {
 
 static char *GizSpinner_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-int GizSpinner_GetOutput(GIZMO *gizmo, int, int) {
+i32 GizSpinner_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+char *GizSpinner_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+i32 GizSpinner_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+void GizSpinner_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-char *GizSpinner_GetOutputName(GIZMO *gizmo, int output_index) {
+void GizSpinner_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-int GizSpinner_GetNumOutputs(GIZMO *gizmo) {
+static i32 GizSpinner_GetPos(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+void GizSpinner_UsingSpecial(GIZMO **, void *, i32, char *) {
     UNIMPLEMENTED();
 }
 
-void GizSpinner_Activate(GIZMO *gizmo, int) {
+static i32 GizSpinner_BoltHitPlat(void *, void *, BOLT *, unsigned char *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-void GizSpinner_SetVisibility(GIZMO *gizmo, int) {
+static i32 *GizSpinner_GetBestBoltTarget(GIZMOSET *, float *, NUVEC *, NUVEC *, void *, NUVEC *, NUVEC *, float, float,
+                                         i32, i32, i32) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizSpinner_GetPos(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-}
-
-void GizSpinner_UsingSpecial(GIZMO **, void *, int, char *) {
-    UNIMPLEMENTED();
-}
-
-static int GizSpinner_BoltHitPlat(void *, void *, BOLT *, unsigned char *) {
-    UNIMPLEMENTED();
-}
-
-static int *GizSpinner_GetBestBoltTarget(GIZMOSET *, float *, NUVEC *, NUVEC *, void *, NUVEC *, NUVEC *, float, float,
-                                         int, int, int) {
-    UNIMPLEMENTED();
-}
-
-static int GizSpinner_HasBoltHit(void *, void *, void *, NUVEC *, int, float, NUVEC *, NUVEC *, BOLT *, unsigned int,
+static i32 GizSpinner_HasBoltHit(void *, void *, void *, NUVEC *, i32, float, NUVEC *, NUVEC *, BOLT *, u32,
                                  unsigned char *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void *GizSpinner_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void GizSpinner_ClearProgress(void *, void *) {
@@ -87,13 +97,15 @@ static void GizSpinner_ResetAll(void *, void *, void *) {
 
 static void *GizSpinner_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizSpinner_Load(void *, void *) {
+static i32 GizSpinner_Load(void *, void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-ADDGIZMOTYPE *Spinner_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *Spinner_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

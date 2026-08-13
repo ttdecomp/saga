@@ -14,15 +14,15 @@ typedef enum nutextype_e {
 
 typedef struct nutex_s {
     NUTEXTYPE type;
-    int width;
-    int height;
+    i32 width;
+    i32 height;
 } NUTEX;
 
 typedef struct nunativetex_s {
-    int width;
-    int height;
+    i32 width;
+    i32 height;
     unsigned char checksum[16];
-    int ref_count;
+    i32 ref_count;
     void *image_data;
     u32 size;
     NUNATIVETEXPS platform;
@@ -86,27 +86,27 @@ struct __attribute__((packed)) dds_header_s {
 extern "C" {
 #endif
     extern pthread_mutex_t criticalSection;
-    extern int max_textures;
+    extern i32 max_textures;
 
-    void NuTexInitEx(VARIPTR *buf, int max_tex_count);
+    void NuTexInitEx(VARIPTR *buf, i32 max_tex_count);
 
-    int NuTexRead(char *name, VARIPTR *buf, VARIPTR *buf_end);
+    i32 NuTexRead(char *name, VARIPTR *buf, VARIPTR *buf_end);
 
-    int NuTexCreate(NUTEX *tex);
-    int NuTexCreateNative(NUNATIVETEX *tex, bool is_pvrtc);
+    i32 NuTexCreate(NUTEX *tex);
+    i32 NuTexCreateNative(NUNATIVETEX *tex, bool is_pvrtc);
 
-    void NuTexDestroy(int tex_id);
+    void NuTexDestroy(i32 tex_id);
 
-    NUNATIVETEX *NuTexGetNative(int tex_id);
+    NUNATIVETEX *NuTexGetNative(i32 tex_id);
 
-    void NuTexAddReference(int tex_id);
-    void NuTexRemoveReference(int tex_id);
-    int NuTexGetRefCount(int tex_id);
+    void NuTexAddReference(i32 tex_id);
+    void NuTexRemoveReference(i32 tex_id);
+    i32 NuTexGetRefCount(i32 tex_id);
 
-    int NuTexWidth(int tex_id);
-    int NuTexHeight(int tex_id);
+    i32 NuTexWidth(i32 tex_id);
+    i32 NuTexHeight(i32 tex_id);
 
-    void NuTexDisplayTexturePage(int page, float depth, int alpha);
+    void NuTexDisplayTexturePage(i32 page, float depth, i32 alpha);
 #ifdef __cplusplus
 }
 #endif
@@ -117,15 +117,15 @@ void NuTexCreatePS(NUNATIVETEX *tex, bool is_pvrtc);
 void NuTexDestroyPS(NUNATIVETEX *tex);
 
 void NuChecksumAsHex(u8 *checksum, char *out);
-void NuTexHiresFilename(int tex_id, char *filename);
-int NuTexSwapHires(int tex_id_lo, int tex_id_hi);
+void NuTexHiresFilename(i32 tex_id, char *filename);
+i32 NuTexSwapHires(i32 tex_id_lo, i32 tex_id_hi);
 
-void NuTexLoadHires(int tex_id);
-void NuTexUnloadHires(int tex_id);
+void NuTexLoadHires(i32 tex_id);
+void NuTexUnloadHires(i32 tex_id);
 
-int NuTexGetReqSize(int tex_id, int level);
+i32 NuTexGetReqSize(i32 tex_id, i32 level);
 
-int NuTexReserve(int size);
+i32 NuTexReserve(i32 size);
 void NuTexUnReserve();
 
 i32 NuDDSGetTextureDescription(const char *dds_data, NUTEXFORMAT &out_format, i32 &out_width, i32 &out_height,

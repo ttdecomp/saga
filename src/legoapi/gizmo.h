@@ -27,33 +27,33 @@ typedef struct BOLT_s {
 
 } BOLT; // defined here for now, TODO: move to its own file
 
-typedef int (*GIZMOGETMAXGIZMOSFN)(void *);
-typedef void (*GIZMOADDGIZMOSFN)(GIZMOSYS *gizmo_sys, int, void *, void *);
+typedef i32 (*GIZMOGETMAXGIZMOSFN)(void *);
+typedef void (*GIZMOADDGIZMOSFN)(GIZMOSYS *gizmo_sys, i32, void *, void *);
 typedef void (*GIZMOLATEUPDATEFN)(void *, void *, float delta_time);
-typedef int (*GIZMOGETOUTPUTFN)(GIZMO *gizmo, int, int);
-typedef char *(*GIZMOGETOUTPUTNAMEFN)(GIZMO *gizmo, int output_index);
-typedef int (*GIZMOGETNUMOUTPUTSFN)(GIZMO *gizmo);
+typedef i32 (*GIZMOGETOUTPUTFN)(GIZMO *gizmo, i32, i32);
+typedef char *(*GIZMOGETOUTPUTNAMEFN)(GIZMO *gizmo, i32 output_index);
+typedef i32 (*GIZMOGETNUMOUTPUTSFN)(GIZMO *gizmo);
 typedef void (*GIZMODRAWFN)(void *, void *, float);
 typedef char *(*GIZMOGETGIZMONAMEFN)(GIZMO *);
-typedef void (*GIZMOACTIVATEFN)(GIZMO *gizmo, int);
-typedef int (*GIZMOACTIVATEREVFN)(GIZMO *gizmo, int, int);
-typedef void (*GIZMOSETVISIBILITYFN)(GIZMO *gizmo, int);
+typedef void (*GIZMOACTIVATEFN)(GIZMO *gizmo, i32);
+typedef i32 (*GIZMOACTIVATEREVFN)(GIZMO *gizmo, i32, i32);
+typedef void (*GIZMOSETVISIBILITYFN)(GIZMO *gizmo, i32);
 typedef void *(*GIZMOALLOCATEPROGRESSDATAFN)(VARIPTR *, VARIPTR *);
 typedef void (*GIZMOCLEARPROGRESSFN)(void *, void *);
 typedef void (*GIZMOSTOREPROGRESSFN)(void *, void *, void *);
 typedef void (*GIZMORESETFN)(void *, void *, void *);
 typedef void *(*GIZMORESERVEBUFFERSPACEFN)(void *);
-typedef int (*GIZMOLOADFN)(void *, void *);
-typedef int (*GIZMOGETPOSFN)(GIZMO *gizmo);
-typedef int (*GIZMOBOLTHITPLATFN)(void *, void *, BOLT *, unsigned char *);
-typedef int *(*GIZMOGETBESTBOLTTARGETFN)(GIZMOSET *, float *, NUVEC *, NUVEC *, void *, NUVEC *, NUVEC *, float, float,
-                                         int, int, int);
-typedef int (*GIZMOBOLTHITFN)(void *, void *, void *, NUVEC *, int, float, NUVEC *, NUVEC *, BOLT *, unsigned int,
+typedef i32 (*GIZMOLOADFN)(void *, void *);
+typedef i32 (*GIZMOGETPOSFN)(GIZMO *gizmo);
+typedef i32 (*GIZMOBOLTHITPLATFN)(void *, void *, BOLT *, unsigned char *);
+typedef i32 *(*GIZMOGETBESTBOLTTARGETFN)(GIZMOSET *, float *, NUVEC *, NUVEC *, void *, NUVEC *, NUVEC *, float, float,
+                                         i32, i32, i32);
+typedef i32 (*GIZMOBOLTHITFN)(void *, void *, void *, NUVEC *, i32, float, NUVEC *, NUVEC *, BOLT *, u32,
                               unsigned char *);
 typedef void (*GIZMOPOSTLOADFN)(void *, void *);
-typedef void (*GIZMOADDLEVELSFXFN)(void *, void *, int *, int *, int);
-typedef int (*GIZMOGETVISIBILITYFN)(GIZMO *);
-typedef void (*GIZMOUSINGSPECIALFN)(GIZMO **, void *, int, char *);
+typedef void (*GIZMOADDLEVELSFXFN)(void *, void *, i32 *, i32 *, i32);
+typedef i32 (*GIZMOGETVISIBILITYFN)(GIZMO *);
+typedef void (*GIZMOUSINGSPECIALFN)(GIZMO **, void *, i32, char *);
 typedef void (*GIZMOPANELDRAWFN)(void *, void *, float);
 typedef void (*GIZMOEARLYUPDATEFN)(void *, void *, float delta_time);
 
@@ -98,7 +98,7 @@ typedef struct ADDGIZMOTYPE_s {
     GIZMOFNS fns;
 } ADDGIZMOTYPE;
 
-typedef ADDGIZMOTYPE *(*REGISTERGIZMOTYPEFN)(int);
+typedef ADDGIZMOTYPE *(*REGISTERGIZMOTYPEFN)(i32);
 
 typedef struct gizmotype_s {
     char name[32];
@@ -108,8 +108,8 @@ typedef struct gizmotype_s {
 } GIZMOTYPE;
 
 typedef struct GIZMOTYPES_s {
-    int count;
-    int unknown;
+    i32 count;
+    i32 unknown;
     GIZMOTYPE *types;
 } GIZMOTYPES;
 
@@ -117,24 +117,24 @@ extern ADDGIZMOTYPE Default_ADDGIZMOTYPE;
 
 #ifdef __cplusplus
 
-VARIPTR *GizmoBufferAlloc(VARIPTR *buffer, VARIPTR *buffer_end, int size);
+VARIPTR *GizmoBufferAlloc(VARIPTR *buffer, VARIPTR *buffer_end, i32 size);
 void RegisterGizmoTypes(VARIPTR *buffer, VARIPTR *buffer_end, REGISTERGIZMOTYPEFN *register_gizmo_type_fns,
-                        int unknown);
+                        i32 unknown);
 void RegisterGizmoTypes_LSW(VARIPTR *buffer, VARIPTR *buffer_end);
-GIZMO *AddGizmo(GIZMOSYS *gizmo_sys, int type_id, char *name, void *object);
-int GizmoGetTypeIDByName(GIZMOSYS *gizmo_sys, char *name);
-void GizmoSetVisibility(GIZMOSYS *gizmo_sys, GIZMO *gizmo, int visibility, int unknown);
-int GizmoGetVisibility(GIZMOSYS *gizmo_sys, GIZMO *gizmo);
-void GizmoActivate(GIZMOSYS *gizmo_sys, GIZMO *gizmo, int unknown1, int unknown2);
-char *GizmoGetOutputName(GIZMOSYS *gizmo_sys, GIZMO *gizmo, int output_index);
-int GizmoGetOutput(GIZMOSYS *gizmo_sys, GIZMO *gizmo, int unknown1, int unknown2);
+GIZMO *AddGizmo(GIZMOSYS *gizmo_sys, i32 type_id, char *name, void *object);
+i32 GizmoGetTypeIDByName(GIZMOSYS *gizmo_sys, char *name);
+void GizmoSetVisibility(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 visibility, i32 unknown);
+i32 GizmoGetVisibility(GIZMOSYS *gizmo_sys, GIZMO *gizmo);
+void GizmoActivate(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 unknown1, i32 unknown2);
+char *GizmoGetOutputName(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 output_index);
+i32 GizmoGetOutput(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 unknown1, i32 unknown2);
 void GizmoSysEarlyUpdate(GIZMOSYS *gizmo_sys, void *world_info, float delta_time);
 void GizmoSysLateUpdate(GIZMOSYS *gizmo_sys, void *world_info, float delta_time);
 void GizmoSysDraw(GIZMOSYS *gizmo_sys, void *world_info, float delta_time);
 void GizmoSysPanelDraw(GIZMOSYS *gizmo_sys, void *world_info, float delta_time);
-int GizmoSys_BoltHitPlat(GIZMOSYS *gizmo_sys, void *world_info, BOLT *bolt, unsigned char *unknown);
-int ResetGizmoType(GIZMOSYS *gizmo_sys, int type_id, char *name);
-void GizmoSysClearLevelProgress(void *unknown, int type_id);
+i32 GizmoSys_BoltHitPlat(GIZMOSYS *gizmo_sys, void *world_info, BOLT *bolt, unsigned char *unknown);
+i32 ResetGizmoType(GIZMOSYS *gizmo_sys, i32 type_id, char *name);
+void GizmoSysClearLevelProgress(void *unknown, i32 type_id);
 
 extern "C" {
 #endif

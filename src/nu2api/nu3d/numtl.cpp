@@ -7,9 +7,9 @@
 #include "nu2api/nucore/common.h"
 #include "nu2api/nufile/nufile.h"
 
-static int max_materials;
+static i32 max_materials;
 static NUMTL *material_list;
-int numtl_renderplane;
+i32 numtl_renderplane;
 
 NUMTL *numtl_defaultmtl2d;
 NUMTL *numtl_defaultmtl3d;
@@ -86,4 +86,19 @@ NUMTL *NuMtlCreate(i32 count) {
 
 void NuMtlUpdate(NUMTL *mtl) {
     UNIMPLEMENTED();
+}
+
+void NuMtlAddEx(numtl_s *, i32) {
+}
+
+void NuMtlInsert(numtl_s *, i32) {
+}
+
+void NuMtlUpdatePS(numtl_s *) {
+}
+
+void NuMtlSetUVOffsetPS(numtl_s *, u32, float, float) {
+}
+
+void NuMtlDisableCulling() {
 }

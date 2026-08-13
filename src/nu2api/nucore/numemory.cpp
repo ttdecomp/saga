@@ -119,12 +119,12 @@ void NuMemory::InitalizeThreadLocalStorage() {
     }
 }
 
-int NuMemory::FixedPoolEventHandler::AllocatePage(NuMemoryPool *pool, u32 _unknown, u32 _unknown2,
+i32 NuMemory::FixedPoolEventHandler::AllocatePage(NuMemoryPool *pool, u32 _unknown, u32 _unknown2,
                                                   const char *_unknown3) {
     return 0;
 }
 
-int NuMemory::FixedPoolEventHandler::ReleasePage(NuMemoryPool *pool, void *ptr) {
+i32 NuMemory::FixedPoolEventHandler::ReleasePage(NuMemoryPool *pool, void *ptr) {
     NuMemoryGet()->GetThreadMem()->BlockFree(ptr, 0);
 
     return 1;
@@ -134,7 +134,7 @@ void NuMemory::FixedPoolEventHandler::ForceReleasePage(NuMemoryPool *pool, void 
     NuMemoryGet()->GetThreadMem()->BlockFree(ptr, 0);
 }
 
-void *NuMemory::FixedPoolEventHandler::AllocateLargeBlock(NuMemoryPool *pool, unsigned int size, unsigned int alignment,
+void *NuMemory::FixedPoolEventHandler::AllocateLargeBlock(NuMemoryPool *pool, u32 size, u32 alignment,
                                                           const char *name) {
     return NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, alignment, 0, name, NUMEMORY_CATEGORY_NONE);
 }
@@ -143,7 +143,7 @@ void NuMemory::FixedPoolEventHandler::FreeLargeBlock(NuMemoryPool *pool, void *p
     NuMemoryGet()->GetThreadMem()->BlockFree(ptr, 0);
 }
 
-int NuMemory::DynamicPoolEventHandler::AllocatePage(NuMemoryPool *pool, unsigned int _unknown, unsigned int alignment,
+i32 NuMemory::DynamicPoolEventHandler::AllocatePage(NuMemoryPool *pool, u32 _unknown, u32 alignment,
                                                     const char *name) {
     void *page = NuMemoryGet()->GetThreadMem()->_BlockAlloc(0x4000, alignment, 0, name, NUMEMORY_CATEGORY_NONE);
     pool->AddPage(page, 0x4000);
@@ -151,7 +151,7 @@ int NuMemory::DynamicPoolEventHandler::AllocatePage(NuMemoryPool *pool, unsigned
     return 1;
 }
 
-int NuMemory::DynamicPoolEventHandler::ReleasePage(NuMemoryPool *pool, void *ptr) {
+i32 NuMemory::DynamicPoolEventHandler::ReleasePage(NuMemoryPool *pool, void *ptr) {
     NuMemoryGet()->GetThreadMem()->BlockFree(ptr, 0);
 
     return 1;
@@ -161,8 +161,8 @@ void NuMemory::DynamicPoolEventHandler::ForceReleasePage(NuMemoryPool *pool, voi
     NuMemoryGet()->GetThreadMem()->BlockFree(ptr, 0);
 }
 
-void *NuMemory::DynamicPoolEventHandler::AllocateLargeBlock(NuMemoryPool *pool, unsigned int size,
-                                                            unsigned int alignment, const char *name) {
+void *NuMemory::DynamicPoolEventHandler::AllocateLargeBlock(NuMemoryPool *pool, u32 size,
+                                                            u32 alignment, const char *name) {
     return NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, alignment, 0, name, NUMEMORY_CATEGORY_NONE);
 }
 
@@ -179,4 +179,186 @@ NuMemoryManager *NuMemory::CreateMemoryManager(NuMemoryManager::IEventHandler *e
     }
 
     return manager;
+}
+
+void NuMemoryPool::GetAllocatedBytes() {
+}
+
+void NuMemoryPool::GetDebugName() const {
+}
+
+void NuMemoryPool::GetFreeBytes() {
+}
+
+void NuMemoryPool::GetLargeBlockBytes() {
+}
+
+void NuMemoryPool::GetPagedBytes() {
+}
+
+void NuMemoryPool::InterlockedPop(NuMemoryPool::FreeBlock volatile **) {
+}
+
+void NuMemoryPool::InterlockedPush(NuMemoryPool::FreeBlock volatile **, void *) {
+}
+
+void NuMemoryPool::Merge(NuMemoryPool::FreeBlock volatile *, NuMemoryPool::FreeBlock volatile *) {
+}
+
+void NuMemoryPool::Merge(NuMemoryPool::Page *, NuMemoryPool::Page *) {
+}
+
+void NuMemoryPool::MergeSort(NuMemoryPool::FreeBlock volatile *, u32) {
+}
+
+void NuMemoryPool::MergeSort(NuMemoryPool::Page *, u32) {
+}
+
+NuMemoryPool::NuMemoryPool(NuMemoryPool::IEventHandler *, u32, char const *) {
+}
+
+void NuMemoryPool::PageAlloc(u32, char const *) {
+}
+
+void NuMemoryPool::ReleaseAllPages() {
+}
+
+void NuMemoryPool::ReleaseUnreferencedPages() {
+}
+
+void NuMemoryPool::ReleaseUnreferencedPages_OLD() {
+}
+
+void NuMemoryPool::VisitPools(NuMemoryPool::IVisitor *) {
+}
+
+NuMemoryPool::~NuMemoryPool() {
+}
+
+void NuMemoryManager::ClearBlockDebugContext(void *) {
+}
+
+void NuMemoryManager::DumpBlock(u32, NuSymbolQuery *, NuMemoryManager::Header *, u32, u32,
+                                u32) {
+}
+
+void NuMemoryManager::DumpBlocksForContext(u32, NuSymbolQuery *, NuMemoryManager::Context *, u32) {
+}
+
+void NuMemoryManager::FindAndTouchMatchingBlocks(NuMemoryManager::DebugHeader *, u32 *, u32) {
+}
+
+void NuMemoryManager::GetAllocatedBytes() {
+}
+
+void NuMemoryManager::GetBlockAlignment(void *) {
+}
+
+void NuMemoryManager::GetBlockDebugBackTrace(void *, void **) {
+}
+
+void NuMemoryManager::GetBlockDebugContext(void *) {
+}
+
+void NuMemoryManager::GetBlockSize(void *) {
+}
+
+void NuMemoryManager::GetCategoryAllocatedBytes(u16) {
+}
+
+void NuMemoryManager::GetCurrentContextID() const {
+}
+
+void NuMemoryManager::GetCurrentContextName() const {
+}
+
+void NuMemoryManager::GetDebugName() const {
+}
+
+void NuMemoryManager::GetFreeBytes() const {
+}
+
+void NuMemoryManager::GetNumFreeFragments() const {
+}
+
+void NuMemoryManager::GetOverrideCategory() {
+}
+
+void NuMemoryManager::GetOverrideCategoryBGThread() {
+}
+
+void NuMemoryManager::GetPagedBytes() {
+}
+
+void NuMemoryManager::GetSmallBinSize(u32) {
+}
+
+void NuMemoryManager::IsZombie() {
+}
+
+void NuMemoryManager::MergeLargeBinSegments(NuMemoryManager::FreeHeader *, NuMemoryManager::FreeHeader *) {
+}
+
+void NuMemoryManager::PushContext(char const *) {
+}
+
+void NuMemoryManager::ReleaseExternalPage(void *) {
+}
+
+void NuMemoryManager::SetBlockDebugContext(void *, u32) {
+}
+
+void NuMemoryManager::SetBlockDebugName(void *, char const *) {
+}
+
+void NuMemoryManager::SetOverrideCategory(u16) {
+}
+
+void NuMemoryManager::SetOverrideCategoryBGThread(u16) {
+}
+
+void NuMemoryManager::SortLargeBin(u32) {
+}
+
+void NuMemoryManager::SortLargeBinSegment(NuMemoryManager::FreeHeader *, u32) {
+}
+
+void NuMemoryManager::UnTouchAllBlocks() {
+}
+
+void NuMemoryManager::ValidateBlock(void *) {
+}
+
+void NuMemoryManager::ValidateBlockDeferredContent(NuMemoryManager::Header *, char const *) {
+}
+
+void NuMemoryManager::VisitManagers(NuMemoryManager::IVisitor *) {
+}
+
+void NuMemoryManager::VisitPages(NuMemoryManager::IPageVisitor *) {
+}
+
+void NuMemoryManager::_MultiBlockAlloc(u32, u32, u32, void **, u32, char const *,
+                                       u16) {
+}
+
+void NuMemory::CreateDynamicMemoryPool(u32, char const *) {
+}
+
+void NuMemory::CreateFixedMemoryPool(u32, u32, char const *) {
+}
+
+void NuMemory::CreateMemoryPool(NuMemoryPool::IEventHandler *, u32, char const *) {
+}
+
+void NuMemory::DestroyMemoryManager(NuMemoryManager *) {
+}
+
+void NuMemory::DestroyMemoryPool(NuMemoryPool *) {
+}
+
+void NuMemory::MoveFreeMem2IntoMem1() {
+}
+
+void NuMemory::SetSoakTestMode() {
 }

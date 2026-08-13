@@ -2,56 +2,64 @@
 
 #include "decomp.h"
 
-int gizspecial_gizmotype_id = -1;
+i32 gizspecial_gizmotype_id = -1;
 
 static char *gizSpec_prefix = "Spec_";
 
-static int GizSpecial_GetMaxGizmos(void *special) {
+static i32 GizSpecial_GetMaxGizmos(void *special) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void GizSpecial_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void GizSpecial_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
 static char *GizSpecial_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizSpecial_GetOutput(GIZMO *gizmo, int, int) {
+static i32 GizSpecial_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static char *GizSpecial_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static i32 GizSpecial_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void GizSpecial_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static char *GizSpecial_GetOutputName(GIZMO *gizmo, int output_index) {
+static i32 GizSpecial_ActivateRev(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void GizSpecial_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static int GizSpecial_GetNumOutputs(GIZMO *gizmo) {
+static i32 GizSpecial_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void GizSpecial_Activate(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static int GizSpecial_ActivateRev(GIZMO *gizmo, int, int) {
-    UNIMPLEMENTED();
-}
-
-static void GizSpecial_SetVisibility(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static int GizSpecial_GetPos(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-}
-
-static void GizSpecial_UsingSpecial(GIZMO **, void *, int, char *) {
+static void GizSpecial_UsingSpecial(GIZMO **, void *, i32, char *) {
     UNIMPLEMENTED();
 }
 
 static void *GizSpecial_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void GizSpecial_ClearProgress(void *, void *) {
@@ -68,9 +76,10 @@ static void GizSpecial_Reset(void *, void *, void *) {
 
 void *GizSpecial_ReserveBuffer(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-ADDGIZMOTYPE *GizSpecial_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *GizSpecial_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

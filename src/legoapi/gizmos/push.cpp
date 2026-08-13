@@ -2,13 +2,14 @@
 
 #include "decomp.h"
 
-int pushblock_gizmotype_id;
+i32 pushblock_gizmotype_id;
 
-static int Push_GetMaxGizmos(void *push) {
+static i32 Push_GetMaxGizmos(void *push) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void Push_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void Push_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
@@ -18,34 +19,40 @@ void UpdatePushBlocks(void *, void *, float) {
 
 static char *GizPush_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-int GizPush_GetOutput(GIZMO *gizmo, int, int) {
+i32 GizPush_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+char *GizPush_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+i32 GizPush_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void Push_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-char *GizPush_GetOutputName(GIZMO *gizmo, int output_index) {
+static void Push_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-int GizPush_GetNumOutputs(GIZMO *gizmo) {
+static i32 Pushblocks_BoltHitPlat(void *, void *, BOLT *, unsigned char *) {
     UNIMPLEMENTED();
-}
-
-static void Push_Activate(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static void Push_SetVisibility(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static int Pushblocks_BoltHitPlat(void *, void *, BOLT *, unsigned char *) {
-    UNIMPLEMENTED();
+    return {};
 }
 
 static void *Push_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void Push_ClearProgress(void *, void *) {
@@ -62,13 +69,15 @@ static void Push_Reset(void *, void *, void *) {
 
 static void *PushBlocks_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int edpush_Load(void *, void *) {
+static i32 edpush_Load(void *, void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-ADDGIZMOTYPE *Push_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *Push_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

@@ -159,7 +159,7 @@ typedef struct numtl_s {
 #ifdef __cplusplus
 
 void DefaultMtl(NUMTL *mtl);
-void NuMtlCreatePS(NUMTL *mtl, int is_3d);
+void NuMtlCreatePS(NUMTL *mtl, i32 is_3d);
 
 extern "C" {
 #endif
@@ -170,7 +170,7 @@ extern "C" {
 
     void NuShaderMtlDescInit(NUSHADERMTLDESC *desc);
     void NuMtlSetShaderDescPS(NUMTL *mtl, NUSHADERMTLDESC *desc);
-    NUMTL *NuMtlCreate(int count);
+    NUMTL *NuMtlCreate(i32 count);
     void NuMtlUpdate(NUMTL *mtl);
 #ifdef __cplusplus
 }

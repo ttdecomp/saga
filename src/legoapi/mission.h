@@ -8,7 +8,7 @@ typedef struct MISSIONSAVE_s {
 } MISSIONSAVE;
 
 struct missionsys_s {
-    int length;
+    i32 length;
     u8 field1_0x4;
     u8 field2_0x5;
     u8 field3_0x6;

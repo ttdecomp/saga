@@ -223,7 +223,7 @@ LEVELDATA *Levels_ConfigureList(char *file, VARIPTR *buf, VARIPTR *buf_end, i32 
 
 void Level_SetDefaults(LEVELDATA *level);
 
-LEVELDATA *Level_FindByName(char *name, int *idx_out);
+LEVELDATA *Level_FindByName(char *name, i32 *idx_out);
 
 void Level_Draw(WORLDINFO *world);
 

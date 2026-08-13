@@ -45,7 +45,7 @@ static u16 ang[ANG_COUNT] = {
     0x1fae, 0x1fb8, 0x1fc3, 0x1fcd, 0x1fd7, 0x1fe1, 0x1fec, 0x1ff6, 0x2000};
 
 #define NU_ATAN2_LUT(y, x) ang[(y << 9) / x]
-#define NU_ATAN2F_LUT(y, x) ang[(int)((y * 512.0f) / x)]
+#define NU_ATAN2F_LUT(y, x) ang[(i32)((y * 512.0f) / x)]
 
 static u16 xy(u32 dx, u32 dy) {
     if (dx > dy) {
@@ -65,7 +65,7 @@ static u16 fxyd(f32 dx, f32 dy) {
 
 #undef NU_ATAN2_LUT
 
-int NuAtan2D(f32 dx, f32 dy) {
+i32 NuAtan2D(f32 dx, f32 dy) {
     if (dx == 0.0f) {
         return 0.0f > dy ? NUANG_180DEG : 0;
     } else if (dy == 0.0f) {
@@ -85,4 +85,16 @@ int NuAtan2D(f32 dx, f32 dy) {
 
 f32 NuAtan2(f32 dx, f32 dy) {
     return NuAtan2D(dx, dy) * (f32)(2.0f * M_PI / USHRT_MAX); // the number of radians per discrete integer angle
+}
+
+float NuSinApprox2(i32 ang) {
+    return NU_SIN_LUT(ang);
+}
+
+float NuCosApprox2(i32 ang) {
+    return NU_COS_LUT(ang);
+}
+
+float NuSin_Accurate(float x) {
+    return sinf(x);
 }

@@ -15,7 +15,7 @@ typedef struct LEVELSCRIPTPROCESS_s {
 typedef struct AI_s {
 } AI;
 
-ADDGIZMOTYPE* AI_RegisterGizmo(int type_id);
+ADDGIZMOTYPE* AI_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

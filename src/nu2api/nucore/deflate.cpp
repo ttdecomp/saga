@@ -69,7 +69,7 @@ u32 BuildHuffmanTree(DEFHUFFMAN *tree, u8 *codeLengths, i32 symbolCount) {
     return 1;
 }
 
-i32 InflateBuffer(char *buffer, int decodedSize, char *readBuffer, i32 readBufferSize) {
+i32 InflateBuffer(char *buffer, i32 decodedSize, char *readBuffer, i32 readBufferSize) {
     DEFLATECONTEXT ctx;
 
     ctx.read_buffer = (u8 *)readBuffer;
@@ -209,7 +209,7 @@ static i32 DistanceBase[32] = {1,    2,    3,    4,    5,    7,     9,     13,  
 static i32 DistanceExtraBits[32] = {0, 0, 0, 0, 1, 1, 2,  2,  3,  3,  4,  4,  5,  5,  6, 6,
                                     7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13, 0, 0};
 
-int DecodeDeflatedBlock(DEFLATECONTEXT *ctx) {
+i32 DecodeDeflatedBlock(DEFLATECONTEXT *ctx) {
     while (true) {
         i32 symbol = CtxReadHuffmanSymbol(ctx, &ctx->length_tree);
 
@@ -242,8 +242,9 @@ int DecodeDeflatedBlock(DEFLATECONTEXT *ctx) {
     }
 }
 
-int DecodeUncompressedBlock(DEFLATECONTEXT *ctx) {
+i32 DecodeUncompressedBlock(DEFLATECONTEXT *ctx) {
     UNIMPLEMENTED("DecodeUncompressedBlock");
+    return {};
 }
 
 enum {
@@ -252,7 +253,7 @@ enum {
     BLOCK_UNCOMPRESSED = 2,
 };
 
-int DecodeDeflated(DEFLATECONTEXT *ctx) {
+i32 DecodeDeflated(DEFLATECONTEXT *ctx) {
     u32 is_final_block;
     i32 type;
 
@@ -307,7 +308,7 @@ int DecodeDeflated(DEFLATECONTEXT *ctx) {
 static u8 LengthDeZigZag[19] = {0x10, 0x11, 0x12, 0x00, 0x08, 0x07, 0x09, 0x06, 0x0a, 0x05,
                                 0x0b, 0x04, 0x0c, 0x03, 0x0d, 0x02, 0x0e, 0x01, 0x0f};
 
-int DecompressHuffmanTrees(DEFLATECONTEXT *ctx) {
+i32 DecompressHuffmanTrees(DEFLATECONTEXT *ctx) {
     i32 hlit = READBITS(ctx, 5) + 257;
     i32 hdist = READBITS(ctx, 5) + 1;
     i32 hclen = READBITS(ctx, 4) + 4;
@@ -326,8 +327,8 @@ int DecompressHuffmanTrees(DEFLATECONTEXT *ctx) {
 
     u8 allCodeLengths[288 + 32];
 
-    unsigned int repeatCount;
-    for (int i = 0; i < hlit + hdist; i += repeatCount) {
+    u32 repeatCount;
+    for (i32 i = 0; i < hlit + hdist; i += repeatCount) {
         i32 symbol = CtxReadHuffmanSymbol(ctx, &ctx->temp_code_length);
 
         // Process the decoded symbol

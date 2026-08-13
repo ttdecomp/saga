@@ -141,3 +141,43 @@ alloc_error:
 
     return 3;
 }
+
+NuSoundStreamer::~NuSoundStreamer() {
+}
+
+void NuSoundStreamer::RequestClose(NuSoundStreamingSample *) {
+}
+
+void NuSoundStreamer::RequestReCue(NuSoundStreamingSample *, bool, float) {
+}
+
+void NuSoundStreamer::RequestFill(NuSoundStreamingSample *, NuSoundBuffer *, bool, NuSoundWeakPtr<NuSoundBufferCallback>) {
+}
+
+void NuSoundStreamer::ShutdownAll() {
+}
+
+void NuSoundStreamer::ShutdownThread() {
+}
+
+NuSoundStreamingSample::~NuSoundStreamingSample() {
+}
+
+void NuSoundStreamingSample::Close() {
+}
+
+void NuSoundStreamingSample::ReCue(float, bool) {
+}
+
+bool NuSoundStreamingSample::IsLocked() const {
+    return false;
+}
+
+void NuSoundStreamingSample::Lock() {
+}
+
+void NuSoundStreamingSample::Unlock() {
+}
+
+void NuSoundStreamingSample::RequestBuffer(bool, NuSoundWeakPtr<NuSoundBufferCallback>) {
+}

@@ -91,6 +91,7 @@ namespace NuInputDevicePS {
     }
 
     u32 GetGamePadButtonIndex(i32 key, i32 *port) {
+        return {};
     }
 
     void HandleKeyDown_ANDROID_SPECIFIC(i32 key) {

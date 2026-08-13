@@ -2,11 +2,12 @@
 
 #include "decomp.h"
 
-static int Tubes_GetMaxGizmos(void *tube) {
+static i32 Tubes_GetMaxGizmos(void *tube) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void Tubes_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void Tubes_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
@@ -19,38 +20,45 @@ static void Tubes_Draw(void *, void *, float) {
 
 static char *Tube_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int Tube_GetOutput(GIZMO *gizmo, int, int) {
+static i32 Tube_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static char *Tube_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static i32 Tube_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void Tube_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static char *Tube_GetOutputName(GIZMO *gizmo, int output_index) {
+static i32 Tube_ActivateRev(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void Tube_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static int Tube_GetNumOutputs(GIZMO *gizmo) {
+static i32 Tube_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
-}
-
-static void Tube_Activate(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static int Tube_ActivateRev(GIZMO *gizmo, int, int) {
-    UNIMPLEMENTED();
-}
-
-static void Tube_SetVisibility(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static int Tube_GetPos(GIZMO *gizmo) {
-    UNIMPLEMENTED();
+    return {};
 }
 
 static void *Tubes_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void Tubes_ClearProgress(void *, void *) {
@@ -67,13 +75,15 @@ static void Tubes_Reset(void *, void *, void *) {
 
 static void *Tubes_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int Tubes_Load(void *, void *) {
+static i32 Tubes_Load(void *, void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-ADDGIZMOTYPE *Tubes_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *Tubes_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

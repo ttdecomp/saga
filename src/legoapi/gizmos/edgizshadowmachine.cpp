@@ -2,41 +2,48 @@
 
 #include "decomp.h"
 
-int edGizShadow_gizmotype_id;
+i32 edGizShadow_gizmotype_id;
 
-static int edGizShadow_GetMaxGizmos(void *shadow) {
+static i32 edGizShadow_GetMaxGizmos(void *shadow) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void edGizShadow_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void edGizShadow_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
 static char *edGizShadow_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int edGizShadow_GetOutput(GIZMO *gizmo, int, int) {
+static i32 edGizShadow_GetOutput(GIZMO *gizmo, i32, i32) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static char *edGizShadow_GetOutputName(GIZMO *gizmo, int output_index) {
+static char *edGizShadow_GetOutputName(GIZMO *gizmo, i32 output_index) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int edGizShadow_GetNumOutputs(GIZMO *gizmo) {
+static i32 edGizShadow_GetNumOutputs(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void *edGizShadow_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int edGizShadow_Load(void *, void *) {
+static i32 edGizShadow_Load(void *, void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-ADDGIZMOTYPE *EdGizShadowMachine_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *EdGizShadowMachine_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

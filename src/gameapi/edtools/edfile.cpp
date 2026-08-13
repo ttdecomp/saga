@@ -5,17 +5,17 @@
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nufile/nufilepak.h"
 
-static int edfile_media;
-int edfile_handle = -1;
-int edfile_write_flag;
+static i32 edfile_media;
+i32 edfile_handle = -1;
+i32 edfile_write_flag;
 
 static void *edfile_pakfile;
 
 char edfile_buffer[0x1000];
-int edfile_buffer_pointer;
-int edfile_lock[2];
+i32 edfile_buffer_pointer;
+i32 edfile_lock[2];
 
-int edfile_readwrongendianess;
+i32 edfile_readwrongendianess;
 
 void EdFileResetBuffers() {
     memset(edfile_buffer, 0, sizeof(edfile_buffer));
@@ -48,10 +48,10 @@ void EdFileFlushBuffer() {
     edfile_buffer_pointer = 0;
 }
 
-int EdFileOpen(char *filepath, NUFILEMODE mode) {
-    int item_handle;
+i32 EdFileOpen(char *filepath, NUFILEMODE mode) {
+    i32 item_handle;
     void *item;
-    int item_size;
+    i32 item_size;
 
     if (edfile_handle != -1) {
         return 0;
@@ -114,7 +114,7 @@ int EdFileOpen(char *filepath, NUFILEMODE mode) {
     return 0;
 }
 
-int EdFileClose() {
+i32 EdFileClose() {
     edfile_pakfile = NULL;
 
     if (edfile_handle == -1) {
@@ -136,7 +136,7 @@ int EdFileClose() {
     return 1;
 }
 
-void EdFileSetMedia(int media) {
+void EdFileSetMedia(i32 media) {
     edfile_media = media;
 }
 
@@ -144,11 +144,11 @@ void EdFileSetPakFile(void *pak) {
     edfile_pakfile = pak;
 }
 
-void EdFileSetReadWrongEndianess(int value) {
+void EdFileSetReadWrongEndianess(i32 value) {
 }
 
-void EdFileRead(void *buf, int len) {
-    int to_read;
+void EdFileRead(void *buf, i32 len) {
+    i32 to_read;
 
     while (len > 0) {
         to_read = MIN(0x1000 - edfile_buffer_pointer, len);
@@ -192,8 +192,8 @@ f32 EdFileReadFloat() {
     return data;
 }
 
-int EdFileReadInt() {
-    int data;
+i32 EdFileReadInt() {
+    i32 data;
 
     EdFileRead(&data, 4);
 
@@ -246,8 +246,8 @@ void EdFileReadNuVec(NUVEC *out) {
     out->z = EdFileReadFloat();
 }
 
-void EdFileWrite(void *data, int len) {
-    int to_write;
+void EdFileWrite(void *data, i32 len) {
+    i32 to_write;
 
     while (len > 0) {
         to_write = MIN(0x1000 - edfile_buffer_pointer, len);

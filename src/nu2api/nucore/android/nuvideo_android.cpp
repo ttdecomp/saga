@@ -6,6 +6,6 @@ void NuVideoSetBrightnessPS() {
 void NuVideoSetSwapModePS(NUVIDEO_SWAPMODE video_swap_mode) {
 }
 
-int NuVideoGetAspectPS(void) {
+i32 NuVideoGetAspectPS(void) {
     return 3;
 }

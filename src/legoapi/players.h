@@ -88,13 +88,13 @@ void Players_Init(void);
 
 // ---- Player/gameobject helpers (defined in players.cpp) ----
 
-void DrawOffsetCode(GameObject_s *obj, int param);
-extern "C" void rtlDynamicEnable(int id, int param);
+void DrawOffsetCode(GameObject_s *obj, i32 param);
+extern "C" void rtlDynamicEnable(i32 id, i32 param);
 float GameObjectNearFloor(GameObject_s *obj, float h, float *out);
 float GetHoverPosY(GameObject_s *obj);
-int Player_HasPurpleForce(GameObject_s *obj);
+i32 Player_HasPurpleForce(GameObject_s *obj);
 extern unsigned GAMEPAD_ACTION;
-void ChatterSfx(GameObject_s *g, int a, float b);
+void ChatterSfx(GameObject_s *g, i32 a, float b);
 void Move_VEHICLE(GameObject_s *g);
 extern "C" void ComplexSockPosition(void *a, void *b, i32 c, i32 d, SOCKPOSITION *out);
 void *CutScenePlayer_Available(void);

@@ -134,7 +134,7 @@ NuMemoryManager::NuMemoryManager(IEventHandler *event_handler, IErrorHandler *er
 
     pthread_mutex_lock(m_globalCriticalSection);
 
-    for (int i = 0; i != 0x100; i++) {
+    for (i32 i = 0; i != 0x100; i++) {
         if (m_memoryManagers[i] == NULL) {
             this->idx = i;
             m_memoryManagers[i] = this;
@@ -389,7 +389,7 @@ void NuMemoryManager::BlockFree(void *ptr, u32 flags) {
             manager->BinLink(final, false);
 
             if (manager->stranded_blocks != NULL) {
-                for (int i = 0; i < manager->stranded_block_count; i++) {
+                for (i32 i = 0; i < manager->stranded_block_count; i++) {
                     if (ptr == manager->stranded_blocks[i]) {
                         manager->stranded_blocks[i] = NULL;
                     }
@@ -479,7 +479,7 @@ void NuMemoryManager::ReleaseUnreferencedPages() {
 
 u32 NuMemoryManager::CalculateBlockSize(u32 size) {
     u32 aligned;
-    int block_size;
+    i32 block_size;
     u32 mem_size;
 
     aligned = ALIGN(size, 0x4);
@@ -680,7 +680,7 @@ bool NuMemoryManager::PopContext(NuMemoryManager::PopDebugMode debug_mode) {
 
             if ((largest_stranded_dbg->flags.alloc_flags & MEM_ALLOC_UNKNOWN_4) != 0) {
                 u32 value_len;
-                int i;
+                i32 i;
 
                 value_len = MIN(BLOCK_SIZE(largest_stranded->value) - m_headerSize - 4, 0x100);
 
@@ -954,7 +954,7 @@ void NuMemoryManager::FreeStrandedBlocks() {
 void NuMemoryManager::IErrorHandler::HandleError(NuMemoryManager *manager, ErrorCode code, const char *msg) {
 }
 
-int NuMemoryManager::IErrorHandler::OpenDump(NuMemoryManager *manager, const char *filename, u32 &id) {
+i32 NuMemoryManager::IErrorHandler::OpenDump(NuMemoryManager *manager, const char *filename, u32 &id) {
     return 0;
 }
 

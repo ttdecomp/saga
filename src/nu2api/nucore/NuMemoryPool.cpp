@@ -1,11 +1,11 @@
 #include "nu2api/nucore/NuMemoryPool.h"
 
-void NuMemoryPool::AddPage(void *ptr, unsigned int size) {
+void NuMemoryPool::AddPage(void *ptr, u32 size) {
 }
 
-void NuMemoryPool::InterlockedAdd(volatile unsigned int *augend, unsigned int addend) {
-    unsigned int expected;
-    unsigned int actual;
+void NuMemoryPool::InterlockedAdd(volatile u32 *augend, u32 addend) {
+    u32 expected;
+    u32 actual;
 
     do {
         expected = *augend;
