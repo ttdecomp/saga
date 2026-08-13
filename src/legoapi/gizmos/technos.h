@@ -9,7 +9,7 @@ extern i32 techno_gizmotype_id;
 typedef struct TECHNO_s {
 } TECHNO;
 
-ADDGIZMOTYPE* Technos_RegisterGizmo(i32 type_id);
+ADDGIZMOTYPE *Technos_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

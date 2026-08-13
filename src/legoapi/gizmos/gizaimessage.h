@@ -9,7 +9,7 @@ extern i32 gizaimessage_gizmotype_id;
 typedef struct GIZAIMESSAGE_s {
 } GIZAIMESSAGE;
 
-ADDGIZMOTYPE* GizAIMessage_RegisterGizmo(i32 type_id);
+ADDGIZMOTYPE *GizAIMessage_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

@@ -7,7 +7,7 @@
 typedef struct MINICUT_s {
 } MINICUT;
 
-ADDGIZMOTYPE* MiniCut_RegisterGizmo(i32 type_id);
+ADDGIZMOTYPE *MiniCut_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

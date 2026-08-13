@@ -9,7 +9,7 @@ extern i32 teleport_gizmotype_id;
 typedef struct TELEPORT_s {
 } TELEPORT;
 
-ADDGIZMOTYPE* Teleport_RegisterGizmo(i32 type_id);
+ADDGIZMOTYPE *Teleport_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

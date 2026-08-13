@@ -127,8 +127,7 @@ void DrawStreaks() {
 void Draw_LOADED() {
 }
 
-void Draw3DObject(WORLDINFO_s *, i32, nuvec_s *, u16, u16, u16, float, float, float,
-                  i32) {
+void Draw3DObject(WORLDINFO_s *, i32, nuvec_s *, u16, u16, u16, float, float, float, i32) {
 }
 
 void DrawCharIcon(i32, float, float, float, float, i32, float, float, i32, nuhspecial_s *) {
@@ -284,8 +283,7 @@ void DrawStatusScreen(WORLDINFO_s *) {
 void Draw_LOADCORRUPT() {
 }
 
-void Draw3DObjectAlpha(WORLDINFO_s *, i32, nuvec_s *, u16, u16, u16, float, float,
-                       float, i32, float) {
+void Draw3DObjectAlpha(WORLDINFO_s *, i32, nuvec_s *, u16, u16, u16, float, float, float, i32, float) {
 }
 
 void DrawBossHitPoints(GameObject_s *) {
@@ -294,8 +292,7 @@ void DrawBossHitPoints(GameObject_s *) {
 void DrawCameraTarget2(nuvec_s *) {
 }
 
-void DrawPanel3DObject(float, float, float, float, float, float, u16, u16, u16,
-                       nuhspecial_s *, i32, float) {
+void DrawPanel3DObject(float, float, float, float, float, float, u16, u16, u16, nuhspecial_s *, i32, float) {
 }
 
 void DrawStatusMiniKit(float, float, float, float, float, i32, STATUSPACKET_s *, float) {
@@ -313,8 +310,7 @@ void Draw_NOMEMORYCARD() {
 void DrawFadeScreenWipe() {
 }
 
-void DrawMessageBoxRGBA(float, float, float, float, u32, u32, u32, u32, numtl_s *,
-                        i32, float) {
+void DrawMessageBoxRGBA(float, float, float, float, u32, u32, u32, u32, numtl_s *, i32, float) {
 }
 
 void DrawSuperStoryTime(float, float, float, i32, i32) {
@@ -353,8 +349,8 @@ void Draw_NODATAAVAILABLE() {
 void DrawInDoubleScoreZone(float) {
 }
 
-void DrawObjectOnCharacter(WORLDINFO_s *, GameObject_s *, i32, nuhspecial_s *, i32, i32, numtx_s *, i32, u32,
-                           numtx_s *, nuvec_s *, float, float) {
+void DrawObjectOnCharacter(WORLDINFO_s *, GameObject_s *, i32, nuhspecial_s *, i32, i32, numtx_s *, i32, u32, numtx_s *,
+                           nuvec_s *, float, float) {
 }
 
 void DrawPlayerIconPrompts(i32, i32, float, i32, i32, i32, i32, i32, i32, float, i32, i32, i32, i32) {
@@ -375,8 +371,7 @@ void DrawGameMessage_Targets(GAMEMESSAGE_s *, nuvec_s *, float) {
 void DrawTorpedoTargetSprite(void *, unsigned char, float) {
 }
 
-void DrawPanel3DObjectNoAlpha(float, float, float, float, float, float, u16, u16, u16,
-                              nuhspecial_s *, i32) {
+void DrawPanel3DObjectNoAlpha(float, float, float, float, float, float, u16, u16, u16, nuhspecial_s *, i32) {
 }
 
 void DrawPanel3DObjectMtxNoAlpha(nuhspecial_s *, numtx_s *) {

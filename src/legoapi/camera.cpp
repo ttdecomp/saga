@@ -33,8 +33,8 @@ void GameCameraMakeMiniCut(nugspline_s *, float, float, float, float, i32, i32) 
 void GameCameraMakeMiniCut2(nuvec_s *, nuvec_s *, i32, float, float, float, float, i32, i32, i32) {
 }
 
-void GameCameraMakeMiniCut3(u32, float, i32, i32, i32, void *, i32, nuvec_s *, float, float, float, float,
-                            float, float, float, i32, nugspline_s *, char, char) {
+void GameCameraMakeMiniCut3(u32, float, i32, i32, i32, void *, i32, nuvec_s *, float, float, float, float, float, float,
+                            float, i32, nugspline_s *, char, char) {
 }
 
 void GameCam_GetAdjustedYRot(GAMECAMERA_s *) {

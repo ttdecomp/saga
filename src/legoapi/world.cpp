@@ -388,9 +388,8 @@ void WorldInfo_Load(WORLDINFO *world) {
     }
 
     // Create antinode system
-    world->game_antinode_sys = (GAMEANTINODESYS_s *)GameAntnode_CreateSys(world, &world->giz_buffer,
-                                                                         &world->unknown_0108,
-                                                                         (i32)(u16)world->current_level->max_antinodes);
+    world->game_antinode_sys = (GAMEANTINODESYS_s *)GameAntnode_CreateSys(
+        world, &world->giz_buffer, &world->unknown_0108, (i32)(u16)world->current_level->max_antinodes);
 
     // Create gizmo system
     world->gizmo_sys = (GIZMOSYS_s *)CreateGizmoSys(world, &world->giz_buffer, &world->unknown_0108);
@@ -415,8 +414,8 @@ void WorldInfo_Load(WORLDINFO *world) {
         goto after_area;
     }
     if ((level->flags & LEVEL_STATUS) != 0 && world->area->minikit_id != -1) {
-        MiniKit_Load(&world->minikit, (i32)(i16)world->area->minikit_id, &world->giz_buffer,
-                     &world->unknown_0108, NULL);
+        MiniKit_Load(&world->minikit, (i32)(i16)world->area->minikit_id, &world->giz_buffer, &world->unknown_0108,
+                     NULL);
         if (world->minikit.gscn != NULL) {
             MiniKit_InitPieces(&world->minikit, 10, &world->giz_buffer, &world->unknown_0108);
         }
@@ -439,10 +438,9 @@ after_area:
 
     // Load cutscenes
     page_handles = (i32 *)&world->unknown_0140[0x2958];
-    world->cutscene_sys = (CUTSYS *)CutScenes_Load(ConfigBuffer, world->current_gscn, (NUGSCN *)cutscene_scene,
-                                                   page_handles[0], &world->giz_buffer, &world->unknown_0108,
-                                                   *(i32 *)&world->unknown_0140[0x011c],
-                                                   *(i32 *)&world->unknown_0140[0x0120], world);
+    world->cutscene_sys = (CUTSYS *)CutScenes_Load(
+        ConfigBuffer, world->current_gscn, (NUGSCN *)cutscene_scene, page_handles[0], &world->giz_buffer,
+        &world->unknown_0108, *(i32 *)&world->unknown_0140[0x011c], *(i32 *)&world->unknown_0140[0x0120], world);
     if (abort_load != 0)
         goto abort;
 
@@ -528,9 +526,8 @@ after_area:
         GameAIScriptAddLevelSfx(world, &global_aiscripts);
         GameAIScriptAddLevelSfx(world, &world->ai_sys->scripts);
 
-        world->climb_object_sys =
-            (CLIMBOBJECTSYS_s *)CreateClimbObjectSys(&world->giz_buffer, &world->unknown_0108,
-                                                     (i32)(u8)level->unknown_103);
+        world->climb_object_sys = (CLIMBOBJECTSYS_s *)CreateClimbObjectSys(&world->giz_buffer, &world->unknown_0108,
+                                                                           (i32)(u8)level->unknown_103);
     } else {
         *(i32 *)&world->unknown_0140[0x29a4] = 1;
     }
@@ -577,8 +574,8 @@ after_area:
     // Load gizmo flow
     NuStrCpy(buf, world->config_file);
     NuStrCat(buf, ".git");
-    world->giz_flow = (GIZFLOW_s *)LoadGizFlow(world, (GIZMOSYS_s *)world->gizmo_sys, buf, &world->giz_buffer,
-                                               &world->unknown_0108);
+    world->giz_flow =
+        (GIZFLOW_s *)LoadGizFlow(world, (GIZMOSYS_s *)world->gizmo_sys, buf, &world->giz_buffer, &world->unknown_0108);
     if (abort_load != 0)
         goto abort;
 

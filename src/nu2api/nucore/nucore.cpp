@@ -3,8 +3,6 @@
 #include <new>
 #include <stddef.h>
 
-#include "nu2api/nucore/numemory.h"
-#include "nu2api/nucore/nuthread.h"
 #include "nu2api/nu3d/NuRenderDevice.h"
 #include "nu2api/nucore/NuCopyFilter.h"
 #include "nu2api/nucore/NuDataPortManager.h"
@@ -26,6 +24,8 @@
 #include "nu2api/nucore/NuSpeedBlurFilter.h"
 #include "nu2api/nucore/NuSpeedBlurFilterGen.h"
 #include "nu2api/nucore/NuVoiceAndroid.h"
+#include "nu2api/nucore/numemory.h"
+#include "nu2api/nucore/nuthread.h"
 
 NuApplicationState *NuCore::m_applicationState;
 NuThreadManager *NuCore::m_threadManager;
@@ -192,8 +192,7 @@ void NuRenderDevice::OnLostFocus() {
 void NuRenderDevice::OnWindowDestroy() {
 }
 
-void NuRenderDevice::OpenglErrorCallback(u32, u32, u32, u32, i32, char const *,
-                                         void *) {
+void NuRenderDevice::OpenglErrorCallback(u32, u32, u32, u32, i32, char const *, void *) {
 }
 
 void NuRenderDevice::PreInitialize() {

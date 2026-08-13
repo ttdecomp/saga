@@ -209,8 +209,7 @@ struct MechInputTouchMainController {
 };
 struct MechInputTouchMainDummyButton {
     void IsPressed() const;
-    MechInputTouchMainDummyButton(MechInputTouchMainController &, u32,
-                                  MechInputTouchMainController::eButtonTypes);
+    MechInputTouchMainDummyButton(MechInputTouchMainController &, u32, MechInputTouchMainController::eButtonTypes);
 };
 struct MechInputTouchMainDummyStick {
     MechInputTouchMainDummyStick(MechInputTouchMainController &, NuTouchInputElement::TYPE);

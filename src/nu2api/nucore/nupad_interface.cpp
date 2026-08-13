@@ -1,10 +1,10 @@
 #include "nu2api/nucore/NuInputDevice.h"
 #include "nu2api/nucore/NuInputManager.h"
+#include "nu2api/nucore/NuTouchInputButton.h"
+#include "nu2api/nucore/NuTouchInputElement.h"
+#include "nu2api/nucore/NuTouchInputStick.h"
 #include "nu2api/nucore/NuVirtualTouchDevice.h"
 #include "nu2api/nucore/nupad.h"
-#include "nu2api/nucore/NuTouchInputElement.h"
-#include "nu2api/nucore/NuTouchInputButton.h"
-#include "nu2api/nucore/NuTouchInputStick.h"
 
 NuInputManager *inputManager;
 NuVirtualTouchDevice *inputTouchDevice;

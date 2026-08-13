@@ -3,8 +3,8 @@
 #include <stddef.h>
 
 #include "nu2api/numath/nufloat.h"
-#include "nu2api/numath/nutrig.h"
 #include "nu2api/numath/numtx.h"
+#include "nu2api/numath/nutrig.h"
 
 NUVEC v000 = {0};
 NUVEC v100 = {1.0f, 0.0f, 0.0f};

@@ -9,7 +9,7 @@ extern i32 lever_gizmotype_id;
 typedef struct LEVER_s {
 } LEVER;
 
-ADDGIZMOTYPE* Levers_RegisterGizmo(i32 type_id);
+ADDGIZMOTYPE *Levers_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

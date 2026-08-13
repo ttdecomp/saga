@@ -1828,8 +1828,8 @@ i32 NuFramebuffer360GetTileCount(nuframebuffer_s *) {
 }
 void NuShaderObject360LoadShader(nushaderobject_s *) {
 }
-void NuShaderObject360LoadPackFile(char *, variptr_u *, char *)
-    __asm__("_Z29NuShaderObject360LoadPackFilePcP9variptr_uS0_");
+void NuShaderObject360LoadPackFile(char *, variptr_u *,
+                                   char *) __asm__("_Z29NuShaderObject360LoadPackFilePcP9variptr_uS0_");
 
 void NuShaderObject360LoadPackFile(char *, variptr_u *, char *) {
 }

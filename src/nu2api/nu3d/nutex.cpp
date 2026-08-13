@@ -148,8 +148,6 @@ i32 NuTexHeight(i32 tex_id) {
     return texture_list[tex_id - 1]->height;
 }
 
-
-
 enum DDSCAPS : u32 {
     DDSCAPS2_CUBEMAP = 0x200, // Required for a cubemap
     DDSCAPS2_CUBEMAP_POSITIVEX = 0x400,
@@ -159,8 +157,6 @@ enum DDSCAPS : u32 {
     DDSCAPS2_CUBEMAP_POSITIVEZ = 0x4000,
     DDSCAPS2_CUBEMAP_NEGATIVEZ = 0x8000
 };
-
-
 
 i32 NuDDSGetTextureDescription(const char *dds_data, NUTEXFORMAT &out_format, i32 &out_width, i32 &out_height,
                                i32 &out_depth, i32 &out_mip_count, bool &out_is_cube_map, bool *out_has_four_cc)

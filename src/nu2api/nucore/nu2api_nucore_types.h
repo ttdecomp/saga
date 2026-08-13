@@ -327,8 +327,7 @@ struct NuMemoryManager {
     void ValidateBlockDeferredContent(NuMemoryManager::Header *, char const *);
     void VisitManagers(NuMemoryManager::IVisitor *);
     void VisitPages(NuMemoryManager::IPageVisitor *);
-    void _MultiBlockAlloc(u32, u32, u32, void **, u32, char const *,
-                          u16);
+    void _MultiBlockAlloc(u32, u32, u32, void **, u32, char const *, u16);
 };
 struct NuMemory {
     struct MemErrorHandler {

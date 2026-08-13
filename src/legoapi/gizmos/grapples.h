@@ -9,7 +9,7 @@ extern i32 grapple_gizmotype_id;
 typedef struct GRAPPLE_s {
 } GRAPPLE;
 
-ADDGIZMOTYPE* Grapples_RegisterGizmo(i32 type_id);
+ADDGIZMOTYPE *Grapples_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

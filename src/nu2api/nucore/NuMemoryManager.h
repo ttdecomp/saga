@@ -205,8 +205,7 @@ class NuMemoryManager {
     };
 
     void ClearBlockDebugContext(void *ptr);
-    void DumpBlock(u32 _a, NuSymbolQuery *query, Header *header, u32 _d, u32 _e,
-                   u32 _f);
+    void DumpBlock(u32 _a, NuSymbolQuery *query, Header *header, u32 _d, u32 _e, u32 _f);
     void DumpBlocksForContext(u32 _a, NuSymbolQuery *query, Context *context, u32 _d);
     void FindAndTouchMatchingBlocks(DebugHeader *header, u32 *a, u32 b);
     void GetAllocatedBytes();
@@ -239,8 +238,7 @@ class NuMemoryManager {
     void ValidateBlockDeferredContent(Header *header, const char *caller);
     void VisitManagers(IVisitor *visitor);
     void VisitPages(IPageVisitor *visitor);
-    void _MultiBlockAlloc(u32 a, u32 b, u32 c, void **out, u32 e,
-                          const char *name, u16 flags);
+    void _MultiBlockAlloc(u32 a, u32 b, u32 c, void **out, u32 e, const char *name, u16 flags);
 
   private:
     static u32 GetLargeBinIndex(u32 size);

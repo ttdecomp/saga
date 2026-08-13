@@ -41,7 +41,7 @@ NuMemory::NuMemory(void **buf) {
     this->mem1_manager = (NuMemoryManager *)ptr;
     if (this->mem1_manager != NULL) {
         new (this->mem1_manager) NuMemoryManager(this->mem1_event_handler, this->error_handler, "MEM1", g_categoryNames,
-                                                sizeof(g_categoryNames) / sizeof(char *));
+                                                 sizeof(g_categoryNames) / sizeof(char *));
     }
     ptr = (void *)((usize)this->mem1_manager + sizeof(NuMemoryManager));
 
@@ -50,8 +50,8 @@ NuMemory::NuMemory(void **buf) {
 
     this->mem2_manager = (NuMemoryManager *)ptr;
     if (this->mem2_manager != NULL) {
-        new (this->mem2_manager) NuMemoryManager(this->mem2_event_handler, this->error_handler, "MEM2",
-                                                     g_categoryNames, sizeof(g_categoryNames) / sizeof(char *));
+        new (this->mem2_manager) NuMemoryManager(this->mem2_event_handler, this->error_handler, "MEM2", g_categoryNames,
+                                                 sizeof(g_categoryNames) / sizeof(char *));
     }
     ptr = (void *)((usize)this->mem2_manager + sizeof(NuMemoryManager));
 
@@ -143,8 +143,7 @@ void NuMemory::FixedPoolEventHandler::FreeLargeBlock(NuMemoryPool *pool, void *p
     NuMemoryGet()->GetThreadMem()->BlockFree(ptr, 0);
 }
 
-i32 NuMemory::DynamicPoolEventHandler::AllocatePage(NuMemoryPool *pool, u32 _unknown, u32 alignment,
-                                                    const char *name) {
+i32 NuMemory::DynamicPoolEventHandler::AllocatePage(NuMemoryPool *pool, u32 _unknown, u32 alignment, const char *name) {
     void *page = NuMemoryGet()->GetThreadMem()->_BlockAlloc(0x4000, alignment, 0, name, NUMEMORY_CATEGORY_NONE);
     pool->AddPage(page, 0x4000);
 
@@ -161,8 +160,8 @@ void NuMemory::DynamicPoolEventHandler::ForceReleasePage(NuMemoryPool *pool, voi
     NuMemoryGet()->GetThreadMem()->BlockFree(ptr, 0);
 }
 
-void *NuMemory::DynamicPoolEventHandler::AllocateLargeBlock(NuMemoryPool *pool, u32 size,
-                                                            u32 alignment, const char *name) {
+void *NuMemory::DynamicPoolEventHandler::AllocateLargeBlock(NuMemoryPool *pool, u32 size, u32 alignment,
+                                                            const char *name) {
     return NuMemoryGet()->GetThreadMem()->_BlockAlloc(size, alignment, 0, name, NUMEMORY_CATEGORY_NONE);
 }
 
@@ -238,8 +237,7 @@ NuMemoryPool::~NuMemoryPool() {
 void NuMemoryManager::ClearBlockDebugContext(void *) {
 }
 
-void NuMemoryManager::DumpBlock(u32, NuSymbolQuery *, NuMemoryManager::Header *, u32, u32,
-                                u32) {
+void NuMemoryManager::DumpBlock(u32, NuSymbolQuery *, NuMemoryManager::Header *, u32, u32, u32) {
 }
 
 void NuMemoryManager::DumpBlocksForContext(u32, NuSymbolQuery *, NuMemoryManager::Context *, u32) {
@@ -338,8 +336,7 @@ void NuMemoryManager::VisitManagers(NuMemoryManager::IVisitor *) {
 void NuMemoryManager::VisitPages(NuMemoryManager::IPageVisitor *) {
 }
 
-void NuMemoryManager::_MultiBlockAlloc(u32, u32, u32, void **, u32, char const *,
-                                       u16) {
+void NuMemoryManager::_MultiBlockAlloc(u32, u32, u32, void **, u32, char const *, u16) {
 }
 
 void NuMemory::CreateDynamicMemoryPool(u32, char const *) {

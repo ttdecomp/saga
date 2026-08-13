@@ -16,10 +16,9 @@ void GameAntinode_RegisterAntiNode(GAMEANTINODESYS_s *, nuvec_s *, float, float,
 void GameAntinode_UnregisterAntiNode(GAMEANTINODESYS_s *, GAMEANTINODE_s *) {
 }
 
-void GameAntinode_UpdateAntiNodeUsingData(GAMEANTINODESYS_s *, GAMEANTINODE_s *, nuvec_s *, u16,
-                                          GAMEANTINODEDATA_s *, float, i32) {
+void GameAntinode_UpdateAntiNodeUsingData(GAMEANTINODESYS_s *, GAMEANTINODE_s *, nuvec_s *, u16, GAMEANTINODEDATA_s *,
+                                          float, i32) {
 }
 
-void GameAntinode_RegisterAntiNodeUsingData(GAMEANTINODESYS_s *, nuvec_s *, u16, GAMEANTINODEDATA_s *, float,
-                                            i32) {
+void GameAntinode_RegisterAntiNodeUsingData(GAMEANTINODESYS_s *, nuvec_s *, u16, GAMEANTINODEDATA_s *, float, i32) {
 }

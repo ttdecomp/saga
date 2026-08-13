@@ -36,12 +36,10 @@ class NuMemory {
         FixedPoolEventHandler() {
         }
 
-        virtual i32 AllocatePage(NuMemoryPool *pool, u32 _unknown, u32 alignment,
-                                 const char *name) override;
+        virtual i32 AllocatePage(NuMemoryPool *pool, u32 _unknown, u32 alignment, const char *name) override;
         virtual i32 ReleasePage(NuMemoryPool *pool, void *ptr) override;
         virtual void ForceReleasePage(NuMemoryPool *pool, void *ptr) override;
-        virtual void *AllocateLargeBlock(NuMemoryPool *pool, u32 size, u32 alignment,
-                                         const char *name) override;
+        virtual void *AllocateLargeBlock(NuMemoryPool *pool, u32 size, u32 alignment, const char *name) override;
         virtual void FreeLargeBlock(NuMemoryPool *pool, void *ptr) override;
 
       private:
@@ -53,12 +51,10 @@ class NuMemory {
         DynamicPoolEventHandler() {
         }
 
-        virtual i32 AllocatePage(NuMemoryPool *pool, u32 _unknown, u32 alignment,
-                                 const char *name) override;
+        virtual i32 AllocatePage(NuMemoryPool *pool, u32 _unknown, u32 alignment, const char *name) override;
         virtual i32 ReleasePage(NuMemoryPool *pool, void *ptr) override;
         virtual void ForceReleasePage(NuMemoryPool *pool, void *ptr) override;
-        virtual void *AllocateLargeBlock(NuMemoryPool *pool, u32 size, u32 alignment,
-                                         const char *name) override;
+        virtual void *AllocateLargeBlock(NuMemoryPool *pool, u32 size, u32 alignment, const char *name) override;
         virtual void FreeLargeBlock(NuMemoryPool *pool, void *ptr) override;
 
       private:

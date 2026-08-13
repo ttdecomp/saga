@@ -9,7 +9,7 @@ extern i32 pushblock_gizmotype_id;
 typedef struct PUSHBLOCK_s {
 } PUSHBLOCK;
 
-ADDGIZMOTYPE* Push_RegisterGizmo(i32 type_id);
+ADDGIZMOTYPE *Push_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

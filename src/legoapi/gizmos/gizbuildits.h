@@ -9,7 +9,7 @@ extern i32 gizbuildit_gizmotype_id;
 typedef struct GIZBUILDIT_s {
 } GIZBUILDIT;
 
-ADDGIZMOTYPE* GizBuildIts_RegisterGizmo(i32 type_id);
+ADDGIZMOTYPE *GizBuildIts_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

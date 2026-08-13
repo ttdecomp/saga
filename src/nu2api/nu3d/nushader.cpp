@@ -150,16 +150,13 @@ i32 NuShaderObjectGenerateGLSLShader(GLuint *shader_dest, GLenum shader_type, co
     return 1;
 }
 
-void NuShaderObjectInit(nushaderobject_s *, nushaderobjectkey_s const *, i32, char const *, i32, u32,
-                        eSHADERVERSION) {
+void NuShaderObjectInit(nushaderobject_s *, nushaderobjectkey_s const *, i32, char const *, i32, u32, eSHADERVERSION) {
 }
 
-void NuShaderObjectInit(nushaderobject_s *, nushaderobjectkey_s const *, i32, u32, char const *, i32,
-                        eSHADERVERSION) {
+void NuShaderObjectInit(nushaderobject_s *, nushaderobjectkey_s const *, i32, u32, char const *, i32, eSHADERVERSION) {
 }
 
-void NuShaderObjectInit(nushaderobject_s *, nushaderobjectkey_s const *, i32, u32, u32,
-                        eSHADERVERSION) {
+void NuShaderObjectInit(nushaderobject_s *, nushaderobjectkey_s const *, i32, u32, u32, eSHADERVERSION) {
 }
 
 void NuShaderObjectInitGLSL(nushaderobjectglsl_s *, nushaderobjectkey_s const *, i32, char const *, i32, char const *,

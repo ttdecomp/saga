@@ -23,5 +23,5 @@ typedef int64_t i64;
 // res/libTTapp.so. Kept as typedefs so google-runtime-int stays quiet (the raw
 // `long`/`unsigned long` keywords would be flagged). On this 32-bit target
 // `long` is 32 bits, so `abi_long` is same-width/same-sign as `i32`.
-typedef long abi_long;          // NOLINT
+typedef long abi_long;           // NOLINT
 typedef unsigned long abi_ulong; // NOLINT

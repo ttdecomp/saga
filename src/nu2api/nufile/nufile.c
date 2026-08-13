@@ -63,5 +63,3 @@ i32 NuFileExists(char *name) {
 
     return NuFileSize(name) > 0;
 }
-
-

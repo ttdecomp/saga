@@ -9,7 +9,7 @@ extern i32 gizspecial_gizmotype_id;
 typedef struct GIZSPECIAL_s {
 } GIZSPECIAL;
 
-ADDGIZMOTYPE* GizSpecial_RegisterGizmo(i32 type_id);
+ADDGIZMOTYPE *GizSpecial_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

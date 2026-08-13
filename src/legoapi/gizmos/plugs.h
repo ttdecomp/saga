@@ -9,7 +9,7 @@ extern i32 plug_gizmotype_id;
 typedef struct PLUG_s {
 } PLUG;
 
-ADDGIZMOTYPE* Plugs_RegisterGizmo(i32 type_id);
+ADDGIZMOTYPE *Plugs_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

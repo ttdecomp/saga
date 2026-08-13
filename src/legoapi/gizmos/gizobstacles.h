@@ -9,7 +9,7 @@ extern i32 obstacle_gizmotype_id;
 typedef struct GIZOBSTACLE_s {
 } GIZOBSTACLE;
 
-ADDGIZMOTYPE* GizObstacles_RegisterGizmo(i32 type_id);
+ADDGIZMOTYPE *GizObstacles_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

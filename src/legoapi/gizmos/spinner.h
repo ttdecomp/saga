@@ -9,7 +9,7 @@ extern i32 spinner_gizmotype_id;
 typedef struct SPINNER_s {
 } SPINNER;
 
-ADDGIZMOTYPE* Spinner_RegisterGizmo(i32 type_id);
+ADDGIZMOTYPE *Spinner_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

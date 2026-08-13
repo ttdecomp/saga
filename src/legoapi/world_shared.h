@@ -123,8 +123,8 @@ extern "C" {
     void NuGCutSceneFixUpExtra(void *cutscene, i32 area);
     void *instNuGCutSceneCreate(void *cutscene, i32 flags, i32 param, char *name);
 }
-void *CutScenes_Load(char *config, NUGSCN *gscn1, NUGSCN *gscn2, i32 param1, VARIPTR *buf, VARIPTR *buf_end,
-                     i32 param2, i32 param3, WORLDINFO *world);
+void *CutScenes_Load(char *config, NUGSCN *gscn1, NUGSCN *gscn2, i32 param1, VARIPTR *buf, VARIPTR *buf_end, i32 param2,
+                     i32 param3, WORLDINFO *world);
 void CharScenes_LevelLoad(WORLDINFO *world);
 
 // --- levelstubs.cpp — WorldInfo_Load dependency stubs ---

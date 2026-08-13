@@ -151,7 +151,8 @@ void NuSoundStreamer::RequestClose(NuSoundStreamingSample *) {
 void NuSoundStreamer::RequestReCue(NuSoundStreamingSample *, bool, float) {
 }
 
-void NuSoundStreamer::RequestFill(NuSoundStreamingSample *, NuSoundBuffer *, bool, NuSoundWeakPtr<NuSoundBufferCallback>) {
+void NuSoundStreamer::RequestFill(NuSoundStreamingSample *, NuSoundBuffer *, bool,
+                                  NuSoundWeakPtr<NuSoundBufferCallback>) {
 }
 
 void NuSoundStreamer::ShutdownAll() {

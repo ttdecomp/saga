@@ -7,7 +7,7 @@
 typedef struct ATTRACTO_s {
 } ATTRACTO;
 
-ADDGIZMOTYPE* Attractos_RegisterGizmo(i32 type_id);
+ADDGIZMOTYPE *Attractos_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

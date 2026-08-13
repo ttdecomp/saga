@@ -312,8 +312,7 @@ void edanimDetermineNearestAnim(float) {
 void edgraDetermineNearestClump(float) {
 }
 
-void eduiItemFileSelectorCreate(u32, eduiiattr_s *, void (*)(eduimenu_s *, eduiitem_s *, u32),
-                                char *) {
+void eduiItemFileSelectorCreate(u32, eduiiattr_s *, void (*)(eduimenu_s *, eduiitem_s *, u32), char *) {
 }
 
 void edanimDetermineNearestSound(float) {

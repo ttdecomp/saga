@@ -24,8 +24,7 @@ void GizTurret_FindByController(GIZTURRETSYS_s *, GameObject_s &) {
 void GizTurrets_OpponentSelection(GIZTURRETSYS_s *, i32, APIOBJECT_s **, i32, APIOBJECT_s **) {
 }
 
-void GizTurret_CalculateInterceptVector(nuvec_s *, numtx_s *, nuvec_s *, nuvec_s *, float, nuvec_s *, nuvec_s *,
-                                        u32) {
+void GizTurret_CalculateInterceptVector(nuvec_s *, numtx_s *, nuvec_s *, nuvec_s *, float, nuvec_s *, nuvec_s *, u32) {
 }
 
 void GIZTURRET_s::ClearMechObjectInterface() {

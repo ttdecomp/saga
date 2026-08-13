@@ -203,8 +203,8 @@ void Collection_GetPos(COLLECTION_s *, i32, float *, float *) {
 void Collection_GetIDList(COLLECTION_s *, u32, u32, i16 *, i32 *, i32 *, i32) {
 }
 
-void Collection_CreateCustom(char *, i16 *, COLLECTION_s *, u32, u32, u32, i32, i32,
-                             variptr_u *, variptr_u *, i32, float) {
+void Collection_CreateCustom(char *, i16 *, COLLECTION_s *, u32, u32, u32, i32, i32, variptr_u *, variptr_u *, i32,
+                             float) {
 }
 
 void Collection_CreateMaster(char *, i16 *, COLLECTION_s *, i32, float) {

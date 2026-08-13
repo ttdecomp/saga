@@ -7,7 +7,7 @@
 typedef struct LEDGE_s {
 } LEDGE;
 
-ADDGIZMOTYPE* Ledges_RegisterGizmo(i32 type_id);
+ADDGIZMOTYPE *Ledges_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

@@ -1188,8 +1188,8 @@ void ANewHopeA_Init(WORLDINFO_s *) {
 void ActivatePlayer(GameObject_s *) {
 }
 
-void AddGameMessage(char *, nuvec_s *, float, nuvec_s *, float, unsigned char, unsigned char, unsigned char,
-                    u32, float) {
+void AddGameMessage(char *, nuvec_s *, float, nuvec_s *, float, unsigned char, unsigned char, unsigned char, u32,
+                    float) {
 }
 
 void AddHeartAsPart(GameObject_s *, nuvec_s *, nuvec_s *, float, float) {
@@ -3704,8 +3704,7 @@ void TerrainBlockOnBlock(WORLDINFO_s *, pushblock_s *, nuvec_s *, float *) {
 void TerrainSkinAllocate(terrsitu_s *) {
 }
 
-void TotalLevelCoinTally(WORLDINFO_s *, u32 *, u32 *, u32 *, u32 *, u32 *,
-                         u32 *, u32 *) {
+void TotalLevelCoinTally(WORLDINFO_s *, u32 *, u32 *, u32 *, u32 *, u32 *, u32 *, u32 *) {
 }
 
 void TrafficAnimSys_Draw(TRAFFICANIMSYS_s *) {
@@ -4222,8 +4221,7 @@ void GizSpecial_FindByName(char *, WORLDINFO_s *) {
 void GizmoBlowupTypeRemove(GIZMOBLOWUPTYPE_s *, WORLDINFO_s *) {
 }
 
-void GizmoBlowup_HitBlowup(GameObject_s *, GIZMOBLOWUP_s *, i32, BOLT_s *, nuvec_s *, unsigned char *, u32,
-                           i32) {
+void GizmoBlowup_HitBlowup(GameObject_s *, GIZMOBLOWUP_s *, i32, BOLT_s *, nuvec_s *, unsigned char *, u32, i32) {
 }
 
 void GizmoSysStoreProgress(GIZMOSYS_s *, void *, i32) {

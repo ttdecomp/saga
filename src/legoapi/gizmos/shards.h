@@ -7,7 +7,7 @@
 typedef struct SHARD_s {
 } SHARD;
 
-ADDGIZMOTYPE* Shards_RegisterGizmo(i32 type_id);
+ADDGIZMOTYPE *Shards_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

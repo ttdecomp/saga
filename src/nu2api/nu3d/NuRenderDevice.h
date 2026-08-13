@@ -88,8 +88,7 @@ class NuRenderDevice : NuRenderDeviceGen {
     void IsContextValid() const;
     void MultiThreadRender() const;
     void DetermineNominalAspectRatio(u32 width, u32 height) const;
-    void OpenglErrorCallback(u32 source, u32 type, u32 id, u32 severity, i32 len,
-                             char const *msg, void *user_param);
+    void OpenglErrorCallback(u32 source, u32 type, u32 id, u32 severity, i32 len, char const *msg, void *user_param);
 };
 
 extern NuRenderDevice g_renderDevice;

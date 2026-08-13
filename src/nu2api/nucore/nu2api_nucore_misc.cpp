@@ -222,8 +222,7 @@ void NuGCutLocatorCalcMtx_3(NUGCUTLOCATOR_s *, numtx_s *, float) {
 void NuIOSDLSkinMtxCallback(void *) {
 }
 
-void NuGCutCharAnimProcess_3(NUGCUTCHAR_s *, float, numtx_s *, i32 *, u32 *, float *, float *, float *,
-                             i32 *) {
+void NuGCutCharAnimProcess_3(NUGCUTCHAR_s *, float, numtx_s *, i32 *, u32 *, float *, float *, float *, i32 *) {
 }
 
 void NuGCutLocatorIsVisble_3(NUGCUTLOCATOR_s *, float, float *, float *) {
@@ -238,8 +237,8 @@ void NuLightMotionBlurEffect(i32, float) {
 void NuPortalEnableDebugDraw(i32) {
 }
 
-void NuQFntPrintJustifiedRSW(rndrstream_s *, void *, u16 *, float, float, float, float, float, float, float,
-                             u32, numtx_s *) {
+void NuQFntPrintJustifiedRSW(rndrstream_s *, void *, u16 *, float, float, float, float, float, float, float, u32,
+                             numtx_s *) {
 }
 
 void NuTimeGetMicrosecondsPS(u32 *, u32 *) {

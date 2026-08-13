@@ -9,7 +9,7 @@ extern i32 turret_gizmotype_id;
 typedef struct GIZTURRET_s {
 } GIZTURRET;
 
-ADDGIZMOTYPE* GizTurrets_RegisterGizmo(i32 type_id);
+ADDGIZMOTYPE *GizTurrets_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

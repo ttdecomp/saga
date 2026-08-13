@@ -7,7 +7,7 @@
 typedef struct TIGHTROPE_s {
 } TIGHTROPE;
 
-ADDGIZMOTYPE* TightRopes_RegisterGizmo(i32 type_id);
+ADDGIZMOTYPE *TightRopes_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

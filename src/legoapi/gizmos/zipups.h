@@ -9,7 +9,7 @@ extern i32 zipup_gizmotype_id;
 typedef struct ZIPUP_s {
 } ZIPUP;
 
-ADDGIZMOTYPE* ZipUps_RegisterGizmo(i32 type_id);
+ADDGIZMOTYPE *ZipUps_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

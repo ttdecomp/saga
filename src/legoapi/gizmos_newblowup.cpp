@@ -1,7 +1,6 @@
 #include "legoapi_types.h"
 
-void GizmoBlowUp_Hit(GameObject_s *, nuvec_s *, i32, float, nuvec_s *, nuvec_s *, BOLT_s *, u32,
-                     unsigned char *) {
+void GizmoBlowUp_Hit(GameObject_s *, nuvec_s *, i32, float, nuvec_s *, nuvec_s *, BOLT_s *, u32, unsigned char *) {
 }
 
 void GizmoBlowUp_Sfx(GIZMOBLOWUP_s *, nuvec_s *) {

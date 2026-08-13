@@ -21,7 +21,8 @@ NuSoundDecodeThread::~NuSoundDecodeThread() {
 void NuSoundDecodeThread::Shutdown() {
 }
 
-void NuSoundDecodeThread::RequestDecode(NuSoundDecoder &, NuSoundBuffer &, NuSoundWeakPtr<NuSoundBufferCallback>, bool) {
+void NuSoundDecodeThread::RequestDecode(NuSoundDecoder &, NuSoundBuffer &, NuSoundWeakPtr<NuSoundBufferCallback>,
+                                        bool) {
 }
 
 NuSoundDecoder::NuSoundDecoder(char const *, NuSoundSource *) {
