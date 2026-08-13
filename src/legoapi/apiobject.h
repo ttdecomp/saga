@@ -62,9 +62,9 @@ typedef struct APIOBJECT_s {
 } APIOBJECT;
 
 typedef struct GameObject_s {
-    APIOBJECT _apiobj;            // 0x0000 .. 0x02a8
+    APIOBJECT apiobj;             // 0x0000 .. 0x02a8
     u8 pad_2a8[0x18];             // 0x02a8 .. 0x02c0
-    PAI _ai;                      // 0x02c0 .. 0x04b0
+    PAI ai;                       // 0x02c0 .. 0x04b0
     u8 pad_4b0[0x7ec - 0x4b0];    // 0x04b0 .. 0x07ec
     COINPACKET *coinpacket;       // 0x07ec
     void *gizforce_los_info;      // 0x07f0
@@ -102,8 +102,8 @@ typedef struct GameObject_s {
     u8 pad_108c[0x108e - 0x108c]; // 0x108c .. 0x108e
     u8 field_0x108e;              // 0x108e
     u8 pad_108f[0x10b0 - 0x108f]; // 0x108f .. 0x10b0
-    void *_opponent;              // 0x10b0
-    void *_last_attacker;         // 0x10b4
+    void *opponent;               // 0x10b0
+    void *last_attacker;          // 0x10b4
     u8 pad_10b8[0x10b8 - 0x10b8]; // tail (empty)
 } GameObject;
 

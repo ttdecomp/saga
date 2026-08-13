@@ -73,7 +73,7 @@ extern "C" {
                 if (sock->cam == NULL) {
                     continue;
                 }
-                len = (int)(short)sock->cam->length;
+                len = (int)(i16)sock->cam->length;
                 if (1 < len) {
                     sock->length = len - 1;
                     sprintf(name, "%s%.2i", tSockA, i);
@@ -81,7 +81,7 @@ extern "C" {
                     if (sock->a == NULL) {
                         continue;
                     }
-                    if ((int)(short)sock->a->length != len) {
+                    if ((int)(i16)sock->a->length != len) {
                         continue;
                     }
                     sprintf(name, "%s%.2i", tSockB, i);
@@ -89,14 +89,14 @@ extern "C" {
                     if (sock->b == NULL) {
                         continue;
                     }
-                    if ((int)(short)sock->b->length != len) {
+                    if ((int)(i16)sock->b->length != len) {
                         continue;
                     }
                     sprintf(name, "%s%.2i", tSockC, i);
                     sock->c = NuSplineFind(gscn, name);
                     if (sock->c == NULL) {
                         sock->flags |= 1;
-                    } else if ((int)(short)sock->c->length != len) {
+                    } else if ((int)(i16)sock->c->length != len) {
                         sock->flags |= 1;
                     }
                     if ((sock->flags & 1) == 0) {
@@ -104,38 +104,38 @@ extern "C" {
                         sock->d = NuSplineFind(gscn, name);
                         if (sock->d == NULL) {
                             sock->flags |= 1;
-                        } else if ((int)(short)sock->d->length != len) {
+                        } else if ((int)(i16)sock->d->length != len) {
                             sock->flags |= 1;
                         }
                     }
                     sprintf(name, "%s%.2i", tSockMID, i);
                     sock->mid = NuSplineFind(gscn, name);
-                    if ((sock->mid != NULL) && ((int)(short)sock->mid->length != len)) {
+                    if ((sock->mid != NULL) && ((int)(i16)sock->mid->length != len)) {
                         sock->mid = NULL;
                     }
                     sprintf(name, "%s%.2i", tSockLEFT, i);
                     sock->left = NuSplineFind(gscn, name);
-                    if ((sock->left != NULL) && ((int)(short)sock->left->length != len)) {
+                    if ((sock->left != NULL) && ((int)(i16)sock->left->length != len)) {
                         sock->left = NULL;
                     }
                     sprintf(name, "%s%.2i", tSockRIGHT, i);
                     sock->right = NuSplineFind(gscn, name);
-                    if ((sock->right != NULL) && ((int)(short)sock->right->length != len)) {
+                    if ((sock->right != NULL) && ((int)(i16)sock->right->length != len)) {
                         sock->right = NULL;
                     }
                     sprintf(name, "%s%.2i", tSockLOOK, i);
                     sock->look = NuSplineFind(gscn, name);
-                    if ((sock->look != NULL) && ((int)(short)sock->look->length != len)) {
+                    if ((sock->look != NULL) && ((int)(i16)sock->look->length != len)) {
                         sock->look = NULL;
                     }
                     sprintf(name, "%s%.2i", tSockLATERAL, i);
                     sock->lateral = NuSplineFind(gscn, name);
-                    if ((sock->lateral != NULL) && ((int)(short)sock->lateral->length != len)) {
+                    if ((sock->lateral != NULL) && ((int)(i16)sock->lateral->length != len)) {
                         sock->lateral = NULL;
                     }
                     sprintf(name, "%s%.2i", tSockTRACKIN, i);
                     sock->trackin = NuSplineFind(gscn, name);
-                    if ((sock->trackin != NULL) && ((int)(short)sock->trackin->length != len)) {
+                    if ((sock->trackin != NULL) && ((int)(i16)sock->trackin->length != len)) {
                         sock->trackin = NULL;
                     }
                     sprintf(name, "%s%.2i", tSockLIMIT, i);

@@ -309,7 +309,7 @@ void Players_Init(void) {
                 g->oldpos = &OldPlrSPos[PLAYERCOUNT];
                 Player[PLAYERCOUNT] = g;
                 Player[pi]->batarang = Batarang + pi * 0xb4;
-                g->_apiobj.field_0x27c = (char)pi;
+                g->apiobj.field_0x27c = (char)pi;
                 Player[pi]->torpedo = GetTorpedoPacket();
 
                 g->field_0x1050 |= 1;
@@ -318,21 +318,21 @@ void Players_Init(void) {
                 g->hitpoints = DEFAULT_PLAYERHITPOINTS;
 
                 if (UsePlayerList == 0) {
-                    slot = g->_apiobj.field_0x289;
-                    g->_apiobj.field252_0x1f8 =
-                        (u8)((g->_apiobj.field252_0x1f8 & 0x7f) | ((slot == 0) << 7));
+                    slot = g->apiobj.field_0x289;
+                    g->apiobj.field252_0x1f8 =
+                        (u8)((g->apiobj.field252_0x1f8 & 0x7f) | ((slot == 0) << 7));
                     PlayerProgress[slot].hitpoints = g->current_hp;
                     g->field_0x106e = 0;
                 } else {
-                    char c = g->_apiobj.field_0x27c;
-                    g->_apiobj.field252_0x1f8 =
-                        (u8)((g->_apiobj.field252_0x1f8 & 0x7f) | (PlayerProgress[c].field_0x6 << 7));
+                    char c = g->apiobj.field_0x27c;
+                    g->apiobj.field252_0x1f8 =
+                        (u8)((g->apiobj.field252_0x1f8 & 0x7f) | (PlayerProgress[c].field_0x6 << 7));
 
                     if (Area == last_area) {
                         if (UsePlayerList == 1) {
                             g->field_0xe22 = (u8)((g->field_0xe22 & 0xfe) | (PlayerProgress[c].field_0x7 & 1));
                             SetHitPoints(g, PlayerProgress[c].hitpoints);
-                            c = g->_apiobj.field_0x27c;
+                            c = g->apiobj.field_0x27c;
                             g->field_0x108e = PlayerProgress[c].field_0xa;
                             g->field_0x106e = PlayerProgress[c].field_0x4;
                             g->field_0xdec = PlayerProgress[c].field_0xc;
@@ -348,31 +348,31 @@ void Players_Init(void) {
                 }
 
                 cd = (GAMECHARACTERDATA *)apicharsys->char_data[g->id].field11_0x24;
-                g->_apiobj.viewdistance = cd->viewdistance;
-                g->_apiobj.heardistance = cd->heardistance;
-                g->_apiobj.maxviewheight = cd->maxviewheight;
-                g->_apiobj.minviewheight = cd->minviewheight;
+                g->apiobj.viewdistance = cd->viewdistance;
+                g->apiobj.heardistance = cd->heardistance;
+                g->apiobj.maxviewheight = cd->maxviewheight;
+                g->apiobj.minviewheight = cd->minviewheight;
 
                 {
-                    g->_ai.nearest_opponent = NULL;
-                    g->_ai.field_0xdc = 0;
-                    g->_ai.opponent = NULL;
-                    g->_ai.field_0xec = 0;
-                    g->_ai.field_0xe0 = 0x4e6e6b28;
-                    g->_ai.field_0xf0 = 0x4e6e6b28;
-                    g->_apiobj.field387_0x2a0 = 0;
-                    g->_apiobj.field388_0x2a4 = 0;
+                    g->ai.nearest_opponent = NULL;
+                    g->ai.field_0xdc = 0;
+                    g->ai.opponent = NULL;
+                    g->ai.field_0xec = 0;
+                    g->ai.field_0xe0 = 0x4e6e6b28;
+                    g->ai.field_0xf0 = 0x4e6e6b28;
+                    g->apiobj.field387_0x2a0 = 0;
+                    g->apiobj.field388_0x2a4 = 0;
                     g->field_0xebc = 0;
                     g->field_0xec0 = 0;
-                    g->_opponent = NULL;
-                    g->_last_attacker = NULL;
+                    g->opponent = NULL;
+                    g->last_attacker = NULL;
                     g->field_0xecc = 0;
                     g->field_0xed0 = 0;
-                    g->_ai.antinode_timer = 0.0f;
+                    g->ai.antinode_timer = 0.0f;
                     g->field_0xec4 = 0;
                     g->field_0xec8 = 0;
                     g->field_0xed8 = 0;
-                    g->_ai.field_0x1e5 &= 0xaf;
+                    g->ai.field_0x1e5 &= 0xaf;
                     g->field_0xef9 &= 0xf7;
                     g->field_0xef8 &= 0xfe;
                     g->field_0xf00 |= 0x40;
