@@ -51,6 +51,13 @@ The following rules should be implemented before you stop:
 
 Before adding any symbols check the source tree for existing files and the most appropriate location. If none exists, create a new file in the appropriate directory. 
 
+# Additional verification before committing
+
+```
+cmake --build build-host
+cmake --build build --target lint
+```
+
 # Forbidden Ghidra Artifacts
 
 Never leave transcribed decompiler output in the code. Recover struct fields, arrays, and idiomatic C++.

@@ -6,7 +6,7 @@
 #include "nu2api/nucore/common.h"
 
 struct AREADATA_s;
-typedef struct MINIKIT_s {
+typedef struct MINIKIT {
     void *gscn;
     char filler[0x14];
     i32 field_0x18;

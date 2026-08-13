@@ -113,6 +113,14 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/store.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/timer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai_sys.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cutscene.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/game_object.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo_sys.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/levelstubs.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/sfx.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/terrain.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/ai.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizaimessage.cpp

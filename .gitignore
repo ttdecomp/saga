@@ -5,6 +5,7 @@ doc/html/*
 # Python caches.
 __pycache__/
 *.pyc
+.venv/
 
 # Binary resources.
 res/*

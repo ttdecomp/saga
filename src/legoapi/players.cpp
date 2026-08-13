@@ -567,8 +567,6 @@ void PreResetCode(GameObject_s *obj) {
 
 }
 
-static float sPostResetSfxScale = 1.0f;
-
 void PostResetCode(GameObject_s *obj) {
     u8 *p = (u8 *)obj;
     void *pp = *(void **)(p + 0x54);
