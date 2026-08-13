@@ -201,8 +201,6 @@ static char sArcadeStartDoor[] = "ArcadeStartDoor";
 static NUVEC HubVehiclesDoorPos[2] = {{0}};
 static NUVEC HubMinikitDoorPos[2] = {{0}};
 
-#define _READ_PTR(w, off) (*(void **)((char *)(w) + (off)))
-
 void Players_InitPositions(WORLDINFO *world) __attribute__((optimize("unroll-loops")));
 void Players_InitPositions(WORLDINFO *world) {
     i32 bonus = 0;
@@ -217,12 +215,11 @@ void Players_InitPositions(WORLDINFO *world) {
 
     PORTALPOS *A = NULL;
     i32 ninit = 2;
-    void *np = _READ_PTR(world, 0x46a4);
+    SPAWNSYS *np = world->spawn_sys;
     if (np != NULL && bonus == 0) {
-        A = ((SPAWNSYS *)np)->portal;
+        A = np->portal;
     } else if (LEGOSPL_START != -1) {
-        void **starter = (void **)_READ_PTR(world, 0x2ac4);
-        A = (PORTALPOS *)starter[LEGOSPL_START];
+        A = world->portal_places[LEGOSPL_START];
         ninit = 0;
     }
 
@@ -301,7 +298,7 @@ void Players_InitPositions(WORLDINFO *world) {
     }
     Door_ExitCameraSplineName[0] = 0;
 
-    void *camArg = _READ_PTR(world, 0x2988);
+    void *camArg = world->api_object_sys;
     for (i32 i = 0; i < 8; i++) {
         SOCKPOSITION sp;
         ComplexSockPosition(camArg, (void *)PlayerStart[i].pos, -1, -1, &sp);

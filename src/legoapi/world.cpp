@@ -365,14 +365,14 @@ void WorldInfo_Load(WORLDINFO *world) {
     // Load pictures for titles/credits
     if (level == TITLES_LDATA || level == CREDITS_LDATA) {
         numtl_force_mipmode = (i32)(u8)level->mipmap_mode + 1;
-        world->unknown_0140_ptr =
+        world->icons_gscn =
             (NUGSCN *)NuGScnRead(&world->giz_buffer, world->unknown_0108, "levels\\titles\\pictures.gsc");
         if (abort_load != 0)
             goto abort;
     }
 
     // Create game animation system
-    world->game_anim_sys = GameAnimSys_Create(&world->giz_buffer, &world->unknown_0108);
+    world->game_anim_sys = (GAMEANIMSYS_s *)GameAnimSys_Create(&world->giz_buffer, &world->unknown_0108);
 
     // Load particles
     Particles_Load(world, &debris_name, 400, 0x93);
@@ -388,11 +388,12 @@ void WorldInfo_Load(WORLDINFO *world) {
     }
 
     // Create antinode system
-    world->game_antinode_sys = GameAntnode_CreateSys(world, &world->giz_buffer, &world->unknown_0108,
-                                                     (i32)(u16)world->current_level->max_antinodes);
+    world->game_antinode_sys = (GAMEANTINODESYS_s *)GameAntnode_CreateSys(world, &world->giz_buffer,
+                                                                         &world->unknown_0108,
+                                                                         (i32)(u16)world->current_level->max_antinodes);
 
     // Create gizmo system
-    world->gizmo_sys = CreateGizmoSys(world, &world->giz_buffer, &world->unknown_0108);
+    world->gizmo_sys = (GIZMOSYS_s *)CreateGizmoSys(world, &world->giz_buffer, &world->unknown_0108);
 
     // Load editor splines
     sprintf(buf, "%s%s", world->config_file, ".spl");
@@ -414,10 +415,10 @@ void WorldInfo_Load(WORLDINFO *world) {
         goto after_area;
     }
     if ((level->flags & LEVEL_STATUS) != 0 && world->area->minikit_id != -1) {
-        MiniKit_Load(&world->char_scene_info.minikit, (i32)(i16)world->area->minikit_id, &world->giz_buffer,
+        MiniKit_Load(&world->minikit, (i32)(i16)world->area->minikit_id, &world->giz_buffer,
                      &world->unknown_0108, NULL);
-        if (world->char_scene_info.minikit.gscn != NULL) {
-            MiniKit_InitPieces(&world->char_scene_info.minikit, 10, &world->giz_buffer, &world->unknown_0108);
+        if (world->minikit.gscn != NULL) {
+            MiniKit_InitPieces(&world->minikit, 10, &world->giz_buffer, &world->unknown_0108);
         }
         if (abort_load != 0)
             goto abort;
@@ -438,15 +439,16 @@ after_area:
 
     // Load cutscenes
     page_handles = (i32 *)&world->unknown_0140[0x2958];
-    world->cutscene_sys = CutScenes_Load(ConfigBuffer, world->current_gscn, (NUGSCN *)cutscene_scene, page_handles[0],
-                                         &world->giz_buffer, &world->unknown_0108, *(i32 *)&world->unknown_0140[0x011c],
-                                         *(i32 *)&world->unknown_0140[0x0120], world);
+    world->cutscene_sys = (CUTSYS *)CutScenes_Load(ConfigBuffer, world->current_gscn, (NUGSCN *)cutscene_scene,
+                                                   page_handles[0], &world->giz_buffer, &world->unknown_0108,
+                                                   *(i32 *)&world->unknown_0140[0x011c],
+                                                   *(i32 *)&world->unknown_0140[0x0120], world);
     if (abort_load != 0)
         goto abort;
 
     // Character scenes
     aligned_buf = ALIGN((i32)world->giz_buffer.addr, 4);
-    *(i32 *)&world->char_scene_info.minikit.field_0x18 = aligned_buf;
+    *(i32 *)&world->minikit.field_0x18 = aligned_buf;
     world->giz_buffer.addr = (usize)(aligned_buf + CHARCOUNT * 0x10);
     CharScenes_LevelLoad(world);
 
@@ -512,19 +514,23 @@ after_area:
         }
         world->ai_sys = (AISYS *)AISysLoad(&world->giz_buffer, &world->unknown_0108, ai_buf_size, world->current_gscn,
                                            level->dir, level->name, ai_name);
-        world->ai_path_cnx_control_sys = AIPathCnxControlSysCreate(&world->giz_buffer, &world->unknown_0108, 0x40);
-        world->ai_path_cnx_helper_sys = AIPathCnxHelperSysCreate(&world->giz_buffer, &world->unknown_0108, 0x20);
-        world->ai_trigger_set_sys = AITriggerSetSysCreate(&world->giz_buffer, &world->unknown_0108);
+        world->ai_path_cnx_control_sys =
+            (AIPATHCNXCONTROLSYS_s *)AIPathCnxControlSysCreate(&world->giz_buffer, &world->unknown_0108, 0x40);
+        world->ai_path_cnx_helper_sys =
+            (AIPATHCNXHELPERSYS_s *)AIPathCnxHelperSysCreate(&world->giz_buffer, &world->unknown_0108, 0x20);
+        world->ai_trigger_set_sys =
+            (AITRIGGERSETSYS_s *)AITriggerSetSysCreate(&world->giz_buffer, &world->unknown_0108);
 
         if (world->ai_sys != NULL) {
-            world->mech_auto_jump_manager = (void *)1; // placeholder
+            world->mech_auto_jump_manager = (MechAutoJumpManager *)1; // placeholder
         }
 
         GameAIScriptAddLevelSfx(world, &global_aiscripts);
         GameAIScriptAddLevelSfx(world, &world->ai_sys->scripts);
 
         world->climb_object_sys =
-            CreateClimbObjectSys(&world->giz_buffer, &world->unknown_0108, (i32)(u8)level->unknown_103);
+            (CLIMBOBJECTSYS_s *)CreateClimbObjectSys(&world->giz_buffer, &world->unknown_0108,
+                                                     (i32)(u8)level->unknown_103);
     } else {
         *(i32 *)&world->unknown_0140[0x29a4] = 1;
     }
@@ -533,7 +539,7 @@ after_area:
         goto abort;
 
     // API object system
-    world->api_object_sys = APIObjectSysInit(0x10e4, &world->giz_buffer, &world->unknown_0108);
+    world->api_object_sys = (APIOBJECTSYS_s *)APIObjectSysInit(0x10e4, &world->giz_buffer, &world->unknown_0108);
     if (abort_load != 0)
         goto abort;
 
@@ -571,7 +577,8 @@ after_area:
     // Load gizmo flow
     NuStrCpy(buf, world->config_file);
     NuStrCat(buf, ".git");
-    world->giz_flow = LoadGizFlow(world, (GIZMOSYS_s *)world->gizmo_sys, buf, &world->giz_buffer, &world->unknown_0108);
+    world->giz_flow = (GIZFLOW_s *)LoadGizFlow(world, (GIZMOSYS_s *)world->gizmo_sys, buf, &world->giz_buffer,
+                                               &world->unknown_0108);
     if (abort_load != 0)
         goto abort;
 
@@ -655,7 +662,7 @@ i32 WorldInfo_Reset(WORLDINFO *world, i32 level_idx) {
 
         i32 progress_index = (i8)levelData->unknown_0d4;
         if (progress_index >= 0 && progress_index < 12 && LevelProgressData != NULL) {
-            world->level_progress = (u8 *)LevelProgressData + progress_index * 0x2e24;
+            world->level_progress = (LEVEL_PROGRESS_s *)((u8 *)LevelProgressData + progress_index * 0x2e24);
         }
 
         // Build config file path

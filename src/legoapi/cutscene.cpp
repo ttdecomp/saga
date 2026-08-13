@@ -151,7 +151,7 @@ void CharScenes_LevelLoad(WORLDINFO *world) {
     }
 
     for (int i = 0; i < CHARCOUNT; i++) {
-        void **entry = (void **)(*(i32 *)&world->char_scene_info.minikit.field_0x18 + i * 0x10);
+        void **entry = (void **)(*(i32 *)&world->minikit.field_0x18 + i * 0x10);
         *entry = NULL;
 
         // Check if we should load this character scene
