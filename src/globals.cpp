@@ -5,6 +5,9 @@
 #include "nu2api/nucore/common.h"
 #include "nu2api/nusound/nusound.h"
 
+void *PlayerItemType = 0;
+i32 PLAYERITEMTYPECOUNT = 0;
+
 i32 PAL = 0;
 f32 FRAMETIME = 0;
 f32 DEFAULTFPS = 0;

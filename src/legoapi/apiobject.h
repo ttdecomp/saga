@@ -70,6 +70,7 @@ typedef struct GameObject_s {
     void *gizforce_los_info;      // 0x07f0
     u8 pad_7f4[0xc98 - 0x7f4];    // 0x07f4 .. 0x0c98
     SOCKPOSITION *oldpos;         // 0x0c98
+    u8 pad_c9c[0xcac - 0xc9c];    // 0x0c9c .. 0x0cac
     void *suit;                   // 0x0cac
     void *batarang;               // 0x0cb0
     TORPEDOPACKET *torpedo;       // 0x0cb4

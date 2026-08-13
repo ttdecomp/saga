@@ -161,15 +161,15 @@ extern "C" void NuGScnUpdate(NUGSCN *gscn, i32 param) {
 void Doors_Init(WORLDINFO *world) {
     (void)world;
 }
-void Players_InitPositions(WORLDINFO *world) {
-    (void)world;
-}
+
+
+
 void ClearGameObjects(void *api_object_sys) {
     (void)api_object_sys;
 }
-void PlayerItemTypes_Reset(WORLDINFO *world) {
-    (void)world;
-}
+
+
+
 
 // --- Players globals ---
 // NOTE: `WORLD` (WORLDINFO) field offsets in world.h are an approximation; the
@@ -183,6 +183,7 @@ i32 PLAYERCOUNT = 0;
 i32 netclient = 0;
 i32 UsePlayerList = 0;
 i16 PlayerList[8];
+i32 PlayerID[2];
 i16 Area_PlayerIDList[8];
 i16 Area_StoryModelList[8];
 PLAYERPROGRESS PlayerProgress[8];
@@ -218,202 +219,45 @@ i32 InitCreature(GameObject_s *obj, i32 id, i32 param) {
     return 0;
 }
 
-GameObject_s *AddCreature(i32 id, i32 param) {
-    GameObject_s *g;
-    if ((u32)id < 0x154 && apicharsys->playermodelids[id] != -1 &&
-        (g = AddGameObject(id), g != NULL)) {
-        InitCreature(g, id, param);
-        return g;
-    }
-    return NULL;
-}
-void PreResetCode(GameObject_s *obj) {
-    (void)obj;
-    UNIMPLEMENTED();
-}
-void PostResetCode(GameObject_s *obj) {
-    (void)obj;
-    UNIMPLEMENTED();
-}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 TORPEDOPACKET TorpedoPackets[16];
 
-TORPEDOPACKET *GetTorpedoPacket(void) {
-    for (i32 i = 0; i < 16; i++) {
-        if ((TorpedoPackets[i].field_0x1 & 1) == 0) {
-            TorpedoPackets[i].field_0x1 |= 1;
-            return &TorpedoPackets[i];
-        }
-    }
-    return NULL;
-}
-void SetHitPoints(GameObject_s *obj, i32 hp) {
-    (void)obj;
-    (void)hp;
-    UNIMPLEMENTED();
-}
-void RememberPlayerIDs(i32 a, i32 b, i32 c) {
-    (void)a;
-    (void)b;
-    (void)c;
-    UNIMPLEMENTED();
-}
 
-void Players_Init(void) {
-    for (i32 i = 0; i < 8; i++) {
-        Player[i] = NULL;
-    }
 
-    if (netclient != 0) {
-        return;
-    }
 
-    PLAYERCOUNT = 0;
 
-    if ((WORLD->current_level->flags & 2) != 0) {
-        i16 *list;
-        i16 list0;
 
-        if (FreePlay == 0 &&
-            (Hub_UsePlayerList == 0 || HUB_ADATA == NULL || HUB_ADATA != WORLD->area) &&
-            (UsePlayerList != 1 ||
-             (PlayerList[0] != -1 &&
-              (apicharsys->playermodelids[PlayerList[0]] == -1 ||
-               (PlayerList[1] != -1 && apicharsys->playermodelids[PlayerList[1]] == -1))))) {
-            list = Area_PlayerIDList;
-            list0 = Area_PlayerIDList[0];
-        } else {
-            list = PlayerList;
-            list0 = PlayerList[0];
-        }
 
-        if (LevelChangesInArea == 0 && UsePlayerList != 0 && PlayerProgress[0].field_0x6 == 0 &&
-            PlayerProgress[1].field_0x6 != 0 && FreePlay == 0 && (WORLD->area->flags & 5) == 1 &&
-            list0 != -1 && list0 == Area_StoryModelList[0] && list[1] != -1 &&
-            list[1] == Area_StoryModelList[2] && list0 != list[1]) {
-            list[0] = list[1];
-            list[1] = list0;
-        }
 
-        i32 idx = 0;
-        while (list[idx] != -1 && idx != 8) {
-            GameObject_s *g = AddCreature(list[idx], 1);
-            if (g != NULL) {
-                i32 pi;
-                u8 slot;
-                GAMECHARACTERDATA *cd;
 
-                PreResetCode(g);
-                PostResetCode(g);
 
-                pi = PLAYERCOUNT;
-                g->oldpos = &OldPlrSPos[PLAYERCOUNT];
-                Player[PLAYERCOUNT] = g;
-                Player[pi]->batarang = Batarang + pi * 0xb4;
-                g->apiobj.field_0x27c = (char)pi;
-                Player[pi]->torpedo = GetTorpedoPacket();
 
-                g->field_0x1050 |= 1;
-                g->field_0x108e = 0;
-                PLAYERCOUNT = PLAYERCOUNT + 1;
-                g->hitpoints = DEFAULT_PLAYERHITPOINTS;
 
-                if (UsePlayerList == 0) {
-                    slot = g->apiobj.field_0x289;
-                    g->apiobj.field252_0x1f8 =
-                        (u8)((g->apiobj.field252_0x1f8 & 0x7f) | ((slot == 0) << 7));
-                    PlayerProgress[slot].hitpoints = g->current_hp;
-                    g->field_0x106e = 0;
-                } else {
-                    char c = g->apiobj.field_0x27c;
-                    g->apiobj.field252_0x1f8 =
-                        (u8)((g->apiobj.field252_0x1f8 & 0x7f) | (PlayerProgress[c].field_0x6 << 7));
 
-                    if (Area == last_area) {
-                        if (UsePlayerList == 1) {
-                            g->field_0xe22 = (u8)((g->field_0xe22 & 0xfe) | (PlayerProgress[c].field_0x7 & 1));
-                            SetHitPoints(g, PlayerProgress[c].hitpoints);
-                            c = g->apiobj.field_0x27c;
-                            g->field_0x108e = PlayerProgress[c].field_0xa;
-                            g->field_0x106e = PlayerProgress[c].field_0x4;
-                            g->field_0xdec = PlayerProgress[c].field_0xc;
-                            g->suit = PlayerSuit[c];
-                            if (g->torpedo != NULL) {
-                                g->torpedo->count = PlayerTorpedoCount[c];
-                            }
-                        }
-                    } else {
-                        g->field_0xe22 &= 0xfe;
-                        g->field_0x106e = 0;
-                    }
-                }
 
-                cd = (GAMECHARACTERDATA *)apicharsys->char_data[g->id].field11_0x24;
-                g->apiobj.viewdistance = cd->viewdistance;
-                g->apiobj.heardistance = cd->heardistance;
-                g->apiobj.maxviewheight = cd->maxviewheight;
-                g->apiobj.minviewheight = cd->minviewheight;
 
-                {
-                    g->ai.nearest_opponent = NULL;
-                    g->ai.field_0xdc = 0;
-                    g->ai.opponent = NULL;
-                    g->ai.field_0xec = 0;
-                    g->ai.field_0xe0 = 0x4e6e6b28;
-                    g->ai.field_0xf0 = 0x4e6e6b28;
-                    g->apiobj.field387_0x2a0 = 0;
-                    g->apiobj.field388_0x2a4 = 0;
-                    g->field_0xebc = 0;
-                    g->field_0xec0 = 0;
-                    g->opponent = NULL;
-                    g->last_attacker = NULL;
-                    g->field_0xecc = 0;
-                    g->field_0xed0 = 0;
-                    g->ai.antinode_timer = 0.0f;
-                    g->field_0xec4 = 0;
-                    g->field_0xec8 = 0;
-                    g->field_0xed8 = 0;
-                    g->ai.field_0x1e5 &= 0xaf;
-                    g->field_0xef9 &= 0xf7;
-                    g->field_0xef8 &= 0xfe;
-                    g->field_0xf00 |= 0x40;
-                }
-            }
-            idx++;
-            if (bonusmodearcade != 0 || (HUB_ADATA != NULL && HUB_ADATA == WORLD->area) || VehicleArea != 0)
-                break;
-        }
-    }
 
-    UsePlayerList = 0;
 
-    if (Player[0] != NULL) {
-        COINPACKET *cp = Player[0]->coinpacket = CoinPacket;
-        cp->lastcoin = LEGOOBJ_DEFAULTLASTCOIN;
-        u32 coins = PlayerProgress[0].coins;
-        if (Area != last_area) {
-            coins = 0;
-        }
-        cp->coins = coins;
-        Player[0]->gizforce_los_info = GizForceLOSInfo;
-        memcpy(BackUpPlayers, Player[0], 0x439 * 4);
-    }
 
-    if (Player[1] != NULL) {
-        COINPACKET *cp = Player[1]->coinpacket = CoinPacket + 1;
-        cp->lastcoin = LEGOOBJ_DEFAULTLASTCOIN;
-        u32 coins = 0;
-        if (Area == last_area) {
-            coins = PlayerProgress[1].coins;
-        }
-        cp->coins = coins;
-        Player[1]->gizforce_los_info = (char *)GizForceLOSInfo + 0x10;
-        memcpy(BackUpPlayers + 0x439, Player[1], 0x439 * 4);
-    }
 
-    i32 id0 = (Player[0] != NULL) ? Player[0]->id : -1;
-    i32 id1 = (Player[1] != NULL) ? Player[1]->id : -1;
-    RememberPlayerIDs(0, id0, id1);
-}
+
+
 
 // ---
 

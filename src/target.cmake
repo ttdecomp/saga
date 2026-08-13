@@ -16,6 +16,7 @@ set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/area.cpp PRO
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/level.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/qrand.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/players.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/timer.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 

@@ -3,6 +3,7 @@
 #include <stddef.h>
 
 #include "nu2api/numath/nufloat.h"
+#include "nu2api/numath/nutrig.h"
 #include "nu2api/numath/numtx.h"
 
 NUVEC v000 = {0};
@@ -151,6 +152,16 @@ f32 NuVecNorm(NUVEC *v, NUVEC *v0) {
     v->z = v0->z * leni;
 
     return len;
+}
+
+void NuVecRotateY(NUVEC *v, NUVEC *v0, NUANG a) {
+    f32 fVar1 = NU_COS_LUT(a);
+    f32 fVar2 = NU_SIN_LUT(a);
+    f32 fVar3 = v0->x;
+
+    v->x = fVar3 * fVar1 + v0->z * fVar2;
+    v->y = v0->y;
+    v->z = v0->z * fVar1 - fVar3 * fVar2;
 }
 
 void NuVecSurfaceNormal(NUVEC *v, NUVEC *v0, NUVEC *v1, NUVEC *v2) {

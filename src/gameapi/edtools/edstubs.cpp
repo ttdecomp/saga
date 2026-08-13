@@ -2,6 +2,7 @@
 #include "gameapi/edtools/edfile.h"
 
 #include "decomp.h"
+#include "legoapi/world.h"
 #include "nu2api/nu3d/nugscn.h"
 
 // Editor subsystem stubs — all symbols with the "ed" prefix belong here.
@@ -70,3 +71,16 @@ extern "C" {
     }
 
 } // extern "C"
+
+i8 BoltType_FindIDByName(char *name, WORLDINFO *world) {
+    (void)name;
+    (void)world;
+    UNIMPLEMENTED();
+    return 0;
+}
+
+i32 Collection_Got(i32 id) {
+    (void)id;
+    UNIMPLEMENTED();
+    return 0;
+}
