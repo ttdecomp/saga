@@ -59,7 +59,6 @@ struct NetAddress {};
 struct NetListenerInterface {};
 struct NetPeer {};
 struct ReplicatorData {};
-struct VuVec {};
 struct WORLDINFO_s {};
 struct ePeerLeftReason {};
 

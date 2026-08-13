@@ -1,5 +1,6 @@
 #include "legoapi/world.h"
 #include "legoapi/world_shared.h"
+#include "legoapi/LEVEL_PROGRESS.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -91,12 +92,6 @@ void SaveSceneObjectAnimTFactors(NUGSCN *gscn) {
 void CalculateWorldSize(WORLDINFO *world) {
     (void)world;
 }
-
-// Placeholder for LEVEL_PROGRESS structure
-typedef struct LEVEL_PROGRESS_s {
-    char data[0x2800];
-    i32 flags;
-} LEVEL_PROGRESS_s;
 
 WORLDINFO WorldInfo[2];
 WORLDINFO *WORLD = &WorldInfo[0];

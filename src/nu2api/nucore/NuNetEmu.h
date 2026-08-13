@@ -1,10 +1,8 @@
 #pragma once
 
-struct nunetaddr_s;
+#include "gamelib/util/gamelib_util_types.h"
 
-struct NetSmallStats {
-    enum eInfo {};
-};
+struct nunetaddr_s;
 
 struct NuNetEmu {
     struct EmuPacket {

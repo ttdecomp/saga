@@ -16,7 +16,6 @@
 #include "nu2api/nucore/NuMotionAccumFilterGen.h"
 #include "nu2api/nucore/NuMotionFilter.h"
 #include "nu2api/nucore/NuMotionFilterGen.h"
-#include "nu2api/nucore/NuMusic.h"
 #include "nu2api/nucore/NuNetEmu.h"
 #include "nu2api/nucore/NuPlatform.h"
 #include "nu2api/nucore/NuPostFilter.h"
@@ -427,66 +426,6 @@ void NuMotionAccumFilterGen::initTextureResources(i32, i32) {
 }
 
 void NuMotionAccumFilterGen::render() {
-}
-
-void NuMusic::ClassToName(u32) {
-}
-
-void NuMusic::CueTrack(u32) {
-}
-
-void NuMusic::Debug(i32, i32) {
-}
-
-void NuMusic::GetAlbumHandle(char const *) {
-}
-
-void NuMusic::GetPlaybackTime(u32) {
-}
-
-void NuMusic::GetPlayer() {
-}
-
-void NuMusic::GetStatus(u32, i32 *) {
-}
-
-void NuMusic::NoMusic(i32) {
-}
-
-void NuMusic::PauseTrack(u32) {
-}
-
-void NuMusic::PlayTrack(u32, u32) {
-}
-
-void NuMusic::Process(float) {
-}
-
-void NuMusic::ResumeTrack(u32) {
-}
-
-void NuMusic::SelectTrack(u32, char const *) {
-}
-
-void NuMusic::SetAlbum(char const *) {
-}
-
-void NuMusic::SetAlbum(i32) {
-}
-
-void NuMusic::SetClassVolume(u32, float) {
-}
-
-void NuMusic::SetFader(float, float) {
-}
-
-void NuMusic::SetMasterVolume(float) {
-}
-
-void NuMusic::SetTrackEntryTimeByClass(u32, float) {
-}
-
-void NuMusic::StopTrack(u32, i32) {
 }
 
 void NuNetEmu::FindPacket(nunetaddr_s *, i32) {

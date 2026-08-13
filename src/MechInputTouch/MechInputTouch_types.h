@@ -3,6 +3,8 @@
 #pragma once
 
 #include "nu2api/nucore/fixed_width.h"
+#include "legoapi/SwipeDecalRenderer.h"
+#include "nu2api/nucore/NuTouchInputElement.h"
 
 struct AIPATHCNX_s;
 struct AIPATH_s;
@@ -76,7 +78,6 @@ struct nuvec_s;
 struct AIPATHCNX_s {};
 struct AIPATH_s {};
 struct AISYS_s {};
-struct GameObject_s {};
 struct JumpTriggerPacket {};
 struct MechAutoJumpConnection {};
 struct MechInputTouchGestureTracker {};
@@ -126,9 +127,6 @@ struct MechInputTouchBonusCavalryController {
     void OnRelease(GameObject_s &, TouchHolder &);
     void Update(NuInputTouchData const *);
     virtual ~MechInputTouchBonusCavalryController();
-};
-struct NuTouchInputElement {
-    struct TYPE {};
 };
 struct MechInputTouchButton {
     void ClearTouchLocked(bool);
@@ -309,9 +307,6 @@ struct MechJumpAutoPilotAddon {
 };
 struct MechObjectInterface {
     void GetFloorTargetPos(VuVec &, i32) const;
-};
-struct SwipeDecalRenderer {
-    struct Style {};
 };
 struct MechSystems {
     void Display(ThingRenderData *);

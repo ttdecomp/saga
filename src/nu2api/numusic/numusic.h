@@ -47,6 +47,9 @@ class NuMusic {
         f32 field24_0x30;
         f32 field25_0x34;
         TRACK_FLAGS flags;
+
+        void ManageEntryTime();
+        void SetEntryTime(float);
     };
 
     struct Voice {
@@ -60,6 +63,9 @@ class NuMusic {
         bool Load(Track *track, i32 trackIndex);
         void SetStatusFn(i32 status, i32 unused);
         i32 Play();
+
+        void Cue();
+        void Unload();
     };
 
     class Album {
@@ -69,8 +75,9 @@ class NuMusic {
         i32 tracks_count;
         Track *tracks[6];
 
-        Track *GetTrack(TRACK_CLASS class_);
         void Initialise();
+        Track *GetTrack(TRACK_CLASS class_);
+        void GetTracks(u32, NuMusic::Track **);
     };
 
   private:
@@ -202,6 +209,27 @@ class NuMusic {
         {"ATTENUATION", NuMusic::xsAttenuation},
         {NULL, NULL},
     };
+
+    void ClassToName(u32);
+    void CueTrack(u32);
+    void Debug(i32, i32);
+    void GetAlbumHandle(char const *);
+    void GetPlaybackTime(u32);
+    void GetPlayer();
+    void GetStatus(u32, i32 *);
+    void NoMusic(i32);
+    void PauseTrack(u32);
+    void PlayTrack(u32, u32);
+    void Process(float);
+    void ResumeTrack(u32);
+    void SelectTrack(u32, char const *);
+    void SetAlbum(char const *);
+    void SetAlbum(i32);
+    void SetClassVolume(u32, float);
+    void SetFader(float, float);
+    void SetMasterVolume(float);
+    void SetTrackEntryTimeByClass(u32, float);
+    void StopTrack(u32, i32);
 };
 
 extern "C" {

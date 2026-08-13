@@ -12,6 +12,16 @@
 AREADATA *ADataList = NULL;
 AREADATA *HUB_ADATA = NULL;
 
+struct LEV {
+    byte pad0[0x64];
+    u32 flags;
+    byte pad1[0xaf - 0x68];
+    u8 unknown_0af;
+    byte pad2[0xd4 - 0xb0];
+    i8 unknown_0d4;
+    byte pad3[0x144 - 0xd5];
+};
+
 AREAFIXUP AreaFixUp_LSW[1] = {{NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}};
 
 i32 Area = -1;
@@ -443,16 +453,6 @@ struct LEVELDATA_s *Area_FindStatusLevel(AREADATA *area, i32 *indexDest) {
         return NULL;
     }
 
-    struct LEV {
-        byte pad0[0x64];
-        u32 flags;
-        byte pad1[0xaf - 0x68];
-        u8 unknown_0af;
-        byte pad2[0xd4 - 0xb0];
-        i8 unknown_0d4;
-        byte pad3[0x144 - 0xd5];
-    };
-
     i32 bound = (u32)area->field28_0x7d * 2 - 2;
     levelIdx = (i32)area->field2_0x60[0];
     i = 0;
@@ -482,16 +482,6 @@ LEVELDATA *Area_FindNextPlayLevel(i32 levelIdx) {
     u8 areaIdx;
     i32 areaLevelIdx;
     LEVELDATA *result;
-
-    struct LEV {
-        byte pad0[0x64];
-        u32 flags;
-        byte pad1[0xaf - 0x68];
-        u8 unknown_0af;
-        byte pad2[0xd4 - 0xb0];
-        i8 unknown_0d4;
-        byte pad3[0x144 - 0xd5];
-    };
 
     level = (LEVELDATA *)&((LEV *)LDataList)[levelIdx];
     areaIdx = ((LEV *)level)->unknown_0af;

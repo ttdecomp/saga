@@ -106,6 +106,12 @@ typedef struct GameObject_s {
     void *opponent;               // 0x10b0
     void *last_attacker;          // 0x10b4
     u8 pad_10b8[0x10b8 - 0x10b8]; // tail (empty)
+    void ClearAddons();
+    void ClearMechObjectInterface();
+    void GetAddons(bool);
+    void GetMechObjectInterface();
+    void IsRunningTaskType(struct HashedKey const &);
+    void KillTasks();
 } GameObject;
 
 typedef struct GameObject_s GameObject_s;

@@ -4,6 +4,20 @@
 
 #include "nu2api/nucore/fixed_width.h"
 
+#include "legoapi/apiobject.h"
+#include "MechInputTouch/MechInputTouch_types.h"
+#include "legoapi/CharacterObjectInterface.h"
+#include "legoapi/GizBlowupObjectInterface.h"
+#include "legoapi/GizBuildItObjectInterface.h"
+#include "legoapi/GizForceObjectInterface.h"
+#include "legoapi/GizLeverObjectInterface.h"
+#include "legoapi/GizObstacleObjectInterface.h"
+#include "legoapi/GizPanelObjectInterface.h"
+#include "legoapi/GizTurretObjectInterface.h"
+#include "legoapi/HatMachineObjectInterface.h"
+#include "legoapi/TeleportObjectInterface.h"
+#include "legoapi/SwipeDecalRenderer.h"
+
 struct ADDGAMEMSG;
 struct ADDPART_s;
 struct AIANTINODE_s;
@@ -308,7 +322,6 @@ struct terrsitu_s;
 struct tertype;
 struct uv1deb;
 struct uv1debdata;
-struct variptr_u;
 struct vorbis_block;
 struct vorbis_comment;
 struct vorbis_dsp_state;
@@ -332,20 +345,16 @@ struct AIPATHCNXCONTROLLER_s {};
 struct AIPATHCNXCONTROLSYS_s {};
 struct AIPATHCNXHELPERSYS_s {};
 struct AIPATHCNXHELPER_s {};
-struct AIPATHCNX_s {};
 struct AIPATHINFO_s {};
 struct AIPATHNODE_s {};
-struct AIPATH_s {};
 struct AISCRIPTPROCESS_s {};
 struct AISCRIPT_s {};
-struct AISYS_s {};
 struct AITRIGGERSETSYS_s {};
 struct AITRIGGERSET_s {};
 struct ANIMLIST_s {};
 struct ANIMPACKET_s {};
 struct ANIMREDIRECT {};
 struct APICHARACTERMODELLIST_s {};
-struct APIOBJECT_s {};
 struct AREADATA_s {};
 struct AREASAVE_s {};
 struct ATTRACTO_s {};
@@ -429,17 +438,11 @@ struct LEVELDATA_s {};
 struct LEVELOBJECT {};
 struct LEVELSCRIPTPROCESS_s {};
 struct LEVELSPLINE {};
-struct LEVEL_PROGRESS_s {
-    char data[0x2800];
-    i32 flags;
-};
+#include "legoapi/LEVEL_PROGRESS.h"
 struct LoadedUniqueShaderRecord {};
 struct MENU_s {};
 struct MISSIONSAVE_s {};
 struct MISSIONSYS_s {};
-struct MechInputTouchVirtualConsoleController {};
-struct MechObjectInterface {};
-struct MechTouchUIElement {};
 struct MemoryBuffer {};
 struct NARROWSOCKEXCEPTION {};
 struct NUGCUTCHAR_s {};
@@ -451,7 +454,6 @@ struct NetPeer {};
 struct NuBloomParameters {};
 struct NuShaderObject {};
 struct NuShaderUsageMask_s {};
-struct NuVec2 {};
 struct OPTIONSSAVE_s {};
 struct OggVorbis_File {};
 struct PARTDEBSYS_s {};
@@ -489,15 +491,9 @@ struct TORPEDOPACKET_s {};
 struct TRAFFICANIMSYS_s {};
 struct TUBE_s {};
 struct ThingLevelData {};
-struct ThingProcessData {};
 struct ThingRemoveData {};
-struct ThingRenderData {};
-struct ThingResetData {};
-struct TouchHolder {};
 struct VirtualStackAllocator {};
 struct VuMtx {};
-struct VuVec {};
-struct WORLDINFO_s {};
 struct __sFILE {};
 struct _vum_s {};
 struct _vuv_s {};
@@ -542,7 +538,6 @@ struct nushadermtldesc_s {};
 struct nusound_filename_info_s {};
 struct nutex_s {};
 struct nutexmanager_s {};
-struct nuvec_s {};
 struct ogg_packet {};
 struct oggpack_buffer {};
 struct ov_callbacks {};
@@ -561,7 +556,6 @@ struct terrsitu_s {};
 struct tertype {};
 struct uv1deb {};
 struct uv1debdata {};
-struct variptr_u {};
 struct vorbis_block {};
 struct vorbis_comment {};
 struct vorbis_dsp_state {};
@@ -585,24 +579,12 @@ struct BaseThing {
     BaseThing();
     virtual ~BaseThing();
 };
-struct MechAddon {
-    struct ProcessStage {};
-};
 struct CantPickupBombTimerAddon {
     CantPickupBombTimerAddon(MechObjectInterface &, float);
     void OnProcess(MechAddon::ProcessStage, float);
     virtual ~CantPickupBombTimerAddon();
 };
-struct CharacterObjectInterface {
-    CharacterObjectInterface(GameObject_s &);
-    void GetHeight() const;
-    void GetPos(VuVec &, i32) const;
-    void GetRadius() const;
-    void GetTargetName() const;
-    void IsDead();
-    void TargetedFlash();
-    virtual ~CharacterObjectInterface();
-};
+
 struct ClassEditor {
     ClassEditor();
     void AddMenuItems(eduimenu_s *);
@@ -753,91 +735,15 @@ struct GIZTURRET_s {
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };
-struct GameObject_s {
-    void ClearAddons();
-    void ClearMechObjectInterface();
-    void GetAddons(bool);
-    void GetMechObjectInterface();
-    void IsRunningTaskType(HashedKey const &);
-    void KillTasks();
-};
 struct GameThingManager {
     void AddLevelOnlyThings();
     void AddOnceOnlyThings();
     GameThingManager(i32);
     virtual ~GameThingManager();
 };
-struct GizBlowupObjectInterface {
-    void GetPos(VuVec &, i32) const;
-    void GetRadius() const;
-    void GetTargetName() const;
-    GizBlowupObjectInterface(GIZMOBLOWUP_s &);
-    void IsDead();
-    void TargetedFlash();
-    virtual ~GizBlowupObjectInterface();
-};
-struct GizBuildItObjectInterface {
-    void GetPos(VuVec &, i32) const;
-    void GetRadius() const;
-    void GetTargetName() const;
-    GizBuildItObjectInterface(GIZBUILDIT_s &);
-    void TargetedFlash();
-    virtual ~GizBuildItObjectInterface();
-};
-struct GizForceObjectInterface {
-    void GetPos(VuVec &, i32) const;
-    void GetRadius() const;
-    void GetTargetName() const;
-    void GetTgtVoidPtr();
-    GizForceObjectInterface(GIZFORCE_s &);
-    void TargetedFlash();
-    virtual ~GizForceObjectInterface();
-};
-struct GizLeverObjectInterface {
-    void GetPos(VuVec &, i32) const;
-    void GetRadius() const;
-    void GetTargetName() const;
-    GizLeverObjectInterface(LEVER_s &);
-    void TargetedFlash();
-    virtual ~GizLeverObjectInterface();
-};
-struct GizObstacleObjectInterface {
-    void GetPos(VuVec &, i32) const;
-    void GetRadius() const;
-    void GetTargetName() const;
-    GizObstacleObjectInterface(GIZOBSTACLE_s &);
-    void IsDead();
-    void TargetedFlash();
-    virtual ~GizObstacleObjectInterface();
-};
-struct GizPanelObjectInterface {
-    void GetFloorTargetPos(VuVec &, i32) const;
-    void GetPos(VuVec &, i32) const;
-    void GetRadius() const;
-    void GetTargetName() const;
-    GizPanelObjectInterface(GIZPANEL_s &);
-    void TargetedFlash();
-    virtual ~GizPanelObjectInterface();
-};
-struct GizTurretObjectInterface {
-    void GetPos(VuVec &, i32) const;
-    void GetRadius() const;
-    void GetTargetName() const;
-    GizTurretObjectInterface(GIZTURRET_s &);
-    void TargetedFlash();
-    virtual ~GizTurretObjectInterface();
-};
 struct HATMACHINE_s {
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
-};
-struct HatMachineObjectInterface {
-    void GetPos(VuVec &, i32) const;
-    void GetRadius() const;
-    void GetTargetName() const;
-    HatMachineObjectInterface(HATMACHINE_s &);
-    void TargetedFlash();
-    virtual ~HatMachineObjectInterface();
 };
 struct HudRadarPulse {
     HudRadarPulse(VuVec const &);
@@ -885,9 +791,6 @@ struct LevelEditor {
     void SetPadText(i32, char *);
     void SetSaveFilename(char *);
     void WriteStream(EdFileOutputStream &);
-};
-struct MechInputTouchMainController {
-    struct eButtonTypes {};
 };
 struct MemoryManager {
     void AllocPool(u32, i32);
@@ -1082,12 +985,6 @@ struct SpecialObject {
     void SetVisibility(i32);
     SpecialObject();
 };
-struct SwipeDecalRenderer {
-    struct Style {};
-    void Process(float);
-    void Render();
-    SwipeDecalRenderer(TouchHolder &, i32, SwipeDecalRenderer::Style);
-};
 struct TELEPORT_s {
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
@@ -1127,14 +1024,6 @@ struct TTNetwork {
     TTNetwork();
     void Update();
     virtual ~TTNetwork();
-};
-struct TeleportObjectInterface {
-    void GetPos(VuVec &, i32) const;
-    void GetRadius() const;
-    void GetTargetName() const;
-    void TargetedFlash();
-    TeleportObjectInterface(TELEPORT_s &, i32);
-    virtual ~TeleportObjectInterface();
 };
 struct ThingManager {
     void AddThing(BaseThing *);

@@ -451,9 +451,20 @@ if(CLANG_TIDY_EXE)
         set_target_properties(saga PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_EXE};-extra-arg=-nostdinc++")
     endif()
 
+    # check_symbols.py needs the original ROM (res/libTTapp.so), which only
+    # exists in local checkouts. Skip it in CI (where the ROM is absent) and
+    # for developers who haven't checked out the ROM, so `lint` stays green
+    # there.
+    if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/res/libTTapp.so)
+        set(CHECK_SYMBOLS_CMD echo "WARNING: res/libTTapp.so not present; skipping symbol check")
+    else()
+        set(CHECK_SYMBOLS_CMD python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/check_symbols.py)
+    endif()
+
     add_custom_target(lint
         COMMAND ${CLANG_TIDY_EXE} -p=${CMAKE_BINARY_DIR} ${SAGA_SOURCE_FILES} --warnings-as-errors="*"
         COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/check_duplicate_definitions.py ${CMAKE_CURRENT_SOURCE_DIR}/src
+        COMMAND ${CHECK_SYMBOLS_CMD}
         COMMENT "Running clang-tidy, duplicate-definition check, and symbol baseline check"
     )
 else()

@@ -425,21 +425,6 @@ void NuStrCatC(char *, char) {
 NuDynamicLight::RenderSet::RenderSet() {
 }
 
-void NuMusic::Album::GetTracks(u32, NuMusic::Track **) {
-}
-
-void NuMusic::Track::ManageEntryTime() {
-}
-
-void NuMusic::Track::SetEntryTime(float) {
-}
-
-void NuMusic::Voice::Cue() {
-}
-
-void NuMusic::Voice::Unload() {
-}
-
 void NuMemory::MemErrorHandler::CloseDump(NuMemoryManager *, u32) {
 }
 

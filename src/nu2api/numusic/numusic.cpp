@@ -796,3 +796,78 @@ void RegisterMusic(NUSOUND_FILENAME_INFO *files) {
         }
     }
 }
+
+void NuMusic::ClassToName(u32) {
+}
+
+void NuMusic::CueTrack(u32) {
+}
+
+void NuMusic::Debug(i32, i32) {
+}
+
+void NuMusic::GetAlbumHandle(char const *) {
+}
+
+void NuMusic::GetPlaybackTime(u32) {
+}
+
+void NuMusic::GetPlayer() {
+}
+
+void NuMusic::GetStatus(u32, i32 *) {
+}
+
+void NuMusic::NoMusic(i32) {
+}
+
+void NuMusic::PauseTrack(u32) {
+}
+
+void NuMusic::PlayTrack(u32, u32) {
+}
+
+void NuMusic::Process(float) {
+}
+
+void NuMusic::ResumeTrack(u32) {
+}
+
+void NuMusic::SelectTrack(u32, char const *) {
+}
+
+void NuMusic::SetAlbum(char const *) {
+}
+
+void NuMusic::SetAlbum(i32) {
+}
+
+void NuMusic::SetClassVolume(u32, float) {
+}
+
+void NuMusic::SetFader(float, float) {
+}
+
+void NuMusic::SetMasterVolume(float) {
+}
+
+void NuMusic::SetTrackEntryTimeByClass(u32, float) {
+}
+
+void NuMusic::StopTrack(u32, i32) {
+}
+
+void NuMusic::Album::GetTracks(u32, NuMusic::Track **) {
+}
+
+void NuMusic::Track::ManageEntryTime() {
+}
+
+void NuMusic::Track::SetEntryTime(float) {
+}
+
+void NuMusic::Voice::Cue() {
+}
+
+void NuMusic::Voice::Unload() {
+}

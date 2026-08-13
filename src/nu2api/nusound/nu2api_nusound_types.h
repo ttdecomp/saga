@@ -65,16 +65,6 @@ struct NuSoundEffect {
     struct EffectType {};
     virtual ~NuSoundEffect();
 };
-struct NuSoundAndroid {
-    void AndroidNuSoundClockThread(void *);
-    void CreateEffect(NuSoundEffect::EffectType);
-    void CreateVoice(NuSoundSource *, bool);
-    void IsValidBitRate(u32);
-    void IsValidSampleRate(u32);
-    void ReportErrorCode(u32, char const *);
-    void ShutdownAudioDevice();
-    void UpdateAudioDevice();
-};
 struct NuSoundBuffer {
     void GetCurrentContext();
     void GetSegmentAddress(u32, u32, u32) const;

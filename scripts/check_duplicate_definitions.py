@@ -5,8 +5,8 @@ A type is a DEFINITION (as opposed to a forward declaration) when its tag is
 followed by a body, e.g.:
 
     struct Foo { ... };              -- definition
-    struct Foo {};                   -- definition (empty)
-    struct Foo { };                  -- definition (empty, spaced)
+    struct Foo {};                   -- opaque placeholder (IGNORED)
+    struct Foo { };                  -- opaque placeholder (IGNORED)
     typedef struct Foo { ... } Foo;  -- definition
     struct Foo;                      -- forward declaration (IGNORED)
 
@@ -18,6 +18,12 @@ the canonical definition. This script flags every tag that has more than one
 definition anywhere in the tree, so those duplicates can be consolidated.
 
 Exit code is 0 when no duplicate definitions are found, 1 otherwise.
+
+Genuine duplicates that cannot be consolidated (e.g. the same tag legitimately
+names different types in two modules that are never co-compiled, where renaming
+would break symbol parity with the original binary) can be listed -- one
+qualified tag per line, '#' comments and blank lines ignored -- in
+scripts/duplicate_definitions_ignore.txt (or a file passed via --ignore).
 """
 
 import argparse
@@ -26,6 +32,9 @@ import re
 import sys
 
 SRC_EXTENSIONS = {".h", ".hh", ".hpp", ".hxx", ".c", ".cc", ".cpp", ".cxx"}
+
+_IGNORE_DEFAULT = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               "duplicate_definitions_ignore.txt")
 
 # Tag kinds and their keywords. enum needs care: "enum Foo : int { ... }".
 KEYWORDS = ("struct", "class", "union")
@@ -119,8 +128,24 @@ def find_definitions(text):
             tag = m.group("tag")
             i = m.end()
             if kw in _TYPE_KW and tag:
-                qname = "::".join(scopes + [tag])
-                defs.append((kw, qname))
+                # An empty body `struct X {};` is an opaque placeholder (a
+                # closed-brace forward declaration), not a real definition, so
+                # it is not recorded. Shadowing placeholders are load-bearing
+                # in this codebase and never coexist with the real definition
+                # in one TU; recording them only masks the genuine duplicates.
+                j = m.end()
+                bd = 1
+                while j < n:
+                    if text[j] == "{":
+                        bd += 1
+                    elif text[j] == "}":
+                        bd -= 1
+                        if bd == 0:
+                            break
+                    j += 1
+                if text[m.end():j].strip() != "":
+                    qname = "::".join(scopes + [tag])
+                    defs.append((kw, qname))
                 scopes.append(tag)
                 closes.append(depth)  # this scope closes when depth returns here
             elif kw == "namespace":
@@ -139,15 +164,37 @@ def find_definitions(text):
     return defs
 
 
+def load_ignore(path):
+    """Load ignored qualified tag names from a file (blank lines and '#' comments)."""
+    if not path or not os.path.isfile(path):
+        return set()
+    ignored = set()
+    with open(path, "r", encoding="utf-8", errors="replace") as fh:
+        for line in fh:
+            s = line.strip()
+            if not s or s.startswith("#"):
+                continue
+            ignored.add(s)
+    return ignored
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("src", help="source root directory to scan (e.g. src/)")
+    ap.add_argument(
+        "--ignore",
+        default=_IGNORE_DEFAULT,
+        help="file of qualified tag names to treat as intentional (default: "
+        "scripts/duplicate_definitions_ignore.txt)",
+    )
     ap.add_argument(
         "--verbose",
         action="store_true",
         help="print every definition found, not just duplicates",
     )
     args = ap.parse_args()
+
+    ignored = load_ignore(args.ignore)
 
     root = os.path.abspath(args.src)
     if not os.path.isdir(root):
@@ -185,6 +232,8 @@ def main():
         key: files
         for key, files in by_tag.items()
         if sum(files.values()) > 1
+        and key[1] not in ignored
+        and f"{key[0]} {key[1]}" not in ignored
     }
 
     if not duplicates:
