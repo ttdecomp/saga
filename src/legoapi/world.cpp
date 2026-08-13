@@ -1,6 +1,6 @@
 #include "legoapi/world.h"
-#include "legoapi/world_shared.h"
 #include "legoapi/LEVEL_PROGRESS.h"
+#include "legoapi/world_shared.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -108,7 +108,11 @@ i32 next_level;
 static WORLDINFO *LWORLD = &WorldInfo[0];
 
 void WorldInfo_InitOnce(void) {
-    memset(WorldInfo, 0, 0xa360);
+    memset(WorldInfo, 0, sizeof(WorldInfo));
+
+#ifndef HOST_BUILD
+    static_assert(sizeof(void *) != 4 || sizeof(WorldInfo) == 0xa360, "WorldInfo size mismatch");
+#endif
 }
 
 void WorldInfo_Init(WORLDINFO *world) {
