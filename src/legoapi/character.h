@@ -111,22 +111,10 @@ struct gamecharacterdata_s { /* PlaceHolder Structure */
     undefined field97_0x61;
     undefined field98_0x62;
     undefined field99_0x63;
-    undefined field100_0x64;
-    undefined field101_0x65;
-    undefined field102_0x66;
-    undefined field103_0x67;
-    undefined field104_0x68;
-    undefined field105_0x69;
-    undefined field106_0x6a;
-    undefined field107_0x6b;
-    undefined field108_0x6c;
-    undefined field109_0x6d;
-    undefined field110_0x6e;
-    undefined field111_0x6f;
-    undefined field112_0x70;
-    undefined field113_0x71;
-    undefined field114_0x72;
-    undefined field115_0x73;
+    f32 viewdistance;    // 0x64
+    f32 heardistance;    // 0x68
+    f32 maxviewheight;   // 0x6c
+    f32 minviewheight;   // 0x70
     undefined field116_0x74;
     undefined field117_0x75;
     undefined field118_0x76;

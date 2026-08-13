@@ -7,13 +7,14 @@ user-invocable: true
 
 # File Locations
 
-| What                   | Where                            |
-| ---------------------- | -------------------------------- |
-| Source                 | `src/`                           |
-| Split original objects | `build/split/*.o`                |
-| Our objects            | `build/CMakeFiles/saga.dir/src/` |
-| Ghidra                 | MCP-connected program            |
-
+| What                                 | Where                            |
+| ------------------------------------ | -------------------------------- |
+| Source                               | `src/`                           |
+| Split original objects               | `build/split/*.o`                |
+| Our objects                          | `build/CMakeFiles/saga.dir/src/` |
+| Ghidra                               | MCP-connected program            |
+| CMakeLists.txt                       | `CMakeLists.txt`                 |
+| CMake file specifying compiler flags | `src/target.cmake`               |
 
 # Workflow
 
