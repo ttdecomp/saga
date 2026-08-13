@@ -102,7 +102,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/character.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cheat.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/collection.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/doorstubs.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/door.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episode.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/level.cpp

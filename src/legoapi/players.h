@@ -5,6 +5,7 @@
 
 #include "legoapi/apiobject.h"
 #include "legoapi/character.h"
+#include "legoapi/door.h"
 #include "nu2api/nu3d/nuspline.h"
 #include "nu2api/numath/nuvec.h"
 
@@ -37,23 +38,7 @@ typedef struct playerstart_s {
     i16 angle;    // 0x0c
 } PLAYERSTARTENTRY;
 
-// Hub/door subsystem globals referenced by Players_InitPositions.
 extern PLAYERSTARTENTRY PlayerStart[8];
-extern NUVEC Door_CutCamPos0;
-extern NUVEC Door_CutCamPos1;
-extern i32 Door_UseCutCam;
-extern struct nugspline_s *Door_CutSpl;
-extern char Door_ExitCameraSplineName[];
-extern char Door_ExitName[];
-extern void *HubStartDoor;
-extern void *VEHICLES_ADATA;
-extern i32 LEGOSPL_START;
-extern i32 hub_from_superstory;
-extern i32 hub_from_mission;
-extern i32 hub_from_arcade;
-extern i32 hub_from_cutsceneplayer;
-extern i32 shop_from_cutsceneplayer;
-extern i32 hub_startoutsidebonusdoor_area;
 
 // ---- Globals used by Players_Init ----
 
@@ -99,13 +84,17 @@ struct WORLDINFO_s;
 void Players_InitPositions(struct WORLDINFO_s *world);
 void PlayerItemTypes_Reset(struct WORLDINFO_s *world);
 
-// Door/hub helpers (stubbed).
-extern "C" void ComplexSockPosition(void *a, void *b, i32 c, i32 d, SOCKPOSITION *out);
-struct EPISODEDATA;
-i32 Episode_FindAreaFromFlags(struct EPISODEDATA *ep, u32 a, u32 b);
-void *Door_FindByIndex(struct WORLDINFO_s *world, i32 a, i32 b, struct nuvec_s *c);
-void *Door_FindByName(struct WORLDINFO_s *world, char *name);
-void StartDoorPositions(void);
-void *CutScenePlayer_Available(void);
-
 void Players_Init(void);
+
+// ---- Player/gameobject helpers (defined in players.cpp) ----
+
+void DrawOffsetCode(GameObject_s *obj, int param);
+extern "C" void rtlDynamicEnable(int id, int param);
+float GameObjectNearFloor(GameObject_s *obj, float h, float *out);
+float GetHoverPosY(GameObject_s *obj);
+int Player_HasPurpleForce(GameObject_s *obj);
+extern unsigned GAMEPAD_ACTION;
+void ChatterSfx(GameObject_s *g, int a, float b);
+void Move_VEHICLE(GameObject_s *g);
+extern "C" void ComplexSockPosition(void *a, void *b, i32 c, i32 d, SOCKPOSITION *out);
+void *CutScenePlayer_Available(void);

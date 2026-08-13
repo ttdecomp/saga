@@ -1,8 +1,13 @@
 #include "legoapi/cheat.h"
 
+#include "globals.h"
 #include "nu2api/nucore/nustring.h"
 
 CHEATSYSTEM CheatSystem = {0};
+
+f32 Cheat_PowerUpTime = 0.0f;
+i32 ONEPLAYERPOWERUPS = 0;
+extern i32 VehicleArea;
 
 void Cheat_SetArea(i32 cheat, i32 areaId) {
     if (cheat >= 0 && cheat < CheatSystem.cheats_count && areaId >= 0 && areaId < AREACOUNT) {
@@ -30,5 +35,25 @@ u32 Cheat_CheckFlags(int cheat_index, u32 flag_mask) {
         return flag_mask & target_cheat.flag;
     }
 
+    return 0;
+}
+
+int Cheat_IsOn(int cheat) {
+    if (cheat >= 0 && cheat < CheatSystem.cheats_count) {
+        if (CheatSystem.cheats[cheat].enabled != 0) {
+            return 1;
+        }
+        if (ONEPLAYERPOWERUPS == 0 && 0.0f < Cheat_PowerUpTime) {
+            u8 bVar = ((u8 *)&CheatSystem.cheats[cheat].flag)[2];
+            if (VehicleArea == 0) {
+                bVar &= 1U;
+            } else {
+                bVar &= 2U;
+            }
+            if (bVar != 0) {
+                return 1;
+            }
+        }
+    }
     return 0;
 }

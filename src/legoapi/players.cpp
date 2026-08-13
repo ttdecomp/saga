@@ -8,6 +8,8 @@
 #include "globals.h"
 #include "legoapi/area.h"
 #include "legoapi/character.h"
+#include "legoapi/cheat.h"
+#include "legoapi/episode.h"
 #include "legoapi/level.h"
 #include "legoapi/players.h"
 #include "legoapi/socksys.h"
@@ -21,9 +23,6 @@
 #include "nu2api/nucore/nutime.h"
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nufile/nufpar.h"
-
-struct episodedata_s;
-extern struct episodedata_s *EDataList;
 
 void Players_Init(void) {
     memset(Player, 0, sizeof(Player));
@@ -255,7 +254,7 @@ void Players_InitPositions(WORLDINFO *world) {
     if (HUB_ADATA != NULL && HUB_ADATA == world->area) {
         if (world->unknown_0120 != last_area && hub_from_cutsceneplayer == 0) {
             if (hub_from_superstory != -1) {
-                i32 area = Episode_FindAreaFromFlags((struct EPISODEDATA *)((char *)EDataList + hub_from_superstory * 0x1c), 5, 5);
+                i32 area = Episode_FindAreaFromFlags((EPISODEDATA *)((char *)EDataList + hub_from_superstory * 0x1c), 5, 5);
                 void *door = Door_FindByIndex(world, area, -1, NULL);
                 if (door != NULL) {
                     NuStrCpy(Door_ExitName, (char *)door);
@@ -384,14 +383,6 @@ static f32 sPreResetD18Scale = 0.0f;
 static f32 sPreReset1048Scale = 0.0f;
 static f32 sPreResetDivF = 0.0f;
 static f32 sPreResetMulG = 0.0f;
-
-void DrawOffsetCode(GameObject_s *obj, int param);
-extern "C" void rtlDynamicEnable(int id, int param);
-float GameObjectNearFloor(GameObject_s *obj, float h, float *out);
-float GetHoverPosY(GameObject_s *obj);
-int Cheat_IsOn(int cheat);
-int Player_HasPurpleForce(GameObject_s *obj);
-extern unsigned GAMEPAD_ACTION;
 
 void PreResetCode(GameObject_s *obj) {
     u8 *b = (u8 *)obj;
@@ -578,9 +569,6 @@ void PreResetCode(GameObject_s *obj) {
 
 static float sPostResetSfxScale = 1.0f;
 
-void ChatterSfx(GameObject_s *g, int a, float b);
-void Move_VEHICLE(GameObject_s *g);
-
 void PostResetCode(GameObject_s *obj) {
     u8 *p = (u8 *)obj;
     void *pp = *(void **)(p + 0x54);
@@ -589,7 +577,7 @@ void PostResetCode(GameObject_s *obj) {
     i16 v = *(i16 *)((u8 *)q + 0xe8);
     if (v != -1) {
         u8 b = *(u8 *)((u8 *)q + 0x11e);
-        f32 f = (f32)(i32)((u32)b >> 16) * sPostResetSfxScale + (f32)(i32)(u32)b;
+        f32 f = (f32)(u32)b;
         ChatterSfx(obj, v, f);
     }
     if (*(void **)(*(u8 **)(p + 0x54) + 0x18) != (void *)&Move_VEHICLE &&
@@ -642,3 +630,65 @@ void RememberPlayerIDs(i32 a, i32 b, i32 c) {
         PlayerID[1] = c;
     }
 }
+
+// ---- Player start spawn entries ----
+PLAYERSTARTENTRY PlayerStart[8];
+
+// ---- Misc player/gameobject helpers relocated from doorstubs.cpp ----
+
+extern "C" void ComplexSockPosition(void *a, void *b, i32 c, i32 d, SOCKPOSITION *out) {
+    (void)a;
+    (void)b;
+    (void)c;
+    (void)d;
+    out->x = 0.0f;
+    out->y = 0.0f;
+    out->z = 0.0f;
+    out->heading = 0.0f;
+}
+
+void *CutScenePlayer_Available(void) {
+    return NULL;
+}
+
+void ChatterSfx(GameObject_s *g, int a, float b) {
+    (void)g;
+    (void)a;
+    (void)b;
+}
+
+void Move_VEHICLE(GameObject_s *g) {
+    (void)g;
+}
+
+void DrawOffsetCode(GameObject_s *obj, int param) {
+    (void)obj;
+    (void)param;
+}
+
+// rtlDynamicEnable uses C linkage in the original binary (plain symbol name).
+extern "C" void rtlDynamicEnable(int id, int param) {
+    (void)id;
+    (void)param;
+}
+
+float GameObjectNearFloor(GameObject_s *obj, float h, float *out) {
+    (void)obj;
+    (void)h;
+    if (out != NULL) {
+        *out = 0.0f;
+    }
+    return 0.0f;
+}
+
+float GetHoverPosY(GameObject_s *obj) {
+    (void)obj;
+    return 0.0f;
+}
+
+int Player_HasPurpleForce(GameObject_s *obj) {
+    (void)obj;
+    return 0;
+}
+
+unsigned GAMEPAD_ACTION = 0;
