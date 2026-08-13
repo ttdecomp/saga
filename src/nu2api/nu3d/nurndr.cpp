@@ -5,10 +5,10 @@
 
 #include "nu2api/nucore/numemory.h"
 
-struct nugobj_s {};
-struct PartHeader {};
-struct uv1debdata {};
-struct nuvec4_s {};
+struct nugobj_s;
+struct PartHeader;
+struct uv1debdata;
+struct nuvec4_s;
 
 i32 nurndr_pixel_width;
 i32 nurndr_pixel_height;

@@ -453,7 +453,8 @@ if(CLANG_TIDY_EXE)
 
     add_custom_target(lint
         COMMAND ${CLANG_TIDY_EXE} -p=${CMAKE_BINARY_DIR} ${SAGA_SOURCE_FILES} --warnings-as-errors="*"
-        COMMENT "Running clang-tidy"
+        COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/check_duplicate_definitions.py ${CMAKE_CURRENT_SOURCE_DIR}/src
+        COMMENT "Running clang-tidy, duplicate-definition check, and symbol baseline check"
     )
 else()
     message(WARNING "clang-tidy not found")

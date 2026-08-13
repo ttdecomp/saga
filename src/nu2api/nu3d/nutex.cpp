@@ -8,9 +8,9 @@
 #include <pthread.h>
 #include <string.h>
 
-struct nutexanimprog_s {};
+struct nutexanimprog_s;
 struct nutextureformat_e {};
-struct nutexanim_s {};
+struct nutexanim_s;
 
 void NuChecksumAsHex(u8 *checksum, char *out) {
     i32 i;
