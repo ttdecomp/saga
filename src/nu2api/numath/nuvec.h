@@ -4,6 +4,7 @@
 /// @brief Functions and types related to vectors in 3-space.
 
 #include "nu2api/nucore/common.h"
+#include "nu2api/numath/nuang.h"
 
 struct numtx_s;
 
@@ -168,6 +169,13 @@ extern "C" {
     /// @param v0 The vector to normalize.
     /// @return The magnitude of the vector prior to normalization.
     f32 NuVecNorm(NUVEC *v, NUVEC *v0);
+
+    /// @relatesalso nuvec_s
+    /// @brief Rotates a vector about the Y axis by a given angle.
+    /// @param[out] v The rotated vector.
+    /// @param v0 The vector to rotate.
+    /// @param a The rotation angle in NUANG units.
+    void NuVecRotateY(NUVEC *v, NUVEC *v0, NUANG a);
 
     /// @relatesalso nuvec_s
     /// @brief Computes the surface normal of a triangle.

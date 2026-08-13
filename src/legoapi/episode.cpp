@@ -7,6 +7,24 @@
 
 EPISODEDATA *EDataList = NULL;
 
+u32 Episode_FindAreaFromFlags(EPISODEDATA *ep, u32 flags, u32 want) {
+    if (ep->area_count == 0) {
+        return 0xffffffff;
+    }
+    AREADATA *a = &ADataList[ep->area_ids[0]];
+    if ((a->flags & flags) != want) {
+        i32 i = 0;
+        do {
+            if (i == (u32)ep->area_count * 2 - 2) {
+                return 0xffffffff;
+            }
+            i = i + 2;
+            a = &ADataList[*(i16 *)((u8 *)ep->area_ids + i)];
+        } while ((a->flags & flags) != want);
+    }
+    return (u8)a->field27_0x7c;
+}
+
 EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, i32 maxCount,
                                     i32 *countDest) {
     i16 *psVar1;

@@ -196,7 +196,7 @@ def main():
             if unit_ != unit:
                 continue
 
-            print(f"| {function} | {format_change(old, new, percent=True)} |")
+            print(f"| `{function}` | {format_change(old, new, percent=True)} |")
 
     print("\n---\n")
     print("\n## Total Changes:\n")

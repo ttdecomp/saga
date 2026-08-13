@@ -16,6 +16,7 @@ set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/area.cpp PRO
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/level.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/qrand.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/players.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/timer.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 
@@ -60,6 +61,7 @@ set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nuscreen
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nugscn.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/numtl.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nuportal.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nuspline.c PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nuqfnt.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nurndr.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nushader.cpp PROPERTIES COMPILE_OPTIONS "-O3")

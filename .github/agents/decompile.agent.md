@@ -7,13 +7,14 @@ user-invocable: true
 
 # File Locations
 
-| What                   | Where                            |
-| ---------------------- | -------------------------------- |
-| Source                 | `src/`                           |
-| Split original objects | `build/split/*.o`                |
-| Our objects            | `build/CMakeFiles/saga.dir/src/` |
-| Ghidra                 | MCP-connected program            |
-
+| What                                 | Where                            |
+| ------------------------------------ | -------------------------------- |
+| Source                               | `src/`                           |
+| Split original objects               | `build/split/*.o`                |
+| Our objects                          | `build/CMakeFiles/saga.dir/src/` |
+| Ghidra                               | MCP-connected program            |
+| CMakeLists.txt                       | `CMakeLists.txt`                 |
+| CMake file specifying compiler flags | `src/target.cmake`               |
 
 # Workflow
 
@@ -49,6 +50,13 @@ The following rules should be implemented before you stop:
 - **Name symbols exactly as in the original.** Only rename to fix a known mismatch.
 
 Before adding any symbols check the source tree for existing files and the most appropriate location. If none exists, create a new file in the appropriate directory. 
+
+# Additional verification before committing
+
+```
+cmake --build build-host
+cmake --build build --target lint
+```
 
 # Forbidden Ghidra Artifacts
 

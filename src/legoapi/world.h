@@ -6,23 +6,50 @@
 #include "nu2api/nucore/common.h"
 
 struct AREADATA_s;
-typedef struct MINIKIT_s {
+struct LEVEL_PROGRESS_s;
+struct APIDEBRISSYS_s;
+struct PARTDEBSYS_s;
+struct GAMEANIMSYS_s;
+struct SOCKSYS_s;
+struct APIOBJECTSYS_s;
+struct burnset_s;
+struct rtlset;
+struct CUTSYS;
+struct GIZMOSYS_s;
+struct GIZFLOW_s;
+struct CHARPLATFORMSYS_s;
+struct AISYS_s;
+struct AIPATHCNXCONTROLSYS_s;
+struct AIPATHCNXHELPERSYS_s;
+struct AITRIGGERSETSYS_s;
+struct CLIMBOBJECTSYS_s;
+struct MechAutoJumpManager;
+struct DOOR_s;
+struct GIZOBSTACLESYS_s;
+struct GIZTURRETSYS_s;
+struct GRABBER_s;
+struct PULSESYS_s;
+struct LEVER_s;
+struct GAMEANTINODESYS_s;
+struct GIZBOMBGENSYS_s;
+struct TRAFFICANIMSYS_s;
+struct GIZTIMER_s;
+struct portalpos_s;
+struct spawnsys_s;
+
+typedef struct MINIKIT {
     void *gscn;
     char filler[0x14];
     i32 field_0x18;
 } MINIKIT;
 
-// Struct at offset 0x2968 in WORLDINFO_s (0x148 bytes)
-typedef struct CHARSCENEINFO_s {
-    MINIKIT minikit;
-    char filler[0x148 - sizeof(MINIKIT)];
-} CHARSCENEINFO;
-
+// Layout matches the original WORLDINFO_s (0x51b0 = 20912 bytes).
 typedef struct WORLDINFO_s {
-    char filler0[0x104];
+    char filler0[0x80];
+
+    char config_file[0x84];
 
     VARIPTR giz_buffer;
-
     VARIPTR unknown_0108;
     i32 unknown_010c;
 
@@ -35,45 +62,96 @@ typedef struct WORLDINFO_s {
     i32 unknown_0124;
 
     struct LEVELDATA_s *current_level;
-
     AREADATA_s *area;
-
-    void *level_progress;
-    char filler2[0x8];
+    LEVEL_PROGRESS_s *level_progress;
+    APIDEBRISSYS_s *field278_0x134;
+    PARTDEBSYS_s *part_debris_sys;
     NUGSCN *current_gscn;
+    NUGSCN *scene;
 
-    i32 char_icons[3];
+    char unknown_0140[0x2960 - 0x144];
 
-    char config_file[0x8c];
-
-    char unknown_0140[0x2788];
-
-    CHARSCENEINFO char_scene_info;
-    void *cutscene_sys;
-    void *game_anim_sys;
-    void *game_antinode_sys;
-    void *gizmo_sys;
-    void *sock_sys;
-    void *api_object_sys;
-    void *ai_path_cnx_control_sys;
-    void *ai_path_cnx_helper_sys;
-    void *ai_trigger_set_sys;
-    void *climb_object_sys;
-    void *mech_auto_jump_manager;
-    void *giz_flow;
+    GAMEANIMSYS_s *game_anim_sys;
     NUGSCN *icons_gscn;
-    NUGSCN *unknown_0140_ptr;
+    MINIKIT minikit;
+    struct SOCKSYS_s *sock_sys;
+    APIOBJECTSYS_s *api_object_sys;
 
-    AISYS *ai_sys;
+    char filler2[0x2a98 - 0x2990];
+
+    i32 unknown_0x2a98;
+    i32 unknown_0x2a9c;
+    i32 unknown_0x2aa0;
+    i32 unknown_0x2aa4;
+    i32 unknown_0x2aa8;
+    burnset_s *field_0x2aac;
+    CUTSYS *cutscene_sys;
+    rtlset *lights;
+    i32 unknown_0x2ab8;
+
+    char filler3a[0x2ac4 - 0x2abc];
+    struct portalpos_s **portal_places;
+
+    GIZMOSYS_s *gizmo_sys;
+    GIZFLOW_s *giz_flow;
+
+    char filler4[0x2adc - 0x2ad0];
+
+    CHARPLATFORMSYS_s *char_platform_sys;
+
+    char filler5[0x2ae8 - 0x2ae0];
+
+    AISYS_s *ai_sys;
     i32 processor_count;
     LEVELSCRIPTPROCESS processors[32];
 
-    char unknown_4670[0xa8c];
+    AIPATHCNXCONTROLSYS_s *ai_path_cnx_control_sys;
+    AIPATHCNXHELPERSYS_s *ai_path_cnx_helper_sys;
+    AITRIGGERSETSYS_s *ai_trigger_set_sys;
+    CLIMBOBJECTSYS_s *climb_object_sys;
+    MechAutoJumpManager *mech_auto_jump_manager;
+
+    char filler6a[0x46a4 - 0x4684];
+    struct spawnsys_s *spawn_sys;
+    char filler6b[0x46ac - 0x46a8];
+
+    GIZTURRETSYS_s *giz_turret_sys;
+
+    char filler7[0x46f0 - 0x46b0];
+
+    GRABBER_s *grabber;
+
+    char filler8[0x5054 - 0x46f4];
+
+    PULSESYS_s *pulses_sys;
+
+    char filler9[0x505c - 0x5058];
+
+    LEVER_s *levers;
+    i32 nlevers;
+
+    char filler10[0x50cc - 0x5064];
 
     struct GIZTIMER_s *giz_timers;
     i32 giz_timers_count;
 
-    char filler4[172];
+    char filler11[0x50d8 - 0x50d4];
+
+    void *giz_randoms;
+
+    char filler12[0x50e0 - 0x50dc];
+
+    GAMEANTINODESYS_s *game_antinode_sys;
+
+    char filler13[0x50e8 - 0x50e4];
+
+    GIZBOMBGENSYS_s *giz_bombgen_sys;
+
+    char filler14[0x516c - 0x50ec];
+
+    TRAFFICANIMSYS_s *trafficanim_sys;
+
+    char filler15[0x51b0 - 0x5170];
 } WORLDINFO;
 
 #ifdef __cplusplus
