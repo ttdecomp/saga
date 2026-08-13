@@ -21,9 +21,9 @@ struct doorview_s {
 
 // Pointer stored in DOOR_s at +0xa0: exit-spline descriptor.
 typedef struct doorspline_s {
-    i16 count;     // 0x00
-    char pad[6];   // 0x02
-    NUVEC *arr;    // 0x08
+    i16 count;   // 0x00
+    char pad[6]; // 0x02
+    NUVEC *arr;  // 0x08
 } DOORSPLINE;
 
 // ---- Exit-camera / cut-door data ----
@@ -191,8 +191,7 @@ void *Door_FindByIndex(struct WORLDINFO_s *world, i32 a, i32 b, struct nuvec_s *
                         i32 i = 0;
                         do {
                             i16 s = d->level;
-                            if (((d->flags & 4) == 0) && s != -1 &&
-                                (s == b || LDataList[s].unknown_0af == a)) {
+                            if (((d->flags & 4) == 0) && s != -1 && (s == b || LDataList[s].unknown_0af == a)) {
                                 f32 dist = NuVecDistSqr((NUVEC *)c, &d->pos, NULL);
                                 count = w->ndoors;
                                 if (dist < best) {
@@ -209,8 +208,7 @@ void *Door_FindByIndex(struct WORLDINFO_s *world, i32 a, i32 b, struct nuvec_s *
                     struct DOOR_s *bestDoor = NULL;
                     i32 i = 0;
                     do {
-                        if (((d->flags & 4) == 0) && d->level != -1 &&
-                            LDataList[d->level].unknown_0af == a) {
+                        if (((d->flags & 4) == 0) && d->level != -1 && LDataList[d->level].unknown_0af == a) {
                             f32 dist = NuVecDistSqr((NUVEC *)c, &d->pos, NULL);
                             count = w->ndoors;
                             if (dist < best) {
@@ -226,8 +224,7 @@ void *Door_FindByIndex(struct WORLDINFO_s *world, i32 a, i32 b, struct nuvec_s *
                 if (b == -1) {
                     i32 i = 0;
                     do {
-                        if (((d->flags & 4) == 0) && d->level != -1 &&
-                            LDataList[d->level].unknown_0af == a) {
+                        if (((d->flags & 4) == 0) && d->level != -1 && LDataList[d->level].unknown_0af == a) {
                             return d;
                         }
                         i++;
@@ -256,8 +253,7 @@ void *Door_FindByIndex(struct WORLDINFO_s *world, i32 a, i32 b, struct nuvec_s *
 }
 
 void *Door_FindByName(struct WORLDINFO_s *world, char *name) {
-    if (name != NULL && ((struct doorview_s *)world)->doors != NULL &&
-        ((struct doorview_s *)world)->ndoors > 0) {
+    if (name != NULL && ((struct doorview_s *)world)->doors != NULL && ((struct doorview_s *)world)->ndoors > 0) {
         i32 i = 0;
         struct DOOR_s *b = ((struct doorview_s *)world)->doors;
         do {

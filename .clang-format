@@ -6,3 +6,4 @@ AllowShortFunctionsOnASingleLine: None
 NamespaceIndentation: All
 IndentExternBlock: Indent
 IndentCaseLabels: true
+SortIncludes: Never

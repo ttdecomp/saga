@@ -1,6 +1,8 @@
 #include "legoapi/cheat.h"
 #include "legoapi/apiobject.h"
 
+#include <string.h>
+
 struct nuvec_s;
 struct nupad_s;
 
@@ -16,8 +18,8 @@ void GameAudio_PlaySfx(i32, nuvec_s *, i32, i32);
 void ConstantRumble(GameObject_s *, float, float);
 void NewRumble(nupad_s *, float, int);
 void GameCam_HitRoll();
-void *AddGameMessage(char *, nuvec_s *, float, nuvec_s *, float, unsigned char,
-                     unsigned char, unsigned char, u32, float);
+void *AddGameMessage(char *, nuvec_s *, float, nuvec_s *, float, unsigned char, unsigned char, unsigned char, u32,
+                     float);
 void NewRumbleAllPlayers(float, float, int, int);
 i32 qrand();
 
@@ -86,13 +88,11 @@ void Cheats_SetFlags() {
             if (powerupTime > 0.0009765625f) {
                 if (vehicleArea != 0) {
                     for (i32 i = 0; i < count; i++)
-                        if (CheatSystem.cheats[i].enabled ||
-                            (CheatSystem.cheats[i].flag & 0x20000))
+                        if (CheatSystem.cheats[i].enabled || (CheatSystem.cheats[i].flag & 0x20000))
                             flags |= CheatSystem.cheats[i].flag;
                 } else {
                     for (i32 i = 0; i < count; i++)
-                        if (CheatSystem.cheats[i].enabled ||
-                            (CheatSystem.cheats[i].flag & 0x10000))
+                        if (CheatSystem.cheats[i].enabled || (CheatSystem.cheats[i].flag & 0x10000))
                             flags |= CheatSystem.cheats[i].flag;
                 }
             } else {
@@ -120,12 +120,10 @@ void Cheat_StartPowerUp(nuvec_s *nuvec, GameObject_s *gameObject) {
         NewRumbleAllPlayers(0.7f, 0, 0, 0);
         Cheat_PowerUpTime = 2.0f;
     }
-    void *m = AddGameMessage(0, nuvec, 0.5f, nuvec, 0.75f, 0xff, 0xff, 0xff,
-                             0x4023, 1.0f);
+    void *m = AddGameMessage(0, nuvec, 0.5f, nuvec, 0.75f, 0xff, 0xff, 0xff, 0x4023, 1.0f);
     if (m)
         *((f32 *)((char *)m + 0xd4)) = 0.75f;
-    m = AddGameMessage(0, nuvec, 0.5f, nuvec, 0.25f, 0xff, 0xff, 0xff, 0x4023,
-                       1.0f);
+    m = AddGameMessage(0, nuvec, 0.5f, nuvec, 0.25f, 0xff, 0xff, 0xff, 0x4023, 1.0f);
     if (m)
         *((f32 *)((char *)m + 0xd4)) = 0.75f;
     GameAudio_PlaySfx(0x50, 0, 0, 0);
@@ -143,11 +141,9 @@ u32 Cheat_MultiplyScore(u32 s) {
 i32 Cheat_PowerUpActive(i32 index) {
     if (ONEPLAYERPOWERUPS != 0) {
         if ((u32)index <= 1) {
-            if (Player[0] && Player[0]->field_0xdec > 0.0009765625f &&
-                Player[0]->apiobj.field_0x27c == index)
+            if (Player[0] && Player[0]->field_0xdec > 0.0009765625f && Player[0]->apiobj.field_0x27c == index)
                 return 1;
-            if (Player[1] && Player[1]->field_0xdec > 0.0009765625f &&
-                Player[1]->apiobj.field_0x27c == index)
+            if (Player[1] && Player[1]->field_0xdec > 0.0009765625f && Player[1]->apiobj.field_0x27c == index)
                 return 1;
         }
         return 0;
@@ -168,7 +164,6 @@ void Cheat_GetOnOffBitfield(i32 *onoffs, i32 count) {
 
 void Cheat_SetOnOffBitfield(i32 *onoffs, i32 count) {
     for (i32 i = 0; i < count; i++) {
-        CheatSystem.cheats[i].enabled =
-            ((onoffs[i >> 5] >> i) & 1) ? 1 : 0;
+        CheatSystem.cheats[i].enabled = ((onoffs[i >> 5] >> i) & 1) ? 1 : 0;
     }
 }
