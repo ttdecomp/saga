@@ -64,24 +64,24 @@ struct nuvec_s;
 struct part_typedesc_s;
 struct variptr_u;
 
-struct ClassObjectList {};
+struct ClassObjectList;
 struct EdMember {};
 struct EdObjectNotifier {};
 struct EdSubSystem {};
-struct MemoryBuffer {};
-struct VuMtx {};
-struct VuVec {};
+struct MemoryBuffer;
+struct VuMtx;
+struct VuVec;
 struct burnset_s {};
 struct eduiiattr_s {};
-struct eduiitem_s {};
-struct eduimenu_s {};
-struct nucamera_s {};
-struct nugscn_s {};
-struct nugspline_s {};
-struct nupad_s {};
-struct nuvec_s {};
+struct eduiitem_s;
+struct eduimenu_s;
+struct nucamera_s;
+struct nugscn_s;
+struct nugspline_s;
+struct nupad_s;
+struct nuvec_s;
 struct part_typedesc_s {};
-struct variptr_u {};
+struct variptr_u;
 
 struct EdBitControl {
     void AddMenuItem(eduimenu_s *, EdRef *, void *);

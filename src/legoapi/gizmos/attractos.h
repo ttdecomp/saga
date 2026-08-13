@@ -4,8 +4,7 @@
 
 #ifdef __cplusplus
 
-typedef struct ATTRACTO_s {
-} ATTRACTO;
+typedef struct ATTRACTO_s ATTRACTO;
 
 ADDGIZMOTYPE *Attractos_RegisterGizmo(i32 type_id);
 

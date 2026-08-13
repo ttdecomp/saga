@@ -47,19 +47,19 @@ struct WORLDINFO_s;
 struct ePeerLeftReason;
 
 struct AIPATHNODE_s {};
-struct BOLT_s {};
-struct EdClass {};
-struct EdStream {};
-struct GIZFORCE_s {};
-struct GIZMOBLOWUP_s {};
-struct GameObject_s {};
+struct BOLT_s;
+struct EdClass;
+struct EdStream;
+struct GIZFORCE_s;
+struct GIZMOBLOWUP_s;
+struct GameObject_s;
 struct NOSContext {};
 struct NOSFilter {};
 struct NetAddress {};
 struct NetListenerInterface {};
 struct NetPeer {};
 struct ReplicatorData {};
-struct WORLDINFO_s {};
+struct WORLDINFO_s;
 struct ePeerLeftReason {};
 
 struct NuFileDeviceAndroidOBBType {

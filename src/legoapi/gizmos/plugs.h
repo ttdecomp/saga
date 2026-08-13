@@ -6,8 +6,7 @@ extern i32 plug_gizmotype_id;
 
 #ifdef __cplusplus
 
-typedef struct PLUG_s {
-} PLUG;
+typedef struct PLUG_s PLUG;
 
 ADDGIZMOTYPE *Plugs_RegisterGizmo(i32 type_id);
 

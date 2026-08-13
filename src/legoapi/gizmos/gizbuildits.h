@@ -6,8 +6,7 @@ extern i32 gizbuildit_gizmotype_id;
 
 #ifdef __cplusplus
 
-typedef struct GIZBUILDIT_s {
-} GIZBUILDIT;
+typedef struct GIZBUILDIT_s GIZBUILDIT;
 
 ADDGIZMOTYPE *GizBuildIts_RegisterGizmo(i32 type_id);
 

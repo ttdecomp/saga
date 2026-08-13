@@ -1,4 +1,5 @@
 #include "legoapi_types.h"
+#include "gamelib/util/gamelib_util_types.h"
 
 void TTNetwork::Broadcast(NetMessage, unsigned char) {
 }

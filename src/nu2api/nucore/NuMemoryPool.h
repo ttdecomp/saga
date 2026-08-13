@@ -18,7 +18,7 @@ class NuMemoryPool {
         FreeBlock *next;
     };
 
-    struct Page {};
+    struct Page;
 
   public:
     class IVisitor {

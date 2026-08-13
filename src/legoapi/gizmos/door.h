@@ -2,8 +2,7 @@
 
 #include "legoapi/gizmo.h"
 
-typedef struct DOOR_s {
-} DOOR;
+typedef struct DOOR_s DOOR;
 
 #ifdef __cplusplus
 

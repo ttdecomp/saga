@@ -1,4 +1,5 @@
 #include "legoapi_types.h"
+#include "nu2api/numath/nuvec.h"
 
 void Minicam_Update() {
 }

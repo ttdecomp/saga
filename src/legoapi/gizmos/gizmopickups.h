@@ -6,8 +6,7 @@ extern i32 gizmopickup_typeid;
 
 #ifdef __cplusplus
 
-typedef struct GIZMOPICKUP_s {
-} GIZMOPICKUP;
+typedef struct GIZMOPICKUP_s GIZMOPICKUP;
 
 ADDGIZMOTYPE *GizmoPickups_RegisterGizmo(i32 type_id);
 

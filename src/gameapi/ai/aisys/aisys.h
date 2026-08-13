@@ -90,17 +90,14 @@ typedef struct AISCRIPT_s {
     NULISTHDR action_macros;
 } AISCRIPT;
 
-typedef struct AIPATHCNX_s {
-} AIPATHCNX;
+typedef struct AIPATHCNX_s AIPATHCNX;
 
 typedef struct AIROUTE_s {
 } AIROUTE;
 
-typedef struct AIANTINODE_s {
-} AIANTINODE;
+typedef struct AIANTINODE_s AIANTINODE;
 
-typedef struct AIPATH_s {
-} AIPATH;
+typedef struct AIPATH_s AIPATH;
 
 typedef struct AIPATHSYS_s {
 } AIPATHSYS;
@@ -122,14 +119,12 @@ typedef struct AIPATHINFO_s {
     f32 width;
 } AIPATHINFO;
 
-typedef struct AILOCATOR_s {
-} AILOCATOR;
+typedef struct AILOCATOR_s AILOCATOR;
 
 typedef struct AILOCATORSET_s {
 } AILOCATORSET;
 
-typedef struct AIAREA_s {
-} AIAREA;
+typedef struct AIAREA_s AIAREA;
 
 typedef struct AISCRIPTPROCESSSTACK_s {
     f32 complex_params[4];
@@ -333,8 +328,7 @@ typedef struct AISYS_s {
     NUGSCN *scene;
 } AISYS;
 
-typedef struct AIPACKET_s {
-} AIPACKET;
+typedef struct AIPACKET_s AIPACKET;
 
 typedef i32 AIACTIONFN(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char **, i32, i32, f32);
 typedef f32 AICONDITIONFN(AISYS *, AISCRIPTPROCESS *, AIPACKET *, char *, void *);

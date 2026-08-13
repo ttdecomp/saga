@@ -6,8 +6,7 @@ extern i32 techno_gizmotype_id;
 
 #ifdef __cplusplus
 
-typedef struct TECHNO_s {
-} TECHNO;
+typedef struct TECHNO_s TECHNO;
 
 ADDGIZMOTYPE *Technos_RegisterGizmo(i32 type_id);
 

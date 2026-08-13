@@ -22,21 +22,21 @@ struct rndrstream_s;
 struct uv1debdata;
 struct variptr_u;
 
-struct PartHeader {};
+struct PartHeader;
 struct nugobj_s {};
-struct nugscn_s {};
-struct numtl_s {};
-struct numtx_s {};
-struct nushaderobject_s {};
-struct nushaderobjectglsl_s {};
-struct nushaderobjectkey_s {};
+struct nugscn_s;
+struct numtl_s;
+struct numtx_s;
+struct nushaderobject_s;
+struct nushaderobjectglsl_s;
+struct nushaderobjectkey_s;
 struct nutexanim_s {};
 struct nutexanimprog_s {};
-struct nuvec4_s {};
-struct nuvec_s {};
-struct rndrstream_s {};
-struct uv1debdata {};
-struct variptr_u {};
+struct nuvec4_s;
+struct nuvec_s;
+struct rndrstream_s;
+struct uv1debdata;
+struct variptr_u;
 
 struct NuScreen {
     void Destroy();

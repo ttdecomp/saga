@@ -4,7 +4,7 @@
 
 #include "nu2api/nucore/common.h"
 
-struct nushaderobjectkey_s {};
+struct nushaderobjectkey_s;
 
 typedef struct nushaderobjectkey_s NUSHADEROBJECTKEY;
 

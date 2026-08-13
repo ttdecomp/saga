@@ -1,4 +1,5 @@
 #include "nu2api_nucore_types.h"
+#include "nu2api/nu3d/nutex.h"
 
 void NuMemAlloc(i32) {
 }

@@ -1,4 +1,5 @@
 #include "legoapi_types.h"
+#include "nu2api/nu3d/nutex.h"
 
 void AddGameMsg(ADDGAMEMSG *) {
 }

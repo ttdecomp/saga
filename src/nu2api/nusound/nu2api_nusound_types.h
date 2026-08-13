@@ -6,12 +6,12 @@
 
 #include "nu2api/nucore/nuelist.hpp"
 #include "nu2api/nucore/nuvuvec.hpp"
+#include "nu2api/nusound/nusound_system.hpp"
 #include "nu2api/nusound/nusound_weakptr.hpp"
 
 class NuSoundBufferCallback;
 
 struct FileHeaderWAV;
-struct NUFILETYPE;
 struct NuSoundAndroid;
 struct NuSoundBuffer;
 struct NuSoundBus;
@@ -52,19 +52,12 @@ struct WORLDINFO_s;
 struct nuvec_s;
 
 struct FileHeaderWAV {};
-struct NUFILETYPE {};
 struct NuSoundMixMatrix {};
-struct NuSoundOutOfMemCallback {};
 struct NuSoundVoiceFactory {};
-struct OPTIONSSAVE_s {};
-struct WORLDINFO_s {};
-struct nuvec_s {};
+struct OPTIONSSAVE_s;
+struct WORLDINFO_s;
+struct nuvec_s;
 
-struct NuSoundEffect {
-    struct EffectProcessStage {};
-    struct EffectType {};
-    virtual ~NuSoundEffect();
-};
 struct NuSoundBuffer {
     void GetCurrentContext();
     void GetSegmentAddress(u32, u32, u32) const;
@@ -159,80 +152,6 @@ struct NuSoundEffectPitchRamp {
     void ProcessVoice(NuSoundVoice *, float);
     void SetParameters(float, float, NuSoundEffectPitchRamp::FinishState);
     virtual ~NuSoundEffectPitchRamp();
-};
-struct NuSoundSource {
-    struct FeedType {};
-    void VoiceReference();
-    void VoiceRelease();
-    virtual ~NuSoundSource();
-};
-struct NuSoundSystem {
-    struct AudioChannel {};
-    struct ChannelConfig {};
-    struct CurveData {};
-    struct DownmixType {};
-    struct FalloffType {};
-    struct FileType {};
-    struct MemoryDiscipline {};
-    struct SurroundMode {};
-    void AddListener(NuSoundListener *);
-    void AddRoutingTable(NuSoundRoutingTable *);
-    void AmplitudeTodB(float);
-    void CalculateCrossfadeHeight(NuSoundSystem::CurveData const &, float) const;
-    void CreateCrossfadeCurve(u32);
-    void CreateDecoder(NuSoundSource *);
-    void CreateEffect(NuSoundEffect::EffectType);
-    void CreateVoice(NuSoundSource *, bool);
-    void DefragmentSampleMemory();
-    void DetermineFileType(NUFILETYPE);
-    void Disable();
-    void FileTypeSupported(NuSoundSystem::FileType);
-    void Get();
-    void GetAllocdMemory(NuSoundSystem::MemoryDiscipline);
-    void GetBufferAlignment();
-    void GetClosestSupportedConfig(i32);
-    void GetCrossfadeCurve(u32) const;
-    void GetDefaultFileType(NuSoundSource::FeedType);
-    void GetDefaultRoutingTable();
-    void GetGfxMemorySize();
-    void GetLanguageString(bool);
-    void GetLargestMemoryFragment(NuSoundSystem::MemoryDiscipline);
-    void GetListeners();
-    void GetNumAvailableOutputDevices();
-    void GetOldestVoice(NuSoundSample *, float &);
-    void GetOutputChannelConfig();
-    void GetPeakAllocdMemory(NuSoundSystem::MemoryDiscipline);
-    void GetPlatformString();
-    void GetQuietestVoice(NuSoundSample *, float &);
-    void GetRoutingTable(char const *);
-    void GetTotalMemory(NuSoundSystem::MemoryDiscipline);
-    NuSoundListener *GetNearestRealListener(NuEList<NuSoundListener, DefaultElist> const &, VuVec const &);
-    NuSoundListener *GetNearestFocusListener(NuEList<NuSoundListener, DefaultElist> const &, VuVec const &, float &);
-    void LoadSample(NuSoundSample *, void *, i32, NuSoundOutOfMemCallback *);
-    void PauseAllVoices();
-    void PauseVoices(i32);
-    void ReAllocMemory(NuSoundSystem::MemoryDiscipline, u32, u32);
-    void ReleaseBus(NuSoundBus *);
-    void ReleaseCrossfadeCurve(u32);
-    void ReleaseDecoder(NuSoundDecoder *);
-    void ReleaseEffect(NuSoundEffect *);
-    void ReleaseSample(NuSoundSample *);
-    void ReleaseVoice(NuSoundVoice *);
-    void RemoveListener(NuSoundListener *);
-    void ResumeAllVoices();
-    void ResumeVoices(i32);
-    void SetDefaultRoutingTable(NuSoundRoutingTable *);
-    void SetGfxMemorySize(u32);
-    void SetMainThreadID(NuThread *);
-    void Shutdown();
-    void SourceRequiresDecoder(NuSoundSource *);
-    void StopAllVoices();
-    void StopVoices(NuSoundSource const &);
-    void StopVoices(i32);
-    void UnloadAllSamples();
-    void UnloadSample(NuSoundSample *);
-    void Update(float);
-    void dBToAmplitude(float);
 };
 struct NuSoundHandle {
     void AddEffect(NuSoundEffect *);
@@ -336,48 +255,6 @@ struct NuSoundLoaderWAV {
     void SeekPCMSample(u64);
     void SeekTime(double);
     virtual ~NuSoundLoaderWAV();
-};
-struct NuSoundMemoryBuffer {
-    void BeginCriticalSection();
-    void EndCriticalSection();
-    void GetAddress();
-    void GetLockReason();
-    void GetNext();
-    void GetPrev();
-    void GetSize();
-    void IsAlloced();
-    void IsLocked();
-    NuSoundMemoryBuffer();
-    void SetAlloced(bool);
-    void SetPrev(NuSoundMemoryBuffer *);
-    ~NuSoundMemoryBuffer();
-};
-struct NuSoundMemoryManager {
-    void AllocAddress(u32);
-    void CheckAndMergeFreeBufferNext(NuSoundMemoryBuffer *);
-    void CheckAndMergeFreeBufferPrev(NuSoundMemoryBuffer *);
-    void CheckList();
-    void CountAdjacentFreeBuffers(NuSoundMemoryBuffer *);
-    void Defragment(u32);
-    void EnableDebug(bool);
-    void EnableDefragOnFree(bool);
-    void Free(NuSoundMemoryBuffer *);
-    void FreeAddress(void *);
-    void GetFree();
-    void GetSize();
-    void GetUsed();
-    void MergeFreeBuffer(NuSoundMemoryBuffer *);
-    void MoveLargestTrailingBufferIntoBuffer(NuSoundMemoryBuffer *, NuSoundMemoryBuffer **, NuSoundMemoryBuffer **);
-    NuSoundMemoryManager();
-    void OutputList();
-    void OutputMap();
-    void PushFreeBuffer(NuSoundMemoryBuffer *);
-    void Release();
-    void RenderMap(float, float, float);
-    void SplitFreeBuffer(NuSoundMemoryBuffer *, u32, NuSoundMemoryBuffer **);
-    void SwapOrMergeAdjacentBuffers(NuSoundMemoryBuffer *);
-    void SwapSimilarBuffers(NuSoundMemoryBuffer *, NuSoundMemoryBuffer *);
-    ~NuSoundMemoryManager();
 };
 struct NuSoundMixer {
     struct OutputLayout {};

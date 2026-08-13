@@ -5,25 +5,25 @@ A type is a DEFINITION (as opposed to a forward declaration) when its tag is
 followed by a body, e.g.:
 
     struct Foo { ... };              -- definition
-    struct Foo {};                   -- opaque placeholder (IGNORED)
-    struct Foo { };                  -- opaque placeholder (IGNORED)
+    struct Foo {};                   -- definition (empty placeholder)
+    struct Foo { };                  -- definition (empty placeholder)
     typedef struct Foo { ... } Foo;  -- definition
-    struct Foo;                      -- forward declaration (IGNORED)
+    typedef struct { ... } Foo;      -- definition (anonymous, name = alias)
+    struct Foo;                      -- forward declaration (ONLY thing ignored)
+
+An empty body (``struct Foo {};``) is a closed definition, not a declaration:
+two of them in different files are a duplicate definition (a TU including both
+fails with a redefinition), and one shadowing a real ``struct Foo {...}`` is a
+hazard. Only a true forward declaration (``struct Foo;``) is ignored.
 
 Defining the same tag in two different translation units is not a compiler
 error (they never see each other), but it is a maintenance hazard: a future
 file that includes both definitions will fail to compile with an ODR
-redefinition, and the "opaque placeholder shadowing a real type" pattern hides
-the canonical definition. This script flags every tag that has more than one
+redefinition, and an opaque placeholder shadowing a real type hides the
+canonical definition. This script flags every tag that has more than one
 definition anywhere in the tree, so those duplicates can be consolidated.
 
 Exit code is 0 when no duplicate definitions are found, 1 otherwise.
-
-Genuine duplicates that cannot be consolidated (e.g. the same tag legitimately
-names different types in two modules that are never co-compiled, where renaming
-would break symbol parity with the original binary) can be listed -- one
-qualified tag per line, '#' comments and blank lines ignored -- in
-scripts/duplicate_definitions_ignore.txt (or a file passed via --ignore).
 """
 
 import argparse
@@ -32,9 +32,6 @@ import re
 import sys
 
 SRC_EXTENSIONS = {".h", ".hh", ".hpp", ".hxx", ".c", ".cc", ".cpp", ".cxx"}
-
-_IGNORE_DEFAULT = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                               "duplicate_definitions_ignore.txt")
 
 # Tag kinds and their keywords. enum needs care: "enum Foo : int { ... }".
 KEYWORDS = ("struct", "class", "union")
@@ -90,11 +87,13 @@ def strip_comments(text):
 
 
 def find_definitions(text):
-    """Yield (kind, qualified_tag) for every type definition found in text.
+    """Yield (kind, qualified_tag, is_empty) for every definition found.
 
-    Tracks namespace/class/union/enum scope via brace depth so that, e.g.
-    ``NuMemoryPool::IVisitor`` and ``NuMemoryManager::IVisitor`` are treated as
-    distinct types instead of a duplicate.
+    ``is_empty`` is True when the body is empty (``struct X {};``), which is an
+    empty placeholder definition. Only a forward declaration (``struct X;``) is
+    not yielded. Tracks namespace/class/union/enum scope via brace depth so
+    that, e.g. ``NuMemoryPool::IVisitor`` and ``NuMemoryManager::IVisitor`` are
+    treated as distinct types instead of a duplicate.
     """
     text = strip_comments(text)
     n = len(text)
@@ -128,11 +127,10 @@ def find_definitions(text):
             tag = m.group("tag")
             i = m.end()
             if kw in _TYPE_KW and tag:
-                # An empty body `struct X {};` is an opaque placeholder (a
-                # closed-brace forward declaration), not a real definition, so
-                # it is not recorded. Shadowing placeholders are load-bearing
-                # in this codebase and never coexist with the real definition
-                # in one TU; recording them only masks the genuine duplicates.
+                # Scan the body between '{' and its matching '}'. An empty body
+                # (``struct X {};``) is an opaque placeholder: it is a closed
+                # definition, not a forward declaration, so it can still clash
+                # with a real definition -- report it as a placeholder.
                 j = m.end()
                 bd = 1
                 while j < n:
@@ -143,9 +141,8 @@ def find_definitions(text):
                         if bd == 0:
                             break
                     j += 1
-                if text[m.end():j].strip() != "":
-                    qname = "::".join(scopes + [tag])
-                    defs.append((kw, qname))
+                qname = "::".join(scopes + [tag])
+                defs.append((kw, qname, text[m.end() : j].strip() == ""))
                 scopes.append(tag)
                 closes.append(depth)  # this scope closes when depth returns here
             elif kw == "namespace":
@@ -153,8 +150,32 @@ def find_definitions(text):
                 scopes.append(tag if tag else "(anonymous)")
                 closes.append(depth)
             else:
-                # a type with no tag (e.g. anonymous enum): no def to record,
-                # but keep scopes/closes parallel so pop stays in sync
+                # a type with no tag. For an anonymous ``typedef struct {...} N;``
+                # the trailing typedef alias is the real name -- record it so a
+                # ``struct N {...}`` definition elsewhere is caught as a dup.
+                if kw in _TYPE_KW:
+                    prefix = text[max(0, m.start() - 16) : m.start()]
+                    if re.search(r"\btypedef\s*$", prefix):
+                        j = m.end()
+                        bd = 1
+                        while j < n:
+                            if text[j] == "{":
+                                bd += 1
+                            elif text[j] == "}":
+                                bd -= 1
+                                if bd == 0:
+                                    break
+                            j += 1
+                        k = j + 1
+                        tail = ""
+                        while k < n and text[k] != ";":
+                            tail += text[k]
+                            k += 1
+                        for alias in re.findall(r"[A-Za-z_][A-Za-z0-9_]*", tail):
+                            defs.append(
+                                (kw, "::".join(scopes + [alias]), text[m.end() : j].strip() == "")
+                            )
+                # keep scopes/closes parallel so pop stays in sync
                 scopes.append("(anon)")
                 closes.append(depth)
             depth += 1  # we just consumed '{'
@@ -164,37 +185,15 @@ def find_definitions(text):
     return defs
 
 
-def load_ignore(path):
-    """Load ignored qualified tag names from a file (blank lines and '#' comments)."""
-    if not path or not os.path.isfile(path):
-        return set()
-    ignored = set()
-    with open(path, "r", encoding="utf-8", errors="replace") as fh:
-        for line in fh:
-            s = line.strip()
-            if not s or s.startswith("#"):
-                continue
-            ignored.add(s)
-    return ignored
-
-
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("src", help="source root directory to scan (e.g. src/)")
-    ap.add_argument(
-        "--ignore",
-        default=_IGNORE_DEFAULT,
-        help="file of qualified tag names to treat as intentional (default: "
-        "scripts/duplicate_definitions_ignore.txt)",
-    )
     ap.add_argument(
         "--verbose",
         action="store_true",
         help="print every definition found, not just duplicates",
     )
     args = ap.parse_args()
-
-    ignored = load_ignore(args.ignore)
 
     root = os.path.abspath(args.src)
     if not os.path.isdir(root):
@@ -204,6 +203,7 @@ def main():
     # tag -> dict(file -> count)
     by_tag = {}
     total = 0
+    empty = {}  # tag -> True if any definition has an empty body
     for dirpath, _dirnames, filenames in os.walk(root):
         for fn in filenames:
             ext = os.path.splitext(fn)[1].lower()
@@ -217,23 +217,19 @@ def main():
                 print(f"warning: cannot read {path}: {e}", file=sys.stderr)
                 continue
             defs = find_definitions(text)
-            seen_in_file = set()
-            for kw, tag in defs:
+            for kw, tag, is_empty in defs:
                 total += 1
                 key = (kw, tag)
+                if is_empty:
+                    empty[key] = True
                 entry = by_tag.setdefault(key, {})
                 entry[path] = entry.get(path, 0) + 1
-                seen_in_file.add(key)
 
     if args.verbose:
         print(f"scanned {total} definitions\n")
 
     duplicates = {
-        key: files
-        for key, files in by_tag.items()
-        if sum(files.values()) > 1
-        and key[1] not in ignored
-        and f"{key[0]} {key[1]}" not in ignored
+        key: files for key, files in by_tag.items() if sum(files.values()) > 1
     }
 
     if not duplicates:
@@ -241,10 +237,11 @@ def main():
         return 0
 
     print("Found type(s) defined in more than one place:\n")
-    for (kw, tag) in sorted(duplicates, key=lambda k: k[1]):
+    for kw, tag in sorted(duplicates, key=lambda k: k[1]):
         files = duplicates[(kw, tag)]
-        total_defs = sum(files.values())
-        print(f"  {kw} {tag}  ({total_defs} definitions)")
+        n = sum(files.values())
+        empty_mark = "  [empty placeholder(s)]" if (kw, tag) in empty else ""
+        print(f"  {kw} {tag}  ({n} definitions){empty_mark}")
         for path, count in sorted(files.items()):
             rel = os.path.relpath(path, os.path.dirname(root))
             print(f"      {rel}:{count}")

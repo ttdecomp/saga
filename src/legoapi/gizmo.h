@@ -23,9 +23,7 @@ typedef struct GIZMOSYS_s {
     u8 flags;
 } GIZMOSYS;
 
-typedef struct BOLT_s {
-
-} BOLT; // defined here for now, TODO: move to its own file
+typedef struct BOLT_s BOLT; // defined here for now, TODO: move to its own file
 
 typedef i32 (*GIZMOGETMAXGIZMOSFN)(void *);
 typedef void (*GIZMOADDGIZMOSFN)(GIZMOSYS *gizmo_sys, i32, void *, void *);

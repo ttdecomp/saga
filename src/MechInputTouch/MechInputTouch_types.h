@@ -75,24 +75,24 @@ struct VuVec;
 struct WORLDINFO_s;
 struct nuvec_s;
 
-struct AIPATHCNX_s {};
-struct AIPATH_s {};
-struct AISYS_s {};
+struct AIPATHCNX_s;
+struct AIPATH_s;
+struct AISYS_s;
 struct JumpTriggerPacket {};
 struct MechAutoJumpConnection {};
 struct MechInputTouchGestureTracker {};
 struct MechTouchUIElement {};
-struct NuInputTouch {};
-struct NuInputTouchData {};
+struct NuInputTouch;
+struct NuInputTouchData;
 struct NuVec2 {};
-struct NuVirtualTouchDevice {};
+struct NuVirtualTouchDevice;
 struct ThingProcessData {};
 struct ThingRenderData {};
 struct ThingResetData {};
 struct TouchHolder {};
-struct VuVec {};
-struct WORLDINFO_s {};
-struct nuvec_s {};
+struct VuVec;
+struct WORLDINFO_s;
+struct nuvec_s;
 
 struct MechAddon {
     struct ProcessStage {};

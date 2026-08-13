@@ -6,8 +6,7 @@ extern i32 teleport_gizmotype_id;
 
 #ifdef __cplusplus
 
-typedef struct TELEPORT_s {
-} TELEPORT;
+typedef struct TELEPORT_s TELEPORT;
 
 ADDGIZMOTYPE *Teleport_RegisterGizmo(i32 type_id);
 

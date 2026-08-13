@@ -6,8 +6,7 @@ extern i32 force_gizmotype_id;
 
 #ifdef __cplusplus
 
-typedef struct GIZFORCE_s {
-} GIZFORCE;
+typedef struct GIZFORCE_s GIZFORCE;
 
 ADDGIZMOTYPE *GizForce_RegisterGizmo(i32 type_id);
 

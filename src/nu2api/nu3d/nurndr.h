@@ -5,8 +5,7 @@
 
 #define NURNDR_STREAM_MAX_BUFFERS 2
 
-typedef struct rndrstream_s {
-} RNDRSTREAM;
+typedef struct rndrstream_s RNDRSTREAM;
 
 typedef i32 NUCOLOUR32;
 

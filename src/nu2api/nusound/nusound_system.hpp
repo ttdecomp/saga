@@ -2,6 +2,8 @@
 
 #include "nu2api/nucore/NuMemoryManager.h"
 #include "nu2api/nucore/common.h"
+#include "nu2api/nucore/nuelist.hpp"
+#include "nu2api/nucore/nuvuvec.hpp"
 #include "nu2api/nusound/nusound_memorymanager.hpp"
 #include "nu2api/nusound/nusound_source.hpp"
 
@@ -25,6 +27,7 @@ class NuSoundEffect {
   public:
     struct EffectType {};
     struct EffectProcessStage {};
+    virtual ~NuSoundEffect();
 };
 
 class NuSoundSystem {
@@ -168,6 +171,8 @@ class NuSoundSystem {
     void GetLanguageString(bool);
     void GetLargestMemoryFragment(NuSoundSystem::MemoryDiscipline);
     void GetListeners();
+    NuSoundListener *GetNearestRealListener(NuEList<NuSoundListener, DefaultElist> const &, VuVec const &);
+    NuSoundListener *GetNearestFocusListener(NuEList<NuSoundListener, DefaultElist> const &, VuVec const &, float &);
     void GetNumAvailableOutputDevices();
     void GetOldestVoice(NuSoundSample *, float &);
     void GetOutputChannelConfig();

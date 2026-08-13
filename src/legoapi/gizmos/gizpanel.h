@@ -6,8 +6,7 @@ extern i32 gizpanel_gizmotype_id;
 
 #ifdef __cplusplus
 
-typedef struct GIZPANEL_s {
-} GIZPANEL;
+typedef struct GIZPANEL_s GIZPANEL;
 
 ADDGIZMOTYPE *GizPanel_RegisterGizmo(i32 type_id);
 

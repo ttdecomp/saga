@@ -1,4 +1,5 @@
 #include "nu2api/nusound/nusound_loader.hpp"
+#include "nu2api/nusound/nusound_system.hpp"
 
 #include "nu2api/numath/nufloat.h"
 
