@@ -21,13 +21,11 @@ i32 AREA_DEFAULTCHALLENGETIME = 0x258;
 
 AREADATA *Area_FindByName(char *name, i32 *indexDest) {
     for (i32 i = 0; i < AREACOUNT; i++) {
-        AREADATA *area = &ADataList[i];
-
-        if (NuStrICmp(area->file, name) == 0) {
+        if (NuStrICmp(ADataList[i].file, name) == 0) {
             if (indexDest != NULL) {
                 *indexDest = i;
             }
-            return area;
+            return &ADataList[i];
         }
     }
 
@@ -414,10 +412,15 @@ AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferE
 }
 
 void Areas_FixUp(AREAFIXUP *fixup) {
+    struct FIXUP {
+        char *name;
+        AREADATA **area;
+    };
+
     if (fixup != NULL) {
-        for (; fixup->name != NULL; fixup++) {
-            if (fixup->area != NULL) {
-                *fixup->area = Area_FindByName(fixup->name, NULL);
+        for (FIXUP *f = (FIXUP *)fixup; f->name != NULL; f++) {
+            if (f->area != NULL) {
+                *f->area = Area_FindByName(f->name, NULL);
             }
         }
     }
@@ -440,17 +443,31 @@ struct LEVELDATA_s *Area_FindStatusLevel(AREADATA *area, i32 *indexDest) {
         return NULL;
     }
 
+    struct LEV {
+        byte pad0[0x64];
+        u32 flags;
+        byte pad1[0xaf - 0x68];
+        u8 unknown_0af;
+        byte pad2[0xd4 - 0xb0];
+        i8 unknown_0d4;
+        byte pad3[0x144 - 0xd5];
+    };
+
+    i32 bound = (u32)area->field28_0x7d * 2 - 2;
     levelIdx = (i32)area->field2_0x60[0];
     i = 0;
-    level = &LDataList[levelIdx];
+    level = (LEVELDATA *)&((LEV *)LDataList)[levelIdx];
 
-    while ((((u8 *)&level->flags)[1] & 4) == 0) {
-        if (i == (u32)area->field28_0x7d * 2 - 2) {
+    while (1) {
+        if ((((u8 *)&level->flags)[1] & 4) != 0) {
+            break;
+        }
+        if (i == bound) {
             return NULL;
         }
         levelIdx = (i32) * (i16 *)((u8 *)area->field2_0x60 + i + 2);
         i += 2;
-        level = &LDataList[levelIdx];
+        level = (LEVELDATA *)&((LEV *)LDataList)[levelIdx];
     }
 
     if (indexDest != NULL) {
@@ -466,20 +483,30 @@ LEVELDATA *Area_FindNextPlayLevel(i32 levelIdx) {
     i32 areaLevelIdx;
     LEVELDATA *result;
 
-    level = &LDataList[levelIdx];
-    areaIdx = level->unknown_0af;
-    areaLevelIdx = (i8)level->unknown_0d4;
+    struct LEV {
+        byte pad0[0x64];
+        u32 flags;
+        byte pad1[0xaf - 0x68];
+        u8 unknown_0af;
+        byte pad2[0xd4 - 0xb0];
+        i8 unknown_0d4;
+        byte pad3[0x144 - 0xd5];
+    };
+
+    level = (LEVELDATA *)&((LEV *)LDataList)[levelIdx];
+    areaIdx = ((LEV *)level)->unknown_0af;
+    areaLevelIdx = (i8)((LEV *)level)->unknown_0d4;
     result = level;
 
     if (areaIdx != 0xff) {
         if (areaLevelIdx < (i32)(ADataList[areaIdx].field28_0x7d - 1)) {
-            result = &LDataList[ADataList[areaIdx].field2_0x60[areaLevelIdx]];
-            if ((result->flags & (LEVEL_INTRO | LEVEL_MIDTRO | LEVEL_OUTRO)) != 0) {
+            result = (LEVELDATA *)&((LEV *)LDataList)[ADataList[areaIdx].field2_0x60[areaLevelIdx]];
+            if (((u8 *)&result->flags)[0] & (LEVEL_INTRO | LEVEL_MIDTRO | LEVEL_OUTRO)) {
                 while (areaLevelIdx != (i32)ADataList[areaIdx].field28_0x7d - 2) {
                     areaLevelIdx++;
-                    if ((LDataList[ADataList[areaIdx].field2_0x60[areaLevelIdx]].flags &
+                    if ((((u8 *)&((LEV *)LDataList)[ADataList[areaIdx].field2_0x60[areaLevelIdx]].flags)[0] &
                          (LEVEL_INTRO | LEVEL_MIDTRO | LEVEL_OUTRO)) == 0) {
-                        return &LDataList[ADataList[areaIdx].field2_0x60[areaLevelIdx]];
+                        return (LEVELDATA *)&((LEV *)LDataList)[ADataList[areaIdx].field2_0x60[areaLevelIdx]];
                     }
                 }
                 return level;
@@ -491,21 +518,12 @@ LEVELDATA *Area_FindNextPlayLevel(i32 levelIdx) {
 
 i32 AreaFromMiniKitID(i32 minikitId) {
     i32 i;
-    AREADATA *area;
 
-    if (AREACOUNT < 1) {
-        return -1;
-    }
-
-    i = 0;
-    area = ADataList;
-    while (area->minikit_id != minikitId) {
-        i++;
-        if (i == AREACOUNT) {
-            return -1;
+    for (i = 0; i < AREACOUNT; i++) {
+        if (ADataList[i].minikit_id == minikitId) {
+            return i;
         }
-        area++;
     }
 
-    return i;
+    return -1;
 }
