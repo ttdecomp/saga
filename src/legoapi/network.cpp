@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include "legoapi_types.h"
 #include "gamelib/util/gamelib_util_types.h"
 
@@ -50,4 +51,7 @@ void TTNetwork::Update() {
 }
 
 TTNetwork::~TTNetwork() {
+}
+
+static __used__ void NOSGetGuid() {
 }

@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include "legoapi/world_shared.h"
 
 #include <stdio.h>
@@ -200,3 +201,13 @@ extern "C" {
         return NULL;
     }
 } // extern "C"
+
+struct instNUGCUTSCENE_s;
+struct NUGCUTLOCATORSYS_s;
+struct instNUGCUTLOCATOR_s;
+struct NUGCUTLOCATOR_s;
+struct numtx_s;
+static __used__ void LocatorFunction_Blaster(instNUGCUTSCENE_s *, NUGCUTLOCATORSYS_s *,
+                                                          instNUGCUTLOCATOR_s *, NUGCUTLOCATOR_s *,
+                                                          float, numtx_s *, int) {
+}

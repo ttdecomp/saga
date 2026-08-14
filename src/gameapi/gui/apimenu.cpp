@@ -231,3 +231,54 @@ void MenuLoadTechnicalStrings(char *filepath, char *language, VARIPTR *buf, VARI
     apitxt_NOTENOUGHSPACE = (char *)NuStringTableGetByName("PC_NOTENOUGHSPACE");
     apitxt_CONTROLLERREMOVED = (char *)NuStringTableGetByName("PC_CONTROLLERREMOVED");
 }
+
+static __used__ void MenuDrawShop(MENU *) {
+}
+static __used__ void MenuDrawTitles(MENU *) {
+}
+static __used__ void MenuUpdateShop(MENU *) {
+}
+static __used__ void MenuUpdateTitles(MENU *) {
+}
+static __used__ void MenuDrawMiniKit(MENU *) {
+}
+static __used__ void MenuEnterTitles(MENU *) {
+}
+static __used__ void MenuUpdateMiniKit(MENU *) {
+}
+static __used__ void MenuDrawBonusWin(MENU *) {
+}
+static __used__ void MenuDrawPauseCut(MENU *) {
+}
+static __used__ void MenuDrawHowToPlay(MENU *) {
+}
+static __used__ void MenuDrawPauseExit(MENU *) {
+}
+static __used__ void MenuDrawPauseMain(MENU *) {
+}
+static __used__ void MenuExitHowToPlay(MENU *) {
+}
+static __used__ void MenuInitHowToPlay(MENU *) {
+}
+static __used__ void MenuUpdateBonusWin(MENU *) {
+}
+static __used__ void MenuUpdatePauseCut(MENU *) {
+}
+static __used__ void MenuUpdateHowToPlay(MENU *) {
+}
+static __used__ void MenuUpdatePauseExit(MENU *) {
+}
+static __used__ void MenuUpdatePauseMain(MENU *) {
+}
+static __used__ void MenuDrawPauseRestart(MENU *) {
+}
+static __used__ void MenuDrawBonusComplete(MENU *) {
+}
+static __used__ void MenuDrawSelectLanguage(MENU *) {
+}
+static __used__ void MenuUpdatePauseRestart(MENU *) {
+}
+static __used__ void MenuUpdateBonusComplete(MENU *) {
+}
+static __used__ void MenuUpdateSelectLanguage(MENU *) {
+}

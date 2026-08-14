@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include "legoapi_types.h"
 
 void ov_bitrate(OggVorbis_File *, i32) {
@@ -278,4 +279,23 @@ void ov_clear(OggVorbis_File *) {
 }
 
 void ov_fopen(char const *, OggVorbis_File *) {
+}
+
+static __used__ void mapping0_free_info(void *) {
+}
+
+static __used__ void mapping0_forward(vorbis_block *) {
+}
+
+static __used__ void mapping0_inverse(vorbis_block *, void *) {
+}
+
+static __used__ void mapping0_pack(vorbis_info *, void *, oggpack_buffer *) {
+}
+
+static __used__ void mapping0_unpack(vorbis_info *, oggpack_buffer *) {
+}
+
+static __used__ int local_book_besterror(codebook *, int *) {
+    return 0;
 }

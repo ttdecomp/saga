@@ -449,3 +449,16 @@ NuNetEmu::EmuPacket::~EmuPacket() {
 
 void NuNetEmu::PackStats::Draw(float, float, float, float, NetSmallStats::eInfo) const {
 }
+
+static void NuErrorFunction(char *, ...) {
+}
+
+static void NuWarningFunction(char *, ...) {
+}
+
+static void NuDebugMsgFunction(char *, ...) {
+}
+
+static i32 NuDebugMsgFunctionTTY(i32, char *, ...) {
+    return 0;
+}

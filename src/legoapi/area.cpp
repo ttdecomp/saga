@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include "legoapi/area.h"
 
 #include <stdlib.h>
@@ -516,4 +517,8 @@ i32 AreaFromMiniKitID(i32 minikitId) {
     }
 
     return -1;
+}
+
+struct bgprocinfo_s;
+static __used__ void LoadAreaData(bgprocinfo_s *) {
 }

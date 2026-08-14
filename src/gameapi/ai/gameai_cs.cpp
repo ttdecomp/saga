@@ -1,0 +1,45 @@
+#include "decomp.h"
+struct nufpar_s;
+
+static __used__ void CS_blobshadow_alpha(nufpar_s *) { }
+static __used__ void CS_blobshadow_fadefar(nufpar_s *) { }
+static __used__ void CS_blobshadow_fadenear(nufpar_s *) { }
+static __used__ void CS_burnout_flare(nufpar_s *) { }
+static __used__ void CS_burnout_intensity(nufpar_s *) { }
+static __used__ void CS_burnout_threshold(nufpar_s *) { }
+static __used__ void CS_cam_only(nufpar_s *) { }
+static __used__ void CS_cutsceneplayerobj(nufpar_s *) { }
+static __used__ void CS_deb_page(nufpar_s *) { }
+static __used__ void CS_draw_gizmo_sys(nufpar_s *) { }
+static __used__ void CS_draw_world(nufpar_s *) { }
+static __used__ void CS_fadefog(nufpar_s *) { }
+static __used__ void CS_farclip(nufpar_s *) { }
+static __used__ void CS_fpsec(nufpar_s *) { }
+static __used__ void CS_go_through_door(nufpar_s *) { }
+static __used__ void CS_goto_level(nufpar_s *) { }
+static __used__ void CS_hold_audio(nufpar_s *) { }
+static __used__ void CS_in_game(nufpar_s *) { }
+static __used__ void CS_is_outro(nufpar_s *) { }
+static __used__ void CS_level_intro(nufpar_s *) { }
+static __used__ void CS_looping(nufpar_s *) { }
+static __used__ void CS_lowend_disthack(nufpar_s *) { }
+static __used__ void CS_lowend_lowbits(nufpar_s *) { }
+static __used__ void CS_nearclip(nufpar_s *) { }
+static __used__ void CS_new_mode(nufpar_s *) { }
+static __used__ void CS_next_cut_scene(nufpar_s *) { }
+static __used__ void CS_nextcutscene_inplayablelevel(nufpar_s *) { }
+static __used__ void CS_no_fog(nufpar_s *) { }
+static __used__ void CS_play_sfx(nufpar_s *) { }
+static __used__ void CS_playonce(nufpar_s *) { }
+static __used__ void CS_reflect_range(nufpar_s *) { }
+static __used__ void CS_render_group(nufpar_s *) { }
+static __used__ void CS_replace_players(nufpar_s *) { }
+static __used__ void CS_sfx(nufpar_s *) { }
+static __used__ void CS_skip_use_goto(nufpar_s *) { }
+static __used__ void CS_snap_out(nufpar_s *) { }
+static __used__ void CS_start_cam(nufpar_s *) { }
+static __used__ void CS_subtitle(nufpar_s *) { }
+static __used__ void CS_super_widescreen(nufpar_s *) { }
+static __used__ void CS_tex_anim(nufpar_s *) { }
+static __used__ void CS_unskippable_in_story(nufpar_s *) { }
+static __used__ void CS_wipe_out(nufpar_s *) { }

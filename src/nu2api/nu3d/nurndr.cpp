@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nu3d/numtl.h"
 
@@ -100,4 +101,20 @@ void NuRndrCalcRandCylinderPos(nuvec4_s *, numtx_s *, nuvec_s *) {
 }
 
 void NuRndrCreateBlendShapeDWAPointers(i32) {
+}
+
+struct nuglobalrndrstate_s;
+
+extern "C" {
+static __used__ void NuRndrSetAmbientLight(f32 *) {
+}
+
+static __used__ void NuRndrSetDirectionalLights(f32 *, f32 *, f32 *, f32 *, f32 *, f32 *) {
+}
+
+static __used__ void NuRndrSetSpecularLight(nuvec_s *, nucolour4_s *) {
+}
+
+static __used__ void RndrStateClear(struct nuglobalrndrstate_s *) {
+}
 }

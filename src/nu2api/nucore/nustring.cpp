@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include "nu2api/nucore/nustring.h"
 
 #include <stdio.h>
@@ -74,4 +75,16 @@ const char *NuStrStripPath(const char *string) {
     } while (*string != '\0');
 
     return string;
+}
+
+static __used__ i32 NuStringIsFluff(u16) {
+    return 0;
+}
+
+static __used__ i32 NuStringCharEquiv(u16, u16) {
+    return 0;
+}
+
+static __used__ u16 *NuStringBadSubString(const u16 *, const u16 *, i32 *, i32) {
+    return 0;
 }

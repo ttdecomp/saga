@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include <new>
 #include <pthread.h>
 
@@ -358,4 +359,57 @@ void NuMemory::MoveFreeMem2IntoMem1() {
 }
 
 void NuMemory::SetSoakTestMode() {
+}
+
+typedef struct NUHEAPBLOCK NUHEAPBLOCK;
+
+static __used__ NUHEAPBLOCK *NuHeapBlock_GetNext(NUHEAPBLOCK *) {
+    return 0;
+}
+
+static __used__ i32 NuHeapBlock_GetPrev(NUHEAPBLOCK *) {
+    return 0;
+}
+
+static __used__ u32 NuHeapBlock_GetSize(NUHEAPBLOCK *) {
+    return 0;
+}
+
+static __used__ void NuHeapBlock_SetName(NUHEAPBLOCK *, char *) {
+}
+
+static __used__ void NuHeapBlock_SetSize(NUHEAPBLOCK *, u32) {
+}
+
+static __used__ bool NuHeapBlock_GetInUse(NUHEAPBLOCK *) {
+    return 0;
+}
+
+static __used__ void NuHeapBlock_SetInUse(NUHEAPBLOCK *, u32) {
+}
+
+static __used__ void NuHeapBlock_SetNextFree(NUHEAPBLOCK *, NUHEAPBLOCK *) {
+}
+
+static __used__ void NuHeapBlock_SetPrevFree(NUHEAPBLOCK *, NUHEAPBLOCK *) {
+}
+
+static __used__ void NuHeapBlock_WriteFooter(NUHEAPBLOCK *) {
+}
+
+static __used__ i32 NuHeapBlock_GetNextFree(NUHEAPBLOCK *) {
+    return 0;
+}
+
+static __used__ NUHEAPBLOCK *NuHeapBlock_GetUsableMemory(NUHEAPBLOCK *) {
+    return 0;
+}
+
+static __used__ void NuHeapBlock_RemoveFromFreeList(NUHEAPBLOCK *) {
+}
+
+static __used__ void NuHeapBlock_SplitFreeBlock(NUHEAPBLOCK *, u32 *, NUHEAPBLOCK **, NUHEAPBLOCK **, u32) {
+}
+
+static __used__ void NuHeap_PrintAllocations(void *) {
 }

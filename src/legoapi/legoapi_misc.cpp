@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include "legoapi_types.h"
 #include "nu2api/nu3d/nutex.h"
 
@@ -5852,4 +5853,10 @@ void res0_look(vorbis_dsp_state *, void *) {
 }
 
 void res0_pack(void *, oggpack_buffer *) {
+}
+
+static __used__ void Movie_CallBack() {
+}
+static __used__ i32 MatchExtension(char *, char *, i32) {
+    return 0;
 }

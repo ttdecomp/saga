@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include "legoapi_types.h"
 
 void Animate_POD(GameObject_s *) {
@@ -166,4 +167,13 @@ void GameAnimSet_GetCompletionRatio(GAMEANIMSET_s *) {
 }
 
 void GameAnimSet_RemoveFromSystemList(GAMEANIMSET_s *) {
+}
+
+static __used__ i32 LoadAnim(char *, i32, variptr_u *, variptr_u) {
+    return 0;
+}
+static __used__ i32 LoadAnimFromPAK(char *, i32, char *, i32) {
+    return 0;
+}
+static __used__ void NormalizeAnimPath(char *) {
 }

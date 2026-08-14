@@ -1,0 +1,38 @@
+# Symbols intentionally not replicated by the build.
+#
+# These are file-static (local) helper functions from statically-linked
+# third-party libraries that are baked into the original libTTapp.so, but are
+# NOT game code and must not be re-implemented as stubs. They are provided by
+# the linked static libraries at link time:
+#   - libvorbis / libogg (floor0_/floor1_/vorbisfile/_ov_*/_fetch_* internals)
+#   - zlib implode/explode (make_code, make_leni)
+_ZL10_01inverseP12vorbis_blockPvPPfiPFlP8codebookS2_P14oggpack_bufferiE
+_ZL11_encodepartP14oggpack_bufferPiiP8codebookPl
+_ZL11floor0_lookP16vorbis_dsp_statePv
+_ZL11floor1_lookP16vorbis_dsp_statePv
+_ZL11floor1_packPvP14oggpack_buffer
+_ZL13floor0_unpackP11vorbis_infoP14oggpack_buffer
+_ZL13floor1_unpackP11vorbis_infoP14oggpack_buffer
+_ZL14_ov_d_seek_lapP14OggVorbis_FiledPFiS0_dE
+_ZL15_open_seekable2P14OggVorbis_File
+_ZL15_ov_64_seek_lapP14OggVorbis_FilexPFiS0_xE
+_ZL15floor0_inverse1P12vorbis_blockPv
+_ZL15floor0_inverse2P12vorbis_blockPvS1_Pf
+_ZL15floor1_inverse1P12vorbis_blockPv
+_ZL15floor1_inverse2P12vorbis_blockPvS1_Pf
+_ZL16_vds_shared_initP16vorbis_dsp_stateP11vorbis_infoi
+_ZL16floor0_free_infoPv
+_ZL16floor0_free_lookPv
+_ZL16floor1_free_infoPv
+_ZL16floor1_free_lookPv
+_ZL17setup_tone_curvesPffiff
+_ZL18_initial_pcmoffsetP14OggVorbis_FileP11vorbis_info
+_ZL20_vorbis_pack_commentP14oggpack_bufferP14vorbis_comment
+_ZL21_get_prev_page_serialP14OggVorbis_FilePliPiPx
+_ZL22_preextrapolate_helperP16vorbis_dsp_state
+_ZL24_bisect_forward_serialnoP14OggVorbis_FilexxxxiPlil
+_ZL7_ve_ampP15envelope_lookupP22vorbis_info_psy_globalPfP13envelope_bandP21envelope_filter_state
+_ZL8make_leni
+_ZL9_ov_open1PvP14OggVorbis_FilePKcl12ov_callbacks
+_ZL9make_codeiPhPt
+

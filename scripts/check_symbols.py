@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""check_symbols.py -- diff defined global text symbols of the build vs the
-original binary, so we can see exactly which functions are still missing.
+"""check_symbols.py -- diff defined text symbols of the build vs the original
+binary, so we can see exactly which functions are still missing.
 
-Extracts defined (global) text symbols from both binaries with `nm`, computes
-`original - built`, then subtracts an ignore list (symbols we don't need to
-replicate: compiler-runtime, platform glue, or ABI-special thunks/templates we
+Extracts defined text symbols (global `T` and local/static `t`, plus weak `W`
+when requested) from both binaries with `nm`, computes `original - built`,
+then subtracts an ignore list (symbols we don't need to replicate:
+compiler-runtime, platform glue, or ABI-special thunks/templates we
 intentionally skip). Prints a summary and the missing list.
 
 Exit codes:
@@ -41,15 +42,12 @@ NM = os.path.join(
 
 
 def defined_text_symbols(binary, include_weak=False, include_local=False):
-    """Return the set of defined global text symbols in a binary.
+    """Return the set of defined text symbols in a binary.
 
-    Matches nm type T, plus type W (weak) when include_weak=True. Weak symbols
-    are real definitions present in the binary, emitted weakly because they are
-    inline or implicit special members; the original ships them strong (T) but
-    the functionality is identical, so the build accepts them as provided.
-    When include_local=True, also matches type t (local/file-static symbols) so
-    a build symbol that exists in the original at any visibility is not treated
-    as an extra addition.
+    Matches nm type T (global). Weak symbols (type W) are matched when
+    include_weak=True; they are real definitions present in the binary, emitted
+    weakly because they are inline or implicit special members. Local/file-static
+    symbols (type t) are matched when include_local=True.
     """
     proc = subprocess.run(
         [NM, "--defined-only", binary], capture_output=True, text=True
@@ -67,10 +65,38 @@ def defined_text_symbols(binary, include_weak=False, include_local=False):
     return out
 
 
+def is_compiler_generated(name):
+    """Compiler-generated symbols that are never hand-declared in source:
+
+    * specialized clones (.isra / .constprop / .part / .cold) produced
+      automatically from static/inline functions, and
+    * static-initialization trampolines (_GLOBAL__sub_I_ / _GLOBAL__sub_D_)
+      emitted for global object constructors/destructors.
+
+    These can only be reproduced by writing the code that triggers them (inline
+    clones, global objects), never by declaring a function of that name, so they
+    are excluded from the must-provide set and reported separately."""
+    return (
+        ".isra." in name
+        or ".constprop." in name
+        or ".part." in name
+        or ".cold." in name
+        or name.startswith("_GLOBAL__sub_I_")
+        or name.startswith("_GLOBAL__sub_D_")
+    )
+
+
 def is_thunk(name):
     """Itanium ABI vtable adjustment thunks (_ZThnNN_...) are emitted
     automatically by the compiler; we don't need to replicate them."""
     return name.startswith("_ZThn")
+
+
+def is_local_label(name):
+    """Assembler-internal local labels (.L#####) are branch/constant labels in
+    the symbol table, not functions; they are compiler-generated and cannot be
+    declared in source."""
+    return name.startswith(".L") and name[2:].isdigit()
 
 
 def load_ignore(path):
@@ -115,25 +141,48 @@ def main():
     )
     args = ap.parse_args()
 
-    build = defined_text_symbols(args.build, include_weak=True)
+    build = defined_text_symbols(args.build, include_weak=True, include_local=True)
     orig_strong = defined_text_symbols(args.orig, include_weak=False)
-    orig_any = defined_text_symbols(args.orig, include_weak=True, include_local=True)
+    orig_local = defined_text_symbols(args.orig, include_weak=False, include_local=True) - orig_strong
+    orig_any = orig_strong | orig_local | defined_text_symbols(args.orig, include_weak=True)
     build_strong = defined_text_symbols(args.build, include_weak=False)
     ignore = load_ignore(args.ignore)
 
-    missing = sorted(s for s in (orig_strong - build - ignore) if not is_thunk(s))
+    missing = sorted(
+        s
+        for s in ((orig_strong | orig_local) - build - ignore)
+        if not is_thunk(s) and not is_local_label(s) and not is_compiler_generated(s)
+    )
+    compiler_gen = sorted(
+        s
+        for s in ((orig_strong | orig_local) - build - ignore)
+        if not is_thunk(s) and not is_local_label(s) and is_compiler_generated(s)
+    )
+    missing_global = [s for s in missing if s in orig_strong]
+    missing_local = [s for s in missing if s in orig_local]
     extras = sorted(build_strong - orig_any)
-    provided = len(orig_strong) - len(missing)
+    provided = len(orig_strong) + len(orig_local) - len(missing)
 
-    print(f"original text symbols : {len(orig_strong)}")
+    print(f"original text symbols : {len(orig_strong) + len(orig_local)} "
+          f"({len(orig_strong)} global, {len(orig_local)} local)")
     print(f"provided by build     : {len(build)}")
     print(f"matched / in build    : {provided}")
-    print(f"missing (not ignored) : {len(missing)}")
+    print(f"missing (not ignored) : {len(missing)} "
+          f"({len(missing_global)} global, {len(missing_local)} local)")
+    print(f"compiler-generated    : {len(compiler_gen)} (clones / static-init; auto)")
     print(f"extra (in build only) : {len(extras)}")
     if args.list:
-        if missing:
-            print("\nmissing symbols:")
-            for s in missing:
+        if missing_global:
+            print("\nmissing global symbols:")
+            for s in missing_global:
+                print(f"  {s}")
+        if missing_local:
+            print("\nmissing local symbols:")
+            for s in missing_local:
+                print(f"  {s}")
+        if compiler_gen:
+            print("\ncompiler-generated (not hand-declared):")
+            for s in compiler_gen:
                 print(f"  {s}")
         if extras:
             print("\nextra symbols (in build, not in original):")

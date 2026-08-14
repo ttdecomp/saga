@@ -68,3 +68,6 @@ void NuVpSetScalingMtx(void) {
     vp_smtx.m32 = vp_minz;
     vp_smtx.m33 = 1.0f;
 }
+
+static __used__ void NuVpSetClippingMtx(void) {
+}

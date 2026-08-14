@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include "legoapi_types.h"
 
 void MoveBlocks(WORLDINFO_s *, pushblock_s *, i32, nuvec_s *) {
@@ -124,4 +125,41 @@ void MoveToMarker::Process(float) {
 }
 
 void MoveToMarker::Render() {
+}
+
+static __used__ void JumpAnimCode(GameObject_s *) {
+}
+static __used__ i32 Jump_UpdateHint(HINT_s *) {
+    return 0;
+}
+static __used__ bool Jump_PreventJump(GameObject_s *) {
+    return false;
+}
+static __used__ void Jump_EndOfLandContext(GameObject_s *) {
+}
+static __used__ void MoveAnim_Check(GameObject_s *) {
+}
+static __used__ void MoveAnim_Manage(GameObject_s *, f32, i32, i32) {
+}
+static __used__ i32 Move_UpdateHint(HINT_s *) {
+    return 0;
+}
+static __used__ i32 LastSafePosExtra(GameObject_s *) {
+    return 0;
+}
+
+struct LEVER_s;
+static __used__ void Lever_Reset(LEVER_s *) {
+}
+static __used__ bool Lever_UpdateHint(HINT_s *) {
+    return false;
+}
+struct _vuv_s;
+static __used__ void MakeWingFormation(_vuv_s *, _vuv_s *, f32, i32) {
+}
+static __used__ i32 Loop_CountLoopingInputsEx(FLOWBOX_s *, FLOWBOX_s *, i32, u8) {
+    return 0;
+}
+static __used__ bool MatrixReflection_CanOverride() {
+    return false;
 }

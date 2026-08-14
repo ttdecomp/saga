@@ -1,0 +1,48 @@
+#include "decomp.h"
+#include "stub_decls.h"
+
+// Local (static) Star Wars special-move AI helpers, row-movement and
+// participant-configuration helpers. Stubbed as local `t` symbols matching
+// res/libTTapp.so.
+
+static __used__ void StarWars_PrepareHatch(AIPACKET_s *, APIOBJECT_s *, i32) {
+}
+
+static __used__ void StarWars_PrepareBigJump(AIPACKET_s *, APIOBJECT_s *, i32) {
+}
+
+static __used__ void StarWars_PrepareObstacle(AIPACKET_s *, APIOBJECT_s *, i32) {
+}
+
+static __used__ void StarWars_PrepareHoverTube(AIPACKET_s *, APIOBJECT_s *, i32) {
+}
+
+static __used__ void StarWars_PrepareTakeOverJump(AIPACKET_s *, APIOBJECT_s *, i32) {
+}
+
+static __used__ void StarWars_PreparingForSpecialMove(AIPACKET_s *, APIOBJECT_s *, i32) {
+}
+
+static __used__ void StarWars_MidSpecialMove(AISYS_s *, AIPACKET_s *, APIOBJECT_s *) {
+}
+
+static __used__ void StarWars_MidSpecialMove_BigJump(AISYS_s *, AIPACKET_s *, APIOBJECT_s *) {
+}
+
+static __used__ void StarWars_MidSpecialMove_Default(AISYS_s *, AIPACKET_s *, APIOBJECT_s *) {
+}
+
+static __used__ void StarWars_MidSpecialMove_UseHatch(AISYS_s *, AIPACKET_s *, APIOBJECT_s *) {
+}
+
+static __used__ void StarWars_MidSpecialMove_StartJump(AISYS_s *, AIPACKET_s *, APIOBJECT_s *) {
+}
+
+static __used__ void SpecialMove_ConfigParticipant(nufpar_s *, i16 *, i8 *, i16 *) {
+}
+
+static __used__ void RowMoveWander(AIGROUP_s *, AIROW_s *, AIROW_s *, APIOBJECT_s *) {
+}
+
+static __used__ void RowMoveTowards(AIGROUP_s *, AIROW_s *, AIROW_s *, APIOBJECT_s *) {
+}

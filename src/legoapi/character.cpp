@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include "legoapi/character.h"
 
 #include "CharacterObjectInterface.h"
@@ -583,4 +584,16 @@ void CharacterObjectInterface::TargetedFlash() {
 }
 
 CharacterObjectInterface::~CharacterObjectInterface() {
+}
+
+static __used__ void NewCharacterIdle(GameObject_s *, i32) {
+}
+static __used__ char *LevelCharacterName(u8) {
+    return nullptr;
+}
+static __used__ i32 LevelCharacterTypeID(char *) {
+    return 0;
+}
+static __used__ i32 LevelCharacterGlobalID(u8) {
+    return 0;
 }

@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include "store.h"
 
 #include "nu2api/nucore/nustring.h"
@@ -133,4 +134,27 @@ void Store_UprootPackCustodian(i32, GameObject_s *) {
 }
 
 void StoreStatusTakeOverObjectSys() {
+}
+
+static __used__ void StoreUnlockEp2() {
+}
+static __used__ void StoreUnlockEp3() {
+}
+static __used__ void StoreUnlockEp4() {
+}
+static __used__ void StoreUnlockEp5() {
+}
+static __used__ void StoreUnlockEp6() {
+}
+static __used__ void StoreUnlockJedi() {
+}
+static __used__ void StoreUnlockSith() {
+}
+static __used__ void StoreUnlockBonus() {
+}
+static __used__ void StoreUnlockArcade() {
+}
+static __used__ void StoreUnlockBounty() {
+}
+static __used__ void StoreUnlockChallenge() {
 }

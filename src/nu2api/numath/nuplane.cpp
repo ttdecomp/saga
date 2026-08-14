@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include "nu2api/numath/nuplane.h"
 
 #include "nu2api/numath/nufloat.h"
@@ -222,4 +223,8 @@ f32 NuLineToPointDistSqrEx(NUVEC *s, NUVEC *e, NUVEC *pnt, NUVEC *out) {
     }
 
     return dist;
+}
+
+static __used__ bool OnOrOutsidePlane(nuvec_s *, nuvec_s *, nuvec_s *) {
+    return false;
 }
