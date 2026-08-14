@@ -441,6 +441,19 @@ static __used__ void SelectPrevFog() {
 static __used__ void PreWarmGeomsAndBakeVAOs(nudisplayscene_s *, nunativegscene_s *) {
 }
 
+void BackDrop_Draw(float, i32) {
+}
+void BackDrop_Dump() {
+}
+void BackDrop_Init(char *, variptr_u *, variptr_u *) {
+}
+void BackDrop_Update(float) {
+}
+void BackDrop_ResetColours() {
+}
+void BackDrop_UpdateColours(i32) {
+}
+
 extern "C" {
 
     void AddColourPick(void) {

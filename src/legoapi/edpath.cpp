@@ -7,6 +7,7 @@ struct AIPATH_s;
 struct eduimenu_s;
 struct eduiitem_s;
 struct nuvec_s;
+struct nupad_s;
 
 static __used__ void ParseAIPathCnxFlag(char *) {
 }
@@ -150,3 +151,12 @@ extern "C" {
     }
 
 } // extern "C"
+
+void pathEditor_Enter(void) {
+}
+
+void pathEditor_Render(i32, i32, float, float) {
+}
+
+void pathEditor_Process(nupad_s *) {
+}

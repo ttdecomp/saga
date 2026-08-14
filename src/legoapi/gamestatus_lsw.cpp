@@ -115,3 +115,33 @@ void SuperStoryTime_LSW_Update(STATUS_STAGE_s *, STATUSPACKET_s *, float) {
 void SuperStoryScore_LSW_Update(STATUS_STAGE_s *, STATUSPACKET_s *, float) {
 }
 
+void Coins_LSW_Draw(STATUS_STAGE_s *, STATUSPACKET_s *, i32) {
+}
+void Coins_LSW_Skip(STATUS_STAGE_s *, STATUSPACKET_s *) {
+}
+void Coins_LSW_Update(STATUS_STAGE_s *, STATUSPACKET_s *, float) {
+}
+void BonusWin_LSW_Draw(STATUS_STAGE_s *, STATUSPACKET_s *, i32) {
+}
+void BonusWin_LSW_Skip(STATUS_STAGE_s *, STATUSPACKET_s *) {
+}
+void BonusTime_LSW_Draw(STATUS_STAGE_s *, STATUSPACKET_s *, i32) {
+}
+void BonusTime_LSW_Skip(STATUS_STAGE_s *, STATUSPACKET_s *) {
+}
+void ChallangeCash_Draw(STATUS_STAGE_s *, STATUSPACKET_s *, i32) {
+}
+void ChallangeCash_Skip(STATUS_STAGE_s *, STATUSPACKET_s *) {
+}
+void BonusWin_LSW_Update(STATUS_STAGE_s *, STATUSPACKET_s *, float) {
+}
+void BonusTime_LSW_Update(STATUS_STAGE_s *, STATUSPACKET_s *, float) {
+}
+void ChallangeCash_Update(STATUS_STAGE_s *, STATUSPACKET_s *, float) {
+}
+void BonusComplete_LSW_Draw(STATUS_STAGE_s *, STATUSPACKET_s *, i32) {
+}
+void BonusComplete_LSW_Skip(STATUS_STAGE_s *, STATUSPACKET_s *) {
+}
+void BonusComplete_LSW_Update(STATUS_STAGE_s *, STATUSPACKET_s *, float) {
+}

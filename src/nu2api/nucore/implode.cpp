@@ -130,8 +130,17 @@ isize ExplodeCompressedSize(char *buf) {
     return size;
 }
 
-static u32 getmasktbl[5] = {0, 0xff, 0xffff, 0xffffff, 0xffffffff};
+extern "C" {
 
+    void ExplodeBuffer(void) {
+    }
+
+    void ExplodeExit(void) {
+    }
+
+} // extern "C"
+
+static u32 getmasktbl[5] = {0, 0xff, 0xffff, 0xffffff, 0xffffffff};
 i32 ImplodeGetI(void *buf, i32 size) {
     unsigned char *char_ptr;
     u32 buf_reversed;

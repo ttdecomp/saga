@@ -13,3 +13,8 @@ void Faders_Draw(WORLDINFO_s *) {
 void Faders_Reset(WORLDINFO_s *) {
 }
 
+void Faders_Configure(WORLDINFO_s *world, char *config) {
+    (void)world;
+    (void)config;
+}
+

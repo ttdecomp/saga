@@ -318,6 +318,10 @@ extern "C" {
     void UpdateParts(void) {
     }
 
+    void SetPartRTLSet(i32 rtl_set) {
+        (void)rtl_set;
+    }
+
 } // extern "C"
 
 void Parts_Stop(WORLDINFO_s *) {

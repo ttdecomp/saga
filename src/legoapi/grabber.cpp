@@ -10,3 +10,8 @@ struct SHOPINPUT;
 void PartKill_Grabber(PART_s *, i32) {
 }
 
+void Grabber_Configure(WORLDINFO_s *world, char *config) {
+    (void)world;
+    (void)config;
+}
+

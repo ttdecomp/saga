@@ -124,6 +124,15 @@ static __used__ void TrooperTeamSetStateCode(minitrooperteam_s *) {
 
 static __used__ unsigned int BoltInitSfx_LSW(GameObject_s*) { return {}; }
 
+void BoltTypes_Init(WORLDINFO_s *world) {
+    (void)world;
+}
+
+void BoltTypes_Configure(WORLDINFO_s *world, char *config) {
+    (void)world;
+    (void)config;
+}
+
 extern "C" {
 
     void HitParts(void) {

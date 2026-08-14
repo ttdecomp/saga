@@ -7,6 +7,12 @@
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufile.h"
 
+struct tertype;
+struct terrsitu_s;
+struct PLATSKININFO;
+struct GAMECAMERA_s;
+struct pushblock_s;
+
 // Debris and terrain globals — accessed from DebrisSetThinningLevel etc.
 f32 debris_thinning_level;
 i32 forced_debris_thinning;
@@ -630,4 +636,65 @@ extern "C" {
     void terrainpickupinit(void) {
     }
 
+    void UpdatePlatinst(void) {
+    }
+
 } // extern "C"
+void ScanTerrId(void *) {
+}
+void UnderWater(GameObject_s *) {
+}
+void ScanTerrain(i32, i32, i32) {
+}
+void TerrainSkin(PLATSKININFO *, nuvec_s *, float, i32) {
+}
+void TerrDrawPlat(tertype *, i16) {
+}
+void TerrDrawSitu(tertype *, terrsitu_s *) {
+}
+void RotateTerrain(tertype *) {
+}
+void TerrainImpact(nuvec_s *, nuvec_s *, unsigned char *) {
+}
+void TerrainPlayer(GameObject_s *) {
+}
+void MakePlayPlanes(GAMECAMERA_s *) {
+}
+void TerrDrawPlatCol(tertype *, i16, i32) {
+}
+void TerrShowCamTerr() {
+}
+void GetIndGrassClump(i32, i32) {
+}
+void TerrainSideClamp(nuvec_s *, nuvec_s *) {
+}
+void TerrainStaticMtx(PLATSKININFO *, nuvec_s *, i32) {
+}
+void ScanTerrainHandel(i32, i16 *) {
+}
+void TerrShapeSideStep(nuvec_s *, nuvec_s *, unsigned char *) {
+}
+void TerrainImpactNorm() {
+}
+void ScanTerrainPlatform(i32, i32) {
+}
+void TerrainBlockOnBlock(WORLDINFO_s *, pushblock_s *, nuvec_s *, float *) {
+}
+void TerrainSkinAllocate(terrsitu_s *) {
+}
+void ScanTerrIDRemovePlat(i32) {
+}
+void ScanWallSplineTerrain(i32, i32, i32) {
+}
+void TerrainImpactPlatform(unsigned char *) {
+}
+void TerrainMoveImpactData() {
+}
+void TerrainPlatformEmbedded(nuvec_s *) {
+}
+void TerrainPlatformMoveCheck(nuvec_s *, nuvec_s *, i32, i32, i32) {
+}
+void TerrDraw(tertype *, i16) {
+}
+void TerrFlush() {
+}

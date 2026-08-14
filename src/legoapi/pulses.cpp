@@ -16,3 +16,8 @@ void Pulses_AddSfx(PULSESYS_s *, i32 *, i32 *, i32) {
 void Pulses_Update(PULSESYS_s *) {
 }
 
+void Pulses_Configure(WORLDINFO_s *world, char *config) {
+    (void)world;
+    (void)config;
+}
+

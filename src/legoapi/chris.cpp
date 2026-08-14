@@ -34,9 +34,6 @@ void ChrisAnakinDInit(WORLDINFO_s *) {
 void DogFightARestart() {
 }
 
-void pathEditor_Enter() {
-}
-
 void ChrisAnakinAPanel(WORLDINFO_s *) {
 }
 
@@ -50,9 +47,6 @@ void ChrisAnakinCReset() {
 }
 
 void ChrisAnakinDReset(WORLDINFO_s *) {
-}
-
-void pathEditor_Render(i32, i32, float, float) {
 }
 
 void ChrisAnakinAUpdate(WORLDINFO_s *) {
@@ -73,9 +67,6 @@ void ChrisDogFightADraw(WORLDINFO_s *) {
 void ChrisDogFightAInit(WORLDINFO_s *) {
 }
 
-void pathEditor_Process(nupad_s *) {
-}
-
 void ChrisAfterBurnerCam(nuvec_s *, nuvec_s *) {
 }
 
@@ -85,9 +76,6 @@ void ChrisDogFightAPanel(WORLDINFO_s *) {
 void ChrisDogFightAReset(WORLDINFO_s *) {
 }
 
-void locatorEditor_Enter() {
-}
-
 void ChrisAllocLevelStuff(WORLDINFO_s *) {
 }
 
@@ -95,12 +83,6 @@ void ChrisDogFightAUpdate(WORLDINFO_s *) {
 }
 
 void DidBoltHitChrisJobby(WORLDINFO_s *, BOLT_s *) {
-}
-
-void locatorEditor_Render(i32, i32, float, float) {
-}
-
-void locatorEditor_Process(nupad_s *) {
 }
 
 void ChrisUnallocLevelStuff(WORLDINFO_s *) {

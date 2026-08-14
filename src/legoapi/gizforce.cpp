@@ -28,3 +28,8 @@ void ForceLightning_Origin(GameObject_s *, nuvec_s *, nuvec_s *) {
 void EndForce(GameObject_s *, i32) {
 }
 
+void GizForceSFX_Configure(WORLDINFO_s *world, char *config) {
+    (void)world;
+    (void)config;
+}
+

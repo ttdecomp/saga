@@ -5,6 +5,7 @@ struct nuvec_s;
 
 struct eduimenu_s;
 struct eduiitem_s;
+struct nupad_s;
 
 static __used__ void locatorEditor_cbDeleteLocator(eduimenu_s *, eduiitem_s *, u32) { }
 static __used__ void locatorEditor_cbRenameLocator(eduimenu_s *, eduiitem_s *, u32) { }
@@ -51,3 +52,12 @@ extern "C" {
     }
 
 } // extern "C"
+
+void locatorEditor_Enter(void) {
+}
+
+void locatorEditor_Render(i32, i32, float, float) {
+}
+
+void locatorEditor_Process(nupad_s *) {
+}

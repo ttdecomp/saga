@@ -37,3 +37,8 @@ void FindReflectionNoPlatforms(nuvec_s *) {
 void CharPlatform_FindObjFromPlatID(CHARPLATFORMSYS_s *, i32) {
 }
 
+void CharPlatforms_Configure(WORLDINFO_s *world, char *config) {
+    (void)world;
+    (void)config;
+}
+

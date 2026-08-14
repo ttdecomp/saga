@@ -49,6 +49,11 @@ void LightSabre_ColourFromObj(i32, i32 *) {
 void SetLights(nucolour3_s *, nuvec_s *, nucolour3_s *, nuvec_s *, nucolour3_s *, nuvec_s *, nuvec_s *) {
 }
 
+void LoadLights(WORLDINFO_s *world, char *path) {
+    (void)world;
+    (void)path;
+}
+
 extern "C" {
 
         void IndexLights(void) {

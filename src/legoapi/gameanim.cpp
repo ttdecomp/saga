@@ -347,3 +347,17 @@ void EvalAnim(nuhspecial_s *, float, numtx_s *, i32) {
 
 void EvalAnim2(nuhspecial_s *, float) {
 }
+
+void *GameAnimSys_Create(variptr_u *buf, variptr_u *buf_end) {
+    (void)buf;
+    (void)buf_end;
+    return NULL;
+}
+
+void *GameAntnode_CreateSys(WORLDINFO_s *world, variptr_u *buf, variptr_u *buf_end, i32 count) {
+    (void)world;
+    (void)buf;
+    (void)buf_end;
+    (void)count;
+    return NULL;
+}

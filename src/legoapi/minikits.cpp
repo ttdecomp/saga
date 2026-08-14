@@ -76,3 +76,8 @@ void IncrementMinikitCounter(GameObject_s *) {
 void EffectOffProgress_Update(LEVEL_PROGRESS_s *, char *, i32) {
 }
 
+void SpecialMiniKits_Configure(WORLDINFO_s *world, char *config) {
+    (void)world;
+    (void)config;
+}
+

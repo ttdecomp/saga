@@ -46,3 +46,12 @@ void Conveyor_AdjustSpeed(nuvec_s *) {
 void AddDevice(nufile_device_s *) {
 }
 
+void LevelObjects_InitForLevel(WORLDINFO_s *world) {
+    (void)world;
+}
+
+void EquivalentObjects_Configure(WORLDINFO_s *world, char *config) {
+    (void)world;
+    (void)config;
+}
+

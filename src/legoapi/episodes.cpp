@@ -25,9 +25,6 @@ void MaulE_Init(WORLDINFO_s *) {
 void MaulF_Init(WORLDINFO_s *) {
 }
 
-void Arcade_Kill(i32, i32) {
-}
-
 void MaulA_Panel(WORLDINFO_s *) {
 }
 
@@ -103,15 +100,6 @@ void VaderB_Reset(WORLDINFO_s *) {
 void VaderC_Reset(WORLDINFO_s *) {
 }
 
-void BackDrop_Draw(float, i32) {
-}
-
-void BackDrop_Dump() {
-}
-
-void BackDrop_Init(char *, variptr_u *, variptr_u *) {
-}
-
 void ResetPodStuff() {
 }
 
@@ -130,16 +118,7 @@ void VaderB_Update(WORLDINFO_s *) {
 void VaderC_Update(WORLDINFO_s *) {
 }
 
-void Arcade_GetMode(u32 *) {
-}
-
 void CoinTotal_Draw(i32, float, float, i32, float, i32, i32, i32) {
-}
-
-void Coins_LSW_Draw(STATUS_STAGE_s *, STATUSPACKET_s *, i32) {
-}
-
-void Coins_LSW_Skip(STATUS_STAGE_s *, STATUSPACKET_s *) {
 }
 
 void InitSuperStory(i32) {
@@ -160,12 +139,6 @@ void TatooineC_Init(WORLDINFO_s *) {
 void TatooineD_Init(WORLDINFO_s *) {
 }
 
-void Arcade_AIKilled(i32) {
-}
-
-void BackDrop_Update(float) {
-}
-
 void MosEisleyA_Init(WORLDINFO_s *) {
 }
 
@@ -179,12 +152,6 @@ void MosEisleyE_Init(WORLDINFO_s *) {
 }
 
 void PodSprintA_Init(WORLDINFO_s *) {
-}
-
-void Arcade_DrawPanel(i32) {
-}
-
-void Coins_LSW_Update(STATUS_STAGE_s *, STATUSPACKET_s *, float) {
 }
 
 void DoubleScoreAlpha() {
@@ -226,18 +193,6 @@ void VaderB_DrawPanel(WORLDINFO_s *) {
 void VaderC_DrawPanel(WORLDINFO_s *) {
 }
 
-void Arcade_AwardPoint(i32, i32, i32) {
-}
-
-void Arcade_ResetPanel() {
-}
-
-void BonusWin_LSW_Draw(STATUS_STAGE_s *, STATUSPACKET_s *, i32) {
-}
-
-void BonusWin_LSW_Skip(STATUS_STAGE_s *, STATUSPACKET_s *) {
-}
-
 void CountOpenEpisodes() {
 }
 
@@ -262,25 +217,7 @@ void SarlaccPitB_Reset(WORLDINFO_s *) {
 void SarlaccPitC_Reset(WORLDINFO_s *) {
 }
 
-void Arcade_DrawEndMenu(MENU_s *) {
-}
-
-void Arcade_UpdatePanel(i32) {
-}
-
 void BonusGunshipB_Init(WORLDINFO_s *) {
-}
-
-void BonusTime_LSW_Draw(STATUS_STAGE_s *, STATUSPACKET_s *, i32) {
-}
-
-void BonusTime_LSW_Skip(STATUS_STAGE_s *, STATUSPACKET_s *) {
-}
-
-void ChallangeCash_Draw(STATUS_STAGE_s *, STATUSPACKET_s *, i32) {
-}
-
-void ChallangeCash_Skip(STATUS_STAGE_s *, STATUSPACKET_s *) {
 }
 
 void Episode_IsComplete(EPISODEDATA *, i32 *) {
@@ -293,9 +230,6 @@ void SarlaccPitB_Update(WORLDINFO_s *) {
 }
 
 void SarlaccPitC_Update(WORLDINFO_s *) {
-}
-
-void Arcade_PlayerKilled(i32, i32) {
 }
 
 void AsteroidChaseA_Init(WORLDINFO_s *) {
@@ -322,9 +256,6 @@ void BonusGunshipB_Panel(WORLDINFO_s *) {
 void BonusGunshipB_Reset(WORLDINFO_s *) {
 }
 
-void BonusWin_LSW_Update(STATUS_STAGE_s *, STATUSPACKET_s *, float) {
-}
-
 void NewTerrStoreAnyInfo() {
 }
 
@@ -332,12 +263,6 @@ void ResetTrooperCannons(WORLDINFO_s *, i32) {
 }
 
 void SetBobaRocketTarget(MechObjectInterface *) {
-}
-
-void Arcade_CoinCollected(i32, u32 *, u32) {
-}
-
-void Arcade_UpdateEndMenu(MENU_s *) {
 }
 
 void AsteroidChaseA_Reset(WORLDINFO_s *) {
@@ -356,12 +281,6 @@ void BonusGunshipA_Update(WORLDINFO_s *) {
 }
 
 void BonusGunshipB_Update(WORLDINFO_s *) {
-}
-
-void BonusTime_LSW_Update(STATUS_STAGE_s *, STATUSPACKET_s *, float) {
-}
-
-void ChallangeCash_Update(STATUS_STAGE_s *, STATUSPACKET_s *, float) {
 }
 
 void Episode_FindFromArea(i32) {
@@ -388,19 +307,7 @@ void AsteroidChaseC_Update(WORLDINFO_s *) {
 void AsteroidChaseD_Update(WORLDINFO_s *) {
 }
 
-void BackDrop_ResetColours() {
-}
-
 void SarlaccPitDiscoActive(WORLDINFO_s *) {
-}
-
-void BackDrop_UpdateColours(i32) {
-}
-
-void BonusComplete_LSW_Draw(STATUS_STAGE_s *, STATUSPACKET_s *, i32) {
-}
-
-void BonusComplete_LSW_Skip(STATUS_STAGE_s *, STATUSPACKET_s *) {
 }
 
 void Episode_CountOpenAreas(i32, i32, AREASAVE_s *) {
@@ -425,12 +332,6 @@ void PodSprint_GetIAlongVals(nugspline_s *, i16 *, i16 *) {
 }
 
 void UpdatePodRaceLapDisplay(float) {
-}
-
-void Arcade_BothPlayersActive() {
-}
-
-void BonusComplete_LSW_Update(STATUS_STAGE_s *, STATUSPACKET_s *, float) {
 }
 
 void BountyHunterPursuitA_Init(WORLDINFO_s *) {
@@ -490,4 +391,3 @@ static __used__ void VaderA_StartCollapseStage(WORLDINFO_s *) {
 
 static __used__ void UpdatePodRaceMines() {
 }
-

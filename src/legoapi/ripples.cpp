@@ -37,3 +37,8 @@ void LookupRippleEffectIndex(char *) {
 void AddRipple(ripple_set_s *, numtx_s *, float, float, float, float, RGBA, RGBA, i32, numtl_s *, nuvec_s *) {
 }
 
+
+void RippleEffects_Configure(WORLDINFO_s *world, char *config) {
+    (void)world;
+    (void)config;
+}

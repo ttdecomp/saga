@@ -332,6 +332,33 @@ static __used__ int count_len(int) { return {}; }
 static __used__ void RemoveData(nuqthdr_s *, char *, i32) {
 }
 
+void drft_clear(drft_lookup *) {
+}
+
+void floor1_fit(vorbis_block *, vorbis_look_floor1 *, float const *, float const *) {
+}
+
+void drft_forward(drft_lookup *, float *) {
+}
+
+void _float32_pack(float) {
+}
+
+void floor1_encode(oggpack_buffer *, vorbis_block *, vorbis_look_floor1 *, i32 *, i32 *) {
+}
+
+void _float32_unpack(abi_long) {
+}
+
+void floor1_interpolate_fit(vorbis_block *, vorbis_look_floor1 *, i32 *, i32 *, i32) {
+}
+
+void _ilog(u32) {
+}
+
+void drft_init(drft_lookup *, i32) {
+}
+
 extern "C" {
 
     void OggAllocMem(void) {

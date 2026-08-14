@@ -95,3 +95,7 @@ static __used__ f32 SplineLength(nugspline_s *, i32) {
     return 0.0f;
 }
 
+void LevelSplines_InitForLevel(WORLDINFO_s *world) {
+    (void)world;
+}
+

@@ -151,6 +151,8 @@ set(SAGA_SOURCE_FILES
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/area_editor.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/arcade.cpp
+
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/attracto.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/audio.cpp
@@ -266,6 +268,12 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gameliball.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gamemenuall.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/nugraph.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/apiobject.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/stream.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gamemessages.cpp
 

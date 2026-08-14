@@ -161,4 +161,7 @@ extern "C" {
         void saveloadWriteKeyCode(void) {
         }
 
+        void TriggerAutoSave(void) {
+        }
+
 } // extern "C"

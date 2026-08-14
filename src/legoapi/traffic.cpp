@@ -16,3 +16,8 @@ void TrafficAnimSys_Reset(TRAFFICANIMSYS_s *) {
 void TrafficAnimSys_Update(TRAFFICANIMSYS_s *) {
 }
 
+void TrafficAnimSys_Configure(WORLDINFO_s *world, char *config) {
+    (void)world;
+    (void)config;
+}
+

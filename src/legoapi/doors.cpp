@@ -22,6 +22,15 @@ void Door_SetCutCam(DOOR_s *) {
 void Doors_SetLastDoor(DOOR_s *) {
 }
 
+void Doors_Init(WORLDINFO_s *world) {
+    (void)world;
+}
+
+void Doors_Configure(WORLDINFO_s *world, char *config) {
+    (void)world;
+    (void)config;
+}
+
 void PortalDoors_Update(WORLDINFO_s *) {
 }
 

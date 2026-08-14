@@ -243,6 +243,21 @@ extern "C" {
     void SockSysTrackInSplineInfo(void) {
     }
 
+    void SockSys_Configure(void *sock_sys, char *config, i32 param, void *buf, void *buf_end, void *gscn) {
+        (void)sock_sys;
+        (void)config;
+        (void)param;
+        (void)buf;
+        (void)buf_end;
+        (void)gscn;
+    }
+
+    void SockSys_GenerateData(void *sock_sys, void *buf, void *buf_end) {
+        (void)sock_sys;
+        (void)buf;
+        (void)buf_end;
+    }
+
 } // extern "C"
 
 void ForceAlongSock(GameObject_s *) {
