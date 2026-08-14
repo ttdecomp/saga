@@ -141,7 +141,7 @@ set(SAGA_SOURCE_FILES
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/aisysall.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/aittrigger.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/aitrigger.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/androidbatman.cpp
 
