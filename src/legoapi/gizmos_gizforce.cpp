@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include "legoapi_types.h"
 
 void GizForce_Throw(GameObject_s *, GIZFORCE_s *, float, float, i32) {
@@ -49,4 +50,18 @@ void GIZFORCE_s::ClearMechObjectInterface() {
 }
 
 void GIZFORCE_s::GetMechObjectInterface() {
+}
+
+// Static force SFX nufpar helpers. Moved from gizmisc_stubs.cpp.
+
+static __used__ void GizForceSFX_forcename(nufpar_s *) {
+}
+
+static __used__ void GizForceSFX_returnsfx(nufpar_s *) {
+}
+
+static __used__ void GizForceSFX_processsfx(nufpar_s *) {
+}
+
+static __used__ void GizForceSFX_completesfx(nufpar_s *) {
 }

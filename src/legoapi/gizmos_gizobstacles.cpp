@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include "legoapi_types.h"
 
 void GizObstacle_Stop(GIZOBSTACLE_s *) {
@@ -49,4 +50,28 @@ void GIZOBSTACLE_s::ClearMechObjectInterface() {
 }
 
 void GIZOBSTACLE_s::GetMechObjectInterface() {
+}
+
+// Static obstacle update/terrain-check helpers. Moved from gizmisc_stubs.cpp.
+
+static __used__ void GizObstacleUpdate_PushOnly(GIZOBSTACLE_s *) {
+}
+
+static __used__ void GizObstacleUpdate_AutoStart(GIZOBSTACLE_s *) {
+}
+
+static __used__ void GizObstacleUpdate_NoTrigger(GIZOBSTACLE_s *) {
+}
+
+static __used__ void GizObstacleUpdate_Proximity(GIZOBSTACLE_s *) {
+}
+
+static __used__ void GizObstacleUpdate_TechnoOnly(GIZOBSTACLE_s *) {
+}
+
+static __used__ int GizObstacle_SatisfyingTerrainChecks(GIZOBSTACLE_s *, GameObject_s *) {
+    return 0;
+}
+
+static __used__ void Gizobstacle_ReadAnimSetData(GAMEANIMOBJ_s *, unsigned char) {
 }

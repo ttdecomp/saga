@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include "legoapi_types.h"
 
 void GizmoBlowUp_Hit(GameObject_s *, nuvec_s *, i32, float, nuvec_s *, nuvec_s *, BOLT_s *, u32, unsigned char *) {
@@ -28,4 +29,10 @@ void GIZMOBLOWUP_s::ClearMechObjectInterface() {
 }
 
 void GIZMOBLOWUP_s::GetMechObjectInterface() {
+}
+
+// Static blowup no-target check. Moved from gizmisc_stubs.cpp.
+
+static __used__ bool GizmoBlowUp_NoTarget(WORLDINFO_s *, GameObject_s *) {
+    return false;
 }

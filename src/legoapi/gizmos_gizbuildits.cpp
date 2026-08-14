@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include "legoapi_types.h"
 
 void GizBuildItMul(GameObject_s *) {
@@ -55,4 +56,17 @@ void GIZBUILDIT_s::ClearMechObjectInterface() {
 }
 
 void GIZBUILDIT_s::GetMechObjectInterface() {
+}
+
+// Static build-it helper callbacks. Moved from gizmisc_stubs.cpp.
+
+static __used__ void GizBuildIt_FinishFn_Game(GIZBUILDIT_s *) {
+}
+
+static __used__ bool GizBuildIt_CanStartBuildingFn_Game(GIZBUILDIT_s *, GameObject_s *) {
+    return false;
+}
+
+static __used__ int GizBuildit_AutoBuildPos_Game(void *, nuvec_s *, nuvec_s *, u16 *) {
+    return 0;
 }

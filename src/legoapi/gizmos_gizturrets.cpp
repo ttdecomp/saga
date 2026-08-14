@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include "legoapi_types.h"
 
 void GizTurrets_Hit(void *, GIZTURRET_s *, nuvec_s *, i32, i32) {
@@ -31,4 +32,9 @@ void GIZTURRET_s::ClearMechObjectInterface() {
 }
 
 void GIZTURRET_s::GetMechObjectInterface() {
+}
+
+// Static turret anim-set reader. Moved from gizmisc_stubs.cpp.
+
+static __used__ void GizTurret_ReadAnimSetData(GAMEANIMOBJ_s *, unsigned char) {
 }

@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include "legoapi_types.h"
 
 void GizmoPickup_InBox(WORLDINFO_s *, i32, nuvec_s *, nuvec_s *) {
@@ -31,4 +32,14 @@ void GizmoPickup_NumberOfType(WORLDINFO_s *, i32, char) {
 }
 
 void GizmoPickup_TurnOnPickup(GIZMOPICKUP_s *) {
+}
+
+// Static pickup collision helpers. Moved from gizmisc_stubs.cpp.
+
+static __used__ float GizmoPickups_Collide2D(GameObject_s *) {
+    return 0;
+}
+
+static __used__ GIZMOPICKUP_s *GizmoPickups_CollideList(GameObject_s *, GIZMOPICKUP_s *, int) {
+    return nullptr;
 }

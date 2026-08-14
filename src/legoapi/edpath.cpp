@@ -1,8 +1,12 @@
 #include "decomp.h"
-#include "stub_decls.h"
 
-// Local (static) path/route editor helpers and AI-path parsing helpers.
-// Stubbed as local `t` symbols matching res/libTTapp.so.
+struct EDAIPATH_s;
+struct EDAIPATHNODE_s;
+struct EDAISHAREDPATHNODE_s;
+struct AIPATH_s;
+struct eduimenu_s;
+struct eduiitem_s;
+struct nuvec_s;
 
 static __used__ void ParseAIPathCnxFlag(char *) {
 }

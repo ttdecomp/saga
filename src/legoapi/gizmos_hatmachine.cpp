@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include "legoapi_types.h"
 
 void HatMachine_MoveCode(WORLDINFO_s *, GameObject_s *, i32) {
@@ -16,4 +17,9 @@ void HATMACHINE_s::ClearMechObjectInterface() {
 }
 
 void HATMACHINE_s::GetMechObjectInterface() {
+}
+
+// Static hat-machine reset helper. Moved from gizmisc_stubs.cpp.
+
+static __used__ void HatMachine_Reset(HATMACHINE_s *) {
 }

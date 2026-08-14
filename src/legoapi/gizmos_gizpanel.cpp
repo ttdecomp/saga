@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include "legoapi_types.h"
 
 void GizPanel_Use(GameObject_s &, GIZPANEL_s &) {
@@ -40,4 +41,9 @@ void GIZPANEL_s::ClearMechObjectInterface() {
 }
 
 void GIZPANEL_s::GetMechObjectInterface() {
+}
+
+// Static panel terrain helper. Moved from gizmisc_stubs.cpp.
+
+static __used__ void GizPanel_CreateTerrain(GIZPANEL_s *) {
 }

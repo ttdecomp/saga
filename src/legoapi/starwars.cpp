@@ -1,9 +1,11 @@
 #include "decomp.h"
-#include "stub_decls.h"
 
-// Local (static) Star Wars special-move AI helpers, row-movement and
-// participant-configuration helpers. Stubbed as local `t` symbols matching
-// res/libTTapp.so.
+struct AIPACKET_s;
+struct APIOBJECT_s;
+struct AISYS_s;
+struct AIGROUP_s;
+struct AIROW_s;
+struct nufpar_s;
 
 static __used__ void StarWars_PrepareHatch(AIPACKET_s *, APIOBJECT_s *, i32) {
 }

@@ -81,14 +81,8 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/batman.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/globals.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/rem_rtl_stubs.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gameobject_stubs.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo_part_stubs.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/nufpar_stubs.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/edpath_stubs.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/starwars_stubs.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/rem_misc_stubs.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/misc_c_stubs.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/legoapi_helpers.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/legoapi_misc_c.c
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/ai/aisys/aiscript.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/ai/aisys/aisys.cpp
@@ -106,7 +100,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/edtools/edbriall.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/edtools/edfile.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/edtools/edui_fnt.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/edtools/edui_stubs.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/edtools/edui.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/edtools/edgraall.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/edtools/edlevelall.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/edtools/edmenucallbacks.cpp
@@ -152,6 +146,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cutscenes.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/door.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/edlevelall.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/edpath.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episode.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/fade.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/game_object.cpp
@@ -181,15 +176,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_teleport.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_tubes.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/hub.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/hub_stubs.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/hud.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/character_stubs.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gamehint_stubs.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cutscene_stubs.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/rtl_stubs.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/misc_stubs.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizactions_stubs.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmisc_stubs.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/input.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/legoapi_misc.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/misc_a_bolt.cpp
@@ -212,12 +199,14 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/players.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/qrand.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/rtl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/scene.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/sceneobject.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/sfx.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/shader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/socksysall.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/specialmoves.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/starwars.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/store.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/suit.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/tagging.cpp
