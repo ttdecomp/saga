@@ -1,4 +1,5 @@
 #include "legoapi/socksys.h"
+struct SOCKPOSITION_s;
 
 #include <stdio.h>
 #include <string.h>
@@ -180,4 +181,7 @@ extern "C" {
         SockSysFindInScene(sys, gscn);
         return sys;
     }
+}
+
+static __used__ void SockDataError() {
 }

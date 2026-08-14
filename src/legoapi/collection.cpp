@@ -260,3 +260,5 @@ i32 Collection_GotAnyOfType(i32 type, u32 flags) {
 
     return 0;
 }
+
+static __used__ void Collection_GetSelectingPlayerIDs(i16*) {}

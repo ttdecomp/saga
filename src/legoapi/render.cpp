@@ -1,4 +1,7 @@
 #include "legoapi/world_shared.h"
+struct starfighter_s;
+struct rtl_s;
+struct rtlidata_s;
 
 #include "SwipeDecalRenderer.h"
 #include "nu2api/nufile/nufile.h"
@@ -408,4 +411,32 @@ void SwipeDecalRenderer::Render() {
 }
 
 SwipeDecalRenderer::SwipeDecalRenderer(TouchHolder &, i32, SwipeDecalRenderer::Style) {
+}
+
+static __used__ void PauseRenderOff() {
+}
+
+static __used__ bool MatrixReflection_CanOverride() {
+    return false;
+}
+
+static __used__ void DrawStarFighter(starfighter_s*) {}
+
+static __used__ void DrawParaphernalia(GameObject_s*) {}
+
+static __used__ void DrawFalconSpotLights(GameObject_s*) {}
+
+static __used__ void BackDrop_Alpha(float*) {}
+
+static __used__ double ApplyAntilights(rtl_s*, rtlidata_s*, float) { return {}; }
+
+static __used__ void DisplayListMaterialClipUpdate(nudisplayscene_s*) {}
+
+static __used__ void SelectNextFog() {
+}
+
+static __used__ void SelectPrevFog() {
+}
+
+static __used__ void PreWarmGeomsAndBakeVAOs(nudisplayscene_s *, nunativegscene_s *) {
 }

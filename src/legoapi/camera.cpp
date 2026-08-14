@@ -39,3 +39,8 @@ void GameCameraMakeMiniCut3(u32, float, i32, i32, i32, void *, i32, nuvec_s *, f
 
 void GameCam_GetAdjustedYRot(GAMECAMERA_s *) {
 }
+
+static __used__ void PlayerCamPos(GameObject_s *, nuvec_s *, nuvec_s *) {
+}
+
+static __used__ variptr_u buildFrustrum(nuvec_s*, nuvec_s*, i16) { return {}; }

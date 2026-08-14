@@ -1,4 +1,5 @@
 #include "decomp.h"
+struct SHOPINPUT;
 #include "store.h"
 
 #include "nu2api/nucore/nustring.h"
@@ -157,4 +158,8 @@ static __used__ void StoreUnlockArcade() {
 static __used__ void StoreUnlockBounty() {
 }
 static __used__ void StoreUnlockChallenge() {
+}
+
+static __used__ i32 Shop_GetInput(SHOPINPUT *) {
+    return 0;
 }

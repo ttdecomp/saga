@@ -51,3 +51,10 @@ void InitSpecialSfx(WORLDINFO *world) {
 void LoadSpecialSfxFile(WORLDINFO *world) {
     (void)world;
 }
+
+static __used__ bool ActionMusicFn() { return {}; }
+
+static __used__ bool CheckMusicOther() { return {}; }
+
+static __used__ void SetSoundFadeDistCallBackFn_LSW(WORLDINFO_s *) {
+}

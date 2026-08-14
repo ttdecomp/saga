@@ -179,10 +179,9 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/hud.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/input.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/legoapi_misc.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/misc_a_bolt.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/misc_a_cutscene.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/misc_a_editor.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/misc_a_fft.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/area_editor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/aieditor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/creature_editor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/misc_a_game.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/legoapi_plain.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/levelconfig.cpp

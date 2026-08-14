@@ -1,4 +1,6 @@
 #include "legoapi/world_shared.h"
+#include "decomp.h"
+struct FLOWBOX_s;
 
 void *MiniKitCollection = NULL;
 
@@ -57,3 +59,15 @@ void *LoadGizFlow(void *world, GIZMOSYS_s *gizmo_sys, char *path, VARIPTR *buf, 
     (void)buf_end;
     return NULL;
 }
+
+static __used__ i32 Loop_CountLoopingInputsEx(FLOWBOX_s *, FLOWBOX_s *, i32, u8) {
+    return 0;
+}
+
+static __used__ void CheckIfParentsFinished(GIZFLOW_s*, FLOWBOX_s*) {}
+
+static __used__ void CheckOutputGizmoFlowBox(GIZFLOW_s*, FLOWBOX_s*, unsigned char) {}
+
+static __used__ void CheckOutputActionFlowBox(GIZFLOW_s*, FLOWBOX_s*, unsigned char) {}
+
+static __used__ void CheckOutputConditionFlowBox(GIZFLOW_s*, FLOWBOX_s*, unsigned char) {}

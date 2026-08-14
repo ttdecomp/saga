@@ -29,3 +29,15 @@ void SpecialMove_GetAttackerAction(i32) {
 
 void SpecialMove_Attacker_SetTargetMom(GameObject_s *) {
 }
+
+static __used__ void JediLightCode(GameObject_s *) {
+}
+
+static __used__ void LightSabreComboCode(GameObject_s *, i32, i32, i32, i32) {
+}
+
+static __used__ void LightSabreStreakCode(GameObject_s *, i32, i32) {
+}
+
+static __used__ void JediBKilledCallback(GameObject_s *) {
+}

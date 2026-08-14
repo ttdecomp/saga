@@ -266,3 +266,5 @@ void *Door_FindByName(struct WORLDINFO_s *world, char *name) {
     }
     return NULL;
 }
+static __used__ void GoThroughDoor_ExtraCode(WORLDINFO_s *, DOOR_s *) {
+}

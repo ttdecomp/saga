@@ -955,14 +955,8 @@ static __used__ void SockCamCAMERARAYTILTDIST(nufpar_s *, void *) {
 static __used__ void SockCamCAMERARAYTILTHEIGHT(nufpar_s *, void *) {
 }
 
-static __used__ void SockRailAngles(SOCK *, nugspline_s *, SOCKROT *) {
-}
 
-static __used__ void SockSysPointAlongMID(SOCK *, SOCKPOSITION_s *, nuvec_s *) {
-}
 
-static __used__ void SockEdgeAnglesXY(nuvec_s *, nuvec_s *, u16 *, u16 *) {
-}
 
 static __used__ void Traffic_animobj(nufpar_s *) {
 }

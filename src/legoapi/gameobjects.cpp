@@ -342,16 +342,6 @@ BaseThing::BaseThing() {
 BaseThing::~BaseThing() {
 }
 
-static __used__ void JediLightCode(GameObject_s *) {
-}
-static __used__ void LightSabreComboCode(GameObject_s *, i32, i32, i32, i32) {
-}
-static __used__ void LightSabreStreakCode(GameObject_s *, i32, i32) {
-}
-static __used__ void JediBKilledCallback(GameObject_s *) {
-}
-static __used__ void KilledTrooperCannon(GameObject_s *) {
-}
 static __used__ void LEGO_100PercentFn() {
 }
 static __used__ void LEGO_AllGoldBricksFn() {

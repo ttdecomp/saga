@@ -6,6 +6,9 @@
 #include "nu2api/nufile/nufpar.h"
 
 #include <string.h>
+struct numtx_s;
+struct APICHARACTERMODELLIST_s;
+struct EXTRAMODEL;
 
 // Forward declarations for local (static) character/gameplay helper stubs.
 struct nuvec_s;
@@ -684,3 +687,13 @@ static __used__ void GameObjectForceApart2D(APIOBJECT_s *, APIOBJECT_s *) {
 static __used__ bool FindSlamOrigin_UseCPos(GameObject_s *) {
     return false;
 }
+
+static __used__ void DrawWeapons(GameObject_s*, int, float) {}
+
+static __used__ void DrawCharacterAttachments(GameObject_s*, numtx_s*) {}
+
+static __used__ void DrawWeapon_SetSabreObjects(GameObject_s*, int, int, int, int, int*, int*) {}
+
+static __used__ void CharConfig(int, char*, char*, variptr_u*, variptr_u*, int, char*, int, int, nufpcomjmp_s*) {}
+
+static __used__ void AddToModelList(APICHARACTERMODELLIST_s*, int*, int, int, int, EXTRAMODEL*) {}

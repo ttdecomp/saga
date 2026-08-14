@@ -5867,42 +5867,16 @@ static __used__ i32 MatchExtension(char *, char *, i32) {
 }
 struct AIROW_s;
 
-static __used__ void GameAILoad(AISYS_s *, int, nugscn_s *, variptr_u *, variptr_u *) {
-}
 
-static __used__ void FormationMove(AIGROUP_s *, int (*)(AIGROUP_s *, AIROW_s *, AIROW_s *, APIOBJECT_s *)) {
-}
 
-static __used__ APIOBJECT_s *GetNamedAPIObject(AISYS_s *, char *) {
-    return nullptr;
-}
 
-static __used__ void *GetNextConnection(AIPACKET_s const *, int *) {
-    return nullptr;
-}
 
-static __used__ nuvec_s *GetAICreatureOrigin(AISYS_s *, AIPACKET_s *) {
-    return nullptr;
-}
 
-static __used__ int GameAIActionParseSpeed(char *, unsigned char *) {
-    return 0;
-}
 
-static __used__ void GameFindAlternativeSpecialObject(AISYS_s *, nuhspecial_s *) {
-}
 
-static __used__ void GenerateTrooperTeamShape(minitrooperteam_s *, int) {
-}
 
-static __used__ void FillSockPosition(SOCKSYS *, SOCKPOSITION_s *) {
-}
 
-static __used__ void EndBolt_EwokTorpedo(BOLT_s *) {
-}
 
-static __used__ void GoThroughDoor_ExtraCode(WORLDINFO_s *, DOOR_s *) {
-}
 
 static __used__ float fxy(unsigned int, unsigned int) {
     return 0;
@@ -5920,13 +5894,7 @@ static __used__ int icomp(const void *, const void *) {
     return 0;
 }
 
-static __used__ void InitUI() {
-}
 
-static __used__ void FireCode(GameObject_s *, int, int, float, int) {
-}
-static __used__ void RemoveData(nuqthdr_s *, char *, i32) {
-}
 
 static __used__ void ThreadMain(u64) {
 }
@@ -5934,9 +5902,6 @@ static __used__ void ThreadMain(u64) {
 static __used__ void seed_chase(f32 *, i32, abi_long) {
 }
 
-static __used__ i32 SubItemMenu(MENU_s *) {
-    return 0;
-}
 
 static __used__ void Titles_Draw(WORLDINFO_s *) {
 }
@@ -5957,18 +5922,9 @@ static __used__ f32 SplineLength(nugspline_s *, i32) {
     return 0.0f;
 }
 
-static __used__ void SelectNextFog() {
-}
 
-static __used__ void SelectPrevFog() {
-}
 
-static __used__ i32 Shop_GetInput(SHOPINPUT *) {
-    return 0;
-}
 
-static __used__ void SockDataError() {
-}
 
 static __used__ i32 _fseek64_wrap(__sFILE *, i64, i32) {
     return 0;
@@ -5989,23 +5945,13 @@ static __used__ void PodRaceSnipersUpdate() {
 static __used__ void Sith_UpdateHint(HINT_s *) {
 }
 
-static __used__ void PlayerButton_PlayHint(HINT_s *) {
-}
 
-static __used__ void PlayerButton_UpdateHint(HINT_s *) {
-}
 
-static __used__ void VehicleStuff_UpdateHint(HINT_s *) {
-}
 
 static __used__ void UnlockHubStuff_UpdateHint(HINT_s *) {
 }
 
-static __used__ void SetSoundFadeDistCallBackFn_LSW(WORLDINFO_s *) {
-}
 
-static __used__ void PreWarmGeomsAndBakeVAOs(nudisplayscene_s *, nunativegscene_s *) {
-}
 
 static __used__ void SpecialRouteCharacterName(u8) {
 }

@@ -1,4 +1,5 @@
 #include "legoapi/gizmo.h"
+#include "decomp.h"
 
 #include "GizBlowupObjectInterface.h"
 #include "GizBuildItObjectInterface.h"
@@ -40,6 +41,7 @@
 #include "nu2api/nucore/nustring.h"
 
 #include <string.h>
+struct FLOWBOX_s;
 
 static i32 DefaultGizmo_GetOutput(GIZMO *, i32, i32) {
     return 0;
@@ -642,4 +644,22 @@ void GizObstacleObjectInterface::TargetedFlash() {
 }
 
 GizObstacleObjectInterface::~GizObstacleObjectInterface() {
+}
+
+static __used__ void ProcessFlowBox(GIZFLOW_s *, FLOWBOX_s *, u8) {
+}
+
+static __used__ void ResetForLoopEx(GIZFLOW_s *, FLOWBOX_s *, FLOWBOX_s *, i32) {
+}
+
+static __used__ void ResetGizmoFlowBox(GIZFLOW_s *, FLOWBOX_s *) {
+}
+
+static __used__ void ProcessGizmoFlowBox(GIZFLOW_s *, FLOWBOX_s *, u8) {
+}
+
+static __used__ void ProcessActionFlowBox(GIZFLOW_s *, FLOWBOX_s *, u8) {
+}
+
+static __used__ void ProcessConditionFlowBox(GIZFLOW_s *, FLOWBOX_s *, u8) {
 }

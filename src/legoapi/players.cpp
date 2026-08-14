@@ -1,4 +1,5 @@
 #include "legoapi/world.h"
+struct HINT_s;
 
 #include <stdio.h>
 #include <string.h>
@@ -758,4 +759,32 @@ void Player_HasDoubleBoltDamage_FromBolt(BOLT_s *) {
 }
 
 void PlayerButton_OnClick_Callback_NextButton(MechTouchUIElement &, TouchHolder &) {
+}
+
+static __used__ i32 SelectOpponent(GameObject_s *, f32, f32, i32, i32) {
+    return 0;
+}
+
+static __used__ i32 ShootThisFrame(GameObject_s *, i32, i32) {
+    return 0;
+}
+
+static __used__ void SetComboOpponent(GameObject_s *, f32, i32, i32) {
+}
+
+static __used__ void Player_ClearContext_Game(GameObject_s *, i32) {
+}
+
+static __used__ u16 CanGlide_Game(GameObject_s*) { return {}; }
+
+static __used__ unsigned int CanStartHold_Game(GameObject_s*) { return {}; }
+
+static __used__ unsigned int CanPushBlocks_Game(GameObject_s*) { return {}; }
+
+static __used__ unsigned int CanPushObstacles_Game(GameObject_s*) { return {}; }
+
+static __used__ void PlayerButton_PlayHint(HINT_s *) {
+}
+
+static __used__ void PlayerButton_UpdateHint(HINT_s *) {
 }

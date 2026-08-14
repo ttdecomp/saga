@@ -29,3 +29,5 @@ void SuperCarry_GetObjectPos(GameObject_s *, nuvec_s *, nuvec_s *) {
 
 void SuperCarry_SetTargetMom(GameObject_s *, float) {
 }
+
+static __used__ unsigned int CanSuperCarry_Game(GameObject_s*) { return {}; }

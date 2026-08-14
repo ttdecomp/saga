@@ -114,59 +114,21 @@ static __used__ void UpdateAnimTimer(CHARACTERMODEL_s *, ANIMPACKET_s *, i16, f3
 static __used__ void UpdateCustomPieceAnim(CUSTOMPIECEANIM *, u16, u16) {
 }
 
-static __used__ void Pup_CollectHeart(WORLDINFO_s *, GIZMOPICKUP_s *, i32, GameObject_s *, i32) {
-}
 
-static __used__ void Pup_CollectCharKit(WORLDINFO_s *, GIZMOPICKUP_s *, i32, GameObject_s *, i32) {
-}
 
-static __used__ void Pup_CollectMinikit(WORLDINFO_s *, GIZMOPICKUP_s *, i32, GameObject_s *, i32) {
-}
 
-static __used__ void Pup_CollectPowerUp(WORLDINFO_s *, GIZMOPICKUP_s *, i32, GameObject_s *, i32) {
-}
 
-static __used__ void Pup_CollectRedBrick(WORLDINFO_s *, GIZMOPICKUP_s *, i32, GameObject_s *, i32) {
-}
 
-static __used__ void Pup_UpdatePowerUp(WORLDINFO_s *, GIZMOPICKUP_s *) {
-}
 
-static __used__ void Pup_UpdateBlueCoin(WORLDINFO_s *, GIZMOPICKUP_s *) {
-}
 
-static __used__ void Pup_UpdatePurpleCoin(WORLDINFO_s *, GIZMOPICKUP_s *) {
-}
 
-static __used__ void ProcessFlowBox(GIZFLOW_s *, FLOWBOX_s *, u8) {
-}
 
-static __used__ void ResetForLoopEx(GIZFLOW_s *, FLOWBOX_s *, FLOWBOX_s *, i32) {
-}
 
-static __used__ void ResetGizmoFlowBox(GIZFLOW_s *, FLOWBOX_s *) {
-}
 
-static __used__ void ProcessGizmoFlowBox(GIZFLOW_s *, FLOWBOX_s *, u8) {
-}
 
-static __used__ void ProcessActionFlowBox(GIZFLOW_s *, FLOWBOX_s *, u8) {
-}
 
-static __used__ void ProcessConditionFlowBox(GIZFLOW_s *, FLOWBOX_s *, u8) {
-}
 
-static __used__ void ProcessSpaceLevel(spacelevel_s *) {
-}
 
-static __used__ void ResetSpaceLevel(WORLDINFO_s *, spacelevel_s *) {
-}
 
-static __used__ void ProcessStarFighter(starfighter_s *, quickboltinfo *) {
-}
 
-static __used__ void StarFighterAlign(starfighter_s *, _vuv_s *, f32, i32) {
-}
 
-static __used__ void TrooperTeamSetStateCode(minitrooperteam_s *) {
-}

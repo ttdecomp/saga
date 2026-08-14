@@ -1,4 +1,7 @@
 #include "legoapi_types.h"
+#include "decomp.h"
+struct nuvisiboxtree_s;
+struct nuvisiboxtreenode_s;
 
 void OccluderSet::AddOccluder(nuvec_s const *, nuvec_s const *, nuvec_s const *, nuvec_s const *) {
 }
@@ -74,3 +77,5 @@ void OcclusionManager::SetEnabled(bool) {
 
 OcclusionManager::~OcclusionManager() {
 }
+
+static __used__ void BoxTreeRndrRec(nuvisiboxtree_s*, unsigned char*, nuvisiboxtreenode_s*, int, float, nugscn_s*) {}
