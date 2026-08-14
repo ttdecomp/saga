@@ -183,7 +183,6 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/aieditor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/creature_editor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/misc_a_game.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/legoapi_plain.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/levelconfig.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/locator_editor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/level.cpp
@@ -204,6 +203,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/sfx.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/shader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/socksysall.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/socksysall_stubs.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/specialmoves.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/starwars.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/store.cpp

@@ -1,5 +1,4 @@
 #include "legoapi/socksys.h"
-struct SOCKPOSITION_s;
 
 #include <stdio.h>
 #include <string.h>
@@ -185,3 +184,61 @@ extern "C" {
 
 static __used__ void SockDataError() {
 }
+
+extern "C" {
+
+    void ComplexSockAngles(void) {
+    }
+
+    void EnforceSockYLimits(void) {
+    }
+
+    void FindSock(void) {
+    }
+
+    void MidDistanceFromSockStart(void) {
+    }
+
+    void MoveSockPosition(void) {
+    }
+
+    void SetSockBit(void) {
+    }
+
+    void SetSockPostion(void) {
+    }
+
+    void SockBitSet(void) {
+    }
+
+    void SockOff(void) {
+    }
+
+    void SockOn(void) {
+    }
+
+    void SockRotationMatrix(void) {
+    }
+
+    void SockSegmentsAhead(void) {
+    }
+
+    void SockSysCamera(void) {
+    }
+
+    void SockSysCameraWithOverlapBlend(void) {
+    }
+
+    void SockSysConfigureNuFPar(void) {
+    }
+
+    void SockSysPointAlongSpline(void) {
+    }
+
+    void SockSysSetObjectVisibility(void) {
+    }
+
+    void SockSysTrackInSplineInfo(void) {
+    }
+
+} // extern "C"

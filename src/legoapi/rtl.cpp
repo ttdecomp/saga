@@ -68,3 +68,124 @@ static __used__ void transposeClipPlanes(NUFRUSTRUM *) {
 
 static __used__ void roomRecursive(nugscn_s *, NUFRUSTRUM *, i16, i16, i32) {
 }
+
+extern "C" {
+
+    void fogAlloc(void) {
+    }
+
+    void fogFree(void) {
+    }
+
+    void rtlAlloc(void) {
+    }
+
+    void rtlApplySetScale(void) {
+    }
+
+    void rtlDynamicAlloc(void) {
+    }
+
+    void rtlDynamicAllocTemplate(void) {
+    }
+
+    void rtlDynamicFree(void) {
+    }
+
+    void rtlDynamicMasterEnable(void) {
+    }
+
+    void rtlDynamicSetColours(void) {
+    }
+
+    void rtlDynamicSetDirection(void) {
+    }
+
+    void rtlDynamicSetPos(void) {
+    }
+
+    void rtlDynamicSetRadii(void) {
+    }
+
+    void rtlDynamicSetType(void) {
+    }
+
+    void rtlFrameUpdate(void) {
+    }
+
+    void rtlFree(void) {
+    }
+
+    void rtlGetCurrentSet(void) {
+    }
+
+    void rtlGetEnvPath(void) {
+    }
+
+    void rtlGetEnvSceneName(void) {
+    }
+
+    void rtlGetEnvSet(void) {
+    }
+
+    void rtlGetFogSet(void) {
+    }
+
+    void rtlInitDynamic(void) {
+    }
+
+    void rtlLoadSet(void) {
+    }
+
+    void rtlProcessLights(void) {
+    }
+
+    void rtlReset(void) {
+    }
+
+    void rtlResetEx(void) {
+    }
+
+    void rtlSaveSet(void) {
+    }
+
+    void rtlScaleSetMultipliers(void) {
+    }
+
+    void rtlSetAssocName(void) {
+    }
+
+    void rtlSetExt(void) {
+    }
+
+    void rtlSetLights(void) {
+    }
+
+    void rtlSetMinR(void) {
+    }
+
+    void rtlSetModifiers(void) {
+    }
+
+    void rtlSetShadowFlickerBlendTime(void) {
+    }
+
+    void rtlSetShadowFlickerScale(void) {
+    }
+
+    void rtlSetSpecularLight(void) {
+    }
+
+    void rtlSetSpecularValue(void) {
+    }
+
+    void rtlSetUndoBuffer(void) {
+    }
+
+    void rtlSetUserIdName(void) {
+    }
+
+    void rtlSpecularValue(void) {
+    }
+
+} // extern "C"

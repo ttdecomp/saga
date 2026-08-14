@@ -952,3 +952,70 @@ extern "C" {
         (void)param3;
     }
 } // extern "C"
+
+extern "C" {
+
+    void APIObjectCollision(void) {
+    }
+
+    void APIObjectCollision2D(void) {
+    }
+
+    void APIObjectCollisions(void) {
+    }
+
+    void APIObjectCreate(void) {
+    }
+
+    void APIObjectDestroy(void) {
+    }
+
+    void APIObjectDestroyAll(void) {
+    }
+
+    void APIObjectLOSChecks(void) {
+    }
+
+    void APIObjectRegisterAnimRedirect(void) {
+    }
+
+    void APIObjectRemoveFromLOSTable(void) {
+    }
+
+    void APIObjectSetUsed(void) {
+    }
+
+    void APIObjectVelocities(void) {
+    }
+
+    void AddCollisionSphere(void) {
+    }
+
+    void FlagRoomInstancesAsVisible(void) {
+    }
+
+    void StoreLocatorCoordinates(void) {
+    }
+
+    void StreamCache(void) {
+    }
+
+    void StreamCacheCheckComplete(void) {
+    }
+
+    void StreamRead(void) {
+    }
+
+    void StreamSeek(void) {
+    }
+
+    void TriggerAutoSave(void) {
+    }
+
+    void UpdatePlatinst(void) {
+    }
+
+    void WindShear(void) {
+    }
+
+} // extern "C"

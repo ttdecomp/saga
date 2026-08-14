@@ -77,3 +77,85 @@ void Text_FillInExtendedSaveInfo() {
 
 void Text_InsertCommasIntoNumber(char *, char *, i32) {
 }
+
+extern "C" {
+
+    void FixUpButtonsInFont(void) {
+    }
+
+    void LoadButtonFont(void) {
+    }
+
+    void LoadGameFont(void) {
+    }
+
+    void MatrixText(void) {
+    }
+
+    void MenuSmartTextEx(void) {
+    }
+
+    void MenuText3DEx(void) {
+    }
+
+    void Set3DGameFont(void) {
+    }
+
+    void SetGameFont(void) {
+    }
+
+    void SetQFont2D(void) {
+    }
+
+    void SmartText(void) {
+    }
+
+    void SmartTextEx(void) {
+    }
+
+    void SmartTextEx2(void) {
+    }
+
+    void SmartTextExDrop(void) {
+    }
+
+    void SmartTextGetWidescreen(void) {
+    }
+
+    void SmartTextSetFWNMode(void) {
+    }
+
+    void SmartTextSetFont(void) {
+    }
+
+    void SmartTextSetWidescreen(void) {
+    }
+
+    void SplitText(void) {
+    }
+
+    void Text3D(void) {
+    }
+
+    void Text3DEx(void) {
+    }
+
+    void Text3DEx2(void) {
+    }
+
+    void Text3DStringEncode(void) {
+    }
+
+    void TextDecode(void) {
+    }
+
+    void TextRegisterButtonMapFn(void) {
+    }
+
+    void TextRegisterPulseTimerFn(void) {
+    }
+
+    void UnloadGameFont(void) {
+    }
+
+} // extern "C"

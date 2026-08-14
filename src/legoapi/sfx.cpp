@@ -58,3 +58,142 @@ static __used__ bool CheckMusicOther() { return {}; }
 
 static __used__ void SetSoundFadeDistCallBackFn_LSW(WORLDINFO_s *) {
 }
+
+extern "C" {
+
+    void GetLogicalSfxCount(void) {
+    }
+
+    void GetSfxCount(void) {
+    }
+
+    void GetSfxIdN(void) {
+    }
+
+    void GetSfxName(void) {
+    }
+
+    void IsSfxLooping(void) {
+    }
+
+    void PauseGameAudio(void) {
+    }
+
+    void PauseGameMusic(void) {
+    }
+
+    void PauseGameSfx(void) {
+    }
+
+    void PlayAltGameMusic(void) {
+    }
+
+    void PlayCutMusic(void) {
+    }
+
+    void PlayMusic(void) {
+    }
+
+    void PlaySfx(void) {
+    }
+
+    void PlaySfxAndSetPitch(void) {
+    }
+
+    void PlaySfxAndSetVolume(void) {
+    }
+
+    void PlaySfxAndSetVolumeAndPitch(void) {
+    }
+
+    void PlaySfxById(void) {
+    }
+
+    void PlaySfxByIdAndSetPitch(void) {
+    }
+
+    void PlaySfxByIdAndSetVolume(void) {
+    }
+
+    void PlaySfxByIdAndSetVolumeAndPitch(void) {
+    }
+
+    void PlaySfxByIdEx(void) {
+    }
+
+    void PlayingCutMusic(void) {
+    }
+
+    void PrepareAllSounds(void) {
+    }
+
+    void RegisterSounds(void) {
+    }
+
+    void ResetPreSeek(void) {
+    }
+
+    void RestoreGameMusic(void) {
+    }
+
+    void ResumeGameAudio(void) {
+    }
+
+    void SOUND_SFXRequest_Table(void) {
+    }
+
+    void SetAPIObjPlaySfxByIdFn(void) {
+    }
+
+    void SetAudioFadeLevel(void) {
+    }
+
+    void SetCutVolume(void) {
+    }
+
+    void SetLinkedCutSceneMusic(void) {
+    }
+
+    void SetMusicVolume(void) {
+    }
+
+    void SetPreSeekStartPoint(void) {
+    }
+
+    void SetSfxBitTab_Off(void) {
+    }
+
+    void SetSfxBitTab_On(void) {
+    }
+
+    void SetSfxBit_Off(void) {
+    }
+
+    void SetSfxBit_On(void) {
+    }
+
+    void SfxBit(void) {
+    }
+
+    void SfxBitMaskTable(void) {
+    }
+
+    void SfxBitTab(void) {
+    }
+
+    void SfxBitsRestore(void) {
+    }
+
+    void SfxBitsSetAll(void) {
+    }
+
+    void SfxBitsStore(void) {
+    }
+
+    void StopAltGameMusic(void) {
+    }
+
+    void SwapMusic(void) {
+    }
+
+} // extern "C"

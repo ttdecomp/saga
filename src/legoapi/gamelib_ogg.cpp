@@ -331,3 +331,16 @@ static __used__ int count_len(int) { return {}; }
 
 static __used__ void RemoveData(nuqthdr_s *, char *, i32) {
 }
+
+extern "C" {
+
+    void OggAllocMem(void) {
+    }
+
+    void OggFreeMem(void) {
+    }
+
+    void OggReAllocMem(void) {
+    }
+
+} // extern "C"

@@ -55,3 +55,10 @@ TTNetwork::~TTNetwork() {
 
 static __used__ void NOSGetGuid() {
 }
+
+extern "C" {
+
+    void WithinConnection(void) {
+    }
+
+} // extern "C"

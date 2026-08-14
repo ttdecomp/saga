@@ -82,3 +82,25 @@ static __used__ void creatureEditor_cb_min_t_respawn(eduimenu_s*, eduiitem_s*, u
 static __used__ void creatureEditor_cb_max_t_respawn(eduimenu_s*, eduiitem_s*, unsigned int) {}
 
 static __used__ void creatureEditor_cb_stagger_start(eduimenu_s*, eduiitem_s*, unsigned int) {}
+
+extern "C" {
+
+    void creatureEditorSaveData(void) {
+    }
+
+    void creatureEditor_GetNearest(void) {
+    }
+
+    void creatureEditor_PathDeleted(void) {
+    }
+
+    void creatureEditor_PathNodeDeleted(void) {
+    }
+
+    void creatureEditor_PathNodeMoved(void) {
+    }
+
+    void creatureEditor_RenderAllCreatures(void) {
+    }
+
+} // extern "C"

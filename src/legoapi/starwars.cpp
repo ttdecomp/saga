@@ -48,3 +48,13 @@ static __used__ void RowMoveWander(AIGROUP_s *, AIROW_s *, AIROW_s *, APIOBJECT_
 
 static __used__ void RowMoveTowards(AIGROUP_s *, AIROW_s *, AIROW_s *, APIOBJECT_s *) {
 }
+
+extern "C" {
+
+    void InitFn_MidSpecialMove(void) {
+    }
+
+    void InitFn_PreparingForSpecialMove(void) {
+    }
+
+} // extern "C"

@@ -177,3 +177,136 @@ static __used__ i32 LoadAnimFromPAK(char *, i32, char *, i32) {
 }
 static __used__ void NormalizeAnimPath(char *) {
 }
+
+extern "C" {
+
+    void ANI_Ani3ExtractAllNodeCurves(void) {
+    }
+
+    void ANI_FixUpAddrs(void) {
+    }
+
+    void ANI_SimpleAni3PlayerV4Joint(void) {
+    }
+
+    void ANI_SimpleAni3PlayerV4Joint_Blend(void) {
+    }
+
+    void ANI_SimpleAni3PlayerV4Joint_Blend_EulerQuat(void) {
+    }
+
+    void ANI_SimpleAni3PlayerV4Joint_EulerQuat(void) {
+    }
+
+    void AddAnimEffects(void) {
+    }
+
+    void AnimBlendingFromTo(void) {
+    }
+
+    void AnimDuration(void) {
+    }
+
+    void AnimEndFrame(void) {
+    }
+
+    void AnimListFrame(void) {
+    }
+
+    void AnimListFrameArray(void) {
+    }
+
+    void AnimList_NoLoad(void) {
+    }
+
+    void AnimList_RequestAnimGroupForCreatures(void) {
+    }
+
+    void AnimList_RequestAnimGroups(void) {
+    }
+
+    void AnimMiscFlags(void) {
+    }
+
+    void AnimPacket_FullToMini(void) {
+    }
+
+    void AnimPacket_MiniToFull(void) {
+    }
+
+    void AnimPlaying(void) {
+    }
+
+    void AnimSpeed(void) {
+    }
+
+    void AnimStopFrame(void) {
+    }
+
+    void AnimsAvailableToBothCharacters(void) {
+    }
+
+    void BlendRootFn(void) {
+    }
+
+    void BlendTimeBetweenAnims(void) {
+    }
+
+    void CurrentAnim(void) {
+    }
+
+    void EvalModelAnim(void) {
+    }
+
+    void FindAnimIX(void) {
+    }
+
+    void GetAnimBlendMode(void) {
+    }
+
+    void GetAnimTimeRandom(void) {
+    }
+
+    void GetInstAnimEndFrame(void) {
+    }
+
+    void ResetAnimPacket(void) {
+    }
+
+    void ResetMiniAnimPacket(void) {
+    }
+
+    void RootFn(void) {
+    }
+
+    void RootFnY(void) {
+    }
+
+    void SetActionInfo(void) {
+    }
+
+    void SetAnimBlendMode(void) {
+    }
+
+    void SetAnimTimeRandom(void) {
+    }
+
+    void SetProceduralAnimationFn(void) {
+    }
+
+    void StateAnimEvaluate(void) {
+    }
+
+    void StateAnimEvaluate2(void) {
+    }
+
+    void StateAnimFixPtrs(void) {
+    }
+
+    void UpdateAnimPacket(void) {
+    }
+
+    void UpdateMiniAnimPacket(void) {
+    }
+
+} // extern "C"

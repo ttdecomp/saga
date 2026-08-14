@@ -5962,3 +5962,394 @@ static __used__ void SpecialRouteCharacterTypeID(char *) {
 static __used__ i32 sort32a(void const *, void const *) {
     return 0;
 }
+
+extern "C" {
+
+    void ActionFromName(void) {
+    }
+
+    void ActionInfoFlags(void) {
+    }
+
+    void ActionInfoName(void) {
+    }
+
+    void BackupMenu(void) {
+    }
+
+    void BackupMenuNoFn(void) {
+    }
+
+    void CreateColourPicker(void) {
+    }
+
+    void CreateTestMenu(void) {
+    }
+
+    void DEVCDDVDROM_Interrogate(void) {
+    }
+
+    void DEVMEMORYCARD_Interrogate(void) {
+    }
+
+    void DebugLog(void) {
+    }
+
+    void Debug_Print(void) {
+    }
+
+    void DrawMenu(void) {
+    }
+
+    void DrawMenuBottomMessage(void) {
+    }
+
+    void DrawMenuButtonPrompts(void) {
+    }
+
+    void DrawMenuButtonPromptsEx(void) {
+    }
+
+    void DrawMenuEntry(void) {
+    }
+
+    void DrawMenuEntryEx(void) {
+    }
+
+    void DrawMenuHeader(void) {
+    }
+
+    void DrawMenuHeaderMessage(void) {
+    }
+
+    void DrawMenuTopMessage(void) {
+    }
+
+    void Draw_CANCEL(void) {
+    }
+
+    void Draw_CHECKINGMEMORYCARD(void) {
+    }
+
+    void Draw_DONOTREMOVEMEMORYCARD(void) {
+    }
+
+    void Draw_NOTENOUGHSPACE(void) {
+    }
+
+    void Draw_SPACENEEDED(void) {
+    }
+
+    void EShadowInfo(void) {
+    }
+
+    void EShadowRoofInfo(void) {
+    }
+
+    void FS_SetFileSelPathFromName(void) {
+    }
+
+    void FileSelKill(void) {
+    }
+
+    void FindGameDebris(void) {
+    }
+
+    void FlushMenuHighlights(void) {
+    }
+
+    void FullDeflect(void) {
+    }
+
+    void FullReflect(void) {
+    }
+
+    void GetCurPreSeek(void) {
+    }
+
+    void GetCurrentMusicId(void) {
+    }
+
+    void GetOppMusicId(void) {
+    }
+
+    void InModelList(void) {
+    }
+
+    void IndexLights(void) {
+    }
+
+    void InitFn_SpecialRouteCharacterName(void) {
+    }
+
+    void InitFn_SpecialRouteCharacterTypeID(void) {
+    }
+
+    void InitGameDebris(void) {
+    }
+
+    void LookupDebrisEffect(void) {
+    }
+
+    void LookupDebrisEffectPage(void) {
+    }
+
+    void LookupDebrisEffectPageIgnore(void) {
+    }
+
+    void LookupDebrisEffectPageOnly(void) {
+    }
+
+    void MenuCurrentID(void) {
+    }
+
+    void MenuDrawBackground(void) {
+    }
+
+    void MenuGetSlotNum(void) {
+    }
+
+    void MenuInCriticalMemoryCard(void) {
+    }
+
+    void MenuInMemoryCard(void) {
+    }
+
+    void MenuInMemoryCardLoad(void) {
+    }
+
+    void MenuInMemoryCardWarning(void) {
+    }
+
+    void MenuRegisterSoundFX(void) {
+    }
+
+    void MenuRememberCursor(void) {
+    }
+
+    void MenuRepeat(void) {
+    }
+
+    void MenuSetColours(void) {
+    }
+
+    void MenuSetHeaderDrawFn(void) {
+    }
+
+    void MenuSetPreDrawFn(void) {
+    }
+
+    void MenuSetPulsateSpeed(void) {
+    }
+
+    void MenuSetTopBottom(void) {
+    }
+
+    void MessageBoxInitMtl(void) {
+    }
+
+    void MusicPreSeek(void) {
+    }
+
+    void MusicPreSeekNow(void) {
+    }
+
+    void MusicSeekOffset(void) {
+    }
+
+    void MusicSeeking(void) {
+    }
+
+    void MusicState(void) {
+    }
+
+    void PetesHackOfDeath(void) {
+    }
+
+    void ProcessFileSel2(void) {
+    }
+
+    void RemapAddr(void) {
+    }
+
+    void RenderFileSel2(void) {
+    }
+
+    void SaveSystemInitialiseEx(void) {
+    }
+
+    void SetButtonScaleMode(void) {
+    }
+
+    void SetSaveSuccessFn(void) {
+    }
+
+    void StartFileSel(void) {
+    }
+
+    void TestMenu(void) {
+    }
+
+    void UpdateMenu(void) {
+    }
+
+    void UpdateSaveSlots(void) {
+    }
+
+    void cbCancelSubMenu(void) {
+    }
+
+    void cbCancelSubMenuFromItem(void) {
+    }
+
+    void cbCompateDirentByDateAsc(void) {
+    }
+
+    void cbCompateDirentByDateDec(void) {
+    }
+
+    void cbCompateDirentByNameAsc(void) {
+    }
+
+    void cbCompateDirentByNameDec(void) {
+    }
+
+    void cbCompateDirentBySizeAsc(void) {
+    }
+
+    void cbCompateDirentBySizeDec(void) {
+    }
+
+    void cbInteractMenuKeySelect(void) {
+    }
+
+    void cbInteractMenuScrollDown(void) {
+    }
+
+    void cbInteractMenuScrollTo(void) {
+    }
+
+    void cbInteractMenuScrollUp(void) {
+    }
+
+    void cbInteractMenuTitle(void) {
+    }
+
+    void cbModifierAdjust(void) {
+    }
+
+    void cbNearClipAtCursor(void) {
+    }
+
+    void cbSetAutoSpeed(void) {
+    }
+
+    void cbTriggerSubMenu(void) {
+    }
+
+    void do_Pad_Standard_camera(void) {
+    }
+
+    void do_maya_mouse_camera(void) {
+    }
+
+    void do_mouse_flymode_camera(void) {
+    }
+
+    void loadsaveCallEachFrame(void) {
+    }
+
+    void nugraphAddPoint(void) {
+    }
+
+    void nugraphCalcCurve(void) {
+    }
+
+    void nugraphDeletePoint(void) {
+    }
+
+    void nugraphFileLoadGraph(void) {
+    }
+
+    void nugraphFileLoadGraphOnly(void) {
+    }
+
+    void nugraphFileLoadGraphOnlyToFile(void) {
+    }
+
+    void nugraphFileLoadTable(void) {
+    }
+
+    void nugraphFileSave(void) {
+    }
+
+    void nugraphFileSaveGraphOnly(void) {
+    }
+
+    void nugraphFileSaveGraphOnlyToFile(void) {
+    }
+
+    void nugraphFreeTempCurveData(void) {
+    }
+
+    void nugraphGenerateLookupTable(void) {
+    }
+
+    void nugraphGetXatT(void) {
+    }
+
+    void nugraphGetYatT(void) {
+    }
+
+    void nugraphGetYatX(void) {
+    }
+
+    void nugraphGetYatXScaled(void) {
+    }
+
+    void nugraphInit(void) {
+    }
+
+    void saveloadASCallEachFrame(void) {
+    }
+
+    void saveloadASFormat(void) {
+    }
+
+    void saveloadAutoSave(void) {
+    }
+
+    void saveloadCheckCardFormatted(void) {
+    }
+
+    void saveloadCheckCardFreeSpace(void) {
+    }
+
+    void saveloadCheckCardPresent(void) {
+    }
+
+    void saveloadCheckCardType(void) {
+    }
+
+    void saveloadCheckKeyCode(void) {
+    }
+
+    void saveloadCheckSlotsUsed(void) {
+    }
+
+    void saveloadDeleteSlot(void) {
+    }
+
+    void saveloadFormatCard(void) {
+    }
+
+    void saveloadLoadIcon(void) {
+    }
+
+    void saveloadUnFormatCard(void) {
+    }
+
+    void saveloadWriteKeyCode(void) {
+    }
+
+} // extern "C"

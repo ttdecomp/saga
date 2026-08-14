@@ -38,3 +38,10 @@ void ShaderMtlDescFilter::hasLayer(i32) const {
 
 void ShaderMtlDescFilter::internalInit(nushadermtldesc_s const *, numtl_s const *, i32, i32) {
 }
+
+extern "C" {
+
+    void GetGLSLTypeInfo(void) {
+    }
+
+} // extern "C"

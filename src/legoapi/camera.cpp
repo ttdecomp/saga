@@ -44,3 +44,10 @@ static __used__ void PlayerCamPos(GameObject_s *, nuvec_s *, nuvec_s *) {
 }
 
 static __used__ variptr_u buildFrustrum(nuvec_s*, nuvec_s*, i16) { return {}; }
+
+extern "C" {
+
+    void CameraEmitterDistance(void) {
+    }
+
+} // extern "C"

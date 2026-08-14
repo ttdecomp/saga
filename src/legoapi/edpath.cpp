@@ -122,3 +122,31 @@ static __used__ void routeEditor_cbCancelRouteUsers(eduimenu_s *, eduimenu_s *) 
 
 static __used__ void routeEditor_cbCancelRenameRouteMenu(eduimenu_s *, eduimenu_s *) {
 }
+
+extern "C" {
+
+    void pathEditorCreateData(void) {
+    }
+
+    void pathEditorDrawPaths(void) {
+    }
+
+    void pathEditorSaveData(void) {
+    }
+
+    void pathEditor_CalcNodeIXs(void) {
+    }
+
+    void pathEditor_GetPath(void) {
+    }
+
+    void pathEditor_OnPathCheck(void) {
+    }
+
+    void pathEditor_QuickOnPathCheck(void) {
+    }
+
+    void pathEditor_UpdateNodesOnPlatforms(void) {
+    }
+
+} // extern "C"

@@ -123,3 +123,10 @@ static __used__ void TrooperTeamSetStateCode(minitrooperteam_s *) {
 }
 
 static __used__ unsigned int BoltInitSfx_LSW(GameObject_s*) { return {}; }
+
+extern "C" {
+
+    void HitParts(void) {
+    }
+
+} // extern "C"

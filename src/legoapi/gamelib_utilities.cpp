@@ -26,3 +26,22 @@ void GroupBuffer_RemoveFromGroup(i32, i32) {
 
 void GroupBuffer_GetSampleByIndex(i32, i32) {
 }
+
+extern "C" {
+
+    void UtilFrameStart(void) {
+    }
+
+    void UtilGetFrameStartTime(void) {
+    }
+
+    void UtilGetTime(void) {
+    }
+
+    void VuQuatSlerpFast(void) {
+    }
+
+    void buildBitCountTable(void) {
+    }
+
+} // extern "C"

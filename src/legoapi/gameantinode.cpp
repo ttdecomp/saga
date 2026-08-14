@@ -42,3 +42,16 @@ static __used__ void antinodeEditor_cbDeleteAntinode(eduimenu_s*, eduiitem_s*, u
 static __used__ void antinodeEditor_cbCancelDeleteAntinodeMenu(eduimenu_s*, eduimenu_s*) {}
 
 static __used__ void antinodeEditor_cbCancelMenu(eduimenu_s*, eduimenu_s*) {}
+
+extern "C" {
+
+    void antinodeEditorDrawAntinodes(void) {
+    }
+
+    void antinodeEditorSaveData(void) {
+    }
+
+    void antinodeEditor_UpdateAntiNodesOnPlatforms(void) {
+    }
+
+} // extern "C"

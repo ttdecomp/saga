@@ -697,3 +697,70 @@ static __used__ void DrawWeapon_SetSabreObjects(GameObject_s*, int, int, int, in
 static __used__ void CharConfig(int, char*, char*, variptr_u*, variptr_u*, int, char*, int, int, nufpcomjmp_s*) {}
 
 static __used__ void AddToModelList(APICHARACTERMODELLIST_s*, int*, int, int, int, EXTRAMODEL*) {}
+
+extern "C" {
+
+    void APICharacterLoaded(void) {
+    }
+
+    void APICharacterModelReset(void) {
+    }
+
+    void APICharacterSysInit(void) {
+    }
+
+    void APIDrawCharacterModel(void) {
+    }
+
+    void APIDumpCharacterModels(void) {
+    }
+
+    void APILoadCharacterModels(void) {
+    }
+
+    void APIResetCharacterRemap(void) {
+    }
+
+    void APITransparentCharDraw(void) {
+    }
+
+    void APITransparentInit(void) {
+    }
+
+    void InitFn_GetCharacterGoalSpeedFn(void) {
+    }
+
+    void InitFn_GetHearDistance(void) {
+    }
+
+    void InitFn_GetViewRange(void) {
+    }
+
+    void InitFn_GlobalCharacterHGobj(void) {
+    }
+
+    void InitFn_GlobalCharacterName(void) {
+    }
+
+    void InitFn_GlobalCharacterRender(void) {
+    }
+
+    void InitFn_GlobalCharacterTypeID(void) {
+    }
+
+    void InitFn_GlobalGetMaxViewHeight(void) {
+    }
+
+    void InitFn_GlobalGetMinViewHeight(void) {
+    }
+
+    void InitFn_LevelCharacterGlobalID(void) {
+    }
+
+    void InitFn_LevelCharacterName(void) {
+    }
+
+    void InitFn_LevelCharacterTypeID(void) {
+    }
+
+} // extern "C"

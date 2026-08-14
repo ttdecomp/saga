@@ -29,3 +29,25 @@ static __used__ void * CreateCreature(int, nuvec_s*, int) { return {}; }
 static __used__ void DestroyLocator(EDLOCATOR_s*) {}
 
 static __used__ unsigned int AddLocatorToSet(EDLOCATORSET_s*, EDLOCATOR_s*, EDLOCATOR_s*) { return {}; }
+
+extern "C" {
+
+    void locatorEditorDrawLocators(void) {
+    }
+
+    void locatorEditorSaveData(void) {
+    }
+
+    void locatorEditor_GetNearest(void) {
+    }
+
+    void locatorEditor_PathDeleted(void) {
+    }
+
+    void locatorEditor_PathNodeDeleted(void) {
+    }
+
+    void locatorEditor_PathNodeMoved(void) {
+    }
+
+} // extern "C"

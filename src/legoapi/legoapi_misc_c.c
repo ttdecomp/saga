@@ -12,3 +12,17 @@ static __used__ void tpentOnEnter(void) {
 
 static __used__ void tpentPropOnEnter(void) {
 }
+    void ExplodeBuffer(void) {
+    }
+
+    void ExplodeExit(void) {
+    }
+
+void sprintf(void) {
+}
+
+void strstr(void) {
+}
+
+void getCurrentTime(void) {
+}

@@ -132,3 +132,190 @@ static __used__ void UpdateCustomPieceAnim(CUSTOMPIECEANIM *, u16, u16) {
 
 
 
+
+extern "C" {
+
+    void AddDebrisEffect(void) {
+    }
+
+    void AddFiniteShotDebrisEffect(void) {
+    }
+
+    void AddFiniteShotDebrisEffect2(void) {
+    }
+
+    void AddFiniteShotDebrisEffectUserData(void) {
+    }
+
+    void AddFiniteShotPART(void) {
+    }
+
+    void AddGameDebris(void) {
+    }
+
+    void AddGameDebrisMom(void) {
+    }
+
+    void AddGameDebrisMomentum(void) {
+    }
+
+    void AddGameDebrisMtx(void) {
+    }
+
+    void AddGameDebrisRot(void) {
+    }
+
+    void AddGameDebrisXYZ(void) {
+    }
+
+    void AddMSituExtraTerrRot(void) {
+    }
+
+    void AddPARTEffect(void) {
+    }
+
+    void AddPart(void) {
+    }
+
+    void AddPickupTerr(void) {
+    }
+
+    void AddPickupTerrRot(void) {
+    }
+
+    void AddRotatedDebrisEffect(void) {
+    }
+
+    void AddScaledFiniteShotDebrisEffect(void) {
+    }
+
+    void AddScaledFiniteShotPART(void) {
+    }
+
+    void AddScaledVariableShotDebrisEffect(void) {
+    }
+
+    void AddScaledVariableShotDebrisEffect1(void) {
+    }
+
+    void AddScaledVariableShotDebrisEffect2(void) {
+    }
+
+    void AddScaledVariableShotDebrisEffect3(void) {
+    }
+
+    void AddScaledVariableShotDebrisEffect4(void) {
+    }
+
+    void AddScaledVariableShotDebrisEffect5(void) {
+    }
+
+    void AddScaledVariableShotPARTEffect(void) {
+    }
+
+    void AddVariableShotDebrisEffect(void) {
+    }
+
+    void AddVariableShotDebrisEffectMtx(void) {
+    }
+
+    void AddVariableShotDebrisEffectMtx3(void) {
+    }
+
+    void AddVariableShotDebrisEffectMtx4(void) {
+    }
+
+    void AddVariableShotDebrisEffectTimed1(void) {
+    }
+
+    void AddVariableShotDebrisEffectTimed3(void) {
+    }
+
+    void AddVariableShotDebrisEffectTimed5(void) {
+    }
+
+    void AddVariableShotPARTEffect(void) {
+    }
+
+    void CastPart(void) {
+    }
+
+    void CheckPartCount(void) {
+    }
+
+    void DrawParts(void) {
+    }
+
+    void FindPart(void) {
+    }
+
+    void GetMaxPartTypes(void) {
+    }
+
+    void GetPartCount(void) {
+    }
+
+    void GetPartName(void) {
+    }
+
+    void InitParts(void) {
+    }
+
+    void KillAllParts(void) {
+    }
+
+    void KillPart(void) {
+    }
+
+    void KillPartsByScene(void) {
+    }
+
+    void NewPartRotation(void) {
+    }
+
+    void PARTEmitterOrientation(void) {
+    }
+
+    void PARTEmitterPos(void) {
+    }
+
+    void PARTGetTotalOffTime(void) {
+    }
+
+    void PARTGetTotalOnTime(void) {
+    }
+
+    void PARTLookupType(void) {
+    }
+
+    void PARTLookupTypePageOnly(void) {
+    }
+
+    void PARTStartOffset(void) {
+    }
+
+    void PartPlatId(void) {
+    }
+
+    void ParticleReset(void) {
+    }
+
+    void ParticlesPerFrame(void) {
+    }
+
+    void ParticlesPerSecond(void) {
+    }
+
+    void ReassignPickupInst(void) {
+    }
+
+    void RemovePARTEffect(void) {
+    }
+
+    void ResetParts(void) {
+    }
+
+    void UpdateParts(void) {
+    }
+
+} // extern "C"
