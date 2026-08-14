@@ -135,6 +135,8 @@ set(SAGA_SOURCE_FILES
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai_sys.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai_sys_stubs.cpp
+
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/aieditor.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/aipathcnxhelper.cpp
@@ -204,6 +206,8 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/customise.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cutscene.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cutscene_stubs.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cutscenes.cpp
 
@@ -447,6 +451,8 @@ set(SAGA_SOURCE_FILES
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render_stubs.cpp
+
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ripples.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/rope.cpp
@@ -514,6 +520,8 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/teleport.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/terrain.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/terrain_stubs.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/text.cpp
 
