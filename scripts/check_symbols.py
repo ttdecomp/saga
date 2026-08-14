@@ -129,6 +129,11 @@ def main():
         "--list", action="store_true", help="print the full missing-symbol list"
     )
     ap.add_argument(
+        "--list-ignored",
+        action="store_true",
+        help="also list the missing symbols that were ignored via the ignore list",
+    )
+    ap.add_argument(
         "--baseline-extra",
         type=int,
         default=None,
@@ -148,16 +153,15 @@ def main():
     build_strong = defined_text_symbols(args.build, include_weak=False)
     ignore = load_ignore(args.ignore)
 
-    missing = sorted(
+    candidate = sorted(
         s
-        for s in ((orig_strong | orig_local) - build - ignore)
-        if not is_thunk(s) and not is_local_label(s) and not is_compiler_generated(s)
+        for s in ((orig_strong | orig_local) - build)
+        if not is_thunk(s) and not is_local_label(s)
     )
-    compiler_gen = sorted(
-        s
-        for s in ((orig_strong | orig_local) - build - ignore)
-        if not is_thunk(s) and not is_local_label(s) and is_compiler_generated(s)
-    )
+    ignored = [s for s in candidate if s in ignore]
+    remain = [s for s in candidate if s not in ignore]
+    missing = [s for s in remain if not is_compiler_generated(s)]
+    compiler_gen = [s for s in remain if is_compiler_generated(s)]
     missing_global = [s for s in missing if s in orig_strong]
     missing_local = [s for s in missing if s in orig_local]
     extras = sorted(build_strong - orig_any)
@@ -167,10 +171,16 @@ def main():
           f"({len(orig_strong)} global, {len(orig_local)} local)")
     print(f"provided by build     : {len(build)}")
     print(f"matched / in build    : {provided}")
-    print(f"missing (not ignored) : {len(missing)} "
-          f"({len(missing_global)} global, {len(missing_local)} local)")
+    print(f"ignored               : {len(ignored)}")
     print(f"compiler-generated    : {len(compiler_gen)} (clones / static-init; auto)")
     print(f"extra (in build only) : {len(extras)}")
+    print(f"total missing         : {len(missing)} "
+          f"({len(missing_global)} global, {len(missing_local)} local)")
+    if args.list_ignored:
+        if ignored:
+            print("\nignored missing symbols (from ignore list):")
+            for s in ignored:
+                print(f"  {s}")
     if args.list:
         if missing_global:
             print("\nmissing global symbols:")
