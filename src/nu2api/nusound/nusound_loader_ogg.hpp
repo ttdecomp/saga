@@ -6,21 +6,21 @@ class NuSoundHeaderOGG : public NuSoundStreamDesc {
   public:
     NuSoundHeaderOGG() = default;
 
-    DataFormat GetDecodedDataFormat();
-    u64 GetEncodedLengthBytes();
-    u64 GetLengthSamples();
-    double GetLengthSeconds();
-    u64 GetDataOffset();
-    u16 GetNumChannels();
-    u32 GetSampleRate();
-    u16 GetBitsPerChannel();
-    u16 GetBlockSize();
-    DataFormat GetEncodedDataFormat();
-    u64 GetDecodedLengthBytes();
-    u16 GetInterleaveSize();
-    u16 GetFormatId();
-    u16 GetExtendedDataSize();
-    void *GetExtendedData();
+    DataFormat GetDecodedDataFormat() const;
+    u64 GetEncodedLengthBytes() const;
+    u64 GetLengthSamples() const;
+    double GetLengthSeconds() const;
+    u64 GetDataOffset() const;
+    u16 GetNumChannels() const;
+    u32 GetSampleRate() const;
+    u16 GetBitsPerChannel() const;
+    u16 GetBlockSize() const;
+    DataFormat GetEncodedDataFormat() const;
+    u64 GetDecodedLengthBytes() const;
+    u16 GetInterleaveSize() const;
+    u16 GetFormatID() const;
+    u16 GetExtendedDataSize() const;
+    void *GetExtendedData() const;
 };
 
 class NuSoundLoaderOGG : public NuSoundLoader {

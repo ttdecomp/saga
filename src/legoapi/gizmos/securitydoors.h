@@ -7,7 +7,7 @@
 typedef struct SECURITYDOOR_s {
 } SECURITYDOOR;
 
-ADDGIZMOTYPE* SecurityDoors_RegisterGizmo(int type_id);
+ADDGIZMOTYPE *SecurityDoors_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

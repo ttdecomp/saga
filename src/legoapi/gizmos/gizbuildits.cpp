@@ -2,13 +2,14 @@
 
 #include "decomp.h"
 
-int gizbuildit_gizmotype_id = -1;
+i32 gizbuildit_gizmotype_id = -1;
 
-static int GizBuildIts_GetMaxGizmos(void *buildit) {
+static i32 GizBuildIts_GetMaxGizmos(void *buildit) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void GizBuildIts_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void GizBuildIts_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
@@ -26,34 +27,40 @@ static void GizBuildIts_Draw(void *, void *, float) {
 
 static char *GizmoBuildit_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizmoBuildit_GetOutput(GIZMO *gizmo, int, int) {
+static i32 GizmoBuildit_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static char *GizmoBuildit_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static i32 GizmoBuildit_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void GizmoBuildit_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static char *GizmoBuildit_GetOutputName(GIZMO *gizmo, int output_index) {
+static void GizmoBuildit_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static int GizmoBuildit_GetNumOutputs(GIZMO *gizmo) {
+static i32 GizmoBuildit_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
-}
-
-static void GizmoBuildit_Activate(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static void GizmoBuildit_SetVisibility(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static int GizmoBuildit_GetPos(GIZMO *gizmo) {
-    UNIMPLEMENTED();
+    return {};
 }
 
 static void *GizBuildIts_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void GizBuildIts_ClearProgress(void *, void *) {
@@ -70,17 +77,19 @@ static void GizBuildIts_Reset(void *, void *, void *) {
 
 static void *GizBuildIts_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizBuildIts_Load(void *, void *) {
+static i32 GizBuildIts_Load(void *, void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void GizBuildIts_PostLoad(void *, void *) {
     UNIMPLEMENTED();
 }
 
-ADDGIZMOTYPE *GizBuildIts_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *GizBuildIts_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

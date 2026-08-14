@@ -4,19 +4,19 @@
 
 #include "nu2api/nucore/nustring.h"
 
-int DEVHOST_Interrogate(NUFILE_DEVICE *device) {
+i32 DEVHOST_Interrogate(NUFILE_DEVICE *device) {
     device->status = 1;
 
     return 1;
 }
 
-int DEV_FormatName(NUFILE_DEVICE *device, char *formatted_name, char *path, int buf_size) {
+i32 DEV_FormatName(NUFILE_DEVICE *device, char *formatted_name, char *path, i32 buf_size) {
     char buf[512];
-    int device_name_len;
+    i32 device_name_len;
     char *subpath;
-    int path_pos;
-    int path_len;
-    int sep_pos;
+    i32 path_pos;
+    i32 path_len;
+    i32 sep_pos;
     char *root;
 
     device_name_len = NuStrLen(device->name);
@@ -62,9 +62,4 @@ i32 NuFileExists(char *name) {
     LOG_DEBUG("name=%s", name);
 
     return NuFileSize(name) > 0;
-}
-
-i32 NuFileNormalise(char *dst, i32 length, const char *src) {
-    NuStrNCpy(dst, src, length);
-    return 1;
 }

@@ -29,7 +29,7 @@ u32 Cheats_CheckFlags(u32 flag) {
     return CheatSystem.flags & flag;
 }
 
-u32 Cheat_CheckFlags(int cheat_index, u32 flag_mask) {
+u32 Cheat_CheckFlags(i32 cheat_index, u32 flag_mask) {
     if ((cheat_index > -1) && (cheat_index < CheatSystem.cheats_count)) {
         CHEAT target_cheat = CheatSystem.cheats[cheat_index];
         return flag_mask & target_cheat.flag;
@@ -38,7 +38,7 @@ u32 Cheat_CheckFlags(int cheat_index, u32 flag_mask) {
     return 0;
 }
 
-int Cheat_IsOn(int cheat) {
+i32 Cheat_IsOn(i32 cheat) {
     if (cheat >= 0 && cheat < CheatSystem.cheats_count) {
         if (CheatSystem.cheats[cheat].enabled != 0) {
             return 1;

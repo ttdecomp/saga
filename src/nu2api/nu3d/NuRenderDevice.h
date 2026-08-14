@@ -52,7 +52,6 @@ class NuRenderDevice : NuRenderDeviceGen {
     i32 lock_count;
 
   private:
-    i32 DetermineNominalAspectRatio(u32 width, u32 height);
     void DetermineBackBufferResolution(i32 width, i32 height);
     EGLConfig SelectEGLConfig();
     bool IsExtensionSupported(const char *exts);
@@ -74,6 +73,22 @@ class NuRenderDevice : NuRenderDeviceGen {
     void InitialiseOpenGLContext(ANativeWindow *window);
     void CheckForRenderWindowInitialisation();
     u8 enabled_extensions[26]; // NEEDS TO BE AT 0x28
+
+    void OnAppPaused();
+    void OnAppRestarted();
+    void OnAppResume();
+    void OnAppStarted();
+    void OnAppStopped();
+    void OnGainedFocus();
+    void OnLostFocus();
+    void OnWindowDestroy();
+    void PreInitialize();
+    void ResizeDevice(i32 width, i32 height, i32 _a, bool _b, bool _c, bool _d, bool _e);
+
+    void IsContextValid() const;
+    void MultiThreadRender() const;
+    void DetermineNominalAspectRatio(u32 width, u32 height) const;
+    void OpenglErrorCallback(u32 source, u32 type, u32 id, u32 severity, i32 len, char const *msg, void *user_param);
 };
 
 extern NuRenderDevice g_renderDevice;

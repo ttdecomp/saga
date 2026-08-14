@@ -23,7 +23,7 @@ static void LoadPermData(BGPROCINFO *proc) {
 
     CDataList =
         ConfigureCharacterList("chars\\chars.txt", &permbuffer_ptr, &permbuffer_end, 340, &CHARCOUNT, 288, &GCDataList);
-    for (int i = 0; i < CHARCOUNT; i++) {
+    for (i32 i = 0; i < CHARCOUNT; i++) {
         LOG_INFO("Character %d: %s / %s", i, CDataList[i].dir, CDataList[i].file);
     }
     LOG_INFO("Loaded %d characters", CHARCOUNT);
@@ -32,7 +32,7 @@ static void LoadPermData(BGPROCINFO *proc) {
                                      Level_SetDefaults);
     FixUpLevels(&LevFixUp);
 
-    for (int i = 0; i < LEVELCOUNT; i++) {
+    for (i32 i = 0; i < LEVELCOUNT; i++) {
         LOG_INFO("Level %d: %s / %s", i, LDataList[i].dir, LDataList[i].name);
     }
     LOG_INFO("Loaded %d levels", LEVELCOUNT);
@@ -40,14 +40,14 @@ static void LoadPermData(BGPROCINFO *proc) {
     ADataList = Areas_ConfigureList("levels\\areas.txt", &permbuffer_ptr, &permbuffer_end, 72, &AREACOUNT);
     // FixUpAreas();
 
-    for (int i = 0; i < AREACOUNT; i++) {
+    for (i32 i = 0; i < AREACOUNT; i++) {
         LOG_INFO("Area %d: %s / %s", i, ADataList[i].dir, ADataList[i].file);
     }
     LOG_INFO("Loaded %d areas", AREACOUNT);
 
     EDataList = Episodes_ConfigureList("levels\\episodes.txt", &permbuffer_ptr, &permbuffer_end, 6, &EPISODECOUNT);
 
-    for (int i = 0; i < EPISODECOUNT; i++) {
+    for (i32 i = 0; i < EPISODECOUNT; i++) {
         LOG_INFO("Episode %d: %hu areas", i, EDataList[i].area_count);
     }
     LOG_INFO("Loaded %d episodes", EPISODECOUNT);

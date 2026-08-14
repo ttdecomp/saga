@@ -7,15 +7,7 @@
 
 #ifdef __cplusplus
 
-struct Track;
 struct NuMusic;
-
-enum voice_status_e : u32 {
-    VOICE_STATUS_1 = 1,
-    VOICE_STATUS_6 = 6,
-    VOICE_STATUS_7 = 7,
-};
-typedef enum voice_status_e VOICE_STATUS;
 
 enum : u32 {
     TRACK_CLASS_QUIET = 0x1,
@@ -29,28 +21,37 @@ typedef u32 TRACK_CLASS;
 typedef u32 TRACK_FLAGS;
 
 #ifdef __cplusplus
-class Track {
-  public:
-    char *path;
-    char *name;
-    char *ident;
-    i32 file_indexes[2];
-    TRACK_CLASS clazz;
-    void *field12_0x18;
-    i32 index_count;
-    u8 field17_0x20;
-    u8 field18_0x21;
-    u8 field19_0x22;
-    u8 field20_0x23;
-    f32 field21_0x24;
-    i32 pitch;
-    f32 field23_0x2c;
-    f32 field24_0x30;
-    f32 field25_0x34;
-    TRACK_FLAGS flags;
-};
-
 class NuMusic {
+  public:
+    enum VOICE_STATUS : u32 {
+        VOICE_STATUS_1 = 1,
+        VOICE_STATUS_6 = 6,
+        VOICE_STATUS_7 = 7,
+    };
+
+    struct Track {
+        char *path;
+        char *name;
+        char *ident;
+        i32 file_indexes[2];
+        TRACK_CLASS clazz;
+        void *field12_0x18;
+        i32 index_count;
+        u8 field17_0x20;
+        u8 field18_0x21;
+        u8 field19_0x22;
+        u8 field20_0x23;
+        f32 field21_0x24;
+        i32 pitch;
+        f32 field23_0x2c;
+        f32 field24_0x30;
+        f32 field25_0x34;
+        TRACK_FLAGS flags;
+
+        void ManageEntryTime();
+        void SetEntryTime(float);
+    };
+
     struct Voice {
         i32 stream_index;
         Track *tracks[2];
@@ -59,9 +60,12 @@ class NuMusic {
         u32 flags;
         void *field16_0x2c;
 
-        bool Load(Track *track, int trackIndex);
-        void SetStatusFn(VOICE_STATUS status);
+        bool Load(Track *track, i32 trackIndex);
+        void SetStatusFn(i32 status, i32 unused);
         i32 Play();
+
+        void Cue();
+        void Unload();
     };
 
     class Album {
@@ -71,8 +75,9 @@ class NuMusic {
         i32 tracks_count;
         Track *tracks[6];
 
-        Track *GetTrack(TRACK_CLASS class_);
         void Initialise();
+        Track *GetTrack(TRACK_CLASS class_);
+        void GetTracks(u32, NuMusic::Track **);
     };
 
   private:
@@ -99,6 +104,9 @@ class NuMusic {
     i32 track_index;
 
   public:
+    NuMusic();
+    ~NuMusic();
+
     i32 Initialise(const char *file, char *null, VARIPTR *buffer_start, VARIPTR buffer_end);
     void GetSoundFiles(nusound_filename_info_s **finfo, i32 *null);
 
@@ -117,7 +125,7 @@ class NuMusic {
     Voice *FindVoiceByClass(TRACK_CLASS class_);
     i32 StopAll(i32 toggle);
     Voice *FindIdleVoice();
-    i32 PlayTrackI(TRACK_CLASS track);
+    i32 PlayTrackI(TRACK_CLASS track, u32 unused);
 
     static i32 ClassToIX(u32 i);
 
@@ -201,6 +209,27 @@ class NuMusic {
         {"ATTENUATION", NuMusic::xsAttenuation},
         {NULL, NULL},
     };
+
+    void ClassToName(u32);
+    void CueTrack(u32);
+    void Debug(i32, i32);
+    void GetAlbumHandle(char const *);
+    void GetPlaybackTime(u32);
+    void GetPlayer();
+    void GetStatus(u32, i32 *);
+    void NoMusic(i32);
+    void PauseTrack(u32);
+    void PlayTrack(u32, u32);
+    void Process(float);
+    void ResumeTrack(u32);
+    void SelectTrack(u32, char const *);
+    void SetAlbum(char const *);
+    void SetAlbum(i32);
+    void SetClassVolume(u32, float);
+    void SetFader(float, float);
+    void SetMasterVolume(float);
+    void SetTrackEntryTimeByClass(u32, float);
+    void StopTrack(u32, i32);
 };
 
 extern "C" {

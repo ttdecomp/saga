@@ -58,7 +58,7 @@ typedef struct COLLECTID {
     i16 id;
     u8 type;
     u8 field2_0x3;
-    int field3_0x4;
+    i32 field3_0x4;
     u8 can_buy;
     u8 field5_0x9;
     u16 field6_0xa;

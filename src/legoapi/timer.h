@@ -6,7 +6,7 @@ struct TIMER_s {
     f32 time_elapsed;
     f32 last_time_elapsed;
     f32 time_elapsed_mod_seconds;
-    int update_count;
+    i32 update_count;
 };
 
 typedef struct TIMER_s TIMER;

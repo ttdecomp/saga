@@ -2,13 +2,14 @@
 
 #include "decomp.h"
 
-int blowup_gizmotype_id = -1;
+i32 blowup_gizmotype_id = -1;
 
-static int Blowup_GetMaxGizmos(void *blowup) {
+static i32 Blowup_GetMaxGizmos(void *blowup) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void Blowup_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void Blowup_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
@@ -26,38 +27,45 @@ void GizmoBlowupBurstDraw(void *, void *, float) {
 
 static char *Blowup_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int Blowup_GetOutput(GIZMO *gizmo, int, int) {
+static i32 Blowup_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static char *Blowup_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static i32 Blowup_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void Blowup_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static char *Blowup_GetOutputName(GIZMO *gizmo, int output_index) {
+static void Blowup_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static int Blowup_GetNumOutputs(GIZMO *gizmo) {
+i32 Blowup_GetVisibility(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void Blowup_Activate(GIZMO *gizmo, int) {
+static i32 GizmoBlowup_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
-}
-
-static void Blowup_SetVisibility(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-int Blowup_GetVisibility(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-}
-
-static int GizmoBlowup_GetPos(GIZMO *gizmo) {
-    UNIMPLEMENTED();
+    return {};
 }
 
 static void *Blowup_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void Blowup_ClearProgress(void *, void *) {
@@ -74,13 +82,15 @@ static void Blowups_Reset(void *, void *, void *) {
 
 void *gizmoblowup_reservebuffers(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-int gizmoblowup_Load(void *, void *) {
+i32 gizmoblowup_Load(void *, void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-ADDGIZMOTYPE *NewBlowup_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *NewBlowup_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

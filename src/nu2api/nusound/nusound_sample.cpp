@@ -16,7 +16,7 @@ NuSoundSample::NuSoundSample(const char *path, FeedType feed_type)
     this->ref_count = 0;
 }
 
-LoadState NuSoundSample::GetLoadState() const {
+NuSoundSample::LoadState NuSoundSample::GetLoadState() const {
     pthread_mutex_lock(&sCriticalSection);
     LoadState ls = this->load_state;
     pthread_mutex_unlock(&sCriticalSection);
@@ -24,7 +24,7 @@ LoadState NuSoundSample::GetLoadState() const {
     return ls;
 }
 
-ErrorState NuSoundSample::GetLastErrorState() const {
+NuSoundSample::ErrorState NuSoundSample::GetLastErrorState() const {
     pthread_mutex_lock(&sCriticalSection);
     ErrorState es = this->last_error;
     pthread_mutex_unlock(&sCriticalSection);
@@ -44,7 +44,7 @@ void NuSoundSample::Release() {
     __sync_fetch_and_sub(&ref_count, 1);
 }
 
-ErrorState NuSoundSample::Load(void *param_1, i32 param_2, NuSoundOutOfMemCallback *oomCallback) {
+NuSoundSample::ErrorState NuSoundSample::Load(void *param_1, i32 param_2, NuSoundOutOfMemCallback *oomCallback) {
     NuSoundLoader *loader;
     NuSoundStreamDesc *desc;
     NuSoundBuffer *buffer;
@@ -101,4 +101,30 @@ void NuSoundSample::SetLoadState(LoadState state) {
     pthread_mutex_lock(&sCriticalSection);
     this->load_state = state;
     pthread_mutex_unlock(&sCriticalSection);
+}
+
+NuSoundSample::~NuSoundSample() {
+}
+
+void NuSoundSample::SetLastErrorState(ErrorState state) {
+}
+
+void *NuSoundSample::GetSourceBuffer() {
+    return NULL;
+}
+
+bool NuSoundSample::IsLocked() const {
+    return false;
+}
+
+void NuSoundSample::Lock() {
+}
+
+void NuSoundSample::Unlock() {
+}
+
+void NuSoundSample::Unload() {
+}
+
+void NuSoundSample::RequestBuffer(bool, NuSoundWeakPtr<NuSoundBufferCallback>) {
 }

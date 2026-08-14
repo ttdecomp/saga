@@ -40,7 +40,9 @@ class NuSoundLoader {
     NuSoundLoader();
 
     i32 CloseStream();
-    u64 Deinterleave(byte *data, int length, char **dest, int count, NuSoundSystem::ChannelConfig config);
+    u64 Deinterleave(char *data, int length, char **dest, int count, NuSoundSystem::ChannelConfig config);
+    void GetChannelAddress(NuSoundBuffer *, NuSoundStreamDesc *, NuSoundSystem::AudioChannel);
+    void ReleaseHeader(NuSoundStreamDesc *);
     i32 LoadFromFile(const char *name, NuSoundStreamDesc *desc, NuSoundBuffer *buffer, NuSoundOutOfMemCallback *oom);
     i32 Load(NuSoundStreamDesc *desc, NuSoundBuffer *buffer);
 
@@ -89,31 +91,22 @@ class NuSoundStreamDesc {
     double length_seconds;
 
   public:
-    virtual DataFormat GetDecodedDataFormat() = 0;
-    virtual u64 GetEncodedLengthBytes() = 0;
-    virtual u64 GetLengthSamples() = 0;
-    virtual double GetLengthSeconds() = 0;
-    virtual u64 GetDataOffset() = 0;
-    virtual u16 GetNumChannels() = 0;
-    virtual u32 GetSampleRate() = 0;
-    virtual u16 GetBitsPerChannel() = 0;
-    virtual u16 GetBlockSize() = 0;
-    virtual DataFormat GetEncodedDataFormat() = 0;
-    virtual u64 GetDecodedLengthBytes() = 0;
-    virtual i32 DecodeStreamOnOpen();
-    virtual i32 GetLoopStart();
-    virtual i32 GetLoopEnd();
-    virtual u16 GetInterleaveSize() = 0;
-    virtual u16 GetFormatId() = 0;
-    virtual u16 GetExtendedDataSize() = 0;
-    virtual void *GetExtendedData() = 0;
-};
-
-enum class LoadState {
-    NOT_LOADED = 0,
-    LOADED = 1,
-    TWO = 2,
-};
-enum class ErrorState {
-    NONE = 0,
+    virtual DataFormat GetDecodedDataFormat() const = 0;
+    virtual u64 GetEncodedLengthBytes() const = 0;
+    virtual u64 GetLengthSamples() const = 0;
+    virtual double GetLengthSeconds() const = 0;
+    virtual u64 GetDataOffset() const = 0;
+    virtual u16 GetNumChannels() const = 0;
+    virtual u32 GetSampleRate() const = 0;
+    virtual u16 GetBitsPerChannel() const = 0;
+    virtual u16 GetBlockSize() const = 0;
+    virtual DataFormat GetEncodedDataFormat() const = 0;
+    virtual u64 GetDecodedLengthBytes() const = 0;
+    virtual i32 DecodeStreamOnOpen() const;
+    virtual i32 GetLoopStart() const;
+    virtual i32 GetLoopEnd() const;
+    virtual u16 GetInterleaveSize() const = 0;
+    virtual u16 GetFormatID() const = 0;
+    virtual u16 GetExtendedDataSize() const = 0;
+    virtual void *GetExtendedData() const = 0;
 };

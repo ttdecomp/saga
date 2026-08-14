@@ -2,13 +2,14 @@
 
 #include "decomp.h"
 
-int giztorpmachine_gizmotype_id;
+i32 giztorpmachine_gizmotype_id;
 
-static int GizTorp_GetMaxGizmos(void *torp) {
+static i32 GizTorp_GetMaxGizmos(void *torp) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void GizTorp_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void GizTorp_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
@@ -22,25 +23,29 @@ static void GizTorp_Draw(void *, void *, float) {
 
 static char *GizTorp_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizTorp_GetOutput(GIZMO *gizmo, int, int) {
+static i32 GizTorp_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static char *GizTorp_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static i32 GizTorp_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void GizTorp_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static char *GizTorp_GetOutputName(GIZMO *gizmo, int output_index) {
-    UNIMPLEMENTED();
-}
-
-static int GizTorp_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-}
-
-static void GizTorp_Activate(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static void GizTorp_SetVisibility(GIZMO *gizmo, int) {
+static void GizTorp_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
@@ -50,13 +55,15 @@ static void GizTorps_Reset(void *, void *, void *) {
 
 static void *GizTorps_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizTorp_Load(void *, void *) {
+static i32 GizTorp_Load(void *, void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-ADDGIZMOTYPE *GizTorpMachine_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *GizTorpMachine_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

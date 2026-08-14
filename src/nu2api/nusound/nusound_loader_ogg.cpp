@@ -114,62 +114,62 @@ void NuSoundLoaderOGG::FreeMemoryBuffer() {
     NU_FREE(buffer);
 }
 
-NuSoundStreamDesc::DataFormat NuSoundHeaderOGG::GetDecodedDataFormat() {
+NuSoundStreamDesc::DataFormat NuSoundHeaderOGG::GetDecodedDataFormat() const {
     return DataFormat::ZERO;
 }
 
-u64 NuSoundHeaderOGG::GetEncodedLengthBytes() {
+u64 NuSoundHeaderOGG::GetEncodedLengthBytes() const {
     return encoded_length_bytes;
 }
 
-u64 NuSoundHeaderOGG::GetLengthSamples() {
+u64 NuSoundHeaderOGG::GetLengthSamples() const {
     return length_samples;
 }
 
-double NuSoundHeaderOGG::GetLengthSeconds() {
+double NuSoundHeaderOGG::GetLengthSeconds() const {
     return length_seconds;
 }
 
-u64 NuSoundHeaderOGG::GetDataOffset() {
+u64 NuSoundHeaderOGG::GetDataOffset() const {
     return 0;
 }
 
-u16 NuSoundHeaderOGG::GetNumChannels() {
+u16 NuSoundHeaderOGG::GetNumChannels() const {
     return num_channels;
 }
 
-u32 NuSoundHeaderOGG::GetSampleRate() {
+u32 NuSoundHeaderOGG::GetSampleRate() const {
     return sample_rate;
 }
 
-u16 NuSoundHeaderOGG::GetBitsPerChannel() {
+u16 NuSoundHeaderOGG::GetBitsPerChannel() const {
     return bits_per_channel;
 }
 
-u16 NuSoundHeaderOGG::GetBlockSize() {
+u16 NuSoundHeaderOGG::GetBlockSize() const {
     return block_size;
 }
 
-NuSoundStreamDesc::DataFormat NuSoundHeaderOGG::GetEncodedDataFormat() {
+NuSoundStreamDesc::DataFormat NuSoundHeaderOGG::GetEncodedDataFormat() const {
     return DataFormat::THREE;
 }
 
-u64 NuSoundHeaderOGG::GetDecodedLengthBytes() {
+u64 NuSoundHeaderOGG::GetDecodedLengthBytes() const {
     return decoded_length_bytes;
 }
 
-u16 NuSoundHeaderOGG::GetInterleaveSize() {
+u16 NuSoundHeaderOGG::GetInterleaveSize() const {
     return bits_per_channel / 8;
 }
 
-u16 NuSoundHeaderOGG::GetFormatId() {
+u16 NuSoundHeaderOGG::GetFormatID() const {
     return format_id;
 }
 
-u16 NuSoundHeaderOGG::GetExtendedDataSize() {
+u16 NuSoundHeaderOGG::GetExtendedDataSize() const {
     return extended_data_size;
 }
 
-void *NuSoundHeaderOGG::GetExtendedData() {
-    return &extended_data;
+void *NuSoundHeaderOGG::GetExtendedData() const {
+    return extended_data;
 }

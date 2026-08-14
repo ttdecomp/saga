@@ -2,13 +2,14 @@
 
 #include "decomp.h"
 
-int gizmopickup_typeid = -1;
+i32 gizmopickup_typeid = -1;
 
-static int GizmoPickups_GetMaxGizmos(void *pickup) {
+static i32 GizmoPickups_GetMaxGizmos(void *pickup) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void GizmoPickups_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void GizmoPickups_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
@@ -22,34 +23,40 @@ static void GizmoPickups_Draw(void *, void *, float) {
 
 static char *GizmoPickup_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizmoPickup_GetOutput(GIZMO *gizmo, int, int) {
+static i32 GizmoPickup_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static char *GizmoPickup_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static i32 GizmoPickup_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void GizmoPickup_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static char *GizmoPickup_GetOutputName(GIZMO *gizmo, int output_index) {
+static void GizmoPickup_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static int GizmoPickup_GetNumOutputs(GIZMO *gizmo) {
+static i32 GizmoPickup_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
-}
-
-static void GizmoPickup_Activate(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static void GizmoPickup_SetVisibility(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static int GizmoPickup_GetPos(GIZMO *gizmo) {
-    UNIMPLEMENTED();
+    return {};
 }
 
 static void *GizmoPickups_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void GizmoPickups_ClearProgress(void *, void *) {
@@ -66,17 +73,19 @@ static void GizmoPickups_Reset(void *, void *, void *) {
 
 static void *GizmoPickups_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizmoPickups_Load(void *, void *) {
+static i32 GizmoPickups_Load(void *, void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 void GizmoPickups_PostLoad(void *, void *) {
     UNIMPLEMENTED();
 }
 
-ADDGIZMOTYPE *GizmoPickups_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *GizmoPickups_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

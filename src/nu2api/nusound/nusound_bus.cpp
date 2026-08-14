@@ -15,7 +15,7 @@ NuSoundBus *NuSoundSystem::GetBus(const char *name) {
 NuSoundBus::NuSoundBus(const char *name, bool is_master) {
     // this->field15_0x3c = (undefined *)&this->field11_0x2c;
     // this->field13_0x34 = (undefined *)&this->field11_0x2c;
-    // this->field1_0x4 = (int *)0x0;
+    // this->field1_0x4 = (i32 *)0x0;
     // this->field0_0x0 = 0;
     // this->field11_0x2c = 0;
     // this->field14_0x38 = 0;
@@ -38,4 +38,32 @@ NuSoundBus::NuSoundBus(const char *name, bool is_master) {
     if (!is_master) {
         this->parent_bus = NuSoundSystem::sMasterBus;
     }
+}
+
+NuSoundBus::NuSoundBus(const char *name, NuSoundBus *parent) {
+    this->parent_bus = parent;
+}
+
+NuSoundBus::~NuSoundBus() {
+}
+
+void NuSoundBus::AddEffect(NuSoundEffect *) {
+}
+
+void NuSoundBus::RemoveEffect(NuSoundEffect *) {
+}
+
+void NuSoundBus::ApplyFinalMix(float *) {
+}
+
+void NuSoundBus::GetOutputMix(float *) {
+}
+
+void NuSoundBus::SetOutputMix(float) {
+}
+
+void NuSoundBus::SetOutputMix(float *) {
+}
+
+void NuSoundBus::SetOutputBus(NuSoundBus *) {
 }

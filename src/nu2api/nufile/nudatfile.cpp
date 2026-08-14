@@ -61,7 +61,7 @@ i32 NuDatFileFindHash(nudathdr_s *header, char *name) {
                     ptr.addr++;
                 }
 
-                return (int)*ptr.i16_ptr;
+                return (i32)*ptr.i16_ptr;
             }
 
             ptr.addr += NuStrLen(ptr.char_ptr) + 3;

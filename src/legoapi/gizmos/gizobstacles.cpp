@@ -2,13 +2,14 @@
 
 #include "decomp.h"
 
-int obstacle_gizmotype_id = -1;
+i32 obstacle_gizmotype_id = -1;
 
-static int GizObstacles_GetMaxGizmos(void *obstacle) {
+static i32 GizObstacles_GetMaxGizmos(void *obstacle) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void GizObstacles_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void GizObstacles_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
@@ -22,52 +23,62 @@ static void GizObstacles_Draw(void *, void *, float) {
 
 static char *GizmoObstacle_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizmoObstacle_GetOutput(GIZMO *gizmo, int, int) {
+static i32 GizmoObstacle_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static char *GizmoObstacle_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static i32 GizmoObstacle_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void GizmoObstacle_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static char *GizmoObstacle_GetOutputName(GIZMO *gizmo, int output_index) {
+static i32 GizmoObstacle_ActivateRev(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void GizmoObstacle_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static int GizmoObstacle_GetNumOutputs(GIZMO *gizmo) {
+static i32 GizmoObstacle_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void GizmoObstacle_Activate(GIZMO *gizmo, int) {
+static i32 GizObstacles_BoltHitPlat(void *, void *, BOLT *, unsigned char *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizmoObstacle_ActivateRev(GIZMO *gizmo, int, int) {
+static i32 *GizObstacles_GetBestBoltTarget(GIZMOSET *, float *, NUVEC *, NUVEC *, void *, NUVEC *, NUVEC *, float,
+                                           float, i32, i32, i32) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void GizmoObstacle_SetVisibility(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static int GizmoObstacle_GetPos(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-}
-
-static int GizObstacles_BoltHitPlat(void *, void *, BOLT *, unsigned char *) {
-    UNIMPLEMENTED();
-}
-
-static int *GizObstacles_GetBestBoltTarget(GIZMOSET *, float *, NUVEC *, NUVEC *, void *, NUVEC *, NUVEC *, float,
-                                           float, int, int, int) {
-    UNIMPLEMENTED();
-}
-
-static int GizObstacles_BoltHit(void *, void *, void *, NUVEC *, int, float, NUVEC *, NUVEC *, BOLT *, unsigned int,
+static i32 GizObstacles_BoltHit(void *, void *, void *, NUVEC *, i32, float, NUVEC *, NUVEC *, BOLT *, u32,
                                 unsigned char *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void *GizObstacles_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void GizObstacles_ClearProgress(void *, void *) {
@@ -84,21 +95,23 @@ static void GizObstacles_Reset(void *, void *, void *) {
 
 static void *GizObstacles_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizObstacles_Load(void *, void *) {
+static i32 GizObstacles_Load(void *, void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void GizObstacles_PostLoad(void *, void *) {
     UNIMPLEMENTED();
 }
 
-static void GizObstacles_AddLevelSfx(void *, void *, int *, int *, int) {
+static void GizObstacles_AddLevelSfx(void *, void *, i32 *, i32 *, i32) {
     UNIMPLEMENTED();
 }
 
-ADDGIZMOTYPE *GizObstacles_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *GizObstacles_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

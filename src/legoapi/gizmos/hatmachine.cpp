@@ -2,13 +2,14 @@
 
 #include "decomp.h"
 
-int hatmachine_gizmotype_id = -1;
+i32 hatmachine_gizmotype_id = -1;
 
-static int HatMachine_GetMaxGizmos(void *hatmachine) {
+static i32 HatMachine_GetMaxGizmos(void *hatmachine) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void HatMachine_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void HatMachine_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
@@ -22,30 +23,35 @@ static void HatMachine_Draw(void *, void *, float) {
 
 static char *HatMachine_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int HatMachine_GetOutput(GIZMO *gizmo, int, int) {
+static i32 HatMachine_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static char *HatMachine_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static i32 HatMachine_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void HatMachine_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static char *HatMachine_GetOutputName(GIZMO *gizmo, int output_index) {
-    UNIMPLEMENTED();
-}
-
-static int HatMachine_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-}
-
-static void HatMachine_Activate(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static void HatMachine_SetVisibility(GIZMO *gizmo, int) {
+static void HatMachine_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
 static void *HatMachines_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void HatMachines_ClearProgress(void *, void *) {
@@ -62,13 +68,15 @@ static void HatMachines_Reset(void *, void *, void *) {
 
 static void *HatMachines_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int HatMachine_Load(void *, void *) {
+static i32 HatMachine_Load(void *, void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-ADDGIZMOTYPE *HatMachine_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *HatMachine_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

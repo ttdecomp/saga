@@ -2,13 +2,14 @@
 
 #include "decomp.h"
 
-int bombgen_gizmotype_id = -1;
+i32 bombgen_gizmotype_id = -1;
 
-static int GizBombGens_GetMaxGizmos(void *bombgen) {
+static i32 GizBombGens_GetMaxGizmos(void *bombgen) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void GizBombGens_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void GizBombGens_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
@@ -18,34 +19,40 @@ static void GizBombGens_Update(void *, void *, float) {
 
 static char *GizmoBombGen_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizmoBombGen_GetOutput(GIZMO *gizmo, int, int) {
+static i32 GizmoBombGen_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static char *GizmoBombGen_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static i32 GizmoBombGen_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void GizmoBombGen_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static char *GizmoBombGen_GetOutputName(GIZMO *gizmo, int output_index) {
+static void GizmoBombGen_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static int GizmoBombGen_GetNumOutputs(GIZMO *gizmo) {
+static i32 GizmoBombGen_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
-}
-
-static void GizmoBombGen_Activate(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static void GizmoBombGen_SetVisibility(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static int GizmoBombGen_GetPos(GIZMO *gizmo) {
-    UNIMPLEMENTED();
+    return {};
 }
 
 static void *GizBombGens_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void GizBombGens_ClearProgress(void *, void *) {
@@ -62,13 +69,15 @@ static void GizBombGens_SetResetFlag(void *, void *, void *) {
 
 static void *GizBombGens_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizBombGens_Load(void *, void *) {
+static i32 GizBombGens_Load(void *, void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-ADDGIZMOTYPE *GizBombGen_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *GizBombGen_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

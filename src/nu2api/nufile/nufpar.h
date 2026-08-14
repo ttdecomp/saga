@@ -27,15 +27,15 @@ typedef struct nufpar_s {
     char word_buf_store[514];
     char *line_buf;
     char *word_buf;
-    int line_buf_size;
-    int word_buf_size;
+    i32 line_buf_size;
+    i32 word_buf_size;
 
-    int line_num;
-    int line_pos;
-    int char_pos;
+    i32 line_num;
+    i32 line_pos;
+    i32 char_pos;
 
-    int buf_start;
-    int buf_end;
+    i32 buf_start;
+    i32 buf_end;
 
     union {
         NUFPCOMJMP *jump[8];
@@ -45,9 +45,9 @@ typedef struct nufpar_s {
         NUFPCOMJMP *jump[8];
         NUFPCOMJMPCTX *jump_ctx[8];
     } command_stack2;
-    int command_pos;
+    i32 command_pos;
 
-    int size;
+    i32 size;
     char is_utf16;
     char is_utf8;
     char *separator_list;
@@ -57,7 +57,7 @@ typedef struct nufpar_s {
 #ifdef __cplusplus
 extern "C" {
 #endif
-    void NuFParInit(int max_count, int buf_size);
+    void NuFParInit(i32 max_count, i32 buf_size);
 
     NUFPAR *NuFParOpen(NUFILE file_handle);
     void NuFParClose(NUFPAR *parser);
@@ -69,26 +69,26 @@ extern "C" {
     void NuFParSuspend(NUFPAR *parser);
     void NuFParResume(NUFPAR *parser);
 
-    int NuFParGetLine(NUFPAR *parser);
-    int NuFParGetLineW(NUFPAR *parser);
-    int NuFParGetWord(NUFPAR *parser);
-    int NuFParGetWordW(NUFPAR *parser);
+    i32 NuFParGetLine(NUFPAR *parser);
+    i32 NuFParGetLineW(NUFPAR *parser);
+    i32 NuFParGetWord(NUFPAR *parser);
+    i32 NuFParGetWordW(NUFPAR *parser);
     void NuFParUnGetWord(NUFPAR *parser);
 
     f32 NuFParGetFloat(NUFPAR *parser);
     f32 NuFParGetFloatRDP(NUFPAR *parser);
-    int NuFParGetInt(NUFPAR *parser);
-    int NuFParGetIntRDP(NUFPAR *parser);
+    i32 NuFParGetInt(NUFPAR *parser);
+    i32 NuFParGetIntRDP(NUFPAR *parser);
 
-    int NuFParPushCom(NUFPAR *parser, NUFPCOMJMP *commands);
-    int NuFParPushCom2(NUFPAR *parser, NUFPCOMJMP *commands, NUFPCOMJMP *commands2);
-    int NuFParPushComCTX(NUFPAR *parser, NUFPCOMJMPCTX *commands);
+    i32 NuFParPushCom(NUFPAR *parser, NUFPCOMJMP *commands);
+    i32 NuFParPushCom2(NUFPAR *parser, NUFPCOMJMP *commands, NUFPCOMJMP *commands2);
+    i32 NuFParPushComCTX(NUFPAR *parser, NUFPCOMJMPCTX *commands);
     void NuFParPopCom(NUFPAR *parser);
 
     nufpcomfn *NuFParSetInterpreterErrorHandler(nufpcomfn *fn);
 
-    int NuFParInterpretWord(NUFPAR *parser);
-    int NuFParInterpretWordCTX(NUFPAR *parser, void *ctx);
+    i32 NuFParInterpretWord(NUFPAR *parser);
+    i32 NuFParInterpretWordCTX(NUFPAR *parser, void *ctx);
 
     NUWCHAR NuGetWChar(NUFPAR *parser);
 #ifdef __cplusplus

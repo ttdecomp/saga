@@ -100,3 +100,7 @@ personal tastes in readability, the following guidelines apply:
 
 - In C++-style code:
   - Classes and their constituent types are named in `PascalCase`.
+
+## git hooks
+
+run `git config core.hooksPath .githooks` to enable the pre-commit hook in that folder.

@@ -2,14 +2,13 @@
 
 #include "legoapi/gizmo.h"
 
-extern int lever_gizmotype_id;
+extern i32 lever_gizmotype_id;
 
 #ifdef __cplusplus
 
-typedef struct LEVER_s {
-} LEVER;
+typedef struct LEVER_s LEVER;
 
-ADDGIZMOTYPE* Levers_RegisterGizmo(int type_id);
+ADDGIZMOTYPE *Levers_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

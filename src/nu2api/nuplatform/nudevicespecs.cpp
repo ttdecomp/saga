@@ -87,7 +87,7 @@ void NuDeviceSpecs::DetermineDeviceSpecs() {
                 return;
             }
             this->specs = 3;
-            int iVar4 = NuStrICmp(renderer, "NVIDIA Tegra 3");
+            i32 iVar4 = NuStrICmp(renderer, "NVIDIA Tegra 3");
             if ((iVar4 != 0) && (iVar4 = NuStrICmp(renderer, "NVIDIA Tegra 2"), iVar4 != 0)) {
                 return;
             }

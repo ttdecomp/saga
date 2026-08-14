@@ -2,17 +2,17 @@
 
 #include "java/java.h"
 
-jint AttachCurrentThread(JavaVM *vm, JNIEnv **env, void *args) {
+static jint AttachCurrentThread(JavaVM *vm, JNIEnv **env, void *args) {
     *env = NULL;
 
     return JNI_OK;
 }
 
-jint DetachCurrentThread(JavaVM *vm) {
+static jint DetachCurrentThread(JavaVM *vm) {
     return JNI_OK;
 }
 
-jint GetEnv(JavaVM *vm, void **env, jint version) {
+static jint GetEnv(JavaVM *vm, void **env, jint version) {
     *env = NULL;
 
     return JNI_OK;

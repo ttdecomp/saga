@@ -5,10 +5,10 @@
 #include "nu2api/nucore/nustring.h"
 
 typedef struct rdpfctxt_s {
-    int cur_tok;
+    i32 cur_tok;
     f32 cur_val;
     char *buf;
-    int pos;
+    i32 pos;
     nurdpgetvarfn *get_var_fn;
 } RDPFCTXT;
 
@@ -25,7 +25,7 @@ enum {
     TOK_CNT = 9,
 };
 
-static int isnumordot(char c) {
+static i32 isnumordot(char c) {
     if ((c >= '0' && c <= '9') || c == '.') {
         return 1;
     }
@@ -36,8 +36,8 @@ static int isnumordot(char c) {
 static void get_tok(RDPFCTXT *ctx) {
     char var_name_buf[256];
     f32 multiplier;
-    int var_name_pos;
-    int ret;
+    i32 var_name_pos;
+    i32 ret;
 
     // In theory, this should consume whitespace, but instead it just transforms
     // spaces into exclamation points and tabs into line feeds. It _does_ make

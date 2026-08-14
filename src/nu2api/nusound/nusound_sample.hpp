@@ -3,10 +3,23 @@
 #include "nu2api/nusound/nusound_buffer.hpp"
 #include "nu2api/nusound/nusound_loader.hpp"
 #include "nu2api/nusound/nusound_source.hpp"
+#include "nu2api/nusound/nusound_weakptr.hpp"
 
 #include <pthread.h>
 
+class NuSoundBufferCallback;
+
 class NuSoundSample : public NuSoundSource {
+  public:
+    enum class LoadState {
+        NOT_LOADED = 0,
+        LOADED = 1,
+        TWO = 2,
+    };
+    enum class ErrorState {
+        NONE = 0,
+    };
+
   protected:
     NuSoundBuffer buffer;
     NuSoundSystem::FileType file_type;
@@ -40,6 +53,16 @@ class NuSoundSample : public NuSoundSource {
     void Release();
 
     void SetLoadState(LoadState state);
+    void SetLastErrorState(ErrorState state);
+
+    void *GetSourceBuffer();
+    bool IsLocked() const;
+    void Lock();
+    void Unlock();
+    void Unload();
+    void RequestBuffer(bool, NuSoundWeakPtr<NuSoundBufferCallback>);
+
+    ~NuSoundSample();
 
     ErrorState Load(void *param_1, int param_2, NuSoundOutOfMemCallback *oomCallback);
 };

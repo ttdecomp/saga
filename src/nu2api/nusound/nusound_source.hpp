@@ -25,8 +25,12 @@ class NuSoundSource {
 
   public:
     NuSoundSource(const char *file, SourceType source_type, FeedType feed_type);
+    virtual ~NuSoundSource();
 
     const char *GetName() const;
 
     void SetStreamDesc(NuSoundStreamDesc *desc);
+
+    void VoiceReference();
+    void VoiceRelease();
 };

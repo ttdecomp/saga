@@ -2,13 +2,14 @@
 
 #include "decomp.h"
 
-int turret_gizmotype_id = -1;
+i32 turret_gizmotype_id = -1;
 
-static int GizTurrets_GetMaxGizmos(void *turret) {
+static i32 GizTurrets_GetMaxGizmos(void *turret) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void GizTurrets_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void GizTurrets_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
@@ -22,52 +23,62 @@ static void GizTurrets_Draw(void *, void *, float) {
 
 static char *GizmoTurret_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizmoTurret_GetOutput(GIZMO *gizmo, int, int) {
+static i32 GizmoTurret_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static char *GizmoTurret_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static i32 GizmoTurret_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void GizmoTurret_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static char *GizmoTurret_GetOutputName(GIZMO *gizmo, int output_index) {
+static i32 GizmoTurret_ActivateRev(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void GizmoTurret_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static int GizmoTurret_GetNumOutputs(GIZMO *gizmo) {
+static i32 GizmoTurret_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void GizmoTurret_Activate(GIZMO *gizmo, int) {
+static i32 GizTurrets_BoltHitPlat(void *, void *, BOLT *, unsigned char *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizmoTurret_ActivateRev(GIZMO *gizmo, int, int) {
+static i32 *GizTurrets_GetBestBoltTarget(GIZMOSET *, float *, NUVEC *, NUVEC *, void *, NUVEC *, NUVEC *, float, float,
+                                         i32, i32, i32) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void GizmoTurret_SetVisibility(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static int GizmoTurret_GetPos(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-}
-
-static int GizTurrets_BoltHitPlat(void *, void *, BOLT *, unsigned char *) {
-    UNIMPLEMENTED();
-}
-
-static int *GizTurrets_GetBestBoltTarget(GIZMOSET *, float *, NUVEC *, NUVEC *, void *, NUVEC *, NUVEC *, float, float,
-                                         int, int, int) {
-    UNIMPLEMENTED();
-}
-
-static int GizTurrets_BoltHit(void *, void *, void *, NUVEC *, int, float, NUVEC *, NUVEC *, BOLT *, unsigned int,
+static i32 GizTurrets_BoltHit(void *, void *, void *, NUVEC *, i32, float, NUVEC *, NUVEC *, BOLT *, u32,
                               unsigned char *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void *GizTurrets_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void GizTurrets_ClearProgress(void *, void *) {
@@ -84,21 +95,23 @@ static void GizTurrets_Reset(void *, void *, void *) {
 
 static void *GizTurrets_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizTurrets_Load(void *, void *) {
+static i32 GizTurrets_Load(void *, void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void GizTurrets_PostLoad(void *, void *) {
     UNIMPLEMENTED();
 }
 
-static void GizTurrets_AddLevelSfx(void *, void *, int *, int *, int) {
+static void GizTurrets_AddLevelSfx(void *, void *, i32 *, i32 *, i32) {
     UNIMPLEMENTED();
 }
 
-ADDGIZMOTYPE *GizTurrets_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *GizTurrets_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

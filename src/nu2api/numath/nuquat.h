@@ -25,8 +25,22 @@ extern "C" {
     void NuQuatHermiteInt(NUQUAT *out, NUQUAT *m, NUQUAT *a, NUQUAT *b, NUQUAT *c, f32 t);
 
     void NuQuatHarmonize(NUQUAT *a, NUQUAT *b);
+
+    void NuQuatAdd(NUQUAT *out, NUQUAT *q0, NUQUAT *q1);
+    void NuQuatSub(NUQUAT *out, NUQUAT *q0, NUQUAT *q1);
+    void NuQuatMul(NUQUAT *out, NUQUAT *q0, NUQUAT *q1);
+    f32 NuQuatMagnitude(NUQUAT *q);
+    void NuQuatNormalise(NUQUAT *out, NUQUAT *q);
 #ifdef __cplusplus
 }
+
+void NuQuatNeg2(NUQUAT *out, NUQUAT *in);
+void NuQuatBlend(NUQUAT *out, NUQUAT *q0, NUQUAT *q1, f32 blendA, f32 blendB);
+void NuQuatLerp2(NUQUAT *out, NUQUAT *from, NUQUAT *to, f32 t);
+void NuQuatSlerpFast(NUQUAT *out, NUQUAT *from, NUQUAT *to, f32 t);
+void NuQuatSlerp_Accurate(NUQUAT *out, NUQUAT *from, NUQUAT *to, f32 t);
+f32 NuQuatDot(NUQUAT *q0, NUQUAT *q1);
+
 #endif
 
 f32 NuCubicInterpolation(f32 m, f32 y0, f32 y1, f32 y2, f32 t);

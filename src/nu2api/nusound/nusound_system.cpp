@@ -2,6 +2,7 @@
 
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufile.h"
+#include "nu2api/numath/nuvec.h"
 #include "nu2api/nusound/nusound_bus.hpp"
 #include "nu2api/nusound/nusound_streamer.hpp"
 
@@ -33,19 +34,19 @@ static struct : NuMemoryManager::IEventHandler {
 
     virtual bool AllocatePage(NuMemoryManager *manager, u32 size, u32 _unknown) {
         UNIMPLEMENTED("g_handler::AllocatePage");
+        return {};
     }
     virtual bool ReleasePage(NuMemoryManager *manager, void *ptr, u32 _unknown) {
         UNIMPLEMENTED("g_handler::ReleasePage");
+        return {};
     }
 } g_handler;
 
 static NuMemoryManager *sScratchMemMgr;
 
-extern "C" {
-    void NuSoundInitDefaultRoutingTables(void) {
-        LOG_WARN("NuSoundInitDefaultRoutingTables is not implemented");
-    }
-};
+void NuSoundInitDefaultRoutingTables(void) {
+    LOG_WARN("NuSoundInitDefaultRoutingTables is not implemented");
+}
 
 NuSoundSystem::NuSoundSystem() {
 
@@ -77,12 +78,12 @@ NuSoundSystem::NuSoundSystem() {
     // this->field22_0x88 = &this->field20_0x80;
     // this->tail_bus = (NuSoundBus *)&this->field29_0xa4;
     // this->field31_0xac = (NuSoundBus *)&this->field27_0x9c;
-    // this->field28_0xa0 = (int)&this->field29_0xa4;
+    // this->field28_0xa0 = (i32)&this->field29_0xa4;
     // this->field29_0xa4 = (NuSoundBus *)&this->field27_0x9c;
-    // this->field39_0xcc = (int)&this->field36_0xc0;
-    // this->field38_0xc8 = (int)&this->field34_0xb8;
-    // this->field35_0xbc = (int)&this->field36_0xc0;
-    // this->field36_0xc0 = (int)&this->field34_0xb8;
+    // this->field39_0xcc = (i32)&this->field36_0xc0;
+    // this->field38_0xc8 = (i32)&this->field34_0xb8;
+    // this->field35_0xbc = (i32)&this->field36_0xc0;
+    // this->field36_0xc0 = (i32)&this->field34_0xb8;
     // this->field13_0x64 = 0;
     // this->field45_0xe4 = (undefined1 *)&this->field41_0xd4;
     // this->field16_0x70 = 0;
@@ -166,6 +167,7 @@ bool NuSoundSystem::Initialise(i32 size) {
 
 u32 NuSoundSystem::FreeMemory(MemoryDiscipline disc, usize address, u32 size) {
     UNIMPLEMENTED("NuSoundSystem::FreeMemory");
+    return {};
 }
 
 u32 NuSoundSystem::GetFreeMemory(MemoryDiscipline disc) {
@@ -211,8 +213,8 @@ u32 NuSoundSystem::GetDecoderMemorySize() {
 }
 
 NuSoundBus *NuSoundSystem::CreateBus(const char *name, bool is_master) {
-    int *piVar1;
-    int iVar2;
+    i32 *piVar1;
+    i32 iVar2;
 
     NuSoundBus *bus = GetBus(name);
 
@@ -224,13 +226,13 @@ NuSoundBus *NuSoundSystem::CreateBus(const char *name, bool is_master) {
             new (bus) NuSoundBus(name, is_master);
 
             // TODO
-            // piVar1 = *(int **)&this->field_0xb0;
+            // piVar1 = *(i32 **)&this->field_0xb0;
             // iVar2 = *piVar1;
-            //*piVar1 = (int)bus;
+            //*piVar1 = (i32)bus;
             // bus->field0_0x0 = iVar2;
             //*(NuSoundBus **)(iVar2 + 4) = bus;
             // bus->field1_0x4 = piVar1;
-            //*(int *)&this->field_0xb4 = *(int *)&this->field_0xb4 + 1;
+            //*(i32 *)&this->field_0xb4 = *(i32 *)&this->field_0xb4 + 1;
         }
     }
 
@@ -326,14 +328,194 @@ void NuSoundSystem::ReleaseFileLoader(NuSoundLoader *loader) {
     UNIMPLEMENTED();
 }
 
-i32 NuSoundStreamDesc::DecodeStreamOnOpen() {
+NuSoundSystem::~NuSoundSystem() {
+}
+
+i32 NuSoundStreamDesc::DecodeStreamOnOpen() const {
     return 0;
 }
 
-i32 NuSoundStreamDesc::GetLoopStart() {
+i32 NuSoundStreamDesc::GetLoopStart() const {
     return 0;
 }
 
-i32 NuSoundStreamDesc::GetLoopEnd() {
+i32 NuSoundStreamDesc::GetLoopEnd() const {
     return 0;
+}
+
+void NuSoundSystem::AddListener(NuSoundListener *) {
+}
+
+void NuSoundSystem::AddRoutingTable(NuSoundRoutingTable *) {
+}
+
+void NuSoundSystem::AmplitudeTodB(float) {
+}
+
+void NuSoundSystem::CalculateCrossfadeHeight(NuSoundSystem::CurveData const &, float) const {
+}
+
+void NuSoundSystem::CreateCrossfadeCurve(u32) {
+}
+
+void NuSoundSystem::CreateDecoder(NuSoundSource *) {
+}
+
+void NuSoundSystem::CreateEffect(NuSoundEffect::EffectType) {
+}
+
+void NuSoundSystem::CreateVoice(NuSoundSource *, bool) {
+}
+
+void NuSoundSystem::DefragmentSampleMemory() {
+}
+
+void NuSoundSystem::DetermineFileType(NUFILETYPE) {
+}
+
+void NuSoundSystem::Disable() {
+}
+
+void NuSoundSystem::FileTypeSupported(NuSoundSystem::FileType) {
+}
+
+void NuSoundSystem::Get() {
+}
+
+void NuSoundSystem::GetAllocdMemory(NuSoundSystem::MemoryDiscipline) {
+}
+
+void NuSoundSystem::GetBufferAlignment() {
+}
+
+void NuSoundSystem::GetClosestSupportedConfig(i32) {
+}
+
+void NuSoundSystem::GetCrossfadeCurve(u32) const {
+}
+
+void NuSoundSystem::GetDefaultFileType(NuSoundSource::FeedType) {
+}
+
+void NuSoundSystem::GetDefaultRoutingTable() {
+}
+
+void NuSoundSystem::GetGfxMemorySize() {
+}
+
+void NuSoundSystem::GetLanguageString(bool) {
+}
+
+void NuSoundSystem::GetLargestMemoryFragment(NuSoundSystem::MemoryDiscipline) {
+}
+
+void NuSoundSystem::GetListeners() {
+}
+
+void NuSoundSystem::GetNumAvailableOutputDevices() {
+}
+
+void NuSoundSystem::GetOldestVoice(NuSoundSample *, float &) {
+}
+
+void NuSoundSystem::GetOutputChannelConfig() {
+}
+
+void NuSoundSystem::GetPeakAllocdMemory(NuSoundSystem::MemoryDiscipline) {
+}
+
+void NuSoundSystem::GetPlatformString() {
+}
+
+void NuSoundSystem::GetQuietestVoice(NuSoundSample *, float &) {
+}
+
+void NuSoundSystem::GetRoutingTable(char const *) {
+}
+
+void NuSoundSystem::GetTotalMemory(NuSoundSystem::MemoryDiscipline) {
+}
+
+void NuSoundSystem::LoadSample(NuSoundSample *, void *, i32, NuSoundOutOfMemCallback *) {
+}
+
+void NuSoundSystem::PauseAllVoices() {
+}
+
+void NuSoundSystem::PauseVoices(i32) {
+}
+
+void NuSoundSystem::ReAllocMemory(NuSoundSystem::MemoryDiscipline, u32, u32) {
+}
+
+void NuSoundSystem::ReleaseBus(NuSoundBus *) {
+}
+
+void NuSoundSystem::ReleaseCrossfadeCurve(u32) {
+}
+
+void NuSoundSystem::ReleaseDecoder(NuSoundDecoder *) {
+}
+
+void NuSoundSystem::ReleaseEffect(NuSoundEffect *) {
+}
+
+void NuSoundSystem::ReleaseSample(NuSoundSample *) {
+}
+
+void NuSoundSystem::ReleaseVoice(NuSoundVoice *) {
+}
+
+void NuSoundSystem::RemoveListener(NuSoundListener *) {
+}
+
+void NuSoundSystem::ResumeAllVoices() {
+}
+
+void NuSoundSystem::ResumeVoices(i32) {
+}
+
+void NuSoundSystem::SetDefaultRoutingTable(NuSoundRoutingTable *) {
+}
+
+void NuSoundSystem::SetGfxMemorySize(u32) {
+}
+
+void NuSoundSystem::SetMainThreadID(NuThread *) {
+}
+
+void NuSoundSystem::Shutdown() {
+}
+
+void NuSoundSystem::SourceRequiresDecoder(NuSoundSource *) {
+}
+
+void NuSoundSystem::StopAllVoices() {
+}
+
+void NuSoundSystem::StopVoices(NuSoundSource const &) {
+}
+
+void NuSoundSystem::StopVoices(i32) {
+}
+
+void NuSoundSystem::UnloadAllSamples() {
+}
+
+void NuSoundSystem::UnloadSample(NuSoundSample *) {
+}
+
+void NuSoundSystem::Update(float) {
+}
+
+void NuSoundSystem::dBToAmplitude(float) {
+}
+
+void NuSound3CreateVoice(nuvec_s *, i32, float, float, i32, i32, float, bool) {
+}
+
+void NuSound3ExitThreads() {
+}
+
+void NuSound_GetAllocdSampleMemory() {
 }

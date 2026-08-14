@@ -6,6 +6,8 @@
 
 #ifdef __cplusplus
 
+struct NuSymbolQuery;
+
 class NuMemoryManager {
   public:
     enum Flags {
@@ -33,7 +35,7 @@ class NuMemoryManager {
     class IErrorHandler {
       public:
         virtual void HandleError(NuMemoryManager *manager, ErrorCode code, const char *msg);
-        virtual int OpenDump(NuMemoryManager *manager, const char *filename, u32 &id);
+        virtual i32 OpenDump(NuMemoryManager *manager, const char *filename, u32 &id);
         virtual void CloseDump(NuMemoryManager *manager, u32 id);
         virtual void Dump(NuMemoryManager *manager, u32 id, const char *msg);
     };
@@ -70,7 +72,7 @@ class NuMemoryManager {
 
     struct ExtendedDebugInfo {
         // Type uncertain.
-        int unknown[32];
+        i32 unknown[32];
     };
 
     // The existence of this type isn't directly attested, but it lets us
@@ -80,7 +82,7 @@ class NuMemoryManager {
         ExtendedDebugInfo extended_info;
 
         // Type uncertain.
-        int unknown;
+        i32 unknown;
     };
 
     struct Page {
@@ -98,13 +100,13 @@ class NuMemoryManager {
         u32 id;
 
         // Type uncertain.
-        int used_block_count;
+        i32 used_block_count;
 
         Context *next;
     };
 
     struct Stats {
-        int unknown_00;
+        i32 unknown_00;
 
         u32 free_frag_bytes;
         u32 min_free_bytes;
@@ -113,7 +115,7 @@ class NuMemoryManager {
         u32 used_block_count;
 
         // Type uncertain.
-        int unknown_18;
+        i32 unknown_18;
 
         u32 bytes_alloc_by_category[100];
     };
@@ -150,8 +152,8 @@ class NuMemoryManager {
     FreeHeader large_bins[22];
 
     // Types uncertain.
-    int unknown_0e2c;
-    int unknown_0e30;
+    i32 unknown_0e2c;
+    i32 unknown_0e30;
 
     Stats stats;
 
@@ -169,8 +171,8 @@ class NuMemoryManager {
     u32 stranded_block_count;
 
     // Types uncertain.
-    int unknown_1814;
-    int unknown_1818;
+    i32 unknown_1814;
+    i32 unknown_1818;
 
     u16 override_category;
     u16 override_category_bg_thread;
@@ -191,6 +193,52 @@ class NuMemoryManager {
     void AddPage(void *ptr, u32 size, bool _unknown);
 
     void SetBlockDebugCategory(void *ptr, u16 category);
+
+    class IVisitor {
+      public:
+        virtual ~IVisitor() = default;
+    };
+
+    class IPageVisitor {
+      public:
+        virtual ~IPageVisitor() = default;
+    };
+
+    void ClearBlockDebugContext(void *ptr);
+    void DumpBlock(u32 _a, NuSymbolQuery *query, Header *header, u32 _d, u32 _e, u32 _f);
+    void DumpBlocksForContext(u32 _a, NuSymbolQuery *query, Context *context, u32 _d);
+    void FindAndTouchMatchingBlocks(DebugHeader *header, u32 *a, u32 b);
+    void GetAllocatedBytes();
+    void GetBlockAlignment(void *ptr);
+    void GetBlockDebugBackTrace(void *ptr, void **out);
+    void GetBlockDebugContext(void *ptr);
+    void GetBlockSize(void *ptr);
+    void GetCategoryAllocatedBytes(u16 category);
+    void GetCurrentContextID() const;
+    void GetCurrentContextName() const;
+    void GetDebugName() const;
+    void GetFreeBytes() const;
+    void GetNumFreeFragments() const;
+    void GetOverrideCategory();
+    void GetOverrideCategoryBGThread();
+    void GetPagedBytes();
+    void GetSmallBinSize(u32 index);
+    void IsZombie();
+    void MergeLargeBinSegments(FreeHeader *a, FreeHeader *b);
+    void PushContext(const char *name);
+    void ReleaseExternalPage(void *ptr);
+    void SetBlockDebugContext(void *ptr, u32 ctx_id);
+    void SetBlockDebugName(void *ptr, const char *name);
+    void SetOverrideCategory(u16 category);
+    void SetOverrideCategoryBGThread(u16 category);
+    void SortLargeBin(u32 index);
+    void SortLargeBinSegment(FreeHeader *header, u32 index);
+    void UnTouchAllBlocks();
+    void ValidateBlock(void *ptr);
+    void ValidateBlockDeferredContent(Header *header, const char *caller);
+    void VisitManagers(IVisitor *visitor);
+    void VisitPages(IPageVisitor *visitor);
+    void _MultiBlockAlloc(u32 a, u32 b, u32 c, void **out, u32 e, const char *name, u16 flags);
 
   private:
     static u32 GetLargeBinIndex(u32 size);

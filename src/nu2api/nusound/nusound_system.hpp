@@ -2,8 +2,12 @@
 
 #include "nu2api/nucore/NuMemoryManager.h"
 #include "nu2api/nucore/common.h"
+#include "nu2api/nucore/nuelist.hpp"
+#include "nu2api/nucore/nuvuvec.hpp"
 #include "nu2api/nusound/nusound_memorymanager.hpp"
 #include "nu2api/nusound/nusound_source.hpp"
+
+#include "nu2api/nufile/nufile.h"
 
 #include "decomp.h"
 
@@ -12,6 +16,19 @@
 class NuSoundLoader;
 class NuSoundBus;
 class NuSoundSample;
+class NuSoundListener;
+class NuSoundRoutingTable;
+class NuSoundDecoder;
+class NuSoundVoice;
+class NuThread;
+class NuSoundOutOfMemCallback;
+
+class NuSoundEffect {
+  public:
+    struct EffectType {};
+    struct EffectProcessStage {};
+    virtual ~NuSoundEffect();
+};
 
 class NuSoundSystem {
   public:
@@ -24,6 +41,12 @@ class NuSoundSystem {
     struct ChannelConfig {
         u32 channels;
     };
+
+    struct AudioChannel {};
+    struct CurveData {};
+    struct DownmixType {};
+    struct FalloffType {};
+    struct SurroundMode {};
 
     // "wav", "adp", "ima", "caf", "xma", "ogg",  "dsp", "msf", "vag", "gcm", "wua", "cbx"
     enum class FileType : u32 {
@@ -120,11 +143,69 @@ class NuSoundSystem {
     // shutdown_audio_device
     // update_audio_device
 
-    virtual ~NuSoundSystem() = default;
+    virtual ~NuSoundSystem();
     virtual bool InitAudioDevice() = 0;
     virtual NuSoundBus *CreateBus(const char *name, bool is_master);
     virtual NuSoundBus *GetBus(const char *name);
 
+    void AddListener(NuSoundListener *);
+    void AddRoutingTable(NuSoundRoutingTable *);
+    void AmplitudeTodB(float);
+    void CalculateCrossfadeHeight(NuSoundSystem::CurveData const &, float) const;
+    void CreateCrossfadeCurve(unsigned int);
+    void CreateDecoder(NuSoundSource *);
+    void CreateEffect(NuSoundEffect::EffectType);
+    void CreateVoice(NuSoundSource *, bool);
+    void DefragmentSampleMemory();
+    void DetermineFileType(NUFILETYPE);
+    void Disable();
+    void FileTypeSupported(NuSoundSystem::FileType);
+    void Get();
+    void GetAllocdMemory(NuSoundSystem::MemoryDiscipline);
+    void GetBufferAlignment();
+    void GetClosestSupportedConfig(int);
+    void GetCrossfadeCurve(unsigned int) const;
+    void GetDefaultFileType(NuSoundSource::FeedType);
+    void GetDefaultRoutingTable();
+    void GetGfxMemorySize();
+    void GetLanguageString(bool);
+    void GetLargestMemoryFragment(NuSoundSystem::MemoryDiscipline);
+    void GetListeners();
+    NuSoundListener *GetNearestRealListener(NuEList<NuSoundListener, DefaultElist> const &, VuVec const &);
+    NuSoundListener *GetNearestFocusListener(NuEList<NuSoundListener, DefaultElist> const &, VuVec const &, float &);
+    void GetNumAvailableOutputDevices();
+    void GetOldestVoice(NuSoundSample *, float &);
+    void GetOutputChannelConfig();
+    void GetPeakAllocdMemory(NuSoundSystem::MemoryDiscipline);
+    void GetPlatformString();
+    void GetQuietestVoice(NuSoundSample *, float &);
+    void GetRoutingTable(char const *);
+    void GetTotalMemory(NuSoundSystem::MemoryDiscipline);
+    void LoadSample(NuSoundSample *, void *, int, NuSoundOutOfMemCallback *);
+    void PauseAllVoices();
+    void PauseVoices(int);
+    void ReAllocMemory(NuSoundSystem::MemoryDiscipline, unsigned int, unsigned int);
+    void ReleaseBus(NuSoundBus *);
+    void ReleaseCrossfadeCurve(unsigned int);
+    void ReleaseDecoder(NuSoundDecoder *);
+    void ReleaseEffect(NuSoundEffect *);
+    void ReleaseSample(NuSoundSample *);
+    void ReleaseVoice(NuSoundVoice *);
+    void RemoveListener(NuSoundListener *);
+    void ResumeAllVoices();
+    void ResumeVoices(int);
+    void SetDefaultRoutingTable(NuSoundRoutingTable *);
+    void SetGfxMemorySize(unsigned int);
+    void SetMainThreadID(NuThread *);
+    void Shutdown();
+    void SourceRequiresDecoder(NuSoundSource *);
+    void StopAllVoices();
+    void StopVoices(NuSoundSource const &);
+    void StopVoices(int);
+    void UnloadAllSamples();
+    void UnloadSample(NuSoundSample *);
+    void Update(float);
+    void dBToAmplitude(float);
 }; // namespace NuSoundSystem
 
 class NuSoundOutOfMemCallback {

@@ -12,7 +12,7 @@ void NuPortalInit(void) {
     fstack_limit.void_ptr = fstackmem + 0x3000;
 }
 
-void NuPortalSetActiveDirect(NUPORTAL *portal, int active) {
+void NuPortalSetActiveDirect(NUPORTAL *portal, i32 active) {
     if (portal == NULL) {
         return;
     }
@@ -24,6 +24,6 @@ void NuPortalSetActiveDirect(NUPORTAL *portal, int active) {
     }
 }
 
-void NuPortalMaxDepth(struct nugscn_s *scene, int depth) {
+void NuPortalMaxDepth(struct nugscn_s *scene, i32 depth) {
     scene->portal_depth = depth;
 }

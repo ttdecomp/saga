@@ -26,9 +26,9 @@ static NULISTHDR *load_conditionshdr;
 static NULISTHDR *load_refscripthdr;
 
 static AICONSTPARAMS aiscript_const[8];
-static int aiscript_const_curr;
+static i32 aiscript_const_curr;
 
-static int condition_has_no_goto;
+static i32 condition_has_no_goto;
 
 AIACTIONDEF *game_aiactiondefs;
 static AICONDITIONDEF *game_aiconditiondefs;
@@ -58,14 +58,14 @@ AICONDITIONDEF api_aiconditiondefs[] = {{"PreviousResult", NULL, NULL},
                                         {"AlwaysTrue", &Condition_AlwaysTrue, &Condition_AlwaysTrueInit},
                                         {NULL, NULL, NULL}};
 
-static int ExpressionRequiredNameLookup;
-static int ExpressionNameLookupFailed;
+static i32 ExpressionRequiredNameLookup;
+static i32 ExpressionNameLookupFailed;
 
-int AiParseExpressionFailed;
+i32 AiParseExpressionFailed;
 
 GAMEPARAMTOFLOAT *GameParamToFloatFn;
 
-static int AiParseExpressionNameLoopup(char *name, f32 *float_out, int *int_out) {
+static i32 AiParseExpressionNameLoopup(char *name, f32 *float_out, i32 *int_out) {
     f32 value;
 
     ExpressionRequiredNameLookup = 1;
@@ -172,7 +172,7 @@ static void AIScriptCopyActions(NULISTHDR *src, NULISTHDR *dst, VARIPTR *buf, VA
             dst_action->params = (char **)AIScriptBufferAlloc(buf, buf_end, src_action->param_count * sizeof(char *));
             dst_action->param_count = src_action->param_count;
 
-            for (int i = 0; i < dst_action->param_count; i++) {
+            for (i32 i = 0; i < dst_action->param_count; i++) {
                 dst_action->params[i] = AIScriptCopyString(src_action->params[i], buf, buf_end);
             }
 
@@ -216,7 +216,7 @@ static void xActions(NUFPAR *parser) {
 
             def = AIActionFind(parser->word_buf);
             if (def != NULL) {
-                int param_count;
+                i32 param_count;
 
                 action = (AIACTION *)AIScriptBufferAlloc(load_buff, load_endbuff, sizeof(AIACTION));
                 if (action == NULL) {
@@ -245,7 +245,7 @@ static void xActions(NUFPAR *parser) {
                     if (action->params != NULL) {
                         action->param_count = param_count;
 
-                        for (int i = 0; i < param_count; i++) {
+                        for (i32 i = 0; i < param_count; i++) {
                             action->params[i] = AIScriptCopyString(params[i], load_buff, load_endbuff);
                         }
                     }
@@ -468,7 +468,7 @@ static void AIScriptCopyConditions(NULISTHDR *src, NULISTHDR *dst, VARIPTR *buf,
 enum { EQ = 0, LT = 1, GT = 2, LT_EQ = 3, GT_EQ = 4, NEQ = 5 };
 
 static void xConditions(NUFPAR *parser) {
-    int complex_idx = 0;
+    i32 complex_idx = 0;
 
     while (NuFParGetLine(parser) != 0) {
         AICONDITION *cond;
@@ -541,7 +541,7 @@ static void xConditions(NUFPAR *parser) {
 
                 param = NuStrIStr(parser->word_buf, "param");
                 if (param == NULL) {
-                    for (int i = 0; i < 4; i++) {
+                    for (i32 i = 0; i < 4; i++) {
                         char *param_name = load_aiscript->params[i].name;
 
                         if (param_name != NULL && NuStrICmp(param_name, parser->word_buf) == 0) {
@@ -560,7 +560,7 @@ static void xConditions(NUFPAR *parser) {
                 }
 
                 if (!cond->is_param_idx_valid) {
-                    int i;
+                    i32 i;
 
                     for (i = 0; i < aiscript_const_curr; i++) {
                         if (NuStrICmp(aiscript_const[i].name, parser->word_buf) == 0) {
@@ -758,7 +758,7 @@ static void xParam(NUFPAR *parser) {
 }
 
 static void xConst(NUFPAR *parser) {
-    int cur;
+    i32 cur;
     f32 default_val;
 
     NuStrLen(parser->word_buf);
@@ -1185,14 +1185,14 @@ void AIScriptOpenPakFileParse(AISCRIPT **script_ref, void *pak, char *filename, 
     sprintf(str_buf, "%s\\%s", path, filename);
 
     if (pak != NULL) {
-        int item_handle;
+        i32 item_handle;
 
         item_handle = NuFilePakGetItem(pak, filename);
         if (item_handle == 0) {
             goto no_pak;
         } else {
             void *item_buf;
-            int size;
+            i32 size;
             NUFILE file;
 
             NuFilePakGetItemInfo(pak, item_handle, &item_buf, &size);

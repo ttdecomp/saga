@@ -45,3 +45,12 @@ void NuSoundSource::SetStreamDesc(NuSoundStreamDesc *desc) {
 
     this->stream_desc = desc;
 }
+
+NuSoundSource::~NuSoundSource() {
+}
+
+void NuSoundSource::VoiceReference() {
+}
+
+void NuSoundSource::VoiceRelease() {
+}

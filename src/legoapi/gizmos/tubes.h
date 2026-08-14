@@ -4,10 +4,9 @@
 
 #ifdef __cplusplus
 
-typedef struct TUBE_s {
-} TUBE;
+typedef struct TUBE_s TUBE;
 
-ADDGIZMOTYPE* Tubes_RegisterGizmo(int type_id);
+ADDGIZMOTYPE *Tubes_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

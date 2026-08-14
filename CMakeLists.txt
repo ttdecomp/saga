@@ -77,14 +77,20 @@ message(STATUS "Building for ${CMAKE_HOST_SYSTEM_NAME} on ${CMAKE_HOST_SYSTEM_PR
 
 # source files for both host and target builds
 set(SAGA_SOURCE_FILES
+
     ${CMAKE_CURRENT_SOURCE_DIR}/src/batman.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/globals.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/ai/aisys/aiscript.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/ai/aisys/aisys.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/ai/aisys/aistate.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/edtools/edfile.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/edtools/edlevelall.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/edtools/edsplines.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/edtools/edstubs.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/edtools/edtoolsall.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/edtools/edtoolsall_plain.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/gui/apimenu.cpp
 
@@ -98,41 +104,95 @@ set(SAGA_SOURCE_FILES
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/java/jni_stub.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai_sys.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/area.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/batarang.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/bolts.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/camera.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/carrying.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/character.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cheat.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cheats.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/climbing.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/collection.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/credits.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/customise.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cutscene.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cutscenes.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/door.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/edlevelall.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episode.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/fade.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/game_object.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gameanim.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gameantinode.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gamehint.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gamelib_ogg.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gamelib_utilities.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gameobjects.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gamepads.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gcutscn.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo_sys.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_gizactions.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_gizbuildits.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_gizforce.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_gizmopickups.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_gizobstacles.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_gizpanel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_gizturrets.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_grabber.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_grapples.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_hatmachine.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_lever.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_newblowup.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_spinner.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_teleport.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_tubes.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/hub.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/hud.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/input.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/legoapi_misc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/legoapi_plain.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/level.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/memory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/minicamcut.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/mission.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/move.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/network.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/occlusion.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/parts.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/placeable.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/players.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/qrand.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/socksysall.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/store.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/timer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai_sys.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cutscene.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/game_object.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo_sys.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/levelstubs.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/scene.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/sceneobject.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/sfx.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/shader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/socksysall.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/specialmoves.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/store.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/suit.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/tagging.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/terrain.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/text.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/timer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/tm.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/virtual.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/ai.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizaimessage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/attractos.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/door.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/edgizshadowmachine.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizaimessage.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizbombgen.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizbuildits.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizforce.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizpanel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizmopickups.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizobstacles.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizpanel.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizportal.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizrandom.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizspecial.cpp
@@ -163,8 +223,7 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legogame/target_android.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/NuRenderDevice.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nuscreen.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nuspline.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/NuScreen.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nucamera.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nucamvu0.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nudlist.c
@@ -175,7 +234,10 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nuprim.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nuqfnt.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nurndr.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nurndr_plain.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nuscreen.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nushader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nuspline.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nutex.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nutexanm.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nuvport.cpp
@@ -187,9 +249,9 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/android/nurenderthread.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/android/nurndr_android.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/android/nuvertexformat_android.cpp
-    
+
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/generic/nucamera_gen.cpp
-    
+
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nuandroid/nuphoneos.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/NuInputDevice.cpp
@@ -200,16 +262,18 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/NuVirtualTouchDevice.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/deflate.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/implode.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nu2api_nucore_misc.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nuapi.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nuapi.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nucore.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nunew.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nucore_plain.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nukeyboard.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nulist.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nulst.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/numem.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/numemory.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/numouse.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nunew.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nupad.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nupad_interface.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nuptrblock.cpp
@@ -217,8 +281,8 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nurdpi.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nustring.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nustring_c.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nutime.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nuthread.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nutime.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nuvideo.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/android/NuInputDevice_android.cpp
@@ -230,22 +294,28 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/android/nutime_android.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/android/nuvideo_android.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/NuFileDeviceAndroidAPK.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/nudatfile.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/nufile.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/nufile.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/nufile_android.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/nufile_plain.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/nufilebase.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/nufiledevice.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/nufilepak.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/nufpar.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/numc.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/nudatfile.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/tmclient.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/android/NuFileAndroidDeviceAPK.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/android/nufile_android.cpp
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numath/nufloat.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numath/numaths.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numath/numaths_plain.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numath/numtx.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numath/nuquat.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numath/nuplane.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numath/nuquat.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numath/nurand.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numath/nutrig.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numath/nutrig.cpp
@@ -256,26 +326,73 @@ set(SAGA_SOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numusic/numusic.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numusic/sfx.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nuplatform/nuplatform.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nuplatform/nudevicespecs.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nuplatform/nuplatform.cpp
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nu2api_nusound_misc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nu2api_nusound_plain.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nu2api_nusound_types.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound3_include.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_android.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_buffer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_bus.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_clock.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_decoder.cpp
-    #${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_decoder_ogg.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_effect.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_effect_doppler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_effect_fader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_effect_pitchramp.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_handle.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_listener.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_loader.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_loader_ogg.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_loader_wav.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_memorymanager.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_mixer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_plain.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_routing.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_sample.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_source.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_streamer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_streamer_thread.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_memorymanager.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_bus.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_sample.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_android.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_system.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_voice.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_voice_android.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_weakptr.cpp
+    #${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_decoder_ogg.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MechInputTouch/MechAutoJumpManager.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MechInputTouch/MechAutofireAddon.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MechInputTouch/MechEdgeStopAddon.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MechInputTouch/MechInputTouch.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MechInputTouch/MechInputTouchBonusCavalryController.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MechInputTouch/MechInputTouchButton.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MechInputTouch/MechInputTouchContextTasks.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MechInputTouch/MechInputTouchDeathStarTurretController.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MechInputTouch/MechInputTouchGestureBasedController.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MechInputTouch/MechInputTouchGestureTracker.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MechInputTouch/MechInputTouchMainController.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MechInputTouch/MechInputTouchMenuController.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MechInputTouch/MechInputTouchPodraceController.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MechInputTouch/MechInputTouchSpeederChaseBikeController.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MechInputTouch/MechInputTouchVirtualConsoleController.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MechInputTouch/MechJumpAutopilotAddon.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MechInputTouch/MechObjectInterface.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MechInputTouch/MechSystems.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/MechInputTouch/MechTouchUIElements.cpp
+
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gamelib/util/AndroidOBBUtils.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gamelib/util/CRC16.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gamelib/util/CRC16_plain.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gamelib/util/Ftp.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gamelib/util/Network.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gamelib/util/TouchHacks.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gamelib/util/Transporter.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gamelib/util/V2SessionManager.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gamelib/util/VirtualStackAllocator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/gamelib/util/gamelib_util_misc.cpp
+
 )
 
 # add platform-specific source files and build rules
@@ -334,9 +451,21 @@ if(CLANG_TIDY_EXE)
         set_target_properties(saga PROPERTIES CXX_CLANG_TIDY "${CLANG_TIDY_EXE};-extra-arg=-nostdinc++")
     endif()
 
+    # check_symbols.py needs the original ROM (res/libTTapp.so), which only
+    # exists in local checkouts. Skip it in CI (where the ROM is absent) and
+    # for developers who haven't checked out the ROM, so `lint` stays green
+    # there.
+    if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/res/libTTapp.so)
+        set(CHECK_SYMBOLS_CMD echo "WARNING: res/libTTapp.so not present; skipping symbol check")
+    else()
+        set(CHECK_SYMBOLS_CMD python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/check_symbols.py)
+    endif()
+
     add_custom_target(lint
         COMMAND ${CLANG_TIDY_EXE} -p=${CMAKE_BINARY_DIR} ${SAGA_SOURCE_FILES} --warnings-as-errors="*"
-        COMMENT "Running clang-tidy"
+        COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/check_duplicate_definitions.py ${CMAKE_CURRENT_SOURCE_DIR}/src
+        COMMAND ${CHECK_SYMBOLS_CMD}
+        COMMENT "Running clang-tidy, duplicate-definition check, and symbol baseline check"
     )
 else()
     message(WARNING "clang-tidy not found")

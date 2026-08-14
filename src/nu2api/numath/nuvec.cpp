@@ -3,8 +3,8 @@
 #include <stddef.h>
 
 #include "nu2api/numath/nufloat.h"
-#include "nu2api/numath/nutrig.h"
 #include "nu2api/numath/numtx.h"
+#include "nu2api/numath/nutrig.h"
 
 NUVEC v000 = {0};
 NUVEC v100 = {1.0f, 0.0f, 0.0f};
@@ -164,6 +164,33 @@ void NuVecRotateY(NUVEC *v, NUVEC *v0, NUANG a) {
     v->z = v0->z * fVar1 - fVar3 * fVar2;
 }
 
+void NuVecRotateX(NUVEC *v, NUVEC *v0, NUANG a) {
+    f32 fVar1 = NU_COS_LUT(a);
+    f32 fVar2 = NU_SIN_LUT(a);
+    f32 fVar3 = v0->y;
+
+    v->x = v0->x;
+    v->y = fVar3 * fVar1 - v0->z * fVar2;
+    v->z = fVar3 * fVar2 + v0->z * fVar1;
+}
+
+void NuVecRotateZ(NUVEC *v, NUVEC *v0, NUANG a) {
+    f32 fVar1 = NU_COS_LUT(a);
+    f32 fVar2 = NU_SIN_LUT(a);
+    f32 fVar3 = v0->x;
+
+    v->x = fVar3 * fVar1 + v0->y * fVar2;
+    v->y = -fVar3 * fVar2 + v0->y * fVar1;
+    v->z = v0->z;
+}
+
+f32 NuVecRotateYValZ(NUVEC *v0, NUANG a) {
+    f32 fVar1 = NU_COS_LUT(a);
+    f32 fVar2 = NU_SIN_LUT(a);
+
+    return v0->z * fVar1 - v0->x * fVar2;
+}
+
 void NuVecSurfaceNormal(NUVEC *v, NUVEC *v0, NUVEC *v1, NUVEC *v2) {
     NUVEC vecA, vecB;
 
@@ -235,7 +262,7 @@ void NuVecLerp(NUVEC *vt, NUVEC *v1, NUVEC *v0, f32 t) {
     vt->z = ((v1->z - v0->z) * t) + v0->z;
 }
 
-int NuVecCompareTolerance(NUVEC *a, NUVEC *b, f32 tolerance) {
+i32 NuVecCompareTolerance(NUVEC *a, NUVEC *b, f32 tolerance) {
     NUVEC diff;
     NuVecSub(&diff, a, b);
 
@@ -254,6 +281,33 @@ void NuVecMtxTransform(NUVEC *out, NUVEC *v, NUMTX *m) {
     out->x = v->x * m->m00 + v->y * m->m10 + v->z * m->m20 + m->m30;
     out->y = y;
     out->z = z;
+}
+
+void NuVecMtxTransformH(NUVEC *out, NUVEC *v, NUMTX *m) {
+    f32 x = v->x * m->m00 + v->y * m->m10 + v->z * m->m20 + m->m30;
+    f32 y = v->x * m->m01 + v->y * m->m11 + v->z * m->m21 + m->m31;
+    f32 z = v->x * m->m02 + v->y * m->m12 + v->z * m->m22 + m->m32;
+    f32 w = v->x * m->m03 + v->y * m->m13 + v->z * m->m23 + m->m33;
+
+    out->x = x / w;
+    out->y = y / w;
+    out->z = z / w;
+}
+
+void NuVecInvMtxRotate(NUVEC *out, NUVEC *v, NUMTX *m) {
+    out->x = v->x * m->m00 + v->y * m->m01 + v->z * m->m02;
+    out->y = v->x * m->m10 + v->y * m->m11 + v->z * m->m12;
+    out->z = v->x * m->m20 + v->y * m->m21 + v->z * m->m22;
+}
+
+void NuVecInvMtxTransform(NUVEC *out, NUVEC *v, NUMTX *m) {
+    f32 x = v->x - m->m30;
+    f32 y = v->y - m->m31;
+    f32 z = v->z - m->m32;
+
+    out->x = x * m->m00 + y * m->m01 + z * m->m02;
+    out->y = x * m->m10 + y * m->m11 + z * m->m12;
+    out->z = x * m->m20 + y * m->m21 + z * m->m22;
 }
 
 void NuVecMtxRotate(NUVEC *out, NUVEC *v, NUMTX *m) {

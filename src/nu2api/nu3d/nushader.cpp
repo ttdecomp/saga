@@ -4,6 +4,9 @@
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nucore/bgproc.h"
 
+struct eSHADERVERSION {};
+struct nushaderuniform_e {};
+
 static f32 water_theta_step = 0.26666668f;
 
 void NuShaderObjectBaseCreate(NUSHADEROBJECTBASE *shader) {
@@ -20,7 +23,7 @@ void NuShaderObjectGLSLCreate(NUSHADEROBJECTGLSL *shader) {
 void NuShaderObjectCreate(NUSHADEROBJECT *shader) {
     NuShaderObjectGLSLCreate(&shader->glsl);
 
-    for (int i = 0; i < NUSHADEROBJECT_PARAMETERS_COUNT; ++i) {
+    for (i32 i = 0; i < NUSHADEROBJECT_PARAMETERS_COUNT; ++i) {
         shader->parameters[i].unk3 = i;
         shader->parameters[i].unk1 = 0xffff;
     }
@@ -50,7 +53,7 @@ void NuShaderObjectGLSLDestroy(NUSHADEROBJECTGLSL *shader) {
 void NuShaderObjectDestroy(NUSHADEROBJECT *shader) {
 }
 
-void NuShaderObjectBaseInit(NUSHADEROBJECTBASE *shader, NUSHADEROBJECTKEY *key, int unk) {
+void NuShaderObjectBaseInit(NUSHADEROBJECTBASE *shader, NUSHADEROBJECTKEY *key, i32 unk) {
     shader->key = (usize) * (NUSHADEROBJECTKEY **)key; // it only matches if you do this noop cast/dereference
     shader->field0 = unk;
 }
@@ -66,7 +69,7 @@ void NuShaderObjectBaseSetWaterSpeed(f32 speed) {
     water_theta_step = speed * 0.1f;
 }
 
-int NuShaderObjectBindAttributeLocationsGLSL(GLuint program) {
+i32 NuShaderObjectBindAttributeLocationsGLSL(GLuint program) {
     static GLchar infoLog[0x2000];
 
     GLint params;
@@ -96,7 +99,7 @@ int NuShaderObjectBindAttributeLocationsGLSL(GLuint program) {
     return 0;
 }
 
-int NuShaderObjectCombineGLSLShadersIntoProgram(GLuint *program_dest, GLuint vertex_shader, GLuint fragment_shader) {
+i32 NuShaderObjectCombineGLSLShadersIntoProgram(GLuint *program_dest, GLuint vertex_shader, GLuint fragment_shader) {
     // these were most definitely macros
     BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/shaderbuilder/android/nushaderobject.cpp", 228);
     GLuint program = glCreateProgram();
@@ -115,7 +118,7 @@ int NuShaderObjectCombineGLSLShadersIntoProgram(GLuint *program_dest, GLuint ver
     }
 
     BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/shaderbuilder/android/nushaderobject.cpp", 237);
-    int bind_result = NuShaderObjectBindAttributeLocationsGLSL(*program_dest);
+    i32 bind_result = NuShaderObjectBindAttributeLocationsGLSL(*program_dest);
     EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/shaderbuilder/android/nushaderobject.cpp", 239);
     if (bgProcIsBgThread()) {
         NuIOS_YieldThread();
@@ -124,7 +127,7 @@ int NuShaderObjectCombineGLSLShadersIntoProgram(GLuint *program_dest, GLuint ver
     return bind_result;
 }
 
-int NuShaderObjectGenerateGLSLShader(GLuint *shader_dest, GLenum shader_type, const GLchar *shader_source,
+i32 NuShaderObjectGenerateGLSLShader(GLuint *shader_dest, GLenum shader_type, const GLchar *shader_source,
                                      GLint shader_source_length) {
     BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/shaderbuilder/android/nushaderobject.cpp", 197);
     GLuint shader = glCreateShader(shader_type);
@@ -145,4 +148,29 @@ int NuShaderObjectGenerateGLSLShader(GLuint *shader_dest, GLenum shader_type, co
     }
 
     return 1;
+}
+
+void NuShaderObjectInit(nushaderobject_s *, nushaderobjectkey_s const *, i32, char const *, i32, u32, eSHADERVERSION) {
+}
+
+void NuShaderObjectInit(nushaderobject_s *, nushaderobjectkey_s const *, i32, u32, char const *, i32, eSHADERVERSION) {
+}
+
+void NuShaderObjectInit(nushaderobject_s *, nushaderobjectkey_s const *, i32, u32, u32, eSHADERVERSION) {
+}
+
+void NuShaderObjectInitGLSL(nushaderobjectglsl_s *, nushaderobjectkey_s const *, i32, char const *, i32, char const *,
+                            i32) {
+}
+
+void NuShaderObjectInitGLSL(nushaderobjectglsl_s *, nushaderobjectkey_s const *, i32, char const *, i32, u32) {
+}
+
+void NuShaderObjectInitGLSL(nushaderobjectglsl_s *, nushaderobjectkey_s const *, i32, u32, char const *, i32) {
+}
+
+void NuShaderObjectInitGLSL(nushaderobjectglsl_s *, nushaderobjectkey_s const *, i32, u32, u32) {
+}
+
+void NuShaderObjectGLSLGetSemanticIndex(char const *, nushaderuniform_e &) {
 }

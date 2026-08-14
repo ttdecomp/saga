@@ -12,17 +12,24 @@
 #include "legoapi/episode.h"
 #include "legoapi/level.h"
 #include "legoapi/players.h"
+#include "legoapi/qrand.h"
 #include "legoapi/socksys.h"
 #include "legoapi/timer.h"
 #include "legogame/game.h"
 #include "nu2api/nu3d/nutex.h"
-#include "nu2api/numath/nutrig.h"
-#include "legoapi/qrand.h"
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nucore/nutime.h"
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nufile/nufpar.h"
+#include "nu2api/numath/nutrig.h"
+
+struct MechTouchUIElement;
+struct PLAYERITEM_s;
+struct PLAYERITEMTYPE_s;
+struct PLAYERPACKET_s;
+struct SOCKPOSITION_s;
+struct TouchHolder;
 
 void Players_Init(void) {
     memset(Player, 0, sizeof(Player));
@@ -38,12 +45,10 @@ void Players_Init(void) {
         i16 *list;
         i16 list0;
 
-        if (FreePlay == 0 &&
-            (Hub_UsePlayerList == 0 || HUB_ADATA == NULL || HUB_ADATA != WORLD->area) &&
+        if (FreePlay == 0 && (Hub_UsePlayerList == 0 || HUB_ADATA == NULL || HUB_ADATA != WORLD->area) &&
             (UsePlayerList != 1 ||
-             (PlayerList[0] != -1 &&
-              (apicharsys->playermodelids[PlayerList[0]] == -1 ||
-               (PlayerList[1] != -1 && apicharsys->playermodelids[PlayerList[1]] == -1))))) {
+             (PlayerList[0] != -1 && (apicharsys->playermodelids[PlayerList[0]] == -1 ||
+                                      (PlayerList[1] != -1 && apicharsys->playermodelids[PlayerList[1]] == -1))))) {
             list = Area_PlayerIDList;
             list0 = Area_PlayerIDList[0];
         } else {
@@ -52,9 +57,8 @@ void Players_Init(void) {
         }
 
         if (LevelChangesInArea == 0 && UsePlayerList != 0 && PlayerProgress[0].field_0x6 == 0 &&
-            PlayerProgress[1].field_0x6 != 0 && FreePlay == 0 && (WORLD->area->flags & 5) == 1 &&
-            list0 != -1 && list0 == Area_StoryModelList[0] && list[1] != -1 &&
-            list[1] == Area_StoryModelList[2] && list0 != list[1]) {
+            PlayerProgress[1].field_0x6 != 0 && FreePlay == 0 && (WORLD->area->flags & 5) == 1 && list0 != -1 &&
+            list0 == Area_StoryModelList[0] && list[1] != -1 && list[1] == Area_StoryModelList[2] && list0 != list[1]) {
             list[0] = list[1];
             list[1] = list0;
         }
@@ -84,8 +88,7 @@ void Players_Init(void) {
 
                 if (UsePlayerList == 0) {
                     slot = g->apiobj.field_0x289;
-                    g->apiobj.field252_0x1f8 =
-                        (u8)((g->apiobj.field252_0x1f8 & 0x7f) | ((slot == 0) << 7));
+                    g->apiobj.field252_0x1f8 = (u8)((g->apiobj.field252_0x1f8 & 0x7f) | ((slot == 0) << 7));
                     PlayerProgress[slot].hitpoints = g->current_hp;
                     g->field_0x106e = 0;
                 } else {
@@ -180,19 +183,18 @@ void Players_Init(void) {
     RememberPlayerIDs(0, id0, id1);
 }
 
-
 // --- Helpers moved from world.cpp ---
 
 typedef struct portalpos_s {
-    i16 count;        // 0x00
+    i16 count; // 0x00
     i16 pad_2;
     f32 *field_0x04;
-    f32 *positions;   // 0x08
+    f32 *positions; // 0x08
 } PORTALPOS;
 
 typedef struct spawnsys_s {
     char pad[0xa0];
-    PORTALPOS *portal;   // 0xa0
+    PORTALPOS *portal; // 0xa0
 } SPAWNSYS;
 
 static char sMissionStartDoor[] = "MissionStartDoor";
@@ -231,8 +233,10 @@ void Players_InitPositions(WORLDINFO *world) {
             PlayerStart[i].pos = (NUVEC *)&ps[6 * n];
             NuVecSub(&tmp, (NUVEC *)&ps[6 * n + 3], (NUVEC *)&ps[6 * n]);
             PlayerStart[i].angle = NuAtan2D(tmp.x, tmp.z);
-            if (2 * n + 4 > A->count) n = ninit;
-            else n = n + 1;
+            if (2 * n + 4 > A->count)
+                n = ninit;
+            else
+                n = n + 1;
         }
         if (bonus != 0 && A->count > 3) {
             i32 nc = A->count >> 2;
@@ -251,7 +255,8 @@ void Players_InitPositions(WORLDINFO *world) {
     if (HUB_ADATA != NULL && HUB_ADATA == world->area) {
         if (world->unknown_0120 != last_area && hub_from_cutsceneplayer == 0) {
             if (hub_from_superstory != -1) {
-                i32 area = Episode_FindAreaFromFlags((EPISODEDATA *)((char *)EDataList + hub_from_superstory * 0x1c), 5, 5);
+                i32 area =
+                    Episode_FindAreaFromFlags((EPISODEDATA *)((char *)EDataList + hub_from_superstory * 0x1c), 5, 5);
                 void *door = Door_FindByIndex(world, area, -1, NULL);
                 if (door != NULL) {
                     NuStrCpy(Door_ExitName, (char *)door);
@@ -272,8 +277,7 @@ void Players_InitPositions(WORLDINFO *world) {
                     NuStrCpy(Door_ExitName, (char *)door);
                 }
             } else if (VEHICLES_ADATA == NULL || (u8)((char *)VEHICLES_ADATA)[0x7c] == 0xa09) {
-                if (VEHICLES_ADATA != NULL &&
-                    (i32)(u8)((char *)VEHICLES_ADATA)[0x7c] == 0xa09) {
+                if (VEHICLES_ADATA != NULL && (i32)(u8)((char *)VEHICLES_ADATA)[0x7c] == 0xa09) {
                     PlayerStart[0].pos = (NUVEC *)&HubVehiclesDoorPos[0];
                     PlayerStart[1].pos = (NUVEC *)&HubVehiclesDoorPos[1];
                 } else if ((u16)(ADataList[0xa09].flags) & 0x5) {
@@ -314,7 +318,8 @@ void Players_InitPositions(WORLDINFO *world) {
         if (hub_from_cutsceneplayer != 0) {
             void *av = CutScenePlayer_Available();
             if (av != NULL && (i16)(*(i16 *)((char *)CutScenePlayer_Available() + 0xa)) != -1) {
-                void *door = Door_FindByIndex(world, -1, (i32)(*(i16 *)((char *)CutScenePlayer_Available() + 0xa)), NULL);
+                void *door =
+                    Door_FindByIndex(world, -1, (i32)(*(i16 *)((char *)CutScenePlayer_Available() + 0xa)), NULL);
                 HubStartDoor = door;
                 if (door != NULL) {
                     f32 *vps = *(f32 **)((char *)(*(void **)((char *)door + 0xa0)) + 0x8);
@@ -452,8 +457,7 @@ void PreResetCode(GameObject_s *obj) {
             }
 
             if (b[0x7a5] == 0 &&
-                sPreReset1048Scale * *(f32 *)(*(u32 *)(*(u32 *)&b[0x54] + 0x24) + 0x30) >
-                    *(f32 *)&b[0x76c]) {
+                sPreReset1048Scale * *(f32 *)(*(u32 *)(*(u32 *)&b[0x54] + 0x24) + 0x30) > *(f32 *)&b[0x76c]) {
                 goto finish_dfd;
             }
 
@@ -500,14 +504,16 @@ void PreResetCode(GameObject_s *obj) {
                         dir.z = *(f32 *)&b[0x70];
                         NuVecNorm(&dir, &dir);
                         if ((*(f32 *)&b[0x698] - *(f32 *)&b[0x5c]) * dir.x +
-                                (*(f32 *)&b[0x6a0] - *(f32 *)&b[0x64]) * dir.z <= 0.0f) {
+                                (*(f32 *)&b[0x6a0] - *(f32 *)&b[0x64]) * dir.z <=
+                            0.0f) {
                             goto finish_dfd;
                         }
                     } else {
                         NUVEC dir;
                         NuVecRotateY(&dir, &v001, *(u16 *)&b[0x5a]);
                         if ((*(f32 *)&b[0x698] - *(f32 *)&b[0x5c]) * dir.x +
-                                (*(f32 *)&b[0x6a0] - *(f32 *)&b[0x64]) * dir.z <= 0.0f) {
+                                (*(f32 *)&b[0x6a0] - *(f32 *)&b[0x64]) * dir.z <=
+                            0.0f) {
                             goto finish_dfd;
                         }
                     }
@@ -561,7 +567,6 @@ void PreResetCode(GameObject_s *obj) {
     }
 
     return;
-
 }
 
 void PostResetCode(GameObject_s *obj) {
@@ -575,8 +580,7 @@ void PostResetCode(GameObject_s *obj) {
         f32 f = (f32)(u32)b;
         ChatterSfx(obj, v, f);
     }
-    if (*(void **)(*(u8 **)(p + 0x54) + 0x18) != (void *)&Move_VEHICLE &&
-        *(u16 *)(p + 0xe1c) != 0 &&
+    if (*(void **)(*(u8 **)(p + 0x54) + 0x18) != (void *)&Move_VEHICLE && *(u16 *)(p + 0xe1c) != 0 &&
         (*(u8 *)(p + 0xe25) & 0x20) == 0) {
         *(u16 *)(p + 0xe1c) = 0;
     }
@@ -612,12 +616,12 @@ void RememberPlayerIDs(i32 a, i32 b, i32 c) {
             return;
         }
     }
-    if (b != -1 && (CDataList[b].field1_0x4 & 0x2000) == 0 && PlayerID[0] != b &&
-        Collection_Got(b) == 1 && GCDataList[b].field275_0x116 != 0 && PlayerID[1] != b) {
+    if (b != -1 && (CDataList[b].field1_0x4 & 0x2000) == 0 && PlayerID[0] != b && Collection_Got(b) == 1 &&
+        GCDataList[b].field275_0x116 != 0 && PlayerID[1] != b) {
         PlayerID[0] = b;
     }
-    if (c != -1 && (CDataList[c].field1_0x4 & 0x2000) == 0 && PlayerID[1] != c &&
-        Collection_Got(c) == 1 && GCDataList[c].field275_0x116 != 0 && PlayerID[0] != c) {
+    if (c != -1 && (CDataList[c].field1_0x4 & 0x2000) == 0 && PlayerID[1] != c && Collection_Got(c) == 1 &&
+        GCDataList[c].field275_0x116 != 0 && PlayerID[0] != c) {
         PlayerID[1] = c;
     }
     if (b != c && PlayerID[1] == b && PlayerID[0] == c) {
@@ -646,7 +650,7 @@ void *CutScenePlayer_Available(void) {
     return NULL;
 }
 
-void ChatterSfx(GameObject_s *g, int a, float b) {
+void ChatterSfx(GameObject_s *g, i32 a, float b) {
     (void)g;
     (void)a;
     (void)b;
@@ -656,13 +660,13 @@ void Move_VEHICLE(GameObject_s *g) {
     (void)g;
 }
 
-void DrawOffsetCode(GameObject_s *obj, int param) {
+void DrawOffsetCode(GameObject_s *obj, i32 param) {
     (void)obj;
     (void)param;
 }
 
 // rtlDynamicEnable uses C linkage in the original binary (plain symbol name).
-extern "C" void rtlDynamicEnable(int id, int param) {
+extern "C" void rtlDynamicEnable(i32 id, i32 param) {
     (void)id;
     (void)param;
 }
@@ -681,9 +685,77 @@ float GetHoverPosY(GameObject_s *obj) {
     return 0.0f;
 }
 
-int Player_HasPurpleForce(GameObject_s *obj) {
+i32 Player_HasPurpleForce(GameObject_s *obj) {
     (void)obj;
     return 0;
 }
 
 unsigned GAMEPAD_ACTION = 0;
+void PlayerTakeHit(GameObject_s *, GameObject_s *) {
+}
+
+void PlayerItem_Set(PLAYERITEM_s *, PLAYERITEMTYPE_s *) {
+}
+
+void Player_FindByID(i32) {
+}
+
+void Player_StartPos(GameObject_s *) {
+}
+
+void PlayersDropInOut() {
+}
+
+void PlayerItem_GotAmmo(PLAYERITEM_s *) {
+}
+
+void Players_AveragePos(nuvec_s *, SOCKPOSITION_s *) {
+}
+
+void Players_BothActive() {
+}
+
+void PlayerItemType_Find(i32) {
+}
+
+void Player_ClearContext(GameObject_s *, i32) {
+}
+
+void Player_HasFastBuild(GameObject_s *) {
+}
+
+void PlayerItemTypes_Init(PLAYERITEMTYPE_s *) {
+}
+
+void Player_ResetContexts(PLAYERPACKET_s *) {
+}
+
+void Player_CopyEssentials(GameObject_s *, GameObject_s *) {
+}
+
+void Player_HasDeflectBolts(GameObject_s *) {
+}
+
+void Player_ToggleCharacter(GameObject_s *, i32, i32) {
+}
+
+void Player_HasInvincibility(GameObject_s *) {
+}
+
+void Player_HasDoubleBoltDamage(GameObject_s *) {
+}
+
+void PlayerButton_OnHold_Callback(MechTouchUIElement &, TouchHolder &) {
+}
+
+void Player_HasDoubleWeaponDamage(GameObject_s *) {
+}
+
+void PlayerButton_OnLeave_Callback(MechTouchUIElement &, TouchHolder &) {
+}
+
+void Player_HasDoubleBoltDamage_FromBolt(BOLT_s *) {
+}
+
+void PlayerButton_OnClick_Callback_NextButton(MechTouchUIElement &, TouchHolder &) {
+}

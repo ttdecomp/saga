@@ -27,14 +27,14 @@ extern "C" {
         DEFHUFFMAN temp_code_length;
     } DEFLATECONTEXT;
 
-    i32 InflateBuffer(char *buffer, int decodedSize, char *readBuffer, i32 readBufferSize);
+    i32 InflateBuffer(char *buffer, i32 decodedSize, char *readBuffer, i32 readBufferSize);
 #ifdef __cplusplus
 }
 
 void InitHuffmanDefaults();
-int DecodeDeflated(DEFLATECONTEXT *ctx);
+i32 DecodeDeflated(DEFLATECONTEXT *ctx);
 i32 Inflate(DEFLATECONTEXT *ctx, char *buffer, i32 size);
 u32 BuildHuffmanTree(DEFHUFFMAN *tree, u8 *codeLengths, i32 symbolCount);
-int DecompressHuffmanTrees(DEFLATECONTEXT *ctx);
+i32 DecompressHuffmanTrees(DEFLATECONTEXT *ctx);
 
 #endif

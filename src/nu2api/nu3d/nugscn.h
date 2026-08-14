@@ -12,7 +12,7 @@ typedef struct nugscn_s { /* PlaceHolder Structure */
     undefined4 field4_0x4;
     undefined4 field5_0x8;
     struct numtl_s **mtls;
-    int nummtl;
+    i32 nummtl;
     undefined field8_0x14;
     undefined field9_0x15;
     undefined field10_0x16;
@@ -29,13 +29,13 @@ typedef struct nugscn_s { /* PlaceHolder Structure */
     undefined field21_0x21;
     undefined field22_0x22;
     undefined field23_0x23;
-    int numspecial;
+    i32 numspecial;
     struct nuspecial_s *specials;
     undefined field26_0x2c;
     undefined field27_0x2d;
     undefined field28_0x2e;
     undefined field29_0x2f;
-    int numsplines;
+    i32 numsplines;
     struct nugspline_s *splines;
     undefined field32_0x38;
     undefined field33_0x39;
@@ -89,9 +89,9 @@ typedef struct nugscn_s { /* PlaceHolder Structure */
     undefined field81_0x69;
     undefined field82_0x6a;
     undefined field83_0x6b;
-    int max_portals;
+    i32 max_portals;
     NUPORTAL *portals;
-    int portal_depth;
+    i32 portal_depth;
     undefined field92_0x74;
     undefined field93_0x75;
     undefined field94_0x76;

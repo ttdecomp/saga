@@ -1,5 +1,8 @@
 #include "nu2api/nucore/NuInputDevice.h"
 #include "nu2api/nucore/NuInputManager.h"
+#include "nu2api/nucore/NuTouchInputButton.h"
+#include "nu2api/nucore/NuTouchInputElement.h"
+#include "nu2api/nucore/NuTouchInputStick.h"
 #include "nu2api/nucore/NuVirtualTouchDevice.h"
 #include "nu2api/nucore/nupad.h"
 
@@ -62,4 +65,167 @@ i32 NuPad_Interface_GetMaxDevices(void) {
 }
 
 void NuPad_UpdateTouchScreenData(void) {
+}
+
+void NuPadReadPS(i32, unsigned char *, unsigned char *, unsigned char *, unsigned char *, unsigned char *,
+                 unsigned char *, unsigned char *, unsigned char *, u32 *, unsigned char *, u32 *) {
+}
+
+void NuPadGetPort(i32) {
+}
+
+void NuPadGetPlayer(i32) {
+}
+
+void NuPadRecordLoad(char *, variptr_u *, variptr_u) {
+}
+
+void NuPadGetDeadzonePS(nupad_s *) {
+}
+
+void NuPadRecordEndFrame() {
+}
+
+void NuPadMapPortToPS2Port(i32, i32) {
+}
+
+void NuPadGetFirstActivePad() {
+}
+
+void NuPadRecordSetPlayEndButtons(i32) {
+}
+
+void NuPadRecordSetRecordEndButtons(i32) {
+}
+
+void NuInputDevice::DisableDPD() {
+}
+
+void NuInputDevice::EnableDPD() {
+}
+
+void NuInputDevice::GetAttachmentType() const {
+}
+
+void NuInputDevice::GetCaps() const {
+}
+
+void NuInputDevice::GetIndexByType() const {
+}
+
+void NuInputDevice::GetLastValidIndexByType() const {
+}
+
+void NuInputDevice::GetLastValidType() const {
+}
+
+void NuInputDevice::GetMotionValue(NUPADMOTIONVALUE) const {
+}
+
+void NuInputDevice::GetMouseData() const {
+}
+
+void NuInputDevice::GetPort() const {
+}
+
+void NuInputDevice::GetTouchData() const {
+}
+
+void NuInputDevice::GetVolume() const {
+}
+
+void NuInputDevice::HasHeadphonesConnected() const {
+}
+
+void NuInputDevice::IsButtonPressed(u32) const {
+}
+
+void NuInputDevice::IsIntercepted() const {
+}
+
+void NuInputDevice::KillRumble() {
+}
+
+void NuInputDevice::ProcessTouchData() {
+}
+
+void NuInputDevice::SetMotors(float, float) {
+}
+
+void NuInputDevice::SupportsCaps(u32) const {
+}
+
+NuInputDevice::~NuInputDevice() {
+}
+
+void NuButtonLayout::ActivateLayout() {
+}
+
+void NuButtonLayout::DeactivateLayout() {
+}
+
+void NuButtonLayout::Render() {
+}
+
+void NuButtonLayout::Update(NuInputTouchData const *) {
+}
+
+void NuButtonLayout::UpdateButtons(i32) {
+}
+
+NuButtonLayout::~NuButtonLayout() {
+}
+
+void NuInputManager::GetDevice(u32) const {
+}
+
+void NuInputManager::GetFirstDeviceByType(NUPADTYPE) const {
+}
+
+void NuInputManager::KillRumbleAll() {
+}
+
+void NuInputDevicePS::DisableDPDPS(u32) {
+}
+
+void NuInputDevicePS::EnableDPDPS(u32) {
+}
+
+void NuInputDevicePS::GetIdentifierPS(u32) {
+}
+
+void NuInputDevicePS::HandleGamePadAxis_ANDROID_SPECIFIC(float, float, float, float, float, float) {
+}
+
+void NuInputDevicePS::HandleSensor_ANDROID_SPECIFIC(i32, float, float, float) {
+}
+
+void NuInputDevicePS::HandleTouch_ANDROID_SPECIFIC(i32, i32, i32, float, float) {
+}
+
+NuTouchInputStick::NuTouchInputStick(NuTouchInputElement::TYPE, i32, u32, float, float, float, float) {
+}
+
+void NuTouchInputStick::Render() {
+}
+
+void NuTouchInputStick::Update(NuInputTouchData const *) {
+}
+
+NuTouchInputButton::NuTouchInputButton(i32, u32) {
+}
+
+NuTouchInputButton::NuTouchInputButton(i32, u32, float, float, float, float) {
+}
+
+void NuTouchInputButton::Render() {
+}
+
+void NuTouchInputButton::Update(NuInputTouchData const *) {
+}
+
+NuTouchInputElement::NuTouchInputElement(NuTouchInputElement::TYPE, i32, u32) {
+}
+
+NuTouchInputElement::NuTouchInputElement(NuTouchInputElement::TYPE, i32, u32, float, float, float, float) {
 }

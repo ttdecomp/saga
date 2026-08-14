@@ -2,14 +2,13 @@
 
 #include "legoapi/gizmo.h"
 
-extern int gizbuildit_gizmotype_id;
+extern i32 gizbuildit_gizmotype_id;
 
 #ifdef __cplusplus
 
-typedef struct GIZBUILDIT_s {
-} GIZBUILDIT;
+typedef struct GIZBUILDIT_s GIZBUILDIT;
 
-ADDGIZMOTYPE* GizBuildIts_RegisterGizmo(int type_id);
+ADDGIZMOTYPE *GizBuildIts_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

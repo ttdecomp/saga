@@ -2,13 +2,14 @@
 
 #include "decomp.h"
 
-int force_gizmotype_id = -1;
+i32 force_gizmotype_id = -1;
 
-static int GizForces_GetMaxGizmos(void *force) {
+static i32 GizForces_GetMaxGizmos(void *force) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void GizForces_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void GizForces_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
@@ -22,52 +23,62 @@ static void GizForces_Draw(void *, void *, float) {
 
 static char *GizmoForce_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizmoForce_GetOutput(GIZMO *gizmo, int, int) {
+static i32 GizmoForce_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static char *GizmoForce_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static i32 GizmoForce_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void GizmoForce_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static char *GizmoForce_GetOutputName(GIZMO *gizmo, int output_index) {
+static i32 GizmoForce_ActivateRev(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void GizmoForce_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static int GizmoForce_GetNumOutputs(GIZMO *gizmo) {
+static i32 GizmoForce_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void GizmoForce_Activate(GIZMO *gizmo, int) {
+static i32 GizForces_BoltHitPlat(void *, void *, BOLT *, unsigned char *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizmoForce_ActivateRev(GIZMO *gizmo, int, int) {
+static i32 *GizForces_GetBestBoltTarget(GIZMOSET *, float *, NUVEC *, NUVEC *, void *, NUVEC *, NUVEC *, float, float,
+                                        i32, i32, i32) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void GizmoForce_SetVisibility(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static int GizmoForce_GetPos(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-}
-
-static int GizForces_BoltHitPlat(void *, void *, BOLT *, unsigned char *) {
-    UNIMPLEMENTED();
-}
-
-static int *GizForces_GetBestBoltTarget(GIZMOSET *, float *, NUVEC *, NUVEC *, void *, NUVEC *, NUVEC *, float, float,
-                                        int, int, int) {
-    UNIMPLEMENTED();
-}
-
-static int GizForces_BoltHit(void *, void *, void *, NUVEC *, int, float, NUVEC *, NUVEC *, BOLT *, unsigned int,
+static i32 GizForces_BoltHit(void *, void *, void *, NUVEC *, i32, float, NUVEC *, NUVEC *, BOLT *, u32,
                              unsigned char *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void *GizForces_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void GizForces_ClearProgress(void *, void *) {
@@ -84,21 +95,23 @@ static void GizForces_Reset(void *, void *, void *) {
 
 static void *GizForces_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizForces_Load(void *, void *) {
+static i32 GizForces_Load(void *, void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void GizForces_PostLoad(void *, void *) {
     UNIMPLEMENTED();
 }
 
-static void GizForces_AddLevelSfx(void *, void *, int *, int *, int) {
+static void GizForces_AddLevelSfx(void *, void *, i32 *, i32 *, i32) {
     UNIMPLEMENTED();
 }
 
-ADDGIZMOTYPE *GizForce_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *GizForce_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

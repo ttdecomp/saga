@@ -77,6 +77,8 @@ class NuInputDeviceTranslator {
                          float *out_motion, NuInputTouchData *out_touch_data, NuInputMouseData *out_mouse_data) = 0;
 };
 
+struct NUPADMOTIONVALUE {};
+
 class NuInputDevice {
   public:
     NuInputDevice(u32 port);
@@ -114,6 +116,27 @@ class NuInputDevice {
 
     void SetDisconnected(void);
     void Clear(void);
+
+    void DisableDPD();
+    void EnableDPD();
+    void GetAttachmentType() const;
+    void GetCaps() const;
+    void GetIndexByType() const;
+    void GetLastValidIndexByType() const;
+    void GetLastValidType() const;
+    void GetMotionValue(NUPADMOTIONVALUE) const;
+    void GetMouseData() const;
+    void GetPort() const;
+    void GetTouchData() const;
+    void GetVolume() const;
+    void HasHeadphonesConnected() const;
+    void IsButtonPressed(u32) const;
+    void IsIntercepted() const;
+    void KillRumble();
+    void ProcessTouchData();
+    void SetMotors(float motor_1, float motor_2);
+    void SupportsCaps(u32) const;
+    ~NuInputDevice();
 
   private:
     void DeadZone(NUPADANALOGVALUE input, f32 dead_zone);
@@ -185,4 +208,11 @@ namespace NuInputDevicePS {
     void ReadMotionValuesPS(u32 port, f32 *values);
     void ReadTouchDataPS(u32 port, NuInputTouchData *data);
     void ReadMouseDataPS(u32 port, NuInputMouseData *data);
+
+    void DisableDPDPS(u32);
+    void EnableDPDPS(u32);
+    void GetIdentifierPS(u32);
+    void HandleGamePadAxis_ANDROID_SPECIFIC(float, float, float, float, float, float);
+    void HandleSensor_ANDROID_SPECIFIC(i32, float, float, float);
+    void HandleTouch_ANDROID_SPECIFIC(i32, i32, i32, float, float);
 }; // namespace NuInputDevicePS

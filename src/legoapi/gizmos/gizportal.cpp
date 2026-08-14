@@ -27,7 +27,7 @@ static void Portal_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_info,
         return;
     }
 
-    for (int i = 0; i < world->current_gscn->max_portals; i++) {
+    for (i32 i = 0; i < world->current_gscn->max_portals; i++) {
         NUPORTAL *portal = &world->current_gscn->portals[i];
 
         if (portal->id == 0) {
@@ -52,7 +52,7 @@ static char *Portal_GetGizmoName(GIZMO *gizmo) {
     return name;
 }
 
-static int Portal_GetOutput(GIZMO *gizmo, int, int) {
+static i32 Portal_GetOutput(GIZMO *gizmo, i32, i32) {
     if (gizmo == NULL || gizmo->object == NULL) {
         return 0;
     }
@@ -127,7 +127,7 @@ static void Portals_StoreProgress(void *world_info, void *, void *progress) {
 
     NUPORTAL *portal = world->current_gscn->portals;
     NUPORTAL *end = portal + world->current_gscn->max_portals;
-    int index = 0;
+    i32 index = 0;
     for (;;) {
         if (portal->id != 0 && index <= SIZEOF_BITS(portal_progress->progress_mask) - 1) {
             if (portal->is_active & 1) {
@@ -158,8 +158,8 @@ static void Portals_Reset(void *world_info, void *, void *progress) {
         return;
     }
 
-    int index = 0;
-    for (int i = 0; i < gscn->max_portals; i++) {
+    i32 index = 0;
+    for (i32 i = 0; i < gscn->max_portals; i++) {
         NUPORTAL *portal = &gscn->portals[i];
         if (portal->id == 0) {
             continue;
@@ -176,7 +176,7 @@ static void Portals_Reset(void *world_info, void *, void *progress) {
     }
 }
 
-ADDGIZMOTYPE *Portal_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *Portal_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

@@ -15,8 +15,8 @@ extern "C" {
 
     void NuPortalInit(void);
     void NuPortalVisibility(struct nugscn_s *scene);
-    void NuPortalMaxDepth(struct nugscn_s *scene, int depth);
-    void NuPortalSetActiveDirect(NUPORTAL *portal, int active);
+    void NuPortalMaxDepth(struct nugscn_s *scene, i32 depth);
+    void NuPortalSetActiveDirect(NUPORTAL *portal, i32 active);
 
 #ifdef __cplusplus
 }

@@ -8,172 +8,135 @@
 EPISODEDATA *EDataList = NULL;
 
 u32 Episode_FindAreaFromFlags(EPISODEDATA *ep, u32 flags, u32 want) {
-    if (ep->area_count == 0) {
-        return 0xffffffff;
+    for (i32 i = 0; i < (i32)ep->area_count; i++) {
+        AREADATA *a = &ADataList[ep->area_ids[i]];
+        if ((a->flags & flags) == want) {
+            return (u8)a->field27_0x7c;
+        }
     }
-    AREADATA *a = &ADataList[ep->area_ids[0]];
-    if ((a->flags & flags) != want) {
-        i32 i = 0;
-        do {
-            if (i == (u32)ep->area_count * 2 - 2) {
-                return 0xffffffff;
-            }
-            i = i + 2;
-            a = &ADataList[*(i16 *)((u8 *)ep->area_ids + i)];
-        } while ((a->flags & flags) != want);
-    }
-    return (u8)a->field27_0x7c;
+    return 0xffffffff;
 }
-
 EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, i32 maxCount,
                                     i32 *countDest) {
-    i16 *psVar1;
-    byte bVar2;
-    char *a;
-    bool bVar3;
-    nufpar_s *fp;
-    int iVar4;
-    u32 uVar5;
-    EPISODEDATA *episodePtr;
-    u32 i;
-    EPISODEDATA *episodePtr2;
-    u32 uVar6;
-    EPISODEDATA *episode;
-    int j;
-    i16 areaId;
-    int count;
-    int areaIndex;
-    AREADATA *area;
-
-    fp = NuFParCreate(file);
-    if (fp == (nufpar_s *)0x0) {
-        if (countDest != (int *)0x0) {
+    NUFPAR *fp = NuFParCreate(file);
+    if (fp == NULL) {
+        if (countDest != NULL) {
             *countDest = 0;
         }
-    } else {
-        count = 0;
-        bVar3 = false;
-        episodePtr = (EPISODEDATA *)((usize)bufferStart->void_ptr + 3U & 0xfffffffc);
-        bufferStart->void_ptr = episodePtr;
-        episode = episodePtr;
-    LAB_00488f90:
-        iVar4 = NuFParGetLine(fp);
-        if (iVar4 != 0) {
-            while (true) {
-                NuFParGetWord(fp);
-                a = fp->word_buf;
-                if (*a == '\0')
-                    break;
-                if (!bVar3) {
-                    iVar4 = NuStrICmp(a, "episode_start");
-                    if (iVar4 == 0 && count < maxCount) {
-                        episode->name_id = -1;
-                        episode->text_id = -1;
-                        episode->area_count = 0;
-                        episode->index = (u8)count;
-                        bVar3 = true;
-                    }
+        return NULL;
+    }
+
+    i32 count = 0;
+    bool bVar3 = false;
+    EPISODEDATA *episodePtr = (EPISODEDATA *)((usize)bufferStart->void_ptr + 3U & 0xfffffffc);
+    bufferStart->void_ptr = (void *)episodePtr;
+    EPISODEDATA *episode = episodePtr;
+
+    while (NuFParGetLine(fp)) {
+    get_word:
+        NuFParGetWord(fp);
+        char *a = fp->word_buf;
+        if (*a == '\0') {
+            continue;
+        }
+
+        if (!bVar3) {
+            if (NuStrICmp(a, "episode_start") == 0 && count < maxCount) {
+                episode->name_id = -1;
+                episode->text_id = -1;
+                episode->area_count = 0;
+                episode->index = (u8)count;
+                bVar3 = true;
+            }
+            continue;
+        }
+
+        if (NuStrICmp(a, "episode_end") == 0) {
+            bVar3 = false;
+            if (episode->area_count != 0) {
+                count++;
+                episode++;
+                if (NuFParGetLine(fp) == 0) {
                     break;
                 }
+                goto get_word;
+            }
+            continue;
+        }
 
-                if (NuStrICmp(a, "episode_end") != 0) {
-                    if (NuStrICmp(fp->word_buf, "area") == 0) {
-                        if (episode->area_count >= 10 || NuFParGetWord(fp) == 0)
-                            goto LAB_004890ae;
-
-                        area = Area_FindByName(fp->word_buf, &areaIndex);
-
-                        bVar3 = true;
-                        if (areaIndex != -1) {
-                            bVar2 = episode->area_count;
-                            i = (u32)bVar2;
-                            if (i == 0)
-                                goto LAB_0048910d;
-                            if (areaIndex == episode->area_ids[0])
-                                uVar5 = 0;
-                            iVar4 = NuStrICmp(fp->word_buf, "name_id");
-                            if (iVar4 == 0) {
-                                iVar4 = NuFParGetInt(fp);
-                                episode->name_id = (i16)iVar4;
-                                bVar3 = true;
-                            } else {
-                                iVar4 = NuStrICmp(fp->word_buf, "text_id");
-                                bVar3 = true;
-                                if (iVar4 == 0) {
-                                    iVar4 = NuFParGetInt(fp);
-                                    episode->text_id = (i16)iVar4;
+        if (NuStrICmp(a, "area") == 0) {
+            if (episode->area_count <= 9 && NuFParGetWord(fp) != 0) {
+                i32 areaIndex;
+                AREADATA *area = Area_FindByName(fp->word_buf, &areaIndex);
+                bVar3 = true;
+                if (areaIndex != -1) {
+                    u32 areaCount = episode->area_count;
+                    bool found = false;
+                    if (areaCount != 0) {
+                        if (episode->area_ids[0] == areaIndex) {
+                            found = true;
+                        } else {
+                            for (i32 k = 1; k < (i32)areaCount; k++) {
+                                if (episode->area_ids[k] == areaIndex) {
+                                    found = true;
+                                    break;
                                 }
                             }
                         }
-                        break;
                     }
-
-                    bVar3 = false;
-                    if (episode->area_count == 0)
-                        break;
-                    count = count + 1;
-                    iVar4 = NuFParGetLine(fp);
-                    episode = episode + 1;
-                    if (iVar4 == 0) {
-                        goto end;
+                    if (!found) {
+                        for (i32 j = 0; j < count; j++) {
+                            EPISODEDATA *prev = &episodePtr[j];
+                            for (i32 byteOff = 0; byteOff < (i32)prev->area_count * 2; byteOff += 2) {
+                                if (*(i16 *)((u8 *)prev->area_ids + byteOff) == areaIndex) {
+                                    found = true;
+                                    break;
+                                }
+                            }
+                            if (found) {
+                                break;
+                            }
+                        }
+                    }
+                    if (!found) {
+                        episode->area_ids[areaCount] = (i16)areaIndex;
+                        episode->area_count = (u8)(areaCount + 1);
+                        if ((area->flags & 6) == 0) {
+                            episode->regular_areas += 1;
+                        }
                     }
                 }
-                goto LAB_00488f90;
+            } else {
+                bVar3 = true;
             }
-
-        end:
-            NuFParDestroy(fp);
-            if (count != 0) {
-                bufferStart->void_ptr = episode;
-                if (countDest == (int *)0x0) {
-                    return episodePtr;
-                }
-                *countDest = count;
-                return episodePtr;
-            }
-        }
-        return NULL;
-
-        while (iVar4 = uVar5 + 1, uVar5 = uVar6, areaIndex != episode->area_ids[iVar4]) {
-        LAB_00489248:
-            uVar6 = uVar5 + 1;
-            if (uVar5 == bVar2 - 1)
-                break;
+            continue;
         }
 
-        if (uVar6 == i) {
-        LAB_0048910d:
-            j = 0;
-            episodePtr2 = episodePtr;
-            if (0 < count) {
-                do {
-                    iVar4 = 0;
-                    while (iVar4 != (u32)episodePtr2->area_count * 2) {
-                        psVar1 = (i16 *)((usize)episodePtr2->area_ids + iVar4);
-                        iVar4 = iVar4 + 2;
-                        if (areaIndex == *psVar1)
-                            goto LAB_004890ae;
-                    }
-                    j = j + 1;
-                    episodePtr2 = episodePtr2 + 1;
-                } while (j != count);
-            }
-            areaId = (i16)areaIndex;
-            episode->area_ids[i] = areaId;
+        if (NuStrICmp(a, "name_id") == 0) {
+            episode->name_id = (i16)NuFParGetInt(fp);
             bVar3 = true;
-            episode->area_count = bVar2 + 1;
-            if ((area->flags & 6) == 0) {
-                episode->regular_areas += 1;
-            }
-        } else {
-            bVar3 = true;
+            continue;
         }
 
-        goto LAB_00488f90;
-    LAB_004890ae:
+        if (NuStrICmp(a, "text_id") == 0) {
+            bVar3 = true;
+            episode->text_id = (i16)NuFParGetInt(fp);
+            continue;
+        }
+
         bVar3 = true;
-        goto LAB_00488f90;
+        continue;
     }
+
+    NuFParDestroy(fp);
+    if (count != 0) {
+        bufferStart->void_ptr = (void *)episode;
+        if (countDest != NULL) {
+            *countDest = count;
+        }
+        return episodePtr;
+    }
+    return NULL;
 }
 
 i32 Episode_ContainsArea(i32 areaId, i32 *areaIndex) {

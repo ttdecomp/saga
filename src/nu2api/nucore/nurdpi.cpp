@@ -5,10 +5,10 @@
 #include "nu2api/nucore/nustring.h"
 
 typedef struct rdpictxt_s {
-    int cur_tok;
-    int cur_val;
+    i32 cur_tok;
+    i32 cur_val;
     char *buf;
-    int pos;
+    i32 pos;
     nurdpgetvarfn *get_var_fn;
 } RDPICTXT;
 
@@ -38,7 +38,7 @@ enum {
     TOK_CNT = 22,
 };
 
-static int ishexnum(char c) {
+static i32 ishexnum(char c) {
     switch (c) {
         case '0' ... '9':
         case 'A' ... 'F':
@@ -49,7 +49,7 @@ static int ishexnum(char c) {
     }
 }
 
-static int hexcodetoint(char c) {
+static i32 hexcodetoint(char c) {
     switch (c) {
         case '0' ... '9':
             return c - 0x30;
@@ -62,7 +62,7 @@ static int hexcodetoint(char c) {
     }
 }
 
-static int isnum(char c) {
+static i32 isnum(char c) {
     if (((u32)c - 0x30) < 10) {
         return 1;
     }
@@ -72,8 +72,8 @@ static int isnum(char c) {
 
 static void get_tok_rdpi(RDPICTXT *ctx) {
     char var_name_buf[256];
-    int var_name_pos;
-    int ret;
+    i32 var_name_pos;
+    i32 ret;
 
     // In theory, this should consume whitespace, but instead it just transforms
     // spaces into exclamation points and tabs into line feeds. It _does_ make
@@ -238,10 +238,10 @@ static void get_tok_rdpi(RDPICTXT *ctx) {
     }
 }
 
-static int i_expr(RDPICTXT *ctx);
+static i32 i_expr(RDPICTXT *ctx);
 
-static int prim(RDPICTXT *ctx) {
-    int expr;
+static i32 prim(RDPICTXT *ctx) {
+    i32 expr;
 
     switch (ctx->cur_tok) {
         case TOK_NUM:
@@ -273,8 +273,8 @@ static int prim(RDPICTXT *ctx) {
     }
 }
 
-static int term(RDPICTXT *ctx) {
-    int term = prim(ctx);
+static i32 term(RDPICTXT *ctx) {
+    i32 term = prim(ctx);
 
     while (true) {
         switch (ctx->cur_tok) {
@@ -329,9 +329,9 @@ static int term(RDPICTXT *ctx) {
     }
 }
 
-static int i_expr(RDPICTXT *ctx) {
-    int rhs;
-    int expr = term(ctx);
+static i32 i_expr(RDPICTXT *ctx) {
+    i32 rhs;
+    i32 expr = term(ctx);
 
     while (true) {
         switch (ctx->cur_tok) {
@@ -378,13 +378,13 @@ static int i_expr(RDPICTXT *ctx) {
     }
 }
 
-int NuRDPI(char *input) {
+i32 NuRDPI(char *input) {
     return NuRDPIVar(input, NULL);
 }
 
-int NuRDPIVar(char *input, nurdpgetvarfn *get_var_fn) {
+i32 NuRDPIVar(char *input, nurdpgetvarfn *get_var_fn) {
     RDPICTXT ctx;
-    int ret;
+    i32 ret;
 
     ctx.buf = input;
     ctx.pos = 0;

@@ -1,4 +1,5 @@
 #include "nu2api/nu3d/nutex.h"
+#include "nu2api/nu3d/nugscn.h"
 
 #include "decomp.h"
 #include "nu2api/nu3d/android/nutex_android.h"
@@ -6,6 +7,10 @@
 #include "nu2api/nucore/nustring.h"
 #include <pthread.h>
 #include <string.h>
+
+struct nutexanimprog_s;
+struct nutextureformat_e {};
+struct nutexanim_s;
 
 void NuChecksumAsHex(u8 *checksum, char *out) {
     i32 i;
@@ -22,7 +27,7 @@ void NuChecksumAsHex(u8 *checksum, char *out) {
     out[32] = '\0';
 }
 
-void NuTexHiresFilename(int tex_id, char *filename) {
+void NuTexHiresFilename(i32 tex_id, char *filename) {
     NUNATIVETEX *tex;
     char checksum_hex[33];
 
@@ -34,23 +39,23 @@ void NuTexHiresFilename(int tex_id, char *filename) {
     NuStrCat(filename, ".tex");
 }
 
-int NuTexSwapHires(int tex_id_lo, int tex_id_hi) {
+i32 NuTexSwapHires(i32 tex_id_lo, i32 tex_id_hi) {
     return 0;
 }
 
-void NuTexLoadHires(int tex_id) {
+void NuTexLoadHires(i32 tex_id) {
     char hires_path[2048];
-    int tex_id_hi;
+    i32 tex_id_hi;
 
     NuTexHiresFilename(tex_id, hires_path);
     tex_id_hi = NuTexRead(hires_path, NULL, NULL);
     NuTexSwapHires(tex_id, tex_id_hi);
 }
 
-void NuTexUnloadHires(int tex_id) {
+void NuTexUnloadHires(i32 tex_id) {
 }
 
-void NuTexAddReference(int tex_id) {
+void NuTexAddReference(i32 tex_id) {
     NUNATIVETEX *tex;
 
     tex = NuTexGetNative(tex_id);
@@ -59,7 +64,7 @@ void NuTexAddReference(int tex_id) {
     }
 }
 
-void NuTexRemoveReference(int tex_id) {
+void NuTexRemoveReference(i32 tex_id) {
     NUNATIVETEX *tex;
 
     tex = NuTexGetNative(tex_id);
@@ -68,7 +73,7 @@ void NuTexRemoveReference(int tex_id) {
     }
 }
 
-int NuTexGetRefCount(int tex_id) {
+i32 NuTexGetRefCount(i32 tex_id) {
     NUNATIVETEX *tex;
 
     tex = NuTexGetNative(tex_id);
@@ -100,8 +105,8 @@ void NuTexInitEx(VARIPTR *buf, i32 max_tex_count) {
 
 pthread_mutex_t criticalSection = PTHREAD_MUTEX_INITIALIZER;
 
-int NuTexCreateNative(NUNATIVETEX *tex, bool is_pvrtc) {
-    int i;
+i32 NuTexCreateNative(NUNATIVETEX *tex, bool is_pvrtc) {
+    i32 i;
 
     if (tex == NULL) {
         return 0;
@@ -109,7 +114,7 @@ int NuTexCreateNative(NUNATIVETEX *tex, bool is_pvrtc) {
 
     pthread_mutex_lock(&criticalSection);
 
-    for (int i = 0; i < max_textures; i++) {
+    for (i32 i = 0; i < max_textures; i++) {
         if (texture_list[i] == NULL) {
             texture_list[i] = tex;
             texture_order[i] = gTextureLoadCount++;
@@ -127,7 +132,7 @@ int NuTexCreateNative(NUNATIVETEX *tex, bool is_pvrtc) {
     return 0;
 }
 
-NUNATIVETEX *NuTexGetNative(int tex_id) {
+NUNATIVETEX *NuTexGetNative(i32 tex_id) {
     if (tex_id > 0) {
         return texture_list[tex_id - 1];
     }
@@ -135,15 +140,13 @@ NUNATIVETEX *NuTexGetNative(int tex_id) {
     return NULL;
 }
 
-int NuTexWidth(int tex_id) {
+i32 NuTexWidth(i32 tex_id) {
     return texture_list[tex_id - 1]->width;
 }
 
-int NuTexHeight(int tex_id) {
+i32 NuTexHeight(i32 tex_id) {
     return texture_list[tex_id - 1]->height;
 }
-
-
 
 enum DDSCAPS : u32 {
     DDSCAPS2_CUBEMAP = 0x200, // Required for a cubemap
@@ -154,8 +157,6 @@ enum DDSCAPS : u32 {
     DDSCAPS2_CUBEMAP_POSITIVEZ = 0x4000,
     DDSCAPS2_CUBEMAP_NEGATIVEZ = 0x8000
 };
-
-
 
 i32 NuDDSGetTextureDescription(const char *dds_data, NUTEXFORMAT &out_format, i32 &out_width, i32 &out_height,
                                i32 &out_depth, i32 &out_mip_count, bool &out_is_cube_map, bool *out_has_four_cc)
@@ -285,4 +286,40 @@ i32 NuDDSGetTextureDescription(const char *dds_data, NUTEXFORMAT &out_format, i3
 
     out_is_cube_map = true;
     return 1;
+}
+
+void NuTexRemap(i32, i32) {
+}
+
+void NuTexReadTex() {
+}
+
+void NuTexAssignAddr(i32, i32) {
+}
+
+void NuTexGetManager() {
+}
+
+void NuTexReadBitmap(char *) {
+}
+
+void NuTexManagerInit(variptr_u *, variptr_u) {
+}
+
+void NuTexAnimProgInit(nutexanimprog_s *) {
+}
+
+void NuTextureCreate3D(i32, i32, i32, i32, i32, nutextureformat_e) {
+}
+
+void NuTexAnimResetList(nutexanim_s *) {
+}
+
+void NuTexManagerStream(nugscn_s *) {
+}
+
+void NuTexAnimProgParseFile(i32, variptr_u *, variptr_u, i32) {
+}
+
+void NuTexGetUnresolvedTextureTIDPS() {
 }

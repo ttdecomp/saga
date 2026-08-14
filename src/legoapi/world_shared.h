@@ -116,15 +116,15 @@ i32 InitCreature(GameObject_s *obj, i32 id, i32 param);
 void InitGameObjectLights(void);
 
 // --- cutscene.cpp — cutscenes / character scenes ---
+i32 InStory(void);
 extern "C" {
-    i32 InStory(void);
     void *NuGCutSceneLoad(char *name, NUGSCN *gscn1, NUGSCN *gscn2, i32 flags);
     void NuGCutSceneFixUp(void *cutscene, char *name, i32 flags, VARIPTR *end);
     void NuGCutSceneFixUpExtra(void *cutscene, i32 area);
     void *instNuGCutSceneCreate(void *cutscene, i32 flags, i32 param, char *name);
 }
-void *CutScenes_Load(char *config, NUGSCN *gscn1, NUGSCN *gscn2, i32 param1, VARIPTR *buf, VARIPTR *buf_end,
-                     i32 param2, i32 param3, WORLDINFO *world);
+void *CutScenes_Load(char *config, NUGSCN *gscn1, NUGSCN *gscn2, i32 param1, VARIPTR *buf, VARIPTR *buf_end, i32 param2,
+                     i32 param3, WORLDINFO *world);
 void CharScenes_LevelLoad(WORLDINFO *world);
 
 // --- levelstubs.cpp — WorldInfo_Load dependency stubs ---

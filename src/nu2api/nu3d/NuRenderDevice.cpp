@@ -69,30 +69,6 @@ void NuGLES2ExtensionsInit() {
     glDeleteVertexArraysOES = eglGetProcAddress("glDeleteVertexArraysOES");
 }
 
-i32 NuRenderDevice::DetermineNominalAspectRatio(u32 width, u32 height) {
-    i32 ret;
-    f32 fVar2;
-    f32 fVar3;
-    f32 fVar4;
-
-    f32 fVar1 = (f32)width / (f32)height;
-
-    fVar2 = fabsf(fVar1 - 1.3333334);
-    if (1000.0 <= fabsf(fVar1 - 1.3333334)) {
-        fVar2 = 1000.0;
-    }
-    fVar3 = fabsf(fVar1 - 1.7777778);
-    fVar4 = fVar3;
-    if (fVar3 >= fVar2) {
-        fVar4 = fVar2;
-    }
-    ret = (int)(fVar3 < fVar2);
-    if (fabsf(fVar1 - 1.6) < fVar4) {
-        ret = 2;
-    }
-    return ret;
-}
-
 bool NuRenderDevice::IsExtensionSupported(const char *exts) {
     if (strchr(exts, ' ') != NULL || *exts == '\0') {
         return false;
@@ -143,7 +119,7 @@ void NuRenderDevice::Initialize() {
     eglGetConfigAttrib(this->egl_display, this->egl_config, 0x3025, attribs + 4);
     eglGetConfigAttrib(this->egl_display, this->egl_config, 0x3026, attribs + 5);
 
-    this->nominal_aspect_ratio = DetermineNominalAspectRatio(this->width, this->height);
+    DetermineNominalAspectRatio(this->width, this->height);
     this->aspect_ratio = (float)this->width / (float)this->height;
 
     glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &this->max_texture_units);
@@ -397,9 +373,7 @@ void NuRenderDevice::InitialiseOpenGLContext(ANativeWindow *window_) {
 
 void NuRenderDevice::CheckForRenderWindowInitialisation() {
     if (g_appWindow != 0 && this->field48_0x45 == '\0' && this->focus) {
-        if (NuCore::GetApplicationState()->GetStatus() != NuApplicationStatus::ZERO) {
-            NuCore::GetApplicationState()->SetStatus(NuApplicationStatus::ZERO);
-        }
+        NuCore::GetApplicationState()->SetStatus(NUAPPLICATIONSTATUS{});
     }
 }
 

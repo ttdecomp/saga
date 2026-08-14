@@ -74,6 +74,7 @@ typedef struct WORLDINFO_s {
     GAMEANIMSYS_s *game_anim_sys;
     NUGSCN *icons_gscn;
     MINIKIT minikit;
+    char unknown_0x2984[0x4];
     struct SOCKSYS_s *sock_sys;
     APIOBJECTSYS_s *api_object_sys;
 
@@ -153,6 +154,10 @@ typedef struct WORLDINFO_s {
 
     char filler15[0x51b0 - 0x5170];
 } WORLDINFO;
+
+#ifndef HOST_BUILD
+static_assert(sizeof(void *) != 4 || sizeof(WORLDINFO_s) == 0x51b0, "WORLDINFO_s size mismatch");
+#endif
 
 #ifdef __cplusplus
 extern "C" {

@@ -4,10 +4,9 @@
 
 #ifdef __cplusplus
 
-typedef struct SHARD_s {
-} SHARD;
+typedef struct SHARD_s SHARD;
 
-ADDGIZMOTYPE* Shards_RegisterGizmo(int type_id);
+ADDGIZMOTYPE *Shards_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

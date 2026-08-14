@@ -5,6 +5,13 @@ struct NuButtonLayout {
     u8 unknown_00[0xc8];
 
     u32 unknown_c8;
+
+    void ActivateLayout();
+    void DeactivateLayout();
+    void Render();
+    void Update(NuInputTouchData const *);
+    void UpdateButtons(i32 index);
+    ~NuButtonLayout();
 };
 
 class NuVirtualTouchDevice : public NuInputDeviceTranslator {
@@ -19,6 +26,10 @@ class NuVirtualTouchDevice : public NuInputDeviceTranslator {
                          NuInputMouseData *out_mouse_data) override;
 
     void CreateDefaultLayout(u32 unknown);
+
+    void GetAspectRatio();
+    void Render();
+    void SetCurrentLayoutIndex(u32 index);
 
   private:
     // Type uncertain.

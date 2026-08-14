@@ -14,10 +14,10 @@ MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *buffer
     i16 sVar1;
     nufpar_s *fp;
     LEVELDATA *pLVar2;
-    int i;
+    i32 i;
     u16 uVar3;
     MISSIONSYS *dest;
-    int charId;
+    i32 charId;
     MISSIONSYS sys;
     MISSIONSAVE local_c;
     i16 *buffer;
@@ -116,9 +116,9 @@ MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *buffer
                                     i = NuStrICmp(fp->word_buf, "bounty");
                                     if (i == 0) {
                                         i = NuFParGetInt(fp);
-                                        *(int *)(buffer + 4) = i;
+                                        *(i32 *)(buffer + 4) = i;
                                         i = NuFParGetInt(fp);
-                                        *(int *)(buffer + 6) = i;
+                                        *(i32 *)(buffer + 6) = i;
                                     } else {
                                         i = NuStrICmp(fp->word_buf, "name_id");
                                         if (i == 0) {

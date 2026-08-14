@@ -352,7 +352,7 @@ void NuPadUpdatePads() {
     i32 max_game_pads;
     i32 i;
     i32 j;
-    int has_active_pad;
+    i32 has_active_pad;
     i32 unused;
     i32 unused2;
 

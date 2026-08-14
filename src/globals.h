@@ -10,7 +10,7 @@
 
 extern "C" {
 #endif
-    struct cheat_s { /* PlaceHolder Structure */
+    typedef struct { /* PlaceHolder Structure */
         char *name;
         undefined field1_0x4;
         undefined field2_0x5;
@@ -31,8 +31,7 @@ extern "C" {
         undefined field17_0x17;
         char *extra_name;
         u32 flag;
-    };
-    typedef struct cheat_s CHEAT;
+    } CHEAT;
 
     struct OPTIONSSAVE_s { /* PlaceHolder Structure */
         undefined field0_0x0;

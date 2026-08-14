@@ -2,13 +2,14 @@
 
 #include "decomp.h"
 
-int grapple_gizmotype_id = -1;
+i32 grapple_gizmotype_id = -1;
 
-static int Grapples_GetMaxGizmos(void *grapple) {
+static i32 Grapples_GetMaxGizmos(void *grapple) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void Grapples_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void Grapples_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
@@ -22,30 +23,35 @@ static void Grapples_Draw(void *, void *, float) {
 
 static char *Grapple_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int Grapple_GetOutput(GIZMO *gizmo, int, int) {
+static i32 Grapple_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static char *Grapple_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static i32 Grapple_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void Grapple_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static char *Grapple_GetOutputName(GIZMO *gizmo, int output_index) {
-    UNIMPLEMENTED();
-}
-
-static int Grapple_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-}
-
-static void Grapple_Activate(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static void Grapple_SetVisibility(GIZMO *gizmo, int) {
+static void Grapple_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
 static void *Grapples_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void Grapples_ClearProgress(void *, void *) {
@@ -62,13 +68,15 @@ static void Grapples_Reset(void *, void *, void *) {
 
 static void *Grapples_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int Grapples_Load(void *, void *) {
+static i32 Grapples_Load(void *, void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-ADDGIZMOTYPE *Grapples_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *Grapples_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

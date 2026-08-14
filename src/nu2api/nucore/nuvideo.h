@@ -24,19 +24,19 @@ enum {
 };
 
 #ifdef __cplusplus
-int NuVideoGetAspectPS(void);
+i32 NuVideoGetAspectPS(void);
 void NuVideoSetBrightnessPS();
 void NuVideoSetSwapModePS(NUVIDEO_SWAPMODE video_swap_mode);
 
 extern "C" {
 #endif
-    int NuVideoGetMode(void);
-    void NuVideoSetMode(int mode);
-    int NuVideoGetAspect(void);
+    i32 NuVideoGetMode(void);
+    void NuVideoSetMode(i32 mode);
+    i32 NuVideoGetAspect(void);
     NUVIDEO_SWAPMODE NuVideoGetSwapMode(void);
     void NuVideoRollingFrameRateReset(void);
     void NuVideoSetBrightness(f32 brightness);
-    void NuVideoSetResolution(int width, int height);
+    void NuVideoSetResolution(i32 width, i32 height);
     NUVIDEO_SWAPMODE NuVideoSetSwapMode(NUVIDEO_SWAPMODE video_swap_mode);
 #ifdef __cplusplus
 }

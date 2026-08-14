@@ -136,9 +136,9 @@ void NuQuatSlerp(NUQUAT *out, NUQUAT *from, NUQUAT *to, f32 t) {
     if (1.0f - scale > 1e-05f) {
         omega = NuACos(scale);
 
-        sin_omega = NU_SIN_LUT((int)omega);
-        from_factor = NuFdiv(NU_SIN_LUT((int)((1.0f - t) * omega)), sin_omega);
-        to_factor = NuFdiv(NU_SIN_LUT((int)(t * omega)), sin_omega);
+        sin_omega = NU_SIN_LUT((i32)omega);
+        from_factor = NuFdiv(NU_SIN_LUT((i32)((1.0f - t) * omega)), sin_omega);
+        to_factor = NuFdiv(NU_SIN_LUT((i32)(t * omega)), sin_omega);
     } else {
         from_factor = 1.0f - t;
         to_factor = t;
@@ -224,4 +224,114 @@ f32 NuHermiteInterpolation(f32 m, f32 y0, f32 y1, f32 y2, f32 t) {
     h3 = t_cb - t_sq;
 
     return h0 * y0 + h1 * m0 + h2 * y1 + h3 * m1;
+}
+
+void NuQuatAdd(NUQUAT *out, NUQUAT *q0, NUQUAT *q1) {
+    out->w = q0->w + q1->w;
+    out->x = q0->x + q1->x;
+    out->y = q0->y + q1->y;
+    out->z = q0->z + q1->z;
+}
+
+void NuQuatSub(NUQUAT *out, NUQUAT *q0, NUQUAT *q1) {
+    out->w = q0->w - q1->w;
+    out->x = q0->x - q1->x;
+    out->y = q0->y - q1->y;
+    out->z = q0->z - q1->z;
+}
+
+void NuQuatMul(NUQUAT *out, NUQUAT *q0, NUQUAT *q1) {
+    out->w = q0->w * q1->w - q0->x * q1->x - q0->y * q1->y - q0->z * q1->z;
+    out->x = q0->w * q1->x + q0->x * q1->w + q0->y * q1->z - q0->z * q1->y;
+    out->y = q0->w * q1->y - q0->x * q1->z + q0->y * q1->w + q0->z * q1->x;
+    out->z = q0->w * q1->z + q0->x * q1->y - q0->y * q1->x + q0->z * q1->w;
+}
+
+f32 NuQuatMagnitude(NUQUAT *q) {
+    return NuFsqrt(q->w * q->w + q->x * q->x + q->y * q->y + q->z * q->z);
+}
+
+void NuQuatNormalise(NUQUAT *out, NUQUAT *q) {
+    f32 mag = NuFsqrt(q->w * q->w + q->x * q->x + q->y * q->y + q->z * q->z);
+
+    if (mag > 0.0f) {
+        mag = 1.0f / mag;
+    } else {
+        mag = 0.0f;
+    }
+
+    out->w = q->w * mag;
+    out->x = q->x * mag;
+    out->y = q->y * mag;
+    out->z = q->z * mag;
+}
+
+void NuQuatNeg2(NUQUAT *out, NUQUAT *in) {
+    out->w = -in->w;
+    out->x = -in->x;
+    out->y = -in->y;
+    out->z = -in->z;
+}
+
+void NuQuatBlend(NUQUAT *out, NUQUAT *q0, NUQUAT *q1, f32 blendA, f32 blendB) {
+    out->w = q0->w * blendA + q1->w * blendB;
+    out->x = q0->x * blendA + q1->x * blendB;
+    out->y = q0->y * blendA + q1->y * blendB;
+    out->z = q0->z * blendA + q1->z * blendB;
+}
+
+void NuQuatLerp2(NUQUAT *out, NUQUAT *from, NUQUAT *to, f32 t) {
+    out->x = (to->x - from->x) * t + from->x;
+    out->y = (to->y - from->y) * t + from->y;
+    out->z = (to->z - from->z) * t + from->z;
+    out->w = (to->w - from->w) * t + from->w;
+}
+
+f32 NuQuatDot(NUQUAT *q0, NUQUAT *q1) {
+    return q0->w * q1->w + q0->x * q1->x + q0->y * q1->y + q0->z * q1->z;
+}
+
+void NuQuatSlerpFast(NUQUAT *out, NUQUAT *from, NUQUAT *to, f32 t) {
+    NuQuatLerp2(out, from, to, t);
+    NuQuatNormalise(out, out);
+}
+
+void NuQuatSlerp_Accurate(NUQUAT *out, NUQUAT *from, NUQUAT *to, f32 t) {
+    f32 scale;
+    f32 from_factor;
+    f32 to_factor;
+    f32 omega;
+    f32 sin_omega;
+    NUQUAT to_prime;
+
+    scale = NuQuatDot(from, to);
+
+    if (scale < 0.0f) {
+        scale = -scale;
+        to_prime.w = -to->w;
+        to_prime.x = -to->x;
+        to_prime.y = -to->y;
+        to_prime.z = -to->z;
+    } else {
+        to_prime.w = to->w;
+        to_prime.x = to->x;
+        to_prime.y = to->y;
+        to_prime.z = to->z;
+    }
+
+    if (1.0f - scale > 1e-05f) {
+        omega = NuACos(scale);
+
+        sin_omega = NU_SIN_LUT((i32)omega);
+        from_factor = NuFdiv(NU_SIN_LUT((i32)((1.0f - t) * omega)), sin_omega);
+        to_factor = NuFdiv(NU_SIN_LUT((i32)(t * omega)), sin_omega);
+    } else {
+        from_factor = 1.0f - t;
+        to_factor = t;
+    }
+
+    out->w = from->w * from_factor + to_prime.w * to_factor;
+    out->x = from->x * from_factor + to_prime.x * to_factor;
+    out->y = from->y * from_factor + to_prime.y * to_factor;
+    out->z = from->z * from_factor + to_prime.z * to_factor;
 }

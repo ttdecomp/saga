@@ -17,7 +17,7 @@ i32 GizTimer_GetMaxGizmos(void *world_info) {
     return world->current_level->max_giz_timers;
 }
 
-void GizTimer_AddGizmos(GIZMOSYS *gizmo_sys, int type_id, void *world_info, void *unknown) {
+void GizTimer_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_info, void *unknown) {
     WORLDINFO *world = (WORLDINFO *)world_info;
 
     for (i32 i = 0; i < world->giz_timers_count; i++) {
@@ -51,7 +51,7 @@ char *GizTimer_GetGizmoName(GIZMO *gizmo) {
     return timer->name;
 }
 
-i32 GizTimer_GetOutput(GIZMO *gizmo, int, int) {
+i32 GizTimer_GetOutput(GIZMO *gizmo, i32, i32) {
     GIZTIMER *timer = (GIZTIMER *)gizmo->object;
 
     if (timer->flags & 1) {
@@ -61,15 +61,15 @@ i32 GizTimer_GetOutput(GIZMO *gizmo, int, int) {
     return 0;
 }
 
-char *GizTimer_GetOutputName(GIZMO *gizmo, int output_index) {
+char *GizTimer_GetOutputName(GIZMO *gizmo, i32 output_index) {
     return "Ping";
 }
 
-int GizTimer_GetNumOutputs(GIZMO *gizmo) {
+i32 GizTimer_GetNumOutputs(GIZMO *gizmo) {
     return 1;
 }
 
-void GizTimer_Activate(GIZMO *gizmo, int unknown) {
+void GizTimer_Activate(GIZMO *gizmo, i32 unknown) {
     // can't get this stupid function to match
     GIZTIMER *timer = (GIZTIMER *)gizmo->object;
 
@@ -101,17 +101,17 @@ void *GizTimer_ReserveBufferSpace(void *world_info) {
     return (void *)buffer;
 }
 
-int GizTimer_Load(void *world_info, void *) {
+i32 GizTimer_Load(void *world_info, void *) {
     NUVEC vec;
     char buffer[16];
 
     WORLDINFO *world = (WORLDINFO *)world_info;
     if (world->giz_timers_count == 0) {
         EdFileReadInt();
-        int count = EdFileReadInt();
+        i32 count = EdFileReadInt();
 
-        for (int i = 0; i < count; i++) {
-            int length = EdFileReadInt();
+        for (i32 i = 0; i < count; i++) {
+            i32 length = EdFileReadInt();
             EdFileRead(buffer, length);
             EdFileReadFloat();
             EdFileReadUnsignedShort();
@@ -124,7 +124,7 @@ int GizTimer_Load(void *world_info, void *) {
     return 0;
 }
 
-ADDGIZMOTYPE *GizTimer_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *GizTimer_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

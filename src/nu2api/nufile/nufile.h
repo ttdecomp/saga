@@ -234,6 +234,9 @@ class NuFileBase : public NuFile::IFile {
 
     virtual void Flush() override;
 
+    void Closedown();
+    void Init();
+
   protected:
     virtual ~NuFileBase();
 
@@ -336,10 +339,10 @@ extern "C" {
     i32 NuFileInitEx(i32 device_id, i32 reboot_iop, i32 eject);
     void NuFileInit(i32 device_id);
 
-    i32 NuFileNormalise(char *dst, i32 length, const char *src);
-
 #ifdef __cplusplus
 }
+
+void NuFileNormalise(char *dst, i32 length, const char *src);
 #endif
 
 i32 NuMemFileOpenSize(NUFILE file);

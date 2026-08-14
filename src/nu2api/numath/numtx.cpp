@@ -3,6 +3,7 @@
 #include "nu2api/numath/numtx.h"
 
 #include "nu2api/numath/nufloat.h"
+#include "nu2api/numath/nuquat.h"
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/numath/nuvec.h"
 
@@ -598,11 +599,11 @@ void NuMtxGetTranslation(NUMTX *m, NUVEC *t) {
     t->z = m->m32;
 }
 
-int NuMtxCompare(NUMTX *a, NUMTX *b) {
+i32 NuMtxCompare(NUMTX *a, NUMTX *b) {
     f32 *aa = &a->m00;
     f32 *bb = &b->m00;
 
-    for (int i = 0; i < 16; i++) {
+    for (i32 i = 0; i < 16; i++) {
         if (*aa < *bb) {
             return -1;
         }
@@ -691,8 +692,8 @@ void NuMtxLookAtD3D(NUMTX *mtx, NUVEC *eye, NUVEC *center, NUVEC *up) {
 }
 
 void NuMtxSetPerspectiveD3D(NUMTX *mtx, f32 fovy, f32 aspect, f32 zNear, f32 zFar) {
-    f32 tanFovy2 = NU_SIN_LUT((int)((fovy / 2.0f) * (USHRT_MAX / 360.0f))) /
-                   NU_COS_LUT((int)((fovy / 2.0f) * (USHRT_MAX / 360.0f))); // USHRT_MAX / 360.0f is indices per degree
+    f32 tanFovy2 = NU_SIN_LUT((i32)((fovy / 2.0f) * (USHRT_MAX / 360.0f))) /
+                   NU_COS_LUT((i32)((fovy / 2.0f) * (USHRT_MAX / 360.0f))); // USHRT_MAX / 360.0f is indices per degree
     mtx->m00 = 1.0 / (aspect * tanFovy2);
     mtx->m01 = 0.0;
     mtx->m02 = 0.0;
@@ -712,8 +713,8 @@ void NuMtxSetPerspectiveD3D(NUMTX *mtx, f32 fovy, f32 aspect, f32 zNear, f32 zFa
 }
 
 void NuMtxSetPerspectiveBlend(NUMTX *mtx, f32 fovy, f32 aspect, f32 zNear, f32 zFar) {
-    f32 tanFovy2 = NU_SIN_LUT((int)((fovy / 2.0f) * (USHRT_MAX / 360.0f))) /
-                   NU_COS_LUT((int)((fovy / 2.0f) * (USHRT_MAX / 360.0f))); // USHRT_MAX / 360.0f is indices per degree
+    f32 tanFovy2 = NU_SIN_LUT((i32)((fovy / 2.0f) * (USHRT_MAX / 360.0f))) /
+                   NU_COS_LUT((i32)((fovy / 2.0f) * (USHRT_MAX / 360.0f))); // USHRT_MAX / 360.0f is indices per degree
     mtx->m00 = 1.0f / (aspect * tanFovy2);
     mtx->m01 = 0.0f;
     mtx->m02 = 0.0f;
@@ -1075,12 +1076,12 @@ void NuMtxInvRSSH(NUMTX *inv, NUMTX *T) {
 void NuMtxInvH(NUMTX *mi, NUMTX *m0) {
     // there's some weird stack alignment stuff going on here...
     // also not sure if this semantically matches the original implementation
-    int p[4];
-    int j;
-    int k;
-    int i;
+    i32 p[4];
+    i32 j;
+    i32 k;
+    i32 i;
     f32 a[4][4];
-    int n;
+    i32 n;
     f32 local_1c;
     f32 localm20;
     f32 localm28;
@@ -1316,4 +1317,184 @@ f32 NuMtxSSE(NUMTX *a, NUMTX *b) {
     sse += (a->m33 - b->m33) * (a->m33 - b->m33);
 
     return sse;
+}
+
+void NuMtx24BitCorrection(NUMTX *m) {
+    u32 *m_int = (u32 *)m;
+
+    m_int[0] &= 0xffffff00;
+    m_int[1] &= 0xffffff00;
+    m_int[2] &= 0xffffff00;
+    m_int[3] &= 0xffffff00;
+    m_int[4] &= 0xffffff00;
+    m_int[5] &= 0xffffff00;
+    m_int[6] &= 0xffffff00;
+    m_int[7] &= 0xffffff00;
+    m_int[8] &= 0xffffff00;
+    m_int[9] &= 0xffffff00;
+    m_int[10] &= 0xffffff00;
+    m_int[11] &= 0xffffff00;
+    m_int[12] &= 0xffffff00;
+    m_int[13] &= 0xffffff00;
+    m_int[14] &= 0xffffff00;
+    m_int[15] &= 0xffffff00;
+}
+
+static void NuMtxCalcFaceOnGeneric(NUMTX *m, NUVEC *v, bool planey) {
+    NUVEC fwd;
+    NUVEC right;
+    NUVEC up;
+    NUVEC up_ref;
+
+    if (planey) {
+        fwd.x = v->x;
+        fwd.y = 0.0f;
+        fwd.z = v->z;
+    } else {
+        fwd = *v;
+    }
+
+    NuVecNorm(&fwd, &fwd);
+
+    up_ref.x = 0.0f;
+    up_ref.y = 1.0f;
+    up_ref.z = 0.0f;
+
+    NuVecCross(&right, &up_ref, &fwd);
+    NuVecNorm(&right, &right);
+    NuVecCross(&up, &fwd, &right);
+    NuVecNorm(&up, &up);
+
+    m->m00 = right.x;
+    m->m01 = up.x;
+    m->m02 = fwd.x;
+    m->m03 = 0.0f;
+    m->m10 = right.y;
+    m->m11 = up.y;
+    m->m12 = fwd.y;
+    m->m13 = 0.0f;
+    m->m20 = right.z;
+    m->m21 = up.z;
+    m->m22 = fwd.z;
+    m->m23 = 0.0f;
+    m->m30 = 0.0f;
+    m->m31 = 0.0f;
+    m->m32 = 0.0f;
+    m->m33 = 1.0f;
+}
+
+void NuMtxCalcFaceOn(NUMTX *m, NUVEC *v) {
+    NuMtxCalcFaceOnGeneric(m, v, false);
+}
+
+void NuMtxCalcCheapFaceOn(NUMTX *m, NUVEC *v) {
+    NUANG x;
+    NUANG y;
+
+    y = NuAtan2D(v->x, v->z);
+    x = -NuAtan2D(v->y, NuFsqrt(v->x * v->x + v->z * v->z));
+
+    NuMtxSetRotationX(m, x);
+    NuMtxRotateY(m, y);
+}
+
+void NuMtxCalcCheapFaceOnDebug(NUMTX *m, NUVEC *v) {
+    NuMtxCalcCheapFaceOn(m, v);
+}
+
+void NuMtxCalcDebrisFaceOn(NUMTX *m, NUVEC *v) {
+    NuMtxCalcFaceOnGeneric(m, v, false);
+}
+
+void NuMtxCalcFaceY(NUMTX *m, NUVEC *v) {
+    NuMtxCalcFaceOnGeneric(m, v, true);
+}
+
+void NuMtxCalcCheapFaceY(NUMTX *m, NUVEC *v) {
+    NUANG y = NuAtan2D(v->x, v->z);
+
+    NuMtxSetRotationY(m, y);
+}
+
+void NuMtxCalcCheapFaceY_v2(NUMTX *m, NUVEC *v) {
+    NUANG y = NuAtan2D(v->x, v->z);
+
+    NuMtxSetRotationY(m, y);
+}
+
+void NuMtxGetPerspectivePS3(NUMTX *mtx, f32 *fovy, f32 *aspect, f32 *zNear, f32 *zFar) {
+    f32 Q = mtx->m22;
+
+    *zNear = -mtx->m32 / Q;
+    *zFar = (*zNear * Q) / (Q - 1.0f);
+    *aspect = mtx->m11 / mtx->m00;
+    *fovy = NuAtan2(1.0f / mtx->m11, 1.0f) * 360.0f / (f32)M_PI;
+}
+
+void NuMtxGetPerspectiveOGL(NUMTX *mtx, f32 *fovy, f32 *aspect, f32 *zNear, f32 *zFar) {
+    *zNear = mtx->m32 / (mtx->m22 - 1.0f);
+    *zFar = (*zNear * (mtx->m22 + 1.0f)) / (mtx->m22 - 1.0f);
+    *aspect = mtx->m11 / mtx->m00;
+    *fovy = NuAtan2(1.0f / mtx->m11, 1.0f) * 360.0f / (f32)M_PI;
+}
+
+void NuMtxLookAtInverseD3D(NUMTX *mtx, NUVEC *eye, NUVEC *center, NUVEC *up) {
+    NUVEC ax;
+    NUVEC ay;
+    NUVEC az;
+
+    NuVecSub(&az, center, eye);
+    NuVecNorm(&az, &az);
+    NuVecCross(&ax, up, &az);
+    NuVecNorm(&ax, &ax);
+    NuVecCross(&ay, &az, &ax);
+    NuVecNorm(&ay, &ay);
+
+    mtx->m00 = ax.x;
+    mtx->m01 = ax.y;
+    mtx->m02 = ax.z;
+    mtx->m03 = 0.0f;
+    mtx->m10 = ay.x;
+    mtx->m11 = ay.y;
+    mtx->m12 = ay.z;
+    mtx->m13 = 0.0f;
+    mtx->m20 = az.x;
+    mtx->m21 = az.y;
+    mtx->m22 = az.z;
+    mtx->m23 = 0.0f;
+    mtx->m30 = eye->x * ax.x + eye->y * ax.y + eye->z * ax.z;
+    mtx->m31 = eye->x * ay.x + eye->y * ay.y + eye->z * ay.z;
+    mtx->m32 = eye->x * az.x + eye->y * az.y + eye->z * az.z;
+    mtx->m33 = 1.0f;
+}
+
+void NuMtxToQuat(struct nuquat_s *out, NUMTX *m) {
+    f32 trace = m->m00 + m->m11 + m->m22;
+    f32 s;
+
+    if (trace > 0.0f) {
+        s = 0.5f / NuFsqrt(trace + 1.0f);
+        out->w = 0.25f / s;
+        out->x = (m->m21 - m->m12) * s;
+        out->y = (m->m02 - m->m20) * s;
+        out->z = (m->m10 - m->m01) * s;
+    } else if ((m->m00 > m->m11) && (m->m00 > m->m22)) {
+        s = 2.0f * NuFsqrt(1.0f + m->m00 - m->m11 - m->m22);
+        out->w = (m->m21 - m->m12) / s;
+        out->x = 0.25f * s;
+        out->y = (m->m01 + m->m10) / s;
+        out->z = (m->m02 + m->m20) / s;
+    } else if (m->m11 > m->m22) {
+        s = 2.0f * NuFsqrt(1.0f + m->m11 - m->m00 - m->m22);
+        out->w = (m->m02 - m->m20) / s;
+        out->x = (m->m01 + m->m10) / s;
+        out->y = 0.25f * s;
+        out->z = (m->m12 + m->m21) / s;
+    } else {
+        s = 2.0f * NuFsqrt(1.0f + m->m22 - m->m00 - m->m11);
+        out->w = (m->m10 - m->m01) / s;
+        out->x = (m->m02 + m->m20) / s;
+        out->y = (m->m12 + m->m21) / s;
+        out->z = 0.25f * s;
+    }
 }

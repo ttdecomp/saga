@@ -12,53 +12,53 @@ typedef struct sockposition_s {
 } SOCKPOSITION;
 
 typedef struct coinpacket_s {
-    u32 coins;       // 0x00
-    u32 field_0x4;   // 0x04
-    u16 lastcoin;    // 0x08
-    u16 field_0xa;   // 0x0a
-    u32 field_0xc;   // 0x0c
+    u32 coins;     // 0x00
+    u32 field_0x4; // 0x04
+    u16 lastcoin;  // 0x08
+    u16 field_0xa; // 0x0a
+    u32 field_0xc; // 0x0c
 } COINPACKET;
 
 typedef struct torpedopacket_s {
-    u8 count;         // 0x00
-    u8 field_0x1;     // 0x01  (bit0 = in use)
-    u8 pad[0x86];     // 0x02..0x88
+    u8 count;     // 0x00
+    u8 field_0x1; // 0x01  (bit0 = in use)
+    u8 pad[0x86]; // 0x02..0x88
 } TORPEDOPACKET;
 
 // Player/enemy bookkeeping block, base 0x2c0 within a GameObject.
 typedef struct PAI_s {
-    u8 pad0[0xd4];            // 0x2c0..0x394
-    void *nearest_opponent;   // 0x394
-    u8 pad_d8[0x4];           // 0x398..0x39c
-    u32 field_0xdc;           // 0x39c
-    u32 field_0xe0;           // 0x3a0
-    void *opponent;           // 0x3a4
-    u8 pad_a8[0x4];           // 0x3a8..0x3ac
-    u32 field_0xec;           // 0x3ac
-    u32 field_0xf0;           // 0x3b0
-    u8 pad1[0x448 - 0x3b4];   // 0x3b4..0x448
-    f32 antinode_timer;       // 0x448
-    u8 pad2[0x4a5 - 0x44c];   // 0x44c..0x4a5
-    u8 field_0x1e5;           // 0x4a5
-    u8 pad3[0x4b0 - 0x4a6];   // 0x4a6..0x4b0
+    u8 pad0[0xd4];          // 0x2c0..0x394
+    void *nearest_opponent; // 0x394
+    u8 pad_d8[0x4];         // 0x398..0x39c
+    u32 field_0xdc;         // 0x39c
+    u32 field_0xe0;         // 0x3a0
+    void *opponent;         // 0x3a4
+    u8 pad_a8[0x4];         // 0x3a8..0x3ac
+    u32 field_0xec;         // 0x3ac
+    u32 field_0xf0;         // 0x3b0
+    u8 pad1[0x448 - 0x3b4]; // 0x3b4..0x448
+    f32 antinode_timer;     // 0x448
+    u8 pad2[0x4a5 - 0x44c]; // 0x44c..0x4a5
+    u8 field_0x1e5;         // 0x4a5
+    u8 pad3[0x4b0 - 0x4a6]; // 0x4a6..0x4b0
 } PAI;
 
 typedef struct APIOBJECT_s {
-    void *objptr;          // 0x00
+    void *objptr; // 0x00
     undefined field_0x4[0x1f4];
-    u8 field252_0x1f8;     // 0x1f8
+    u8 field252_0x1f8; // 0x1f8
     undefined field_0x1f9[0x33];
-    f32 viewdistance;      // 0x22c
-    f32 heardistance;      // 0x230
-    f32 maxviewheight;     // 0x234
-    f32 minviewheight;     // 0x238
+    f32 viewdistance;  // 0x22c
+    f32 heardistance;  // 0x230
+    f32 maxviewheight; // 0x234
+    f32 minviewheight; // 0x238
     undefined field_0x23c[0x40];
-    char field_0x27c;      // 0x27c
+    char field_0x27c; // 0x27c
     undefined field_0x27d[0xc];
-    u8 field_0x289;        // 0x289
+    u8 field_0x289; // 0x289
     undefined field_0x28a[0x16];
-    u32 field387_0x2a0;    // 0x2a0
-    u32 field388_0x2a4;    // 0x2a4
+    u32 field387_0x2a0; // 0x2a0
+    u32 field388_0x2a4; // 0x2a4
 } APIOBJECT;
 
 typedef struct GameObject_s {
@@ -106,6 +106,12 @@ typedef struct GameObject_s {
     void *opponent;               // 0x10b0
     void *last_attacker;          // 0x10b4
     u8 pad_10b8[0x10b8 - 0x10b8]; // tail (empty)
+    void ClearAddons();
+    void ClearMechObjectInterface();
+    void GetAddons(bool);
+    void GetMechObjectInterface();
+    void IsRunningTaskType(struct HashedKey const &);
+    void KillTasks();
 } GameObject;
 
 typedef struct GameObject_s GameObject_s;

@@ -15,7 +15,7 @@ NUGSPLINE *NuSplineFind(NUGSCN *scene, char *name) {
         return NULL;
     }
 
-    for (int i = 0; i < scene->numsplines; i++, spline++) {
+    for (i32 i = 0; i < scene->numsplines; i++, spline++) {
         if (NuStrICmp(name, spline->name) == 0) {
             return spline;
         }

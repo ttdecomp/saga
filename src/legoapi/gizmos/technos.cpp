@@ -2,13 +2,14 @@
 
 #include "decomp.h"
 
-int techno_gizmotype_id = -1;
+i32 techno_gizmotype_id = -1;
 
-static int Technos_GetMaxGizmos(void *techno) {
+static i32 Technos_GetMaxGizmos(void *techno) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void Technos_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void Technos_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
@@ -26,34 +27,40 @@ static void Technos_Draw(void *, void *, float) {
 
 static char *Techno_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int Techno_GetOutput(GIZMO *gizmo, int, int) {
+static i32 Techno_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static char *Techno_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static i32 Techno_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void Techno_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static char *Techno_GetOutputName(GIZMO *gizmo, int output_index) {
+static void Techno_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static int Techno_GetNumOutputs(GIZMO *gizmo) {
+static i32 Techno_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
-}
-
-static void Techno_Activate(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static void Techno_SetVisibility(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static int Techno_GetPos(GIZMO *gizmo) {
-    UNIMPLEMENTED();
+    return {};
 }
 
 static void *Technos_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void Technos_ClearProgress(void *, void *) {
@@ -70,13 +77,15 @@ static void Technos_Reset(void *, void *, void *) {
 
 static void *Technos_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int Technos_Load(void *, void *) {
+static i32 Technos_Load(void *, void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-ADDGIZMOTYPE *Technos_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *Technos_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

@@ -31,6 +31,7 @@ class NuSoundBuffer {
   public:
     NuSoundBuffer();
     NuSoundBuffer(char *name, u64 size);
+    ~NuSoundBuffer();
 
     void Free();
 
@@ -50,4 +51,8 @@ class NuSoundBuffer {
     u64 GetBufferSize() const;
 
     bool IsLocked() const;
+
+    void GetCurrentContext();
+    void GetSegmentAddress(unsigned int, unsigned int, unsigned int) const;
+    void GetSegmentSize(unsigned int, unsigned int) const;
 };

@@ -29,9 +29,6 @@ f32 CutSceneScale = 1.0f;
 i32 CUTCAM = 0;
 i32 CharScene_Area = 0;
 
-extern "C" i32 InStory(void) {
-}
-
 __attribute__((noinline)) static void CutScene_Configure_Load(CUTINFO_LOAD *cut, char *name, VARIPTR *buf,
                                                               VARIPTR *buf_end) {
     (void)buf;
@@ -150,7 +147,7 @@ void CharScenes_LevelLoad(WORLDINFO *world) {
         return;
     }
 
-    for (int i = 0; i < CHARCOUNT; i++) {
+    for (i32 i = 0; i < CHARCOUNT; i++) {
         void **entry = (void **)(*(i32 *)&world->minikit.field_0x18 + i * 0x10);
         *entry = NULL;
 

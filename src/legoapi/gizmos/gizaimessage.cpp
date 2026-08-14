@@ -2,35 +2,40 @@
 
 #include "decomp.h"
 
-int gizaimessage_gizmotype_id = -1;
+i32 gizaimessage_gizmotype_id = -1;
 
 static char *gizaimessage_prefix = "msg_";
 
-static int GizAIMessage_GetMaxGizmos(void *message) {
+static i32 GizAIMessage_GetMaxGizmos(void *message) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void GizAIMessage_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void GizAIMessage_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
 static char *GizAIMessage_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizAIMessage_GetOutput(GIZMO *gizmo, int, int) {
+static i32 GizAIMessage_GetOutput(GIZMO *gizmo, i32, i32) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static char *GizAIMessage_GetOutputName(GIZMO *gizmo, int output_index) {
+static char *GizAIMessage_GetOutputName(GIZMO *gizmo, i32 output_index) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int GizAIMessage_GetNumOutputs(GIZMO *gizmo) {
+static i32 GizAIMessage_GetNumOutputs(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-ADDGIZMOTYPE *GizAIMessage_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *GizAIMessage_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

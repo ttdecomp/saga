@@ -36,12 +36,10 @@ class NuMemory {
         FixedPoolEventHandler() {
         }
 
-        virtual int AllocatePage(NuMemoryPool *pool, unsigned int _unknown, unsigned int alignment,
-                                 const char *name) override;
-        virtual int ReleasePage(NuMemoryPool *pool, void *ptr) override;
+        virtual i32 AllocatePage(NuMemoryPool *pool, u32 _unknown, u32 alignment, const char *name) override;
+        virtual i32 ReleasePage(NuMemoryPool *pool, void *ptr) override;
         virtual void ForceReleasePage(NuMemoryPool *pool, void *ptr) override;
-        virtual void *AllocateLargeBlock(NuMemoryPool *pool, unsigned int size, unsigned int alignment,
-                                         const char *name) override;
+        virtual void *AllocateLargeBlock(NuMemoryPool *pool, u32 size, u32 alignment, const char *name) override;
         virtual void FreeLargeBlock(NuMemoryPool *pool, void *ptr) override;
 
       private:
@@ -53,12 +51,10 @@ class NuMemory {
         DynamicPoolEventHandler() {
         }
 
-        virtual int AllocatePage(NuMemoryPool *pool, unsigned int _unknown, unsigned int alignment,
-                                 const char *name) override;
-        virtual int ReleasePage(NuMemoryPool *pool, void *ptr) override;
+        virtual i32 AllocatePage(NuMemoryPool *pool, u32 _unknown, u32 alignment, const char *name) override;
+        virtual i32 ReleasePage(NuMemoryPool *pool, void *ptr) override;
         virtual void ForceReleasePage(NuMemoryPool *pool, void *ptr) override;
-        virtual void *AllocateLargeBlock(NuMemoryPool *pool, unsigned int size, unsigned int alignment,
-                                         const char *name) override;
+        virtual void *AllocateLargeBlock(NuMemoryPool *pool, u32 size, u32 alignment, const char *name) override;
         virtual void FreeLargeBlock(NuMemoryPool *pool, void *ptr) override;
 
       private:
@@ -73,6 +69,14 @@ class NuMemory {
 
     NuMemoryManager *CreateMemoryManager(NuMemoryManager::IEventHandler *event_handler, const char *name);
 
+    void CreateMemoryPool(NuMemoryPool::IEventHandler *event_handler, u32 size, const char *name);
+    void CreateFixedMemoryPool(u32 size, u32 block_size, const char *name);
+    void CreateDynamicMemoryPool(u32 size, const char *name);
+    void DestroyMemoryPool(NuMemoryPool *pool);
+    void DestroyMemoryManager(NuMemoryManager *manager);
+    void MoveFreeMem2IntoMem1();
+    void SetSoakTestMode();
+
   private:
     void InitalizeThreadLocalStorage();
 
@@ -83,7 +87,7 @@ class NuMemory {
     NuMemoryManager *mem1_manager;
     NuMemoryManager *mem2_manager;
 
-    int unknown;
+    i32 unknown;
 
     FixedPoolEventHandler *fixed_pool_event_handler;
     DynamicPoolEventHandler *dynamic_pool_event_handler;

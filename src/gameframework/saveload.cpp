@@ -109,6 +109,7 @@ i32 saveloadLoadSlot(i32 slot, void *buffer, usize size) {
 
 i32 saveloadSaveSlot(i32 slot, void *buffer, usize size) {
     UNIMPLEMENTED();
+    return {};
 }
 
 typedef i16 (*hashfn_t)(void);

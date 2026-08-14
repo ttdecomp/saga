@@ -131,3 +131,15 @@ void NuSoundBuffer::Unlock() {
 
     sCriticalSection.Unlock();
 }
+
+NuSoundBuffer::~NuSoundBuffer() {
+}
+
+void NuSoundBuffer::GetCurrentContext() {
+}
+
+void NuSoundBuffer::GetSegmentAddress(u32, u32, u32) const {
+}
+
+void NuSoundBuffer::GetSegmentSize(u32, u32) const {
+}

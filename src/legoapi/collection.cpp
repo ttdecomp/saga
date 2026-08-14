@@ -7,6 +7,10 @@
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufpar.h"
 
+struct APICHARACTERMODELLIST_s;
+
+i32 Collection_Got(i32);
+
 COLLECTID *TempCollectID = NULL;
 
 i32 CollectCount = 0;
@@ -15,25 +19,22 @@ i32 COLLECTION_COMPLETIONCOUNT = 0;
 
 i32 InCollectList_Index(i32 id, COLLECTID *list, i32 count) {
     i32 i;
-    i32 charId;
+    COLLECTID *p;
 
-    if (list == NULL && (list = CollectList, count = CollectCount, CollectList == NULL)) {
-        return id;
+    TempCollectID = NULL;
+
+    if (list == NULL) {
+        list = CollectList;
+        count = CollectCount;
+        if (list == NULL)
+            return id;
     }
 
-    if (0 < count) {
-        charId = list->id;
-        i = 0;
-        while (true) {
-            if (charId == id) {
-                TempCollectID = list;
-                return i;
-            }
-            i = i + 1;
-            list = list + 1;
-            if (i == count)
-                break;
-            charId = list->id;
+    p = list;
+    for (i = 0; i < count; i++, p++) {
+        if (p->id == id) {
+            TempCollectID = p;
+            return i;
         }
     }
 
@@ -45,9 +46,9 @@ void Collection_Configure(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd) 
     ushort uVar2;
     i16 sVar3;
     COLLECTID *collect;
-    int iVar4;
+    i32 iVar4;
     AREADATA *pAVar5;
-    int i;
+    i32 i;
     char *buf;
 
     nufpar_s *fp = NuFParCreate(file);
@@ -69,7 +70,7 @@ void Collection_Configure(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd) 
 
                 collect->id = sVar3;
 
-                if (sVar3 != -1 && InCollectList_Index((int)sVar3, CollectList, CollectCount) == -1) {
+                if (sVar3 != -1 && InCollectList_Index((i32)sVar3, CollectList, CollectCount) == -1) {
                     collect->type = 0;
                     collect->field2_0x3 = 0xff;
                     collect->can_buy = 0;
@@ -189,4 +190,73 @@ LAB_004eb920:
     }
 
     goto LAB_004eb886;
+}
+
+void Collection_Draw(COLLECTION_s *, float, float, float, APICHARACTERMODELLIST_s *, float, i32) {
+}
+
+void Collection_GetPos(COLLECTION_s *collection, i32 id, float *x, float *y) {
+    COLLECTID *list = collection->list;
+    i32 count = collection->count_y;
+
+    for (i32 i = 0; i < count; i++) {
+        if (list[i].id == id) {
+            float *f = (float *)&list[i].cheat_code[8];
+            *x = f[0];
+            *y = f[1];
+            return;
+        }
+    }
+}
+
+void Collection_GetIDList(COLLECTION_s *, u32, u32, i16 *, i32 *, i32 *, i32) {
+}
+
+void Collection_CreateCustom(char *, i16 *, COLLECTION_s *, u32, u32, u32, i32, i32, variptr_u *, variptr_u *, i32,
+                             float) {
+}
+
+void Collection_CreateMaster(char *file, i16 *idlist, COLLECTION_s *collection, i32 param4, float param5) {
+    collection->list = CollectList;
+    collection->count_x = (u16)param4;
+    collection->count_y = (u16)CollectCount;
+    collection->field_8 = idlist;
+    collection->field_c = file;
+    collection->field_10 = param5;
+}
+
+i32 Collection_GotAnyOfType(i32 type, u32 flags) {
+    i32 count;
+
+    if (CollectList == NULL)
+        return 0;
+
+    count = CollectCount;
+    if (count <= 0)
+        return 0;
+
+    for (i32 i = 0; i < count; i++) {
+        i32 id = CollectList[i].id;
+        if (type == -1) {
+            if (flags == 0) {
+                if (Collection_Got(id))
+                    return 1;
+            } else if (((u32)CDataList[id].field1_0x4 & flags) == flags) {
+                if (Collection_Got(id))
+                    return 1;
+            }
+        } else {
+            if ((signed char)GCDataList[id].field275_0x116 != type)
+                continue;
+            if (flags == 0) {
+                if (Collection_Got(id))
+                    return 1;
+            } else if (((u32)CDataList[id].field1_0x4 & flags) == flags) {
+                if (Collection_Got(id))
+                    return 1;
+            }
+        }
+    }
+
+    return 0;
 }

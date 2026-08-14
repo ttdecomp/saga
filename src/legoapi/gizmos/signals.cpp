@@ -2,11 +2,12 @@
 
 #include "decomp.h"
 
-static int Signals_GetMaxGizmos(void *signal) {
+static i32 Signals_GetMaxGizmos(void *signal) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static void Signals_AddGizmos(GIZMOSYS *gizmo_sys, int, void *, void *) {
+static void Signals_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
     UNIMPLEMENTED();
 }
 
@@ -20,38 +21,45 @@ static void Signals_Draw(void *, void *, float) {
 
 static char *Signal_GetGizmoName(GIZMO *gizmo) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int Signal_GetOutput(GIZMO *gizmo, int, int) {
+static i32 Signal_GetOutput(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static char *Signal_GetOutputName(GIZMO *gizmo, i32 output_index) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static i32 Signal_GetNumOutputs(GIZMO *gizmo) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void Signal_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static char *Signal_GetOutputName(GIZMO *gizmo, int output_index) {
+static i32 Signal_ActivateRev(GIZMO *gizmo, i32, i32) {
+    UNIMPLEMENTED();
+    return {};
+}
+
+static void Signal_SetGizmoVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static int Signal_GetNumOutputs(GIZMO *gizmo) {
+static i32 Signal_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
-}
-
-static void Signal_Activate(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static int Signal_ActivateRev(GIZMO *gizmo, int, int) {
-    UNIMPLEMENTED();
-}
-
-static void Signal_SetGizmoVisibility(GIZMO *gizmo, int) {
-    UNIMPLEMENTED();
-}
-
-static int Signal_GetPos(GIZMO *gizmo) {
-    UNIMPLEMENTED();
+    return {};
 }
 
 static void *Signals_AllocateProgressData(VARIPTR *, VARIPTR *) {
     UNIMPLEMENTED();
+    return {};
 }
 
 static void Signals_ClearProgress(void *, void *) {
@@ -68,13 +76,15 @@ static void Signals_Reset(void *, void *, void *) {
 
 static void *Signals_ReserveBufferSpace(void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-static int Signals_Load(void *, void *) {
+static i32 Signals_Load(void *, void *) {
     UNIMPLEMENTED();
+    return {};
 }
 
-ADDGIZMOTYPE *Signals_RegisterGizmo(int type_id) {
+ADDGIZMOTYPE *Signals_RegisterGizmo(i32 type_id) {
     static ADDGIZMOTYPE addtype;
 
     addtype = Default_ADDGIZMOTYPE;

@@ -7,14 +7,14 @@
 
 #include "nu2api/nucore/common.h"
 
-static int gExplodeInitialised = 1;
+static i32 gExplodeInitialised = 1;
 
 char *implode_inbuffer;
 char *implode_outbuffer;
 usize implode_origsize;
 usize implode_compsize;
 
-static int bytes_to_copy;
+static i32 bytes_to_copy;
 
 static void decode_start() {
     ImplodeHufDecodeStart();
@@ -22,13 +22,13 @@ static void decode_start() {
     bytes_to_copy = 0;
 }
 
-static void decode(unsigned int size, unsigned char *buf) {
-    static unsigned int i;
+static void decode(u32 size, unsigned char *buf) {
+    static u32 i;
 
-    unsigned int n;
+    u32 n;
 
     n = 0;
-    unsigned int c;
+    u32 c;
 
     while (--bytes_to_copy >= 0) {
         buf[n] = buf[i];
@@ -67,8 +67,8 @@ static void decode(unsigned int size, unsigned char *buf) {
 static unsigned char buffer[0x2000];
 
 isize ExplodeBufferNoHeader(char *in_buf, char *out_buf, isize compressed_size, isize orig_size) {
-    int total_read;
-    unsigned int read_size;
+    i32 total_read;
+    u32 read_size;
 
     if (gExplodeInitialised == 0) {
         return 0;
@@ -101,7 +101,7 @@ isize ExplodeBufferSize(char *buf) {
     char magic[] = "LZ2K";
 
     for (i32 i = 0; i < 4; i++) {
-        int does_not_match;
+        i32 does_not_match;
         if ((does_not_match = *(buf++) != magic[i])) {
             return 0;
         }
@@ -115,7 +115,7 @@ isize ExplodeCompressedSize(char *buf) {
     char magic[] = "LZ2K";
 
     for (i32 i = 0; i < 4; i++) {
-        int does_not_match;
+        i32 does_not_match;
         if ((does_not_match = *(buf++) != magic[i])) {
             return 0;
         }
@@ -134,7 +134,7 @@ static u32 getmasktbl[5] = {0, 0xff, 0xffff, 0xffffff, 0xffffffff};
 
 i32 ImplodeGetI(void *buf, i32 size) {
     unsigned char *char_ptr;
-    unsigned int buf_reversed;
+    u32 buf_reversed;
 
     char_ptr = (unsigned char *)buf;
     buf_reversed = *char_ptr | *(char_ptr + 1) << 0x8 | *(char_ptr + 2) << 0x10 | *(char_ptr + 3) << 0x18;
@@ -404,9 +404,9 @@ void ImplodeHufDecodeStart() {
     blocksize = 0;
 }
 
-unsigned int implode_bitbuf;
-static unsigned int subbitbuf;
-static unsigned int bitcount;
+u32 implode_bitbuf;
+static u32 subbitbuf;
+static u32 bitcount;
 
 void ImplodeInitGetBits() {
     implode_bitbuf = 0;

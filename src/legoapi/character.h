@@ -111,10 +111,10 @@ struct gamecharacterdata_s { /* PlaceHolder Structure */
     undefined field97_0x61;
     undefined field98_0x62;
     undefined field99_0x63;
-    f32 viewdistance;    // 0x64
-    f32 heardistance;    // 0x68
-    f32 maxviewheight;   // 0x6c
-    f32 minviewheight;   // 0x70
+    f32 viewdistance;  // 0x64
+    f32 heardistance;  // 0x68
+    f32 maxviewheight; // 0x6c
+    f32 minviewheight; // 0x70
     undefined field116_0x74;
     undefined field117_0x75;
     undefined field118_0x76;
@@ -288,7 +288,7 @@ struct gamecharacterdata_s { /* PlaceHolder Structure */
 typedef struct gamecharacterdata_s GAMECHARACTERDATA;
 
 struct characterdata_s { /* PlaceHolder Structure */
-    int field0_0x0;
+    i32 field0_0x0;
     undefined4 field1_0x4;
     char *dir;
     char *file;

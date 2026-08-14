@@ -11,6 +11,12 @@ static NuMusic *the_music_player = NULL;
 
 NuMusic music_man;
 
+NuMusic::NuMusic() {
+}
+
+NuMusic::~NuMusic() {
+}
+
 i32 NuMusic::ClassToIX(u32 i) {
     switch (i) {
         case TRACK_CLASS_QUIET:
@@ -30,7 +36,7 @@ i32 NuMusic::ClassToIX(u32 i) {
     }
 }
 
-Track *NuMusic::Album::GetTrack(u32 clazz) {
+NuMusic::Track *NuMusic::Album::GetTrack(u32 clazz) {
     i32 index = ClassToIX(clazz);
     if (index == -1) {
         return NULL;
@@ -69,7 +75,7 @@ void NuMusic::InitVoiceManager() {
     this->voices[1].status = VOICE_STATUS_1;
 }
 
-void NuMusic::GetSoundFiles(nusound_filename_info_s **finfo, int *null) {
+void NuMusic::GetSoundFiles(nusound_filename_info_s **finfo, i32 *null) {
     if (this == NULL) {
         if (finfo != NULL) {
             *finfo = NULL;
@@ -187,7 +193,7 @@ LAB_003203e6:
             pTVar3 = tracksPtr + track_count;
             do {
                 // if (tracksPtr->field8_0x18 != (void *)0x0) {
-                // tracksPtr->field8_0x18 = (void *)((int)tracksPtr->field8_0x18 + ((int)__dest - (int)pfVar2));
+                // tracksPtr->field8_0x18 = (void *)((i32)tracksPtr->field8_0x18 + ((i32)__dest - (i32)pfVar2));
                 //}
                 tracksPtr = tracksPtr + 1;
             } while (tracksPtr != pTVar3);
@@ -257,10 +263,10 @@ i32 NuMusic::FindOrCreateSoundFile(nusound_filename_info_s *files, i32 *count, c
 }
 
 void NuMusic::Album::Initialise() {
-    int j;
+    i32 j;
     TRACK_CLASS clazz;
     Track *track;
-    int count;
+    i32 count;
 
     LOG_DEBUG("this=%p, this->tracks_source=%p", this, this->tracks_source);
 
@@ -294,7 +300,7 @@ void NuMusic::Album::Initialise() {
 }
 
 i32 NuMusic::PlayTrack(TRACK_CLASS track) {
-    return PlayTrackI(track);
+    return PlayTrackI(track, 0);
 }
 
 NuMusic::Voice *NuMusic::FindVoiceByClassAndStatus(TRACK_CLASS clazz, VOICE_STATUS status) {
@@ -356,7 +362,7 @@ bool NuMusic::SelectTrackByHandle(TRACK_CLASS clazz, i32 trackIndex) {
             } else {
                 album = this->album;
                 if (
-                    // (((int)album - (int)this->albums >> 2) * 0x38e38e39 - (trackIndex >> 0xb) == 0) &&
+                    // (((i32)album - (i32)this->albums >> 2) * 0x38e38e39 - (trackIndex >> 0xb) == 0) &&
                     trackIndex < album->tracks_count) {
                     album->tracks[index] = &album->tracks_source[trackIndex];
                     return true;
@@ -374,8 +380,8 @@ i32 NuMusic::GetTrackHandle(TRACK_CLASS clazz, const char *name) {
             i32 index = ClassToIX(clazz);
             if (index != -1) {
                 if (this->album->tracks[index] != NULL) {
-                    // return ((int)album->tracks[index] - (int)album->tracks_source >> 2) * -0x11111111 |
-                    //        ((int)pAVar1 - (int)this->albums >> 2) * 0x1c71c800;
+                    // return ((i32)album->tracks[index] - (i32)album->tracks_source >> 2) * -0x11111111 |
+                    //        ((i32)pAVar1 - (i32)this->albums >> 2) * 0x1c71c800;
                     return this->album->tracks[index] - this->album->tracks_source;
                 }
             }
@@ -385,7 +391,7 @@ i32 NuMusic::GetTrackHandle(TRACK_CLASS clazz, const char *name) {
             for (i32 i = 0; i < this->album->tracks_count; i++) {
                 if (this->album->tracks_source[i].clazz == clazz && this->album->tracks_source[i].ident != NULL) {
                     if (NuStrICmp(this->album->tracks_source[i].ident, name) == 0) {
-                        // return ((int)this->album - (int)this->albums >> 2) * 0x1c71c800 | i;
+                        // return ((i32)this->album - (i32)this->albums >> 2) * 0x1c71c800 | i;
                         return i;
                     }
                 }
@@ -396,10 +402,11 @@ i32 NuMusic::GetTrackHandle(TRACK_CLASS clazz, const char *name) {
     return -1;
 }
 
-void NuMusic::Voice::SetStatusFn(VOICE_STATUS status) {
-    if (this->status != status) {
+void NuMusic::Voice::SetStatusFn(i32 status, i32 unused) {
+    (void)unused;
+    if (this->status != (VOICE_STATUS)status) {
         this->field16_0x2c = NULL;
-        this->status = status;
+        this->status = (VOICE_STATUS)status;
     }
 }
 
@@ -407,9 +414,9 @@ extern "C" void NuSound3StopStereoStream(i32 streamIndex) {
     LOG_WARN("Unimplemented: NuSound3StopStereoStream(%d)", streamIndex);
 }
 
-bool NuMusic::Voice::Load(Track *track, int trackIndex) {
+bool NuMusic::Voice::Load(Track *track, i32 trackIndex) {
     bool bVar1;
-    int index;
+    i32 index;
 
     bVar1 = this->tracks[this->track_index] != track;
     if (bVar1) {
@@ -419,7 +426,7 @@ bool NuMusic::Voice::Load(Track *track, int trackIndex) {
         this->tracks[index] = track;
         this->tracks[index + 2] = (Track *)trackIndex;
         this->flags &= 0xfd;
-        SetStatusFn(VOICE_STATUS_1);
+        SetStatusFn(VOICE_STATUS_1, 0);
     }
 
     return bVar1;
@@ -444,6 +451,7 @@ NuMusic::Voice *NuMusic::FindIdleVoice() {
 
 i32 NuMusic::StopAll(i32 toggle) {
     UNIMPLEMENTED();
+    return {};
 }
 
 i32 NuMusic::Voice::Play() {
@@ -464,7 +472,8 @@ i32 NuMusic::Voice::Play() {
     return 1;
 }
 
-i32 NuMusic::PlayTrackI(TRACK_CLASS clazz) {
+i32 NuMusic::PlayTrackI(TRACK_CLASS clazz, u32 unused) {
+    (void)unused;
     if (this == NULL || the_music_player == NULL) {
         return -1;
     }
@@ -606,7 +615,7 @@ void NuMusic::SubstituteString(char *dst, char *src, char *find, char *subst) {
         if (pcVar2 == NULL)
             break;
 
-        int pos = (usize)pcVar2 - (usize)src;
+        i32 pos = (usize)pcVar2 - (usize)src;
         NuStrNCpy(dst, src, pos + 1);
         NuStrCpy(dst + pos, subst);
 
@@ -786,4 +795,79 @@ void RegisterMusic(NUSOUND_FILENAME_INFO *files) {
             SFX_MUSIC_COUNT++;
         }
     }
+}
+
+void NuMusic::ClassToName(u32) {
+}
+
+void NuMusic::CueTrack(u32) {
+}
+
+void NuMusic::Debug(i32, i32) {
+}
+
+void NuMusic::GetAlbumHandle(char const *) {
+}
+
+void NuMusic::GetPlaybackTime(u32) {
+}
+
+void NuMusic::GetPlayer() {
+}
+
+void NuMusic::GetStatus(u32, i32 *) {
+}
+
+void NuMusic::NoMusic(i32) {
+}
+
+void NuMusic::PauseTrack(u32) {
+}
+
+void NuMusic::PlayTrack(u32, u32) {
+}
+
+void NuMusic::Process(float) {
+}
+
+void NuMusic::ResumeTrack(u32) {
+}
+
+void NuMusic::SelectTrack(u32, char const *) {
+}
+
+void NuMusic::SetAlbum(char const *) {
+}
+
+void NuMusic::SetAlbum(i32) {
+}
+
+void NuMusic::SetClassVolume(u32, float) {
+}
+
+void NuMusic::SetFader(float, float) {
+}
+
+void NuMusic::SetMasterVolume(float) {
+}
+
+void NuMusic::SetTrackEntryTimeByClass(u32, float) {
+}
+
+void NuMusic::StopTrack(u32, i32) {
+}
+
+void NuMusic::Album::GetTracks(u32, NuMusic::Track **) {
+}
+
+void NuMusic::Track::ManageEntryTime() {
+}
+
+void NuMusic::Track::SetEntryTime(float) {
+}
+
+void NuMusic::Voice::Cue() {
+}
+
+void NuMusic::Voice::Unload() {
 }

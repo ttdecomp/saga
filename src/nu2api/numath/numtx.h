@@ -3,6 +3,8 @@
 #include "nu2api/numath/nuang.h"
 #include "nu2api/numath/nuvec.h"
 
+struct nuquat_s;
+
 typedef struct numtx_s {
     f32 m00;
     f32 m01;
@@ -142,7 +144,7 @@ extern "C" {
     void NuMtxGetYAxis(NUMTX *m, NUVEC *y);
     void NuMtxGetZAxis(NUMTX *m, NUVEC *z);
     void NuMtxGetTranslation(NUMTX *m, NUVEC *t);
-    int NuMtxCompare(NUMTX *a, NUMTX *b);
+    i32 NuMtxCompare(NUMTX *a, NUMTX *b);
     void NuMtxTruncate24Bit(NUMTX *trunc, NUMTX *mtx);
     void NuMtxRotateAng(NUANG ang, f32 x, f32 z, f32 *rx, f32 *rz);
     void NuMtxGetEulerXYZ(NUMTX *Mat, NUANG *x, NUANG *y, NUANG *z);
@@ -170,6 +172,21 @@ extern "C" {
     void NuMtxOrth(NUMTX *m);
     void NuMtxVecToEulerXYZ(NUVEC *XVec, NUVEC *ZVec, NUANG *x, NUANG *y, NUANG *z);
     f32 NuMtxSSE(NUMTX *a, NUMTX *b);
+
+    void NuMtx24BitCorrection(NUMTX *m);
+    void NuMtxCalcFaceOn(NUMTX *m, NUVEC *v);
+    void NuMtxCalcCheapFaceOn(NUMTX *m, NUVEC *v);
+    void NuMtxCalcDebrisFaceOn(NUMTX *m, NUVEC *v);
+    void NuMtxCalcFaceY(NUMTX *m, NUVEC *v);
+    void NuMtxGetPerspectivePS3(NUMTX *mtx, f32 *fovy, f32 *aspect, f32 *zNear, f32 *zFar);
+    void NuMtxLookAtInverseD3D(NUMTX *mtx, NUVEC *eye, NUVEC *center, NUVEC *up);
+    void NuMtxToQuat(struct nuquat_s *out, NUMTX *m);
 #ifdef __cplusplus
 }
+
+void NuMtxCalcCheapFaceY(NUMTX *m, NUVEC *v);
+void NuMtxCalcCheapFaceY_v2(NUMTX *m, NUVEC *v);
+void NuMtxCalcCheapFaceOnDebug(NUMTX *m, NUVEC *v);
+void NuMtxGetPerspectiveOGL(NUMTX *mtx, f32 *fovy, f32 *aspect, f32 *zNear, f32 *zFar);
+
 #endif

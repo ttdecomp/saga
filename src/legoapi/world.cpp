@@ -1,4 +1,5 @@
 #include "legoapi/world.h"
+#include "legoapi/LEVEL_PROGRESS.h"
 #include "legoapi/world_shared.h"
 
 #include <stdio.h>
@@ -92,12 +93,6 @@ void CalculateWorldSize(WORLDINFO *world) {
     (void)world;
 }
 
-// Placeholder for LEVEL_PROGRESS structure
-typedef struct LEVEL_PROGRESS_s {
-    char data[0x2800];
-    i32 flags;
-} LEVEL_PROGRESS_s;
-
 WORLDINFO WorldInfo[2];
 WORLDINFO *WORLD = &WorldInfo[0];
 
@@ -113,7 +108,11 @@ i32 next_level;
 static WORLDINFO *LWORLD = &WorldInfo[0];
 
 void WorldInfo_InitOnce(void) {
-    memset(WorldInfo, 0, 0xa360);
+    memset(WorldInfo, 0, sizeof(WorldInfo));
+
+#ifndef HOST_BUILD
+    static_assert(sizeof(void *) != 4 || sizeof(WorldInfo) == 0xa360, "WorldInfo size mismatch");
+#endif
 }
 
 void WorldInfo_Init(WORLDINFO *world) {
@@ -388,9 +387,8 @@ void WorldInfo_Load(WORLDINFO *world) {
     }
 
     // Create antinode system
-    world->game_antinode_sys = (GAMEANTINODESYS_s *)GameAntnode_CreateSys(world, &world->giz_buffer,
-                                                                         &world->unknown_0108,
-                                                                         (i32)(u16)world->current_level->max_antinodes);
+    world->game_antinode_sys = (GAMEANTINODESYS_s *)GameAntnode_CreateSys(
+        world, &world->giz_buffer, &world->unknown_0108, (i32)(u16)world->current_level->max_antinodes);
 
     // Create gizmo system
     world->gizmo_sys = (GIZMOSYS_s *)CreateGizmoSys(world, &world->giz_buffer, &world->unknown_0108);
@@ -415,8 +413,8 @@ void WorldInfo_Load(WORLDINFO *world) {
         goto after_area;
     }
     if ((level->flags & LEVEL_STATUS) != 0 && world->area->minikit_id != -1) {
-        MiniKit_Load(&world->minikit, (i32)(i16)world->area->minikit_id, &world->giz_buffer,
-                     &world->unknown_0108, NULL);
+        MiniKit_Load(&world->minikit, (i32)(i16)world->area->minikit_id, &world->giz_buffer, &world->unknown_0108,
+                     NULL);
         if (world->minikit.gscn != NULL) {
             MiniKit_InitPieces(&world->minikit, 10, &world->giz_buffer, &world->unknown_0108);
         }
@@ -439,10 +437,9 @@ after_area:
 
     // Load cutscenes
     page_handles = (i32 *)&world->unknown_0140[0x2958];
-    world->cutscene_sys = (CUTSYS *)CutScenes_Load(ConfigBuffer, world->current_gscn, (NUGSCN *)cutscene_scene,
-                                                   page_handles[0], &world->giz_buffer, &world->unknown_0108,
-                                                   *(i32 *)&world->unknown_0140[0x011c],
-                                                   *(i32 *)&world->unknown_0140[0x0120], world);
+    world->cutscene_sys = (CUTSYS *)CutScenes_Load(
+        ConfigBuffer, world->current_gscn, (NUGSCN *)cutscene_scene, page_handles[0], &world->giz_buffer,
+        &world->unknown_0108, *(i32 *)&world->unknown_0140[0x011c], *(i32 *)&world->unknown_0140[0x0120], world);
     if (abort_load != 0)
         goto abort;
 
@@ -528,9 +525,8 @@ after_area:
         GameAIScriptAddLevelSfx(world, &global_aiscripts);
         GameAIScriptAddLevelSfx(world, &world->ai_sys->scripts);
 
-        world->climb_object_sys =
-            (CLIMBOBJECTSYS_s *)CreateClimbObjectSys(&world->giz_buffer, &world->unknown_0108,
-                                                     (i32)(u8)level->unknown_103);
+        world->climb_object_sys = (CLIMBOBJECTSYS_s *)CreateClimbObjectSys(&world->giz_buffer, &world->unknown_0108,
+                                                                           (i32)(u8)level->unknown_103);
     } else {
         *(i32 *)&world->unknown_0140[0x29a4] = 1;
     }
@@ -577,8 +573,8 @@ after_area:
     // Load gizmo flow
     NuStrCpy(buf, world->config_file);
     NuStrCat(buf, ".git");
-    world->giz_flow = (GIZFLOW_s *)LoadGizFlow(world, (GIZMOSYS_s *)world->gizmo_sys, buf, &world->giz_buffer,
-                                               &world->unknown_0108);
+    world->giz_flow =
+        (GIZFLOW_s *)LoadGizFlow(world, (GIZMOSYS_s *)world->gizmo_sys, buf, &world->giz_buffer, &world->unknown_0108);
     if (abort_load != 0)
         goto abort;
 
@@ -827,3 +823,132 @@ void WorldInfo_ReArrangeBuffers(i32 area1, i32 area2) {
     WorldInfo[0].unknown_0108.addr = bufferEnd->addr;
     bufferEnd->addr = end + EditBufferEndSize;
 }
+
+// ---------------------------------------------------------------------------
+// World init/config functions (merged from levelstubs.cpp). The editor/level
+// subsystems these belong to are not yet decompiled, so bodies are provisional
+// empty stubs that keep the world-loading call graph linkable.
+// ---------------------------------------------------------------------------
+extern "C" void NuRndrInitWorld(void); // Defined in nurndr_android.c
+
+void LevObj_FixUpPlatIDs(WORLDINFO *world) {
+    (void)world;
+}
+void Doors_Init(WORLDINFO *world) {
+    (void)world;
+}
+void LevelSplines_InitForLevel(WORLDINFO *world) {
+    (void)world;
+}
+void LevelObjects_InitForLevel(WORLDINFO *world) {
+    (void)world;
+}
+void BoltTypes_Init(WORLDINFO *world) {
+    (void)world;
+}
+void BoltTypes_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void EquivalentObjects_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void Teleports_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void Doors_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void Faders_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void CharPlatforms_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void Grabber_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void Pulses_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void TrafficAnimSys_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void SpecialMiniKits_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void GizForceSFX_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void RippleEffects_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void PortalDoors_Configure(WORLDINFO *world, char *config) {
+    (void)world;
+    (void)config;
+}
+void LoadLights(WORLDINFO *world, char *path) {
+    (void)world;
+    (void)path;
+}
+void *GameAnimSys_Create(VARIPTR *buf, VARIPTR *buf_end) {
+    (void)buf;
+    (void)buf_end;
+    return NULL;
+}
+void *GameAntnode_CreateSys(WORLDINFO *world, VARIPTR *buf, VARIPTR *buf_end, i32 count) {
+    (void)world;
+    (void)buf;
+    (void)buf_end;
+    (void)count;
+    return NULL;
+}
+
+// C-linkage symbol set (kept in TU; consolidation deferred).
+// --- Extern "C": functions with C linkage in original ---
+extern "C" {
+    void SockSys_Configure(void *sock_sys, char *config, i32 param, void *buf, void *buf_end, void *gscn) {
+        (void)sock_sys;
+        (void)config;
+        (void)param;
+        (void)buf;
+        (void)buf_end;
+        (void)gscn;
+    }
+    void SockSys_GenerateData(void *sock_sys, void *buf, void *buf_end) {
+        (void)sock_sys;
+        (void)buf;
+        (void)buf_end;
+    }
+    void rtlResetDynamic(void) {
+    }
+    void SetPartRTLSet(i32 rtl_set) {
+        (void)rtl_set;
+    }
+    i32 rtlFindByUserId(i32 rtl_set, i32 user_id) {
+        (void)rtl_set;
+        (void)user_id;
+        return -1;
+    }
+    void rtlGetDirection(i32 rtl_set, i32 id, void **out) {
+        (void)rtl_set;
+        (void)id;
+        (void)out;
+    }
+    void NewMenu(i32 menu_id, i32 menu_y, i32 param3) {
+        (void)menu_id;
+        (void)menu_y;
+        (void)param3;
+    }
+} // extern "C"

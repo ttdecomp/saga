@@ -20,7 +20,7 @@ static NUFPAR *NuAllocFPar() {
         NuFParInit(PARSER_COUNT, PARSER_BUF_SIZE);
     }
 
-    for (int i = 0; i < PARSER_COUNT; i++) {
+    for (i32 i = 0; i < PARSER_COUNT; i++) {
 
         if (fpars[i].file_buf == NULL) {
             memset(&fpars[i], 0, sizeof(NUFPAR));
@@ -39,7 +39,7 @@ static void NuFreeFPar(NUFPAR *parser) {
     parser->file_buf = NULL;
 }
 
-void NuFParInit(int max_count, int buf_size) {
+void NuFParInit(i32 max_count, i32 buf_size) {
     fpars = _fpars;
     memset(fpars, 0, PARSER_COUNT * sizeof(NUFPAR));
 
@@ -152,19 +152,19 @@ void NuFParResume(NUFPAR *parser) {
     parser->buf_end = parser->char_pos - 1;
 }
 
-static int old_line_pos;
+static i32 old_line_pos;
 
 #define CLAMP_LINE(pos) pos &(parser->line_buf_size - 1)
 #define CLAMP_WORD(pos) pos &(parser->word_buf_size - 1)
 #define CLAMP_WIDE_LINE(pos) pos &((parser->line_buf_size >> 1) - 1)
 #define CLAMP_WIDE_WORD(pos) pos &((parser->word_buf_size >> 1) - 1)
 
-int NuFParGetLine(NUFPAR *parser) {
+i32 NuFParGetLine(NUFPAR *parser) {
     char c;
-    int len;
-    int at_end_of_line;
-    int is_done;
-    int in_quoted_text;
+    i32 len;
+    i32 at_end_of_line;
+    i32 is_done;
+    i32 in_quoted_text;
 
     in_quoted_text = 0;
 
@@ -252,13 +252,13 @@ int NuFParGetLine(NUFPAR *parser) {
     } while (true);
 }
 
-int NuFParGetLineW(NUFPAR *parser) {
+i32 NuFParGetLineW(NUFPAR *parser) {
     NUWCHAR c;
-    int len;
+    i32 len;
     NUWCHAR *line;
-    int at_end_of_line;
-    int is_done;
-    int in_quoted_text;
+    i32 at_end_of_line;
+    i32 is_done;
+    i32 in_quoted_text;
 
     in_quoted_text = 0;
     line = (NUWCHAR *)parser->line_buf;
@@ -342,10 +342,10 @@ int NuFParGetLineW(NUFPAR *parser) {
     } while (true);
 }
 
-int NuFParGetWord(NUFPAR *parser) {
-    int len;
-    int in_quoted_text;
-    int found_quotes = 0;
+i32 NuFParGetWord(NUFPAR *parser) {
+    i32 len;
+    i32 in_quoted_text;
+    i32 found_quotes = 0;
 
     if (parser->is_utf16) {
         return NuFParGetWordW(parser);
@@ -414,11 +414,11 @@ int NuFParGetWord(NUFPAR *parser) {
     return len;
 }
 
-int NuFParGetWordW(NUFPAR *parser) {
+i32 NuFParGetWordW(NUFPAR *parser) {
     NUWCHAR *line = (NUWCHAR *)parser->line_buf;
     NUWCHAR *word = (NUWCHAR *)parser->word_buf;
-    int len = 0;
-    int in_quoted_text = 0;
+    i32 len = 0;
+    i32 in_quoted_text = 0;
 
     old_line_pos = parser->line_pos;
 
@@ -520,7 +520,7 @@ f32 NuFParGetFloatRDP(NUFPAR *parser) {
     }
 }
 
-int NuFParGetInt(NUFPAR *parser) {
+i32 NuFParGetInt(NUFPAR *parser) {
     char buf[64];
 
     NuFParGetWord(parser);
@@ -543,7 +543,7 @@ int NuFParGetInt(NUFPAR *parser) {
     }
 }
 
-int NuFParGetIntRDP(NUFPAR *parser) {
+i32 NuFParGetIntRDP(NUFPAR *parser) {
     char buf[64];
 
     NuFParGetWord(parser);
@@ -560,7 +560,7 @@ int NuFParGetIntRDP(NUFPAR *parser) {
     }
 }
 
-int NuFParPushCom(NUFPAR *parser, NUFPCOMJMP *commands) {
+i32 NuFParPushCom(NUFPAR *parser, NUFPCOMJMP *commands) {
     if (parser->command_pos >= 7) {
         return -1;
     }
@@ -573,7 +573,7 @@ int NuFParPushCom(NUFPAR *parser, NUFPCOMJMP *commands) {
     return parser->command_pos;
 }
 
-int NuFParPushCom2(NUFPAR *parser, NUFPCOMJMP *commands, NUFPCOMJMP *commands2) {
+i32 NuFParPushCom2(NUFPAR *parser, NUFPCOMJMP *commands, NUFPCOMJMP *commands2) {
     if (parser->command_pos >= 7) {
         return -1;
     }
@@ -586,7 +586,7 @@ int NuFParPushCom2(NUFPAR *parser, NUFPCOMJMP *commands, NUFPCOMJMP *commands2) 
     return parser->command_pos;
 }
 
-int NuFParPushComCTX(NUFPAR *parser, NUFPCOMJMPCTX *commands) {
+i32 NuFParPushComCTX(NUFPAR *parser, NUFPCOMJMPCTX *commands) {
     if (parser->command_pos >= 7) {
         return -1;
     }
@@ -615,9 +615,9 @@ nufpcomfn *NuFParSetInterpreterErrorHandler(nufpcomfn *fn) {
     return old;
 }
 
-int NuFParInterpretWord(NUFPAR *parser) {
+i32 NuFParInterpretWord(NUFPAR *parser) {
     char buf[64];
-    int i;
+    i32 i;
 
     if (parser->is_utf16) {
         NuUnicodeToAscii(buf, (NUWCHAR16 *)parser->word_buf);
@@ -660,9 +660,9 @@ int NuFParInterpretWord(NUFPAR *parser) {
     return 0;
 }
 
-int NuFParInterpretWordCTX(NUFPAR *parser, void *ctx) {
+i32 NuFParInterpretWordCTX(NUFPAR *parser, void *ctx) {
     char buf[64];
-    int i;
+    i32 i;
 
     if (parser->is_utf16) {
         NuUnicodeToAscii(buf, (NUWCHAR16 *)parser->word_buf);
@@ -707,10 +707,10 @@ int NuFParInterpretWordCTX(NUFPAR *parser, void *ctx) {
 
 char NuGetChar(NUFPAR *parser) {
     char c;
-    int len;
-    int length;
+    i32 len;
+    i32 length;
 
-    int read_to = parser->buf_end >= 0 ? parser->buf_end : 0;
+    i32 read_to = parser->buf_end >= 0 ? parser->buf_end : 0;
 
     if (parser->char_pos > parser->buf_end) {
         if (parser->buf_end + 1 <= parser->size) {

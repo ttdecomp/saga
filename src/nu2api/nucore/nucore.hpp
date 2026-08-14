@@ -2,19 +2,15 @@
 
 #include "nu2api/nucore/nuthread.h"
 
-enum class NuApplicationStatus {
-    ZERO = 0,
-};
+struct NUAPPLICATIONSTATUS {};
 
 class NuApplicationState {
-  private:
-    NuApplicationStatus status;
-
   public:
     NuApplicationState();
+    ~NuApplicationState();
 
-    NuApplicationStatus GetStatus() const;
-    void SetStatus(NuApplicationStatus status);
+    void SetStatus(NUAPPLICATIONSTATUS status);
+    NUAPPLICATIONSTATUS GetStatus() const;
 };
 
 class NuCore {

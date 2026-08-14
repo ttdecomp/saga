@@ -1,5 +1,6 @@
 #include "legoapi/character.h"
 
+#include "CharacterObjectInterface.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufpar.h"
 
@@ -442,8 +443,8 @@ i32 CharIDFromName(char *name) {
     return -1;
 }
 
-CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, int count, int *countDest,
-                                      int count2, GAMECHARACTERDATA **dataList) {
+CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, i32 count, i32 *countDest,
+                                      i32 count2, GAMECHARACTERDATA **dataList) {
     bool bVar1;
     bool bVar2;
     nufpar_s *fp;
@@ -452,9 +453,9 @@ CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR 
     i16 filenameOffsets[500];
     char buf[10000];
     CHARACTERDATA *cdatas;
-    int j;
+    i32 j;
     usize offset;
-    int i;
+    i32 i;
     CHARACTERDATA *cdata;
 
     fp = NuFParCreate(file);
@@ -538,8 +539,8 @@ CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR 
         bufferStart->void_ptr = cdata;
         memmove(bufferStart->void_ptr, buf, offset);
         for (j = 0; j < i; j = j + 1) {
-            characterdata[j].dir = (char *)((int)dirnameOffsets[j] + (usize)bufferStart->void_ptr);
-            characterdata[j].file = (char *)((int)filenameOffsets[j] + (usize)bufferStart->void_ptr);
+            characterdata[j].dir = (char *)((i32)dirnameOffsets[j] + (usize)bufferStart->void_ptr);
+            characterdata[j].file = (char *)((i32)filenameOffsets[j] + (usize)bufferStart->void_ptr);
         }
         bufferStart->void_ptr = (void *)((usize)bufferStart->void_ptr + offset);
         bufferStart->void_ptr = (void *)((usize)bufferStart->void_ptr + 3U & 0xfffffffc);
@@ -553,9 +554,33 @@ CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR 
             }
         }
         bufferStart->void_ptr = (void *)((usize)bufferStart->void_ptr + 3U & 0xfffffffc);
-        if (countDest != (int *)0x0) {
+        if (countDest != (i32 *)0x0) {
             *countDest = i;
         }
     }
     return characterdata;
+}
+
+CharacterObjectInterface::CharacterObjectInterface(GameObject_s &) {
+}
+
+void CharacterObjectInterface::GetHeight() const {
+}
+
+void CharacterObjectInterface::GetPos(VuVec &, i32) const {
+}
+
+void CharacterObjectInterface::GetRadius() const {
+}
+
+void CharacterObjectInterface::GetTargetName() const {
+}
+
+void CharacterObjectInterface::IsDead() {
+}
+
+void CharacterObjectInterface::TargetedFlash() {
+}
+
+CharacterObjectInterface::~CharacterObjectInterface() {
 }

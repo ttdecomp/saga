@@ -15,7 +15,7 @@ objdiff-cli report generate -o report.json || exit 1
 git add report.json
 
 # get fuzzy match progress from report
-PROGRESS=$(grep -o '"fuzzy_match_percent":[^,}]*' report.json | head -1 | cut -d: -f2)
+PROGRESS=$(jq ".measures.fuzzy_match_percent" report.json)
 PROGRESS=$(printf "%.2f" "$PROGRESS")
 
 # determine badge color
@@ -38,3 +38,11 @@ sed -i "s|https://img.shields.io/badge/matching-[^)]*|${BADGE_URL}|g" README.md
 git add report.json README.md
 
 echo "Progress: ${PROGRESS}%"
+
+# verify no original symbols are missing and extra symbols stay within the
+# baseline (needs res/libTTapp.so, checked out locally by the developer)
+if [ -f res/libTTapp.so ]; then
+    python3 scripts/check_symbols.py || exit 1
+else
+    echo "WARNING: res/libTTapp.so not present; skipping symbol check"
+fi

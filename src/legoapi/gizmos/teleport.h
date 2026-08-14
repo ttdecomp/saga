@@ -2,14 +2,13 @@
 
 #include "legoapi/gizmo.h"
 
-extern int teleport_gizmotype_id;
+extern i32 teleport_gizmotype_id;
 
 #ifdef __cplusplus
 
-typedef struct TELEPORT_s {
-} TELEPORT;
+typedef struct TELEPORT_s TELEPORT;
 
-ADDGIZMOTYPE* Teleport_RegisterGizmo(int type_id);
+ADDGIZMOTYPE *Teleport_RegisterGizmo(i32 type_id);
 
 extern "C" {
 #endif

@@ -6,19 +6,19 @@
 f32 NuFnabs(f32 f) {
     f32 rv;
 
-    *(int *)&rv = *(int *)&f | 0x80000000;
+    *(i32 *)&rv = *(i32 *)&f | 0x80000000;
     return rv;
 }
 
 f32 NuFneg(f32 v) {
     f32 rv;
 
-    *(int *)&rv = *(int *)&v ^ 0x80000000;
+    *(i32 *)&rv = *(i32 *)&v ^ 0x80000000;
     return rv;
 }
 
 f32 NuFsign(f32 f) {
-    if (*(int *)&f < 0) {
+    if (*(i32 *)&f < 0) {
         return -1.0f;
     } else {
         return 1.0f;
@@ -50,7 +50,7 @@ f32 NuFmin(f32 a, f32 b) {
 }
 
 f32 NuFmod(f32 a, f32 b) {
-    return a - (int)(a / b) * b;
+    return a - (i32)(a / b) * b;
 }
 
 f32 NuFloor(f32 f) {
@@ -59,10 +59,12 @@ f32 NuFloor(f32 f) {
 
 f32 NuLog10(float x) {
     UNIMPLEMENTED();
+    return 0.0f;
 }
 
 f32 NuExp10(float x) {
     UNIMPLEMENTED();
+    return 0.0f;
 }
 
 f32 NuPowFast(f32 base, f32 exponent) {
