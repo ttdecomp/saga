@@ -63,3 +63,60 @@ extern "C" {
     }
 
 } // extern "C"
+
+void PadOutPause(i32, WORLDINFO_s *) {
+}
+
+void ResetRumble(RUMBLEPACKET *) {
+}
+
+void UpdateRumble(RUMBLEPACKET *) {
+}
+
+void NewBuzzFrames(nupad_s *, i32, i32) {
+}
+
+void TakeHitRumble(GameObject_s *, float) {
+}
+
+void SpaceRumbleProcess() {
+}
+
+void NewRumbleAllPlayers(float, float, i32, i32) {
+}
+
+void NewStatusRumbleBuzz(i32, float, float, i32) {
+}
+
+void ObjLookingWithLeftStick(GameObject_s *) {
+}
+
+void PerformPauseButtonStuff() {
+}
+
+void VirtualControlDPad_OnDown_Callback(MechTouchUIElement &, TouchHolder &) {
+}
+
+void VirtualControlButton_OnDown_Callback(MechTouchUIElement &, TouchHolder &) {
+}
+
+void VirtualControlButtonMover_OnDown_Callback(MechTouchUIElement &, TouchHolder &) {
+}
+
+void VirtualControlDPad_LockButton_OnClick_Callback(MechTouchUIElement &, TouchHolder &) {
+}
+
+void NoPad(i32, i32) {
+}
+
+void NewBuzz(nupad_s *, float, i32) {
+}
+
+void ReadPad(i32) {
+}
+
+void ReadPads() {
+}
+
+void NewRumble(nupad_s *, float, i32) {
+}

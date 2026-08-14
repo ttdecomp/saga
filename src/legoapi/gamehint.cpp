@@ -85,3 +85,12 @@ static __used__ bool HoldTag_UpdateHint(HINT_s *) {
 static __used__ bool HatMachine_UpdateHint(HINT_s *) {
     return false;
 }
+
+void Push_UpdateHints(HINT_s *) {
+}
+
+void Percent_UpdateHint(HINT_s *) {
+}
+
+void RegisterWithHintSys(void (*)(HINT_s *, i32), HINT_s *, u32 *, i32) {
+}

@@ -788,3 +788,66 @@ static __used__ void PlayerButton_PlayHint(HINT_s *) {
 
 static __used__ void PlayerButton_UpdateHint(HINT_s *) {
 }
+
+void KillPlayer(GameObject_s *, i32, i32, nuvec_s *) {
+}
+
+void ResetPlayer(GameObject_s *, i32, nuvec_s *, i32) {
+}
+
+void ResetPlayerAI(GameObject_s *) {
+}
+
+void ActivatePlayer(GameObject_s *) {
+}
+
+void MakePlayerList(i32) {
+}
+
+void CollectHitPoint(GameObject_s *, nuvec_s *, i32) {
+}
+
+void DeactivatePlayer(GameObject_s *, float, GameObject_s *) {
+}
+
+void ResetPlayerMoves(GameObject_s *) {
+}
+
+void SetToLastSafePos(GameObject_s *) {
+}
+
+void AvailableToPlayer(u32, i32, i32, i32) {
+}
+
+void GetNumLocalPlayers() {
+}
+
+void UnderPlayerControl(GameObject_s *) {
+}
+
+void ActivePlayerInRange(nuvec_s *, float, float *) {
+}
+
+void GetOtherActivePlayer(GameObject_s *) {
+}
+
+void FindNearestPlayerToVec(nuvec_s *, GameObject_s **, float &, bool, u32) {
+}
+
+void SetPlayerGroupPosition(float, float, float) {
+}
+
+void UpdateLastSafePosition(GameObject_s *) {
+}
+
+void CheckForPlayersTurnedOff() {
+}
+
+void FindFurthestPlayerFromVec(nuvec_s *, GameObject_s **, float &, bool, u32) {
+}
+
+void AveragePlayerCurrentSpeedMul() {
+}
+
+void SetPlayer() {
+}

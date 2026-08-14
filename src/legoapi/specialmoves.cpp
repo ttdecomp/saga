@@ -41,3 +41,12 @@ static __used__ void LightSabreStreakCode(GameObject_s *, i32, i32) {
 
 static __used__ void JediBKilledCallback(GameObject_s *) {
 }
+
+void BackFlipCode(GameObject_s *) {
+}
+
+void SetSpecialMove(GameObject_s *, AIPATHNODE_s *, AIPATHNODE_s *, char) {
+}
+
+void ClearSpecialMove(GameObject_s *) {
+}

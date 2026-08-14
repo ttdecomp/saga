@@ -346,3 +346,99 @@ static __used__ void LEGO_100PercentFn() {
 }
 static __used__ void LEGO_AllGoldBricksFn() {
 }
+
+void NoLayerKill(GameObject_s *) {
+}
+
+void GetUsageMask(NuShaderUsageMask_s *) {
+}
+
+void TakeOverCode(GameObject_s *, i32) {
+}
+
+void InitExtraList() {
+}
+
+void FindGameObject(i32, u32, i32, i32, i32) {
+}
+
+void KillGameObject(GameObject_s *, i32, i32) {
+}
+
+void PowerUp_Update(GameObject_s *) {
+}
+
+void TakeOver2GetIn(GameObject_s *, GameObject_s *) {
+}
+
+void PowerUp_AddPart(nuvec_s *, nuvec_s *, float, float) {
+}
+
+void ScaleGameObject(GameObject_s *) {
+}
+
+void RemoveGameObject(GameObject_s *, i32) {
+}
+
+void TargetGameObject(GameObject_s *, nuvec_s *, nuvec_s *, float, float, u32, i32, i32, i32) {
+}
+
+void ManageGameObjects() {
+}
+
+void PowerUp_GetPanelY(i32) {
+}
+
+void PowerUp_Particles(WORLDINFO_s *, nuvec_s *) {
+}
+
+void UpdateGameObjects(WORLDINFO_s *) {
+}
+
+void AddDynamicCreature(i32, nuvec_s *, i32, char *, AIPATHINFO_s *, AIGROUP_s *, i32, nugspline_s *, nuvec_s *, i32,
+                        i32) {
+}
+
+void GetNamedGameObject(AISYS_s *, char *) {
+}
+
+void TakeOverGameObject(GameObject_s *, GameObject_s *, i32, i32) {
+}
+
+void TakeOverGameObject2(GameObject_s *, GameObject_s *, i32) {
+}
+
+void DeactivateGameObject(GameObject_s *) {
+}
+
+void EquivalentObject_Find(WORLDINFO_s *, nuhspecial_s *) {
+}
+
+void FindNearestGameObject(nuvec_s *, GameObject_s *, u32, float, float, i32, i32, i32, float *, i32,
+                           i32 (*)(GameObject_s *), bool) {
+}
+
+void SetAllInstancesHidden(nugscn_s *) {
+}
+
+void RemoveAnyChunkControls(i32 *) {
+}
+
+void RemoveChunkFromRenderStack(particlechunkrendertype_s *, particlechunkrendertype_s **) {
+}
+
+void RemoveChunkControlFromStack(debris_chunk_control_s *, debris_chunk_control_s **) {
+}
+
+void RemoveDebrisEffectFromStack(debkeydatatype_s *) {
+}
+
+void ReStoreStatusTakeOverObjectSys(i32) {
+}
+
+extern "C" {
+
+        void InModelList(void) {
+        }
+
+} // extern "C"

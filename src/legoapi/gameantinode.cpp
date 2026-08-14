@@ -55,3 +55,12 @@ extern "C" {
     }
 
 } // extern "C"
+
+void AISysDrawAntinode_Circle(AIANTINODE_s *, u32) {
+}
+
+void AISysDrawAntinode_Ellipse(AIANTINODE_s *, u32) {
+}
+
+void AISysDrawAntinode_Rectangle(AIANTINODE_s *, u32) {
+}

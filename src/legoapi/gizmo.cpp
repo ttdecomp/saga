@@ -663,3 +663,61 @@ static __used__ void ProcessActionFlowBox(GIZFLOW_s *, FLOWBOX_s *, u8) {
 
 static __used__ void ProcessConditionFlowBox(GIZFLOW_s *, FLOWBOX_s *, u8) {
 }
+
+void TwistLevel(LEVELDATA_s *) {
+}
+
+void GizmoGetPos(GIZMOSYS_s *, GIZMO_s *) {
+}
+
+void GizmoGetGuid(GIZMOSYS_s *, GIZMO_s *) {
+}
+
+void GizmoGetName(GIZMO_s *) {
+}
+
+void GizmoSysReset(GIZMOSYS_s *, void *, i32) {
+}
+
+void GizmoFindByData(GIZMOSYS_s *, i32, void *) {
+}
+
+void GizmoFindByName(GIZMOSYS_s *, i32, char *) {
+}
+
+void GizmoSysSetGame() {
+}
+
+void GizmoSys_BoltHit(GIZMOSYS_s *, void *, BOLT_s *, nuvec_s *, nuvec_s *, nuvec_s *, float, unsigned char *) {
+}
+
+void ResetPaintPuzzle(WORLDINFO_s *) {
+}
+
+void GizmoFileReadName(char *) {
+}
+
+void GizmoIsNameUnique(GIZMOSYS_s *, char *) {
+}
+
+void GizmoSysWriteInfo(GIZMOSYS_s *, char *, nugscn_s *) {
+}
+
+void UpdatePaintPuzzle(WORLDINFO_s *) {
+}
+
+void GizmoGetNumOutputs(GIZMOSYS_s *, GIZMO_s *) {
+}
+
+void GizmoGetUniqueName(GIZMOSYS_s *, char *, char *, char *, i32) {
+}
+
+void GizmoNameUsesPrefix(char *, char *) {
+}
+
+void GizmoActivateReverse(GIZMOSYS_s *, GIZMO_s *, i32, i32, i32) {
+}
+
+void GizmoSys_SetBestBoltTarget(GIZMOSYS_s *, void *, GameObject_s *, nuvec_s *, nuvec_s *, float, float, i32, i32,
+                                i32) {
+}

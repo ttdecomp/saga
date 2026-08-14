@@ -6,6 +6,11 @@
 #include "legoapi/store.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufpar.h"
+struct GIZMOPICKUP_s;
+struct PART_s;
+struct starfighter_s;
+struct COINPACKET_s;
+
 
 struct APICHARACTERMODELLIST_s;
 
@@ -262,3 +267,45 @@ i32 Collection_GotAnyOfType(i32 type, u32 flags) {
 }
 
 static __used__ void Collection_GetSelectingPlayerIDs(i16*) {}
+
+void ReleaseEat(GameObject_s *) {
+}
+
+void SetCoinType(i32, GIZMOPICKUP_s *) {
+}
+
+void PartStop_Coin(PART_s *) {
+}
+
+void ShipDropCoins(starfighter_s *) {
+}
+
+void AddToCollection(i32) {
+}
+
+void AddToGoldBricks() {
+}
+
+void Pup_CollectCoin(WORLDINFO_s *, GIZMOPICKUP_s *, i32, GameObject_s *, i32) {
+}
+
+void ResetCoinPacket(COINPACKET_s *) {
+}
+
+void UpdateCoinPacket(COINPACKET_s *, i32, i32) {
+}
+
+void TotalLevelCoinTally(WORLDINFO_s *, u32 *, u32 *, u32 *, u32 *, u32 *, u32 *, u32 *) {
+}
+
+void AddToCompletionPoints(u32) {
+}
+
+void GetFreePlayCollection(i32) {
+}
+
+void ReCalculateCompletionPoints() {
+}
+
+void LoseCoins(GameObject_s *, i32) {
+}

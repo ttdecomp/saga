@@ -1,4 +1,6 @@
 #include "legoapi/world_shared.h"
+struct SoundTable;
+
 
 i32 ActionFromQuiet(i32 idx) {
     static i16 ActionPairTab[14] = {-1};
@@ -197,3 +199,84 @@ extern "C" {
     }
 
 } // extern "C"
+
+void PlayDieSfx(GameObject_s *) {
+}
+
+void PlayHurtSfx(GameObject_s *) {
+}
+
+void PlayJumpSfx(GameObject_s *, i32) {
+}
+
+void PlayLandSfx(GameObject_s *, i32, i32) {
+}
+
+void SfxBitTabEx(SoundTable const *, i32) {
+}
+
+void TickTockSfx() {
+}
+
+void AddFootSteps(GameObject_s *) {
+}
+
+void PlayGruntSfx(GameObject_s *) {
+}
+
+void PlaySabreSfx(char *, GameObject_s *, nuvec_s *, i32) {
+}
+
+void LevChatterSfx(char *, nuvec_s *) {
+}
+
+void PlayRepeatSfx(char *, i32, float, char, float, nuvec_s *) {
+}
+
+void ResetRepeatSfx() {
+}
+
+void SetSfxBit_OnEx(i32) {
+}
+
+void UpdateLevelSfx(WORLDINFO_s *, i32) {
+}
+
+void PlayFootStepSfx(GameObject_s *) {
+}
+
+void SetSfxBit_OffEx(i32) {
+}
+
+void UpdateRepeatSfx() {
+}
+
+void AddLevelSfxFromId(i32, i32 *, i32 *, i32) {
+}
+
+void SetSfxBitTab_OnEx(SoundTable *, i32) {
+}
+
+void SetSfxBitTab_OffEx(SoundTable *, i32) {
+}
+
+void SfxCheckMusicOnOff(OPTIONSSAVE_s *) {
+}
+
+void AddLevelSfxFromName(char *, i32 *, i32 *, i32) {
+}
+
+void AddLevelSfxGizmoSys(GIZMOSYS_s *, void *, i32 *, i32 *, i32) {
+}
+
+void LoadSfx(char const *, variptr_u *, variptr_u) {
+}
+
+void BlockSfx(GameObject_s *) {
+}
+
+void SfxBitEx(i32) {
+}
+
+void AddLevSfx(WORLDINFO_s *, nuvec_s *, char *, i32) {
+}

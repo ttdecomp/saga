@@ -319,3 +319,87 @@ extern "C" {
     }
 
 } // extern "C"
+
+void Parts_Stop(WORLDINFO_s *) {
+}
+
+void TargetPart(GameObject_s *, nuvec_s *, nuvec_s *, float, float, i32, i32) {
+}
+
+void Parts_Start(WORLDINFO_s *) {
+}
+
+void PartTimeSlip() {
+}
+
+void InitPartTable(char **) {
+}
+
+void SetPartTarget(GameObject_s *, PART_s *) {
+}
+
+void AddHeartAsPart(GameObject_s *, nuvec_s *, nuvec_s *, float, float) {
+}
+
+void FindPartDebris(PARTDEBSYS_s *, char *) {
+}
+
+void MakePartVector(nuvec_s *, nuvec_s *, float) {
+}
+
+void PartCollide_2D(PART_s *) {
+}
+
+void PartCollide_3D(PART_s *) {
+}
+
+void SetKillPartMom(nuvec_s *) {
+}
+
+void AddCoinsAsParts(i32, nuvec_s *, nuvec_s *, float, float) {
+}
+
+void UpdatePartEmits(float) {
+}
+
+void FindIncomingPart(void *, nuvec_s *, float, u32, float) {
+}
+
+void InstantKillParts(GameObject_s *, i32, float) {
+}
+
+void PartCleanupTypes() {
+}
+
+void PartImpact_Brick(PART_s *) {
+}
+
+void PartUpdate_Heart(PART_s *) {
+}
+
+void Asteroid_PartKill(PART_s *, i32) {
+}
+
+void PartDraw_Flickerer(PART_s *) {
+}
+
+void PartStop_Flickerer(PART_s *) {
+}
+
+void PartKill_ForceThrow(PART_s *, i32) {
+}
+
+void PartImpact_Basketball(PART_s *) {
+}
+
+void PartUpdate_Basketball(PART_s *) {
+}
+
+void Part_FindFromHSpecial(nuhspecial_s *) {
+}
+
+void NewPartOrderedRotation(PART_s *) {
+}
+
+void KillParts(GameObject_s *, i32, i32, i32, float, i32, u16 *) {
+}

@@ -172,3 +172,135 @@ static __used__ bool AutoJump_UpdateHint(HINT_s*) { return {}; }
 
 static __used__ void VehicleStuff_UpdateHint(HINT_s *) {
 }
+
+void Slam_Start(GameObject_s *, float) {
+}
+
+void StartLunge(GameObject_s *, float, float) {
+}
+
+void StartSlide(GameObject_s *, i32) {
+}
+
+void CanObjSlide(GameObject_s *, i32) {
+}
+
+void CanStepBack(GameObject_s *) {
+}
+
+void FlattenCode(GameObject_s *) {
+}
+
+void Glide_Start(GameObject_s *) {
+}
+
+void JetPackCode(GameObject_s *, i32, i32, i32) {
+}
+
+void SeekLinearF(float, float, float) {
+}
+
+void StartLaunch(GameObject_s *) {
+}
+
+void ApplyGravity(GameObject_s *, float *, float, float, float *) {
+}
+
+void SetObjTarget(GameObject_s *, GameObject_s *) {
+}
+
+void SnapPosTaken(WORLDINFO_s *, pushblock_s *, nuvec_s *, i32) {
+}
+
+void StartFlatten(GameObject_s *, GameObject_s *) {
+}
+
+void UpdateMidPos(GIZMOBLOWUP_s *) {
+}
+
+void Hang_MoveCode(GameObject_s *) {
+}
+
+void HoldCode_Copy(GameObject_s *) {
+}
+
+void SetHeadTarget(GameObject_s *, nuvec_s *, signed char, float, float, float) {
+}
+
+void StartBackFlip(GameObject_s *) {
+}
+
+void ForcedBackCode(GameObject_s *) {
+}
+
+void Glide_MoveCode(GameObject_s *) {
+}
+
+void SetObjOnSurface(GameObject_s *, i32) {
+}
+
+void TurnCodeCamSafe(GameObject_s *, numtx_s *) {
+}
+
+void RotateGameMatrix(numtx_s *, i32, u16, u16, u16) {
+}
+
+void Hang_SetTargetMom(GameObject_s *) {
+}
+
+void Glide_SetTargetMom(GameObject_s *) {
+}
+
+void SetObjAsHeadTarget(GameObject_s *, GameObject_s *, signed char, float, float, float) {
+}
+
+void Slide_SetTargetMom(GameObject_s *, u16, float) {
+}
+
+void StepBackFromTarget(GameObject_s *) {
+}
+
+void ApplyGravity_Network(GameObject_s *) {
+}
+
+void VehicleCollisionCode(GameObject_s *) {
+}
+
+void VehicleTurnOrLoopOffset(GameObject_s *) {
+}
+
+void WallShuffle_SetTargetMom(GameObject_s *, u16) {
+}
+
+void SetMoveAndAnimateFunctions(u32, u32, u32, u32, i32, void *, void *, void *) {
+}
+
+void SeekRot(u16, u16, float) {
+}
+
+void SeekVec(nuvec_s *, nuvec_s *, nuvec_s *, float) {
+}
+
+void TurnRot(u16, u16, i32, i32 *) {
+}
+
+void HoldCode(GameObject_s *) {
+}
+
+void SeekValF(float, float, float) {
+}
+
+void TurnCode(GameObject_s *, i32, GAMEPAD_s *) {
+}
+
+void FloatCode(GameObject_s *) {
+}
+
+void SlideCode(GameObject_s *) {
+}
+
+void StartHold(GameObject_s *) {
+}
+
+void StartTurn(GameObject_s *) {
+}

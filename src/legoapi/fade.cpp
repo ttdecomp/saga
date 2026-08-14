@@ -65,3 +65,18 @@ void FadeStill::InitFade() {
 
 void FadeStill::UpdateFade() {
 }
+
+void FadeLoop_SetObj(nugscn_s *, char *) {
+}
+
+void FadeLoop_DrawObj(float) {
+}
+
+void FadeLoop_UsingObj() {
+}
+
+void CreateFadeMaterials() {
+}
+
+void FadeLoop(char *, i32, float, void (*)(float)) {
+}

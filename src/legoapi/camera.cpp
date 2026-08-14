@@ -51,3 +51,67 @@ extern "C" {
     }
 
 } // extern "C"
+
+void ViewCamDraw() {
+}
+
+void KeepOnScreen(GameObject_s *) {
+}
+
+void ViewCamGetTgt() {
+}
+
+void ViewCamGetMode() {
+}
+
+void SetDepthOfField() {
+}
+
+void SpeedBlur_Apply(WORLDINFO_s *) {
+}
+
+void SpeedBlur_Update() {
+}
+
+void ViewCamSetActive(i32, GAMEPAD_s *) {
+}
+
+void KeepPointOnScreen(nuvec_s *, nuvec_s *) {
+}
+
+void SetCameraMatrices() {
+}
+
+void ViewCamGetGamePad() {
+}
+
+void KeepVehicleOnScreen(GameObject_s *, i32, i32, i32) {
+}
+
+void CentreTwoPlayerCamera(nuvec_s *, nuvec_s *, nuvec_s *, nuvec_s *) {
+}
+
+void do_Pad_flymode_camera(edcam_s *, float, nupad_s *) {
+}
+
+void InitCameraTargetMaterial() {
+}
+
+void GetTopBot(GameObject_s *) {
+}
+
+extern "C" {
+
+        void cbNearClipAtCursor(void) {
+        }
+
+        void do_Pad_Standard_camera(void) {
+        }
+
+        void do_maya_mouse_camera(void) {
+        }
+
+        void do_mouse_flymode_camera(void) {
+        }
+
+} // extern "C"

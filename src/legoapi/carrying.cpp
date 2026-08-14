@@ -31,3 +31,12 @@ void SuperCarry_SetTargetMom(GameObject_s *, float) {
 }
 
 static __used__ unsigned int CanSuperCarry_Game(GameObject_s*) { return {}; }
+
+void ObjLandReady(GameObject_s *) {
+}
+
+void LetGoOfBalloon(GameObject_s *) {
+}
+
+void MovingBackwards(GameObject_s *) {
+}

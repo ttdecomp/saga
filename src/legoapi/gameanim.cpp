@@ -310,3 +310,40 @@ extern "C" {
     }
 
 } // extern "C"
+
+void SetAnimFrame(nuhspecial_s *, float) {
+}
+
+void GetDefaultIdle(GameObject_s *) {
+}
+
+void GetAnimDirection(nuinstanim_s *) {
+}
+
+void FindTexAnimFromMtl(nugscn_s *, numtl_s *) {
+}
+
+void InitTexAnimScripts(char **) {
+}
+
+void GizmoFileReadGameAnimSet(GAMEANIMSET_s *, void *, void (*)(GAMEANIMOBJ_s *, unsigned char), unsigned char, char *,
+                              char *) {
+}
+
+void ANI_SimpleAni3PlayerV4Joint_Quat3(ani3_animheader_s *, float, nuanimbuff_s *, i32, i32) {
+}
+
+void ANI_SimpleAni3PlayerV4Joint_Quat3W(ani3_animheader_s *, float, nuanimbuff_s *, i32, i32) {
+}
+
+void ANI_SimpleAni3PlayerV4Joint_Blend_Quat3(ani3_animheader_s *, float, nuanimbuff_s *, float, i32, i32, nuvec_s *) {
+}
+
+void ANI_SimpleAni3PlayerV4Joint_Blend_Quat3W(ani3_animheader_s *, float, nuanimbuff_s *, float, i32, i32, nuvec_s *) {
+}
+
+void EvalAnim(nuhspecial_s *, float, numtx_s *, i32) {
+}
+
+void EvalAnim2(nuhspecial_s *, float) {
+}

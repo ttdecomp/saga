@@ -38,3 +38,6 @@ void Batarang_StartThrowQuick(GameObject_s *) {
 
 void Batarang_GetObjectFromCharID(i32) {
 }
+
+void GetShootDirection_Batman(GameObject_s *, nuvec_s *) {
+}

@@ -68,3 +68,45 @@ void CutScene_PlayingOrRequested(CUTINFO *) {
 
 void CutScene_ReplaceCharacterModelFn_LSW(CUTINFO *, NUGCUTCHAR_s *) {
 }
+
+void ResetScene(nugscn_s *, SCENEPROGRESS_s *) {
+}
+
+void NewCutScene(CUTINFO *, CUTSYS *, char *, i32) {
+}
+
+void Exit_LSW_Update(STATUS_STAGE_s *, STATUSPACKET_s *, float) {
+}
+
+void Fade_LSW_Update(STATUS_STAGE_s *, STATUSPACKET_s *, float) {
+}
+
+void RelocateCutScene(NUGCUTSCENE_s *, variptr_u *) {
+}
+
+void GoldBrick_LSW_Draw(STATUS_STAGE_s *, STATUSPACKET_s *, i32) {
+}
+
+void GoldBrick_LSW_Skip(STATUS_STAGE_s *, STATUSPACKET_s *) {
+}
+
+void GoldBrick_LSW_Update(STATUS_STAGE_s *, STATUSPACKET_s *, float) {
+}
+
+void LevelComplete_LSW_Draw(STATUS_STAGE_s *, STATUSPACKET_s *, i32) {
+}
+
+void LevelComplete_LSW_Skip(STATUS_STAGE_s *, STATUSPACKET_s *) {
+}
+
+void LevelComplete_LSW_Update(STATUS_STAGE_s *, STATUSPACKET_s *, float) {
+}
+
+static __used__ void Titles_Draw(WORLDINFO_s *) {
+}
+
+static __used__ void Titles_Init(WORLDINFO_s *) {
+}
+
+static __used__ void Titles_Update(WORLDINFO_s *) {
+}

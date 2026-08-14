@@ -98,3 +98,6 @@ void Customiser_CopyDefaultPiecesToSave(CUSTOMISER *, CUSTOMISESAVE_s *) {
 }
 
 static __used__ bool Customiser_PieceAvailable_Default(CUSTOMPIECE*) { return {}; }
+
+void Customise_GetToggleString(i32) {
+}

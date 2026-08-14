@@ -167,3 +167,6 @@ void Cheat_SetOnOffBitfield(i32 *onoffs, i32 count) {
         CheatSystem.cheats[i].enabled = ((onoffs[i >> 5] >> i) & 1) ? 1 : 0;
     }
 }
+
+void FreePlayUnlocked() {
+}

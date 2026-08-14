@@ -24,3 +24,6 @@ void Minicam_ResetForNewCut() {
 
 void Minicam_ResetForNextCommand() {
 }
+
+void MiniCam_ChangeMode(i32) {
+}

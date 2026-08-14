@@ -20,3 +20,12 @@ void Climb_SetMagnetDrawOffsetTarget(GameObject_s *, nuvec_s *) {
 static __used__ u16 CanMagnetClimb_Game(GameObject_s*) { return {}; }
 
 static __used__ unsigned int ClimbObject_FindNormal(CLIMBOBJECT_s*) { return {}; }
+
+void CanClimbSurface(GameObject_s *, i32) {
+}
+
+void FindClimbObject(CLIMBOBJECTSYS_s *, AIPATHCNX_s *) {
+}
+
+void InitClimbObjectSys(WORLDINFO_s *) {
+}

@@ -159,3 +159,36 @@ extern "C" {
     }
 
 } // extern "C"
+
+void LookupHash(u32, u32 *, HashRedirect *, u32) {
+}
+
+void _make_words(abi_long *, abi_long, abi_long) {
+}
+
+void MultilineDump(char const *) {
+}
+
+void GetMatchLength(unsigned char *, unsigned char *, abi_ulong) {
+}
+
+void IntroText_Draw(float) {
+}
+
+void MakeLayerList_Name(CHARACTERMODEL_s *, i16 *, u32) {
+}
+
+void UnicodeToIndexFast(vucharidx_s *, i32, u16) {
+}
+
+void IntroText_SetTextID(i32) {
+}
+
+void SplitTextFindNextWS(unsigned char *, i32) {
+}
+
+void MatrixTextStringEncode(void *, unsigned char *, u16 *) {
+}
+
+void GetLineW(u16 *, i32) {
+}

@@ -189,3 +189,12 @@ extern "C" {
     }
 
 } // extern "C"
+
+void SelectNextRTL() {
+}
+
+void SelectPrevRTL() {
+}
+
+void rtlSwapSetEndianess(rtlset *) {
+}

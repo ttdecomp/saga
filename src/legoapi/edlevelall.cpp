@@ -467,3 +467,42 @@ void ClassObjectList::IsInList(EdClass *) {
 
 void ClassObjectList::IsInList(void *, EdRef *) {
 }
+
+void DumpAreaData(i32, i32) {
+}
+
+void cbEdLevelSave(eduimenu_s *, eduiitem_s *, u32) {
+}
+
+void areaEditor_Enter() {
+}
+
+void cbEdLevelDestroy(eduimenu_s *, eduimenu_s *) {
+}
+
+void cbEdLevelSetText(eduimenu_s *, eduiitem_s *, u32) {
+}
+
+void areaEditor_Render(i32, i32, float, float) {
+}
+
+void areaEditor_Process(nupad_s *) {
+}
+
+void cbEdLevelToggleInt(eduimenu_s *, eduiitem_s *, u32) {
+}
+
+void cbCEDeleteConfirmed(eduimenu_s *, eduiitem_s *, u32) {
+}
+
+void cbEdLevelSetSliderInt(eduimenu_s *, eduiitem_s *, u32) {
+}
+
+void LightEverythingInEditor(void *) {
+}
+
+void cbEdLevelSetSliderFloat(eduimenu_s *, eduiitem_s *, u32) {
+}
+
+void cbEdLevelDestroyOnSelect(eduimenu_s *, eduiitem_s *, u32) {
+}

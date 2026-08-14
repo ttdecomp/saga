@@ -21,3 +21,9 @@ static __used__ float BestSockPosition(struct SOCKSYS *, nuvec_s *, SOCKPOSITION
 
 static __used__ void FillSockPosition(struct SOCKSYS *, SOCKPOSITION_s *) {
 }
+
+void TurnOffAllSocksExcept(struct SOCKSYS *, i32) {
+}
+
+void RestoreLastSocksTurnoff(struct SOCKSYS *) {
+}
