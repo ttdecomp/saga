@@ -14,6 +14,9 @@ objdiff-cli report generate -o report.json || exit 1
 
 git add report.json
 
+# regenerate the per-subdirectory matching table in README.md
+python3 scripts/matching_report.py --readme || exit 1
+
 # get fuzzy match progress from report
 PROGRESS=$(jq ".measures.fuzzy_match_percent" report.json)
 PROGRESS=$(printf "%.2f" "$PROGRESS")
