@@ -3,7 +3,7 @@
 #pragma once
 
 #include "nu2api/nucore/fixed_width.h"
-#include "legoapi/SwipeDecalRenderer.h"
+#include "legoapi/render/core/SwipeDecalRenderer.h"
 #include "nu2api/nucore/NuTouchInputElement.h"
 
 struct AIPATHCNX_s;

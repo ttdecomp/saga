@@ -4,19 +4,19 @@
 
 #include "nu2api/nucore/fixed_width.h"
 
-#include "legoapi/apiobject.h"
+#include "legoapi/items/base/apiobject.h"
 #include "MechInputTouch/MechInputTouch_types.h"
-#include "legoapi/CharacterObjectInterface.h"
-#include "legoapi/GizBlowupObjectInterface.h"
-#include "legoapi/GizBuildItObjectInterface.h"
-#include "legoapi/GizForceObjectInterface.h"
-#include "legoapi/GizLeverObjectInterface.h"
-#include "legoapi/GizObstacleObjectInterface.h"
-#include "legoapi/GizPanelObjectInterface.h"
-#include "legoapi/GizTurretObjectInterface.h"
-#include "legoapi/HatMachineObjectInterface.h"
-#include "legoapi/TeleportObjectInterface.h"
-#include "legoapi/SwipeDecalRenderer.h"
+#include "legoapi/characters/core/CharacterObjectInterface.h"
+#include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
+#include "legoapi/gizmo/base/GizBuildItObjectInterface.h"
+#include "legoapi/gizmo/base/GizForceObjectInterface.h"
+#include "legoapi/gizmo/base/GizLeverObjectInterface.h"
+#include "legoapi/gizmo/base/GizObstacleObjectInterface.h"
+#include "legoapi/gizmo/base/GizPanelObjectInterface.h"
+#include "legoapi/gizmo/base/GizTurretObjectInterface.h"
+#include "legoapi/gizmo/base/HatMachineObjectInterface.h"
+#include "legoapi/gizmo/base/TeleportObjectInterface.h"
+#include "legoapi/render/core/SwipeDecalRenderer.h"
 
 struct ADDGAMEMSG;
 struct ADDPART_s;
@@ -437,7 +437,7 @@ struct LEVELDATA_s;
 struct LEVELOBJECT {};
 struct LEVELSCRIPTPROCESS_s;
 struct LEVELSPLINE {};
-#include "legoapi/LEVEL_PROGRESS.h"
+#include "legoapi/world/LEVEL_PROGRESS.h"
 struct LoadedUniqueShaderRecord {};
 struct MENU_s;
 struct MISSIONSAVE_s;

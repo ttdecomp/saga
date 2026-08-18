@@ -127,503 +127,503 @@ set(SAGA_SOURCE_FILES
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/java/jni_stub.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/legoapi_helpers.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/misc/legoapi_helpers.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/legoapi_misc_c.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/misc/legoapi_misc_c.c
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/legoapi_misc.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/misc/legoapi_misc.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai_sys.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai/core/ai_sys.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai_sys_stubs.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai/core/ai_sys_stubs.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/aieditor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai/editor/aieditor.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/aipathcnxhelper.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai/game/aipathcnxhelper.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/aisysall.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai/core/aisysall.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/aitrigger.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai/game/aitrigger.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/androidbatman.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/misc/androidbatman.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/animation.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/characters/motion/animation.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/area.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/area.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/area_editor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/area_editor.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/arcade.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/menus/screens/arcade.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/attracto.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/collect/attracto.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/audio.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/audio/audio.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/batarang.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/collect/batarang.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/bolt.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/collect/bolt.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/bolts.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/collect/bolts.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/buffers.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/misc/buffers.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cable.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/objects/cable.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/camera.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/characters/motion/camera.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/carrying.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/actions/movement/carrying.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/character.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/characters/core/character.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/characters.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/characters/core/characters.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/charconfig.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/characters/core/charconfig.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/charpivot.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/characters/motion/charpivot.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/charplatforms.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/characters/motion/charplatforms.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/charshadows.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/characters/motion/charshadows.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cheat.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/core/config/cheat.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cheats.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/core/config/cheats.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/chris.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/characters/motion/chris.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/climbing.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/actions/movement/climbing.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/collection.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/base/collection.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/config.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/core/config/config.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/creature.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai/game/creature.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/creature_editor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai/editor/creature_editor.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/credits.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/menus/screens/credits.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/customise.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/menus/screens/customise.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cutscene.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cutscenes/cutscene.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cutscene_stubs.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cutscenes/cutscene_stubs.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cutscenes.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cutscenes/cutscenes.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/detonator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/collect/detonator.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/door.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/props/doors/door.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/doors.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/props/doors/doors.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/dropinout.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/actions/movement/dropinout.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/edlevelall.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/edlevelall.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/edpath.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai/editor/edpath.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/edsplines.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render/fx/edsplines.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/edtoolsall.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai/editor/edtoolsall.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episode.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episodes/episode.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episodeI.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episodes/episodeI.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episodeII.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episodes/episodeII.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episodeIII.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episodes/episodeIII.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episodeIV.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episodes/episodeIV.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episodeV.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episodes/episodeV.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episodeVI.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episodes/episodeVI.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episodes.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episodes/episodes.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/explosions.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/fx/explosions.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/fade.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render/light/fade.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/faders.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render/light/faders.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/fighting.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/actions/combat/fighting.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/game.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/core/startup/game.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/game_deb.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render/fx/game_deb.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/game_object.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/base/game_object.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gameai.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai/core/gameai.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gameanim.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/characters/motion/gameanim.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gameantinode.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai/game/gameantinode.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gamehint.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/menus/core/gamehint.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gamelib_ogg.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/audio/gamelib_ogg.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gamelib_utilities.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/misc/gamelib_utilities.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gameliball.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/gameliball.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gamemenuall.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/menus/screens/gamemenuall.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/nugraph.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render/core/nugraph.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/apiobject.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/base/apiobject.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/stream.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/misc/stream.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gamemessages.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/menus/core/gamemessages.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gameobjects.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/objects/gameobjects.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gamepads.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/core/input/gamepads.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gamestatus_lsw.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/menus/screens/gamestatus_lsw.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gcutscn.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cutscenes/gcutscn.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizactions.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/base/gizactions.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizbombgen.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/object/gizbombgen.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizbuildit.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/object/gizbuildit.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizflow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/base/gizflow.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizforce.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/object/gizforce.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmessage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/base/gizmessage.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizminicut.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/object/gizminicut.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/base/gizmo.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo_sys.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/base/gizmo_sys.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmoblowups.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/object/gizmoblowups.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmopickup.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/object/gizmopickup.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmopickups.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/object/gizmopickups.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_gizactions.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/gizmos/gizmos_gizactions.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_gizbuildits.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/gizmos/gizmos_gizbuildits.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_gizforce.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/gizmos/gizmos_gizforce.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_gizmopickups.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/gizmos/gizmos_gizmopickups.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_gizobstacles.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/gizmos/gizmos_gizobstacles.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_gizpanel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/gizmos/gizmos_gizpanel.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_gizturrets.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/gizmos/gizmos_gizturrets.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_grabber.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/gizmos/gizmos_grabber.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_grapples.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/gizmos/gizmos_grapples.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_hatmachine.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/gizmos/gizmos_hatmachine.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_lever.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/gizmos/gizmos_lever.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_newblowup.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/gizmos/gizmos_newblowup.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_spinner.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/gizmos/gizmos_spinner.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_teleport.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/gizmos/gizmos_teleport.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos_tubes.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/gizmos/gizmos_tubes.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizobstacle.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/object/gizobstacle.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizpanel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/object/gizpanel.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizportal.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/object/gizportal.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizrandom.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/object/gizrandom.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizspecial.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/object/gizspecial.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/giztimers.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/object/giztimers.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/giztorpedo.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/object/giztorpedo.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/grabber.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/objects/grabber.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/guidelines.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/props/objects/guidelines.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/hatmachine.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/props/objects/hatmachine.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/hint.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/menus/core/hint.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/hits.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/actions/combat/hits.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/hub.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/hub.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/hud.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/menus/core/hud.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/inflate.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render/fx/inflate.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/input.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/core/input/input.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/jumping.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/actions/movement/jumping.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ledge.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/props/objects/ledge.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/legoai.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai/core/legoai.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/legoapi_status.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/misc/legoapi_status.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/level.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/level.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/levelconfig.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/levelconfig.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/levels.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/levels.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/lever.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/props/objects/lever.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/lighting.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render/light/lighting.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/locator_editor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai/editor/locator_editor.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/lsw_hub_ai.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/lsw_hub_ai.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/core/startup/main.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/memory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/misc/memory.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/menus.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/menus/screens/menus.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/minicamcut.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cutscenes/minicamcut.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/minikits.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/collect/minikits.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/misc_a_game.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai/game/misc_a_game.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/mission.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episodes/mission.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/missions.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episodes/missions.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/move.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/characters/motion/move.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/movies.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/menus/screens/movies.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/netplay.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/core/net/netplay.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/network.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/core/net/network.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/objectsall.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/objects/objectsall.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/occlusion.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render/light/occlusion.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/panel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/menus/core/panel.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/particles.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render/fx/particles.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/parts.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render/fx/parts.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/placeable.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/objects/placeable.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/playeritems.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/characters/core/playeritems.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/players.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/characters/core/players.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/plugs.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/objects/plugs.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/pulses.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/fx/pulses.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/pushblocks.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/actions/movement/pushblocks.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/pushing.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/actions/movement/pushing.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/qrand.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/core/input/qrand.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/radio.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/audio/radio.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render/core/render.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render_stubs.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render/core/render_stubs.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ripples.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/fx/ripples.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/rope.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/actions/combat/rope.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/rtl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render/core/rtl.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/saveload.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/core/config/saveload.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/scene.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/base/scene.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/sceneobject.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/base/sceneobject.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/screen.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render/core/screen.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/securitydoor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/props/doors/securitydoor.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/sfx.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/audio/sfx.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/shader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render/core/shader.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/shadow.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render/light/shadow.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/shard.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/collect/shard.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/shop.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/menus/screens/shop.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/shovesys.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/actions/combat/shovesys.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/signal.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/props/objects/signal.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/simpletons.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/actions/character/simpletons.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/snake.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/actions/character/snake.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/socksysall.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/props/system/socksysall.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/socksysall_stubs.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/props/system/socksysall_stubs.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/specialmoves.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/actions/character/specialmoves.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/specialsfx.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/audio/specialsfx.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/speederchase.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/actions/character/speederchase.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/startup.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/core/startup/startup.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/starwars.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/actions/character/starwars.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/starwars_gameai.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai/game/starwars_gameai.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/store.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/menus/screens/store.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/streaks.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/actions/character/streaks.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/suit.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/actions/character/suit.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/supportall.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/misc/supportall.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/surfaces.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render/light/surfaces.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/tagging.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/actions/character/tagging.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/techno.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/props/objects/techno.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/teleport.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/props/objects/teleport.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/terrain.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render/core/terrain.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/terrain_stubs.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render/core/terrain_stubs.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/text.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/menus/core/text.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/thermaldetonators.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/collect/thermaldetonators.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/things.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/objects/things.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/tightrope.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/props/objects/tightrope.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/timer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/core/input/timer.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/timing.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/core/input/timing.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/tm.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/misc/tm.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/torpedo.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/collect/torpedo.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/traffic.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/objects/traffic.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/transform.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/actions/character/transform.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/tubes.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/props/objects/tubes.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/utilities.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/misc/utilities.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/virtual.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/core/startup/virtual.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/whip.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/actions/combat/whip.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/world.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/zipup.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/props/objects/zipup.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/ai.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/trigger/ai.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/attractos.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/traps/attractos.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/door.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/door/door.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/edgizshadowmachine.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/fx/edgizshadowmachine.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizaimessage.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/trigger/gizaimessage.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizbombgen.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/traps/gizbombgen.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizbuildits.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/object/gizbuildits.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizforce.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/traps/gizforce.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizmopickups.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/fx/gizmopickups.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizobstacles.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/object/gizobstacles.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizpanel.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/object/gizpanel.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizportal.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/transport/gizportal.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizrandom.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/trigger/gizrandom.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizspecial.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/trigger/gizspecial.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/giztimer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/trigger/giztimer.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/giztorpmachine.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/traps/giztorpmachine.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/gizturrets.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/traps/gizturrets.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/grapples.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/transport/grapples.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/guidelines.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/fx/guidelines.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/hatmachine.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/object/hatmachine.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/ledges.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/transport/ledges.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/lever.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/object/lever.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/minicut.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/trigger/minicut.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/newblowup.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/object/newblowup.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/plugs.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/door/plugs.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/push.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/door/push.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/securitydoors.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/door/securitydoors.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/shards.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/traps/shards.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/signals.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/trigger/signals.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/spinner.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/door/spinner.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/technos.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/object/technos.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/teleport.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/transport/teleport.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/tightropes.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/transport/tightropes.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/tubes.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/transport/tubes.cpp
 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/zipups.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/door/zipups.cpp
 
 
     ${CMAKE_CURRENT_SOURCE_DIR}/src/legogame/game.cpp

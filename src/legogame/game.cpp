@@ -2,11 +2,11 @@
 
 #include "gameframework/saveload.h"
 #include "globals.h"
-#include "legoapi/area.h"
-#include "legoapi/cheat.h"
-#include "legoapi/collection.h"
-#include "legoapi/episode.h"
-#include "legoapi/level.h"
+#include "legoapi/world/area.h"
+#include "legoapi/core/config/cheat.h"
+#include "legoapi/items/base/collection.h"
+#include "legoapi/episodes/episode.h"
+#include "legoapi/world/level.h"
 #include "nu2api/nucore/nustring.h"
 
 u16 MakeSaveHash(void) {

@@ -76,8 +76,9 @@ The original source tree groups TUs into modules; the current `src/` mirrors it 
 | gameapi/edtools | `ed*`, `Ed*` | `src/gameapi/edtools/` |
 | gameapi/ai(/aisys) | `gameai_*`, `aisys`, `aiscript`, `aistate` | `src/gameapi/ai/` (+`aisys/`) |
 | gameapi/gui | `apimenu` | `src/gameapi/gui/` |
-| legoapi | game logic (approx 210 files) | `src/legoapi/` |
-| legoapi/gizmos | `giz*`, gizmo types | `src/legoapi/gizmos/` (`<gizmo>.cpp` + `.h`) |
+| legoapi | game logic (approx 210 files) | `src/legoapi/` (grouped: `actions/`, `ai/`, `audio/`, `characters/`, `core/`, `cutscenes/`, `episodes/`, `gizmo/`, `gizmos/`, `items/`, `menus/`, `misc/`, `props/`, `render/`, `world/`) |
+| legoapi/gizmo | gizmo core (`gizmo.cpp`), object impls, `gizmos_giz*` wrappers | `src/legoapi/gizmo/` (`base/`, `object/`, `gizmos/`) |
+| legoapi/gizmos | `giz*`/`*ObjectInterface` gizmo types | `src/legoapi/gizmos/` (`door/`, `fx/`, `object/`, `transport/`, `traps/`, `trigger/`) |
 | legogame | `game`, `startup`, `target_android` | `src/legogame/` |
 | gamelib(/util,/crc,/nuwind) | `AndroidOBBUtils`, `CRC16`, `Ftp`, `Network`, `Transporter`, `nuwind`, `NewTerrain` | `src/gamelib/util`, `src/gamelib/crc`, `src/gamelib/nuwind`, `src/gamelib/NewTerrain.cpp` |
 | gameframework | `saveload` | `src/gameframework/` |
@@ -245,11 +246,10 @@ Module : gamelib
    `nu2api/nucore/nucore_plain.cpp` (~910 stubs, 1837 lines), `gameapi/edtools/edtoolsall_plain.cpp`
    (~244), `nu2api/nu3d/nurndr_plain.cpp` (~198), `nu2api/nusound/nusound_plain.cpp` (~84),
    `nu2api/nufile/nufile_plain.cpp` (~67), `nu2api/numath/numaths_plain.cpp` (~37).
-4. **Duplicated basenames** between `legoapi/` and `legoapi/gizmos/`
-   (`gizbombgen.cpp`, `gizforce.cpp`, `gizmopickups.cpp`, `gizpanel.cpp`, `gizportal.cpp`,
-   `gizrandom.cpp`, `gizspecial.cpp`, `guidelines.cpp`, `hatmachine.cpp`, `lever.cpp`,
-   `plugs.cpp`, `teleport.cpp`, `tubes.cpp`) — the bare `legoapi/giz*.cpp` set is likely
-   stale; verify before deleting.
+4. ~~**Duplicated basenames** between `legoapi/` and `legoapi/gizmos/`~~
+   **DONE**: the flat `legoapi/giz*.cpp` set (the `gizmo/object/` TUs) and the `gizmos/`
+   subdir were disentangled by grouping legoapi into domain subdirectories — the duplicate
+   basenames now live in distinct dirs (`gizmo/object/` vs `gizmos/<sub>/`).
 5. **Duplicate `nufile_android.cpp`** in both `nufile/` (impl) and `nufile/android/` (stubs).
 6. **`src/globals.h`** carries 123 `undefined fieldN_0x…` placeholder bytes in `CHEAT` etc.
 7. **Misplaced catch-alls**: `nu2api_nucore_misc.cpp` dumps symbols from many modules;
