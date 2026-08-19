@@ -3,6 +3,10 @@
 #include "legoapi/world/level.h"
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/numusic/sfx.h"
+#include "nu2api/numusic/numusic.h"
+#include "globals.h"
+
+extern i16 GetMusicIndex(char *, nusound_filename_info_s *, i32);
 
 static __used__ void LC_AL_backb(nufpar_s *fp) {
     u8 v = (u8)NuFParGetInt(fp);
@@ -332,9 +336,21 @@ static __used__ void loadSumBox(nufpar_s *fp) {
 }
 static __used__ void LC_AL_metal(nufpar_s *) {
 }
-static __used__ void LC_AL_music(nufpar_s *) {
+static __used__ void LC_AL_music(nufpar_s *fp) {
+    if (NuFParGetWord(fp) != 0) {
+        *(i16 *)((char *)levelconfig_ldata + 0xa0) = (i16)GetMusicIndex(fp->word_buf, MusicInfo, -1);
+        *(i32 *)((char *)levelconfig_ldata + 0x12c) = music_man.GetTrackHandle(TRACK_CLASS_QUIET, fp->word_buf);
+        *(i32 *)((char *)levelconfig_ldata + 0x134) = music_man.GetTrackHandle(TRACK_CLASS_ACTION, fp->word_buf);
+        *(i32 *)((char *)levelconfig_ldata + 0x13c) = music_man.GetTrackHandle(TRACK_CLASS_NOMUSIC, fp->word_buf);
+    }
 }
-static __used__ void LC_AL_music_other(nufpar_s *) {
+static __used__ void LC_AL_music_other(nufpar_s *fp) {
+    if (NuFParGetWord(fp) != 0) {
+        *(i16 *)((char *)levelconfig_ldata + 0xa8) = (i16)GetMusicIndex(fp->word_buf, MusicInfo, -1);
+        *(i32 *)((char *)levelconfig_ldata + 0x130) = music_man.GetTrackHandle(TRACK_CLASS_QUIET, fp->word_buf);
+        *(i32 *)((char *)levelconfig_ldata + 0x138) = music_man.GetTrackHandle(TRACK_CLASS_ACTION, fp->word_buf);
+        *(i32 *)((char *)levelconfig_ldata + 0x140) = music_man.GetTrackHandle(TRACK_CLASS_NOMUSIC, fp->word_buf);
+    }
 }
 static __used__ void LC_AL_farclip(nufpar_s *fp) {
     i32 v = NuFParGetInt(fp);
