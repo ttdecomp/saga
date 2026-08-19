@@ -333,7 +333,18 @@ static __used__ void LC_AL_music(nufpar_s *) {
 }
 static __used__ void LC_AL_music_other(nufpar_s *) {
 }
-static __used__ void LC_AL_farclip(nufpar_s *) {
+static __used__ void LC_AL_farclip(nufpar_s *fp) {
+    i32 v = NuFParGetInt(fp);
+    i32 farclip;
+    if (v > 9) {
+        farclip = (v <= 20000) ? v : 20000;
+    } else {
+        farclip = 10;
+    }
+    if (NuIOS_IsLowEndDevice() && (f32)farclip <= *(f32 *)((char *)levelconfig_ldata + 0x8c)) {
+        farclip = (i32) * (f32 *)((char *)levelconfig_ldata + 0x8c);
+    }
+    *(i16 *)((char *)levelconfig_ldata + 0x98) = (i16)farclip;
 }
 static __used__ void LC_AL_camera_rain(nufpar_s *fp) {
     *(u32 *)((char *)levelconfig_ldata + 0x64) |= 0x4000;
@@ -373,7 +384,17 @@ static __used__ void LC_AL_terrain_rain(nufpar_s *fp) {
         *(u32 *)((char *)levelconfig_ldata + 0x64) &= ~0x8000;
     }
 }
-static __used__ void LC_AL_lowendfarclip(nufpar_s *) {
+static __used__ void LC_AL_lowendfarclip(nufpar_s *fp) {
+    f32 v = NuFParGetFloat(fp);
+    if (v < 2.0f) {
+        v = 2.0f;
+    } else if (v > 20000.0f) {
+        v = 20000.0f;
+    }
+    *(f32 *)((char *)levelconfig_ldata + 0x8c) = v;
+    if (NuIOS_IsLowEndDevice()) {
+        *(i16 *)((char *)levelconfig_ldata + 0x98) = (i16)v;
+    }
 }
 static __used__ void LC_AL_cam_lateral_dist(nufpar_s *fp) {
     f32 v = NuFParGetFloat(fp);
