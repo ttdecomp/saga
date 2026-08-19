@@ -30,4 +30,3 @@ void ResetGizAIMessageSys(GIZAIMESSAGESYS_s *) {
 
 void CreateGizAIMessageSys(variptr_u *, variptr_u *, i32) {
 }
-

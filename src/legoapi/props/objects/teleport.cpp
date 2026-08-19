@@ -14,4 +14,3 @@ void Teleports_Configure(WORLDINFO_s *world, char *config) {
     (void)world;
     (void)config;
 }
-

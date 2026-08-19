@@ -15,4 +15,3 @@ void LSW_Hub_ResetAI(WORLDINFO_s *) {
 
 void LSW_Hub_UpdateAI(WORLDINFO_s *) {
 }
-

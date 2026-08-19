@@ -21,4 +21,5 @@ void Suits_CollectAll() {
 void Suit_FindFromLetter(char) {
 }
 
-static __used__ void DisguiseAdjust_LSW(int, int, nuvec_s*, nuvec_s*) {}
+static __used__ void DisguiseAdjust_LSW(int, int, nuvec_s *, nuvec_s *) {
+}

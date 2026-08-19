@@ -90,19 +90,28 @@ void Bolt_Init(void *, NetMessage &) {
 static __used__ void UpdateBolt_Geonosian(BOLT_s *) {
 }
 
-static __used__ bool Bolt_RayCast(BOLT_s*, nuvec_s*, nuvec_s*, float) { return {}; }
+static __used__ bool Bolt_RayCast(BOLT_s *, nuvec_s *, nuvec_s *, float) {
+    return {};
+}
 
-static __used__ void Bolt_Debris_Default(BOLT_s*, nuvec_s*, int, nuvec_s*, int) {}
+static __used__ void Bolt_Debris_Default(BOLT_s *, nuvec_s *, int, nuvec_s *, int) {
+}
 
-static __used__ void Bolt_GetShootOrigin_Default(GameObject_s*, nuvec_s*) {}
+static __used__ void Bolt_GetShootOrigin_Default(GameObject_s *, nuvec_s *) {
+}
 
-static __used__ void Bolt_GetShootDirection_Default(GameObject_s*, nuvec_s*) {}
+static __used__ void Bolt_GetShootDirection_Default(GameObject_s *, nuvec_s *) {
+}
 
-static __used__ unsigned int Batarang_GetTargetPos(BATARANG_s*, int, nuvec_s*) { return {}; }
+static __used__ unsigned int Batarang_GetTargetPos(BATARANG_s *, int, nuvec_s *) {
+    return {};
+}
 
-static __used__ void CollideBoltStarFighter(BOLT_s*, starfighter_s*, _vuv_s*, _vuv_s*) {}
+static __used__ void CollideBoltStarFighter(BOLT_s *, starfighter_s *, _vuv_s *, _vuv_s *) {
+}
 
-static __used__ void DrawLightningBolts(GameObject_s*, GameObject_s*, int) {}
+static __used__ void DrawLightningBolts(GameObject_s *, GameObject_s *, int) {
+}
 
 static __used__ void EndBolt_EwokTorpedo(BOLT_s *) {
 }
@@ -122,7 +131,9 @@ static __used__ void StarFighterAlign(starfighter_s *, _vuv_s *, f32, i32) {
 static __used__ void TrooperTeamSetStateCode(minitrooperteam_s *) {
 }
 
-static __used__ unsigned int BoltInitSfx_LSW(GameObject_s*) { return {}; }
+static __used__ unsigned int BoltInitSfx_LSW(GameObject_s *) {
+    return {};
+}
 
 void BoltTypes_Init(WORLDINFO_s *world) {
     (void)world;

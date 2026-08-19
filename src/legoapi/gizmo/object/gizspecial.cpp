@@ -24,4 +24,3 @@ void GizSpecial_FindByName(char *, WORLDINFO_s *) {
 
 void GizmoGetGizmosUsingSpecial(GIZMOSYS_s *, void *, GIZMO_s **, i32, char *) {
 }
-

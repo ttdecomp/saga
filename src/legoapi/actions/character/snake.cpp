@@ -30,4 +30,3 @@ void DestroySnakeBody(GameObject_s *) {
 
 void EatVictim(GameObject_s *) {
 }
-

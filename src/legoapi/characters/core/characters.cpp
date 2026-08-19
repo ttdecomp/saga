@@ -153,11 +153,10 @@ static __used__ void SpecialRouteCharacterTypeID(char *) {
 
 extern "C" {
 
-        void InitFn_SpecialRouteCharacterName(void) {
-        }
+    void InitFn_SpecialRouteCharacterName(void) {
+    }
 
-        void InitFn_SpecialRouteCharacterTypeID(void) {
-        }
+    void InitFn_SpecialRouteCharacterTypeID(void) {
+    }
 
 } // extern "C"
-

@@ -21,4 +21,3 @@ void StarWars_ParseAIPathCnxFlag(char *) {
 
 void StarWars_AutoSetAICapabilities(GameObject_s *) {
 }
-

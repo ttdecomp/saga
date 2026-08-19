@@ -18,4 +18,3 @@ void Signal_FindNearest(WORLDINFO_s *, nuvec_s *, GameObject_s *, float *) {
 
 void Signals_InitTerrain(WORLDINFO_s *) {
 }
-

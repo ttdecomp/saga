@@ -12,14 +12,13 @@ void RegisterGizActions(GIZACTIONDEFN_s *) {
 
 extern "C" {
 
-        void ActionFromName(void) {
-        }
+    void ActionFromName(void) {
+    }
 
-        void ActionInfoFlags(void) {
-        }
+    void ActionInfoFlags(void) {
+    }
 
-        void ActionInfoName(void) {
-        }
+    void ActionInfoName(void) {
+    }
 
 } // extern "C"
-

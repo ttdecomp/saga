@@ -1,7 +1,6 @@
 #include "legoapi/world/world_shared.h"
 struct SoundTable;
 
-
 i32 ActionFromQuiet(i32 idx) {
     static i16 ActionPairTab[14] = {-1};
     if (idx != -1) {
@@ -54,9 +53,13 @@ void LoadSpecialSfxFile(WORLDINFO *world) {
     (void)world;
 }
 
-static __used__ bool ActionMusicFn() { return {}; }
+static __used__ bool ActionMusicFn() {
+    return {};
+}
 
-static __used__ bool CheckMusicOther() { return {}; }
+static __used__ bool CheckMusicOther() {
+    return {};
+}
 
 static __used__ void SetSoundFadeDistCallBackFn_LSW(WORLDINFO_s *) {
 }

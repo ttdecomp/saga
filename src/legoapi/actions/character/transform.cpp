@@ -30,4 +30,3 @@ void InterpolateRotationMatrix(numtx_s *, numtx_s *, numtx_s *, float) {
 
 void QuatInterpolateRotationMatrix(numtx_s *, numtx_s *, numtx_s *, float) {
 }
-

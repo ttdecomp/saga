@@ -42,4 +42,3 @@ void InitShop(WORLDINFO_s *) {
 
 void CheckCash(shopitem_s *, i32) {
 }
-

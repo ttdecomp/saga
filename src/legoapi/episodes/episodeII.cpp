@@ -114,4 +114,3 @@ void KaminoE_CheckPlatHit(BOLT_s *) {
 
 void GunShip_DragBombSeekBlowUp(GameObject_s *) {
 }
-

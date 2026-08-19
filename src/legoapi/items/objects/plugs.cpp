@@ -12,4 +12,3 @@ void Plug_FindNearest(PLUGSYS_s *, nuvec_s *, float *, i32) {
 
 void Plug_MakeDrawMtx(PLUG_s *, numtx_s *) {
 }
-

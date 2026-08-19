@@ -24,4 +24,3 @@ void Detonator_MoveCode(GameObject_s *) {
 
 void Detonator_FindNearest(nuvec_s *, float, GameObject_s *) {
 }
-

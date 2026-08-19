@@ -12,4 +12,3 @@ void CharPivot_Init(CHARPIVOT *) {
 
 void CharPivot_Check(GameObject_s *, nuvec_s *) {
 }
-

@@ -21,4 +21,3 @@ void CoinsGoToMainTotal() {
 
 void InitPanel(i32) {
 }
-

@@ -9,4 +9,3 @@ struct SHOPINPUT;
 
 void GuideLine_FindNearest(nuvec_s *, WORLDINFO_s *, i32 *, float *) {
 }
-

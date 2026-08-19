@@ -42,4 +42,3 @@ void Missions_NumCompleted(MISSIONSYS_s *, MISSIONSAVE_s *, i32) {
 
 void Missions_PartyAvailable(MISSIONSYS_s *) {
 }
-

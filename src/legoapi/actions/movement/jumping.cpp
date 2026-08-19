@@ -39,4 +39,3 @@ void JumpCode(GameObject_s *, i32, i32, u32, i32, i32, i32) {
 
 void StartJump(GameObject_s *, i32) {
 }
-

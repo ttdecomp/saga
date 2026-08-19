@@ -56,8 +56,7 @@ void LoadLights(WORLDINFO_s *world, char *path) {
 
 extern "C" {
 
-        void IndexLights(void) {
-        }
+    void IndexLights(void) {
+    }
 
 } // extern "C"
-

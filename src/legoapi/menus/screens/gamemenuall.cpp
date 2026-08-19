@@ -396,182 +396,181 @@ void MenuUpdateViewTextStrings(MENU_s *) {
 
 extern "C" {
 
-        void BackupMenu(void) {
-        }
+    void BackupMenu(void) {
+    }
 
-        void BackupMenuNoFn(void) {
-        }
+    void BackupMenuNoFn(void) {
+    }
 
-        void CreateColourPicker(void) {
-        }
+    void CreateColourPicker(void) {
+    }
 
-        void CreateTestMenu(void) {
-        }
+    void CreateTestMenu(void) {
+    }
 
-        void DrawMenu(void) {
-        }
+    void DrawMenu(void) {
+    }
 
-        void DrawMenuBottomMessage(void) {
-        }
+    void DrawMenuBottomMessage(void) {
+    }
 
-        void DrawMenuButtonPrompts(void) {
-        }
+    void DrawMenuButtonPrompts(void) {
+    }
 
-        void DrawMenuButtonPromptsEx(void) {
-        }
+    void DrawMenuButtonPromptsEx(void) {
+    }
 
-        void DrawMenuEntry(void) {
-        }
+    void DrawMenuEntry(void) {
+    }
 
-        void DrawMenuEntryEx(void) {
-        }
+    void DrawMenuEntryEx(void) {
+    }
 
-        void DrawMenuHeader(void) {
-        }
+    void DrawMenuHeader(void) {
+    }
 
-        void DrawMenuHeaderMessage(void) {
-        }
+    void DrawMenuHeaderMessage(void) {
+    }
 
-        void DrawMenuTopMessage(void) {
-        }
+    void DrawMenuTopMessage(void) {
+    }
 
-        void Draw_CANCEL(void) {
-        }
+    void Draw_CANCEL(void) {
+    }
 
-        void Draw_CHECKINGMEMORYCARD(void) {
-        }
+    void Draw_CHECKINGMEMORYCARD(void) {
+    }
 
-        void Draw_DONOTREMOVEMEMORYCARD(void) {
-        }
+    void Draw_DONOTREMOVEMEMORYCARD(void) {
+    }
 
-        void Draw_NOTENOUGHSPACE(void) {
-        }
+    void Draw_NOTENOUGHSPACE(void) {
+    }
 
-        void Draw_SPACENEEDED(void) {
-        }
+    void Draw_SPACENEEDED(void) {
+    }
 
-        void FileSelKill(void) {
-        }
+    void FileSelKill(void) {
+    }
 
-        void FlushMenuHighlights(void) {
-        }
+    void FlushMenuHighlights(void) {
+    }
 
-        void MenuCurrentID(void) {
-        }
+    void MenuCurrentID(void) {
+    }
 
-        void MenuDrawBackground(void) {
-        }
+    void MenuDrawBackground(void) {
+    }
 
-        void MenuGetSlotNum(void) {
-        }
+    void MenuGetSlotNum(void) {
+    }
 
-        void MenuInCriticalMemoryCard(void) {
-        }
+    void MenuInCriticalMemoryCard(void) {
+    }
 
-        void MenuInMemoryCard(void) {
-        }
+    void MenuInMemoryCard(void) {
+    }
 
-        void MenuInMemoryCardLoad(void) {
-        }
+    void MenuInMemoryCardLoad(void) {
+    }
 
-        void MenuInMemoryCardWarning(void) {
-        }
+    void MenuInMemoryCardWarning(void) {
+    }
 
-        void MenuRegisterSoundFX(void) {
-        }
+    void MenuRegisterSoundFX(void) {
+    }
 
-        void MenuRememberCursor(void) {
-        }
+    void MenuRememberCursor(void) {
+    }
 
-        void MenuRepeat(void) {
-        }
+    void MenuRepeat(void) {
+    }
 
-        void MenuSetColours(void) {
-        }
+    void MenuSetColours(void) {
+    }
 
-        void MenuSetHeaderDrawFn(void) {
-        }
+    void MenuSetHeaderDrawFn(void) {
+    }
 
-        void MenuSetPreDrawFn(void) {
-        }
+    void MenuSetPreDrawFn(void) {
+    }
 
-        void MenuSetPulsateSpeed(void) {
-        }
+    void MenuSetPulsateSpeed(void) {
+    }
 
-        void MenuSetTopBottom(void) {
-        }
+    void MenuSetTopBottom(void) {
+    }
 
-        void MessageBoxInitMtl(void) {
-        }
+    void MessageBoxInitMtl(void) {
+    }
 
-        void PetesHackOfDeath(void) {
-        }
+    void PetesHackOfDeath(void) {
+    }
 
-        void ProcessFileSel2(void) {
-        }
+    void ProcessFileSel2(void) {
+    }
 
-        void RemapAddr(void) {
-        }
+    void RemapAddr(void) {
+    }
 
-        void RenderFileSel2(void) {
-        }
+    void RenderFileSel2(void) {
+    }
 
-        void SetButtonScaleMode(void) {
-        }
+    void SetButtonScaleMode(void) {
+    }
 
-        void StartFileSel(void) {
-        }
+    void StartFileSel(void) {
+    }
 
-        void TestMenu(void) {
-        }
+    void TestMenu(void) {
+    }
 
-        void UpdateMenu(void) {
-        }
+    void UpdateMenu(void) {
+    }
 
-        void cbCancelSubMenu(void) {
-        }
+    void cbCancelSubMenu(void) {
+    }
 
-        void cbCancelSubMenuFromItem(void) {
-        }
+    void cbCancelSubMenuFromItem(void) {
+    }
 
-        void cbCompateDirentByDateAsc(void) {
-        }
+    void cbCompateDirentByDateAsc(void) {
+    }
 
-        void cbCompateDirentByDateDec(void) {
-        }
+    void cbCompateDirentByDateDec(void) {
+    }
 
-        void cbCompateDirentByNameAsc(void) {
-        }
+    void cbCompateDirentByNameAsc(void) {
+    }
 
-        void cbCompateDirentByNameDec(void) {
-        }
+    void cbCompateDirentByNameDec(void) {
+    }
 
-        void cbCompateDirentBySizeAsc(void) {
-        }
+    void cbCompateDirentBySizeAsc(void) {
+    }
 
-        void cbCompateDirentBySizeDec(void) {
-        }
+    void cbCompateDirentBySizeDec(void) {
+    }
 
-        void cbInteractMenuKeySelect(void) {
-        }
+    void cbInteractMenuKeySelect(void) {
+    }
 
-        void cbInteractMenuScrollDown(void) {
-        }
+    void cbInteractMenuScrollDown(void) {
+    }
 
-        void cbInteractMenuScrollTo(void) {
-        }
+    void cbInteractMenuScrollTo(void) {
+    }
 
-        void cbInteractMenuScrollUp(void) {
-        }
+    void cbInteractMenuScrollUp(void) {
+    }
 
-        void cbInteractMenuTitle(void) {
-        }
+    void cbInteractMenuTitle(void) {
+    }
 
-        void cbModifierAdjust(void) {
-        }
+    void cbModifierAdjust(void) {
+    }
 
-        void cbTriggerSubMenu(void) {
-        }
+    void cbTriggerSubMenu(void) {
+    }
 
 } // extern "C"
-

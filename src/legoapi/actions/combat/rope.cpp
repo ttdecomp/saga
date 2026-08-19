@@ -12,4 +12,3 @@ void InitRopeMtl(char *, variptr_u *, variptr_u *) {
 
 void ropesegment(numtl_s *, nuvec_s *, i32, i32) {
 }
-

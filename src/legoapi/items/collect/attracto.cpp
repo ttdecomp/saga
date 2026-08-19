@@ -21,4 +21,3 @@ void Attractos_InitTerrain(WORLDINFO_s *) {
 
 void Attracto_GetSuctionPos(GameObject_s *, nuvec_s *) {
 }
-

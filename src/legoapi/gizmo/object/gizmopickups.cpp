@@ -24,4 +24,3 @@ void InDoubleScoreZone(GameObject_s *) {
 
 void DropTorpedoPickups(TORPEDOPACKET_s *, i32) {
 }
-

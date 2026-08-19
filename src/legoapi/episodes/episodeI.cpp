@@ -81,4 +81,3 @@ static __used__ void PodRaceSnipersReset() {
 
 static __used__ void PodRaceSnipersUpdate() {
 }
-

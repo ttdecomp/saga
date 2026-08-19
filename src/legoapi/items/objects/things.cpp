@@ -15,4 +15,3 @@ void FindMtlInHGObj(nugscn_s *, i32) {
 
 void CreateThingManager() {
 }
-

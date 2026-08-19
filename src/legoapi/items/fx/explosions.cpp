@@ -21,4 +21,3 @@ void UpdateExplosions() {
 
 void UpdateExplosion_Generic(EXPLOSION *) {
 }
-

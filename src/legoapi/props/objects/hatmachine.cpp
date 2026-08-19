@@ -9,4 +9,3 @@ struct SHOPINPUT;
 
 void Hat_GetAbsTargetPos(HATMACHINE_s *, nuvec_s *) {
 }
-

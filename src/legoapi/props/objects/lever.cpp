@@ -12,4 +12,3 @@ void ReleaseLever(GameObject_s *) {
 
 void CanPullLevers(i32) {
 }
-

@@ -96,4 +96,3 @@ void ChrisGetSpaceShipMatrix(GameObject_s *, numtx_s *) {
 
 void ChrisGetTargetedSpaceShipMatrix(GameObject_s *, numtx_s *) {
 }
-

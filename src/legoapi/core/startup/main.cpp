@@ -21,4 +21,3 @@ void EndOfDemo(i32) {
 
 static __used__ void ThreadMain(u64) {
 }
-

@@ -12,4 +12,3 @@ void GizTorpMachine_FindNearest(WORLDINFO_s *, nuvec_s *, float *) {
 
 void ZapTarget(GameObject_s *) {
 }
-

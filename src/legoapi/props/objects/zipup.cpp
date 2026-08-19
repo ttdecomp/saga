@@ -18,4 +18,3 @@ void ZipUp_FindNearest(WORLDINFO_s *, nuvec_s *, float, float *, i32 *, GameObje
 
 void ZipUps_UpdateHint(HINT_s *) {
 }
-

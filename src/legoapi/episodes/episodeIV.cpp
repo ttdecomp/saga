@@ -99,4 +99,3 @@ void DeathStarBattleC_AlwaysUpdate(WORLDINFO_s *) {
 
 void DeathStarEscapeB_AlwaysUpdate(WORLDINFO_s *) {
 }
-

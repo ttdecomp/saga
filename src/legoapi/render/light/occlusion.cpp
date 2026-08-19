@@ -78,4 +78,5 @@ void OcclusionManager::SetEnabled(bool) {
 OcclusionManager::~OcclusionManager() {
 }
 
-static __used__ void BoxTreeRndrRec(nuvisiboxtree_s*, unsigned char*, nuvisiboxtreenode_s*, int, float, nugscn_s*) {}
+static __used__ void BoxTreeRndrRec(nuvisiboxtree_s *, unsigned char *, nuvisiboxtreenode_s *, int, float, nugscn_s *) {
+}

@@ -186,5 +186,4 @@ extern "C" {
     void glGenVertexArraysOESC(void) {
     }
 
-
 } // extern "C"

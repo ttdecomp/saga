@@ -33,4 +33,3 @@ void CharConfig_CalculateJumpStats(float, float, float *, float *) {
 
 void ExtraCharacterFixUpAfterConfig() {
 }
-

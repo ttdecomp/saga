@@ -66,4 +66,3 @@ void PostRenderFlashHack() {
 
 void LookupPreloadedShaderObject(u32, u32 **, LoadedUniqueShaderRecord *, u32) {
 }
-

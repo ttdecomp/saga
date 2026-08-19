@@ -9,4 +9,3 @@ struct SHOPINPUT;
 
 void createGizTimer(void *, float, i32, char *) {
 }
-

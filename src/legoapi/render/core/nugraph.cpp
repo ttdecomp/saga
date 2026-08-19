@@ -3,55 +3,55 @@
 
 extern "C" {
 
-        void nugraphAddPoint(void) {
-        }
+    void nugraphAddPoint(void) {
+    }
 
-        void nugraphCalcCurve(void) {
-        }
+    void nugraphCalcCurve(void) {
+    }
 
-        void nugraphDeletePoint(void) {
-        }
+    void nugraphDeletePoint(void) {
+    }
 
-        void nugraphFileLoadGraph(void) {
-        }
+    void nugraphFileLoadGraph(void) {
+    }
 
-        void nugraphFileLoadGraphOnly(void) {
-        }
+    void nugraphFileLoadGraphOnly(void) {
+    }
 
-        void nugraphFileLoadGraphOnlyToFile(void) {
-        }
+    void nugraphFileLoadGraphOnlyToFile(void) {
+    }
 
-        void nugraphFileLoadTable(void) {
-        }
+    void nugraphFileLoadTable(void) {
+    }
 
-        void nugraphFileSave(void) {
-        }
+    void nugraphFileSave(void) {
+    }
 
-        void nugraphFileSaveGraphOnly(void) {
-        }
+    void nugraphFileSaveGraphOnly(void) {
+    }
 
-        void nugraphFileSaveGraphOnlyToFile(void) {
-        }
+    void nugraphFileSaveGraphOnlyToFile(void) {
+    }
 
-        void nugraphFreeTempCurveData(void) {
-        }
+    void nugraphFreeTempCurveData(void) {
+    }
 
-        void nugraphGenerateLookupTable(void) {
-        }
+    void nugraphGenerateLookupTable(void) {
+    }
 
-        void nugraphGetXatT(void) {
-        }
+    void nugraphGetXatT(void) {
+    }
 
-        void nugraphGetYatT(void) {
-        }
+    void nugraphGetYatT(void) {
+    }
 
-        void nugraphGetYatX(void) {
-        }
+    void nugraphGetYatX(void) {
+    }
 
-        void nugraphGetYatXScaled(void) {
-        }
+    void nugraphGetYatXScaled(void) {
+    }
 
-        void nugraphInit(void) {
-        }
+    void nugraphInit(void) {
+    }
 
 } // extern "C"

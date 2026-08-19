@@ -48,21 +48,39 @@ extern "C" void *APIObjectSysInit(i32 size, void *buf, void *buf_end) {
     return NULL;
 }
 
-static __used__ unsigned int AIRespawnOnPath(APIOBJECT_s*) { return {}; }
+static __used__ unsigned int AIRespawnOnPath(APIOBJECT_s *) {
+    return {};
+}
 
-static __used__ int Collide2Objects(APIOBJECT_s*, APIOBJECT_s*) { return {}; }
+static __used__ int Collide2Objects(APIOBJECT_s *, APIOBJECT_s *) {
+    return {};
+}
 
-static __used__ unsigned int CalculateIntersection(AISYS_s*, AIPACKET_s*, APIOBJECT_s*, AIPATHCNX_s*, AIPATHCNX_s*) { return {}; }
+static __used__ unsigned int CalculateIntersection(AISYS_s *, AIPACKET_s *, APIOBJECT_s *, AIPATHCNX_s *,
+                                                   AIPATHCNX_s *) {
+    return {};
+}
 
-static __used__ unsigned int AIBigJumpToDestination(APIOBJECT_s*, nuvec_s*) { return {}; }
+static __used__ unsigned int AIBigJumpToDestination(APIOBJECT_s *, nuvec_s *) {
+    return {};
+}
 
-static __used__ unsigned int AISysCharacterTestPathCnx(AISYS_s*, APIOBJECT_s*, AIPACKET_s*, AIPATHCNX_s*, int, float*) { return {}; }
+static __used__ unsigned int AISysCharacterTestPathCnx(AISYS_s *, APIOBJECT_s *, AIPACKET_s *, AIPATHCNX_s *, int,
+                                                       float *) {
+    return {};
+}
 
-static __used__ unsigned int AISysCheckAntinode_Circle(APIOBJECT_s*, AIANTINODE_s*, nuvec_s*, float) { return {}; }
+static __used__ unsigned int AISysCheckAntinode_Circle(APIOBJECT_s *, AIANTINODE_s *, nuvec_s *, float) {
+    return {};
+}
 
-static __used__ unsigned int AISysCheckAntinode_Ellipse(APIOBJECT_s*, AIANTINODE_s*, nuvec_s*, float) { return {}; }
+static __used__ unsigned int AISysCheckAntinode_Ellipse(APIOBJECT_s *, AIANTINODE_s *, nuvec_s *, float) {
+    return {};
+}
 
-static __used__ unsigned int AISysCheckAntinode_Rectangle(APIOBJECT_s*, AIANTINODE_s*, nuvec_s*, float) { return {}; }
+static __used__ unsigned int AISysCheckAntinode_Rectangle(APIOBJECT_s *, AIANTINODE_s *, nuvec_s *, float) {
+    return {};
+}
 
 static __used__ void GameAILoad(AISYS_s *, int, nugscn_s *, variptr_u *, variptr_u *) {
 }
@@ -91,4 +109,3 @@ static __used__ void GameFindAlternativeSpecialObject(AISYS_s *, nuhspecial_s *)
 
 static __used__ void GenerateTrooperTeamShape(minitrooperteam_s *, int) {
 }
-

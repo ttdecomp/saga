@@ -48,4 +48,3 @@ void SetForcedAttackOpponent(MechObjectInterface *) {
 
 void Punch_Hit(GameObject_s *, GameObject_s *, float, float) {
 }
-

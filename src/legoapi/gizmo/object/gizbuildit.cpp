@@ -30,4 +30,3 @@ void GizBuildit_SetVisibility(GIZBUILDIT_s *, i32) {
 
 void GizMoveAttractoBuildItPiece(GIZBUILDIT_s *, GAMEANIMOBJ_s *) {
 }
-

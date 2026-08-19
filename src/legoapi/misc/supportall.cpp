@@ -177,4 +177,3 @@ void RndrArrow(float, float, float, i32, i32) {
 
 void TBCLOSEFN(char *, i32) {
 }
-

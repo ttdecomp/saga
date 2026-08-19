@@ -15,4 +15,3 @@ void Shard_FindNearest(WORLDINFO_s *, nuvec_s *, GameObject_s *, float *) {
 
 void Shards_HandleLostObj(WORLDINFO_s *, GameObject_s *) {
 }
-

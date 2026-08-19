@@ -2,15 +2,15 @@
 
 extern "C" VARIPTR *display_list_buffer = 0;
 extern "C" {
-static void NuDisplayListCheckBuffer(void) {
-}
+    static void NuDisplayListCheckBuffer(void) {
+    }
 
-static nudisplaylist_s *NuDisplayListGet2dList(void) {
-    return 0;
-}
+    static nudisplaylist_s *NuDisplayListGet2dList(void) {
+        return 0;
+    }
 
-static void NuDisplayListResetBuffer(void) {
-}
+    static void NuDisplayListResetBuffer(void) {
+    }
 }
 
 static void NuDisplayListSetID(nudisplaylistitem_s *, u8) {

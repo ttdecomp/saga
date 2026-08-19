@@ -12,4 +12,3 @@ void FindSlamOrigin(GameObject_s *, nuvec_s *, nuvec_s *) {
 
 void InitPaintPuzzle(WORLDINFO_s *) {
 }
-

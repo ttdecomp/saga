@@ -43,7 +43,9 @@ void GameCam_GetAdjustedYRot(GAMECAMERA_s *) {
 static __used__ void PlayerCamPos(GameObject_s *, nuvec_s *, nuvec_s *) {
 }
 
-static __used__ variptr_u buildFrustrum(nuvec_s*, nuvec_s*, i16) { return {}; }
+static __used__ variptr_u buildFrustrum(nuvec_s *, nuvec_s *, i16) {
+    return {};
+}
 
 extern "C" {
 
@@ -102,16 +104,16 @@ void GetTopBot(GameObject_s *) {
 
 extern "C" {
 
-        void cbNearClipAtCursor(void) {
-        }
+    void cbNearClipAtCursor(void) {
+    }
 
-        void do_Pad_Standard_camera(void) {
-        }
+    void do_Pad_Standard_camera(void) {
+    }
 
-        void do_maya_mouse_camera(void) {
-        }
+    void do_maya_mouse_camera(void) {
+    }
 
-        void do_mouse_flymode_camera(void) {
-        }
+    void do_mouse_flymode_camera(void) {
+    }
 
 } // extern "C"

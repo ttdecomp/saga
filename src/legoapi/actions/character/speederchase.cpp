@@ -87,8 +87,7 @@ void SpeederChase_ObjIsAGroundTroop(GameObject_s *) {
 
 extern "C" {
 
-        void cbSetAutoSpeed(void) {
-        }
+    void cbSetAutoSpeed(void) {
+    }
 
 } // extern "C"
-

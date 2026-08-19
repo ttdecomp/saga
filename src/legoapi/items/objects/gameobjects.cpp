@@ -438,7 +438,7 @@ void ReStoreStatusTakeOverObjectSys(i32) {
 
 extern "C" {
 
-        void InModelList(void) {
-        }
+    void InModelList(void) {
+    }
 
 } // extern "C"

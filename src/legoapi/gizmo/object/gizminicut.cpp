@@ -9,4 +9,3 @@ struct SHOPINPUT;
 
 void GizMiniCut_GetGuid(GIZMO_s *) {
 }
-

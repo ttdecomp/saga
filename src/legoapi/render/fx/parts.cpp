@@ -114,25 +114,6 @@ static __used__ void UpdateAnimTimer(CHARACTERMODEL_s *, ANIMPACKET_s *, i16, f3
 static __used__ void UpdateCustomPieceAnim(CUSTOMPIECEANIM *, u16, u16) {
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 extern "C" {
 
     void AddDebrisEffect(void) {

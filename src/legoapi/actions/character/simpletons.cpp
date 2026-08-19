@@ -42,4 +42,3 @@ void oneAtOnce_SetInitDistPerRow(float) {
 
 void oneAtOnce_SetAttackersPerRow(i32) {
 }
-

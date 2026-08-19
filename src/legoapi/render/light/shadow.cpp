@@ -39,11 +39,10 @@ void EnableShadowMapRenderingFn() {
 
 extern "C" {
 
-        void EShadowInfo(void) {
-        }
+    void EShadowInfo(void) {
+    }
 
-        void EShadowRoofInfo(void) {
-        }
+    void EShadowRoofInfo(void) {
+    }
 
 } // extern "C"
-

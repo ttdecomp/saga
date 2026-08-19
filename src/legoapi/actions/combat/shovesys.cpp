@@ -15,4 +15,3 @@ void ShoveObjectSysReset() {
 
 void ShoveSystemCheckGameObject(GameObject_s *) {
 }
-

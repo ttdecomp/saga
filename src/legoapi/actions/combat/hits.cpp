@@ -72,4 +72,3 @@ void ObjHitObj(GameObject_s *, GameObject_s *, i32, u16, i32, i32) {
 
 void RayImpact(nuvec_s *) {
 }
-

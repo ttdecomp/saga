@@ -54,4 +54,3 @@ void creatureEditor_CalculatePos(EDCREATURE_s *, i32, nuvec_s *, i32) {
 
 void creatureEditor_IsSelectable(EDCREATURE_s *) {
 }
-

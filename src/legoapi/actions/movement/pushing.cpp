@@ -42,4 +42,3 @@ void PushAway(nuvec_s *, float, nuvec_s *, nuvec_s *, GameObject_s *, GameObject
 
 void PushCode(GameObject_s *, i32) {
 }
-

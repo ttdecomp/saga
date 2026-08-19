@@ -24,4 +24,3 @@ void FinishStatusPacket_LSW(WORLDINFO_s *, STATUSPACKET_s *, i32) {
 
 void setObjInNetWaitContext(GameObject_s *, i32) {
 }
-

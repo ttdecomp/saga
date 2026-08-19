@@ -57,4 +57,3 @@ static __used__ void Sith_UpdateHint(HINT_s *) {
 
 static __used__ void UnlockHubStuff_UpdateHint(HINT_s *) {
 }
-

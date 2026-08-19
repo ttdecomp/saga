@@ -21,4 +21,3 @@ void AITriggerSetAddTrigger(AISYS_s *, AITRIGGERSET_s *, GIZMO_s *) {
 
 void AITriggerSetSysProcess(AITRIGGERSETSYS_s *) {
 }
-

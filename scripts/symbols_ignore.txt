@@ -36,3 +36,7 @@ _ZL8make_leni
 _ZL9_ov_open1PvP14OggVorbis_FilePKcl12ov_callbacks
 _ZL9make_codeiPhPt
 
+# glibc symbols
+sprintf
+strstr
+rand

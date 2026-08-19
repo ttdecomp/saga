@@ -15,4 +15,3 @@ void ReadInstanceIDs(i32, nugscn_s *) {
 
 void ReadTerrainPickup(unsigned char *, i16 **, TERRPICKUPSET *) {
 }
-

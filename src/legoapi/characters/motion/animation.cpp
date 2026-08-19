@@ -27,4 +27,3 @@ void EvaluateJointOrientationMtx(nugscn_s *, i32, numtx_s *) {
 
 void PlayAnim(nuinstanim_s *, float *, float, i32) {
 }
-

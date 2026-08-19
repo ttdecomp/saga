@@ -158,17 +158,24 @@ struct _vuv_s;
 static __used__ void MakeWingFormation(_vuv_s *, _vuv_s *, f32, i32) {
 }
 
-static __used__ void AtatPart_Stop(PART_s*) {}
+static __used__ void AtatPart_Stop(PART_s *) {
+}
 
-static __used__ void AtatPart_Update(PART_s*) {}
+static __used__ void AtatPart_Update(PART_s *) {
+}
 
-static __used__ void BigJump_EndOfLand(GameObject_s*) {}
+static __used__ void BigJump_EndOfLand(GameObject_s *) {
+}
 
-static __used__ void BigJump_JumpAction_Default(GameObject_s*) {}
+static __used__ void BigJump_JumpAction_Default(GameObject_s *) {
+}
 
-static __used__ void BigJump_LandAction_Default(GameObject_s*) {}
+static __used__ void BigJump_LandAction_Default(GameObject_s *) {
+}
 
-static __used__ bool AutoJump_UpdateHint(HINT_s*) { return {}; }
+static __used__ bool AutoJump_UpdateHint(HINT_s *) {
+    return {};
+}
 
 static __used__ void VehicleStuff_UpdateHint(HINT_s *) {
 }

@@ -54,4 +54,3 @@ void WeaponScalingCode(GameObject_s *) {
 
 void FindPlayerAndSetWeapon(i32, i32) {
 }
-

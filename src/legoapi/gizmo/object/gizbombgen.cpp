@@ -12,4 +12,3 @@ void GizBombGen_FindByName(GIZBOMBGENSYS_s *, char *) {
 
 void Mine_Kill(PART_s *, i32) {
 }
-

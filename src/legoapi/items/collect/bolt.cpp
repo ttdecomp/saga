@@ -36,11 +36,10 @@ void InitBolt_AddMomentumType_LSW(BOLT_s *, GameObject_s *, nuvec_s *) {
 
 extern "C" {
 
-        void FullDeflect(void) {
-        }
+    void FullDeflect(void) {
+    }
 
-        void FullReflect(void) {
-        }
+    void FullReflect(void) {
+    }
 
 } // extern "C"
-

@@ -36,4 +36,3 @@ void SetSpecialSfxBits(i32 *, i32 *, WORLDINFO_s *) {
 
 void FileLoadSingleEffectType(debinftype *, i32, char) {
 }
-

@@ -104,64 +104,64 @@ void LoadState(i32, variptr_u *, variptr_u *, variptr_u *, variptr_u *, variptr_
 
 extern "C" {
 
-        void FS_SetFileSelPathFromName(void) {
-        }
+    void FS_SetFileSelPathFromName(void) {
+    }
 
-        void SaveSystemInitialiseEx(void) {
-        }
+    void SaveSystemInitialiseEx(void) {
+    }
 
-        void SetSaveSuccessFn(void) {
-        }
+    void SetSaveSuccessFn(void) {
+    }
 
-        void UpdateSaveSlots(void) {
-        }
+    void UpdateSaveSlots(void) {
+    }
 
-        void loadsaveCallEachFrame(void) {
-        }
+    void loadsaveCallEachFrame(void) {
+    }
 
-        void saveloadASCallEachFrame(void) {
-        }
+    void saveloadASCallEachFrame(void) {
+    }
 
-        void saveloadASFormat(void) {
-        }
+    void saveloadASFormat(void) {
+    }
 
-        void saveloadAutoSave(void) {
-        }
+    void saveloadAutoSave(void) {
+    }
 
-        void saveloadCheckCardFormatted(void) {
-        }
+    void saveloadCheckCardFormatted(void) {
+    }
 
-        void saveloadCheckCardFreeSpace(void) {
-        }
+    void saveloadCheckCardFreeSpace(void) {
+    }
 
-        void saveloadCheckCardPresent(void) {
-        }
+    void saveloadCheckCardPresent(void) {
+    }
 
-        void saveloadCheckCardType(void) {
-        }
+    void saveloadCheckCardType(void) {
+    }
 
-        void saveloadCheckKeyCode(void) {
-        }
+    void saveloadCheckKeyCode(void) {
+    }
 
-        void saveloadCheckSlotsUsed(void) {
-        }
+    void saveloadCheckSlotsUsed(void) {
+    }
 
-        void saveloadDeleteSlot(void) {
-        }
+    void saveloadDeleteSlot(void) {
+    }
 
-        void saveloadFormatCard(void) {
-        }
+    void saveloadFormatCard(void) {
+    }
 
-        void saveloadLoadIcon(void) {
-        }
+    void saveloadLoadIcon(void) {
+    }
 
-        void saveloadUnFormatCard(void) {
-        }
+    void saveloadUnFormatCard(void) {
+    }
 
-        void saveloadWriteKeyCode(void) {
-        }
+    void saveloadWriteKeyCode(void) {
+    }
 
-        void TriggerAutoSave(void) {
-        }
+    void TriggerAutoSave(void) {
+    }
 
 } // extern "C"

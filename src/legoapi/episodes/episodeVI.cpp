@@ -102,4 +102,3 @@ void DeathStar2BattleFire_SetSlowDownMul(GameObject_s *) {
 
 void DeathStar2BattleFire_UpdateSlowDownMul(float) {
 }
-

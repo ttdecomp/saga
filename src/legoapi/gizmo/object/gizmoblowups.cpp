@@ -114,4 +114,3 @@ void GizmoBlowupTypeGetNameFromIndex(WORLDINFO_s *, i32) {
 
 void GizmoBlowupGetTypeFromNameTableId(WORLDINFO_s *, i32) {
 }
-

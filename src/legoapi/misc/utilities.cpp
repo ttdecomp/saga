@@ -189,4 +189,3 @@ static __used__ int icomp(const void *, const void *) {
 static __used__ i32 sort32a(void const *, void const *) {
     return 0;
 }
-

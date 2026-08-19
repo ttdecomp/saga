@@ -15,4 +15,3 @@ void CharShadows_Reset(PLAYERPACKET_s *) {
 
 void CharShadows_Update() {
 }
-

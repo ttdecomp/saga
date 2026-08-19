@@ -420,17 +420,24 @@ static __used__ bool MatrixReflection_CanOverride() {
     return false;
 }
 
-static __used__ void DrawStarFighter(starfighter_s*) {}
+static __used__ void DrawStarFighter(starfighter_s *) {
+}
 
-static __used__ void DrawParaphernalia(GameObject_s*) {}
+static __used__ void DrawParaphernalia(GameObject_s *) {
+}
 
-static __used__ void DrawFalconSpotLights(GameObject_s*) {}
+static __used__ void DrawFalconSpotLights(GameObject_s *) {
+}
 
-static __used__ void BackDrop_Alpha(float*) {}
+static __used__ void BackDrop_Alpha(float *) {
+}
 
-static __used__ double ApplyAntilights(rtl_s*, rtlidata_s*, float) { return {}; }
+static __used__ double ApplyAntilights(rtl_s *, rtlidata_s *, float) {
+    return {};
+}
 
-static __used__ void DisplayListMaterialClipUpdate(nudisplayscene_s*) {}
+static __used__ void DisplayListMaterialClipUpdate(nudisplayscene_s *) {
+}
 
 static __used__ void SelectNextFog() {
 }
@@ -453,4 +460,3 @@ void BackDrop_ResetColours() {
 }
 void BackDrop_UpdateColours(i32) {
 }
-

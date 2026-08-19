@@ -9,17 +9,16 @@ struct SHOPINPUT;
 
 extern "C" {
 
-        void DEVCDDVDROM_Interrogate(void) {
-        }
+    void DEVCDDVDROM_Interrogate(void) {
+    }
 
-        void DEVMEMORYCARD_Interrogate(void) {
-        }
+    void DEVMEMORYCARD_Interrogate(void) {
+    }
 
-        void DebugLog(void) {
-        }
+    void DebugLog(void) {
+    }
 
-        void Debug_Print(void) {
-        }
+    void Debug_Print(void) {
+    }
 
 } // extern "C"
-

@@ -75,4 +75,3 @@ void AnakinsFlightB_Init(WORLDINFO_s *) {
 
 void AnakinsFlightB_Update(WORLDINFO_s *) {
 }
-

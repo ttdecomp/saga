@@ -24,4 +24,3 @@ void FreePlay_DropInToPlayerPos(GameObject_s *) {
 
 void DropOut(i32, i32, i32, i32) {
 }
-

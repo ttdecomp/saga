@@ -18,4 +18,3 @@ void UpdateStreaks(float) {
 
 void AddStreakPoints(nuvec_s *, float, u32, void **, i32, void *) {
 }
-

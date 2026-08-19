@@ -28,7 +28,6 @@ void ItemMenu(MENU_s *) {
 void GetMenuID() {
 }
 
-
 extern "C" {
 
     void NewMenu(i32 menu_id, i32 menu_y, i32 param3) {

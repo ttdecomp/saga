@@ -45,4 +45,3 @@ void AICircle(AISYS_s *, AIPACKET_s *, APIOBJECT_s *, i32) {
 
 void AIWander(AISYS_s *, AIPACKET_s *, APIOBJECT_s *, i32) {
 }
-

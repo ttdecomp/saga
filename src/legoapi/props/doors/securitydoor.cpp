@@ -15,4 +15,3 @@ void SecurityDoor_FindNearest(WORLDINFO_s *, nuvec_s *, GameObject_s *, float *)
 
 void SecurityDoors_InitTerrain(WORLDINFO_s *) {
 }
-

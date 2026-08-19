@@ -45,4 +45,3 @@ void GizmoSysStoreProgress(GIZMOSYS_s *, void *, i32) {
 
 void GizmoTypeStoreProgress(GIZMOSYS_s *, void *, i32, i32, char *) {
 }
-

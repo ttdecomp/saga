@@ -39,4 +39,3 @@ void GizPushBlock_EndFrameCompleted(pushblock_s *, i32) {
 
 void PushBlock(GameObject_s *) {
 }
-

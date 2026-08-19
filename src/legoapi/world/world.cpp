@@ -823,4 +823,3 @@ void WorldInfo_ReArrangeBuffers(i32 area1, i32 area2) {
     WorldInfo[0].unknown_0108.addr = bufferEnd->addr;
     bufferEnd->addr = end + EditBufferEndSize;
 }
-

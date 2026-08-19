@@ -60,4 +60,3 @@ void res0_look(vorbis_dsp_state *, void *) {
 
 void res0_pack(void *, oggpack_buffer *) {
 }
-

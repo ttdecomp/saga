@@ -130,29 +130,28 @@ void mdct_init(mdct_lookup *, i32) {
 
 extern "C" {
 
-        void GetCurPreSeek(void) {
-        }
+    void GetCurPreSeek(void) {
+    }
 
-        void GetCurrentMusicId(void) {
-        }
+    void GetCurrentMusicId(void) {
+    }
 
-        void GetOppMusicId(void) {
-        }
+    void GetOppMusicId(void) {
+    }
 
-        void MusicPreSeek(void) {
-        }
+    void MusicPreSeek(void) {
+    }
 
-        void MusicPreSeekNow(void) {
-        }
+    void MusicPreSeekNow(void) {
+    }
 
-        void MusicSeekOffset(void) {
-        }
+    void MusicSeekOffset(void) {
+    }
 
-        void MusicSeeking(void) {
-        }
+    void MusicSeeking(void) {
+    }
 
-        void MusicState(void) {
-        }
+    void MusicState(void) {
+    }
 
 } // extern "C"
-

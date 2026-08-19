@@ -18,4 +18,3 @@ void LedgeTerrain_MoveCode(GameObject_s *) {
 
 void LedgeTerrain_SetTargetMom(GameObject_s *) {
 }
-

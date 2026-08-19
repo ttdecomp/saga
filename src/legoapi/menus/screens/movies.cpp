@@ -15,4 +15,3 @@ void Movies_ConfigureList(char *, variptr_u *, variptr_u *) {
 
 static __used__ void Movie_CallBack() {
 }
-

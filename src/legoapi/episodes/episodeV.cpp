@@ -180,4 +180,3 @@ void isHothBattleWaveCreature(GameObject_s *) {
 
 void HothBattle_ManageBackgroundCreatures() {
 }
-

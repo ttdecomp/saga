@@ -36,4 +36,3 @@ void SpawnMeleeCreatureType(i32) {
 
 void AlertSurroundingCreatures(GameObject_s *, nuvec_s *) {
 }
-

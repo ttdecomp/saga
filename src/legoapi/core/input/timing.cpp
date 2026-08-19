@@ -21,4 +21,3 @@ void ResetFrameCounters() {
 
 void UpdateFrameCounters() {
 }
-

@@ -9,4 +9,3 @@ struct SHOPINPUT;
 
 void InitPlayerAI(GameObject_s *) {
 }
-

@@ -1,205 +1,408 @@
 struct nufpar_s;
 
-static void CC_CharClipToBlobShadows(nufpar_s *) { }
-static void CC_already_got_hat(nufpar_s *) { }
-static void CC_always_stop_to_shoot(nufpar_s *) { }
-static void CC_atatheadmovement(nufpar_s *) { }
-static void CC_backwards_factor(nufpar_s *) { }
-static void CC_baddie(nufpar_s *) { }
-static void CC_beast(nufpar_s *) { }
-static void CC_blobshadow_alpha(nufpar_s *) { }
-static void CC_blobshadow_size(nufpar_s *) { }
-static void CC_bypass_security(nufpar_s *) { }
-static void CC_can_communicate(nufpar_s *) { }
-static void CC_can_drag_bombs(nufpar_s *) { }
-static void CC_can_open_doors(nufpar_s *) { }
-static void CC_can_shoot_offscreen(nufpar_s *) { }
-static void CC_cannon(nufpar_s *) { }
-static void CC_cape_layer_index(nufpar_s *) { }
-static void CC_choke(nufpar_s *) { }
-static void CC_clear_sfx_misc(nufpar_s *) { }
-static void CC_cloak_down_angle(nufpar_s *) { }
-static void CC_cloak_up_angle(nufpar_s *) { }
-static void CC_collision_locator(nufpar_s *) { }
-static void CC_complex_shadow(nufpar_s *) { }
-static void CC_deflect_bolts_in_minikit_bonus(nufpar_s *) { }
-static void CC_die_usecurrentlayers(nufpar_s *) { }
-static void CC_dont_draw_rider(nufpar_s *) { }
-static void CC_dont_move_out_of_way(nufpar_s *) { }
-static void CC_double_jump_hover(nufpar_s *) { }
-static void CC_droid(nufpar_s *) { }
-static void CC_extra_character_locator(nufpar_s *) { }
-static void CC_ghost(nufpar_s *) { }
-static void CC_grapple_locator(nufpar_s *) { }
-static void CC_hair_layer_index(nufpar_s *) { }
-static void CC_has_scene_element(nufpar_s *) { }
-static void CC_hazard_protection(nufpar_s *) { }
-static void CC_helmet_locator(nufpar_s *) { }
-static void CC_hover_over_mud(nufpar_s *) { }
-static void CC_icon(nufpar_s *) { }
-static void CC_immune_to_forcepush(nufpar_s *) { }
-static void CC_immune_to_magnets(nufpar_s *) { }
-static void CC_jedi(nufpar_s *) { }
-static void CC_jump_move_speed_scale(nufpar_s *) { }
-static void CC_layer(nufpar_s *) { }
-static void CC_layers_special(nufpar_s *) { }
-static void CC_lowres_swapdist(nufpar_s *) { }
-static void CC_mass(nufpar_s *) { }
-static void CC_max_viewheight(nufpar_s *) { }
-static void CC_maxy(nufpar_s *) { }
-static void CC_mediumres_swapdist(nufpar_s *) { }
-static void CC_min_viewheight(nufpar_s *) { }
-static void CC_minikit_noscenewhenplayable(nufpar_s *) { }
-static void CC_minikit_with_scene(nufpar_s *) { }
-static void CC_miny(nufpar_s *) { }
-static void CC_no_offpath_teleport(nufpar_s *) { }
-static void CC_no_start_punch_sfx(nufpar_s *) { }
-static void CC_no_weapon_draw(nufpar_s *) { }
-static void CC_oldheadmovement(nufpar_s *) { }
-static void CC_only_active_when_taken_over(nufpar_s *) { }
-static void CC_prefers_brawling(nufpar_s *) { }
-static void CC_punch_weapon_out(nufpar_s *) { }
-static void CC_put_weapon_away_on_shoot(nufpar_s *) { }
-static void CC_radius(nufpar_s *) { }
-static void CC_ride_layersoff(nufpar_s *) { }
-static void CC_rocket_locator(nufpar_s *) { }
-static void CC_scale(nufpar_s *) { }
-static void CC_second_shot_only(nufpar_s *) { }
-static void CC_set_timebaseupdate1(nufpar_s *) { }
-static void CC_set_timebaseupdate2(nufpar_s *) { }
-static void CC_set_timebaseupdate3(nufpar_s *) { }
-static void CC_set_timebaseupdate4(nufpar_s *) { }
-static void CC_shadow_locators(nufpar_s *) { }
-static void CC_shadow_orientation(nufpar_s *) { }
-static void CC_shield_hit_points(nufpar_s *) { }
-static void CC_shield_locator(nufpar_s *) { }
-static void CC_single_jump_slam(nufpar_s *) { }
-static void CC_slide_orientation(nufpar_s *) { }
-static void CC_slow_down_time(nufpar_s *) { }
-static void CC_streak(nufpar_s *) { }
-static void CC_streak_1_locators(nufpar_s *) { }
-static void CC_streak_2_locators(nufpar_s *) { }
-static void CC_streak_3_locators(nufpar_s *) { }
-static void CC_streak_4_locators(nufpar_s *) { }
-static void CC_super_strength(nufpar_s *) { }
-static void CC_thingy_locator(nufpar_s *) { }
-static void CC_thrust_locators(nufpar_s *) { }
-static void CC_tightrope_tilt(nufpar_s *) { }
-static void CC_tightrope_walk(nufpar_s *) { }
-static void CC_toggle_if_in_minikit_bonus(nufpar_s *) { }
-static void CC_toggle_if_not_in_collection(nufpar_s *) { }
-static void CC_transformatron(nufpar_s *) { }
-static void CC_turning_circle(nufpar_s *) { }
-static void CC_wait_for_weapon_in_out(nufpar_s *) { }
-static void CC_weapon(nufpar_s *) { }
-static void CC_weapon_locator_1(nufpar_s *) { }
-static void CC_weapon_locator_2(nufpar_s *) { }
-static void CC_weapon_locator_3(nufpar_s *) { }
-static void CC_weapon_locator_4(nufpar_s *) { }
-static void CC_weapon_shoot_locator_1(nufpar_s *) { }
-static void CC_weapon_shoot_locator_2(nufpar_s *) { }
-static void CC_weapon_shoot_locator_3(nufpar_s *) { }
-static void CC_weapon_shoot_locator_4(nufpar_s *) { }
-static void CC_white_lightning(nufpar_s *) { }
-static void CC_zipup(nufpar_s *) { }
-static void CC_acceleration(nufpar_s *) { }
-static void CC_air_gravity(nufpar_s *) { }
-static void CC_anim_start(nufpar_s *) { }
-static void CC_astromech(nufpar_s *) { }
-static void CC_banking(nufpar_s *) { }
-static void CC_blaster(nufpar_s *) { }
-static void CC_bounty_hunter(nufpar_s *) { }
-static void CC_bsa_default(nufpar_s *) { }
-static void CC_buck_rider(nufpar_s *) { }
-static void CC_can_fire(nufpar_s *) { }
-static void CC_can_flatten(nufpar_s *) { }
-static void CC_cannotbigjump(nufpar_s *) { }
-static void CC_cannot_kill(nufpar_s *) { }
-static void CC_can_poo(nufpar_s *) { }
-static void CC_can_take_over(nufpar_s *) { }
-static void CC_can_zap(nufpar_s *) { }
-static void CC_cape_layer(nufpar_s *) { }
-static void CC_car_wheels(nufpar_s *) { }
-static void CC_chatter_delay(nufpar_s *) { }
-static void CC_cloak_joint(nufpar_s *) { }
-static void CC_cloak_joint2(nufpar_s *) { }
-static void CC_coin_value(nufpar_s *) { }
-static void CC_combat_roll(nufpar_s *) { }
-static void CC_dontmove(nufpar_s *) { }
-static void CC_dontpush(nufpar_s *) { }
-static void CC_dont_turn(nufpar_s *) { }
-static void CC_extra_toggle(nufpar_s *) { }
-static void CC_fixed_layers(nufpar_s *) { }
-static void CC_glide_anytime(nufpar_s *) { }
-static void CC_got_batarang(nufpar_s *) { }
-static void CC_hair_layer(nufpar_s *) { }
-static void CC_hand_locators(nufpar_s *) { }
-static void CC_has_grapple(nufpar_s *) { }
-static void CC_has_no_turn(nufpar_s *) { }
-static void CC_has_whip(nufpar_s *) { }
-static void CC_head_joint(nufpar_s *) { }
-static void CC_head_locator(nufpar_s *) { }
-static void CC_headrotrate(nufpar_s *) { }
-static void CC_heardistance(nufpar_s *) { }
-static void CC_high_jump(nufpar_s *) { }
-static void CC_hit_points(nufpar_s *) { }
-static void CC_hover_height(nufpar_s *) { }
-static void CC_hover_time(nufpar_s *) { }
-static void CC_hover_wings(nufpar_s *) { }
-static void CC_idle_speed(nufpar_s *) { }
-static void CC_is_a_boy(nufpar_s *) { }
-static void CC_is_a_girl(nufpar_s *) { }
-static void CC_jetpack(nufpar_s *) { }
-static void CC_jump_2_speed(nufpar_s *) { }
-static void CC_jump_speed(nufpar_s *) { }
-static void CC_layers_dead(nufpar_s *) { }
-static void CC_layers_high(nufpar_s *) { }
-static void CC_layers_low(nufpar_s *) { }
-static void CC_layers_medium(nufpar_s *) { }
-static void CC_lift_hover(nufpar_s *) { }
-static void CC_lightning(nufpar_s *) { }
-static void CC_loop_height(nufpar_s *) { }
-static void CC_maxheadtilt(nufpar_s *) { }
-static void CC_maxheadturn(nufpar_s *) { }
-static void CC_minikit(nufpar_s *) { }
-static void CC_name_id(nufpar_s *) { }
-static void CC_neutral(nufpar_s *) { }
-static void CC_no_category(nufpar_s *) { }
-static void CC_no_force(nufpar_s *) { }
-static void CC_no_jump(nufpar_s *) { }
-static void CC_no_jump_fire(nufpar_s *) { }
-static void CC_no_kill_parts(nufpar_s *) { }
-static void CC_non_stick(nufpar_s *) { }
-static void CC_no_shoot(nufpar_s *) { }
-static void CC_not_got_hat(nufpar_s *) { }
-static void CC_no_tiptoe(nufpar_s *) { }
-static void CC_orientate(nufpar_s *) { }
-static void CC_place_locator(nufpar_s *) { }
-static void CC_poo_locator(nufpar_s *) { }
-static void CC_protocol(nufpar_s *) { }
-static void CC_resist_zap(nufpar_s *) { }
-static void CC_respawn(nufpar_s *) { }
-static void CC_ride_locator(nufpar_s *) { }
-static void CC_run_speed(nufpar_s *) { }
-static void CC_sfx_chatter(nufpar_s *) { }
-static void CC_sfx_die(nufpar_s *) { }
-static void CC_sfx_engine(nufpar_s *) { }
-static void CC_sfx_footstep(nufpar_s *) { }
-static void CC_sfx_grunt(nufpar_s *) { }
-static void CC_sfx_hurt(nufpar_s *) { }
-static void CC_sfx_misc(nufpar_s *) { }
-static void CC_sfx_sabre(nufpar_s *) { }
-static void CC_sfx_shoot(nufpar_s *) { }
-static void CC_speed_up_time(nufpar_s *) { }
-static void CC_stop_speed(nufpar_s *) { }
-static void CC_teleport(nufpar_s *) { }
-static void CC_throw_locator(nufpar_s *) { }
-static void CC_tiptoe_speed(nufpar_s *) { }
-static void CC_turn_rate(nufpar_s *) { }
-static void CC_turn_rate_2(nufpar_s *) { }
-static void CC_untargetable(nufpar_s *) { }
-static void CC_variant(nufpar_s *) { }
-static void CC_vehicle(nufpar_s *) { }
-static void CC_viewrange(nufpar_s *) { }
-static void CC_walk_speed(nufpar_s *) { }
-static void CC_wall_jump(nufpar_s *) { }
+static void CC_CharClipToBlobShadows(nufpar_s *) {
+}
+static void CC_already_got_hat(nufpar_s *) {
+}
+static void CC_always_stop_to_shoot(nufpar_s *) {
+}
+static void CC_atatheadmovement(nufpar_s *) {
+}
+static void CC_backwards_factor(nufpar_s *) {
+}
+static void CC_baddie(nufpar_s *) {
+}
+static void CC_beast(nufpar_s *) {
+}
+static void CC_blobshadow_alpha(nufpar_s *) {
+}
+static void CC_blobshadow_size(nufpar_s *) {
+}
+static void CC_bypass_security(nufpar_s *) {
+}
+static void CC_can_communicate(nufpar_s *) {
+}
+static void CC_can_drag_bombs(nufpar_s *) {
+}
+static void CC_can_open_doors(nufpar_s *) {
+}
+static void CC_can_shoot_offscreen(nufpar_s *) {
+}
+static void CC_cannon(nufpar_s *) {
+}
+static void CC_cape_layer_index(nufpar_s *) {
+}
+static void CC_choke(nufpar_s *) {
+}
+static void CC_clear_sfx_misc(nufpar_s *) {
+}
+static void CC_cloak_down_angle(nufpar_s *) {
+}
+static void CC_cloak_up_angle(nufpar_s *) {
+}
+static void CC_collision_locator(nufpar_s *) {
+}
+static void CC_complex_shadow(nufpar_s *) {
+}
+static void CC_deflect_bolts_in_minikit_bonus(nufpar_s *) {
+}
+static void CC_die_usecurrentlayers(nufpar_s *) {
+}
+static void CC_dont_draw_rider(nufpar_s *) {
+}
+static void CC_dont_move_out_of_way(nufpar_s *) {
+}
+static void CC_double_jump_hover(nufpar_s *) {
+}
+static void CC_droid(nufpar_s *) {
+}
+static void CC_extra_character_locator(nufpar_s *) {
+}
+static void CC_ghost(nufpar_s *) {
+}
+static void CC_grapple_locator(nufpar_s *) {
+}
+static void CC_hair_layer_index(nufpar_s *) {
+}
+static void CC_has_scene_element(nufpar_s *) {
+}
+static void CC_hazard_protection(nufpar_s *) {
+}
+static void CC_helmet_locator(nufpar_s *) {
+}
+static void CC_hover_over_mud(nufpar_s *) {
+}
+static void CC_icon(nufpar_s *) {
+}
+static void CC_immune_to_forcepush(nufpar_s *) {
+}
+static void CC_immune_to_magnets(nufpar_s *) {
+}
+static void CC_jedi(nufpar_s *) {
+}
+static void CC_jump_move_speed_scale(nufpar_s *) {
+}
+static void CC_layer(nufpar_s *) {
+}
+static void CC_layers_special(nufpar_s *) {
+}
+static void CC_lowres_swapdist(nufpar_s *) {
+}
+static void CC_mass(nufpar_s *) {
+}
+static void CC_max_viewheight(nufpar_s *) {
+}
+static void CC_maxy(nufpar_s *) {
+}
+static void CC_mediumres_swapdist(nufpar_s *) {
+}
+static void CC_min_viewheight(nufpar_s *) {
+}
+static void CC_minikit_noscenewhenplayable(nufpar_s *) {
+}
+static void CC_minikit_with_scene(nufpar_s *) {
+}
+static void CC_miny(nufpar_s *) {
+}
+static void CC_no_offpath_teleport(nufpar_s *) {
+}
+static void CC_no_start_punch_sfx(nufpar_s *) {
+}
+static void CC_no_weapon_draw(nufpar_s *) {
+}
+static void CC_oldheadmovement(nufpar_s *) {
+}
+static void CC_only_active_when_taken_over(nufpar_s *) {
+}
+static void CC_prefers_brawling(nufpar_s *) {
+}
+static void CC_punch_weapon_out(nufpar_s *) {
+}
+static void CC_put_weapon_away_on_shoot(nufpar_s *) {
+}
+static void CC_radius(nufpar_s *) {
+}
+static void CC_ride_layersoff(nufpar_s *) {
+}
+static void CC_rocket_locator(nufpar_s *) {
+}
+static void CC_scale(nufpar_s *) {
+}
+static void CC_second_shot_only(nufpar_s *) {
+}
+static void CC_set_timebaseupdate1(nufpar_s *) {
+}
+static void CC_set_timebaseupdate2(nufpar_s *) {
+}
+static void CC_set_timebaseupdate3(nufpar_s *) {
+}
+static void CC_set_timebaseupdate4(nufpar_s *) {
+}
+static void CC_shadow_locators(nufpar_s *) {
+}
+static void CC_shadow_orientation(nufpar_s *) {
+}
+static void CC_shield_hit_points(nufpar_s *) {
+}
+static void CC_shield_locator(nufpar_s *) {
+}
+static void CC_single_jump_slam(nufpar_s *) {
+}
+static void CC_slide_orientation(nufpar_s *) {
+}
+static void CC_slow_down_time(nufpar_s *) {
+}
+static void CC_streak(nufpar_s *) {
+}
+static void CC_streak_1_locators(nufpar_s *) {
+}
+static void CC_streak_2_locators(nufpar_s *) {
+}
+static void CC_streak_3_locators(nufpar_s *) {
+}
+static void CC_streak_4_locators(nufpar_s *) {
+}
+static void CC_super_strength(nufpar_s *) {
+}
+static void CC_thingy_locator(nufpar_s *) {
+}
+static void CC_thrust_locators(nufpar_s *) {
+}
+static void CC_tightrope_tilt(nufpar_s *) {
+}
+static void CC_tightrope_walk(nufpar_s *) {
+}
+static void CC_toggle_if_in_minikit_bonus(nufpar_s *) {
+}
+static void CC_toggle_if_not_in_collection(nufpar_s *) {
+}
+static void CC_transformatron(nufpar_s *) {
+}
+static void CC_turning_circle(nufpar_s *) {
+}
+static void CC_wait_for_weapon_in_out(nufpar_s *) {
+}
+static void CC_weapon(nufpar_s *) {
+}
+static void CC_weapon_locator_1(nufpar_s *) {
+}
+static void CC_weapon_locator_2(nufpar_s *) {
+}
+static void CC_weapon_locator_3(nufpar_s *) {
+}
+static void CC_weapon_locator_4(nufpar_s *) {
+}
+static void CC_weapon_shoot_locator_1(nufpar_s *) {
+}
+static void CC_weapon_shoot_locator_2(nufpar_s *) {
+}
+static void CC_weapon_shoot_locator_3(nufpar_s *) {
+}
+static void CC_weapon_shoot_locator_4(nufpar_s *) {
+}
+static void CC_white_lightning(nufpar_s *) {
+}
+static void CC_zipup(nufpar_s *) {
+}
+static void CC_acceleration(nufpar_s *) {
+}
+static void CC_air_gravity(nufpar_s *) {
+}
+static void CC_anim_start(nufpar_s *) {
+}
+static void CC_astromech(nufpar_s *) {
+}
+static void CC_banking(nufpar_s *) {
+}
+static void CC_blaster(nufpar_s *) {
+}
+static void CC_bounty_hunter(nufpar_s *) {
+}
+static void CC_bsa_default(nufpar_s *) {
+}
+static void CC_buck_rider(nufpar_s *) {
+}
+static void CC_can_fire(nufpar_s *) {
+}
+static void CC_can_flatten(nufpar_s *) {
+}
+static void CC_cannotbigjump(nufpar_s *) {
+}
+static void CC_cannot_kill(nufpar_s *) {
+}
+static void CC_can_poo(nufpar_s *) {
+}
+static void CC_can_take_over(nufpar_s *) {
+}
+static void CC_can_zap(nufpar_s *) {
+}
+static void CC_cape_layer(nufpar_s *) {
+}
+static void CC_car_wheels(nufpar_s *) {
+}
+static void CC_chatter_delay(nufpar_s *) {
+}
+static void CC_cloak_joint(nufpar_s *) {
+}
+static void CC_cloak_joint2(nufpar_s *) {
+}
+static void CC_coin_value(nufpar_s *) {
+}
+static void CC_combat_roll(nufpar_s *) {
+}
+static void CC_dontmove(nufpar_s *) {
+}
+static void CC_dontpush(nufpar_s *) {
+}
+static void CC_dont_turn(nufpar_s *) {
+}
+static void CC_extra_toggle(nufpar_s *) {
+}
+static void CC_fixed_layers(nufpar_s *) {
+}
+static void CC_glide_anytime(nufpar_s *) {
+}
+static void CC_got_batarang(nufpar_s *) {
+}
+static void CC_hair_layer(nufpar_s *) {
+}
+static void CC_hand_locators(nufpar_s *) {
+}
+static void CC_has_grapple(nufpar_s *) {
+}
+static void CC_has_no_turn(nufpar_s *) {
+}
+static void CC_has_whip(nufpar_s *) {
+}
+static void CC_head_joint(nufpar_s *) {
+}
+static void CC_head_locator(nufpar_s *) {
+}
+static void CC_headrotrate(nufpar_s *) {
+}
+static void CC_heardistance(nufpar_s *) {
+}
+static void CC_high_jump(nufpar_s *) {
+}
+static void CC_hit_points(nufpar_s *) {
+}
+static void CC_hover_height(nufpar_s *) {
+}
+static void CC_hover_time(nufpar_s *) {
+}
+static void CC_hover_wings(nufpar_s *) {
+}
+static void CC_idle_speed(nufpar_s *) {
+}
+static void CC_is_a_boy(nufpar_s *) {
+}
+static void CC_is_a_girl(nufpar_s *) {
+}
+static void CC_jetpack(nufpar_s *) {
+}
+static void CC_jump_2_speed(nufpar_s *) {
+}
+static void CC_jump_speed(nufpar_s *) {
+}
+static void CC_layers_dead(nufpar_s *) {
+}
+static void CC_layers_high(nufpar_s *) {
+}
+static void CC_layers_low(nufpar_s *) {
+}
+static void CC_layers_medium(nufpar_s *) {
+}
+static void CC_lift_hover(nufpar_s *) {
+}
+static void CC_lightning(nufpar_s *) {
+}
+static void CC_loop_height(nufpar_s *) {
+}
+static void CC_maxheadtilt(nufpar_s *) {
+}
+static void CC_maxheadturn(nufpar_s *) {
+}
+static void CC_minikit(nufpar_s *) {
+}
+static void CC_name_id(nufpar_s *) {
+}
+static void CC_neutral(nufpar_s *) {
+}
+static void CC_no_category(nufpar_s *) {
+}
+static void CC_no_force(nufpar_s *) {
+}
+static void CC_no_jump(nufpar_s *) {
+}
+static void CC_no_jump_fire(nufpar_s *) {
+}
+static void CC_no_kill_parts(nufpar_s *) {
+}
+static void CC_non_stick(nufpar_s *) {
+}
+static void CC_no_shoot(nufpar_s *) {
+}
+static void CC_not_got_hat(nufpar_s *) {
+}
+static void CC_no_tiptoe(nufpar_s *) {
+}
+static void CC_orientate(nufpar_s *) {
+}
+static void CC_place_locator(nufpar_s *) {
+}
+static void CC_poo_locator(nufpar_s *) {
+}
+static void CC_protocol(nufpar_s *) {
+}
+static void CC_resist_zap(nufpar_s *) {
+}
+static void CC_respawn(nufpar_s *) {
+}
+static void CC_ride_locator(nufpar_s *) {
+}
+static void CC_run_speed(nufpar_s *) {
+}
+static void CC_sfx_chatter(nufpar_s *) {
+}
+static void CC_sfx_die(nufpar_s *) {
+}
+static void CC_sfx_engine(nufpar_s *) {
+}
+static void CC_sfx_footstep(nufpar_s *) {
+}
+static void CC_sfx_grunt(nufpar_s *) {
+}
+static void CC_sfx_hurt(nufpar_s *) {
+}
+static void CC_sfx_misc(nufpar_s *) {
+}
+static void CC_sfx_sabre(nufpar_s *) {
+}
+static void CC_sfx_shoot(nufpar_s *) {
+}
+static void CC_speed_up_time(nufpar_s *) {
+}
+static void CC_stop_speed(nufpar_s *) {
+}
+static void CC_teleport(nufpar_s *) {
+}
+static void CC_throw_locator(nufpar_s *) {
+}
+static void CC_tiptoe_speed(nufpar_s *) {
+}
+static void CC_turn_rate(nufpar_s *) {
+}
+static void CC_turn_rate_2(nufpar_s *) {
+}
+static void CC_untargetable(nufpar_s *) {
+}
+static void CC_variant(nufpar_s *) {
+}
+static void CC_vehicle(nufpar_s *) {
+}
+static void CC_viewrange(nufpar_s *) {
+}
+static void CC_walk_speed(nufpar_s *) {
+}
+static void CC_wall_jump(nufpar_s *) {
+}

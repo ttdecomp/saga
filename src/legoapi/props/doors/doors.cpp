@@ -33,4 +33,3 @@ void Doors_Configure(WORLDINFO_s *world, char *config) {
 
 void PortalDoors_Update(WORLDINFO_s *) {
 }
-

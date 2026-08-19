@@ -48,4 +48,3 @@ void CreateAlphaBlendTexture(variptr_u *, variptr_u, char *, i32, i32, i32, i32)
 
 void CreateSubtractiveTexture(char *) {
 }
-

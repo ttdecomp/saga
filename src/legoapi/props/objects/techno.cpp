@@ -33,4 +33,3 @@ void GizTechno_CanUseTechno(GameObject_s *, TECHNO_s *) {
 
 void Technos_FindControllingTechno(GameObject_s *) {
 }
-

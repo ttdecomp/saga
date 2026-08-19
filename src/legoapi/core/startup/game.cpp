@@ -27,4 +27,3 @@ void NewGame() {
 
 void PauseGame(i32) {
 }
-

@@ -126,5 +126,4 @@ extern "C" {
     void instNuGCutSoundStream(void) {
     }
 
-
 } // extern "C"

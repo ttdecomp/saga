@@ -54,23 +54,22 @@ void GenDebMomAdjFromPosRevTree(debkeydatatype_s *, debinftype *, uv1deb *) {
 
 extern "C" {
 
-        void FindGameDebris(void) {
-        }
+    void FindGameDebris(void) {
+    }
 
-        void InitGameDebris(void) {
-        }
+    void InitGameDebris(void) {
+    }
 
-        void LookupDebrisEffect(void) {
-        }
+    void LookupDebrisEffect(void) {
+    }
 
-        void LookupDebrisEffectPage(void) {
-        }
+    void LookupDebrisEffectPage(void) {
+    }
 
-        void LookupDebrisEffectPageIgnore(void) {
-        }
+    void LookupDebrisEffectPageIgnore(void) {
+    }
 
-        void LookupDebrisEffectPageOnly(void) {
-        }
+    void LookupDebrisEffectPageOnly(void) {
+    }
 
 } // extern "C"
-

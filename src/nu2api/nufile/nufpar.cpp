@@ -955,9 +955,6 @@ static __used__ void SockCamCAMERARAYTILTDIST(nufpar_s *, void *) {
 static __used__ void SockCamCAMERARAYTILTHEIGHT(nufpar_s *, void *) {
 }
 
-
-
-
 static __used__ void Traffic_animobj(nufpar_s *) {
 }
 

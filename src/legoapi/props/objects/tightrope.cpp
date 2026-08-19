@@ -21,4 +21,3 @@ void TightRope_FindNearest(nuvec_s *, WORLDINFO_s *, i32 *, float *) {
 
 void TightRope_SetTargetMom(GameObject_s *) {
 }
-

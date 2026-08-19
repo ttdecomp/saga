@@ -43,4 +43,3 @@ void TransformGameMessages(nuvec_s *, nuvec_s *, nuvec_s *) {
 
 void numeminit() {
 }
-

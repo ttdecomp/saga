@@ -106,15 +106,15 @@ void NuRndrCreateBlendShapeDWAPointers(i32) {
 struct nuglobalrndrstate_s;
 
 extern "C" {
-static __used__ void NuRndrSetAmbientLight(f32 *) {
-}
+    static __used__ void NuRndrSetAmbientLight(f32 *) {
+    }
 
-static __used__ void NuRndrSetDirectionalLights(f32 *, f32 *, f32 *, f32 *, f32 *, f32 *) {
-}
+    static __used__ void NuRndrSetDirectionalLights(f32 *, f32 *, f32 *, f32 *, f32 *, f32 *) {
+    }
 
-static __used__ void NuRndrSetSpecularLight(nuvec_s *, nucolour4_s *) {
-}
+    static __used__ void NuRndrSetSpecularLight(nuvec_s *, nucolour4_s *) {
+    }
 
-static __used__ void RndrStateClear(struct nuglobalrndrstate_s *) {
-}
+    static __used__ void RndrStateClear(struct nuglobalrndrstate_s *) {
+    }
 }

@@ -12,4 +12,3 @@ void Whip_Release(GameObject_s *) {
 
 void Whip_MoveCode(GameObject_s *) {
 }
-

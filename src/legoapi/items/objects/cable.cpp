@@ -27,4 +27,3 @@ void CableTargetGameObject(GameObject_s *, nuvec_s *, float) {
 
 void CableCode(GameObject_s *, i32, float) {
 }
-

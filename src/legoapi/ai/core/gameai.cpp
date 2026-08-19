@@ -24,4 +24,3 @@ void NewCast(nuvec_s *, float, float) {
 
 void LoopCode(GameObject_s *, i32, i32, GAMEPAD_s *, i32) {
 }
-

@@ -47,4 +47,3 @@ void pathEditorDrawConnectionInfo(nuvec_s *, float, nuvec_s *, u32, i32) {
 
 void AIPathCnxControllerSetOnRange(AIPATHCNXCONTROLLER_s *, i32, i32) {
 }
-

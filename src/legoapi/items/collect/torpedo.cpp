@@ -36,4 +36,3 @@ void GetShootDirection_LSW(GameObject_s *, nuvec_s *) {
 
 void HomeNearestTorpTarget(BOLT_s *, TORPEDOPACKET_s *) {
 }
-

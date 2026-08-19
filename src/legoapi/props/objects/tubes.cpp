@@ -12,4 +12,3 @@ void TractorBeamCode(GameObject_s *) {
 
 void ObjInTube(GameObject_s *) {
 }
-

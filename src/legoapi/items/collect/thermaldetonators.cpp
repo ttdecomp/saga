@@ -30,4 +30,3 @@ void PartUpdate_ThermalDetonator(PART_s *) {
 
 void Detonate(nuvec_s *, u16) {
 }
-

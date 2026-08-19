@@ -25,11 +25,11 @@ static __used__ f32 Condition_HintAvailable(AISYS_s *, AISCRIPTPROCESS_s *, AIPA
     return 0;
 }
 
-static __used__ void * Condition_HitPointsInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_HitPointsInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ void * Condition_InContextInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_InContextInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -37,11 +37,11 @@ static __used__ f32 Condition_InTriggerArea(AISYS_s *, AISCRIPTPROCESS_s *, AIPA
     return 0;
 }
 
-static __used__ void * Condition_IsVisibleInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_IsVisibleInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ void * Condition_LastLevelInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_LastLevelInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -77,7 +77,7 @@ static __used__ f32 Condition_TakeOverRange(AISYS_s *, AISCRIPTPROCESS_s *, AIPA
     return 0;
 }
 
-static __used__ void * Condition_TakenOverInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_TakenOverInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -137,7 +137,7 @@ static __used__ i32 Action_SetTechnoComplete(AISYS_s *, AISCRIPTPROCESS_s *, AIP
     return 0;
 }
 
-static __used__ void * Condition_CategoryIsInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_CategoryIsInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -161,7 +161,7 @@ static __used__ f32 Condition_ForceBeingUsed(AISYS_s *, AISCRIPTPROCESS_s *, AIP
     return 0;
 }
 
-static __used__ void * Condition_GizSpecialInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_GizSpecialInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -177,11 +177,11 @@ static __used__ f32 Condition_IsLowEndDevice(AISYS_s *, AISCRIPTPROCESS_s *, AIP
     return 0;
 }
 
-static __used__ void * Condition_IsOnScreenInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_IsOnScreenInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ void * Condition_IsSetAliveInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_IsSetAliveInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -193,7 +193,7 @@ static __used__ f32 Condition_LocatorRangeXZ(AISYS_s *, AISCRIPTPROCESS_s *, AIP
     return 0;
 }
 
-static __used__ void * Condition_NumBaddiesInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_NumBaddiesInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -221,7 +221,7 @@ static __used__ f32 Condition_RigidAnimFrame(AISYS_s *, AISCRIPTPROCESS_s *, AIP
     return 0;
 }
 
-static __used__ void * Condition_UsingForceInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_UsingForceInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -309,7 +309,7 @@ static __used__ i32 Action_UseTimeBasedUpdate(AISYS_s *, AISCRIPTPROCESS_s *, AI
     return 0;
 }
 
-static __used__ void * Condition_BeenToLevelInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_BeenToLevelInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -345,7 +345,7 @@ static __used__ f32 Condition_FlowBoxComplete(AISYS_s *, AISCRIPTPROCESS_s *, AI
     return 0;
 }
 
-static __used__ void * Condition_GizmoOutputInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_GizmoOutputInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -357,7 +357,7 @@ static __used__ f32 Condition_GotLocatorInSet(AISYS_s *, AISCRIPTPROCESS_s *, AI
     return 0;
 }
 
-static __used__ void * Condition_InLevelNodeInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_InLevelNodeInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -381,7 +381,7 @@ static __used__ f32 Condition_OpponentContext(AISYS_s *, AISCRIPTPROCESS_s *, AI
     return 0;
 }
 
-static __used__ void * Condition_OpponentIsAInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_OpponentIsAInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -401,11 +401,11 @@ static __used__ f32 Condition_PrefersBrawling(AISYS_s *, AISCRIPTPROCESS_s *, AI
     return 0;
 }
 
-static __used__ void * Condition_ScriptParamInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_ScriptParamInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ void * Condition_TurretAliveInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_TurretAliveInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -445,7 +445,7 @@ static __used__ i32 Action_SplineFollowTerrain(AISYS_s *, AISCRIPTPROCESS_s *, A
     return 0;
 }
 
-static __used__ void * Condition_AreaCompleteInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_AreaCompleteInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -457,7 +457,7 @@ static __used__ f32 Condition_CutSceneFinished(AISYS_s *, AISCRIPTPROCESS_s *, A
     return 0;
 }
 
-static __used__ void * Condition_ForcePushingInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_ForcePushingInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -469,7 +469,7 @@ static __used__ f32 Condition_IAmAGoodieBaddie(AISYS_s *, AISCRIPTPROCESS_s *, A
     return 0;
 }
 
-static __used__ void * Condition_LocatorRangeInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_LocatorRangeInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -485,7 +485,7 @@ static __used__ f32 Condition_PlayerCategoryIs(AISYS_s *, AISCRIPTPROCESS_s *, A
     return 0;
 }
 
-static __used__ void * Condition_PlayerInSockInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_PlayerInSockInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -533,7 +533,7 @@ static __used__ f32 Condition_AnimationFinished(AISYS_s *, AISCRIPTPROCESS_s *, 
     return 0;
 }
 
-static __used__ void * Condition_BeenTakenOverInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_BeenTakenOverInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -541,15 +541,15 @@ static __used__ f32 Condition_CanFightLikeAJedi(AISYS_s *, AISCRIPTPROCESS_s *, 
     return 0;
 }
 
-static __used__ void * Condition_ForceCompleteInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_ForceCompleteInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ void * Condition_HintAvailableInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_HintAvailableInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ void * Condition_InTriggerAreaInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_InTriggerAreaInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -565,7 +565,7 @@ static __used__ f32 Condition_NearestPartyRange(AISYS_s *, AISCRIPTPROCESS_s *, 
     return 0;
 }
 
-static __used__ void * Condition_OnSpeederBikeInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_OnSpeederBikeInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -609,15 +609,15 @@ static __used__ f32 Condition_BaddyInTriggerArea(AISYS_s *, AISCRIPTPROCESS_s *,
     return 0;
 }
 
-static __used__ void * Condition_CharacterRangeInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_CharacterRangeInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ void * Condition_CutSceneExistsInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_CutSceneExistsInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ void * Condition_EitherPlayerIsInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_EitherPlayerIsInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -637,7 +637,7 @@ static __used__ f32 Condition_IAmAPartyCharacter(AISYS_s *, AISCRIPTPROCESS_s *,
     return 0;
 }
 
-static __used__ void * Condition_LevelNodeRangeInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_LevelNodeRangeInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -657,7 +657,7 @@ static __used__ f32 Condition_ObstacleLockedShut(AISYS_s *, AISCRIPTPROCESS_s *,
     return 0;
 }
 
-static __used__ void * Condition_OffScreenTimerInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_OffScreenTimerInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -673,7 +673,7 @@ static __used__ f32 Condition_PickupBeenTurnedOn(AISYS_s *, AISCRIPTPROCESS_s *,
     return 0;
 }
 
-static __used__ void * Condition_RigidAnimFrameInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_RigidAnimFrameInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -681,27 +681,33 @@ static __used__ f32 Condition_UnderPlayerControl(AISYS_s *, AISCRIPTPROCESS_s *,
     return 0;
 }
 
-static __used__ i32 Action_CanMoveWhenDeactivated(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32, f32) {
+static __used__ i32 Action_CanMoveWhenDeactivated(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32,
+                                                  f32) {
     return 0;
 }
 
-static __used__ i32 Action_IgnoreTurnAroundSpline(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32, f32) {
+static __used__ i32 Action_IgnoreTurnAroundSpline(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32,
+                                                  f32) {
     return 0;
 }
 
-static __used__ i32 Action_LinkTurretToController(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32, f32) {
+static __used__ i32 Action_LinkTurretToController(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32,
+                                                  f32) {
     return 0;
 }
 
-static __used__ i32 Action_PathConnectionObstacle(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32, f32) {
+static __used__ i32 Action_PathConnectionObstacle(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32,
+                                                  f32) {
     return 0;
 }
 
-static __used__ i32 Action_RegisterTakeOverObject(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32, f32) {
+static __used__ i32 Action_RegisterTakeOverObject(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32,
+                                                  f32) {
     return 0;
 }
 
-static __used__ i32 Action_SetDoomedEscapeLocator(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32, f32) {
+static __used__ i32 Action_SetDoomedEscapeLocator(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32,
+                                                  f32) {
     return 0;
 }
 
@@ -713,15 +719,15 @@ static __used__ f32 Condition_AreaContainsGoodies(AISYS_s *, AISCRIPTPROCESS_s *
     return 0;
 }
 
-static __used__ void * Condition_BuildItCompleteInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_BuildItCompleteInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ void * Condition_CharacterExistsInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_CharacterExistsInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ void * Condition_CharacterLoadedInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_CharacterLoadedInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -729,27 +735,27 @@ static __used__ f32 Condition_CharacterTypeExists(AISYS_s *, AISCRIPTPROCESS_s *
     return 0;
 }
 
-static __used__ void * Condition_CutScenePlayingInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_CutScenePlayingInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ void * Condition_CutSceneStartedInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_CutSceneStartedInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ void * Condition_FlowBoxCompleteInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_FlowBoxCompleteInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ void * Condition_GizmoVisibilityInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_GizmoVisibilityInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ void * Condition_GotLocatorInSetInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_GotLocatorInSetInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ void * Condition_LocatorOnScreenInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_LocatorOnScreenInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -757,11 +763,11 @@ static __used__ f32 Condition_NearestPartyXZRange(AISYS_s *, AISCRIPTPROCESS_s *
     return 0;
 }
 
-static __used__ void * Condition_NumForceObjectsInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_NumForceObjectsInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ void * Condition_OnForcePlatformInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_OnForcePlatformInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -777,23 +783,25 @@ static __used__ f32 Condition_PlayerInTriggerArea(AISYS_s *, AISCRIPTPROCESS_s *
     return 0;
 }
 
-static __used__ void * Condition_PlayerToLocatorInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_PlayerToLocatorInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ i32 Action_PathConnectionMaxLength(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32, f32) {
+static __used__ i32 Action_PathConnectionMaxLength(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32,
+                                                   f32) {
     return 0;
 }
 
-static __used__ i32 Action_SetDefaultMovementRange(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32, f32) {
+static __used__ i32 Action_SetDefaultMovementRange(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32,
+                                                   f32) {
     return 0;
 }
 
-static __used__ void * Condition_CurrentLocatorIsInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_CurrentLocatorIsInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ void * Condition_CutSceneFinishedInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_CutSceneFinishedInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -809,7 +817,7 @@ static __used__ f32 Condition_NearestPlayerXZRange(AISYS_s *, AISCRIPTPROCESS_s 
     return 0;
 }
 
-static __used__ void * Condition_OnDynamicGrappleInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_OnDynamicGrappleInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -829,7 +837,7 @@ static __used__ f32 Condition_PlayerDeflectingPart(AISYS_s *, AISCRIPTPROCESS_s 
     return 0;
 }
 
-static __used__ void * Condition_RespawnLocatorIsInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_RespawnLocatorIsInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -841,19 +849,21 @@ static __used__ f32 Condition_SockDistanceToPlayer(AISYS_s *, AISCRIPTPROCESS_s 
     return 0;
 }
 
-static __used__ i32 Action_MoveAwayFromLastAttacker(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32, f32) {
+static __used__ i32 Action_MoveAwayFromLastAttacker(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32,
+                                                    f32) {
     return 0;
 }
 
-static __used__ i32 Action_RemoveThrownForceObjects(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32, f32) {
+static __used__ i32 Action_RemoveThrownForceObjects(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32,
+                                                    f32) {
     return 0;
 }
 
-static __used__ void * Condition_AIOverrideControlInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_AIOverrideControlInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ void * Condition_AnimationFinishedInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_AnimationFinishedInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -869,7 +879,7 @@ static __used__ f32 Condition_OpponentInTriggerArea(AISYS_s *, AISCRIPTPROCESS_s
     return 0;
 }
 
-static __used__ void * Condition_OpponentToLocatorInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_OpponentToLocatorInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -877,7 +887,7 @@ static __used__ f32 Condition_OpponentToPlayerRange(AISYS_s *, AISCRIPTPROCESS_s
     return 0;
 }
 
-static __used__ void * Condition_PlayerInLevelNodeInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_PlayerInLevelNodeInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -889,7 +899,7 @@ static __used__ f32 Condition_SockXDistanceToPlayer(AISYS_s *, AISCRIPTPROCESS_s
     return 0;
 }
 
-static __used__ void * Condition_BaddyInTriggerAreaInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_BaddyInTriggerAreaInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -905,7 +915,7 @@ static __used__ f32 Condition_EitherPlayerUsingPanel(AISYS_s *, AISCRIPTPROCESS_
     return 0;
 }
 
-static __used__ void * Condition_GoodyInTriggerAreaInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_GoodyInTriggerAreaInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -917,7 +927,7 @@ static __used__ f32 Condition_ObstacleOpenedByPlayer(AISYS_s *, AISCRIPTPROCESS_
     return 0;
 }
 
-static __used__ void * Condition_PickupBeenTurnedOnInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_PickupBeenTurnedOnInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -925,19 +935,20 @@ static __used__ f32 Condition_SockDistanceToOpponent(AISYS_s *, AISCRIPTPROCESS_
     return 0;
 }
 
-static __used__ void * Condition_UnderPlayerControlInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_UnderPlayerControlInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ i32 Action_RetreatFromNearestOpponent(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32, f32) {
+static __used__ i32 Action_RetreatFromNearestOpponent(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32,
+                                                      f32) {
     return 0;
 }
 
-static __used__ void * Condition_AreaContainsBaddiesInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_AreaContainsBaddiesInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ void * Condition_AreaContainsGoodiesInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_AreaContainsGoodiesInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -945,7 +956,7 @@ static __used__ f32 Condition_AreaContainsPartyMember(AISYS_s *, AISCRIPTPROCESS
     return 0;
 }
 
-static __used__ void * Condition_CharacterTypeExistsInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_CharacterTypeExistsInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -957,7 +968,7 @@ static __used__ f32 Condition_PlayerDistanceAlongSock(AISYS_s *, AISCRIPTPROCESS
     return 0;
 }
 
-static __used__ void * Condition_PlayerInTriggerAreaInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_PlayerInTriggerAreaInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -969,7 +980,8 @@ static __used__ f32 Condition_EitherPlayerPullingLever(AISYS_s *, AISCRIPTPROCES
     return 0;
 }
 
-static __used__ i32 Action_SetBoltsDontGetDeflectedBack(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32, f32) {
+static __used__ i32 Action_SetBoltsDontGetDeflectedBack(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char **, i32, i32,
+                                                        f32) {
     return 0;
 }
 
@@ -989,7 +1001,7 @@ static __used__ f32 Condition_ForceStackCompleteInOrder(AISYS_s *, AISCRIPTPROCE
     return 0;
 }
 
-static __used__ void * Condition_OpponentInTriggerAreaInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_OpponentInTriggerAreaInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
@@ -1005,58 +1017,67 @@ static __used__ f32 Condition_LastAttackerIsActivePlayer(AISYS_s *, AISCRIPTPROC
     return 0;
 }
 
-static __used__ void * Condition_ObstacleOpenedByPlayerInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_ObstacleOpenedByPlayerInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ f32 Condition_AngleAboutMyLocatorToPlayer(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
+static __used__ f32 Condition_AngleAboutMyLocatorToPlayer(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *,
+                                                          void *) {
     return 0;
 }
 
-static __used__ void * Condition_AreaContainsPartyMemberInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_AreaContainsPartyMemberInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ f32 Condition_EitherPlayerInMyTriggerArea(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
+static __used__ f32 Condition_EitherPlayerInMyTriggerArea(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *,
+                                                          void *) {
     return 0;
 }
 
-static __used__ f32 Condition_EitherPlayerOnForcePlatform(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
+static __used__ f32 Condition_EitherPlayerOnForcePlatform(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *,
+                                                          void *) {
     return 0;
 }
 
-static __used__ f32 Condition_EitherPlayerUsingHatMachine(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
+static __used__ f32 Condition_EitherPlayerUsingHatMachine(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *,
+                                                          void *) {
     return 0;
 }
 
-static __used__ f32 Condition_NumBaddiesThatCanSeePlayers(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
+static __used__ f32 Condition_NumBaddiesThatCanSeePlayers(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *,
+                                                          void *) {
     return 0;
 }
 
-static __used__ f32 Condition_TakeOverTargetInTriggerArea(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
+static __used__ f32 Condition_TakeOverTargetInTriggerArea(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *,
+                                                          void *) {
     return 0;
 }
 
-static __used__ f32 Condition_ObstacleOpenedByEitherPlayer(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
+static __used__ f32 Condition_ObstacleOpenedByEitherPlayer(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *,
+                                                           void *) {
     return 0;
 }
 
-static __used__ void * Condition_EitherPlayerPushingSpinnerInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_EitherPlayerPushingSpinnerInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ void * Condition_AngleAboutMyLocatorToPlayerInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_AngleAboutMyLocatorToPlayerInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ f32 Condition_FurthestPlayerDistanceAlongSock(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
+static __used__ f32 Condition_FurthestPlayerDistanceAlongSock(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *,
+                                                              void *) {
     return 0;
 }
 
-static __used__ void * Condition_TakeOverTargetInTriggerAreaInit(AISYS_s *, char *, AISCRIPT_s *) {
+static __used__ void *Condition_TakeOverTargetInTriggerAreaInit(AISYS_s *, char *, AISCRIPT_s *) {
     return nullptr;
 }
 
-static __used__ f32 Condition_InSameTriggerAreaAsNearestPlayer(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
+static __used__ f32 Condition_InSameTriggerAreaAsNearestPlayer(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *,
+                                                               void *) {
     return 0;
 }

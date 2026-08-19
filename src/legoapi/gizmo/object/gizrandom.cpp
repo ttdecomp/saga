@@ -15,4 +15,3 @@ void createGizRandom(void *, i32, i32 *, char *) {
 
 void RandomIDFromFlags(u32, u32, i32, APICHARACTERMODELLIST_s *, i32) {
 }
-

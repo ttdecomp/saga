@@ -6,7 +6,6 @@
 #include "nu2api/numath/nuvec.h"
 struct GameObject_s;
 
-
 // Spline name prefixes for a socket's rails; the socket index is appended
 // zero-padded, e.g. "sock_cam_03". Looked up against the scene splines in
 // SockSysFindInScene.
