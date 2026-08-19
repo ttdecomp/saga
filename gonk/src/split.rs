@@ -722,7 +722,10 @@ pub fn split() -> anyhow::Result<()> {
         used_symbols.extend(text_symbols.iter().map(|sym| sym.index()));
         used_symbols.extend(data_symbols.iter().map(|sym| sym.index()));
 
-        let output_relative_path = command.output.file_name().unwrap();
+        let output_relative_path = command
+            .output
+            .strip_prefix("CMakeFiles/saga.dir/src")
+            .expect("failed to strip prefix");
         let output_path = std::path::Path::new("build/split").join(output_relative_path);
 
         std::fs::create_dir_all(output_path.parent().unwrap())
@@ -731,19 +734,12 @@ pub fn split() -> anyhow::Result<()> {
         let bytes = new_obj.write()?;
         std::fs::write(&output_path, bytes).context("Failed to write split object file")?;
 
-        let name = std::path::Path::new(&command.file)
-            .components()
-            .collect::<Vec<_>>();
-        let name =
-            name[name.len() - 3..]
-                .iter()
-                .fold(std::path::PathBuf::new(), |mut acc, comp| {
-                    acc.push(comp);
-                    acc
-                });
+        let name = output_relative_path
+            .to_str()
+            .expect("failed to convert path to str");
 
         objdiff_units.push(ObjDiffUnit {
-            name: name.display().to_string(),
+            name: name.to_string(),
             target_path: output_path,
             base_path: binary,
             scratch: Some(ObjDiffScratch {
