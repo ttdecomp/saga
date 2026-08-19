@@ -211,6 +211,7 @@ typedef struct LEVELFIXUP {
 extern "C" {
 #endif
     extern LEVELDATA *LDataList;
+    extern LEVELDATA *levelconfig_ldata;
 
     extern LEVELDATA *NEWGAME_LDATA;
     extern LEVELDATA *LOADGAME_LDATA;
