@@ -145,6 +145,10 @@ static __used__ void LC_BL_max_bombgens(nufpar_s *fp) {
     *(u8 *)((char *)levelconfig_ldata + 0x113) = (u8)NuFParGetInt(fp);
 }
 
+static __used__ void LC_BL_max_bridges(nufpar_s *fp) {
+    *(u8 *)((char *)levelconfig_ldata + 0x114) = (u8)NuFParGetInt(fp);
+}
+
 static __used__ void LC_BL_max_buildit_objects(nufpar_s *fp) {
     *(i16 *)((char *)levelconfig_ldata + 0xee) = (i16)NuFParGetInt(fp);
 }
