@@ -75,8 +75,13 @@ static __used__ void LC_AL_campos_seek(nufpar_s *fp) {
 }
 
 static __used__ void LC_AL_conveyor(nufpar_s *fp) {
-    *(f32 *)((char *)levelconfig_ldata + 0xdc) = NuFParGetFloat(fp);
-    *(f32 *)((char *)levelconfig_ldata + 0xe0) = NuFParGetFloat(fp);
+    while (NuFParGetWord(fp) != 0) {
+        if (NuStrICmp(fp->word_buf, "xspeed") == 0) {
+            *(f32 *)((char *)levelconfig_ldata + 0xdc) = NuFParGetFloat(fp);
+        } else if (NuStrICmp(fp->word_buf, "zspeed") == 0) {
+            *(f32 *)((char *)levelconfig_ldata + 0xe0) = NuFParGetFloat(fp);
+        }
+    }
 }
 
 static __used__ void LC_AL_hover_height(nufpar_s *fp) {
