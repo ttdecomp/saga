@@ -20,7 +20,6 @@ import sys
 from collections import defaultdict
 
 ROOT_LABEL = "(root)"
-UNRESOLVED_LABEL = "(unresolved)"
 
 
 def _num(value):
@@ -82,13 +81,11 @@ FIELDS = ("units", "code", "fuzzy", "funcs", "matched_funcs",
 
 
 def _aggregate(units, src):
-    """Map directory -> dict of summed measures; also return unresolved count."""
+    """Map directory -> dict of summed measures."""
     agg = defaultdict(_zero)
-    unresolved = 0
     for unit in units:
         rel = find_src_file(unit["name"], src)
         if rel is None:
-            unresolved += 1
             continue
         m = unit.get("measures", {})
         key = os.path.dirname(rel) or ROOT_LABEL
@@ -100,7 +97,7 @@ def _aggregate(units, src):
         agg[key]["matched_funcs"] += _num(m.get("matched_functions"))
         agg[key]["data"] += _num(m.get("total_data"))
         agg[key]["matched_data"] += _num(m.get("matched_data"))
-    return agg, unresolved
+    return agg
 
 
 def _fuzzy(value):
@@ -206,7 +203,7 @@ def main():
     with open(args.report) as f:
         report = json.load(f)
 
-    agg, unresolved = _aggregate(report.get("units", []), args.src)
+    agg = _aggregate(report.get("units", []), args.src)
 
     lego_base = os.path.join(args.src, "legoapi")
     if not os.path.isdir(lego_base):
@@ -232,10 +229,7 @@ def main():
     } | set(rows)
     if ROOT_LABEL in rows:
         keys.add(ROOT_LABEL)
-    if unresolved:
-        rows[UNRESOLVED_LABEL] = _zero()
-        rows[UNRESOLVED_LABEL]["units"] = unresolved
-        keys.add(UNRESOLVED_LABEL)
+    keys.discard("host-tests")
     table = {k: rows.get(k, _zero()) for k in sorted(keys)}
     _print_table(table,
                  "Matching progress for `src/` subdirectories and `legoapi/*`")

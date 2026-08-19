@@ -80,12 +80,10 @@ See the [docs/](docs/) directory.
 | Directory | Fuzzy % | Funcs % | Data % |
 |---|---|---|---|
 | `(root)` | 0.6% | 0.0% | 82.8% |
-| `(unresolved)` | - | - | - |
 | `MechInputTouch` | 4.8% | 0.0% | 0.0% |
 | `gameapi` | 6.5% | 1.5% | 94.8% |
 | `gameframework` | 0.0% | 0.0% | - |
 | `gamelib` | 5.5% | 0.9% | 5.0% |
-| `host-tests` | - | - | - |
 | `java` | 10.5% | 0.0% | 0.0% |
 | `legoapi` | 3.6% | 1.5% | 1.6% |
 | `legoapi/actions` | 1.7% | 0.5% | - |
@@ -107,6 +105,7 @@ See the [docs/](docs/) directory.
 | `nu2api` | 27.0% | 19.3% | 81.5% |
 
 <!-- matching-table-end -->
+
 
 
 
