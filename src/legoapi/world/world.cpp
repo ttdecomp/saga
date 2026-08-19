@@ -560,7 +560,7 @@ after_area:
         GameAIScriptAddLevelSfx(world, &world->ai_sys->scripts);
 
         world->climb_object_sys = (CLIMBOBJECTSYS_s *)CreateClimbObjectSys(&world->giz_buffer, &world->unknown_0108,
-                                                                           (i32)(u8)level->unknown_103);
+                                                                            (i32)(u8)level->max_climb_objs);
     } else {
         *(i32 *)&world->unknown_0140[0x29a4] = 1;
     }
