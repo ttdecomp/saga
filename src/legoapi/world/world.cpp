@@ -99,7 +99,29 @@ void StoreSceneProgress(NUGSCN *gscn, SCENEPROGRESS_s *progress, i32 param) {
     (void)param;
 }
 void SaveSceneObjectAnimTFactors(NUGSCN *gscn) {
-    (void)gscn;
+    i32 count;
+    char *p;
+    void *obj;
+
+    if (gscn == NULL) {
+        return;
+    }
+    if (*(void **)((char *)gscn + 0x110) != NULL) {
+        return;
+    }
+    count = *(i32 *)((char *)gscn + 0x1c);
+    p = *(char **)((char *)gscn + 0x20) + count * 0x50;
+    if (count == 0) {
+        return;
+    }
+    do {
+        p -= 0x50;
+        obj = *(void **)(p + 0x48);
+        if (obj != NULL) {
+            *(f32 *)((char *)obj + 0x54) = *(f32 *)((char *)obj + 0x40);
+        }
+        count--;
+    } while (count != 0);
 }
 void CalculateWorldSize(WORLDINFO *world) {
     (void)world;
