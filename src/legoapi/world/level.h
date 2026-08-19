@@ -3,6 +3,11 @@
 #include "legoapi/world/world.h"
 #include "nu2api/nucore/common.h"
 
+struct LEVEL_PROGRESS_s {
+    char data[0x2800];
+    i32 flags;
+};
+
 typedef struct leveldatadisplay_s {
     f32 unknown_00;
     f32 unknown_04;

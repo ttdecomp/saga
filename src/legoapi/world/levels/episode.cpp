@@ -1,4 +1,4 @@
-#include "legoapi/episodes/episode.h"
+#include "legoapi/world/levels/episode.h"
 
 #include "globals.h"
 #include "legoapi/world/area.h"

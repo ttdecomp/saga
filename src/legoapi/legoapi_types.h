@@ -437,7 +437,6 @@ struct LEVELDATA_s;
 struct LEVELOBJECT {};
 struct LEVELSCRIPTPROCESS_s;
 struct LEVELSPLINE {};
-#include "legoapi/world/LEVEL_PROGRESS.h"
 struct LoadedUniqueShaderRecord {};
 struct MENU_s;
 struct MISSIONSAVE_s;

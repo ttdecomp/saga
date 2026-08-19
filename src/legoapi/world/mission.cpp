@@ -1,4 +1,4 @@
-#include "legoapi/episodes/mission.h"
+#include "legoapi/world/mission.h"
 
 #include "legoapi/characters/core/character.h"
 #include "legoapi/world/level.h"

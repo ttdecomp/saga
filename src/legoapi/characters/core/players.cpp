@@ -10,7 +10,7 @@ struct HINT_s;
 #include "legoapi/world/area.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/core/config/cheat.h"
-#include "legoapi/episodes/episode.h"
+#include "legoapi/world/levels/episode.h"
 #include "legoapi/world/level.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/core/input/qrand.h"

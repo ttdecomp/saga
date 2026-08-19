@@ -2,7 +2,7 @@
 
 #include "decomp.h"
 #include "legoapi/world/level.h"
-#include "legoapi/episodes/mission.h"
+#include "legoapi/world/mission.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nucore/common.h"
 

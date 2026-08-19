@@ -5,8 +5,8 @@
 #include "legoapi/world/area.h"
 #include "legoapi/core/config/cheat.h"
 #include "legoapi/items/base/collection.h"
-#include "legoapi/episodes/episode.h"
 #include "legoapi/world/level.h"
+#include "legoapi/world/levels/episode.h"
 #include "nu2api/nucore/nustring.h"
 
 u16 MakeSaveHash(void) {

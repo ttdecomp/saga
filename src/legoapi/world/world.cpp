@@ -1,5 +1,5 @@
 #include "legoapi/world/world.h"
-#include "legoapi/world/LEVEL_PROGRESS.h"
+#include "legoapi/world/level.h"
 #include "legoapi/world/world_shared.h"
 
 #include <stdio.h>
