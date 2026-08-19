@@ -263,6 +263,13 @@ extern "C" {
     extern f32 GameTimer[2];
     extern i32 AreaGlobals;
 
+    extern i32 BonusWinner;
+    extern i32 BonusWinFlag;
+    extern i32 ChallengeMode;
+    extern struct TIMER_s ChallengeTimer;
+    extern i32 HIGHGAMEOBJECT;
+    extern void *Obj;
+
     extern i32 LevObjRef_FirstObj;
     extern i32 LevObjRef_LastObj;
     extern i32 LevObjRef_FirstRefObj;

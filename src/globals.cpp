@@ -4,6 +4,7 @@
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nusound/nusound.h"
+#include "legoapi/core/input/timer.h"
 
 void *PlayerItemType = 0;
 i32 PLAYERITEMTYPECOUNT = 0;
@@ -78,6 +79,13 @@ i32 g_lowEndLevelBehaviour = 0;
 f32 DoubleScoreTime = 0.0f;
 f32 GameTimer[2] = {0.0f, 0.0f};
 i32 AreaGlobals = 0;
+
+i32 BonusWinner = 0;
+i32 BonusWinFlag = 0;
+i32 ChallengeMode = 0;
+TIMER ChallengeTimer;
+i32 HIGHGAMEOBJECT = 0;
+void *Obj = NULL;
 
 i32 LevObjRef_FirstObj = 0;
 i32 LevObjRef_LastObj = 0;
