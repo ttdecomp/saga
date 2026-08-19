@@ -105,7 +105,3 @@ See the [docs/](docs/) directory.
 | `nu2api` | 27.0% | 19.3% | 81.5% |
 
 <!-- matching-table-end -->
-
-
-
-

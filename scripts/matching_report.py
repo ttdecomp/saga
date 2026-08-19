@@ -153,7 +153,6 @@ def _update_readme(path, table_lines):
         *table_lines,
         "",
         SECTION_END,
-        "",
     ])
     if not os.path.isfile(path):
         with open(path, "w") as f:
