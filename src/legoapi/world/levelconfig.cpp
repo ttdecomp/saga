@@ -1,6 +1,7 @@
 #include "decomp.h"
 #include "nu2api/nufile/nufpar.h"
 #include "legoapi/world/level.h"
+#include "nu2api/nuandroid/ios_graphics.h"
 
 static __used__ void LC_AL_backb(nufpar_s *fp) {
     u8 v = (u8)NuFParGetInt(fp);
@@ -335,10 +336,6 @@ static __used__ void LC_AL_camera_rain(nufpar_s *) {
 }
 static __used__ void LC_AL_in_space(nufpar_s *) {
 }
-static __used__ void LC_AL_nearclip(nufpar_s *) {
-}
-static __used__ void LC_AL_farclip_hack(nufpar_s *) {
-}
 static __used__ void LC_AL_flat_terrain(nufpar_s *) {
 }
 static __used__ void LC_AL_hidden_icons(nufpar_s *) {
@@ -351,17 +348,64 @@ static __used__ void LC_AL_terrain_rain(nufpar_s *) {
 }
 static __used__ void LC_AL_lowendfarclip(nufpar_s *) {
 }
-static __used__ void LC_AL_lowendcharclip(nufpar_s *) {
+static __used__ void LC_AL_cam_lateral_dist(nufpar_s *fp) {
+    f32 v = NuFParGetFloat(fp);
+    if (v < 0.0f) {
+        v = 0.0f;
+    }
+    *(f32 *)((char *)levelconfig_ldata + 0xc8) = v;
 }
-static __used__ void LC_AL_lowendfogstart(nufpar_s *) {
+static __used__ void LC_AL_cam_pullback_dist(nufpar_s *fp) {
+    f32 v = NuFParGetFloat(fp);
+    if (v < 0.0f) {
+        v = 0.0f;
+    }
+    *(f32 *)((char *)levelconfig_ldata + 0xc4) = v;
 }
-static __used__ void LC_AL_lowendcamerazoom(nufpar_s *) {
+static __used__ void LC_AL_lowendcharclip(nufpar_s *fp) {
+    f32 v = NuFParGetFloat(fp);
+    if (!NuIOS_IsLowEndDevice()) {
+        *(f32 *)((char *)levelconfig_ldata + 0x11c) = v;
+    }
 }
-static __used__ void LC_AL_lowendparticlethin(nufpar_s *) {
+static __used__ void LC_AL_lowendfogstart(nufpar_s *fp) {
+    f32 v = NuFParGetFloat(fp);
+    if (v < 2.0f) {
+        v = 2.0f;
+    } else if (v > 20000.0f) {
+        v = 20000.0f;
+    }
+    *(f32 *)((char *)levelconfig_ldata + 0x90) = v;
 }
-static __used__ void LC_AL_cam_lateral_dist(nufpar_s *) {
+static __used__ void LC_AL_nearclip(nufpar_s *fp) {
+    f32 v = NuFParGetFloat(fp);
+    if (v < 0.001f) {
+        v = 0.001f;
+    } else if (v > 1.0f) {
+        v = 1.0f;
+    }
+    *(f32 *)((char *)levelconfig_ldata + 0x88) = v;
 }
-static __used__ void LC_AL_cam_pullback_dist(nufpar_s *) {
+static __used__ void LC_AL_farclip_hack(nufpar_s *fp) {
+    f32 v = NuFParGetFloat(fp);
+    if (v < 0.1f) {
+        v = 0.1f;
+    } else if (v > 50.0f) {
+        v = 50.0f;
+    }
+    *(f32 *)((char *)levelconfig_ldata + 0x84) = v;
+}
+static __used__ void LC_AL_lowendcamerazoom(nufpar_s *fp) {
+    f32 v = NuFParGetFloat(fp);
+    if (!NuIOS_IsLowEndDevice()) {
+        *(f32 *)((char *)levelconfig_ldata + 0x120) = v;
+    }
+}
+static __used__ void LC_AL_lowendparticlethin(nufpar_s *fp) {
+    f32 v = NuFParGetFloat(fp);
+    if (!NuIOS_IsLowEndDevice()) {
+        *(f32 *)((char *)levelconfig_ldata + 0x94) = v;
+    }
 }
 static __used__ void LC_AL_forget_takeovers(nufpar_s *) {
 }
