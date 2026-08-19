@@ -790,13 +790,11 @@ void WorldInfo_ClearAllIfScreenFaded(void) {
 }
 
 void WorldInfo_LoadObjectAnimFile(WORLDINFO *world) {
-    i32 *object_anim_page = (i32 *)&world->unknown_0140[0x2960];
-    if (*object_anim_page == -1) {
+    if (*(i32 *)((char *)world + 0x2aa0) == -1) {
         char path[256];
-        strcpy(path, world->config_file);
-        strcat(path, ".anm");
+        sprintf(path, "%s.anm", world->config_file);
         if (NuFileExists(path)) {
-            *object_anim_page = edanimLoadPage(path, world->current_gscn);
+            *(i32 *)((char *)world + 0x2aa0) = edanimLoadPage(path, world->current_gscn);
         }
     }
 }
