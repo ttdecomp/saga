@@ -223,12 +223,9 @@ i32 Missions_PartyAvailable(MISSIONSYS *ms) {
 
     if (ms == NULL) {
         ms = MissionSys;
-    }
-    if (ms == NULL) {
-        return 1;
-    }
-    if (ms->character_count == 0) {
-        return 1;
+        if (ms == NULL) {
+            return 1;
+        }
     }
     for (i = 0; i < ms->character_count; i++) {
         if (Collection_Got(ms->character_ids[i]) == 0) {
