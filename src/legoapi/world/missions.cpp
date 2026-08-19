@@ -74,17 +74,17 @@ void Mission_Clear(MISSIONSYS *ms) {
     ResetTimer(&ms->timer, 0.0f);
 }
 
-i32 Mission_Active(MISSIONSYS *ms) {
+MISSIONDATA *Mission_Active(MISSIONSYS *ms) {
     if (ms == NULL) {
         ms = MissionSys;
-    }
-    if (ms == NULL) {
-        return 0;
+        if (ms == NULL) {
+            return NULL;
+        }
     }
     if (ms->field8_0x1d == 0) {
-        return 0;
+        return NULL;
     }
-    return (i32)(usize)ms->mission;
+    return ms->mission;
 }
 
 void CheckMissionEnd(MISSIONSYS *ms) {
