@@ -75,8 +75,20 @@ TORPEDOPACKET TorpedoPackets[16];
 // --- World-module helpers (kept with the WorldInfo API) ---
 
 void SetAreaPickupGravity(i32 area, i32 level) {
-    (void)area;
-    (void)level;
+    AreaPickupGravity = -6.0f;
+    if (area < 0 || area >= AREACOUNT) {
+        return;
+    }
+    AREADATA *ad = &ADataList[area];
+    if (ad->flags & AREAFLAG_NOPICKUPGRAVITY) {
+        if ((*(u8 *)((char *)LDataList + level * 0x144 + 0x66) & 0x40) == 0) {
+            AreaPickupGravity = 0.0f;
+            return;
+        }
+    }
+    if (ad->flags & AREAFLAG_VEHICLE_AREA) {
+        AreaPickupGravity = -20.0f;
+    }
 }
 void WorldInfo_Dump(WORLDINFO *world) {
     (void)world;

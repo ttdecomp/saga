@@ -269,6 +269,7 @@ extern "C" {
     extern struct TIMER_s ChallengeTimer;
     extern i32 HIGHGAMEOBJECT;
     extern void *Obj;
+    extern f32 AreaPickupGravity;
 
     extern i32 LevObjRef_FirstObj;
     extern i32 LevObjRef_LastObj;

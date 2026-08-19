@@ -86,6 +86,7 @@ i32 ChallengeMode = 0;
 TIMER ChallengeTimer;
 i32 HIGHGAMEOBJECT = 0;
 void *Obj = NULL;
+f32 AreaPickupGravity = 0.0f;
 
 i32 LevObjRef_FirstObj = 0;
 i32 LevObjRef_LastObj = 0;
