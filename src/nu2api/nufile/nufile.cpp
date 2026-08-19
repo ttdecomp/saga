@@ -1612,3 +1612,10 @@ i32 NuFileInitEx(i32 device_id, i32 reboot_iop, i32 eject) {
 void NuFileInit(i32 device_id) {
     NuFileInitEx(device_id, 1, 0);
 }
+
+static FILEEXTINFO *NuFileExtGetInfo(char *, i32) {
+    return 0;
+}
+
+static void NuFileEndianSwap16(void *) {
+}

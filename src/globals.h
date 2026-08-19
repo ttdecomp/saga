@@ -1,8 +1,8 @@
 #pragma once
 
 #include "decomp.h"
-#include "legoapi/level.h"
-#include "legoapi/mission.h"
+#include "legoapi/world/level.h"
+#include "legoapi/episodes/mission.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nucore/common.h"
 

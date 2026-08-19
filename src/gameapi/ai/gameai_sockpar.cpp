@@ -1,0 +1,95 @@
+#include "decomp.h"
+struct nufpar_s;
+
+static __used__ void SockParBlend(nufpar_s *, void *) {
+}
+static __used__ void SockParCam1Zoom(nufpar_s *, void *) {
+}
+static __used__ void SockParCamAngSeek(nufpar_s *, void *) {
+}
+static __used__ void SockParCamArenaOffset(nufpar_s *, void *) {
+}
+static __used__ void SockParCamBehind(nufpar_s *, void *) {
+}
+static __used__ void SockParCamBlendTime(nufpar_s *, void *) {
+}
+static __used__ void SockParCamDistRatio(nufpar_s *, void *) {
+}
+static __used__ void SockParCamDistToTarget(nufpar_s *, void *) {
+}
+static __used__ void SockParCamDistToTargetXZ(nufpar_s *, void *) {
+}
+static __used__ void SockParCamHeightAboveTerrain(nufpar_s *, void *) {
+}
+static __used__ void SockParCamLateralRatio(nufpar_s *, void *) {
+}
+static __used__ void SockParCamLockRatioY(nufpar_s *, void *) {
+}
+static __used__ void SockParCamLookRatio(nufpar_s *, void *) {
+}
+static __used__ void SockParCamOffset(nufpar_s *, void *) {
+}
+static __used__ void SockParCamPosSeek(nufpar_s *, void *) {
+}
+static __used__ void SockParCamPullBackYRef(nufpar_s *, void *) {
+}
+static __used__ void SockParCamRailOffset(nufpar_s *, void *) {
+}
+static __used__ void SockParCamScaleLateral(nufpar_s *, void *) {
+}
+static __used__ void SockParCamSegAhead(nufpar_s *, void *) {
+}
+static __used__ void SockParCamShake(nufpar_s *, void *) {
+}
+static __used__ void SockParCamVerticalRatio(nufpar_s *, void *) {
+}
+static __used__ void SockParCamXOffset(nufpar_s *, void *) {
+}
+static __used__ void SockParCamYOffset(nufpar_s *, void *) {
+}
+static __used__ void SockParCamZOffset(nufpar_s *, void *) {
+}
+static __used__ void SockParCircuit(nufpar_s *, void *) {
+}
+static __used__ void SockParCurSpeed(nufpar_s *, void *) {
+}
+static __used__ void SockParIgnore(nufpar_s *, void *) {
+}
+static __used__ void SockParMidforce(nufpar_s *, void *) {
+}
+static __used__ void SockParMidforceYscale(nufpar_s *, void *) {
+}
+static __used__ void SockParMidForceDown(nufpar_s *, void *) {
+}
+static __used__ void SockParMidForceYScale(nufpar_s *, void *) {
+}
+static __used__ void SockParMidRangeInner(nufpar_s *, void *) {
+}
+static __used__ void SockParMidRangeOuter(nufpar_s *, void *) {
+}
+static __used__ void SockParMisc1(nufpar_s *, void *) {
+}
+static __used__ void SockParMisc2(nufpar_s *, void *) {
+}
+static __used__ void SockParMoveAngle(nufpar_s *, void *) {
+}
+static __used__ void SockParName(nufpar_s *, void *) {
+}
+static __used__ void SockParObj(nufpar_s *, void *) {
+}
+static __used__ void SockParOffsetBlendRatio(nufpar_s *, void *) {
+}
+static __used__ void SockParOffsetBlendXRatio(nufpar_s *, void *) {
+}
+static __used__ void SockParOffsetBlendYRatio(nufpar_s *, void *) {
+}
+static __used__ void SockParOffsetBlendZRatio(nufpar_s *, void *) {
+}
+static __used__ void SockParPullbackRatio(nufpar_s *, void *) {
+}
+static __used__ void SockParPullbackRatioXZ(nufpar_s *, void *) {
+}
+static __used__ void SockParTurnOff(nufpar_s *, void *) {
+}
+static __used__ void SockParYLimits(nufpar_s *, void *) {
+}

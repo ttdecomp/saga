@@ -2,7 +2,7 @@
 
 #include <GLES2/gl2.h>
 
-#include "legoapi/character.h"
+#include "legoapi/characters/core/character.h"
 #include "nu2api/nu3d/NuRenderDevice.h"
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nucore/bgproc.h"

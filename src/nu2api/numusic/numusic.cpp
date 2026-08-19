@@ -871,3 +871,10 @@ void NuMusic::Voice::Cue() {
 
 void NuMusic::Voice::Unload() {
 }
+
+extern "C" {
+
+    void numusicGetDuckVolume(void) {
+    }
+
+} // extern "C"

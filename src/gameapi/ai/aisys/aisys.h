@@ -1,4 +1,4 @@
-#include "legoapi/apiobject.h"
+#include "legoapi/items/base/apiobject.h"
 #include "nu2api/nu3d/nugscn.h"
 #include "nu2api/nu3d/nuspline.h"
 #include "nu2api/nucore/common.h"

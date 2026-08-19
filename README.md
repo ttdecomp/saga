@@ -1,4 +1,4 @@
-![Progress](https://img.shields.io/badge/matching-7.24%25-red)
+![Progress](https://img.shields.io/badge/matching-7.77%25-red)
 [![Discord](https://img.shields.io/discord/1467775700894224555?color=%235865F2&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/2HJuMtzA7q)
 
 |                 | Target (Android x86)                                                                                                                                                                                  | Host                                                                                                                                                                                  |
@@ -72,3 +72,36 @@ See the [docs/](docs/) directory.
 
 - The Android app can be run with the Waydroid emulator: https://waydro.id/
 - The Android NDK can be found here: https://dl.google.com/android/ndk/android-ndk-r8e-linux-x86_64.tar.bz2
+
+<!-- matching-table-start -->
+
+## Matching progress
+
+| Directory | Fuzzy % | Funcs % | Data % |
+|---|---|---|---|
+| `(root)` | 0.6% | 0.0% | 82.8% |
+| `MechInputTouch` | 4.8% | 0.0% | 0.0% |
+| `gameapi` | 6.5% | 1.5% | 94.8% |
+| `gameframework` | 0.0% | 0.0% | - |
+| `gamelib` | 5.5% | 0.9% | 5.0% |
+| `java` | 10.5% | 0.0% | 0.0% |
+| `legoapi` | 3.6% | 1.5% | 1.6% |
+| `legoapi/actions` | 1.7% | 0.5% | - |
+| `legoapi/ai` | 2.0% | 0.0% | - |
+| `legoapi/audio` | 1.7% | 0.0% | 0.0% |
+| `legoapi/characters` | 3.4% | 0.4% | 3.9% |
+| `legoapi/core` | 7.5% | 4.4% | 2.3% |
+| `legoapi/cutscenes` | 2.9% | 0.0% | 100.0% |
+| `legoapi/episodes` | 2.4% | 0.3% | 100.0% |
+| `legoapi/gizmo` | 4.0% | 4.0% | 0.2% |
+| `legoapi/gizmos` | 12.2% | 4.0% | 100.0% |
+| `legoapi/items` | 2.3% | 0.0% | 2.7% |
+| `legoapi/menus` | 2.3% | 0.0% | 0.0% |
+| `legoapi/misc` | 2.2% | 0.5% | - |
+| `legoapi/props` | 4.7% | 1.3% | 0.0% |
+| `legoapi/render` | 2.3% | 1.5% | 0.5% |
+| `legoapi/world` | 7.7% | 2.9% | 0.1% |
+| `legogame` | 4.2% | 0.0% | 100.0% |
+| `nu2api` | 27.0% | 19.3% | 81.5% |
+
+<!-- matching-table-end -->

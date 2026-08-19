@@ -1,9 +1,9 @@
 #include "legogame/startup.h"
 
 #include "globals.h"
-#include "legoapi/area.h"
-#include "legoapi/character.h"
-#include "legoapi/episode.h"
+#include "legoapi/world/area.h"
+#include "legoapi/characters/core/character.h"
+#include "legoapi/episodes/episode.h"
 #include "legogame/game.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nucore/bgproc.h"

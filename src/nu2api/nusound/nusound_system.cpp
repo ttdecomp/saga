@@ -519,3 +519,6 @@ void NuSound3ExitThreads() {
 
 void NuSound_GetAllocdSampleMemory() {
 }
+
+static __used__ void NuSoundAppTerminate(void) {
+}

@@ -392,3 +392,53 @@ void EndCriticalSectionGL(const char *file, i32 line) {
 void NuRenderDeviceSwapBuffers() {
     g_renderDevice.SwapBuffers();
 }
+
+struct numtl_s;
+typedef struct NuVertexFormatPS NuVertexFormatPS;
+
+extern "C" {
+    static __used__ void NuIOS_BindVertexAttributes(u32, u32) {
+    }
+
+    static __used__ void NuIOS_BindVertexAttributesImmediate(u32, u32) {
+    }
+
+    static __used__ void NuIOS_BindVertexAttributesImmediateOverrideDataLayout(u32, u32, void *) {
+    }
+
+    static __used__ void NuIOS_BindVertexAttributesInternal(i32, i32, u32 *, u32) {
+    }
+
+    static __used__ void NuIOS_BindVertexAttributesOverrideDataLayout(u32, u32) {
+    }
+
+    static __used__ void NuIOS_GetAlphaTestParameters(f32 *) {
+    }
+
+    static __used__ u8 *NuRenderContextGetKTint(void) {
+        return 0;
+    }
+
+    static __used__ struct numtl_s *NuRenderContextGetMaterialInUse(void) {
+        return 0;
+    }
+
+    static __used__ void NuRenderContextSetKTint(f32 *) {
+    }
+
+    static __used__ void NuRenderContextSetWorld(NUMTX *) {
+    }
+
+    static __used__ void NuRenderContextSetWorld_transpose(NUMTX *) {
+    }
+
+    static __used__ void NuRenderContextSetZFunc_inline(i32) {
+    }
+}
+
+static __used__ i32 NuIOS_GetOrCreateVAO(u32, u32, u32, NuVertexFormatPS *) {
+    return 0;
+}
+
+static __used__ void Nu360SetObjectShadowFactor(f32) {
+}

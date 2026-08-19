@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include "nu2api/nu3d/nushader.h"
 
 #include "nu2api/nu3d/NuRenderDevice.h"
@@ -173,4 +174,12 @@ void NuShaderObjectInitGLSL(nushaderobjectglsl_s *, nushaderobjectkey_s const *,
 }
 
 void NuShaderObjectGLSLGetSemanticIndex(char const *, nushaderuniform_e &) {
+}
+
+extern "C" {
+    static __used__ void NuShaderProgramSetFragmentParamfv(i32, u32, u32, i32) {
+    }
+
+    static __used__ void NuShaderProgramSetVertexParamfv(i32, u32, u32, i32) {
+    }
 }

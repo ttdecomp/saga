@@ -33,3 +33,83 @@ struct JNIInvokeInterface stub = {
 JavaVM g_javaVM = {
     .functions = &stub,
 };
+
+extern "C" {
+
+    jint JNI_OnLoad(JavaVM *vm, void *reserved) {
+        return JNI_OK;
+    }
+
+    void Java_com_tt_tech_CheckGamepadStatus_nativeSetGamePadConnected(void) {
+    }
+
+    void Java_com_tt_tech_TTActivity_nativeCacheJNIVars(void) {
+    }
+
+    void Java_com_tt_tech_TTActivity_nativeOnCreate(void) {
+    }
+
+    void Java_com_tt_tech_TTActivity_nativeOnKeyDown(void) {
+    }
+
+    void Java_com_tt_tech_TTActivity_nativeOnKeyUp(void) {
+    }
+
+    void Java_com_tt_tech_TTActivity_nativeOnPause(void) {
+    }
+
+    void Java_com_tt_tech_TTActivity_nativeOnResume(void) {
+    }
+
+    void Java_com_tt_tech_TTActivity_nativeOnSensorUpdate(void) {
+    }
+
+    void Java_com_tt_tech_TTActivity_nativeOnStart(void) {
+    }
+
+    void Java_com_tt_tech_TTActivity_nativeOnStop(void) {
+    }
+
+    void Java_com_tt_tech_TTActivity_nativeOnTouchDown(void) {
+    }
+
+    void Java_com_tt_tech_TTActivity_nativeOnTouchMove(void) {
+    }
+
+    void Java_com_tt_tech_TTActivity_nativeOnTouchUp(void) {
+    }
+
+    void Java_com_tt_tech_TTActivity_nativeSetAndroidVersion(void) {
+    }
+
+    void Java_com_tt_tech_TTActivity_nativeSetAssetManager(void) {
+    }
+
+    void Java_com_tt_tech_TTActivity_nativeSetCaps(void) {
+    }
+
+    void Java_com_tt_tech_TTActivity_nativeSetLanguage(void) {
+    }
+
+    void Java_com_tt_tech_TTActivity_nativeSetManufacturer(void) {
+    }
+
+    void Java_com_tt_tech_TTActivity_nativeSetModel(void) {
+    }
+
+    void Java_com_tt_tech_TTActivity_nativeSetObbInfo(void) {
+    }
+
+    void Java_com_tt_tech_TTActivity_nativeSetPaths(void) {
+    }
+
+    void Java_com_tt_tech_TTActivity_nativeSetScreenDimesions(void) {
+    }
+
+    void Java_com_tt_tech_TTActivity_nativeSetSurface(void) {
+    }
+
+    void Java_com_tt_tech_TTActivity_nativeUpdateGamepadAxisValues(void) {
+    }
+
+} // extern "C"

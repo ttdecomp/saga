@@ -1,7 +1,7 @@
 #pragma once
 
 #include "globals.h"
-#include "legoapi/level.h"
+#include "legoapi/world/level.h"
 #include "nu2api/nufile/nufpar.h"
 #include "nu2api/nusound/nusound.h"
 

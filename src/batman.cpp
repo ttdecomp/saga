@@ -2,7 +2,7 @@
 
 #include "gameframework/saveload.h"
 #include "globals.h"
-#include "legoapi/level.h"
+#include "legoapi/world/level.h"
 #include "legogame/startup.h"
 #include "legogame/target.h"
 #include "nu2api/nu3d/NuRenderDevice.h"

@@ -335,3 +335,11 @@ void NuQuatSlerp_Accurate(NUQUAT *out, NUQUAT *from, NUQUAT *to, f32 t) {
     out->y = from->y * from_factor + to_prime.y * to_factor;
     out->z = from->z * from_factor + to_prime.z * to_factor;
 }
+
+typedef struct nuqthdr_s nuqthdr_s;
+
+static void NuQTFixAddress(nuqthdr_s *) {
+}
+
+static void NuQTUnfixAddress(nuqthdr_s *) {
+}

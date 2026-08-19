@@ -98,3 +98,7 @@ float NuCosApprox2(i32 ang) {
 float NuSin_Accurate(float x) {
     return sinf(x);
 }
+
+static double NuSinApprox3(i32) {
+    return 0.0;
+}

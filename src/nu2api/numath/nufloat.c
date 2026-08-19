@@ -57,6 +57,18 @@ f32 NuFloor(f32 f) {
     return (f32)(i32)f;
 }
 
+static f32 NuTrunc(f32 a) {
+    (void)a;
+    return 0.0f;
+}
+
+static f32 NuFsel(f32 a, f32 b, f32 c) {
+    (void)a;
+    (void)b;
+    (void)c;
+    return 0.0f;
+}
+
 f32 NuLog10(float x) {
     UNIMPLEMENTED();
     return 0.0f;

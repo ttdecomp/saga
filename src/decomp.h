@@ -31,6 +31,8 @@ typedef u16 word;
 
 #define SAGA_NOMATCH __attribute__((section(".text.nomatch")))
 
+#define __used__ __attribute__((used)) // NOLINT(readability-identifier-naming)
+
 #ifdef HOST_BUILD
 #include <stdio.h>
 
