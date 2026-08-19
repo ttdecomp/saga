@@ -2,6 +2,7 @@
 #include "nu2api/nufile/nufpar.h"
 #include "legoapi/world/level.h"
 #include "nu2api/nuandroid/ios_graphics.h"
+#include "nu2api/numusic/sfx.h"
 
 static __used__ void LC_AL_backb(nufpar_s *fp) {
     u8 v = (u8)NuFParGetInt(fp);
@@ -95,7 +96,9 @@ static __used__ void LC_AL_reflect_y(nufpar_s *fp) {
 }
 
 static __used__ void LC_AL_sfx_ambient(nufpar_s *fp) {
-    *(i16 *)((char *)levelconfig_ldata + 0xa2) = (i16)NuFParGetInt(fp);
+    if (NuFParGetWord(fp) != 0) {
+        *(i16 *)((char *)levelconfig_ldata + 0xa2) = (i16)GetSfxId(fp->word_buf);
+    }
 }
 
 static __used__ void LC_AL_waterripple_endcol_a(nufpar_s *fp) {
@@ -364,7 +367,16 @@ static __used__ void LC_AL_flat_terrain(nufpar_s *fp) {
         *(u32 *)((char *)levelconfig_ldata + 0x64) &= ~0x10;
     }
 }
-static __used__ void LC_AL_hidden_icons(nufpar_s *) {
+static __used__ void LC_AL_hidden_icons(nufpar_s *fp) {
+    if (NuFParGetWord(fp) != 0) {
+        if (NuStrICmp(fp->word_buf, "on") == 0) {
+            *(u32 *)((char *)levelconfig_ldata + 0x64) &= ~0x800000;
+            return;
+        }
+        if (NuStrICmp(fp->word_buf, "off") == 0) {
+            *(u32 *)((char *)levelconfig_ldata + 0x64) |= 0x800000;
+        }
+    }
 }
 static __used__ void LC_AL_double_score(nufpar_s *fp) {
     *(u32 *)((char *)levelconfig_ldata + 0x64) |= 0x800;
