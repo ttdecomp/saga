@@ -334,7 +334,11 @@ static u8 load_conditionParam;
 static __used__ void loadSumBox(nufpar_s *fp) {
     load_conditionParam = (u8)NuFParGetInt(fp);
 }
-static __used__ void LC_AL_metal(nufpar_s *) {
+static __used__ void LC_AL_metal(nufpar_s *fp) {
+    *(u32 *)((char *)levelconfig_ldata + 0x64) |= 0x1000;
+    if (NuFParGetWord(fp) != 0 && NuStrICmp(fp->word_buf, "off") == 0) {
+        *(u32 *)((char *)levelconfig_ldata + 0x64) &= ~0x1000;
+    }
 }
 static __used__ void LC_AL_music(nufpar_s *fp) {
     if (NuFParGetWord(fp) != 0) {
@@ -501,5 +505,7 @@ static __used__ void LC_AL_override_nopickupgravity(nufpar_s *fp) {
         *(u32 *)((char *)levelconfig_ldata + 0x64) &= ~0x400000;
     }
 }
-static __used__ void LC_BL_fix_strobing_anims(nufpar_s *) {
+static __used__ void LC_BL_fix_strobing_anims(nufpar_s *fp) {
+    (void)fp;
+    *(u32 *)((char *)levelconfig_ldata + 0x64) |= 0x100;
 }
