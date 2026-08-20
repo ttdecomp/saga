@@ -13,6 +13,7 @@
 #include "legoapi/characters/core/character.h"
 #include "legoapi/world/level.h"
 #include "legoapi/characters/core/players.h"
+#include "legoapi/items/base/collection.h"
 #include "legoapi/props/system/socksys.h"
 #include "legoapi/core/input/timer.h"
 #include "legogame/game.h"
@@ -860,4 +861,86 @@ void WorldInfo_ReArrangeBuffers(i32 area1, i32 area2) {
     usize end = WorldInfo[0].unknown_0108.addr;
     WorldInfo[0].unknown_0108.addr = bufferEnd->addr;
     bufferEnd->addr = end + EditBufferEndSize;
+}
+
+extern "C" {
+    i32 Collection_Got(i32);
+    i32 InModelList(APICHARACTERMODELLIST_s *, i32, i32 *);
+    extern i16 id_DARTHVADER;
+    extern i16 id_THEEMPEROR;
+    extern i16 id_GRANDMOFFTARKIN;
+    extern i16 id_IMPERIALOFFICER;
+    extern i16 id_IMPERIALSHUTTLEPILOT;
+}
+
+i32 InModelListDataFlags(APICHARACTERMODELLIST_s *, u32, u32, i32, i32);
+i32 RandomIDFromFlags(u32, u32, i32, APICHARACTERMODELLIST_s *, i32);
+void Collection_GetIDList(COLLECTION_s *, u32, u32, i16 *, i32 *, i32 *, i32);
+
+void MakeFreePlayModelList(i32 model1, i32 model2, i32 area, i32 level, i32 param5) {
+    i32 flags = 0;
+    if (WORLD != NULL && WORLD->area != NULL && WORLD->area == HUB_ADATA && bonusmodearcade != 0)
+        flags = Arcade_Mode[ArcadeItem.field_c_0xc * 3].field8_0x8;
+
+    FreePlayModelCount = 0;
+    FreePlayResidentCount = 0;
+    FreePlayBonusCount = 0;
+    if (model1 == -1)
+        model2 = -1;
+
+    AREADATA *ad = &ADataList[area];
+
+    if ((ad->flags & 5) == 5) {
+        i32 count = 0;
+        i32 models[2] = {model1, model2};
+        for (i32 i = 0; i < 2; i++) {
+            i32 m = models[i];
+            if (m == -1)
+                break;
+            if (count > 0x2f)
+                continue;
+            if (count > 1) {
+                if (FreePlayModelList[0].model_id == m)
+                    continue;
+                i32 j;
+                for (j = 1; j < count; j++) {
+                    if (FreePlayModelList[j].model_id == m)
+                        break;
+                }
+                if (j != count)
+                    continue;
+            }
+            FreePlayModelList[count].model_id = m;
+            FreePlayModelList[count].count = 1;
+            count++;
+            FreePlayModelList[count].model_id = -1;
+        }
+        FreePlayModelCount = count;
+    } else {
+        i32 count = 0;
+        i32 models[2] = {model1, model2};
+        for (i32 i = 0; i < 2; i++) {
+            i32 m = models[i];
+            if (m == -1)
+                break;
+            if (count > 0x2f)
+                continue;
+            if (count > 1) {
+                if (FreePlayModelList[0].model_id == m)
+                    continue;
+                i32 j;
+                for (j = 1; j < count; j++) {
+                    if (FreePlayModelList[j].model_id == m)
+                        break;
+                }
+                if (j != count)
+                    continue;
+            }
+            FreePlayModelList[count].model_id = m;
+            FreePlayModelList[count].count = 1;
+            count++;
+            FreePlayModelList[count].model_id = -1;
+        }
+        FreePlayModelCount = count;
+    }
 }

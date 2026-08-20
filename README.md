@@ -96,11 +96,11 @@ See the [docs/](docs/) directory.
 | `legoapi/gizmo` | 4.9% | 4.7% | 0.4% |
 | `legoapi/gizmos` | 12.2% | 4.2% | 100.0% |
 | `legoapi/items` | 2.3% | 0.2% | 4.9% |
-| `legoapi/menus` | 2.3% | 0.0% | 0.0% |
+| `legoapi/menus` | 2.4% | 0.0% | 0.0% |
 | `legoapi/misc` | 2.2% | 0.5% | - |
 | `legoapi/props` | 7.3% | 2.4% | 13.0% |
 | `legoapi/render` | 2.3% | 1.5% | 0.5% |
-| `legoapi/world` | 12.1% | 18.2% | 0.1% |
+| `legoapi/world` | 12.1% | 18.1% | 0.1% |
 | `legogame` | 4.2% | 0.0% | 100.0% |
 | `nu2api` | 27.1% | 19.4% | 81.5% |
 

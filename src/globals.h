@@ -189,6 +189,39 @@ extern "C" {
         char field39_0x7d08[336];
     };
 
+    struct CHARCAT_s {
+        undefined field0_0x0[4];
+        u32 field1_0x4;
+        i32 field2_0x8;
+    };
+
+    struct ARCADEITEM_s {
+        undefined field0_0x0[0xc];
+        char field_c_0xc;
+    };
+
+    struct ARCADE_MODE_s {
+        undefined field0_0x0[8];
+        i32 field8_0x8;
+    };
+
+    struct GAME_CUSTOMISER_s {
+        undefined field0_0x0[0x6c];
+        i16 field6c_0x6c;
+        i16 field6e_0x6e;
+    };
+
+    struct VEHICLECOLLECTION_s {
+        void *field0_0x0;
+        undefined field4_0x4[2];
+        u16 count_0x6;
+    };
+
+    struct EXTRAMODELLISTENTRY_s {
+        i16 *model_list;
+        void *field4_0x4;
+    };
+
     extern i32 PAL;
     extern f32 FRAMETIME;
     extern f32 DEFAULTFPS;
@@ -476,6 +509,19 @@ extern "C" {
     extern i32 newlevelfrommenu_newmenuid;
     extern i32 newlevelfrommenu_newmenuy;
     extern i32 NextArea_FreePlay;
+
+    extern i32 FreePlayModelCount;
+    extern i32 FreePlayResidentCount;
+    extern i32 FreePlayBonusCount;
+    extern CHARCAT_s *CharCategory;
+    extern i32 CHARCATEGORYCOUNT;
+    extern EXTRAMODELLISTENTRY_s ExtraModelList[];
+    extern VEHICLECOLLECTION_s VehicleCollection;
+    extern ARCADEITEM_s ArcadeItem;
+    extern ARCADE_MODE_s Arcade_Mode[];
+    extern GAME_CUSTOMISER_s *Game_Customiser;
+    extern APICHARACTERMODELLIST_s FreePlayModelList[];
+    extern APICHARACTERMODELLIST_s Hub_ModelList[];
 
 #ifdef __cplusplus
 }
