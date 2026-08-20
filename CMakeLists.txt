@@ -185,7 +185,7 @@ if(CLANG_TIDY_EXE)
 
     add_custom_target(lint
         COMMAND ${CLANG_TIDY_EXE} -p=${CMAKE_BINARY_DIR} ${SAGA_SOURCE_FILES} --warnings-as-errors="*"
-        COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/check_duplicate_definitions.py ${CMAKE_CURRENT_SOURCE_DIR}/src
+        COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/check_duplicate_definitions.py ${CMAKE_CURRENT_SOURCE_DIR}/src --build ${CMAKE_BINARY_DIR}
         COMMAND ${CHECK_SYMBOLS_CMD}
         COMMENT "Running clang-tidy, duplicate-definition check, and symbol baseline check"
     )
