@@ -144,11 +144,11 @@ void Mission_FindTarget(MISSIONSYS *ms, u64 *target) {
 
     obj = FindGameObject((u32)ms->mission->find_char, 0, 0, 1, 0);
     if (target != NULL) {
+        u64 v = 0;
         if (obj != NULL) {
-            *target = *(u64 *)((char *)obj + 0x1e4);
-        } else {
-            *target = 0;
+            v = *(u64 *)((char *)obj + 0x1e4);
         }
+        *target = v;
     }
 }
 
