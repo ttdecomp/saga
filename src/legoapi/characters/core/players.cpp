@@ -254,7 +254,7 @@ void Players_InitPositions(WORLDINFO *world) {
 
     // --- hub exit-door lookup ---
     if (HUB_ADATA != NULL && HUB_ADATA == world->area) {
-        if (world->unknown_0120 != last_area && hub_from_cutsceneplayer == 0) {
+        if (world->level_sub_id != last_area && hub_from_cutsceneplayer == 0) {
             if (hub_from_superstory != -1) {
                 i32 area =
                     Episode_FindAreaFromFlags((EPISODEDATA *)((char *)EDataList + hub_from_superstory * 0x1c), 5, 5);

@@ -44,65 +44,73 @@ typedef struct MINIKIT {
 } MINIKIT;
 
 // Layout matches the original WORLDINFO_s (0x51b0 = 20912 bytes).
+// Field offsets verified against the original binary disassembly.
 typedef struct WORLDINFO_s {
-    char filler0[0x80];
+    char name[0x80];      // 0x000  level name / path scratch (Reset builds "levels\\..." here)
 
-    char config_file[0x84];
+    char config_file[0x80];   // 0x080  level config path/name
+    void *buffer_start;       // 0x100  start of this world's bump buffer (saved across Reset)
 
-    VARIPTR giz_buffer;
-    VARIPTR unknown_0108;
-    i32 unknown_010c;
+    VARIPTR giz_buffer;       // 0x104
+    VARIPTR unknown_0108;     // 0x108  end of the bump buffer
+    i32 config_count;         // 0x10c  level config keyword count / gate
 
-    i32 unknown_0110;
+    i32 loaded;               // 0x110  set to 1 at end of WorldInfo_Load
 
-    char filler1[0x8];
+    char filler1[0x8];        // 0x114 .. 0x11c
 
-    i32 unknown_011c;
-    i32 unknown_0120;
-    i32 unknown_0124;
+    i32 level_idx;            // 0x11c
+    i32 level_sub_id;         // 0x120  from LEVELDATA.unknown_0af
+    i32 area_sub_id;          // 0x124  from AREADATA.episode_index
 
-    struct LEVELDATA_s *current_level;
-    AREADATA_s *area;
-    LEVEL_PROGRESS_s *level_progress;
-    APIDEBRISSYS_s *field278_0x134;
-    PARTDEBSYS_s *part_debris_sys;
-    NUGSCN *current_gscn;
-    NUGSCN *scene;
+    struct LEVELDATA_s *current_level;   // 0x128
+    AREADATA_s *area;                    // 0x12c
+    LEVEL_PROGRESS_s *level_progress;    // 0x130
+    APIDEBRISSYS_s *debris_sys;          // 0x134
+    PARTDEBSYS_s *part_debris_sys;       // 0x138
+    NUGSCN *current_gscn;                // 0x13c
+    NUGSCN *scene;                       // 0x140
 
-    char unknown_0140[0x2960 - 0x144];
+    f32 level_min[3];         // 0x144  CalculateWorldSize output
+    f32 level_max[3];         // 0x150
+    u8 progress_data[0x2800]; // 0x15c .. 0x295c  level progress store
 
-    GAMEANIMSYS_s *game_anim_sys;
-    NUGSCN *icons_gscn;
-    MINIKIT minikit;
-    char unknown_0x2984[0x4];
-    struct SOCKSYS_s *sock_sys;
-    APIOBJECTSYS_s *api_object_sys;
+    void *terrain;            // 0x295c  LoadTerrainFile result
 
-    char filler2[0x2a98 - 0x2990];
+    GAMEANIMSYS_s *game_anim_sys;   // 0x2960
+    NUGSCN *icons_gscn;             // 0x2964
+    MINIKIT minikit;                // 0x2968
+    void *minikit_pieces_buf;       // 0x2984
+    struct SOCKSYS_s *sock_sys;     // 0x2988
+    APIOBJECTSYS_s *api_object_sys; // 0x298c
 
-    i32 unknown_0x2a98;
-    i32 unknown_0x2a9c;
-    i32 unknown_0x2aa0;
-    i32 unknown_0x2aa4;
-    i32 unknown_0x2aa8;
-    burnset_s *field_0x2aac;
-    CUTSYS *cutscene_sys;
-    rtlset *lights;
-    i32 unknown_0x2ab8;
+    u8 room_visibility_flag;  // 0x2990
+    u8 rooms_visible[0x100];  // 0x2991 .. 0x2a91
+    u8 *rooms_visible_ptr;    // 0x2a94
 
-    char filler3a[0x2ac4 - 0x2abc];
-    struct portalpos_s **portal_places;
+    i32 page_pp;              // 0x2a98  edpp page handle
+    i32 page_part;            // 0x2a9c  edpart page handle
+    i32 page_anim;            // 0x2aa0  edanim page handle
+    i32 page_grass;           // 0x2aa4  edgra page handle
+    i32 page_bridge;          // 0x2aa8  edbri page handle
+    burnset_s *burnset;       // 0x2aac
+    CUTSYS *cutscene_sys;     // 0x2ab0
+    i32 rtl_set_id;           // 0x2ab4  SetPartRTLSet / rtlFindByUserId arg
+    i32 rtl_id;               // 0x2ab8  rtlFindByUserId result
+    void *light_dir;          // 0x2abc  rtlGetDirection out-pointer
+    void *lev_objs;           // 0x2ac0  level-object array
+    struct portalpos_s **portal_places;  // 0x2ac4
 
-    GIZMOSYS_s *gizmo_sys;
-    GIZFLOW_s *giz_flow;
+    GIZMOSYS_s *gizmo_sys;    // 0x2ac8
+    GIZFLOW_s *giz_flow;      // 0x2acc
 
-    char filler4[0x2adc - 0x2ad0];
+    char filler4[0x2adc - 0x2ad0];  // 0x2ad0 .. 0x2adc
 
-    CHARPLATFORMSYS_s *char_platform_sys;
+    CHARPLATFORMSYS_s *char_platform_sys;  // 0x2adc
 
-    char filler5[0x2ae8 - 0x2ae0];
-
-    AISYS_s *ai_sys;
+    char filler5a[0x2ae4 - 0x2ae0];  // 0x2ae0 .. 0x2ae4
+    i32 ai_loaded;                    // 0x2ae4
+    AISYS_s *ai_sys;                  // 0x2ae8
     i32 processor_count;
     LEVELSCRIPTPROCESS processors[32];
 
@@ -112,19 +120,19 @@ typedef struct WORLDINFO_s {
     CLIMBOBJECTSYS_s *climb_object_sys;
     MechAutoJumpManager *mech_auto_jump_manager;
 
-    char filler6a[0x46a4 - 0x4684];
-    struct spawnsys_s *spawn_sys;
-    char filler6b[0x46ac - 0x46a8];
+    char filler6a[0x469c - 0x4684];  // 0x4684 .. 0x469c
+    void *portal_list;        // 0x469c
+    i32 portal_count;         // 0x46a0
+    struct spawnsys_s *spawn_sys;   // 0x46a4
+    char filler6b[0x46ac - 0x46a8]; // 0x46a8 .. 0x46ac
+    GIZTURRETSYS_s *giz_turret_sys; // 0x46ac
+    char filler7[0x46f0 - 0x46b0];  // 0x46b0 .. 0x46f0
 
-    GIZTURRETSYS_s *giz_turret_sys;
-
-    char filler7[0x46f0 - 0x46b0];
-
-    GRABBER_s *grabber;
+    GRABBER_s *grabber;       // 0x46f0
 
     char filler8[0x5054 - 0x46f4];
 
-    PULSESYS_s *pulses_sys;
+    PULSESYS_s *pulses_sys;   // 0x5058
 
     char filler9[0x505c - 0x5058];
 
@@ -150,7 +158,7 @@ typedef struct WORLDINFO_s {
 
     char filler14[0x516c - 0x50ec];
 
-    TRAFFICANIMSYS_s *trafficanim_sys;
+    TRAFFICANIMSYS_s *trafficanim_sys;  // 0x516c
 
     char filler15[0x51b0 - 0x5170];
 } WORLDINFO;

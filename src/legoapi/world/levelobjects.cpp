@@ -10,7 +10,7 @@ void *LevObj_FindByPlatID(WORLDINFO_s *world, i32 platID) {
     if (count <= 0) {
         return NULL;
     }
-    obj = *(u8 **)((char *)world + 0x2ac0);
+    obj = (u8 *)world->lev_objs;
     if (*(i16 *)(obj + 0xc) == platID) {
         return obj;
     }
@@ -34,9 +34,9 @@ void LevObj_FixUpPlatIDs(WORLDINFO_s *world) {
         return;
     }
     for (i = 0; i < LEVELOBJECTCOUNT; i++) {
-        obj = *(u8 **)((char *)world + 0x2ac0) + i * 0x10;
+        obj = (u8 *)world->lev_objs + i * 0x10;
         *(i16 *)(obj + 0xc) = -1;
-        if (*(void **)((char *)world + 0x295c) != NULL) {
+        if (world->terrain != NULL) {
             if (NuSpecialExistsFn(obj)) {
                 if (*(u8 *)((char *)ObjTabList + i * 8) == 1) {
                     i++;

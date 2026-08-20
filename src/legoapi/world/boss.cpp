@@ -12,7 +12,7 @@ void KillBossNewLevel(i32 a, i32 b, float c, i32 d) {
 
 i32 KillBossPlayCutScene(i32 a, i32 b, float c, char *name) {
     if (KillBoss(a, b, c) != 0) {
-        NewCutScene(NULL, (CUTSYS *)(*(void **)((char *)WORLD + 0x2ab0)), name, 1);
+        NewCutScene(NULL, (CUTSYS *)WORLD->cutscene_sys, name, 1);
         return 1;
     }
     return 0;

@@ -224,7 +224,7 @@ void WorldInfo_Init(WORLDINFO *world) {
     }
 
     // Start page loading for various subsystems
-    i32 *page_handles = (i32 *)&world->unknown_0140[0x2958];
+    i32 *page_handles = (i32 *)&world->page_pp;
     if (page_handles[0] != -1) {
         edppStartPage(page_handles[0]);
     }
@@ -237,7 +237,7 @@ void WorldInfo_Init(WORLDINFO *world) {
 
     // Terrain initialization
     noterraininit();
-    void *terrain_cur = *(void **)&world->unknown_0140[0x281c];
+    void *terrain_cur = world->terrain;
     TerrainSetCur(terrain_cur);
     TerrSetPlatScanDist((f32)(u8)world->current_level->unknown_0db);
 
@@ -263,7 +263,9 @@ void WorldInfo_Init(WORLDINFO *world) {
     // Level progress copy
     LEVEL_PROGRESS_s *progress = (LEVEL_PROGRESS_s *)world->level_progress;
     if (NOSOUND == 0 && progress != NULL && (progress->flags & 1) == 0) {
-        i32 *src = (i32 *)&world->filler0[0x5c];
+        // Progress payload lives at the tail of the name/config buffer region;
+        // there is no named field for it, so the source is addressed raw.
+        i32 *src = (i32 *)&world->name[0x5c];
         i32 *dst = (i32 *)&progress->data;
         for (i32 i = 0xa00; i != 0; i--) {
             *dst = *src;
@@ -279,7 +281,7 @@ void WorldInfo_Init(WORLDINFO *world) {
     PlayerItemTypes_Reset(world);
     Players_Init();
     rtlResetDynamic();
-    SetPartRTLSet(*(i32 *)&world->unknown_0140[0x2974]);
+    SetPartRTLSet(world->rtl_set_id);
 
     WorldInfo_UpdateRoomVisibility(world, 1);
 
@@ -327,7 +329,8 @@ void WorldInfo_Init(WORLDINFO *world) {
 
     InitGameObjectLights();
 
-    *(i32 *)&world->unknown_0140[0x5034] = 1; // field_0x5174
+    // Unreferenced padding slot (0x5174); no named field.
+    *(i32 *)((char *)world + 0x5174) = 1;
 
     // Init last function
     Game_WorldInfo_InitLast(world);
@@ -353,7 +356,7 @@ void WorldInfo_Load(WORLDINFO *world) {
 
     Level_LoadConfigFile(world);
 
-    if (abort_load != 0 || (world->unknown_010c > 0 && (LevelConfig_BeforeLoad(world->current_level, ConfigBuffer,
+    if (abort_load != 0 || (world->config_count > 0 && (LevelConfig_BeforeLoad(world->current_level, ConfigBuffer,
                                                                                Level_ConfigBeforeLoad_GameKeywords),
                                                         abort_load != 0))) {
         goto abort;
@@ -386,7 +389,7 @@ void WorldInfo_Load(WORLDINFO *world) {
         world->current_gscn = (NUGSCN *)NuGScnRead(&world->giz_buffer, world->unknown_0108, buf);
         numtl_force_mipmode = 0;
 
-        StoreSceneProgress(world->current_gscn, (SCENEPROGRESS_s *)&world->filler0[0x15c], 1);
+        StoreSceneProgress(world->current_gscn, (SCENEPROGRESS_s *)world->progress_data, 1);
         SaveSceneObjectAnimTFactors(world->current_gscn);
 
         if (world->current_gscn != NULL) {
@@ -417,7 +420,7 @@ void WorldInfo_Load(WORLDINFO *world) {
         goto abort;
 
     // Configure bolt types
-    if (world->unknown_010c > 0) {
+    if (world->config_count > 0) {
         BoltTypes_Configure(world, ConfigBuffer);
     }
 
@@ -471,10 +474,11 @@ after_area:
     }
 
     // Load cutscenes
-    page_handles = (i32 *)&world->unknown_0140[0x2958];
+    page_handles = (i32 *)&world->page_pp;
     world->cutscene_sys = (CUTSYS *)CutScenes_Load(
         ConfigBuffer, world->current_gscn, (NUGSCN *)cutscene_scene, page_handles[0], &world->giz_buffer,
-        &world->unknown_0108, *(i32 *)&world->unknown_0140[0x011c], *(i32 *)&world->unknown_0140[0x0120], world);
+        // 0x25c/0x260 are i32 reads into the progress_data region.
+        &world->unknown_0108, *(i32 *)((char *)world + 0x25c), *(i32 *)((char *)world + 0x260), world);
     if (abort_load != 0)
         goto abort;
 
@@ -494,7 +498,7 @@ after_area:
     BoltTypes_Init(world);
 
     // Config-based subsystem initialization
-    if (world->unknown_010c > 0) {
+    if (world->config_count > 0) {
         LevelConfig_AfterLoad(world->current_level, ConfigBuffer, LevelConfigKeywords_AfterLoad);
         EquivalentObjects_Configure(world, ConfigBuffer);
         Teleports_Configure(world, ConfigBuffer);
@@ -510,7 +514,7 @@ after_area:
 
     // SockSys configuration
     if (world->sock_sys != NULL) {
-        if (world->unknown_010c > 0) {
+        if (world->config_count > 0) {
             SockSys_Configure(world->sock_sys, ConfigBuffer, 0, &world->giz_buffer, &world->unknown_0108,
                               world->current_gscn);
         }
@@ -539,7 +543,7 @@ after_area:
 
     // AI system loading
     if ((level->flags & 0xe2) == 2 && level != (LEVELDATA *)PLATFORM_LDATA) {
-        *(i32 *)&world->unknown_0140[0x29a4] = 0;
+        world->ai_loaded = 0;
         ai_buf_size = 0x1cc00;
         if (RETAKED_LDATA != NULL && level == (LEVELDATA *)RETAKED_LDATA) {
             ai_buf_size = 0x1e800;
@@ -563,7 +567,7 @@ after_area:
         world->climb_object_sys = (CLIMBOBJECTSYS_s *)CreateClimbObjectSys(&world->giz_buffer, &world->unknown_0108,
                                                                             (i32)(u8)level->max_climb_objs);
     } else {
-        *(i32 *)&world->unknown_0140[0x29a4] = 1;
+        world->ai_loaded = 1;
     }
 
     if (abort_load != 0)
@@ -576,17 +580,17 @@ after_area:
 
     // Lights
     if ((level->flags & LEVEL_STATUS) == 0) {
-        *(i32 *)&world->unknown_0140[0x2978] = -1;
-        *(i32 *)&world->unknown_0140[0x297c] = 0;
+        world->rtl_id = -1;
+        world->light_dir = 0;
     } else {
         light_path = world->config_file;
         LoadLights(world, light_path);
-        rtl_id = rtlFindByUserId(*(i32 *)&world->unknown_0140[0x2974], 1);
-        *(i32 *)&world->unknown_0140[0x2978] = rtl_id;
+        rtl_id = rtlFindByUserId(world->rtl_set_id, 1);
+        world->rtl_id = rtl_id;
         if (rtl_id != -1) {
-            rtlGetDirection(*(i32 *)&world->unknown_0140[0x2974], rtl_id, (void **)&world->unknown_0140[0x297c]);
+            rtlGetDirection(world->rtl_set_id, rtl_id, (void **)&world->light_dir);
         } else {
-            *(i32 *)&world->unknown_0140[0x297c] = 0;
+            world->light_dir = 0;
         }
     }
 
@@ -594,14 +598,14 @@ after_area:
         goto abort;
 
     // More config-based subsystems
-    if (world->unknown_010c > 0) {
+    if (world->config_count > 0) {
         RippleEffects_Configure(world, ConfigBuffer);
         PortalDoors_Configure(world, ConfigBuffer);
         if (abort_load != 0)
             goto abort;
     }
 
-    GizmoSysAddGizmos((GIZMOSYS_s *)world->gizmo_sys, (GIZFLOW_s *)*(void **)&world->unknown_0140[0x298c], world);
+    GizmoSysAddGizmos((GIZMOSYS_s *)world->gizmo_sys, (GIZFLOW_s *)world->giz_flow, world);
     if (abort_load != 0)
         goto abort;
 
@@ -623,8 +627,9 @@ after_area:
         ((void (*)(WORLDINFO *, void *, void *))level->load_fn)(world, &world->giz_buffer, &world->unknown_0108);
     }
 
-    SetAreaPickupGravity(*(i32 *)&world->unknown_0140[0x0120], *(i32 *)&world->unknown_0140[0x011c]);
-    world->unknown_0110 = 1;
+    // i32 reads into the progress_data region (0x260/0x25c).
+    SetAreaPickupGravity(*(i32 *)((char *)world + 0x260), *(i32 *)((char *)world + 0x25c));
+    world->loaded = 1;
     return;
 
 abort:
@@ -633,9 +638,9 @@ abort:
 }
 
 i32 WorldInfo_Reset(WORLDINFO *world, i32 level_idx) {
-    if (world->unknown_0110 != 0) {
+    if (world->loaded != 0) {
         SetLevelExBlowupFlags(0);
-        if (world->unknown_011c == level_idx && (u8)LDataList[level_idx].unknown_0af != 0xff &&
+        if (world->level_idx == level_idx && (u8)LDataList[level_idx].unknown_0af != 0xff &&
             new_level_from_menu == 0) {
             return 0;
         }
@@ -645,17 +650,17 @@ i32 WorldInfo_Reset(WORLDINFO *world, i32 level_idx) {
     }
 
     if (new_level_from_menu != 0) {
-        WORLDINFO *other = (WORLDINFO *)((char *)world + 0x51b0);
+        WORLDINFO *other = world + 1;
         if (WORLD != world) {
             other = WORLD;
         }
-        if (other->unknown_0110 != 0 && other->unknown_011c == level_idx) {
+        if (other->loaded != 0 && other->level_idx == level_idx) {
             WorldInfo_Dump(other);
         }
     }
 
     // Save buffer cursors before clearing the world.
-    void *bufStart = *(void **)((char *)world + 0x100);
+    void *bufStart = world->buffer_start;
     void *bufEnd = world->unknown_0108.void_ptr;
 
     TouchHacks::CleanupAllMechObjectInterfaces(world);
@@ -664,33 +669,33 @@ i32 WorldInfo_Reset(WORLDINFO *world, i32 level_idx) {
 
     // Restore the buffer cursors: 0x108, then 0x100, then 0x104 (giz_buffer).
     world->unknown_0108.void_ptr = bufEnd;
-    *(void **)((char *)world + 0x100) = bufStart;
+    world->buffer_start = bufStart;
     world->giz_buffer.void_ptr = bufStart;
     if ((char *)bufEnd > (char *)bufStart) {
         memset(bufStart, 0, (usize)((char *)bufEnd - (char *)bufStart));
     }
 
     // Set level info
-    world->unknown_011c = level_idx;
-    world->unknown_0120 = -1;
-    world->unknown_0124 = -1;
+    world->level_idx = level_idx;
+    world->level_sub_id = -1;
+    world->area_sub_id = -1;
 
     if (level_idx != -1) {
         LEVELDATA *levelData = &LDataList[level_idx];
         world->current_level = levelData;
         i32 areaIdx = (i8)levelData->unknown_0af;
-        world->unknown_0120 = areaIdx;
+        world->level_sub_id = areaIdx;
         if (areaIdx != -1) {
             world->area = &ADataList[areaIdx];
-            world->unknown_0124 = (i8)ADataList[areaIdx].episode_index;
+            world->area_sub_id = (i8)ADataList[areaIdx].episode_index;
         }
 
         // Invalidate every page handle (0x2a98 .. 0x2aac).
-        *(i32 *)((char *)world + 0x2a98) = -1;
-        *(i32 *)((char *)world + 0x2a9c) = -1;
-        *(i32 *)((char *)world + 0x2aa0) = -1;
-        *(i32 *)((char *)world + 0x2aa4) = -1;
-        *(i32 *)((char *)world + 0x2aa8) = -1;
+        world->page_pp = -1;
+        world->page_part = -1;
+        world->page_anim = -1;
+        world->page_grass = -1;
+        world->page_bridge = -1;
 
         i32 progress_index = (i8)levelData->unknown_0d4;
         if (progress_index > 0xb || progress_index == -1) {
@@ -700,9 +705,9 @@ i32 WorldInfo_Reset(WORLDINFO *world, i32 level_idx) {
         }
 
         // Build config file path
-        NuStrCpy(world->filler0, "levels\\");
-        NuStrCat(world->filler0, levelData->dir);
-        NuStrCpy(world->config_file, world->filler0);
+        NuStrCpy(world->name, "levels\\");
+        NuStrCat(world->name, levelData->dir);
+        NuStrCpy(world->config_file, world->name);
         NuStrCat(world->config_file, "\\");
         NuStrCat(world->config_file, levelData->name);
         ResetLevSfx(world);
@@ -747,7 +752,7 @@ void WorldInfo_StreamLevel(BGPROCINFO *bg_info) {
 
     waiting_for_level = -1;
 
-    if (LWORLD->unknown_0110 != 0) {
+    if (LWORLD->loaded != 0) {
         level_already_loaded = next_level;
     }
 
@@ -770,8 +775,8 @@ i32 WorldInfo_OtherLevel(WORLDINFO *world) {
         other = &WorldInfo[1];
     }
 
-    if (other->unknown_0110 != 0) {
-        return other->unknown_011c;
+    if (other->loaded != 0) {
+        return other->level_idx;
     }
 
     return -1;
@@ -780,7 +785,7 @@ i32 WorldInfo_OtherLevel(WORLDINFO *world) {
 void WorldInfo_Register(WORLDINFO *world) {
     edbitsRegisterBaseScene(world->current_gscn);
     edanimRegisterBaseScene(world->current_gscn);
-    edbitsRegisterBaseTerrain(*(void **)&world->unknown_0140[0x281c]);
+    edbitsRegisterBaseTerrain(world->terrain);
 }
 
 void WorldInfo_ClearAllIfScreenFaded(void) {
@@ -794,11 +799,11 @@ void WorldInfo_ClearAllIfScreenFaded(void) {
 }
 
 void WorldInfo_LoadObjectAnimFile(WORLDINFO *world) {
-    if (*(i32 *)((char *)world + 0x2aa0) == -1) {
+    if (world->page_anim == -1) {
         char path[256];
         sprintf(path, "%s.anm", world->config_file);
         if (NuFileExists(path)) {
-            *(i32 *)((char *)world + 0x2aa0) = edanimLoadPage(path, world->current_gscn);
+            world->page_anim = edanimLoadPage(path, world->current_gscn);
         }
     }
 }
@@ -819,9 +824,12 @@ void WorldInfo_DrawScene(WORLDINFO *world) {
 }
 
 void WorldInfo_UpdateRoomVisibility(WORLDINFO *world, i32 param) {
-    u8 *visBuf = (u8 *)&world->unknown_0140[0x2851]; // field_0x2991
-    world->unknown_0140[0x2850] = 1;                 // field_0x2990
-    *(u8 **)&world->unknown_0140[0x2954] = visBuf;   // field_0x2a94
+    // NOTE: using the named `rooms_visible` field (vs a raw byte offset) shifts
+    // GCC 4.7's register allocation for the 0x100-byte memset alignment path,
+    // dropping the fuzzy match (~70% -> ~65%) with identical instructions.
+    u8 *visBuf = world->rooms_visible;
+    world->room_visibility_flag = 1;
+    world->rooms_visible_ptr = visBuf;
     memset(visBuf, 0, 0x100);
 
     if (param == 0 && world->current_gscn != NULL && world->current_gscn->field5_0x8 > 0) {

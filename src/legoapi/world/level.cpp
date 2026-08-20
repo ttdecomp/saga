@@ -2377,10 +2377,10 @@ void Level_LoadConfigFile(WORLDINFO *world) {
 
     world->giz_buffer.void_ptr = (void *)((usize)world->giz_buffer.void_ptr + 3U & ~3U);
     i32 bytesRead = NuFileLoadBuffer(name, world->giz_buffer.void_ptr, 0x10000);
-    world->unknown_010c = bytesRead;
+    world->config_count = bytesRead;
     if (bytesRead > 0) {
         ((char *)world->giz_buffer.void_ptr)[bytesRead] = '\0';
         bytesRead = Text_StripComments((char *)world->giz_buffer.void_ptr, ConfigBuffer, 1);
-        world->unknown_010c = bytesRead;
+        world->config_count = bytesRead;
     }
 }

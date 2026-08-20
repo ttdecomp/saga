@@ -9,6 +9,7 @@
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nu3d/nutex.h"
 #include "legoapi/core/input/timer.h"
+#include "legoapi/world/world.h"
 
 // --- Level data (leveldata.cpp) ---
 extern void *LevelHackData;
@@ -140,7 +141,6 @@ extern void Door_Reset(void);
 extern void ResetMinikitCounter(void);
 extern i32 Mission_Active(struct MISSIONSYS_s *);
 extern i32 Players_AveragePos(struct nuvec_s *, struct SOCKPOSITION_s *);
-extern "C" f32 NuVecDistSqr(void *, void *, i32);
 extern "C" void *NuFParCreate(const char *);
 extern "C" i32 NuFParDestroy(void *);
 extern "C" i32 NuFParGetLine(void *);
