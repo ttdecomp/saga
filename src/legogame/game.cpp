@@ -164,7 +164,7 @@ void InitGameAfterConfig(void) {
         LEVELDATA *level = LDataList;
         do {
             if (799 < level->unknown_060) {
-                // level->field2_0x60 = tab;
+                // level->levels = tab;
             }
             level->unknown_0af = 0xff;
             level->unknown_0d4 = 0xff;
@@ -174,10 +174,10 @@ void InitGameAfterConfig(void) {
                 areaIndex = 0;
                 area = pAVar2;
                 do {
-                    if (area->field28_0x7d != 0) {
+                    if (area->level_count != 0) {
                         i32 iVar4 = 0;
                         do {
-                            if (area->field2_0x60[iVar4] == i) {
+                            if (area->levels[iVar4] == i) {
                                 level->unknown_0af = (byte)areaIndex;
                                 level->unknown_0d4 = (byte)iVar4;
                                 episode = (byte)areaIndex;
@@ -199,7 +199,7 @@ void InitGameAfterConfig(void) {
                                 goto LAB_0012cb40;
                             }
                             iVar4 = iVar4 + 1;
-                        } while (iVar4 < (i32)(u32)area->field28_0x7d);
+                        } while (iVar4 < (i32)(u32)area->level_count);
                     }
                     areaIndex = areaIndex + 1;
                     area = area + 1;

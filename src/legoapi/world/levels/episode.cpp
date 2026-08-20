@@ -11,7 +11,7 @@ u32 Episode_FindAreaFromFlags(EPISODEDATA *ep, u32 flags, u32 want) {
     for (i32 i = 0; i < (i32)ep->area_count; i++) {
         AREADATA *a = &ADataList[ep->area_ids[i]];
         if ((a->flags & flags) == want) {
-            return (u8)a->field27_0x7c;
+            return (u8)a->index;
         }
     }
     return 0xffffffff;

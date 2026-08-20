@@ -110,7 +110,7 @@ AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferE
         if (in_area) {
             if (NuStrICmp(word, "area_end") == 0) {
                 in_area = 0;
-                if (area->dir[0] != '\0' && area->file[0] != '\0' && area->field28_0x7d != 0 &&
+                if (area->dir[0] != '\0' && area->file[0] != '\0' && area->level_count != 0 &&
                     (area->flags & AREAFLAG_TEST_AREA) == 0) {
                     area++;
                     area_count++;
@@ -124,27 +124,27 @@ AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferE
                     NuStrCpy(area->file, fp->word_buf);
                 in_area = 1;
             } else if (NuStrICmp(fp->word_buf, "level") == 0) {
-                if (area->field28_0x7d > 0xb || NuFParGetWord(fp) == 0) {
+                if (area->level_count > 0xb || NuFParGetWord(fp) == 0) {
                     in_area = 1;
                 } else {
                     i32 li;
                     Level_FindByName(fp->word_buf, &li);
                     in_area = 1;
                     if (li != -1) {
-                        in_area = area->field28_0x7d;
+                        in_area = area->level_count;
                         if (in_area == 0) {
-                            area->field2_0x60[0] = (i16)li;
-                            area->field28_0x7d = 1;
+                            area->levels[0] = (i16)li;
+                            area->level_count = 1;
                         } else {
                             i32 k;
-                            if (area->field2_0x60[0] != li) {
+                            if (area->levels[0] != li) {
                                 for (k = 1; k < in_area; k++) {
-                                    if (area->field2_0x60[k] == li)
+                                    if (area->levels[k] == li)
                                         break;
                                 }
                                 if (k == in_area) {
-                                    area->field2_0x60[in_area] = (i16)li;
-                                    area->field28_0x7d = (u8)(in_area + 1);
+                                    area->levels[in_area] = (i16)li;
+                                    area->level_count = (u8)(in_area + 1);
                                 }
                             }
                         }
@@ -203,12 +203,12 @@ AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferE
                 area->flags |= AREAFLAG_NO_FREEPLAY;
             } else if (NuStrICmp(fp->word_buf, "name_id") == 0) {
                 in_area = 1;
-                area->field25_0x78 = NuFParGetInt(fp);
+                area->name_id = NuFParGetInt(fp);
             } else if (NuStrICmp(fp->word_buf, "text_id") == 0) {
-                area->field39_0x94 = NuFParGetInt(fp);
+                area->text_id = NuFParGetInt(fp);
                 in_area = 1;
                 if (NuFParGetWord(fp) != 0)
-                    area->field40_0x96 = (byte)abs(NuAToI(fp->word_buf));
+                    area->text_id_value = (byte)abs(NuAToI(fp->word_buf));
             } else if (NuStrICmp(fp->word_buf, "timetrial_time") == 0) {
                 in_area = 1;
                 area->challenge_trial_time = NuFParGetInt(fp);
@@ -227,11 +227,11 @@ AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferE
             in_area = 1;
             area->dir[0] = '\0';
             area->file[0] = '\0';
-            area->field2_0x60[0] = -1;
-            area->field25_0x78 = 0xffff;
+            area->levels[0] = -1;
+            area->name_id = 0xffff;
             area->flags = AREAFLAG_NONE;
-            area->field27_0x7c = (u8)area_count;
-            area->field28_0x7d = 0;
+            area->index = (u8)area_count;
+            area->level_count = 0;
             area->cheat = 0xff;
             area->field30_0x7f = 0;
             area->field31_0x80 = 0;
@@ -242,8 +242,8 @@ AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferE
             area->minikit_id = 0xffff;
             area->field37_0x8c = 0;
             area->field38_0x90 = 0;
-            area->field39_0x94 = 0xffff;
-            area->field40_0x96 = 1;
+            area->text_id = 0xffff;
+            area->text_id_value = 1;
             area->field42_0x98 = NULL;
         }
     }
@@ -309,12 +309,12 @@ struct LEVELDATA_s *Area_FindStatusLevel(AREADATA *area, i32 *indexDest) {
         *indexDest = -1;
     }
 
-    if (area == NULL || area->field28_0x7d == 0) {
+    if (area == NULL || area->level_count == 0) {
         return NULL;
     }
 
-    i32 bound = (u32)area->field28_0x7d * 2 - 2;
-    levelIdx = (i32)area->field2_0x60[0];
+    i32 bound = (u32)area->level_count * 2 - 2;
+    levelIdx = (i32)area->levels[0];
     i = 0;
     level = &LDataList[levelIdx];
 
@@ -325,7 +325,7 @@ struct LEVELDATA_s *Area_FindStatusLevel(AREADATA *area, i32 *indexDest) {
         if (i == bound) {
             return NULL;
         }
-        levelIdx = (i32) * (i16 *)((u8 *)area->field2_0x60 + i + 2);
+        levelIdx = (i32) * (i16 *)((u8 *)area->levels + i + 2);
         i += 2;
         level = &LDataList[levelIdx];
     }
@@ -349,14 +349,14 @@ LEVELDATA *Area_FindNextPlayLevel(i32 levelIdx) {
     result = level;
 
     if (areaIdx != 0xff) {
-        if (areaLevelIdx < (i32)(ADataList[areaIdx].field28_0x7d - 1)) {
-            result = &LDataList[ADataList[areaIdx].field2_0x60[areaLevelIdx]];
+        if (areaLevelIdx < (i32)(ADataList[areaIdx].level_count - 1)) {
+            result = &LDataList[ADataList[areaIdx].levels[areaLevelIdx]];
             if (((u8 *)&result->flags)[0] & (LEVEL_INTRO | LEVEL_MIDTRO | LEVEL_OUTRO)) {
-                while (areaLevelIdx != (i32)ADataList[areaIdx].field28_0x7d - 2) {
+                while (areaLevelIdx != (i32)ADataList[areaIdx].level_count - 2) {
                     areaLevelIdx++;
-                    if ((((u8 *)&LDataList[ADataList[areaIdx].field2_0x60[areaLevelIdx]].flags)[0] &
+                    if ((((u8 *)&LDataList[ADataList[areaIdx].levels[areaLevelIdx]].flags)[0] &
                          (LEVEL_INTRO | LEVEL_MIDTRO | LEVEL_OUTRO)) == 0) {
-                        return &LDataList[ADataList[areaIdx].field2_0x60[areaLevelIdx]];
+                        return &LDataList[ADataList[areaIdx].levels[areaLevelIdx]];
                     }
                 }
                 return level;
@@ -415,7 +415,7 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
         }
     }
 
-    if (HUB_ADATA != NULL && HUB_ADATA->field27_0x7c == area) {
+    if (HUB_ADATA != NULL && HUB_ADATA->index == area) {
         if (area != last_area) {
             characterbuffer_ptr.addr = ALIGN(characterbuffer_ptr.addr, 0x40);
             scene = NuGScnRead(&characterbuffer_ptr, characterbuffer_end, "stuff\\icons\\starwars_icons_all.gsc");
@@ -454,7 +454,7 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
         }
     }
 model_select:
-    if (HUB_ADATA != NULL && HUB_ADATA->field27_0x7c == area) {
+    if (HUB_ADATA != NULL && HUB_ADATA->index == area) {
         list = Hub_ModelList;
         story_list = Hub_ModelList;
     } else {
@@ -465,7 +465,7 @@ model_select:
             else
                 list = Area_StoryModelList;
         }
-        if (HUB_ADATA != NULL && HUB_ADATA->field27_0x7c == area) {
+        if (HUB_ADATA != NULL && HUB_ADATA->index == area) {
             story_list = Hub_ModelList;
         } else {
             if (Mission_Active(0) != 0)
@@ -479,16 +479,16 @@ icon_scenes:
     CurrentCList = list;
     IconScenes_Load(list, 1, &characterbuffer_ptr, &characterbuffer_end);
 
-    if (HUB_ADATA != NULL && HUB_ADATA->field27_0x7c == area)
+    if (HUB_ADATA != NULL && HUB_ADATA->index == area)
         Customiser_SetAnimsToLoad(CharacterCustomiser, 1);
     else
         Customiser_SetAnimsToLoad(CharacterCustomiser, 0);
 
     if (area != -1 &&
         (ADataList[area].flags & (AREAFLAG_ENDING_AREA | AREAFLAG_TEST_AREA | AREAFLAG_NO_CHARACTER_COLLISION)) == 0) {
-        if (ADataList[area].episode_index <= 2 || (ANEWHOPE_ADATA != NULL && ANEWHOPE_ADATA->field27_0x7c == area) ||
-            (PODSPRINT_ADATA != NULL && PODSPRINT_ADATA->field27_0x7c == area) ||
-            (BONUS_GUNSHIP_ADATA != NULL && BONUS_GUNSHIP_ADATA->field27_0x7c == area)) {
+        if (ADataList[area].episode_index <= 2 || (ANEWHOPE_ADATA != NULL && ANEWHOPE_ADATA->index == area) ||
+            (PODSPRINT_ADATA != NULL && PODSPRINT_ADATA->index == area) ||
+            (BONUS_GUNSHIP_ADATA != NULL && BONUS_GUNSHIP_ADATA->index == area)) {
             Particles_LoadAreaPage("stuff\\char_lsw1.ptl");
         }
     }
@@ -499,7 +499,7 @@ icon_scenes:
     GameLoadCharacterModels(list, 0, &characterbuffer_ptr, &characterbuffer_end, 1, area);
     CharacterDataLoad = 2;
     CharScenes_AreaLoad(list, &characterbuffer_end, characterbuffer_ptr);
-    if (!(HUB_ADATA != NULL && HUB_ADATA->field27_0x7c == area))
+    if (!(HUB_ADATA != NULL && HUB_ADATA->index == area))
         Customiser_LoadAccessories(CharacterCustomiser, list);
     Customiser_ResetModelTextureIDs(CharacterCustomiser);
     CurrentStoryCList = story_list;

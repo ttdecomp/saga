@@ -8,14 +8,14 @@
 typedef struct AREADATA_s {
     char dir[64];
     char file[32];
-    i16 field2_0x60[12];
+    i16 levels[12];
 
-    i16 field25_0x78;
+    i16 name_id;
 
     u16 flags;
 
-    byte field27_0x7c;
-    byte field28_0x7d;
+    byte index;
+    byte level_count;
     byte cheat;
     byte field30_0x7f;
     i32 field31_0x80;
@@ -26,8 +26,8 @@ typedef struct AREADATA_s {
     i16 minikit_id;
     i32 field37_0x8c;
     i32 field38_0x90;
-    i16 field39_0x94;
-    byte field40_0x96;
+    i16 text_id;
+    byte text_id_value;
     byte field41_0x97;
     i16 *field42_0x98;
 } AREADATA;
