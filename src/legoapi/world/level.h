@@ -52,13 +52,13 @@ typedef struct LEVELDATA_s {
 
     u32 flags;
 
-    void *load_fn;
-    void *init_fn;
-    void *reset_fn;
-    void *update_fn;
-    void *always_update_fn;
+    void (*load_fn)(WORLDINFO *, VARIPTR *, VARIPTR *);
+    void (*init_fn)(WORLDINFO *);
+    void (*reset_fn)(WORLDINFO *);
+    void (*update_fn)(WORLDINFO *);
+    void (*always_update_fn)(WORLDINFO *);
     void (*draw_fn)(WORLDINFO *);
-    void *draw_status_fn;
+    void (*draw_status_fn)(WORLDINFO *);
 
     LEVELDATADISPLAY data_display;
 
@@ -188,13 +188,13 @@ typedef struct LEVELOBJECT_s {
 typedef struct LEVELFIXUP {
     char *name;
     LEVELDATA **level;
-    void *load_fn;
-    void *init_fn;
-    void *reset_fn;
-    void *update_fn;
-    void *always_update_fn;
+    void (*load_fn)(WORLDINFO *, VARIPTR *, VARIPTR *);
+    void (*init_fn)(WORLDINFO *);
+    void (*reset_fn)(WORLDINFO *);
+    void (*update_fn)(WORLDINFO *);
+    void (*always_update_fn)(WORLDINFO *);
     void (*draw_fn)(WORLDINFO *);
-    void *draw_status_fn;
+    void (*draw_status_fn)(WORLDINFO *);
 } LEVELFIXUP;
 
 #ifdef __cplusplus

@@ -285,7 +285,7 @@ void WorldInfo_Init(WORLDINFO *world) {
 
     // Level init function
     if (world->current_level->init_fn != NULL) {
-        ((void (*)(WORLDINFO *))world->current_level->init_fn)(world);
+        world->current_level->init_fn(world);
     }
 
     // The game hook may provide a menu and Y position for the newly loaded
@@ -623,7 +623,7 @@ after_area:
 
     // Level load function
     if (level->load_fn != NULL) {
-        ((void (*)(WORLDINFO *, void *, void *))level->load_fn)(world, &world->giz_buffer, &world->unknown_0108);
+        level->load_fn(world, &world->giz_buffer, &world->unknown_0108);
     }
 
     // i32 reads into the progress_data region (0x260/0x25c).
