@@ -25,10 +25,10 @@ extern i16 id_ANAKINJEDISCARRED;
 extern i16 id_HANINCARBONITE;
 extern i16 id_DEFAULTCHARACTER[2];
 extern i16 Area_PlayerModelList[18];
-extern APICHARACTERMODELLIST_s Area_MissionModelList[98];
-extern APICHARACTERMODELLIST_s Area_StoryModelList[98];
-extern APICHARACTERMODELLIST_s FreePlayModelList[98];
-extern APICHARACTERMODELLIST_s Hub_ModelList[12];
+extern APICHARACTERMODELLIST_s Area_MissionModelList[52];
+extern APICHARACTERMODELLIST_s Area_StoryModelList[52];
+extern APICHARACTERMODELLIST_s FreePlayModelList[52];
+extern APICHARACTERMODELLIST_s Hub_ModelList[8];
 extern i32 Area_PlayerModelCount;
 extern void *CurrentCList;
 extern void *CurrentStoryCList;
@@ -562,7 +562,7 @@ i32 AreaFromMiniKitID(i32 minikitId) {
 struct bgprocinfo_s;
 static __used__ void LoadAreaData(bgprocinfo_s *) {
     char pathbuf[0x100];
-    APICHARACTERMODELLIST_s ml[6];
+    i16 ml[6];
     i32 level;
     i32 saved_max_fps;
     i32 area;
@@ -607,15 +607,15 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
     }
 
     if (area != -1 && area != last_area) {
-        ml[1].model_id = 1;
-        ml[2].model_id = -1;
-        ml[3].model_id = 1;
-        ml[4].model_id = -1;
-        ml[5].model_id = 0;
-        ml[0].model_id = id_ANAKINJEDISCARRED;
+        ml[1] = 1;
+        ml[2] = -1;
+        ml[3] = 1;
+        ml[4] = -1;
+        ml[5] = 0;
+        ml[0] = id_ANAKINJEDISCARRED;
         if ((ADataList[area].flags & AREAFLAG_HUB_AREA) != 0)
-            ml[2].model_id = id_HANINCARBONITE;
-        IconScenes_Load(ml, 1, &characterbuffer_ptr, &characterbuffer_end);
+            ml[2] = id_HANINCARBONITE;
+        IconScenes_Load((APICHARACTERMODELLIST_s *)ml, 1, &characterbuffer_ptr, &characterbuffer_end);
     }
 
     if (makefreeplaymodellist != 0) {

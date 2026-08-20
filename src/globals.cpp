@@ -276,11 +276,11 @@ LEVELDATA *NEWTOWN_LDATA = NULL;
 void *LevelHackData = NULL;
 i32 Area_PlayerModelCount = 0;
 i32 Area_StoryModelCount = 0;
-i16 Area_PlayerModelList[1] = {0};
+i16 Area_PlayerModelList[24] = {0};
 i32 Area_FreePlayModelCount = 0;
-i16 Area_FreePlayModelList[1] = {0};
+i16 Area_FreePlayModelList[104] = {0};
 i32 Area_MissionModelCount = 0;
-APICHARACTERMODELLIST_s Area_MissionModelList[1] = {0};
+APICHARACTERMODELLIST_s Area_MissionModelList[52] = {0};
 i16 AreaMusic = 0;
 
 i32 LOADEROFF = 0;
@@ -366,8 +366,8 @@ i32 NextArea_FreePlay = 0;
 
 VARIPTR characterbuffer_ptr = {0};
 VARIPTR characterbuffer_end = {0};
-APICHARACTERMODELLIST_s FreePlayModelList[98] = {0};
-APICHARACTERMODELLIST_s Hub_ModelList[12] = {0};
+APICHARACTERMODELLIST_s FreePlayModelList[52] = {0};
+APICHARACTERMODELLIST_s Hub_ModelList[8] = {0};
 void *CurrentCList = NULL;
 void *CurrentStoryCList = NULL;
 i32 CharacterDataLoad = 0;

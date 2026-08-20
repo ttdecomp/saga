@@ -91,14 +91,14 @@ extern char PlayerProgress[0x80];
 extern i32 DEFAULT_PLAYERHITPOINTS;
 extern i32 Area_PlayerModelCount;
 extern i32 Area_StoryModelCount;
-extern i16 Area_PlayerModelList[1];
+extern i16 Area_PlayerModelList[24];
 extern i32 Area_FreePlayModelCount;
-extern i16 Area_FreePlayModelList[1];
+extern i16 Area_FreePlayModelList[104];
 extern i32 Area_MissionModelCount;
-extern APICHARACTERMODELLIST_s Area_MissionModelList[1];
+extern APICHARACTERMODELLIST_s Area_MissionModelList[52];
 extern i16 AreaMusic;
 extern void *MissionSys;
-extern APICHARACTERMODELLIST_s Area_StoryModelList[98];
+extern APICHARACTERMODELLIST_s Area_StoryModelList[52];
 extern void *LevelLoad;
 extern i32 LevelLoadCount;
 

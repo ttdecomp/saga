@@ -31,6 +31,7 @@ typedef u16 word;
 
 struct APICHARACTERMODELLIST_s {
     i16 model_id;
+    i16 count;
 };
 
 #define SAGA_NOMATCH __attribute__((section(".text.nomatch")))

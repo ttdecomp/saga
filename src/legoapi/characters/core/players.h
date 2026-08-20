@@ -50,7 +50,7 @@ extern i16 PlayerList[8];
 extern i32 PlayerID[2];
 extern i32 GAMEDEMO;
 extern i16 Area_PlayerIDList[9];
-extern APICHARACTERMODELLIST_s Area_StoryModelList[98];
+extern APICHARACTERMODELLIST_s Area_StoryModelList[52];
 extern PLAYERPROGRESS PlayerProgress[8];
 extern i32 Hub_UsePlayerList;
 extern i32 LevelChangesInArea;

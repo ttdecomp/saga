@@ -52,7 +52,7 @@ i32 UsePlayerList = 0;
 i16 PlayerList[8];
 i32 PlayerID[2] = {-1, -1};
 i16 Area_PlayerIDList[9];
-APICHARACTERMODELLIST_s Area_StoryModelList[98];
+APICHARACTERMODELLIST_s Area_StoryModelList[52];
 PLAYERPROGRESS PlayerProgress[8];
 i32 Hub_UsePlayerList = 0;
 i32 LevelChangesInArea = 0;
