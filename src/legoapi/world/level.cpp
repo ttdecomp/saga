@@ -23,6 +23,15 @@ void GameAudio_PlaySfxAndSetVolume(i32, nuvec_s *, float);
 // until the original defining file is decompiled.
 LEVELDATA *levelconfig_ldata = NULL;
 
+extern i16 GetMusicIndex(char *, nusound_filename_info_s *, i32);
+
+static void Titles_Init(WORLDINFO *) {
+}
+static void Titles_Update(WORLDINFO *) {
+}
+static void Titles_Draw(WORLDINFO *) {
+}
+
 // Keyword tables for generic level configuration keywords.
 // These are combined with game-specific keyword tables by LevelConfig_BeforeLoad
 // and LevelConfig_AfterLoad via NuFParPushCom2.
@@ -384,29 +393,25 @@ void FixUpLevels(LEVELFIXUP *fixup) {
     Levels_FixUp(fixup);
 
     LEVELDATA *level = Level_FindByName("titles", NULL);
-    // TITLES_LDATA = level;
+    TITLES_LDATA = level;
     if (level != NULL) {
-        // level->init_fn = Titles_Init;
-        // level->update_fn = Titles_Update;
-        // level->draw_fn = Titles_Draw;
-        // level->flags = level->flags & 0xfffffff5;
-        // level->music_index = GetMusicIndex("titles", MusicInfo, -1);
-        level->music_index = -1;
+        level->init_fn = (void *)Titles_Init;
+        level->update_fn = (void *)Titles_Update;
+        level->draw_fn = (void *)Titles_Draw;
+        level->flags &= ~0xa;
+        level->music_index = (i16)GetMusicIndex("titles", MusicInfo, -1);
 
         i32 handle = music_man.GetTrackHandle(TRACK_CLASS_QUIET, "titles");
-        level->music_tracks[0][0] = handle;
         level->music_tracks[0][1] = handle;
+        level->music_tracks[0][0] = handle;
 
         handle = music_man.GetTrackHandle(TRACK_CLASS_ACTION, "titles");
-        level->music_tracks[1][0] = handle;
         level->music_tracks[1][1] = handle;
+        level->music_tracks[1][0] = handle;
 
         handle = music_man.GetTrackHandle(TRACK_CLASS_NOMUSIC, "titles");
-        level->music_tracks[2][0] = handle;
         level->music_tracks[2][1] = handle;
-
-        LOG_DEBUG("Titles level track handles: %d, %d, %d, %d, %d, %d", level->music_tracks[0], level->music_tracks[1],
-                  level->music_tracks[2], level->music_tracks[3], level->music_tracks[4], level->music_tracks[5]);
+        level->music_tracks[2][0] = handle;
     }
 }
 
