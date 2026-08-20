@@ -62,7 +62,7 @@ extern void *PlayerSuit[8];
 extern u8 PlayerTorpedoCount[8];
 extern COINPACKET CoinPacket[2];
 extern u32 BackUpPlayers[];
-extern void *GizForceLOSInfo;
+extern char GizForceLOSInfo[0xc60];
 extern i32 DEFAULT_PLAYERHITPOINTS;
 extern u32 LEGOOBJ_DEFAULTLASTCOIN;
 

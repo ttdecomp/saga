@@ -36,7 +36,7 @@ LEVELDATA *PLATFORM_LDATA = NULL;
 LEVELDATA *RETAKED_LDATA = NULL;
 LEVELDATA *CREDITS_LDATA = NULL;
 u32 Text_Language = 1;
-nufpcomjmp_s *LevelConfigKeywords_AfterLoad = NULL;
+nufpcomjmp_s LevelConfigKeywords_AfterLoad;
 
 // --- Players globals ---
 // NOTE: `WORLD` (WORLDINFO) field offsets in world.h are an approximation; the
@@ -64,7 +64,7 @@ void *PlayerSuit[8];
 u8 PlayerTorpedoCount[8];
 COINPACKET CoinPacket[2];
 u32 BackUpPlayers[0x872];
-void *GizForceLOSInfo;
+char GizForceLOSInfo[0xc60];
 i32 DEFAULT_PLAYERHITPOINTS = 8;
 u32 LEGOOBJ_DEFAULTLASTCOIN = -1;
 
@@ -497,7 +497,7 @@ after_area:
 
     // Config-based subsystem initialization
     if (world->config_count > 0) {
-        LevelConfig_AfterLoad(world->current_level, ConfigBuffer, LevelConfigKeywords_AfterLoad);
+        LevelConfig_AfterLoad(world->current_level, ConfigBuffer, &LevelConfigKeywords_AfterLoad);
         EquivalentObjects_Configure(world, ConfigBuffer);
         Teleports_Configure(world, ConfigBuffer);
         Doors_Configure(world, ConfigBuffer);
