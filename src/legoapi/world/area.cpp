@@ -9,6 +9,56 @@
 #include "legoapi/world/level.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufpar.h"
+#include "nu2api/nucore/nuapi.h"
+#include "nu2api/nu3d/nugscn.h"
+#include "legoapi/world/world.h"
+
+struct APICHARACTERMODELLIST_s;
+struct CUSTOMISER;
+struct MISSIONSYS_s;
+
+extern i32 abort_load;
+extern void *area_scene;
+extern void *vehicle_scene;
+extern void *big_icon_scene;
+extern i16 id_ANAKINJEDISCARRED;
+extern i16 id_HANINCARBONITE;
+extern i16 id_DEFAULTCHARACTER[2];
+extern i16 Area_PlayerModelList[18];
+extern i16 Area_MissionModelList[98];
+extern i16 Area_StoryModelList[98];
+extern i16 FreePlayModelList[98];
+extern i16 Hub_ModelList[12];
+extern i32 Area_PlayerModelCount;
+extern void *CurrentCList;
+extern void *CurrentStoryCList;
+extern void *CharacterCustomiser;
+extern i32 makefreeplaymodellist;
+extern i32 BonusArea;
+extern AREADATA *ANEWHOPE_ADATA;
+extern AREADATA *PODSPRINT_ADATA;
+extern AREADATA *BONUS_GUNSHIP_ADATA;
+extern i32 CHARPAK;
+extern i32 apiloadcharactermodels_nopakfile;
+extern i32 CharacterDataLoad;
+extern i32 loadareadata_loadlevel;
+extern i32 AreaDataLoaded;
+extern i32 Level;
+extern VARIPTR characterbuffer_ptr;
+extern VARIPTR characterbuffer_end;
+
+extern void IconScenes_Load(APICHARACTERMODELLIST_s *, i32, variptr_u *, variptr_u *);
+extern void MakeFreePlayModelList(i32, i32, i32, i32, i32);
+extern void Customiser_LoadAccessories(CUSTOMISER *, APICHARACTERMODELLIST_s *);
+extern void Customiser_ResetModelTextureIDs(CUSTOMISER *);
+extern void Customiser_SetAnimsToLoad(CUSTOMISER *, i32);
+extern void GameLoadCharacterModels(APICHARACTERMODELLIST_s *, i32, variptr_u *, variptr_u *, i32, i32);
+extern void CharScenes_AreaLoad(APICHARACTERMODELLIST_s *, variptr_u *, variptr_u);
+extern void Particles_LoadAreaPage(char *);
+extern void *Mission_Active(struct MISSIONSYS_s *ms);
+extern "C" {
+    extern void APIResetCharacterRemap(void);
+}
 
 AREADATA *ADataList = NULL;
 AREADATA *HUB_ADATA = NULL;
@@ -511,4 +561,136 @@ i32 AreaFromMiniKitID(i32 minikitId) {
 
 struct bgprocinfo_s;
 static __used__ void LoadAreaData(bgprocinfo_s *) {
+    char pathbuf[0x100];
+    i16 ml[6];
+    i32 level;
+    i32 saved_max_fps;
+    i32 area;
+    void *scene;
+    void *list;
+    void *story_list;
+
+area = Area;
+    saved_max_fps = nuapi.max_fps;
+    nuapi.max_fps = 0x1e;
+    level = Level;
+
+    if (area != -1 && area != last_area) {
+        characterbuffer_ptr.addr = (characterbuffer_ptr.addr + 3) & ~3U;
+        NuStrCpy(pathbuf, "levels\\");
+        NuStrCat(pathbuf, ADataList[area].dir);
+        NuStrCat(pathbuf, "\\");
+        NuStrCat(pathbuf, ADataList[area].file);
+        NuStrCat(pathbuf, ".gsc");
+        scene = NuGScnRead(&characterbuffer_ptr, characterbuffer_end, pathbuf);
+        area_scene = scene;
+        if (scene != NULL && *(void **)((char *)scene + 0x110) != NULL)
+            *(byte *)(*(char **)((char *)scene + 0x110) + 0x74) |= 0x10;
+
+        if ((ADataList[area].flags & 5) != 0 && area != last_area) {
+            characterbuffer_ptr.addr = (characterbuffer_ptr.addr + 3) & ~3U;
+            scene = NuGScnRead(&characterbuffer_ptr, characterbuffer_end, "stuff\\vehicle_things.gsc");
+            vehicle_scene = scene;
+            if (scene != NULL && *(void **)((char *)scene + 0x110) != NULL)
+                *(byte *)(*(char **)((char *)scene + 0x110) + 0x74) |= 0x10;
+        }
+    }
+
+    if (HUB_ADATA != NULL && HUB_ADATA->field27_0x7c == area) {
+        if (area != last_area) {
+            characterbuffer_ptr.addr = (characterbuffer_ptr.addr + 0x3f) & ~0x3fU;
+            scene = NuGScnRead(&characterbuffer_ptr, characterbuffer_end, "stuff\\icons\\starwars_icons_all.gsc");
+            big_icon_scene = scene;
+            if (scene != NULL && *(void **)((char *)scene + 0x110) != NULL)
+                *(byte *)(*(char **)((char *)scene + 0x110) + 0x74) |= 0x10;
+        }
+    }
+
+    if (area != -1 && area != last_area) {
+        ml[1] = 1;
+        ml[2] = -1;
+        ml[3] = 1;
+        ml[4] = -1;
+        ml[5] = 0;
+        ml[0] = id_ANAKINJEDISCARRED;
+        if ((ADataList[area].flags & AREAFLAG_HUB_AREA) != 0)
+            ml[2] = id_HANINCARBONITE;
+        IconScenes_Load((APICHARACTERMODELLIST_s *)ml, 1, &characterbuffer_ptr, &characterbuffer_end);
+    }
+
+    if (makefreeplaymodellist != 0) {
+        if ((ADataList[area].flags & AREAFLAG_VEHICLE_AREA) != 0 ||
+            (Area_PlayerModelCount > 1 && BonusArea == 0)) {
+            MakeFreePlayModelList(Area_PlayerModelList[0], Area_PlayerModelList[2], area, level, 0);
+        } else {
+            MakeFreePlayModelList(id_DEFAULTCHARACTER[0], id_DEFAULTCHARACTER[1], area, level, 0);
+        }
+        story_list = Area_StoryModelList;
+        makefreeplaymodellist = 0;
+        list = FreePlayModelList;
+        goto icon_scenes;
+    } else {
+        if (area != -1 && area == last_area) {
+            CharacterDataLoad = 2;
+            goto loadareadata_check;
+        }
+    }
+model_select:
+    if (HUB_ADATA != NULL && HUB_ADATA->field27_0x7c == area) {
+        list = Hub_ModelList;
+        story_list = Hub_ModelList;
+    } else {
+        list = FreePlayModelList;
+        if (FreePlay == 0) {
+            if (Mission_Active(0) != 0)
+                list = Area_MissionModelList;
+            else
+                list = Area_StoryModelList;
+        }
+        if (HUB_ADATA != NULL && HUB_ADATA->field27_0x7c == area) {
+            story_list = Hub_ModelList;
+        } else {
+            if (Mission_Active(0) != 0)
+                story_list = Area_MissionModelList;
+            else
+                story_list = Area_StoryModelList;
+        }
+    }
+
+icon_scenes:
+    CurrentCList = list;
+    IconScenes_Load((APICHARACTERMODELLIST_s *)list, 1, &characterbuffer_ptr, &characterbuffer_end);
+
+    if (HUB_ADATA != NULL && HUB_ADATA->field27_0x7c == area)
+        Customiser_SetAnimsToLoad((CUSTOMISER *)CharacterCustomiser, 1);
+    else
+        Customiser_SetAnimsToLoad((CUSTOMISER *)CharacterCustomiser, 0);
+
+    if (area != -1 && (ADataList[area].flags & 0x62) == 0) {
+        if (ADataList[area].episode_index <= 2 ||
+            (ANEWHOPE_ADATA != NULL && ANEWHOPE_ADATA->field27_0x7c == area) ||
+            (PODSPRINT_ADATA != NULL && PODSPRINT_ADATA->field27_0x7c == area) ||
+            (BONUS_GUNSHIP_ADATA != NULL && BONUS_GUNSHIP_ADATA->field27_0x7c == area)) {
+            Particles_LoadAreaPage("stuff\\char_lsw1.ptl");
+        }
+    }
+
+    apiloadcharactermodels_nopakfile = (CHARPAK == 0);
+    APIResetCharacterRemap();
+    CharacterDataLoad = 1;
+    GameLoadCharacterModels((APICHARACTERMODELLIST_s *)list, 0, &characterbuffer_ptr, &characterbuffer_end, 1, area);
+    CurrentStoryCList = (void *)2;
+    CharScenes_AreaLoad((APICHARACTERMODELLIST_s *)list, &characterbuffer_end, characterbuffer_ptr);
+    if (!(HUB_ADATA != NULL && HUB_ADATA->field27_0x7c == area))
+        Customiser_LoadAccessories((CUSTOMISER *)CharacterCustomiser, (APICHARACTERMODELLIST_s *)list);
+    Customiser_ResetModelTextureIDs((CUSTOMISER *)CharacterCustomiser);
+    CurrentStoryCList = story_list;
+loadareadata_check:
+    if (loadareadata_loadlevel != 0) {
+        next_level = Level;
+        abort_load = 0;
+        WorldInfo_StreamLevel(0);
+    }
+    AreaDataLoaded = 1;
+    nuapi.max_fps = saved_max_fps;
 }

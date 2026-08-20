@@ -5,6 +5,7 @@
 #include "nu2api/nucore/common.h"
 #include "nu2api/nusound/nusound.h"
 #include "legoapi/core/input/timer.h"
+#include "legoapi/world/area.h"
 
 void *PlayerItemType = 0;
 i32 PLAYERITEMTYPECOUNT = 0;
@@ -360,3 +361,22 @@ i32 reset_restart = 0;
 i32 newlevelfrommenu_newmenuid = -1;
 i32 newlevelfrommenu_newmenuy = -1;
 i32 NextArea_FreePlay = 0;
+
+VARIPTR characterbuffer_ptr = {0};
+VARIPTR characterbuffer_end = {0};
+i16 FreePlayModelList[98] = {0};
+i16 Hub_ModelList[12] = {0};
+void *CurrentCList = NULL;
+void *CurrentStoryCList = NULL;
+i32 CharacterDataLoad = 0;
+i32 makefreeplaymodellist = 0;
+i32 BonusArea = 0;
+i16 id_DEFAULTCHARACTER[2] = {-1, -1};
+AREADATA *ANEWHOPE_ADATA = NULL;
+AREADATA *PODSPRINT_ADATA = NULL;
+AREADATA *BONUS_GUNSHIP_ADATA = NULL;
+i32 CHARPAK = 0;
+i32 apiloadcharactermodels_nopakfile = 0;
+i32 loadareadata_loadlevel = 0;
+i32 AreaDataLoaded = 1;
+i32 Level = 0;
