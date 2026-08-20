@@ -324,23 +324,18 @@ struct LEVELDATA_s *Area_FindStatusLevel(AREADATA *area, i32 *indexDest) {
 }
 
 LEVELDATA *Area_FindNextPlayLevel(i32 levelIdx) {
-    LEVELDATA *level;
-    u8 areaIdx;
-    i32 areaLevelIdx;
-    LEVELDATA *result;
-
-    level = &LDataList[levelIdx];
-    areaIdx = (u8)level->unknown_0af;
-    areaLevelIdx = (i8)level->unknown_0d4;
-    result = level;
+    LEVELDATA *level = &LDataList[levelIdx];
+    u8 areaIdx = (u8)level->unknown_0af;
+    i32 areaLevelIdx = level->unknown_0d4;
+    LEVELDATA *result = level;
 
     if (areaIdx != 0xff) {
-        if (areaLevelIdx < (i32)(ADataList[areaIdx].level_count - 1)) {
+        if (areaLevelIdx < ADataList[areaIdx].level_count - 1) {
             result = &LDataList[ADataList[areaIdx].levels[areaLevelIdx]];
-            if (((u8 *)&result->flags)[0] & (LEVEL_INTRO | LEVEL_MIDTRO | LEVEL_OUTRO)) {
-                while (areaLevelIdx != (i32)ADataList[areaIdx].level_count - 2) {
+            if (result->flags & (LEVEL_INTRO | LEVEL_MIDTRO | LEVEL_OUTRO)) {
+                while (areaLevelIdx != ADataList[areaIdx].level_count - 2) {
                     areaLevelIdx++;
-                    if ((((u8 *)&LDataList[ADataList[areaIdx].levels[areaLevelIdx]].flags)[0] &
+                    if ((LDataList[ADataList[areaIdx].levels[areaLevelIdx]].flags &
                          (LEVEL_INTRO | LEVEL_MIDTRO | LEVEL_OUTRO)) == 0) {
                         return &LDataList[ADataList[areaIdx].levels[areaLevelIdx]];
                     }
