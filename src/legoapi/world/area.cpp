@@ -88,379 +88,197 @@ AREADATA *Area_FindByName(char *name, i32 *indexDest) {
 }
 
 AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, i32 count, i32 *countDest) {
-    byte bVar3;
-    undefined2 uVar4;
-    i16 sVar5;
-    nufpar_s *fp;
-    i32 iVar6;
-    u32 uVar7;
-    undefined4 uVar8;
-    u32 uVar9;
-    AREADATA *area2;
-    i16 index;
-    AREADATA *area;
-    i32 i;
-    i32 j;
-    undefined4 uStack_14;
-    char *a;
-    bool bVar2;
-    u32 uVar1;
-
-    uStack_14 = 0x4862eb;
-    fp = NuFParCreate(file);
-    if (fp == (nufpar_s *)0x0) {
-        if (countDest != (i32 *)0x0) {
+    nufpar_s *fp = NuFParCreate(file);
+    if (fp == NULL) {
+        if (countDest != NULL)
             *countDest = 0;
-        }
-    } else {
-        i = 0;
-        bVar2 = false;
-        area2 = (AREADATA *)((usize)bufferStart->void_ptr + 3U & 0xfffffffc);
-        bufferStart->void_ptr = area2;
-        area = area2;
-    LAB_00486340:
-        iVar6 = NuFParGetLine(fp);
-        if (iVar6 != 0) {
-            while (true) {
-                NuFParGetWord(fp);
-                a = fp->word_buf;
-                if (*a == '\0')
-                    break;
-                if (bVar2) {
-                    iVar6 = NuStrICmp(a, "area_end");
-                    if (iVar6 == 0) {
-                        bVar2 = false;
-                        if ((((area->dir[0] != '\0') && (area->file[0] != '\0')) && (area->field28_0x7d != 0)) &&
-                            ((area->flags & AREAFLAG_TEST_AREA) == 0)) {
-                            area = area + 1;
-                            i = i + 1;
-                        }
-                    } else {
-                        iVar6 = NuStrICmp(fp->word_buf, "dir");
-                        if (iVar6 == 0) {
-                            iVar6 = NuFParGetWord(fp);
-                            if ((iVar6 == 0) || (iVar6 = NuStrLen(fp->word_buf), 0x3f < iVar6))
-                                goto LAB_00486600;
-                            NuStrCpy(area->dir, fp->word_buf);
-                            bVar2 = true;
+        return NULL;
+    }
+
+    i32 area_count = 0;
+    i32 in_area = 0;
+    AREADATA *area = (AREADATA *)ALIGN((usize)bufferStart->void_ptr, 4);
+    bufferStart->void_ptr = area;
+    AREADATA *area_base = area;
+
+    while (NuFParGetLine(fp)) {
+        NuFParGetWord(fp);
+        char *word = fp->word_buf;
+        if (*word == '\0')
+            continue;
+
+        if (in_area) {
+            if (NuStrICmp(word, "area_end") == 0) {
+                in_area = 0;
+                if (area->dir[0] != '\0' && area->file[0] != '\0' && area->field28_0x7d != 0 &&
+                    (area->flags & AREAFLAG_TEST_AREA) == 0) {
+                    area++;
+                    area_count++;
+                }
+            } else if (NuStrICmp(fp->word_buf, "dir") == 0) {
+                if (NuFParGetWord(fp) != 0 && NuStrLen(fp->word_buf) <= 0x3f)
+                    NuStrCpy(area->dir, fp->word_buf);
+                in_area = 1;
+            } else if (NuStrICmp(fp->word_buf, "file") == 0) {
+                if (NuFParGetWord(fp) != 0 && NuStrLen(fp->word_buf) <= 0x1f)
+                    NuStrCpy(area->file, fp->word_buf);
+                in_area = 1;
+            } else if (NuStrICmp(fp->word_buf, "level") == 0) {
+                if (area->field28_0x7d > 0xb || NuFParGetWord(fp) == 0) {
+                    in_area = 1;
+                } else {
+                    i32 li;
+                    Level_FindByName(fp->word_buf, &li);
+                    in_area = 1;
+                    if (li != -1) {
+                        in_area = area->field28_0x7d;
+                        if (in_area == 0) {
+                            area->field2_0x60[0] = (i16)li;
+                            area->field28_0x7d = 1;
                         } else {
-                            iVar6 = NuStrICmp(fp->word_buf, "file");
-                            if (iVar6 == 0) {
-                                iVar6 = NuFParGetWord(fp);
-                                if ((iVar6 == 0) || (iVar6 = NuStrLen(fp->word_buf), 0x1f < iVar6))
-                                    goto LAB_00486600;
-                                NuStrCpy(area->file, fp->word_buf);
-                                bVar2 = true;
-                            } else {
-                                iVar6 = NuStrICmp(fp->word_buf, "level");
-                                if (iVar6 == 0) {
-                                    if ((0xb < area->field28_0x7d) || (iVar6 = NuFParGetWord(fp), iVar6 == 0))
-                                        goto LAB_00486600;
-                                    Level_FindByName(fp->word_buf, &j);
-                                    bVar2 = true;
-                                    if (j != -1) {
-                                        bVar3 = area->field28_0x7d;
-                                        uVar7 = (u32)bVar3;
-                                        if (uVar7 == 0)
-                                            goto LAB_004866e6;
-                                        uVar9 = 0;
-                                        if (j == area->field2_0x60[0])
-                                            goto LAB_00486600;
-                                        goto LAB_0048672f;
-                                    }
-                                } else {
-                                    iVar6 = NuStrICmp(fp->word_buf, "single_buffer");
-                                    if (iVar6 == 0) {
-                                        bVar2 = true;
-                                        area->flags |= AREAFLAG_SINGLE_BUFFER;
-                                    } else {
-                                        iVar6 = NuStrICmp(fp->word_buf, "minikit");
-                                        if (iVar6 == 0) {
-                                            area->flags |= AREAFLAG_MINIKIT;
-                                            iVar6 = NuFParGetWord(fp);
-                                            bVar2 = true;
-                                            if (iVar6 != 0) {
-                                                uVar4 = CharIDFromName(fp->word_buf);
-                                                bVar2 = true;
-                                                area->minikit_id = uVar4;
-                                            }
-                                        } else {
-                                            iVar6 = NuStrICmp(fp->word_buf, "true_jedi");
-                                            if (iVar6 == 0) {
-                                                bVar2 = true;
-                                                area->flags |= AREAFLAG_TRUE_JEDI;
-                                            } else {
-                                                iVar6 = NuStrICmp(fp->word_buf, "test_area");
-                                                if (iVar6 == 0) {
-                                                    bVar2 = true;
-                                                    area->flags |= AREAFLAG_TEST_AREA;
-                                                } else {
-                                                    iVar6 = NuStrICmp(fp->word_buf, "hub_area");
-                                                    if (iVar6 == 0) {
-                                                        bVar2 = true;
-                                                        area->flags |= AREAFLAG_HUB_AREA;
-                                                    } else {
-                                                        iVar6 = NuStrICmp(fp->word_buf, "override_things_scene");
-                                                        if (iVar6 == 0) {
-                                                            bVar2 = true;
-                                                            area->flags |= AREAFLAG_OVERRIDE_THINGS_SCENE;
-                                                        } else {
-                                                            iVar6 = NuStrICmp(fp->word_buf, "vehicle_area");
-                                                            if (iVar6 == 0) {
-                                                                bVar2 = true;
-                                                                area->flags |= AREAFLAG_VEHICLE_AREA;
-                                                            } else {
-                                                                iVar6 = NuStrICmp(fp->word_buf, "ending_area");
-                                                                if (iVar6 == 0) {
-                                                                    bVar2 = true;
-                                                                    area->flags |= AREAFLAG_ENDING_AREA;
-                                                                } else {
-                                                                    iVar6 = NuStrICmp(fp->word_buf, "bonus_area");
-                                                                    if (iVar6 == 0) {
-                                                                        bVar2 = true;
-                                                                        area->flags |= AREAFLAG_BONUS_AREA;
-                                                                    } else {
-                                                                        iVar6 =
-                                                                            NuStrICmp(fp->word_buf, "super_bonus_area");
-                                                                        if (iVar6 == 0) {
-                                                                            bVar2 = true;
-                                                                            area->flags |= AREAFLAG_SUPER_BONUS_AREA;
-                                                                        } else {
-                                                                            iVar6 = NuStrICmp(fp->word_buf,
-                                                                                              "nocharactercollision");
-                                                                            if ((((iVar6 == 0) ||
-                                                                                  (iVar6 = NuStrICmp(
-                                                                                       fp->word_buf,
-                                                                                       "nocharactercollisions"),
-                                                                                   iVar6 == 0)) ||
-                                                                                 (iVar6 = NuStrICmp(
-                                                                                      fp->word_buf,
-                                                                                      "no_character_collision"),
-                                                                                  iVar6 == 0)) ||
-                                                                                (iVar6 = NuStrICmp(
-                                                                                     fp->word_buf,
-                                                                                     "no_character_collisions"),
-                                                                                 iVar6 == 0)) {
-                                                                                bVar2 = true;
-                                                                                area->flags |=
-                                                                                    AREAFLAG_NO_CHARACTER_COLLISION;
-                                                                            } else {
-                                                                                iVar6 = NuStrICmp(fp->word_buf,
-                                                                                                  "nopickupgravity");
-                                                                                if (iVar6 == 0) {
-                                                                                    bVar2 = true;
-                                                                                    area->flags |=
-                                                                                        AREAFLAG_NOPICKUPGRAVITY;
-                                                                                } else {
-                                                                                    iVar6 = NuStrICmp(fp->word_buf,
-                                                                                                      "no_gold_brick");
-                                                                                    if (iVar6 == 0) {
-                                                                                        bVar2 = true;
-                                                                                        area->flags |=
-                                                                                            AREAFLAG_NO_GOLDBRICK;
-                                                                                    } else {
-                                                                                        iVar6 = NuStrICmp(
-                                                                                            fp->word_buf,
-                                                                                            "no_completion_points");
-                                                                                        if (iVar6 == 0) {
-                                                                                            bVar2 = true;
-                                                                                            area->flags |=
-                                                                                                AREAFLAG_NO_COMPLETION_POINTS;
-                                                                                        } else {
-                                                                                            iVar6 = NuStrICmp(
-                                                                                                fp->word_buf,
-                                                                                                "no_freeplay");
-                                                                                            if (iVar6 == 0) {
-                                                                                                bVar2 = true;
-                                                                                                area->flags |=
-                                                                                                    AREAFLAG_NO_FREEPLAY;
-                                                                                            } else {
-                                                                                                iVar6 = NuStrICmp(
-                                                                                                    fp->word_buf,
-                                                                                                    "name_id");
-                                                                                                if (iVar6 == 0) {
-                                                                                                    uVar4 =
-                                                                                                        NuFParGetInt(
-                                                                                                            fp);
-                                                                                                    bVar2 = true;
-                                                                                                    area->field25_0x78 =
-                                                                                                        uVar4;
-                                                                                                } else {
-                                                                                                    iVar6 = NuStrICmp(
-                                                                                                        fp->word_buf,
-                                                                                                        "text_id");
-                                                                                                    if (iVar6 == 0) {
-                                                                                                        uVar4 =
-                                                                                                            NuFParGetInt(
-                                                                                                                fp);
-                                                                                                        area->field39_0x94 =
-                                                                                                            uVar4;
-                                                                                                        iVar6 =
-                                                                                                            NuFParGetWord(
-                                                                                                                fp);
-                                                                                                        bVar2 = true;
-                                                                                                        if (iVar6 !=
-                                                                                                            0) {
-                                                                                                            uVar8 = NuAToI(
-                                                                                                                fp->word_buf);
-                                                                                                            bVar3 =
-                                                                                                                (byte)((i32)
-                                                                                                                           uVar8 >>
-                                                                                                                       0x1f);
-                                                                                                            area->field40_0x96 =
-                                                                                                                ((byte)
-                                                                                                                     uVar8 ^
-                                                                                                                 bVar3) -
-                                                                                                                bVar3;
-                                                                                                        }
-                                                                                                    } else {
-                                                                                                        iVar6 = NuStrICmp(
-                                                                                                            fp->word_buf,
-                                                                                                            "timetrial_"
-                                                                                                            "time");
-                                                                                                        if (iVar6 ==
-                                                                                                            0) {
-                                                                                                            sVar5 =
-                                                                                                                NuFParGetInt(
-                                                                                                                    fp);
-                                                                                                            bVar2 =
-                                                                                                                true;
-                                                                                                            area->challenge_trial_time =
-                                                                                                                sVar5;
-                                                                                                        } else {
-                                                                                                            iVar6 = NuStrICmp(
-                                                                                                                fp->word_buf,
-                                                                                                                "redbri"
-                                                                                                                "ck_"
-                                                                                                                "chea"
-                                                                                                                "t");
-                                                                                                            if (((iVar6 !=
-                                                                                                                  0) &&
-                                                                                                                 (iVar6 = NuStrICmp(
-                                                                                                                      fp->word_buf,
-                                                                                                                      "redbrick_extra"),
-                                                                                                                  iVar6 !=
-                                                                                                                      0)) ||
-                                                                                                                (iVar6 = NuFParGetWord(
-                                                                                                                     fp),
-                                                                                                                 iVar6 ==
-                                                                                                                     0))
-                                                                                                                goto LAB_00486600;
-                                                                                                            bVar3 = Cheat_FindByName(
-                                                                                                                fp->word_buf);
-                                                                                                            bVar2 =
-                                                                                                                true;
-                                                                                                            area->cheat =
-                                                                                                                bVar3;
-                                                                                                        }
-                                                                                                    }
-                                                                                                }
-                                                                                            }
-                                                                                        }
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
+                            i32 k;
+                            if (area->field2_0x60[0] != li) {
+                                for (k = 1; k < in_area; k++) {
+                                    if (area->field2_0x60[k] == li)
+                                        break;
+                                }
+                                if (k == in_area) {
+                                    area->field2_0x60[in_area] = (i16)li;
+                                    area->field28_0x7d = (u8)(in_area + 1);
                                 }
                             }
                         }
+                        in_area = 1;
                     }
-                    break;
                 }
-                iVar6 = NuStrICmp(a, "area_start");
-                if ((iVar6 != 0) || (count <= i))
-                    break;
-                bVar2 = true;
-                area->dir[0] = '\0';
-                area->file[0] = '\0';
-                area->field2_0x60[0] = -1;
-                area->field25_0x78 = 0xffff;
-                area->flags = AREAFLAG_NONE;
-                area->field27_0x7c = (undefined1)i;
-                area->field28_0x7d = 0;
-                area->cheat = 0xff;
-                area->field30_0x7f = 0;
-                area->field31_0x80 = 0;
-                area->challenge_trial_time = 0;
-                area->episode_index = 0xff;
-                area->area_index = 0xff;
-                area->area_music = -1;
-                area->minikit_id = 0xffff;
-                area->field37_0x8c = 0;
-                area->field38_0x90 = 0;
-                area->field39_0x94 = 0xffff;
-                area->field40_0x96 = 1;
-                area->field42_0x98 = 0;
-                iVar6 = NuFParGetLine(fp);
-                if (iVar6 == 0)
-                    goto LAB_004864a0;
+            } else if (NuStrICmp(fp->word_buf, "single_buffer") == 0) {
+                in_area = 1;
+                area->flags |= AREAFLAG_SINGLE_BUFFER;
+            } else if (NuStrICmp(fp->word_buf, "minikit") == 0) {
+                in_area = 1;
+                area->flags |= AREAFLAG_MINIKIT;
+                if (NuFParGetWord(fp) != 0)
+                    area->minikit_id = CharIDFromName(fp->word_buf);
+            } else if (NuStrICmp(fp->word_buf, "true_jedi") == 0) {
+                in_area = 1;
+                area->flags |= AREAFLAG_TRUE_JEDI;
+            } else if (NuStrICmp(fp->word_buf, "test_area") == 0) {
+                in_area = 1;
+                area->flags |= AREAFLAG_TEST_AREA;
+            } else if (NuStrICmp(fp->word_buf, "hub_area") == 0) {
+                in_area = 1;
+                area->flags |= AREAFLAG_HUB_AREA;
+            } else if (NuStrICmp(fp->word_buf, "override_things_scene") == 0) {
+                in_area = 1;
+                area->flags |= AREAFLAG_OVERRIDE_THINGS_SCENE;
+            } else if (NuStrICmp(fp->word_buf, "vehicle_area") == 0) {
+                in_area = 1;
+                area->flags |= AREAFLAG_VEHICLE_AREA;
+            } else if (NuStrICmp(fp->word_buf, "ending_area") == 0) {
+                in_area = 1;
+                area->flags |= AREAFLAG_ENDING_AREA;
+            } else if (NuStrICmp(fp->word_buf, "bonus_area") == 0) {
+                in_area = 1;
+                area->flags |= AREAFLAG_BONUS_AREA;
+            } else if (NuStrICmp(fp->word_buf, "super_bonus_area") == 0) {
+                in_area = 1;
+                area->flags |= AREAFLAG_SUPER_BONUS_AREA;
+            } else if (NuStrICmp(fp->word_buf, "nocharactercollision") == 0 ||
+                       NuStrICmp(fp->word_buf, "nocharactercollisions") == 0 ||
+                       NuStrICmp(fp->word_buf, "no_character_collision") == 0 ||
+                       NuStrICmp(fp->word_buf, "no_character_collisions") == 0) {
+                in_area = 1;
+                area->flags |= AREAFLAG_NO_CHARACTER_COLLISION;
+            } else if (NuStrICmp(fp->word_buf, "nopickupgravity") == 0) {
+                in_area = 1;
+                area->flags |= AREAFLAG_NOPICKUPGRAVITY;
+            } else if (NuStrICmp(fp->word_buf, "no_gold_brick") == 0) {
+                in_area = 1;
+                area->flags |= AREAFLAG_NO_GOLDBRICK;
+            } else if (NuStrICmp(fp->word_buf, "no_completion_points") == 0) {
+                in_area = 1;
+                area->flags |= AREAFLAG_NO_COMPLETION_POINTS;
+            } else if (NuStrICmp(fp->word_buf, "no_freeplay") == 0) {
+                in_area = 1;
+                area->flags |= AREAFLAG_NO_FREEPLAY;
+            } else if (NuStrICmp(fp->word_buf, "name_id") == 0) {
+                in_area = 1;
+                area->field25_0x78 = NuFParGetInt(fp);
+            } else if (NuStrICmp(fp->word_buf, "text_id") == 0) {
+                area->field39_0x94 = NuFParGetInt(fp);
+                in_area = 1;
+                if (NuFParGetWord(fp) != 0)
+                    area->field40_0x96 = (byte)abs(NuAToI(fp->word_buf));
+            } else if (NuStrICmp(fp->word_buf, "timetrial_time") == 0) {
+                in_area = 1;
+                area->challenge_trial_time = NuFParGetInt(fp);
+            } else if (NuStrICmp(fp->word_buf, "redbrick_cheat") == 0 ||
+                       NuStrICmp(fp->word_buf, "redbrick_extra") == 0) {
+                if (NuFParGetWord(fp) == 0) {
+                    in_area = 1;
+                } else {
+                    area->cheat = Cheat_FindByName(fp->word_buf);
+                    in_area = 1;
+                }
             }
-            goto LAB_00486340;
+        } else {
+            if (NuStrICmp(word, "area_start") != 0 || count <= area_count)
+                continue;
+            in_area = 1;
+            area->dir[0] = '\0';
+            area->file[0] = '\0';
+            area->field2_0x60[0] = -1;
+            area->field25_0x78 = 0xffff;
+            area->flags = AREAFLAG_NONE;
+            area->field27_0x7c = (u8)area_count;
+            area->field28_0x7d = 0;
+            area->cheat = 0xff;
+            area->field30_0x7f = 0;
+            area->field31_0x80 = 0;
+            area->challenge_trial_time = 0;
+            area->episode_index = 0xff;
+            area->area_index = 0xff;
+            area->area_music = -1;
+            area->minikit_id = 0xffff;
+            area->field37_0x8c = 0;
+            area->field38_0x90 = 0;
+            area->field39_0x94 = 0xffff;
+            area->field40_0x96 = 1;
+            area->field42_0x98 = NULL;
         }
-    LAB_004864a0:
-        NuFParDestroy(fp);
-        if (i != 0) {
-            bufferStart->void_ptr = area;
-            if (countDest != (i32 *)0x0) {
-                *countDest = i;
-            }
-            j = 0;
-            if (0 < i) {
-                do {
-                    while (true) {
-                        if (area2[j].challenge_trial_time == 0) {
-                            if ((area2[j].flags & AREAFLAG_SUPER_BONUS_AREA) == AREAFLAG_BONUS_AREA) {
-                                area2[j].challenge_trial_time = (i16)AREA_DEFAULTBONUSTIMETRIALTIME;
-                            } else if ((area2[j].flags & AREAFLAG_MINIKIT) != 0) {
-                                area2[j].challenge_trial_time = (i16)AREA_DEFAULTCHALLENGETIME;
-                            }
-                        }
-                        if (area2[j].cheat != 0xff) {
-                            Cheat_SetArea((i32)(char)area2[j].cheat, j);
-                        }
-                        if ((area2[j].challenge_trial_time != 0) &&
-                            ((area2[j].flags & (AREAFLAG_SUPER_BONUS_AREA | AREAFLAG_MINIKIT)) == AREAFLAG_MINIKIT))
-                            break;
-                        j = j + 1;
-                        if (i <= j) {
-                            return area2;
-                        }
+    }
+
+    NuFParDestroy(fp);
+    if (area_count != 0) {
+        bufferStart->void_ptr = area;
+        if (countDest != NULL)
+            *countDest = area_count;
+        i32 j = 0;
+        if (0 < area_count) {
+            do {
+                while (true) {
+                    if (area_base[j].challenge_trial_time == 0) {
+                        if ((area_base[j].flags & AREAFLAG_SUPER_BONUS_AREA) == AREAFLAG_BONUS_AREA)
+                            area_base[j].challenge_trial_time = (i16)AREA_DEFAULTBONUSTIMETRIALTIME;
+                        else if ((area_base[j].flags & AREAFLAG_MINIKIT) != 0)
+                            area_base[j].challenge_trial_time = (i16)AREA_DEFAULTCHALLENGETIME;
                     }
-                    iVar6 = j + 1;
-                    area2[j].challenge_trial_time = 1200;
-                    j = iVar6;
-                } while (iVar6 < i);
-            }
-            return area2;
+                    if (area_base[j].cheat != 0xff)
+                        Cheat_SetArea((i32)(char)area_base[j].cheat, j);
+                    if (area_base[j].challenge_trial_time != 0 &&
+                        (area_base[j].flags & (AREAFLAG_SUPER_BONUS_AREA | AREAFLAG_MINIKIT)) == AREAFLAG_MINIKIT)
+                        break;
+                    j++;
+                    if (area_count <= j)
+                        return area_base;
+                }
+                area_base[j].challenge_trial_time = 1200;
+                j++;
+            } while (j < area_count);
+            return area_base;
         }
     }
-    return (AREADATA *)0x0;
-    while (iVar6 = uVar9 + 1, uVar9 = uVar1, j != area->field2_0x60[iVar6]) {
-    LAB_0048672f:
-        uVar1 = uVar9 + 1;
-        if (uVar9 == uVar7 - 1)
-            break;
-    }
-    if (uVar1 == uVar7) {
-    LAB_004866e6:
-        index = (i16)j;
-        area->field2_0x60[uVar7] = index;
-        bVar2 = true;
-        area->field28_0x7d = bVar3 + 1;
-    } else {
-    LAB_00486600:
-        bVar2 = true;
-    }
-    goto LAB_00486340;
+    return NULL;
 }
 
 void Areas_FixUp(AREAFIXUP *fixup) {
