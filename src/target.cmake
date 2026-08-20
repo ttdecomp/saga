@@ -24,6 +24,7 @@ set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/episodes/epi
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/core/input/timer.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/world.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/levelconfig.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/levels.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/mission.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/missions.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 

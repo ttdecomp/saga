@@ -25,7 +25,8 @@ void Area_Configure(i32, i32, EXTRAMODEL *, i16 *) {
 void ClearUpAreaData() {
 }
 
-void GetTableLocator() {
+i32 GetTableLocator(void) {
+    return 0;
 }
 
 void getSpawnLocator(float, char *) {
@@ -40,7 +41,8 @@ void NewLevelFromMenu(LEVELDATA_s *, i32, i32, i32) {
 void ClearAreaProgress(i32, i32) {
 }
 
-void GetCounterLocator(i32) {
+i32 GetCounterLocator(i32) {
+    return 0;
 }
 
 void LevObj_FindByPlatID(WORLDINFO_s *, i32) {
