@@ -87,6 +87,8 @@ void TouchHacks::CheckJumpForLandingSpot(GameObject_s &, float) {
 void TouchHacks::CleanupAllMechObjectInterfaces(WORLDINFO_s *) {
 }
 
+
+
 void TouchHacks::FindBombTarget(GameObject_s &) {
 }
 

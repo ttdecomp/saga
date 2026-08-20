@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "gamelib/util/gamelib_util_types.h"
 #include "gameapi/edtools/edstubs.h"
 #include "gameapi/gui/apimenu.h"
 #include "globals.h"
@@ -632,44 +633,41 @@ abort:
 }
 
 i32 WorldInfo_Reset(WORLDINFO *world, i32 level_idx) {
-    SetLevelExBlowupFlags(0);
-    if (world->unknown_0110 != 0 && world->unknown_011c == level_idx && LDataList != NULL && level_idx >= 0 &&
-        LDataList[level_idx].unknown_0af != -1 && new_level_from_menu == 0) {
-        return 0;
+    if (world->unknown_0110 != 0) {
+        SetLevelExBlowupFlags(0);
+        if (world->unknown_011c == level_idx && (u8)LDataList[level_idx].unknown_0af != 0xff &&
+            new_level_from_menu == 0) {
+            return 0;
+        }
+        WorldInfo_Dump(world);
+    } else {
+        SetLevelExBlowupFlags(0);
     }
 
-    if (world->unknown_0110 != 0) {
-        WorldInfo_Dump(world);
-    }
     if (new_level_from_menu != 0) {
-        WORLDINFO *other = world == &WorldInfo[0] ? &WorldInfo[1] : &WorldInfo[0];
+        WORLDINFO *other = (WORLDINFO *)((char *)world + 0x51b0);
+        if (WORLD != world) {
+            other = WORLD;
+        }
         if (other->unknown_0110 != 0 && other->unknown_011c == level_idx) {
             WorldInfo_Dump(other);
         }
     }
 
-    // Save buffer pointers
-    void *bufStart = *(void **)&world->filler0[0xFC];
+    // Save buffer cursors before clearing the world.
+    void *bufStart = *(void **)((char *)world + 0x100);
     void *bufEnd = world->unknown_0108.void_ptr;
 
-    // Clear the world and the portion of the streaming buffer owned by it.
-    // The original keeps the two buffer cursors across a reset, but does not
-    // leave stale level data in the newly selected world.
-    if (bufStart != NULL && bufEnd != NULL && (char *)bufEnd > (char *)bufStart) {
-        memset(bufStart, 0, (size_t)((char *)bufEnd - (char *)bufStart));
-    }
-    // The loader owns the prefix through 0x51b0.  The trailing processor and
-    // timer storage is initialized separately and survives a level reset.
+    TouchHacks::CleanupAllMechObjectInterfaces(world);
+
     memset(world, 0, 0x51b0);
 
-    // Restore buffer pointers
+    // Restore the buffer cursors: 0x108, then 0x100, then 0x104 (giz_buffer).
     world->unknown_0108.void_ptr = bufEnd;
-    *(void **)&world->filler0[0xFC] = bufStart;
+    *(void **)((char *)world + 0x100) = bufStart;
     world->giz_buffer.void_ptr = bufStart;
-
-    i32 *all_pages = (i32 *)&world->unknown_0140[0x2958];
-    for (i32 i = 0; i != 6; ++i) {
-        all_pages[i] = -1;
+    if ((char *)bufEnd > (char *)bufStart) {
+        memset(bufStart, 0, (usize)((char *)bufEnd - (char *)bufStart));
     }
 
     // Set level info
@@ -677,9 +675,6 @@ i32 WorldInfo_Reset(WORLDINFO *world, i32 level_idx) {
     world->unknown_0120 = -1;
     world->unknown_0124 = -1;
 
-    // These page handles live in the level-owned portion of WORLDINFO.  A
-    // reset must invalidate every page, otherwise the next load can mistake
-    // a handle from the previous level for an already loaded resource.
     if (level_idx != -1) {
         LEVELDATA *levelData = &LDataList[level_idx];
         world->current_level = levelData;
@@ -690,17 +685,26 @@ i32 WorldInfo_Reset(WORLDINFO *world, i32 level_idx) {
             world->unknown_0124 = (i8)ADataList[areaIdx].episode_index;
         }
 
+        // Invalidate every page handle (0x2a98 .. 0x2aac).
+        *(i32 *)((char *)world + 0x2a98) = -1;
+        *(i32 *)((char *)world + 0x2a9c) = -1;
+        *(i32 *)((char *)world + 0x2aa0) = -1;
+        *(i32 *)((char *)world + 0x2aa4) = -1;
+        *(i32 *)((char *)world + 0x2aa8) = -1;
+
         i32 progress_index = (i8)levelData->unknown_0d4;
-        if (progress_index >= 0 && progress_index < 12 && LevelProgressData != NULL) {
-            world->level_progress = (LEVEL_PROGRESS_s *)((u8 *)LevelProgressData + progress_index * 0x2e24);
+        if (progress_index > 0xb || progress_index == -1) {
+            world->level_progress = NULL;
+        } else {
+            world->level_progress = (LEVEL_PROGRESS_s *)((char *)LevelProgressData + progress_index * 0x2e24);
         }
 
         // Build config file path
         NuStrCpy(world->filler0, "levels\\");
         NuStrCat(world->filler0, levelData->dir);
-        NuStrCat(world->filler0, "\\");
-        NuStrCat(world->filler0, levelData->name);
         NuStrCpy(world->config_file, world->filler0);
+        NuStrCat(world->config_file, "\\");
+        NuStrCat(world->config_file, levelData->name);
         ResetLevSfx(world);
     }
 
