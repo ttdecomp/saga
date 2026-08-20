@@ -101,7 +101,7 @@ EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *b
                     if (!found) {
                         episode->area_ids[areaCount] = (i16)areaIndex;
                         episode->area_count = (u8)(areaCount + 1);
-                        if ((area->flags & 6) == 0) {
+                        if ((area->flags & (AREAFLAG_ENDING_AREA | AREAFLAG_BONUS_AREA)) == 0) {
                             episode->regular_areas += 1;
                         }
                     }

@@ -17,7 +17,7 @@ void Areas_OpenAll(i32 mode) {
         for (i = 0; i < AREACOUNT; i++) {
             area = *(u8 **)&ADataList + i * 0x9c;
             open = 1;
-            if (*(u16 *)(area + 0x7a) & 0x10) {
+            if (*(u16 *)(area + 0x7a) & AREAFLAG_MINIKIT) {
                 u8 ep = *(u8 *)(area + 0x86);
                 for (pack = 0; pack < ep; pack++) {
                     if (Store_IsPackUnlocked(pack) == 0) {
@@ -25,7 +25,9 @@ void Areas_OpenAll(i32 mode) {
                         break;
                     }
                 }
-            } else if ((*(u16 *)(area + 0x7a) & 0x105) == 0x4 && *(u8 *)(area + 0x86) != 0xff) {
+            } else if ((*(u16 *)(area + 0x7a) & (AREAFLAG_SUPER_BONUS_AREA | AREAFLAG_VEHICLE_AREA)) ==
+                           AREAFLAG_BONUS_AREA &&
+                       *(u8 *)(area + 0x86) != 0xff) {
                 open = (Store_IsPackUnlocked(5) != 0);
             }
             if (open) {
@@ -197,7 +199,7 @@ void Areas_CompleteAllBuildUps(AREASAVE_s *save) {
     area = *(u8 **)&ADataList;
     end = area + count * 0x9c;
     while (area != end) {
-        if ((*(u16 *)(area + 0x7a) & 0x4010) && *((u8 *)save) != 0) {
+        if ((*(u16 *)(area + 0x7a) & (AREAFLAG_TRUE_JEDI | AREAFLAG_MINIKIT)) && *((u8 *)save) != 0) {
             ((u8 *)save)[2] = 1;
             ((u8 *)save)[3] = 1;
         }

@@ -131,7 +131,7 @@ AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferE
                     if (iVar6 == 0) {
                         bVar2 = false;
                         if ((((area->dir[0] != '\0') && (area->file[0] != '\0')) && (area->field28_0x7d != 0)) &&
-                            ((area->flags & 0x20) == 0)) {
+                            ((area->flags & AREAFLAG_TEST_AREA) == 0)) {
                             area = area + 1;
                             i = i + 1;
                         }
@@ -418,16 +418,17 @@ AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferE
                 do {
                     while (true) {
                         if (area2[j].challenge_trial_time == 0) {
-                            if ((area2[j].flags & 0x104) == 4) {
+                            if ((area2[j].flags & AREAFLAG_SUPER_BONUS_AREA) == AREAFLAG_BONUS_AREA) {
                                 area2[j].challenge_trial_time = (i16)AREA_DEFAULTBONUSTIMETRIALTIME;
-                            } else if ((area2[j].flags & 0x10) != 0) {
+                            } else if ((area2[j].flags & AREAFLAG_MINIKIT) != 0) {
                                 area2[j].challenge_trial_time = (i16)AREA_DEFAULTCHALLENGETIME;
                             }
                         }
                         if (area2[j].cheat != 0xff) {
                             Cheat_SetArea((i32)(char)area2[j].cheat, j);
                         }
-                        if ((area2[j].challenge_trial_time != 0) && ((area2[j].flags & 0x114) == 0x10))
+                        if ((area2[j].challenge_trial_time != 0) &&
+                            ((area2[j].flags & (AREAFLAG_SUPER_BONUS_AREA | AREAFLAG_MINIKIT)) == AREAFLAG_MINIKIT))
                             break;
                         j = j + 1;
                         if (i <= j) {
@@ -587,7 +588,7 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
         if (scene != NULL && scene->display_list != NULL)
             scene->display_list->flags |= NU_DISPLAYSCENE_FLAG_NEEDS_BUILD;
 
-        if ((ADataList[area].flags & 5) != 0 && area != last_area) {
+        if ((ADataList[area].flags & (AREAFLAG_VEHICLE_AREA | AREAFLAG_BONUS_AREA)) != 0 && area != last_area) {
             characterbuffer_ptr.addr = ALIGN(characterbuffer_ptr.addr, 4);
             scene = NuGScnRead(&characterbuffer_ptr, characterbuffer_end, "stuff\\vehicle_things.gsc");
             vehicle_scene = scene;
@@ -665,7 +666,8 @@ icon_scenes:
     else
         Customiser_SetAnimsToLoad(CharacterCustomiser, 0);
 
-    if (area != -1 && (ADataList[area].flags & 0x62) == 0) {
+    if (area != -1 &&
+        (ADataList[area].flags & (AREAFLAG_ENDING_AREA | AREAFLAG_TEST_AREA | AREAFLAG_NO_CHARACTER_COLLISION)) == 0) {
         if (ADataList[area].episode_index <= 2 || (ANEWHOPE_ADATA != NULL && ANEWHOPE_ADATA->field27_0x7c == area) ||
             (PODSPRINT_ADATA != NULL && PODSPRINT_ADATA->field27_0x7c == area) ||
             (BONUS_GUNSHIP_ADATA != NULL && BONUS_GUNSHIP_ADATA->field27_0x7c == area)) {
@@ -677,7 +679,7 @@ icon_scenes:
     APIResetCharacterRemap();
     CharacterDataLoad = 1;
     GameLoadCharacterModels(list, 0, &characterbuffer_ptr, &characterbuffer_end, 1, area);
-    CurrentStoryCList = (void *)2;
+    CharacterDataLoad = 2;
     CharScenes_AreaLoad(list, &characterbuffer_end, characterbuffer_ptr);
     if (!(HUB_ADATA != NULL && HUB_ADATA->field27_0x7c == area))
         Customiser_LoadAccessories(CharacterCustomiser, list);

@@ -465,7 +465,7 @@ after_area:
 
     // Determine which scene to use for cutscenes
     cutscene_scene = area_scene;
-    if (cutscene_scene == NULL || world->area == NULL || (world->area->flags & 0x400) == 0) {
+    if (cutscene_scene == NULL || world->area == NULL || (world->area->flags & AREAFLAG_OVERRIDE_THINGS_SCENE) == 0) {
         cutscene_scene = things_scene;
     }
 
@@ -520,7 +520,9 @@ after_area:
     }
 
     // Terrain/grass/bridge loading
-    if (world->area != NULL && (world->area->flags & 5) == 5 &&
+    if (world->area != NULL &&
+        (world->area->flags & (AREAFLAG_VEHICLE_AREA | AREAFLAG_BONUS_AREA)) ==
+            (AREAFLAG_VEHICLE_AREA | AREAFLAG_BONUS_AREA) &&
         (level->flags & (LEVEL_STATUS | LEVEL_OUTRO | LEVEL_MIDTRO | LEVEL_INTRO)) == 0) {
         CharacterMiniKits_Load((COLLECTION_s *)MiniKitCollection, world, &world->giz_buffer, &world->unknown_0108);
         if (abort_load != 0)
@@ -890,7 +892,7 @@ void MakeFreePlayModelList(i32 model1, i32 model2, i32 area, i32 level, i32 para
 
     AREADATA *ad = &ADataList[area];
 
-    if ((ad->flags & 5) == 5) {
+    if ((ad->flags & (AREAFLAG_VEHICLE_AREA | AREAFLAG_BONUS_AREA)) == (AREAFLAG_VEHICLE_AREA | AREAFLAG_BONUS_AREA)) {
         i32 count = 0;
         i32 models[2] = {model1, model2};
         for (i32 i = 0; i < 2; i++) {
