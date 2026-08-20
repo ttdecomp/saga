@@ -585,14 +585,14 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
         scene = NuGScnRead(&characterbuffer_ptr, characterbuffer_end, pathbuf);
         area_scene = scene;
         if (scene != NULL && scene->display_list != NULL)
-            scene->display_list->flags |= 0x10;
+            scene->display_list->flags |= NU_DISPLAYSCENE_FLAG_NEEDS_BUILD;
 
         if ((ADataList[area].flags & 5) != 0 && area != last_area) {
             characterbuffer_ptr.addr = (characterbuffer_ptr.addr + 3) & ~3U;
             scene = NuGScnRead(&characterbuffer_ptr, characterbuffer_end, "stuff\\vehicle_things.gsc");
             vehicle_scene = scene;
             if (scene != NULL && scene->display_list != NULL)
-                scene->display_list->flags |= 0x10;
+                scene->display_list->flags |= NU_DISPLAYSCENE_FLAG_NEEDS_BUILD;
         }
     }
 
@@ -602,7 +602,7 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
             scene = NuGScnRead(&characterbuffer_ptr, characterbuffer_end, "stuff\\icons\\starwars_icons_all.gsc");
             big_icon_scene = scene;
             if (scene != NULL && scene->display_list != NULL)
-                scene->display_list->flags |= 0x10;
+                scene->display_list->flags |= NU_DISPLAYSCENE_FLAG_NEEDS_BUILD;
         }
     }
 

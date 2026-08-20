@@ -354,7 +354,7 @@ struct ANIMLIST_s {};
 struct ANIMPACKET_s {};
 struct ANIMREDIRECT {};
 struct APICHARACTERMODELLIST_s {
-    i16 model_list[];
+    i16 model_id;
 };
 struct AREADATA_s;
 struct AREASAVE_s {};

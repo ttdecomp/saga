@@ -9,6 +9,10 @@ struct nudisplayscene_s {
     u8 flags;
 };
 
+enum {
+    NU_DISPLAYSCENE_FLAG_NEEDS_BUILD = 0x10,
+};
+
 typedef struct nugscn_s { /* PlaceHolder Structure */
     undefined field0_0x0;
     undefined field1_0x1;
