@@ -587,6 +587,8 @@ void PostResetCode(GameObject_s *obj) {
     }
 }
 
+static TORPEDOPACKET TorpedoPackets[16];
+
 TORPEDOPACKET *GetTorpedoPacket(void) __attribute__((optimize("unroll-loops")));
 TORPEDOPACKET *GetTorpedoPacket(void) {
     for (i32 i = 0; i < 16; i++) {

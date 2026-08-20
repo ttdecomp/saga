@@ -70,7 +70,6 @@ u32 LEGOOBJ_DEFAULTLASTCOIN = -1;
 
 PLAYERDATA *apicharsys;
 
-TORPEDOPACKET TorpedoPackets[16];
 
 // --- World-module helpers (kept with the WorldInfo API) ---
 

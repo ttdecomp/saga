@@ -67,7 +67,6 @@ extern i32 DEFAULT_PLAYERHITPOINTS;
 extern u32 LEGOOBJ_DEFAULTLASTCOIN;
 
 extern PLAYERDATA *apicharsys;
-extern TORPEDOPACKET TorpedoPackets[16];
 
 // ---- Helper functions called by Players_Init ----
 

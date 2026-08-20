@@ -340,11 +340,11 @@ static void Titles_Draw(WORLDINFO *) {
 // Both tables exist in the original binary (defined in a separate compilation unit)
 // and are terminated by {NULL, NULL}.
 // TODO: Populate with actual keyword entries once extracted from the binary.
-NUFPCOMJMP LevelConfig_BeforeLoad_GenericKeywords[] = {
+static NUFPCOMJMP LevelConfig_BeforeLoad_GenericKeywords[] = {
     {NULL, NULL},
 };
 
-NUFPCOMJMP LevelConfig_AfterLoad_GenericKeywords[] = {
+static NUFPCOMJMP LevelConfig_AfterLoad_GenericKeywords[] = {
     {NULL, NULL},
 };
 

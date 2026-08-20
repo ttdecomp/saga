@@ -71,7 +71,6 @@ typedef struct AREAFIXUP {
     void *draw_status_fn;
 } AREAFIXUP;
 
-extern AREAFIXUP AreaFixUp_LSW[];
 
 AREADATA *Area_FindByName(char *name, i32 *indexDest);
 
