@@ -171,6 +171,33 @@ void *LevelHackData = NULL;
 void *OldLevelHackData = NULL;
 i32 LevelHackSize = 0;
 i32 LevelHackSendTimer = 0;
+
+i32 LevFlag[4] = {0};
+i32 LevHSpecial[264] = {0};
+i32 LevSfxFlag[4] = {0};
+void *dynamic_antinodes = NULL;
+i32 LevInstAnim[12] = {0};
+i32 LevArea[4] = {0};
+i32 LevPathNodes[8] = {0};
+i32 LevPathCnx[16] = {0};
+i32 LevGameObject[8] = {0};
+i32 LevGamePart[8] = {0};
+i32 LevAIMessage[8] = {0};
+i32 LevelLocator = 0;
+i32 LevGizObst[8] = {0};
+i32 LevBlowUp[5] = {0};
+i32 LevGizmo[12] = {0};
+i32 LevSfxId[4] = {0};
+i32 LevelCodeSpline[8] = {0};
+i32 LevGizForce[4] = {0};
+i32 LevAIPathNode[4] = {0};
+i32 LevBoltIgnorePlatIds[2] = {0};
+i32 LevPlatID[2] = {0};
+i32 LevPathCnxDir = 0;
+i32 LevDeaths = 0;
+i32 LevLock[4] = {0};
+i32 LevSafePlatID[2] = {0};
+
 i32 new_level_from_menu = 0;
 i32 BGLOAD = 0;
 
