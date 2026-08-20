@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# force the C numeric locale so %.2f and awk comparisons use '.' as the
+# decimal separator regardless of the developer's environment
+export LC_NUMERIC=C
+
 # run clang-format on all tracked source files and stage the results
 SRC_FILES=$(git ls-files '*.cpp' '*.h' '*.c' '*.hpp' | while read -r f; do [ -f "$f" ] && echo "$f"; done)
 if [ -n "$SRC_FILES" ]; then
