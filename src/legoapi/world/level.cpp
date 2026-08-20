@@ -729,6 +729,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("credits", NULL);
+        CREDITS_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)Credits_Init_Game;
             level->update_fn = (void *)Credits_Update_Game;
@@ -752,6 +753,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("speederchase_a", NULL);
+        SPEEDERCHASEA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)SpeederChaseA_Init;
             level->reset_fn = (void *)SpeederChaseA_Reset;
@@ -762,6 +764,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("negotiations_a", NULL);
+        NEGOTIATIONSA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)NegotiationsA_Init;
         }
@@ -769,6 +772,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("negotiations_b", NULL);
+        NEGOTIATIONSB_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)NegotiationsB_Init;
         }
@@ -783,6 +787,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("gungan_a", NULL);
+        GUNGAN_A_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)GunganA_Init;
             level->update_fn = (void *)GunganA_Update;
@@ -798,6 +803,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("rescue_a", NULL);
+        RESCUEA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)RescueA_Init;
         }
@@ -805,6 +811,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("rescue_b", NULL);
+        RESCUEB_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)RescueB_Init;
         }
@@ -812,6 +819,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("rescue_c", NULL);
+        RESCUEC_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)RescueC_Init;
         }
@@ -819,6 +827,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("rescue_e", NULL);
+        RESCUEE_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)RescueE_Init;
         }
@@ -917,6 +926,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("podrace_b", NULL);
+        PODRACEB_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)PodRaceBInit;
             level->reset_fn = (void *)PodRaceBReset;
@@ -928,6 +938,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("podrace_a", NULL);
+        PODRACEA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)PodRaceAInit;
             level->reset_fn = (void *)PodRaceAReset;
@@ -940,6 +951,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("podrace_c", NULL);
+        PODRACEC_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)PodRaceCInit;
             level->reset_fn = (void *)PodRaceCReset;
@@ -965,6 +977,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("PodSprint_A", NULL);
+        PODSPRINTA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)PodSprintA_Init;
             level->reset_fn = (void *)PodSprintA_Reset;
@@ -975,6 +988,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("AnakinsFlight_B", NULL);
+        ANAKINSFLIGHTB_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)AnakinsFlightB_Init;
             level->update_fn = (void *)AnakinsFlightB_Update;
@@ -1012,6 +1026,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("retake_d", NULL);
+        RETAKED_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)RetakeD_Init;
         }
@@ -1019,6 +1034,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("retake_e", NULL);
+        RETAKEE_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)RetakeE_Init;
         }
@@ -1026,6 +1042,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("retake_g", NULL);
+        RETAKEG_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)RetakeG_Init;
             level->reset_fn = (void *)RetakeG_Reset;
@@ -1036,6 +1053,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("Maul_A", NULL);
+        MAULA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)MaulA_Init;
             level->reset_fn = (void *)MaulA_Reset;
@@ -1046,6 +1064,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("Maul_B", NULL);
+        MAULB_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)MaulB_Init;
         }
@@ -1053,6 +1072,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("Maul_D", NULL);
+        MAULD_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)MaulD_Init;
             level->update_fn = (void *)MaulD_Update;
@@ -1061,6 +1081,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("Maul_E", NULL);
+        MAULE_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)MaulE_Init;
             level->update_fn = (void *)MaulE_Update;
@@ -1069,6 +1090,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("Maul_F", NULL);
+        MAULF_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)MaulF_Init;
             level->reset_fn = (void *)MaulF_Reset;
@@ -1079,6 +1101,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("Jedi_B", NULL);
+        JEDI_B_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)JediB_Init;
             level->reset_fn = (void *)JediB_Reset;
@@ -1096,6 +1119,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("gunship_a", NULL);
+        GUNSHIPA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)GunshipA_Init;
             level->update_fn = (void *)GunshipA_Update;
@@ -1105,6 +1129,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("gunship_b", NULL);
+        GUNSHIPB_LDATA = level;
         if (level != NULL) {
             level->reset_fn = (void *)GunshipB_Reset;
         }
@@ -1112,6 +1137,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("bonus_gunship_a", NULL);
+        BONUS_GUNSHIPA_LDATA = level;
         if (level != NULL) {
             level->reset_fn = (void *)BonusGunshipA_Reset;
             level->update_fn = (void *)BonusGunshipA_Update;
@@ -1120,6 +1146,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("bonus_gunship_b", NULL);
+        BONUS_GUNSHIPB_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)BonusGunshipB_Init;
             level->reset_fn = (void *)BonusGunshipB_Reset;
@@ -1130,6 +1157,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("pursuit_a", NULL);
+        BOUNTYHUNTERPURSUITA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)BountyHunterPursuitA_Init;
             level->reset_fn = (void *)BountyHunterPursuitA_Reset;
@@ -1139,6 +1167,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("pursuit_b", NULL);
+        BOUNTYHUNTERPURSUITB_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)BountyHunterPursuitB_Init;
             level->reset_fn = (void *)BountyHunterPursuitB_Reset;
@@ -1148,6 +1177,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("pursuit_c", NULL);
+        BOUNTYHUNTERPURSUITC_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)BountyHunterPursuitC_Init;
             level->reset_fn = (void *)BountyHunterPursuitC_Reset;
@@ -1157,6 +1187,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("pursuit_d", NULL);
+        BOUNTYHUNTERPURSUITD_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)BountyHunterPursuitD_Init;
             level->reset_fn = (void *)BountyHunterPursuitD_Reset;
@@ -1183,6 +1214,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("Factory_B", NULL);
+        FACTORYB_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)FactoryB_Init;
             level->reset_fn = (void *)FactoryB_Reset;
@@ -1207,6 +1239,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("Factory_G", NULL);
+        FACTORYG_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)FactoryG_Init;
             level->update_fn = (void *)FactoryG_Update;
@@ -1215,6 +1248,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("Dooku_C", NULL);
+        DOOKUC_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)DookuC_Init;
             level->reset_fn = (void *)DookuC_Reset;
@@ -1248,6 +1282,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("Kamino_D", NULL);
+        KAMINOD_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)KaminoD_Init;
         }
@@ -1255,6 +1290,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("Kamino_Outro1", NULL);
+        KAMINOOUTRO_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)KaminoOutro_Init;
         }
@@ -1275,6 +1311,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("Kamino_E", NULL);
+        KAMINOE_LDATA = level;
         if (level != NULL) {
             level->reset_fn = (void *)KaminoE_Reset;
             level->init_fn = (void *)KaminoE_Init;
@@ -1286,6 +1323,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("Kamino_F", NULL);
+        KAMINOF_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)KaminoF_Init;
         }
@@ -1293,6 +1331,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("NB_Kamino_a", NULL);
+        NB_KAMINOALDATA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)NbKaminoA_Init;
             level->always_update_fn = (void *)KaminoA_AlwaysUpdate;
@@ -1308,6 +1347,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("Cruiser_A", NULL);
+        CRUISERA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)CruiserAInit;
             level->update_fn = (void *)CruiserAUpdate;
@@ -1323,6 +1363,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("Cruiser_C", NULL);
+        CRUISERC_LDATA = level;
         if (level != NULL) {
             level->reset_fn = (void *)CruiserCReset;
             level->update_fn = (void *)CruiserCUpdate;
@@ -1332,6 +1373,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("Cruiser_D", NULL);
+        CRUISERD_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)CruiserDInit;
             level->reset_fn = (void *)CruiserDReset;
@@ -1355,6 +1397,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("Grievous_A", NULL);
+        GRIEVOUSA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)GrievousA_Init;
             level->reset_fn = (void *)GrievousA_Reset;
@@ -1364,6 +1407,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("temple_A", NULL);
+        TEMPLEA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)TempleA_Init;
         }
@@ -1378,6 +1422,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("temple_c", NULL);
+        TEMPLEC_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)TempleC_Init;
             level->always_update_fn = (void *)TempleC_AlwaysUpdate;
@@ -1393,6 +1438,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("Kashyyyk_A", NULL);
+        KASHYYYKA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)KashyyykA_Init;
             level->reset_fn = (void *)KashyyykA_Reset;
@@ -1403,6 +1449,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("Kashyyyk_B", NULL);
+        KASHYYYKB_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)KashyyykB_Init;
             level->reset_fn = (void *)KashyyykB_Reset;
@@ -1412,6 +1459,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("Kashyyyk_C", NULL);
+        KASHYYYKC_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)KashyyykC_Init;
             level->update_fn = (void *)KashyyykC_Update;
@@ -1420,6 +1468,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("Kashyyyk_D", NULL);
+        KASHYYYKD_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)KashyyykD_Init;
             level->reset_fn = (void *)KashyyykD_Reset;
@@ -1429,6 +1478,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("vader_a", NULL);
+        VADERA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)VaderA_Init;
             level->reset_fn = (void *)VaderA_Reset;
@@ -1439,6 +1489,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("vader_b", NULL);
+        VADERB_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)VaderB_Init;
             level->reset_fn = (void *)VaderB_Reset;
@@ -1449,6 +1500,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("vader_c", NULL);
+        VADERC_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)VaderC_Init;
             level->reset_fn = (void *)VaderC_Reset;
@@ -1459,6 +1511,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("BlockadeRunner_B", NULL);
+        BLOCKADERUNNERB_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)BlockadeRunnerB_Init;
             level->update_fn = (void *)BlockadeRunnerB_Update;
@@ -1467,6 +1520,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("BlockadeRunner_C", NULL);
+        BLOCKADERUNNERC_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)BlockadeRunnerC_Init;
         }
@@ -1474,6 +1528,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("BlockadeRunner_D", NULL);
+        BLOCKADERUNNERD_LDATA = level;
         if (level != NULL) {
             level->reset_fn = (void *)BlockadeRunnerD_Reset;
             level->update_fn = (void *)BlockadeRunnerD_Update;
@@ -1497,6 +1552,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("moseisley_a", NULL);
+        MOSEISLEYA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)MosEisleyA_Init;
         }
@@ -1504,6 +1560,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("moseisley_b", NULL);
+        MOSEISLEYB_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)MosEisleyB_Init;
             level->update_fn = (void *)MosEisleyB_Update;
@@ -1519,6 +1576,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("moseisley_d", NULL);
+        MOSEISLEYD_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)MosEisleyD_Init;
             level->always_update_fn = (void *)MosEisleyD_AlwaysUpdate;
@@ -1527,6 +1585,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("moseisley_e", NULL);
+        MOSEISLEYE_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)MosEisleyE_Init;
             level->reset_fn = (void *)MosEisleyE_Reset;
@@ -1536,6 +1595,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("tatooine_a", NULL);
+        TATOOINEA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)TatooineA_Init;
             level->update_fn = (void *)TatooineA_Update;
@@ -1550,6 +1610,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("tatooine_d", NULL);
+        TATOOINED_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)TatooineD_Init;
             level->update_fn = (void *)TatooineD_Update;
@@ -1572,6 +1633,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("deathstarrescue_b", NULL);
+        DEATHSTARRESCUEB_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)DeathStarRescueB_Init;
             level->update_fn = (void *)DeathStarRescueB_Update;
@@ -1581,6 +1643,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("deathstarrescue_c", NULL);
+        DEATHSTARRESCUEC_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)DeathStarRescueC_Init;
             level->always_update_fn = (void *)DeathStarRescueC_AlwaysUpdate;
@@ -1603,6 +1666,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("deathstarescape_a", NULL);
+        DEATHSTARESCAPEA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)DeathStarEscapeA_Init;
             level->update_fn = (void *)DeathStarEscapeA_Update;
@@ -1611,6 +1675,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("deathstarescape_b", NULL);
+        DEATHSTARESCAPEB_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)DeathStarEscapeB_Init;
             level->update_fn = (void *)DeathStarEscapeB_Update;
@@ -1621,6 +1686,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("deathstarescape_c", NULL);
+        DEATHSTARESCAPEC_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)DeathStarEscapeC_Init;
             level->update_fn = (void *)DeathStarEscapeC_Update;
@@ -1630,6 +1696,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("deathstarescape_d", NULL);
+        DEATHSTARESCAPED_LDATA = level;
         if (level != NULL) {
             level->update_fn = (void *)DeathStarEscapeD_Update;
         }
@@ -1651,6 +1718,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("deathstarbattle_c", NULL);
+        DEATHSTARBATTLEC_LDATA = level;
         if (level != NULL) {
             level->always_update_fn = (void *)DeathStarBattleC_AlwaysUpdate;
         }
@@ -1658,6 +1726,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("deathstarbattle_d", NULL);
+        DEATHSTARBATTLED_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)DeathStarBattleDInit;
             level->update_fn = (void *)DeathStarBattleDUpdate;
@@ -1668,6 +1737,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("hothbattle_a", NULL);
+        HOTHBATTLEA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)HothBattleA_Init;
             level->reset_fn = (void *)HothBattleA_Reset;
@@ -1685,6 +1755,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("hothbattle_c", NULL);
+        HOTHBATTLEC_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)HothBattleC_Init;
             level->reset_fn = (void *)HothBattleC_Reset;
@@ -1702,6 +1773,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("hothbattle_e", NULL);
+        HOTHBATTLEE_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)HothBattleE_Init;
             level->update_fn = (void *)HothBattleE_Update;
@@ -1719,6 +1791,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("hothescape_a", NULL);
+        HOTHESCAPEA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)HothEscapeA_Init;
             level->update_fn = (void *)HothEscapeA_Update;
@@ -1728,6 +1801,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("hothescape_b", NULL);
+        HOTHESCAPEB_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)HothEscapeB_Init;
             level->update_fn = (void *)HothEscapeB_Update;
@@ -1737,6 +1811,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("hothescape_c", NULL);
+        HOTHESCAPEC_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)HothEscapeC_Init;
             level->update_fn = (void *)HothEscapeC_Update;
@@ -1747,6 +1822,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("hothescape_d", NULL);
+        HOTHESCAPED_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)HothEscapeD_Init;
             level->update_fn = (void *)HothEscapeD_Update;
@@ -1756,6 +1832,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("AsteroidChase_A", NULL);
+        ASTEROIDCHASEA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)AsteroidChaseA_Init;
             level->reset_fn = (void *)AsteroidChaseA_Reset;
@@ -1765,6 +1842,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("AsteroidChase_B", NULL);
+        ASTEROIDCHASEB_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)AsteroidChaseB_Init;
             level->reset_fn = (void *)AsteroidChaseB_Reset;
@@ -1774,6 +1852,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("AsteroidChase_C", NULL);
+        ASTEROIDCHASEC_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)AsteroidChaseC_Init;
             level->reset_fn = (void *)AsteroidChaseC_Reset;
@@ -1783,6 +1862,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("AsteroidChase_D", NULL);
+        ASTEROIDCHASED_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)AsteroidChaseD_Init;
             level->update_fn = (void *)AsteroidChaseD_Update;
@@ -1799,6 +1879,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("dagobah_a", NULL);
+        DAGOBAHA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)DagobahA_Init;
             level->update_fn = (void *)DagobahA_Update;
@@ -1827,6 +1908,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("dagobah_b", NULL);
+        DAGOBAHB_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)DagobahB_Init;
             level->reset_fn = (void *)DagobahB_Reset;
@@ -1835,6 +1917,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("dagobah_c", NULL);
+        DAGOBAHC_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)DagobahC_Init;
             level->draw_status_fn = (void *)DagobahC_Panel;
@@ -1843,6 +1926,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("CloudCityTrap_A", NULL);
+        CLOUDCITYTRAPA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)CloudCityTrapA_Init;
             level->update_fn = (void *)CloudCityTrapA_Update;
@@ -1852,6 +1936,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("CloudCityTrap_B", NULL);
+        CLOUDCITYTRAPB_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)CloudCityTrapB_Init;
             level->update_fn = (void *)CloudCityTrapB_Update;
@@ -1860,6 +1945,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("CloudCityTrap_C", NULL);
+        CLOUDCITYTRAPC_LDATA = level;
         if (level != NULL) {
             level->reset_fn = (void *)CloudCityTrapC_Reset;
             level->update_fn = (void *)CloudCityTrapC_Update;
@@ -1876,6 +1962,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("cloudcityescape_a", NULL);
+        CLOUDCITYESCAPEA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)CloudCityEscapeA_Init;
             level->reset_fn = (void *)CloudCityEscapeA_Reset;
@@ -1893,6 +1980,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("cloudcityescape_c", NULL);
+        CLOUDCITYESCAPEC_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)CloudCityEscapeC_Init;
             level->update_fn = (void *)CloudCityEscapeC_Update;
@@ -1901,6 +1989,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("jabbaspalace_a", NULL);
+        JABBASPALACEA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)JabbasPalaceA_Init;
             level->reset_fn = (void *)JabbasPalaceA_Reset;
@@ -1910,6 +1999,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("jabbaspalace_b", NULL);
+        JABBASPALACEB_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)JabbasPalaceB_Init;
             level->reset_fn = (void *)JabbasPalaceB_Reset;
@@ -1918,6 +2008,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("jabbaspalace_d", NULL);
+        JABBASPALACED_LDATA = level;
         if (level != NULL) {
             level->reset_fn = (void *)JabbasPalaceD_Reset;
         }
@@ -1925,6 +2016,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("jabbaspalace_e", NULL);
+        JABBASPALACEE_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)JabbasPalaceE_Init;
             level->reset_fn = (void *)JabbasPalaceE_Reset;
@@ -1942,6 +2034,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("endorbattle_a", NULL);
+        ENDORBATTLEA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)EndorBattleA_Init;
             level->update_fn = (void *)EndorBattleA_Update;
@@ -1972,6 +2065,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("DeathStar2Battle_A", NULL);
+        DEATHSTAR2BATTLEA_LDATA = level;
         if (level != NULL) {
             level->always_update_fn = (void *)DeathStar2BattleA_AlwaysUpdate;
         }
@@ -1986,6 +2080,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("DeathStar2Battle_D", NULL);
+        DEATHSTAR2BATTLED_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)DeathStar2BattleD_Init;
             level->update_fn = (void *)DeathStar2BattleD_Update;
@@ -1994,6 +2089,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("DeathStar2Battle_E", NULL);
+        DEATHSTAR2BATTLEE_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)DeathStar2BattleFire_Init;
             level->update_fn = (void *)DeathStar2BattleFire_Update;
@@ -2003,6 +2099,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("DeathStar2Battle_F", NULL);
+        DEATHSTAR2BATTLEF_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)DeathStar2BattleFire_Init;
             level->update_fn = (void *)DeathStar2BattleFire_Update;
@@ -2012,6 +2109,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("DeathStar2Battle_G", NULL);
+        DEATHSTAR2BATTLEG_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)DeathStar2BattleFire_Init;
             level->update_fn = (void *)DeathStar2BattleFire_Update;
@@ -2028,6 +2126,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("EmperorFight_A", NULL);
+        EMPERORFIGHTA_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)EmperorFightA_Init;
             level->reset_fn = (void *)EmperorFightA_Reset;
@@ -2038,6 +2137,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("SarlaccPit_A", NULL);
+        SARLACCPITA_LDATA = level;
         if (level != NULL) {
             level->reset_fn = (void *)SarlaccPitA_Reset;
             level->draw_fn = (void *)SarlaccPitA_Draw;
@@ -2046,6 +2146,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("SarlaccPit_B", NULL);
+        SARLACCPITB_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)SarlaccPitB_Init;
             level->reset_fn = (void *)SarlaccPitB_Reset;
@@ -2055,6 +2156,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("SarlaccPit_C", NULL);
+        SARLACCPITC_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)SarlaccPitC_Init;
             level->reset_fn = (void *)SarlaccPitC_Reset;
@@ -2064,6 +2166,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("lego_city", NULL);
+        LEGOCITY_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)LegoCity_Init;
             level->reset_fn = (void *)LegoCity_Reset;
@@ -2081,6 +2184,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("new_town", NULL);
+        NEWTOWN_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)NewTown_Init;
             level->reset_fn = (void *)NewTown_Reset;
@@ -2090,6 +2194,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("platform", NULL);
+        PLATFORM_LDATA = level;
         if (level != NULL) {
             level->init_fn = (void *)Platform_Init;
             level->reset_fn = (void *)Platform_Reset;

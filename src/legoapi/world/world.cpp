@@ -33,8 +33,8 @@ void *big_icon_scene = NULL;
 void *area_scene = NULL;
 void *things_scene = NULL;
 LEVELDATA *PLATFORM_LDATA = NULL;
-void *RETAKED_LDATA = NULL;
-void *CREDITS_LDATA = NULL;
+LEVELDATA *RETAKED_LDATA = NULL;
+LEVELDATA *CREDITS_LDATA = NULL;
 u32 Text_Language = 0;
 nufpcomjmp_s *LevelConfigKeywords_AfterLoad = NULL;
 
