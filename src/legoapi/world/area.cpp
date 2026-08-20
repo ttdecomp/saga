@@ -567,8 +567,8 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
     i32 saved_max_fps;
     i32 area;
     NUGSCN *scene;
-    void *list;
-    void *story_list;
+    APICHARACTERMODELLIST_s *list;
+    APICHARACTERMODELLIST_s *story_list;
 
     area = Area;
     saved_max_fps = nuapi.max_fps;
@@ -585,14 +585,14 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
         scene = NuGScnRead(&characterbuffer_ptr, characterbuffer_end, pathbuf);
         area_scene = scene;
         if (scene != NULL && scene->display_list != NULL)
-            *(byte *)((char *)scene->display_list + 0x74) |= 0x10;
+            scene->display_list->flags |= 0x10;
 
         if ((ADataList[area].flags & 5) != 0 && area != last_area) {
             characterbuffer_ptr.addr = (characterbuffer_ptr.addr + 3) & ~3U;
             scene = NuGScnRead(&characterbuffer_ptr, characterbuffer_end, "stuff\\vehicle_things.gsc");
             vehicle_scene = scene;
             if (scene != NULL && scene->display_list != NULL)
-                *(byte *)((char *)scene->display_list + 0x74) |= 0x10;
+                scene->display_list->flags |= 0x10;
         }
     }
 
@@ -602,7 +602,7 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
             scene = NuGScnRead(&characterbuffer_ptr, characterbuffer_end, "stuff\\icons\\starwars_icons_all.gsc");
             big_icon_scene = scene;
             if (scene != NULL && scene->display_list != NULL)
-                *(byte *)((char *)scene->display_list + 0x74) |= 0x10;
+                scene->display_list->flags |= 0x10;
         }
     }
 
@@ -624,9 +624,9 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
         } else {
             MakeFreePlayModelList(id_DEFAULTCHARACTER[0], id_DEFAULTCHARACTER[1], area, level, 0);
         }
-        story_list = Area_StoryModelList;
+        story_list = (APICHARACTERMODELLIST_s *)Area_StoryModelList;
         makefreeplaymodellist = 0;
-        list = FreePlayModelList;
+        list = (APICHARACTERMODELLIST_s *)FreePlayModelList;
         goto icon_scenes;
     } else {
         if (area != -1 && area == last_area) {
@@ -636,29 +636,29 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
     }
 model_select:
     if (HUB_ADATA != NULL && HUB_ADATA->field27_0x7c == area) {
-        list = Hub_ModelList;
-        story_list = Hub_ModelList;
+        list = (APICHARACTERMODELLIST_s *)Hub_ModelList;
+        story_list = (APICHARACTERMODELLIST_s *)Hub_ModelList;
     } else {
-        list = FreePlayModelList;
+        list = (APICHARACTERMODELLIST_s *)FreePlayModelList;
         if (FreePlay == 0) {
             if (Mission_Active(0) != 0)
-                list = Area_MissionModelList;
+                list = (APICHARACTERMODELLIST_s *)Area_MissionModelList;
             else
-                list = Area_StoryModelList;
+                list = (APICHARACTERMODELLIST_s *)Area_StoryModelList;
         }
         if (HUB_ADATA != NULL && HUB_ADATA->field27_0x7c == area) {
-            story_list = Hub_ModelList;
+            story_list = (APICHARACTERMODELLIST_s *)Hub_ModelList;
         } else {
             if (Mission_Active(0) != 0)
-                story_list = Area_MissionModelList;
+                story_list = (APICHARACTERMODELLIST_s *)Area_MissionModelList;
             else
-                story_list = Area_StoryModelList;
+                story_list = (APICHARACTERMODELLIST_s *)Area_StoryModelList;
         }
     }
 
 icon_scenes:
     CurrentCList = list;
-    IconScenes_Load((APICHARACTERMODELLIST_s *)list, 1, &characterbuffer_ptr, &characterbuffer_end);
+    IconScenes_Load(list, 1, &characterbuffer_ptr, &characterbuffer_end);
 
     if (HUB_ADATA != NULL && HUB_ADATA->field27_0x7c == area)
         Customiser_SetAnimsToLoad(CharacterCustomiser, 1);
@@ -676,11 +676,11 @@ icon_scenes:
     apiloadcharactermodels_nopakfile = (CHARPAK == 0);
     APIResetCharacterRemap();
     CharacterDataLoad = 1;
-    GameLoadCharacterModels((APICHARACTERMODELLIST_s *)list, 0, &characterbuffer_ptr, &characterbuffer_end, 1, area);
+    GameLoadCharacterModels(list, 0, &characterbuffer_ptr, &characterbuffer_end, 1, area);
     CurrentStoryCList = (void *)2;
-    CharScenes_AreaLoad((APICHARACTERMODELLIST_s *)list, &characterbuffer_end, characterbuffer_ptr);
+    CharScenes_AreaLoad(list, &characterbuffer_end, characterbuffer_ptr);
     if (!(HUB_ADATA != NULL && HUB_ADATA->field27_0x7c == area))
-        Customiser_LoadAccessories(CharacterCustomiser, (APICHARACTERMODELLIST_s *)list);
+        Customiser_LoadAccessories(CharacterCustomiser, list);
     Customiser_ResetModelTextureIDs(CharacterCustomiser);
     CurrentStoryCList = story_list;
 loadareadata_check:

@@ -353,7 +353,9 @@ struct AITRIGGERSET_s {};
 struct ANIMLIST_s {};
 struct ANIMPACKET_s {};
 struct ANIMREDIRECT {};
-struct APICHARACTERMODELLIST_s {};
+struct APICHARACTERMODELLIST_s {
+    i16 model_list[];
+};
 struct AREADATA_s;
 struct AREASAVE_s {};
 struct ATTRACTO_s;

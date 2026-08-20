@@ -4,6 +4,11 @@
 
 #include "nu2api/nu3d/nuportal.h"
 
+struct nudisplayscene_s {
+    u8 pad0[0x74];
+    u8 flags;
+};
+
 typedef struct nugscn_s { /* PlaceHolder Structure */
     undefined field0_0x0;
     undefined field1_0x1;
