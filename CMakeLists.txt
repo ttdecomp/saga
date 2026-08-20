@@ -110,6 +110,15 @@ file(GLOB_RECURSE SAGA_SOURCE_FILES CONFIGURE_DEPENDS
 
 # add platform-specific source files and build rules
 if (BUILD_FOR_HOST)
+    # The host-tests/nuios/ files provide the platform glue for the host; do
+    # not also compile the Android originals (they would duplicate symbols and
+    # pull in Android-only dependencies such as libsquish).
+    list(REMOVE_ITEM SAGA_SOURCE_FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nuandroid/ios_graphics.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/android/nutex_android.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/android/nutex_ios_ex.cpp
+    )
+
     list(APPEND SAGA_SOURCE_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/main.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/ios_graphics.cpp
