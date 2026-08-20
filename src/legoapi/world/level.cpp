@@ -28,6 +28,305 @@ extern i16 GetMusicIndex(char *, nusound_filename_info_s *, i32);
 void UpdateStatusScreen(WORLDINFO *);
 void DrawStatusScreen(WORLDINFO *);
 
+// Forward declarations for the level fix-up function pointers (all defined
+// elsewhere in the build; these names match the original mangled symbols).
+void Hub_Draw3D(WORLDINFO *);
+void Hub_Update(WORLDINFO *);
+void JediB_Init(WORLDINFO *);
+void MaulA_Init(WORLDINFO *);
+void MaulB_Init(WORLDINFO *);
+void MaulD_Init(WORLDINFO *);
+void MaulE_Init(WORLDINFO *);
+void MaulF_Init(WORLDINFO *);
+void DookuC_Init(WORLDINFO *);
+void JediB_Reset(WORLDINFO *);
+void MaulA_Panel(WORLDINFO *);
+void MaulA_Reset(WORLDINFO *);
+void MaulF_Panel(WORLDINFO *);
+void MaulF_Reset(WORLDINFO *);
+void VaderA_Init(WORLDINFO *);
+void VaderB_Init(WORLDINFO *);
+void VaderC_Init(WORLDINFO *);
+void CruiserAInit(WORLDINFO *);
+void CruiserDInit(WORLDINFO *);
+void DookuC_Reset(WORLDINFO *);
+void GunganA_Init(WORLDINFO *);
+void JediB_Update(WORLDINFO *);
+void KaminoC_Init(WORLDINFO *);
+void KaminoD_Init(WORLDINFO *);
+void KaminoE_Draw(WORLDINFO *);
+void KaminoE_Init(WORLDINFO *);
+void KaminoF_Init(WORLDINFO *);
+void MaulA_Update(WORLDINFO *);
+void MaulD_Update(WORLDINFO *);
+void MaulE_Update(WORLDINFO *);
+void MaulF_Update(WORLDINFO *);
+void NewTown_Init(WORLDINFO *);
+void PodRaceADraw(WORLDINFO *);
+void PodRaceAInit(WORLDINFO *);
+void PodRaceBInit(WORLDINFO *);
+void PodRaceCInit(WORLDINFO *);
+void PodRacePanel(WORLDINFO *);
+void RescueA_Init(WORLDINFO *);
+void RescueB_Init(WORLDINFO *);
+void RescueC_Init(WORLDINFO *);
+void RescueE_Init(WORLDINFO *);
+void RetakeD_Init(WORLDINFO *);
+void RetakeE_Init(WORLDINFO *);
+void RetakeG_Init(WORLDINFO *);
+void SenateA_Init(WORLDINFO *);
+void TempleA_Init(WORLDINFO *);
+void TempleC_Init(WORLDINFO *);
+void VaderA_Reset(WORLDINFO *);
+void VaderB_Reset(WORLDINFO *);
+void VaderC_Reset(WORLDINFO *);
+void CruiserCPanel(WORLDINFO *);
+void CruiserCReset(WORLDINFO *);
+void CruiserDReset(WORLDINFO *);
+void DagobahA_Init(WORLDINFO *);
+void DagobahB_Init(WORLDINFO *);
+void DagobahC_Init(WORLDINFO *);
+void DagobahE_Init(WORLDINFO *);
+void DookuC_Update(WORLDINFO *);
+void FactoryB_Draw(WORLDINFO *);
+void FactoryB_Init(WORLDINFO *);
+void FactoryG_Init(WORLDINFO *);
+void GunshipA_Draw(WORLDINFO *);
+void GunshipA_Init(WORLDINFO *);
+void Hub_DrawPanel(WORLDINFO *);
+void KaminoC_Reset(WORLDINFO *);
+void KaminoE_Reset(WORLDINFO *);
+void LegoCity_Init(WORLDINFO *);
+void NewTown_Reset(WORLDINFO *);
+void Platform_Init(WORLDINFO *);
+void PodRaceAReset(WORLDINFO *);
+void PodRaceBReset(WORLDINFO *);
+void PodRaceCReset(WORLDINFO *);
+void RetakeG_Panel(WORLDINFO *);
+void RetakeG_Reset(WORLDINFO *);
+void VaderA_Update(WORLDINFO *);
+void VaderB_Update(WORLDINFO *);
+void VaderC_Update(WORLDINFO *);
+void ANewHopeA_Init(WORLDINFO *);
+void CruiserAUpdate(WORLDINFO *);
+void CruiserCUpdate(WORLDINFO *);
+void CruiserDUpdate(WORLDINFO *);
+void DagobahB_Reset(WORLDINFO *);
+void DagobahC_Panel(WORLDINFO *);
+void FactoryB_Reset(WORLDINFO *);
+void GrievousA_Init(WORLDINFO *);
+void GunganA_Update(WORLDINFO *);
+void GunshipB_Reset(WORLDINFO *);
+void KaminoC_Update(WORLDINFO *);
+void KaminoE_Update(WORLDINFO *);
+void KashyyykA_Init(WORLDINFO *);
+void KashyyykB_Init(WORLDINFO *);
+void KashyyykC_Init(WORLDINFO *);
+void KashyyykD_Init(WORLDINFO *);
+void LegoCity_Reset(WORLDINFO *);
+void NbKaminoA_Init(WORLDINFO *);
+void NewTown_Update(WORLDINFO *);
+void Platform_Reset(WORLDINFO *);
+void PodRaceAUpdate(WORLDINFO *);
+void PodRaceBUpdate(WORLDINFO *);
+void PodRaceCUpdate(WORLDINFO *);
+void RetakeG_Update(WORLDINFO *);
+void TatooineA_Init(WORLDINFO *);
+void TatooineB_Init(WORLDINFO *);
+void TatooineC_Init(WORLDINFO *);
+void TatooineD_Init(WORLDINFO *);
+void DagobahA_Update(WORLDINFO *);
+void FactoryB_Update(WORLDINFO *);
+void FactoryG_Update(WORLDINFO *);
+void GrievousA_Reset(WORLDINFO *);
+void GunshipA_Update(WORLDINFO *);
+void JediB_DrawPanel(WORLDINFO *);
+void KashyyykA_Panel(WORLDINFO *);
+void KashyyykA_Reset(WORLDINFO *);
+void KashyyykB_Reset(WORLDINFO *);
+void KashyyykD_Reset(WORLDINFO *);
+void LegoCity_Update(WORLDINFO *);
+void MosEisleyA_Init(WORLDINFO *);
+void MosEisleyB_Init(WORLDINFO *);
+void MosEisleyD_Init(WORLDINFO *);
+void MosEisleyE_Init(WORLDINFO *);
+void PodSprintA_Init(WORLDINFO *);
+void DookuC_DrawPanel(WORLDINFO *);
+void GrievousA_Update(WORLDINFO *);
+void HothBattleA_Draw(WORLDINFO *);
+void HothBattleA_Init(WORLDINFO *);
+void HothBattleC_Draw(WORLDINFO *);
+void HothBattleC_Init(WORLDINFO *);
+void HothBattleE_Draw(WORLDINFO *);
+void HothBattleE_Init(WORLDINFO *);
+void HothEscapeA_Init(WORLDINFO *);
+void HothEscapeB_Init(WORLDINFO *);
+void HothEscapeC_Init(WORLDINFO *);
+void HothEscapeD_Init(WORLDINFO *);
+void KaminoOutro_Init(WORLDINFO *);
+void KashyyykA_Update(WORLDINFO *);
+void KashyyykB_Update(WORLDINFO *);
+void KashyyykC_Update(WORLDINFO *);
+void KashyyykD_Update(WORLDINFO *);
+void MosEisleyE_Reset(WORLDINFO *);
+void PodSprintA_Panel(WORLDINFO *);
+void PodSprintA_Reset(WORLDINFO *);
+void SarlaccPitA_Draw(WORLDINFO *);
+void SarlaccPitB_Init(WORLDINFO *);
+void SarlaccPitC_Init(WORLDINFO *);
+void TatooineA_Update(WORLDINFO *);
+void TatooineD_Update(WORLDINFO *);
+void VaderA_DrawPanel(WORLDINFO *);
+void VaderB_DrawPanel(WORLDINFO *);
+void VaderC_DrawPanel(WORLDINFO *);
+void Credits_DrawPanel(WORLDINFO *);
+void EndorBattleA_Init(WORLDINFO *);
+void EndorBattleC_Init(WORLDINFO *);
+void HothBattleA_Reset(WORLDINFO *);
+void HothBattleC_Reset(WORLDINFO *);
+void HothBattleE_Panel(WORLDINFO *);
+void HothEscapeA_Reset(WORLDINFO *);
+void HothEscapeB_Reset(WORLDINFO *);
+void HothEscapeC_Reset(WORLDINFO *);
+void HothEscapeD_Reset(WORLDINFO *);
+void MosEisleyB_Update(WORLDINFO *);
+void MosEisleyE_Update(WORLDINFO *);
+void PodSprintA_Update(WORLDINFO *);
+void SarlaccPitA_Reset(WORLDINFO *);
+void SarlaccPitB_Reset(WORLDINFO *);
+void SarlaccPitC_Reset(WORLDINFO *);
+void BonusGunshipB_Init(WORLDINFO *);
+void ChrisDogFightADraw(WORLDINFO *);
+void ChrisDogFightAInit(WORLDINFO *);
+void EmperorFightA_Init(WORLDINFO *);
+void HothBattleA_Update(WORLDINFO *);
+void HothBattleC_Update(WORLDINFO *);
+void HothBattleE_Update(WORLDINFO *);
+void HothEscapeA_Update(WORLDINFO *);
+void HothEscapeB_Update(WORLDINFO *);
+void HothEscapeC_Update(WORLDINFO *);
+void HothEscapeD_Update(WORLDINFO *);
+void JabbasPalaceA_Init(WORLDINFO *);
+void JabbasPalaceB_Init(WORLDINFO *);
+void JabbasPalaceE_Init(WORLDINFO *);
+void NegotiationsA_Init(WORLDINFO *);
+void NegotiationsB_Init(WORLDINFO *);
+void SarlaccPitB_Update(WORLDINFO *);
+void SarlaccPitC_Update(WORLDINFO *);
+void SpeederChaseA_Init(WORLDINFO *);
+void AnakinsFlightB_Draw(WORLDINFO *);
+void AnakinsFlightB_Init(WORLDINFO *);
+void AsteroidChaseA_Init(WORLDINFO *);
+void AsteroidChaseB_Init(WORLDINFO *);
+void AsteroidChaseC_Init(WORLDINFO *);
+void AsteroidChaseD_Init(WORLDINFO *);
+void BonusGunshipA_Reset(WORLDINFO *);
+void BonusGunshipB_Panel(WORLDINFO *);
+void BonusGunshipB_Reset(WORLDINFO *);
+void ChrisDogFightAReset(WORLDINFO *);
+void CloudCityTrapA_Init(WORLDINFO *);
+void CloudCityTrapB_Init(WORLDINFO *);
+void EmperorFightA_Panel(WORLDINFO *);
+void EmperorFightA_Reset(WORLDINFO *);
+void EndorBattleA_Update(WORLDINFO *);
+void JabbasPalaceA_Reset(WORLDINFO *);
+void JabbasPalaceB_Reset(WORLDINFO *);
+void JabbasPalaceD_Reset(WORLDINFO *);
+void JabbasPalaceE_Panel(WORLDINFO *);
+void JabbasPalaceE_Reset(WORLDINFO *);
+void PodRaceAlwasyUpdate(WORLDINFO *);
+void SpeederChaseA_Panel(WORLDINFO *);
+void SpeederChaseA_Reset(WORLDINFO *);
+void AsteroidChaseA_Reset(WORLDINFO *);
+void AsteroidChaseB_Reset(WORLDINFO *);
+void AsteroidChaseC_Reset(WORLDINFO *);
+void AsteroidChaseD_Panel(WORLDINFO *);
+void BlockadeRunnerB_Init(WORLDINFO *);
+void BlockadeRunnerC_Init(WORLDINFO *);
+void BonusGunshipA_Update(WORLDINFO *);
+void BonusGunshipB_Update(WORLDINFO *);
+void ChrisDogFightAUpdate(WORLDINFO *);
+void CloudCityTrapA_Reset(WORLDINFO *);
+void CloudCityTrapC_Panel(WORLDINFO *);
+void CloudCityTrapC_Reset(WORLDINFO *);
+void DeathStarBattleDDraw(WORLDINFO *);
+void DeathStarBattleDInit(WORLDINFO *);
+void EmperorFightA_Update(WORLDINFO *);
+void JabbasPalaceA_Update(WORLDINFO *);
+void JabbasPalaceE_Update(WORLDINFO *);
+void KaminoA_AlwaysUpdate(WORLDINFO *);
+void KaminoE_AlwaysUpdate(WORLDINFO *);
+void SpeederChaseA_Update(WORLDINFO *);
+void TempleC_AlwaysUpdate(WORLDINFO *);
+void AnakinsFlightB_Update(WORLDINFO *);
+void AsteroidChaseA_Update(WORLDINFO *);
+void AsteroidChaseB_Update(WORLDINFO *);
+void AsteroidChaseC_Update(WORLDINFO *);
+void AsteroidChaseD_Update(WORLDINFO *);
+void BlockadeRunnerD_Reset(WORLDINFO *);
+void CloudCityEscapeA_Init(WORLDINFO *);
+void CloudCityEscapeC_Init(WORLDINFO *);
+void CloudCityTrapA_Update(WORLDINFO *);
+void CloudCityTrapB_Update(WORLDINFO *);
+void CloudCityTrapC_Update(WORLDINFO *);
+void DeathStarBattleDReset(WORLDINFO *);
+void DeathStarEscapeA_Init(WORLDINFO *);
+void DeathStarEscapeB_Draw(WORLDINFO *);
+void DeathStarEscapeB_Init(WORLDINFO *);
+void DeathStarEscapeC_Init(WORLDINFO *);
+void DeathStarRescueB_Init(WORLDINFO *);
+void DeathStarRescueC_Init(WORLDINFO *);
+void E1CharacterBonus_Init(WORLDINFO *);
+void PodRaceA_AlwaysUpdate(WORLDINFO *);
+void BlockadeRunnerB_Update(WORLDINFO *);
+void BlockadeRunnerD_Update(WORLDINFO *);
+void CloudCityEscapeA_Panel(WORLDINFO *);
+void CloudCityEscapeA_Reset(WORLDINFO *);
+void DeathStar2BattleD_Init(WORLDINFO *);
+void DeathStarBattleDUpdate(WORLDINFO *);
+void DeathStarEscapeC_Reset(WORLDINFO *);
+void CloudCityEscapeA_Update(WORLDINFO *);
+void CloudCityEscapeC_Update(WORLDINFO *);
+void DeathStarEscapeA_Update(WORLDINFO *);
+void DeathStarEscapeB_Update(WORLDINFO *);
+void DeathStarEscapeC_Update(WORLDINFO *);
+void DeathStarEscapeD_Update(WORLDINFO *);
+void DeathStarRescueB_Update(WORLDINFO *);
+void MosEisleyD_AlwaysUpdate(WORLDINFO *);
+void DeathStar2BattleD_Update(WORLDINFO *);
+void HothEscapeC_AlwaysUpdate(WORLDINFO *);
+void BountyHunterPursuitA_Init(WORLDINFO *);
+void BountyHunterPursuitB_Init(WORLDINFO *);
+void BountyHunterPursuitC_Init(WORLDINFO *);
+void BountyHunterPursuitD_Init(WORLDINFO *);
+void DeathStar2BattleFire_Draw(WORLDINFO *);
+void DeathStar2BattleFire_Init(WORLDINFO *);
+void BountyHunterPursuitA_Reset(WORLDINFO *);
+void BountyHunterPursuitB_Reset(WORLDINFO *);
+void BountyHunterPursuitC_Reset(WORLDINFO *);
+void BountyHunterPursuitD_Reset(WORLDINFO *);
+void BountyHunterPursuitA_Update(WORLDINFO *);
+void BountyHunterPursuitB_Update(WORLDINFO *);
+void BountyHunterPursuitC_Update(WORLDINFO *);
+void BountyHunterPursuitD_Update(WORLDINFO *);
+void DeathStar2BattleFire_Update(WORLDINFO *);
+void DeathStarBattleC_AlwaysUpdate(WORLDINFO *);
+void DeathStarEscapeB_AlwaysUpdate(WORLDINFO *);
+void DeathStarRescueB_AlwaysUpdate(WORLDINFO *);
+void DeathStarRescueC_AlwaysUpdate(WORLDINFO *);
+void DeathStar2BattleA_AlwaysUpdate(WORLDINFO *);
+void Hub_Init(WORLDINFO *);
+void Hub_Load(WORLDINFO *, VARIPTR *, VARIPTR *);
+void Hub_Reset(WORLDINFO *);
+
+static void Credits_Init_Game(WORLDINFO *) {
+}
+static void Credits_Update_Game(WORLDINFO *) {
+}
+static void Credits_Draw_Game(WORLDINFO *) {
+}
+
+
 static void Titles_Init(WORLDINFO *) {
 }
 static void Titles_Update(WORLDINFO *) {
@@ -423,6 +722,1391 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         level->update_fn = (void *)UpdateStatusScreen;
         level->draw_status_fn = (void *)DrawStatusScreen;
         level->flags = (level->flags & ~0xa) | 0x400;
+    }
+
+
+    {
+        LEVELDATA *level = Level_FindByName("credits", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)Credits_Init_Game;
+            level->update_fn = (void *)Credits_Update_Game;
+            level->draw_fn = (void *)Credits_Draw_Game;
+            level->draw_status_fn = (void *)Credits_DrawPanel;
+            level->flags = 0;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("map", NULL);
+        if (level != NULL) {
+            level->load_fn = (void *)Hub_Load;
+            level->init_fn = (void *)Hub_Init;
+            level->reset_fn = (void *)Hub_Reset;
+            level->update_fn = (void *)Hub_Update;
+            level->draw_fn = (void *)Hub_Draw3D;
+            level->draw_status_fn = (void *)Hub_DrawPanel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("speederchase_a", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)SpeederChaseA_Init;
+            level->reset_fn = (void *)SpeederChaseA_Reset;
+            level->update_fn = (void *)SpeederChaseA_Update;
+            level->draw_status_fn = (void *)SpeederChaseA_Panel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("negotiations_a", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)NegotiationsA_Init;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("negotiations_b", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)NegotiationsB_Init;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("negotiations_c", NULL);
+        NEGOTIATIONSC_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("gungan_a", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)GunganA_Init;
+            level->update_fn = (void *)GunganA_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("gungan_b", NULL);
+        GUNGAN_B_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("rescue_a", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)RescueA_Init;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("rescue_b", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)RescueB_Init;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("rescue_c", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)RescueC_Init;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("rescue_e", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)RescueE_Init;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("PodRace_Arrival1", NULL);
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("PodRace_Arrival2", NULL);
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("PodRace_Arrival3", NULL);
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("PodRace_Arrival4", NULL);
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("PodRace_Intro", NULL);
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("PodRace_B", NULL);
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("PodRace_C", NULL);
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("PodRace_A", NULL);
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("PodRace_A", NULL);
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("PodRace_Outro2", NULL);
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("PodRace_Status", NULL);
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("ANewHope_Intro", NULL);
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("ANewHope_A", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)ANewHopeA_Init;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("ANewHope_B", NULL);
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("ANewHope_Status", NULL);
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("podrace_b", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)PodRaceBInit;
+            level->reset_fn = (void *)PodRaceBReset;
+            level->update_fn = (void *)PodRaceBUpdate;
+            level->always_update_fn = (void *)PodRaceAlwasyUpdate;
+            level->draw_status_fn = (void *)PodRacePanel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("podrace_a", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)PodRaceAInit;
+            level->reset_fn = (void *)PodRaceAReset;
+            level->update_fn = (void *)PodRaceAUpdate;
+            level->always_update_fn = (void *)PodRaceA_AlwaysUpdate;
+            level->draw_fn = (void *)PodRaceADraw;
+            level->draw_status_fn = (void *)PodRacePanel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("podrace_c", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)PodRaceCInit;
+            level->reset_fn = (void *)PodRaceCReset;
+            level->update_fn = (void *)PodRaceCUpdate;
+            level->always_update_fn = (void *)PodRaceAlwasyUpdate;
+            level->draw_status_fn = (void *)PodRacePanel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("?", NULL);
+        PODRACEOUTRO1_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("podrace_status", NULL);
+        PODRACESTATUS_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("PodSprint_A", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)PodSprintA_Init;
+            level->reset_fn = (void *)PodSprintA_Reset;
+            level->update_fn = (void *)PodSprintA_Update;
+            level->draw_status_fn = (void *)PodSprintA_Panel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("AnakinsFlight_B", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)AnakinsFlightB_Init;
+            level->update_fn = (void *)AnakinsFlightB_Update;
+            level->draw_fn = (void *)AnakinsFlightB_Draw;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("retake_intro1", NULL);
+        RETAKEINTRO1_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("retake_intro2", NULL);
+        RETAKEINTRO2_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("retake_intro3", NULL);
+        RETAKEINTRO3_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("retake_b", NULL);
+        RETAKEB_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("retake_d", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)RetakeD_Init;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("retake_e", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)RetakeE_Init;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("retake_g", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)RetakeG_Init;
+            level->reset_fn = (void *)RetakeG_Reset;
+            level->update_fn = (void *)RetakeG_Update;
+            level->draw_status_fn = (void *)RetakeG_Panel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Maul_A", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)MaulA_Init;
+            level->reset_fn = (void *)MaulA_Reset;
+            level->update_fn = (void *)MaulA_Update;
+            level->draw_status_fn = (void *)MaulA_Panel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Maul_B", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)MaulB_Init;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Maul_D", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)MaulD_Init;
+            level->update_fn = (void *)MaulD_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Maul_E", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)MaulE_Init;
+            level->update_fn = (void *)MaulE_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Maul_F", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)MaulF_Init;
+            level->reset_fn = (void *)MaulF_Reset;
+            level->update_fn = (void *)MaulF_Update;
+            level->draw_status_fn = (void *)MaulF_Panel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Jedi_B", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)JediB_Init;
+            level->reset_fn = (void *)JediB_Reset;
+            level->update_fn = (void *)JediB_Update;
+            level->draw_status_fn = (void *)JediB_DrawPanel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Jedi_Outro", NULL);
+        JEDI_OUTRO_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("gunship_a", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)GunshipA_Init;
+            level->update_fn = (void *)GunshipA_Update;
+            level->draw_fn = (void *)GunshipA_Draw;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("gunship_b", NULL);
+        if (level != NULL) {
+            level->reset_fn = (void *)GunshipB_Reset;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("bonus_gunship_a", NULL);
+        if (level != NULL) {
+            level->reset_fn = (void *)BonusGunshipA_Reset;
+            level->update_fn = (void *)BonusGunshipA_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("bonus_gunship_b", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)BonusGunshipB_Init;
+            level->reset_fn = (void *)BonusGunshipB_Reset;
+            level->update_fn = (void *)BonusGunshipB_Update;
+            level->draw_status_fn = (void *)BonusGunshipB_Panel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("pursuit_a", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)BountyHunterPursuitA_Init;
+            level->reset_fn = (void *)BountyHunterPursuitA_Reset;
+            level->update_fn = (void *)BountyHunterPursuitA_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("pursuit_b", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)BountyHunterPursuitB_Init;
+            level->reset_fn = (void *)BountyHunterPursuitB_Reset;
+            level->update_fn = (void *)BountyHunterPursuitB_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("pursuit_c", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)BountyHunterPursuitC_Init;
+            level->reset_fn = (void *)BountyHunterPursuitC_Reset;
+            level->update_fn = (void *)BountyHunterPursuitC_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("pursuit_d", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)BountyHunterPursuitD_Init;
+            level->reset_fn = (void *)BountyHunterPursuitD_Reset;
+            level->update_fn = (void *)BountyHunterPursuitD_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("pursuit_e", NULL);
+        BOUNTYHUNTERPURSUITE_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("dogfight_a", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)ChrisDogFightAInit;
+            level->reset_fn = (void *)ChrisDogFightAReset;
+            level->update_fn = (void *)ChrisDogFightAUpdate;
+            level->draw_fn = (void *)ChrisDogFightADraw;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Factory_B", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)FactoryB_Init;
+            level->reset_fn = (void *)FactoryB_Reset;
+            level->update_fn = (void *)FactoryB_Update;
+            level->draw_fn = (void *)FactoryB_Draw;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Factory_D", NULL);
+        FACTORYD_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Factory_F", NULL);
+        FACTORYF_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Factory_G", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)FactoryG_Init;
+            level->update_fn = (void *)FactoryG_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Dooku_C", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)DookuC_Init;
+            level->reset_fn = (void *)DookuC_Reset;
+            level->update_fn = (void *)DookuC_Update;
+            level->draw_status_fn = (void *)DookuC_DrawPanel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Dooku_Outro", NULL);
+        DOOKUOUTRO_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Dooku_Outro", NULL);
+        if (level != NULL) {
+            level->always_update_fn = (void *)KaminoA_AlwaysUpdate;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("?", NULL);
+        if (level != NULL) {
+            level->reset_fn = (void *)KaminoC_Reset;
+            level->init_fn = (void *)KaminoC_Init;
+            level->update_fn = (void *)KaminoC_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Kamino_D", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)KaminoD_Init;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Kamino_Outro1", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)KaminoOutro_Init;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Kamino_Outro1", NULL);
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("?", NULL);
+        KAMINOC_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Kamino_E", NULL);
+        if (level != NULL) {
+            level->reset_fn = (void *)KaminoE_Reset;
+            level->init_fn = (void *)KaminoE_Init;
+            level->always_update_fn = (void *)KaminoE_AlwaysUpdate;
+            level->update_fn = (void *)KaminoE_Update;
+            level->draw_fn = (void *)KaminoE_Draw;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Kamino_F", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)KaminoF_Init;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("NB_Kamino_a", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)NbKaminoA_Init;
+            level->always_update_fn = (void *)KaminoA_AlwaysUpdate;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Dogfight_A", NULL);
+        DOGFIGHTA_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Cruiser_A", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)CruiserAInit;
+            level->update_fn = (void *)CruiserAUpdate;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Cruiser_B", NULL);
+        CRUISERB_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Cruiser_C", NULL);
+        if (level != NULL) {
+            level->reset_fn = (void *)CruiserCReset;
+            level->update_fn = (void *)CruiserCUpdate;
+            level->draw_status_fn = (void *)CruiserCPanel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Cruiser_D", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)CruiserDInit;
+            level->reset_fn = (void *)CruiserDReset;
+            level->update_fn = (void *)CruiserDUpdate;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Cruiser_E", NULL);
+        CRUISERE_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("cruiser_g", NULL);
+        CRUISERG_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Grievous_A", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)GrievousA_Init;
+            level->reset_fn = (void *)GrievousA_Reset;
+            level->update_fn = (void *)GrievousA_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("temple_A", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)TempleA_Init;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("temple_b", NULL);
+        TEMPLEB_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("temple_c", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)TempleC_Init;
+            level->always_update_fn = (void *)TempleC_AlwaysUpdate;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("temple_status", NULL);
+        TEMPLESTATUS_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Kashyyyk_A", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)KashyyykA_Init;
+            level->reset_fn = (void *)KashyyykA_Reset;
+            level->update_fn = (void *)KashyyykA_Update;
+            level->draw_status_fn = (void *)KashyyykA_Panel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Kashyyyk_B", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)KashyyykB_Init;
+            level->reset_fn = (void *)KashyyykB_Reset;
+            level->update_fn = (void *)KashyyykB_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Kashyyyk_C", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)KashyyykC_Init;
+            level->update_fn = (void *)KashyyykC_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Kashyyyk_D", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)KashyyykD_Init;
+            level->reset_fn = (void *)KashyyykD_Reset;
+            level->update_fn = (void *)KashyyykD_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("vader_a", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)VaderA_Init;
+            level->reset_fn = (void *)VaderA_Reset;
+            level->update_fn = (void *)VaderA_Update;
+            level->draw_status_fn = (void *)VaderA_DrawPanel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("vader_b", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)VaderB_Init;
+            level->reset_fn = (void *)VaderB_Reset;
+            level->update_fn = (void *)VaderB_Update;
+            level->draw_status_fn = (void *)VaderB_DrawPanel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("vader_c", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)VaderC_Init;
+            level->reset_fn = (void *)VaderC_Reset;
+            level->update_fn = (void *)VaderC_Update;
+            level->draw_status_fn = (void *)VaderC_DrawPanel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("BlockadeRunner_B", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)BlockadeRunnerB_Init;
+            level->update_fn = (void *)BlockadeRunnerB_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("BlockadeRunner_C", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)BlockadeRunnerC_Init;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("BlockadeRunner_D", NULL);
+        if (level != NULL) {
+            level->reset_fn = (void *)BlockadeRunnerD_Reset;
+            level->update_fn = (void *)BlockadeRunnerD_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("BlockadeRunner_D", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)TatooineB_Init;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("tatooine_c", NULL);
+        TATOOINEC_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = (void *)TatooineC_Init;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("moseisley_a", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)MosEisleyA_Init;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("moseisley_b", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)MosEisleyB_Init;
+            level->update_fn = (void *)MosEisleyB_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("moseisley_c", NULL);
+        MOSEISLEYC_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("moseisley_d", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)MosEisleyD_Init;
+            level->always_update_fn = (void *)MosEisleyD_AlwaysUpdate;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("moseisley_e", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)MosEisleyE_Init;
+            level->reset_fn = (void *)MosEisleyE_Reset;
+            level->update_fn = (void *)MosEisleyE_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("tatooine_a", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)TatooineA_Init;
+            level->update_fn = (void *)TatooineA_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("tatooine_a", NULL);
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("tatooine_d", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)TatooineD_Init;
+            level->update_fn = (void *)TatooineD_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("tatooine_e", NULL);
+        TATOOINEE_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("deathstarrescue_a", NULL);
+        DEATHSTARRESCUEA_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("deathstarrescue_b", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)DeathStarRescueB_Init;
+            level->update_fn = (void *)DeathStarRescueB_Update;
+            level->always_update_fn = (void *)DeathStarRescueB_AlwaysUpdate;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("deathstarrescue_c", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)DeathStarRescueC_Init;
+            level->always_update_fn = (void *)DeathStarRescueC_AlwaysUpdate;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("deathstarrescue_d", NULL);
+        DEATHSTARRESCUED_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("deathstarrescue_e", NULL);
+        DEATHSTARRESCUEE_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("deathstarescape_a", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)DeathStarEscapeA_Init;
+            level->update_fn = (void *)DeathStarEscapeA_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("deathstarescape_b", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)DeathStarEscapeB_Init;
+            level->update_fn = (void *)DeathStarEscapeB_Update;
+            level->always_update_fn = (void *)DeathStarEscapeB_AlwaysUpdate;
+            level->draw_fn = (void *)DeathStarEscapeB_Draw;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("deathstarescape_c", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)DeathStarEscapeC_Init;
+            level->update_fn = (void *)DeathStarEscapeC_Update;
+            level->reset_fn = (void *)DeathStarEscapeC_Reset;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("deathstarescape_d", NULL);
+        if (level != NULL) {
+            level->update_fn = (void *)DeathStarEscapeD_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("deathstarbattle_a", NULL);
+        DEATHSTARBATTLEA_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("deathstarbattle_b", NULL);
+        DEATHSTARBATTLEB_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("deathstarbattle_c", NULL);
+        if (level != NULL) {
+            level->always_update_fn = (void *)DeathStarBattleC_AlwaysUpdate;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("deathstarbattle_d", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)DeathStarBattleDInit;
+            level->update_fn = (void *)DeathStarBattleDUpdate;
+            level->draw_fn = (void *)DeathStarBattleDDraw;
+            level->reset_fn = (void *)DeathStarBattleDReset;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("hothbattle_a", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)HothBattleA_Init;
+            level->reset_fn = (void *)HothBattleA_Reset;
+            level->update_fn = (void *)HothBattleA_Update;
+            level->draw_fn = (void *)HothBattleA_Draw;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("hothbattle_b", NULL);
+        HOTHBATTLEB_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("hothbattle_c", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)HothBattleC_Init;
+            level->reset_fn = (void *)HothBattleC_Reset;
+            level->update_fn = (void *)HothBattleC_Update;
+            level->draw_fn = (void *)HothBattleC_Draw;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("hothbattle_d", NULL);
+        HOTHBATTLED_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("hothbattle_e", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)HothBattleE_Init;
+            level->update_fn = (void *)HothBattleE_Update;
+            level->draw_fn = (void *)HothBattleE_Draw;
+            level->draw_status_fn = (void *)HothBattleE_Panel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("HothBattle_Outro", NULL);
+        HOTHBATTLEOUTRO_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("hothescape_a", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)HothEscapeA_Init;
+            level->update_fn = (void *)HothEscapeA_Update;
+            level->reset_fn = (void *)HothEscapeA_Reset;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("hothescape_b", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)HothEscapeB_Init;
+            level->update_fn = (void *)HothEscapeB_Update;
+            level->reset_fn = (void *)HothEscapeB_Reset;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("hothescape_c", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)HothEscapeC_Init;
+            level->update_fn = (void *)HothEscapeC_Update;
+            level->always_update_fn = (void *)HothEscapeC_AlwaysUpdate;
+            level->reset_fn = (void *)HothEscapeC_Reset;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("hothescape_d", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)HothEscapeD_Init;
+            level->update_fn = (void *)HothEscapeD_Update;
+            level->reset_fn = (void *)HothEscapeD_Reset;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("AsteroidChase_A", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)AsteroidChaseA_Init;
+            level->reset_fn = (void *)AsteroidChaseA_Reset;
+            level->update_fn = (void *)AsteroidChaseA_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("AsteroidChase_B", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)AsteroidChaseB_Init;
+            level->reset_fn = (void *)AsteroidChaseB_Reset;
+            level->update_fn = (void *)AsteroidChaseB_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("AsteroidChase_C", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)AsteroidChaseC_Init;
+            level->reset_fn = (void *)AsteroidChaseC_Reset;
+            level->update_fn = (void *)AsteroidChaseC_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("AsteroidChase_D", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)AsteroidChaseD_Init;
+            level->update_fn = (void *)AsteroidChaseD_Update;
+            level->draw_fn = (void *)AsteroidChaseD_Panel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("AsteroidChase_Midtro", NULL);
+        ASTEROIDCHASEMITRO_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("dagobah_a", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)DagobahA_Init;
+            level->update_fn = (void *)DagobahA_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("dagobah_d", NULL);
+        DAGOBAHD_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("dagobah_d", NULL);
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("dagobah_d", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)DagobahE_Init;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("dagobah_b", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)DagobahB_Init;
+            level->reset_fn = (void *)DagobahB_Reset;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("dagobah_c", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)DagobahC_Init;
+            level->draw_status_fn = (void *)DagobahC_Panel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("CloudCityTrap_A", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)CloudCityTrapA_Init;
+            level->update_fn = (void *)CloudCityTrapA_Update;
+            level->reset_fn = (void *)CloudCityTrapA_Reset;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("CloudCityTrap_B", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)CloudCityTrapB_Init;
+            level->update_fn = (void *)CloudCityTrapB_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("CloudCityTrap_C", NULL);
+        if (level != NULL) {
+            level->reset_fn = (void *)CloudCityTrapC_Reset;
+            level->update_fn = (void *)CloudCityTrapC_Update;
+            level->draw_status_fn = (void *)CloudCityTrapC_Panel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("CloudCityTrap_Outro", NULL);
+        CLOUDCITYTRAPOUTRO_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("cloudcityescape_a", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)CloudCityEscapeA_Init;
+            level->reset_fn = (void *)CloudCityEscapeA_Reset;
+            level->update_fn = (void *)CloudCityEscapeA_Update;
+            level->draw_status_fn = (void *)CloudCityEscapeA_Panel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("cloudcityescape_b", NULL);
+        CLOUDCITYESCAPEB_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("cloudcityescape_c", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)CloudCityEscapeC_Init;
+            level->update_fn = (void *)CloudCityEscapeC_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("jabbaspalace_a", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)JabbasPalaceA_Init;
+            level->reset_fn = (void *)JabbasPalaceA_Reset;
+            level->update_fn = (void *)JabbasPalaceA_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("jabbaspalace_b", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)JabbasPalaceB_Init;
+            level->reset_fn = (void *)JabbasPalaceB_Reset;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("jabbaspalace_d", NULL);
+        if (level != NULL) {
+            level->reset_fn = (void *)JabbasPalaceD_Reset;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("jabbaspalace_e", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)JabbasPalaceE_Init;
+            level->reset_fn = (void *)JabbasPalaceE_Reset;
+            level->update_fn = (void *)JabbasPalaceE_Update;
+            level->draw_status_fn = (void *)JabbasPalaceE_Panel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("jabbaspalace_Outro", NULL);
+        JABBASPALACE_OUTRO_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("endorbattle_a", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)EndorBattleA_Init;
+            level->update_fn = (void *)EndorBattleA_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("endorbattle_b", NULL);
+        ENDORBATTLEB_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("endorbattle_c", NULL);
+        ENDORBATTLEC_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = (void *)EndorBattleC_Init;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("endorbattle_d", NULL);
+        ENDORBATTLED_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("DeathStar2Battle_A", NULL);
+        if (level != NULL) {
+            level->always_update_fn = (void *)DeathStar2BattleA_AlwaysUpdate;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("DeathStar2Battle_B", NULL);
+        DEATHSTAR2BATTLEB_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("DeathStar2Battle_D", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)DeathStar2BattleD_Init;
+            level->update_fn = (void *)DeathStar2BattleD_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("DeathStar2Battle_E", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)DeathStar2BattleFire_Init;
+            level->update_fn = (void *)DeathStar2BattleFire_Update;
+            level->draw_fn = (void *)DeathStar2BattleFire_Draw;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("DeathStar2Battle_F", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)DeathStar2BattleFire_Init;
+            level->update_fn = (void *)DeathStar2BattleFire_Update;
+            level->draw_fn = (void *)DeathStar2BattleFire_Draw;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("DeathStar2Battle_G", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)DeathStar2BattleFire_Init;
+            level->update_fn = (void *)DeathStar2BattleFire_Update;
+            level->draw_fn = (void *)DeathStar2BattleFire_Draw;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("DeathStar2Battle_Midtro", NULL);
+        DEATHSTAR2BATTLEMIDTRO_LDATA = level;
+        if (level != NULL) {
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("EmperorFight_A", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)EmperorFightA_Init;
+            level->reset_fn = (void *)EmperorFightA_Reset;
+            level->update_fn = (void *)EmperorFightA_Update;
+            level->draw_status_fn = (void *)EmperorFightA_Panel;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("SarlaccPit_A", NULL);
+        if (level != NULL) {
+            level->reset_fn = (void *)SarlaccPitA_Reset;
+            level->draw_fn = (void *)SarlaccPitA_Draw;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("SarlaccPit_B", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)SarlaccPitB_Init;
+            level->reset_fn = (void *)SarlaccPitB_Reset;
+            level->update_fn = (void *)SarlaccPitB_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("SarlaccPit_C", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)SarlaccPitC_Init;
+            level->reset_fn = (void *)SarlaccPitC_Reset;
+            level->update_fn = (void *)SarlaccPitC_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("lego_city", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)LegoCity_Init;
+            level->reset_fn = (void *)LegoCity_Reset;
+            level->update_fn = (void *)LegoCity_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("Senate_a", NULL);
+        SENATEA_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = (void *)SenateA_Init;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("new_town", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)NewTown_Init;
+            level->reset_fn = (void *)NewTown_Reset;
+            level->update_fn = (void *)NewTown_Update;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("platform", NULL);
+        if (level != NULL) {
+            level->init_fn = (void *)Platform_Init;
+            level->reset_fn = (void *)Platform_Reset;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("E1CharacterBonus_A", NULL);
+        E1CHARACTERBONUSA_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = (void *)E1CharacterBonus_Init;
+        }
+    }
+
+    {
+        LEVELDATA *level = Level_FindByName("E2VehicleBonus_A", NULL);
+        E2VEHICLEBONUSA_LDATA = level;
+        if (level != NULL) {
+        }
     }
 }
 
