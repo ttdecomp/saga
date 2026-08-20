@@ -32,7 +32,7 @@ extern i16 Hub_ModelList[12];
 extern i32 Area_PlayerModelCount;
 extern void *CurrentCList;
 extern void *CurrentStoryCList;
-extern void *CharacterCustomiser;
+extern CUSTOMISER *CharacterCustomiser;
 extern i32 makefreeplaymodellist;
 extern i32 BonusArea;
 extern AREADATA *ANEWHOPE_ADATA;
@@ -661,9 +661,9 @@ icon_scenes:
     IconScenes_Load((APICHARACTERMODELLIST_s *)list, 1, &characterbuffer_ptr, &characterbuffer_end);
 
     if (HUB_ADATA != NULL && HUB_ADATA->field27_0x7c == area)
-        Customiser_SetAnimsToLoad((CUSTOMISER *)CharacterCustomiser, 1);
+        Customiser_SetAnimsToLoad(CharacterCustomiser, 1);
     else
-        Customiser_SetAnimsToLoad((CUSTOMISER *)CharacterCustomiser, 0);
+        Customiser_SetAnimsToLoad(CharacterCustomiser, 0);
 
     if (area != -1 && (ADataList[area].flags & 0x62) == 0) {
         if (ADataList[area].episode_index <= 2 || (ANEWHOPE_ADATA != NULL && ANEWHOPE_ADATA->field27_0x7c == area) ||
@@ -680,8 +680,8 @@ icon_scenes:
     CurrentStoryCList = (void *)2;
     CharScenes_AreaLoad((APICHARACTERMODELLIST_s *)list, &characterbuffer_end, characterbuffer_ptr);
     if (!(HUB_ADATA != NULL && HUB_ADATA->field27_0x7c == area))
-        Customiser_LoadAccessories((CUSTOMISER *)CharacterCustomiser, (APICHARACTERMODELLIST_s *)list);
-    Customiser_ResetModelTextureIDs((CUSTOMISER *)CharacterCustomiser);
+        Customiser_LoadAccessories(CharacterCustomiser, (APICHARACTERMODELLIST_s *)list);
+    Customiser_ResetModelTextureIDs(CharacterCustomiser);
     CurrentStoryCList = story_list;
 loadareadata_check:
     if (loadareadata_loadlevel != 0) {

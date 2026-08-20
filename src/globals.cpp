@@ -7,6 +7,8 @@
 #include "legoapi/core/input/timer.h"
 #include "legoapi/world/area.h"
 
+struct CUSTOMISER;
+
 void *PlayerItemType = 0;
 i32 PLAYERITEMTYPECOUNT = 0;
 
@@ -298,7 +300,7 @@ i32 Arcade = 0;
 f32 HIGHJUMPHEIGHT = 0.0f;
 i32 BuildUpTotal = 0;
 i32 BuildUpDone = 0;
-void *HOTHBATTLE_ADATA = NULL;
+AREADATA *HOTHBATTLE_ADATA = NULL;
 TIMER AreaTimer;
 i32 VehicleAreaRememberSpeed = 0;
 i32 OldBonusScore[2] = {0};
@@ -312,7 +314,7 @@ f32 LevTime = 0.0f;
 
 i32 Customiser_AccessoriesLoaded = 0;
 NUGSCN *vehicle_scene = NULL;
-void *CharacterCustomiser = NULL;
+CUSTOMISER *CharacterCustomiser = NULL;
 
 void *OldLevelHackData = NULL;
 i32 LevelHackSize = 0;

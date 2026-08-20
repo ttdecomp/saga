@@ -138,10 +138,10 @@ void ClearUpAreaData() {
     }
     switch (Customiser_AccessoriesLoaded) {
         case 2:
-            Customiser_RestoreModelTextureIDs((struct CUSTOMISER *)CharacterCustomiser);
+            Customiser_RestoreModelTextureIDs(CharacterCustomiser);
             break;
         case 1:
-            Customiser_DumpAccessories((struct CUSTOMISER *)CharacterCustomiser);
+            Customiser_DumpAccessories(CharacterCustomiser);
             break;
     }
     Customiser_AccessoriesLoaded = 0;
@@ -257,7 +257,7 @@ have_jump:
     *(i32 *)((char *)AreaGlobals + 0x24) = 0;
     BuildUpTotal = 0;
     BuildUpDone = 0;
-    if (*(void **)((char *)WORLD + 0x12c) == (void *)HOTHBATTLE_ADATA) {
+    if (*(void **)((char *)WORLD + 0x12c) == HOTHBATTLE_ADATA) {
         ResetMinikitCounter();
     }
     for (i = 0; i < 8; i++) {
