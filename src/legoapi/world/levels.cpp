@@ -9,6 +9,8 @@ extern void *ADataList;
 extern void CompleteLevel(WORLDINFO_s *);
 extern WORLDINFO_s *WORLD;
 i32 KillBoss(i32, i32, float);
+extern void GoToNewLevel(i32);
+extern void NewCutScene(CUTINFO *, CUTSYS *, char *, i32);
 
 struct AIROW_s;
 struct nuqthdr_s;
@@ -40,7 +42,10 @@ i32 GetTableLocator(void) {
 void getSpawnLocator(float, char *) {
 }
 
-void KillBossNewLevel(i32, i32, float, i32) {
+void KillBossNewLevel(i32 a, i32 b, float c, i32 d) {
+    if (KillBoss(a, b, c) != 0) {
+        GoToNewLevel(d);
+    }
 }
 
 void NewLevelFromMenu(LEVELDATA_s *, i32, i32, i32) {
@@ -74,7 +79,12 @@ void *LevObj_FindByPlatID(WORLDINFO_s *world, i32 platID) {
     return NULL;
 }
 
-void KillBossPlayCutScene(i32, i32, float, char *) {
+i32 KillBossPlayCutScene(i32 a, i32 b, float c, char *name) {
+    if (KillBoss(a, b, c) != 0) {
+        NewCutScene(NULL, (CUTSYS *)(*(void **)((char *)WORLD + 0x2ab0)), name, 1);
+        return 1;
+    }
+    return 0;
 }
 
 void KillBossCompleteLevel(i32 a, i32 b, float c) {
