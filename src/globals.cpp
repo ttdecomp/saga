@@ -169,6 +169,24 @@ LEVELDATA *TEMPLEB_LDATA = NULL;
 LEVELDATA *TEMPLESTATUS_LDATA = NULL;
 
 void *LevelHackData = NULL;
+i32 LSW1 = 0;
+i32 LSW2 = 0;
+i32 Arcade = 0;
+f32 HIGHJUMPHEIGHT = 0.0f;
+i32 BuildUpTotal = 0;
+i32 BuildUpDone = 0;
+void *HOTHBATTLE_ADATA = NULL;
+TIMER AreaTimer;
+i32 VehicleAreaRememberSpeed = 0;
+i32 OldBonusScore[2] = {0};
+i32 BonusScore[2] = {0};
+i32 BonusCoinTotal = 0;
+void *Door_Last = NULL;
+i32 LevelChange = 0;
+i32 BombGenerator_PlayerBomb[2] = {0};
+i32 Lap = 0;
+f32 LevTime = 0.0f;
+
 i32 Customiser_AccessoriesLoaded = 0;
 void *vehicle_scene = NULL;
 void *CharacterCustomiser = NULL;

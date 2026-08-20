@@ -1,6 +1,7 @@
 #include "decomp.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nu3d/nutex.h"
+#include "legoapi/core/input/timer.h"
 
 #include <string.h>
 
@@ -77,6 +78,35 @@ extern "C" i16 FindPlatInst(void *);
 i32 Store_IsPackUnlocked(i32);
 void ReCalculateCompletionPoints(void);
 void Hub_LockUnlockDoors(struct WORLDINFO_s *);
+
+extern i32 LSW1;
+extern i32 LSW2;
+extern i32 Arcade;
+extern f32 HIGHJUMPHEIGHT;
+extern i32 BuildUpTotal;
+extern i32 BuildUpDone;
+extern void *HOTHBATTLE_ADATA;
+extern TIMER AreaTimer;
+extern i32 VehicleAreaRememberSpeed;
+extern i32 OldBonusScore[2];
+extern i32 BonusScore[2];
+extern i32 BonusCoinTotal;
+extern void *Door_Last;
+extern i32 LevelChange;
+extern i32 BombGenerator_PlayerBomb[2];
+extern i32 Lap;
+extern f32 LevTime;
+extern char AreaGlobals[0x34];
+extern i32 Door_UseCutCam;
+extern void *Player[8];
+extern char PlayerProgress[0x80];
+extern u8 DEFAULT_PLAYERHITPOINTS;
+
+extern void SuperCounters_Reset(i32);
+extern void NewAreaMusicChanges(void);
+extern void ClearTakeOverObjectSys(void);
+extern void Door_Reset(void);
+extern void ResetMinikitCounter(void);
 
 struct AIROW_s;
 struct nuqthdr_s;
@@ -360,6 +390,77 @@ void LevelProgress_ReserveBufferSpace(variptr_u *buf, variptr_u) {
 }
 
 void NewArea() {
+    i32 i;
+    u8 area_ep;
+
+    LSW1 = 0;
+    LSW2 = 0;
+    if (WORLD != NULL) {
+        if (*(void **)((char *)WORLD + 0x12c) != NULL) {
+            i8 ep = *(i8 *)(*(char **)((char *)WORLD + 0x12c) + 0x86);
+            if (ep >= 0) {
+                if (ep > 2) {
+                    LSW2 = 1;
+                } else {
+                    LSW1 = 1;
+                    HIGHJUMPHEIGHT = 1.14f;
+                    goto have_jump;
+                }
+            }
+        }
+    }
+    if (Arcade != 0) {
+        HIGHJUMPHEIGHT = 1.14f;
+    } else {
+        HIGHJUMPHEIGHT = 0.75f;
+    }
+have_jump:
+    ClearAreaProgress(Area, 0);
+    if (*(void **)((char *)WORLD + 0x130) != NULL &&
+        (*(u8 *)(*(char **)((char *)WORLD + 0x130) + 0x2800) & 1) == 0) {
+        memcpy(*(void **)((char *)WORLD + 0x130), (char *)WORLD + 0x15c, 0x2800);
+        *(u8 *)(*(char **)((char *)WORLD + 0x130) + 0x2800) |= 1;
+    }
+    SuperCounters_Reset(Area);
+    *(i32 *)((char *)AreaGlobals + 0x10) = 0;
+    if (Area == -1) {
+        area_ep = 0;
+    } else {
+        area_ep = *(u8 *)((char *)Game + 0x7831 + Area * 12);
+    }
+    *(u8 *)((char *)AreaGlobals + 0xc) = area_ep;
+    *(u8 *)((char *)AreaGlobals + 0x14) = area_ep;
+    Door_UseCutCam = 0;
+    *(i32 *)((char *)AreaGlobals + 0x0) = 0;
+    *(i32 *)((char *)AreaGlobals + 0x1c) = 0;
+    *(i32 *)((char *)AreaGlobals + 0x8) = 0;
+    *(i32 *)((char *)AreaGlobals + 0x18) = 0;
+    *(i32 *)((char *)AreaGlobals + 0x24) = 0;
+    BuildUpTotal = 0;
+    BuildUpDone = 0;
+    if (*(void **)((char *)WORLD + 0x12c) == (void *)HOTHBATTLE_ADATA) {
+        ResetMinikitCounter();
+    }
+    for (i = 0; i < 8; i++) {
+        if (Player[i] != NULL) {
+            *(u8 *)((char *)Player[i] + 0x108b) = *(u8 *)((char *)Player[i] + 0x108a);
+        }
+        ((u8 *)PlayerProgress)[i * 0x10 + 0x8] = DEFAULT_PLAYERHITPOINTS;
+    }
+    ResetTimer(&AreaTimer, 0.0f);
+    memcpy(BackupGame, (char *)WORLD + 0x15c, 0x7e58);
+    NewAreaMusicChanges();
+    VehicleAreaRememberSpeed = 0;
+    ClearTakeOverObjectSys();
+    BonusScore[0] = OldBonusScore[0];
+    BonusScore[1] = OldBonusScore[1];
+    BonusCoinTotal = 0;
+    Door_Last = NULL;
+    Door_Reset();
+    LevelChange = 1;
+    BombGenerator_PlayerBomb[0] = 0;
+    BombGenerator_PlayerBomb[1] = 0;
+    Lap = 1;
 }
 
 void OffPlat(i32) {
