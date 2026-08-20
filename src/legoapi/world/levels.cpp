@@ -43,6 +43,9 @@ extern WORLDINFO_s *WORLD;
 i32 KillBoss(i32, i32, float);
 extern void GoToNewLevel(i32);
 extern void NewCutScene(CUTINFO *, CUTSYS *, char *, i32);
+extern void ClearLevelProgress(i32, struct WORLDINFO_s *);
+extern char Game[0x7e58];
+extern char BackupGame[0x7e58];
 
 struct AIROW_s;
 struct nuqthdr_s;
@@ -141,7 +144,27 @@ void KillBossNewLevel(i32 a, i32 b, float c, i32 d) {
 void NewLevelFromMenu(LEVELDATA_s *, i32, i32, i32) {
 }
 
-void ClearAreaProgress(i32, i32) {
+void ClearAreaProgress(i32 a, i32 b) {
+    u8 *area;
+    i32 i;
+    i32 levelIdx;
+
+    for (i = 0; i < 12; i++) {
+        ClearLevelProgress(i, NULL);
+    }
+    *(i32 *)BackupGame = *(i32 *)((u8 *)Game + 0x7bfc);
+    if (b == 0 || a == -1) {
+        return;
+    }
+    *(i32 *)((u8 *)Game + 0x14) = 0;
+    area = *(u8 **)&ADataList + a * 0x9c;
+    if (*(u8 *)(area + 0x7d) == 0) {
+        return;
+    }
+    for (i = 0; i < *(u8 *)(area + 0x7d); i++) {
+        levelIdx = *(i16 *)(area + 0x60 + i * 2);
+        memcpy((u8 *)Game + levelIdx * 0x54 + 0x11, (u8 *)BackupGame + levelIdx * 0x54 + 0x11, 0x53);
+    }
 }
 
 i32 GetCounterLocator(i32) {
