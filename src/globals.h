@@ -309,6 +309,7 @@ extern "C" {
     extern i32 last_area;
     extern LEVELDATA *LastLData;
     extern LEVELDATA *TITLES_LDATA;
+    extern LEVELDATA *STATUS_LDATA;
     extern i32 new_level_from_menu;
     extern i32 BGLOAD;
 

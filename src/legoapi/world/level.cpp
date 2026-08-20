@@ -25,6 +25,9 @@ LEVELDATA *levelconfig_ldata = NULL;
 
 extern i16 GetMusicIndex(char *, nusound_filename_info_s *, i32);
 
+void UpdateStatusScreen(WORLDINFO *);
+void DrawStatusScreen(WORLDINFO *);
+
 static void Titles_Init(WORLDINFO *) {
 }
 static void Titles_Update(WORLDINFO *) {
@@ -412,6 +415,14 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         handle = music_man.GetTrackHandle(TRACK_CLASS_NOMUSIC, "titles");
         level->music_tracks[2][1] = handle;
         level->music_tracks[2][0] = handle;
+    }
+
+    level = Level_FindByName("status", NULL);
+    STATUS_LDATA = level;
+    if (level != NULL) {
+        level->update_fn = (void *)UpdateStatusScreen;
+        level->draw_status_fn = (void *)DrawStatusScreen;
+        level->flags = (level->flags & ~0xa) | 0x400;
     }
 }
 

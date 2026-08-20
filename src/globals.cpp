@@ -121,6 +121,7 @@ i32 BeenAttacked = 0;
 i32 last_area = -1;
 LEVELDATA *LastLData = NULL;
 LEVELDATA *TITLES_LDATA = NULL;
+LEVELDATA *STATUS_LDATA = NULL;
 i32 new_level_from_menu = 0;
 i32 BGLOAD = 0;
 
