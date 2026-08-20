@@ -24,9 +24,9 @@
 #include "nu2api/nufile/nufpar.h"
 
 // Globals shared across world loading — defined here until moved to globals.cpp
-TIMER *LevelTimer = NULL;
+TIMER LevelTimer;
 i32 abort_load = 0;
-char *ConfigBuffer = NULL;
+char ConfigBuffer[0x10000];
 i32 numtl_force_mipmode = 0;
 i32 GAMEDEMO = 0;
 void *big_icon_scene = NULL;
@@ -35,7 +35,7 @@ void *things_scene = NULL;
 LEVELDATA *PLATFORM_LDATA = NULL;
 LEVELDATA *RETAKED_LDATA = NULL;
 LEVELDATA *CREDITS_LDATA = NULL;
-u32 Text_Language = 0;
+u32 Text_Language = 1;
 nufpcomjmp_s *LevelConfigKeywords_AfterLoad = NULL;
 
 // --- Players globals ---
@@ -50,7 +50,7 @@ i32 PLAYERCOUNT = 0;
 i32 netclient = 0;
 i32 UsePlayerList = 0;
 i16 PlayerList[8];
-i32 PlayerID[2];
+i32 PlayerID[2] = {-1, -1};
 i16 Area_PlayerIDList[8];
 i16 Area_StoryModelList[8];
 PLAYERPROGRESS PlayerProgress[8];
@@ -62,12 +62,11 @@ SOCKPOSITION OldPlrSPos[8];
 char Batarang[8 * 0xb4];
 void *PlayerSuit[8];
 u8 PlayerTorpedoCount[8];
-COINPACKET COINPACKETS[2];
-COINPACKET *CoinPacket = COINPACKETS;
+COINPACKET CoinPacket[2];
 u32 BackUpPlayers[0x872];
 void *GizForceLOSInfo;
-u8 DEFAULT_PLAYERHITPOINTS = 100;
-u16 LEGOOBJ_DEFAULTLASTCOIN = 50;
+i32 DEFAULT_PLAYERHITPOINTS = 8;
+u32 LEGOOBJ_DEFAULTLASTCOIN = -1;
 
 PLAYERDATA *apicharsys;
 
@@ -317,7 +316,7 @@ void WorldInfo_Init(WORLDINFO *world) {
     NewMenu(local_menu_id, local_menu_y, -1);
 
     if (NOSOUND == 0) {
-        ResetTimer(LevelTimer, 0.0f);
+        ResetTimer(&LevelTimer, 0.0f);
     }
 
     if ((world->current_level->flags & (LEVEL_OUTRO | LEVEL_MIDTRO | LEVEL_INTRO)) == 0) {

@@ -60,11 +60,11 @@ extern SOCKPOSITION OldPlrSPos[8];
 extern char Batarang[8 * 0xb4];
 extern void *PlayerSuit[8];
 extern u8 PlayerTorpedoCount[8];
-extern COINPACKET *CoinPacket;
+extern COINPACKET CoinPacket[2];
 extern u32 BackUpPlayers[];
 extern void *GizForceLOSInfo;
-extern u8 DEFAULT_PLAYERHITPOINTS;
-extern u16 LEGOOBJ_DEFAULTLASTCOIN;
+extern i32 DEFAULT_PLAYERHITPOINTS;
+extern u32 LEGOOBJ_DEFAULTLASTCOIN;
 
 extern PLAYERDATA *apicharsys;
 extern TORPEDOPACKET TorpedoPackets[16];

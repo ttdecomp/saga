@@ -88,7 +88,7 @@ extern char AreaGlobals[0x34];
 extern i32 Door_UseCutCam;
 extern GameObject_s *Player[8];
 extern char PlayerProgress[0x80];
-extern u8 DEFAULT_PLAYERHITPOINTS;
+extern i32 DEFAULT_PLAYERHITPOINTS;
 extern i32 Area_PlayerModelCount;
 extern i32 Area_StoryModelCount;
 extern i16 Area_PlayerModelList[1];

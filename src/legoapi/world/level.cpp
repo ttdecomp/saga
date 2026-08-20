@@ -14,7 +14,7 @@
 #include "nu2api/numath/nuvec.h"
 #include "nu2api/numusic/numusic.h"
 
-extern "C" char *ConfigBuffer;
+extern "C" char ConfigBuffer[0x10000];
 
 // Defined in legoapi/gameobjects.cpp
 void GameAudio_PlaySfxAndSetVolume(i32, nuvec_s *, float);
