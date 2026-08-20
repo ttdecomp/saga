@@ -57,11 +57,11 @@ void Area_Configure(i32 area, i32 param, EXTRAMODEL *models, i16 *s) {
     Area_PlayerModelCount = 0;
     Area_StoryModelCount = 0;
     Area_PlayerModelList[0] = -1;
-    ((i16 *)Area_StoryModelList)[0] = -1;
+    Area_StoryModelList[0].model_id = -1;
     Area_FreePlayModelCount = 0;
     Area_FreePlayModelList[0] = -1;
     Area_MissionModelCount = 0;
-    Area_MissionModelList[0] = -1;
+    Area_MissionModelList[0].model_id = -1;
     ((i16 *)LevelLoad)[0] = -1;
     LevelLoadCount = 0;
     if (area != -1) {

@@ -25,10 +25,10 @@ extern i16 id_ANAKINJEDISCARRED;
 extern i16 id_HANINCARBONITE;
 extern i16 id_DEFAULTCHARACTER[2];
 extern i16 Area_PlayerModelList[18];
-extern i16 Area_MissionModelList[98];
-extern i16 Area_StoryModelList[98];
-extern i16 FreePlayModelList[98];
-extern i16 Hub_ModelList[12];
+extern APICHARACTERMODELLIST_s Area_MissionModelList[98];
+extern APICHARACTERMODELLIST_s Area_StoryModelList[98];
+extern APICHARACTERMODELLIST_s FreePlayModelList[98];
+extern APICHARACTERMODELLIST_s Hub_ModelList[12];
 extern i32 Area_PlayerModelCount;
 extern void *CurrentCList;
 extern void *CurrentStoryCList;
@@ -562,7 +562,7 @@ i32 AreaFromMiniKitID(i32 minikitId) {
 struct bgprocinfo_s;
 static __used__ void LoadAreaData(bgprocinfo_s *) {
     char pathbuf[0x100];
-    i16 ml[6];
+    APICHARACTERMODELLIST_s ml[6];
     i32 level;
     i32 saved_max_fps;
     i32 area;
@@ -572,7 +572,7 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
 
     area = Area;
     saved_max_fps = nuapi.max_fps;
-    nuapi.max_fps = 0x1e;
+    nuapi.max_fps = 30;
     level = Level;
 
     if (area != -1 && area != last_area) {
@@ -607,15 +607,15 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
     }
 
     if (area != -1 && area != last_area) {
-        ml[1] = 1;
-        ml[2] = -1;
-        ml[3] = 1;
-        ml[4] = -1;
-        ml[5] = 0;
-        ml[0] = id_ANAKINJEDISCARRED;
+        ml[1].model_id = 1;
+        ml[2].model_id = -1;
+        ml[3].model_id = 1;
+        ml[4].model_id = -1;
+        ml[5].model_id = 0;
+        ml[0].model_id = id_ANAKINJEDISCARRED;
         if ((ADataList[area].flags & AREAFLAG_HUB_AREA) != 0)
-            ml[2] = id_HANINCARBONITE;
-        IconScenes_Load((APICHARACTERMODELLIST_s *)ml, 1, &characterbuffer_ptr, &characterbuffer_end);
+            ml[2].model_id = id_HANINCARBONITE;
+        IconScenes_Load(ml, 1, &characterbuffer_ptr, &characterbuffer_end);
     }
 
     if (makefreeplaymodellist != 0) {
@@ -624,9 +624,9 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
         } else {
             MakeFreePlayModelList(id_DEFAULTCHARACTER[0], id_DEFAULTCHARACTER[1], area, level, 0);
         }
-        story_list = (APICHARACTERMODELLIST_s *)Area_StoryModelList;
+        story_list = Area_StoryModelList;
         makefreeplaymodellist = 0;
-        list = (APICHARACTERMODELLIST_s *)FreePlayModelList;
+        list = FreePlayModelList;
         goto icon_scenes;
     } else {
         if (area != -1 && area == last_area) {
@@ -636,23 +636,23 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
     }
 model_select:
     if (HUB_ADATA != NULL && HUB_ADATA->field27_0x7c == area) {
-        list = (APICHARACTERMODELLIST_s *)Hub_ModelList;
-        story_list = (APICHARACTERMODELLIST_s *)Hub_ModelList;
+        list = Hub_ModelList;
+        story_list = Hub_ModelList;
     } else {
-        list = (APICHARACTERMODELLIST_s *)FreePlayModelList;
+        list = FreePlayModelList;
         if (FreePlay == 0) {
             if (Mission_Active(0) != 0)
-                list = (APICHARACTERMODELLIST_s *)Area_MissionModelList;
+                list = Area_MissionModelList;
             else
-                list = (APICHARACTERMODELLIST_s *)Area_StoryModelList;
+                list = Area_StoryModelList;
         }
         if (HUB_ADATA != NULL && HUB_ADATA->field27_0x7c == area) {
-            story_list = (APICHARACTERMODELLIST_s *)Hub_ModelList;
+            story_list = Hub_ModelList;
         } else {
             if (Mission_Active(0) != 0)
-                story_list = (APICHARACTERMODELLIST_s *)Area_MissionModelList;
+                story_list = Area_MissionModelList;
             else
-                story_list = (APICHARACTERMODELLIST_s *)Area_StoryModelList;
+                story_list = Area_StoryModelList;
         }
     }
 

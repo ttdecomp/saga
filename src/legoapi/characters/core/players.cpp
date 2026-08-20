@@ -59,7 +59,8 @@ void Players_Init(void) {
 
         if (LevelChangesInArea == 0 && UsePlayerList != 0 && PlayerProgress[0].field_0x6 == 0 &&
             PlayerProgress[1].field_0x6 != 0 && FreePlay == 0 && (WORLD->area->flags & 5) == 1 && list0 != -1 &&
-            list0 == Area_StoryModelList[0] && list[1] != -1 && list[1] == Area_StoryModelList[2] && list0 != list[1]) {
+            list0 == Area_StoryModelList[0].model_id && list[1] != -1 && list[1] == Area_StoryModelList[2].model_id &&
+            list0 != list[1]) {
             list[0] = list[1];
             list[1] = list0;
         }

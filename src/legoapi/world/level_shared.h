@@ -95,10 +95,10 @@ extern i16 Area_PlayerModelList[1];
 extern i32 Area_FreePlayModelCount;
 extern i16 Area_FreePlayModelList[1];
 extern i32 Area_MissionModelCount;
-extern i16 Area_MissionModelList[1];
+extern APICHARACTERMODELLIST_s Area_MissionModelList[1];
 extern i16 AreaMusic;
 extern void *MissionSys;
-extern void *Area_StoryModelList;
+extern APICHARACTERMODELLIST_s Area_StoryModelList[98];
 extern void *LevelLoad;
 extern i32 LevelLoadCount;
 

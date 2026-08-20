@@ -29,6 +29,10 @@ typedef u64 undefined8;
 typedef u16 ushort;
 typedef u16 word;
 
+struct APICHARACTERMODELLIST_s {
+    i16 model_id;
+};
+
 #define SAGA_NOMATCH __attribute__((section(".text.nomatch")))
 
 #define __used__ __attribute__((used)) // NOLINT(readability-identifier-naming)
