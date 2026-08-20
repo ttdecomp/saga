@@ -29,9 +29,9 @@ i32 abort_load = 0;
 char ConfigBuffer[0x10000];
 i32 numtl_force_mipmode = 0;
 i32 GAMEDEMO = 0;
-void *big_icon_scene = NULL;
-void *area_scene = NULL;
-void *things_scene = NULL;
+NUGSCN *big_icon_scene = NULL;
+NUGSCN *area_scene = NULL;
+NUGSCN *things_scene = NULL;
 LEVELDATA *PLATFORM_LDATA = NULL;
 LEVELDATA *RETAKED_LDATA = NULL;
 LEVELDATA *CREDITS_LDATA = NULL;
@@ -337,7 +337,7 @@ void WorldInfo_Load(WORLDINFO *world) {
     char buf[268];
     char titles[64];
     LEVELDATA *level;
-    void *cutscene_scene;
+    NUGSCN *cutscene_scene;
     i32 *page_handles;
     i32 aligned_buf;
     char ai_name[4];
@@ -383,7 +383,7 @@ void WorldInfo_Load(WORLDINFO *world) {
         NuStrCat(buf, ".gsc");
 
         numtl_force_mipmode = (i32)(u8)level->mipmap_mode + 1;
-        world->current_gscn = (NUGSCN *)NuGScnRead(&world->giz_buffer, world->unknown_0108, buf);
+        world->current_gscn = NuGScnRead(&world->giz_buffer, world->unknown_0108, buf);
         numtl_force_mipmode = 0;
 
         StoreSceneProgress(world->current_gscn, (SCENEPROGRESS_s *)world->progress_data, 1);
@@ -399,8 +399,7 @@ void WorldInfo_Load(WORLDINFO *world) {
     // Load pictures for titles/credits
     if (level == TITLES_LDATA || level == CREDITS_LDATA) {
         numtl_force_mipmode = (i32)(u8)level->mipmap_mode + 1;
-        world->icons_gscn =
-            (NUGSCN *)NuGScnRead(&world->giz_buffer, world->unknown_0108, "levels\\titles\\pictures.gsc");
+        world->icons_gscn = NuGScnRead(&world->giz_buffer, world->unknown_0108, "levels\\titles\\pictures.gsc");
         if (abort_load != 0)
             goto abort;
     }
@@ -460,8 +459,7 @@ void WorldInfo_Load(WORLDINFO *world) {
 after_area:
     // Load big icon scene for hub/status levels
     if ((level == HUB_LDATA || (level->flags & LEVEL_STATUS) != 0) && big_icon_scene == NULL) {
-        world->icons_gscn =
-            (NUGSCN *)NuGScnRead(&world->giz_buffer, world->unknown_0108, "stuff\\icons\\starwars_icons_all.gsc");
+        world->icons_gscn = NuGScnRead(&world->giz_buffer, world->unknown_0108, "stuff\\icons\\starwars_icons_all.gsc");
     }
 
     // Determine which scene to use for cutscenes
@@ -473,7 +471,7 @@ after_area:
     // Load cutscenes
     page_handles = (i32 *)&world->page_pp;
     world->cutscene_sys = (CUTSYS *)CutScenes_Load(
-        ConfigBuffer, world->current_gscn, (NUGSCN *)cutscene_scene, page_handles[0], &world->giz_buffer,
+        ConfigBuffer, world->current_gscn, cutscene_scene, page_handles[0], &world->giz_buffer,
         // 0x25c/0x260 are i32 reads into the progress_data region.
         &world->unknown_0108, *(i32 *)((char *)world + 0x25c), *(i32 *)((char *)world + 0x260), world);
     if (abort_load != 0)

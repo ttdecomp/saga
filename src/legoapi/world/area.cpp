@@ -18,9 +18,9 @@ struct CUSTOMISER;
 struct MISSIONSYS_s;
 
 extern i32 abort_load;
-extern void *area_scene;
-extern void *vehicle_scene;
-extern void *big_icon_scene;
+extern NUGSCN *area_scene;
+extern NUGSCN *vehicle_scene;
+extern NUGSCN *big_icon_scene;
 extern i16 id_ANAKINJEDISCARRED;
 extern i16 id_HANINCARBONITE;
 extern i16 id_DEFAULTCHARACTER[2];
@@ -566,7 +566,7 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
     i32 level;
     i32 saved_max_fps;
     i32 area;
-    void *scene;
+    NUGSCN *scene;
     void *list;
     void *story_list;
 
@@ -584,15 +584,15 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
         NuStrCat(pathbuf, ".gsc");
         scene = NuGScnRead(&characterbuffer_ptr, characterbuffer_end, pathbuf);
         area_scene = scene;
-        if (scene != NULL && *(void **)((char *)scene + 0x110) != NULL)
-            *(byte *)(*(char **)((char *)scene + 0x110) + 0x74) |= 0x10;
+        if (scene != NULL && scene->display_list != NULL)
+            *(byte *)((char *)scene->display_list + 0x74) |= 0x10;
 
         if ((ADataList[area].flags & 5) != 0 && area != last_area) {
             characterbuffer_ptr.addr = (characterbuffer_ptr.addr + 3) & ~3U;
             scene = NuGScnRead(&characterbuffer_ptr, characterbuffer_end, "stuff\\vehicle_things.gsc");
             vehicle_scene = scene;
-            if (scene != NULL && *(void **)((char *)scene + 0x110) != NULL)
-                *(byte *)(*(char **)((char *)scene + 0x110) + 0x74) |= 0x10;
+            if (scene != NULL && scene->display_list != NULL)
+                *(byte *)((char *)scene->display_list + 0x74) |= 0x10;
         }
     }
 
@@ -601,8 +601,8 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
             characterbuffer_ptr.addr = (characterbuffer_ptr.addr + 0x3f) & ~0x3fU;
             scene = NuGScnRead(&characterbuffer_ptr, characterbuffer_end, "stuff\\icons\\starwars_icons_all.gsc");
             big_icon_scene = scene;
-            if (scene != NULL && *(void **)((char *)scene + 0x110) != NULL)
-                *(byte *)(*(char **)((char *)scene + 0x110) + 0x74) |= 0x10;
+            if (scene != NULL && scene->display_list != NULL)
+                *(byte *)((char *)scene->display_list + 0x74) |= 0x10;
         }
     }
 

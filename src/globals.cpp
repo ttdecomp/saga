@@ -311,7 +311,7 @@ i32 Lap = 0;
 f32 LevTime = 0.0f;
 
 i32 Customiser_AccessoriesLoaded = 0;
-void *vehicle_scene = NULL;
+NUGSCN *vehicle_scene = NULL;
 void *CharacterCustomiser = NULL;
 
 void *OldLevelHackData = NULL;

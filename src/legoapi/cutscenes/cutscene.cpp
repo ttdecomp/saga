@@ -170,7 +170,7 @@ void CharScenes_LevelLoad(WORLDINFO *world) {
                 char path[136];
                 VARIPTR buf_end = world->unknown_0108;
                 sprintf(path, "chars\\%s\\%s.gsc", CDataList[i].dir, CDataList[i].file);
-                NUGSCN *scene = (NUGSCN *)NuGScnRead(&world->giz_buffer, buf_end, path);
+                NUGSCN *scene = NuGScnRead(&world->giz_buffer, buf_end, path);
                 *entry = scene;
                 if (scene != NULL) {
                     NuSpecialFind(scene, (void **)(entry + 1), CDataList[i].file);

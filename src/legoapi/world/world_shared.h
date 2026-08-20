@@ -47,7 +47,7 @@ extern "C" {
     void NuPortalVisibility(NUGSCN *scene);
     void NuGScnRndr3(NUGSCN *scene);
     void NuGScnUpdate(NUGSCN *gscn, i32 param);
-    void *NuGScnRead(VARIPTR *buf, VARIPTR buf_end, char *path);
+    NUGSCN *NuGScnRead(VARIPTR *buf, VARIPTR buf_end, char *path);
     void NuGScnReadFromMemory(NUGSCN *scene);
     void NuGHGFixup(NUGSCN *scene);
     void NuRndrInitWorld(void);
