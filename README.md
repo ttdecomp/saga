@@ -79,28 +79,29 @@ See the [docs/](docs/) directory.
 
 | Directory | Fuzzy % | Funcs % | Data % |
 |---|---|---|---|
-| `MechInputTouch` | - | - | - |
-| `editor` | - | - | - |
-| `gameapi` | - | - | - |
-| `gameframework` | - | - | - |
-| `gamelib` | - | - | - |
-| `java` | - | - | - |
-| `legoapi` | - | - | - |
-| `legoapi/actions` | - | - | - |
-| `legoapi/ai` | - | - | - |
-| `legoapi/audio` | - | - | - |
-| `legoapi/characters` | - | - | - |
-| `legoapi/core` | - | - | - |
-| `legoapi/cutscenes` | - | - | - |
-| `legoapi/gizmo` | - | - | - |
-| `legoapi/gizmos` | - | - | - |
-| `legoapi/items` | - | - | - |
-| `legoapi/menus` | - | - | - |
-| `legoapi/misc` | - | - | - |
-| `legoapi/props` | - | - | - |
-| `legoapi/render` | - | - | - |
-| `legoapi/world` | - | - | - |
-| `legogame` | - | - | - |
-| `nu2api` | - | - | - |
+| `(root)` | 0.6% | 0.0% | 68.4% |
+| `MechInputTouch` | 4.8% | 0.0% | 0.0% |
+| `editor` | 2.5% | 0.0% | - |
+| `gameapi` | 6.5% | 1.4% | 94.8% |
+| `gameframework` | 65.4% | 12.5% | 100.0% |
+| `gamelib` | 5.5% | 0.9% | 5.0% |
+| `java` | 10.5% | 0.0% | 0.0% |
+| `legoapi` | 4.6% | 3.5% | 3.6% |
+| `legoapi/actions` | 1.7% | 0.5% | - |
+| `legoapi/ai` | 2.0% | 0.0% | - |
+| `legoapi/audio` | 2.9% | 0.0% | - |
+| `legoapi/characters` | 3.4% | 0.4% | 3.9% |
+| `legoapi/core` | 9.4% | 4.5% | 2.8% |
+| `legoapi/cutscenes` | 2.9% | 0.0% | 100.0% |
+| `legoapi/gizmo` | 4.9% | 4.7% | 0.4% |
+| `legoapi/gizmos` | 12.2% | 4.2% | 100.0% |
+| `legoapi/items` | 2.3% | 0.0% | 4.9% |
+| `legoapi/menus` | 2.3% | 0.0% | 0.0% |
+| `legoapi/misc` | 2.2% | 0.5% | - |
+| `legoapi/props` | 7.3% | 2.4% | 13.0% |
+| `legoapi/render` | 2.3% | 1.5% | 0.5% |
+| `legoapi/world` | 11.6% | 18.0% | 0.1% |
+| `legogame` | 4.2% | 0.0% | 100.0% |
+| `nu2api` | 27.1% | 19.4% | 81.5% |
 
 <!-- matching-table-end -->
