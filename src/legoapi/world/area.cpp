@@ -301,10 +301,6 @@ void FixUpAreas(void) {
 }
 
 struct LEVELDATA_s *Area_FindStatusLevel(AREADATA *area, i32 *indexDest) {
-    LEVELDATA *level;
-    i32 levelIdx;
-    i32 i;
-
     if (indexDest != NULL) {
         *indexDest = -1;
     }
@@ -313,28 +309,18 @@ struct LEVELDATA_s *Area_FindStatusLevel(AREADATA *area, i32 *indexDest) {
         return NULL;
     }
 
-    i32 bound = area->level_count * 2 - 2;
-    levelIdx = area->levels[0];
-    i = 0;
-    level = &LDataList[levelIdx];
-
-    while (1) {
-        if ((((u8 *)&level->flags)[1] & 4) != 0) {
-            break;
+    for (i32 i = 0; i < area->level_count; i++) {
+        i32 levelIdx = area->levels[i];
+        LEVELDATA *level = &LDataList[levelIdx];
+        if (level->flags & LEVEL_STATUS) {
+            if (indexDest != NULL) {
+                *indexDest = levelIdx;
+            }
+            return level;
         }
-        if (i == bound) {
-            return NULL;
-        }
-        levelIdx = (i32) * (i16 *)((u8 *)area->levels + i + 2);
-        i += 2;
-        level = &LDataList[levelIdx];
     }
 
-    if (indexDest != NULL) {
-        *indexDest = levelIdx;
-    }
-
-    return level;
+    return NULL;
 }
 
 LEVELDATA *Area_FindNextPlayLevel(i32 levelIdx) {
