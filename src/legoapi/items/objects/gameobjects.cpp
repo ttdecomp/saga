@@ -438,7 +438,20 @@ void ReStoreStatusTakeOverObjectSys(i32) {
 
 extern "C" {
 
-    void InModelList(void) {
+    i32 InModelList(APICHARACTERMODELLIST_s *list, i32 id, i32 *out_index) {
+        if (list != NULL) {
+            i32 i = 0;
+            for (; list->model_id != -1; list++, i++) {
+                if (list->model_id == id) {
+                    if (out_index != NULL)
+                        *out_index = i;
+                    return 1;
+                }
+            }
+        }
+        if (out_index != NULL)
+            *out_index = -1;
+        return 0;
     }
 
 } // extern "C"
