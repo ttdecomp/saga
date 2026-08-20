@@ -69,9 +69,14 @@ void Customiser_DumpAccessories(struct CUSTOMISER *);
 extern "C" void APIDumpCharacterModels(i32);
 extern "C" void NuGScnRemove(void *);
 extern void *ObjTabList;
+extern void *HUB_LDATA;
 extern "C" i32 NuSpecialExistsFn(void *);
 extern "C" void *NuSpecialGetInstanceix(void *);
 extern "C" i16 FindPlatInst(void *);
+
+i32 Store_IsPackUnlocked(i32);
+void ReCalculateCompletionPoints(void);
+void Hub_LockUnlockDoors(struct WORLDINFO_s *);
 
 struct AIROW_s;
 struct nuqthdr_s;
@@ -145,7 +150,53 @@ void *SetLevelHack(i32 size) {
     return LevelHackData;
 }
 
-void Areas_OpenAll(i32) {
+void Areas_OpenAll(i32 mode) {
+    i32 i;
+    i32 pack;
+    i32 open;
+    u8 *comp;
+    u8 *area;
+
+    if (mode != 0 && Store_IsPackUnlocked(8) == 0) {
+        return;
+    }
+    if (AREACOUNT > 0) {
+        comp = (u8 *)Game + 0x7834;
+        for (i = 0; i < AREACOUNT; i++) {
+            area = *(u8 **)&ADataList + i * 0x9c;
+            open = 1;
+            if (*(u16 *)(area + 0x7a) & 0x10) {
+                u8 ep = *(u8 *)(area + 0x86);
+                for (pack = 0; pack < ep; pack++) {
+                    if (Store_IsPackUnlocked(pack) == 0) {
+                        open = 0;
+                        break;
+                    }
+                }
+            } else if ((*(u16 *)(area + 0x7a) & 0x105) == 0x4 && *(u8 *)(area + 0x86) != 0xff) {
+                open = (Store_IsPackUnlocked(5) != 0);
+            }
+            if (open) {
+                if (mode == 0) {
+                    comp[-2] = 1;
+                    comp[-1] = 1;
+                    i16 t = *(i16 *)(area + 0x84);
+                    if (t != 0) {
+                        *(f32 *)comp = ((f32)(t >> 16) * 0.0588f) + (f32)t - 0.5f;
+                    }
+                } else {
+                    comp[-1] = 1;
+                }
+            }
+            comp += 0xc;
+        }
+    }
+    *(u8 *)((u8 *)Game + 0x3) = 1;
+    if (WORLD != NULL && *(void **)((char *)WORLD + 0x128) == (void *)HUB_LDATA) {
+        Hub_LockUnlockDoors(WORLD);
+    } else {
+        ReCalculateCompletionPoints();
+    }
 }
 
 void Area_Configure(i32, i32, EXTRAMODEL *, i16 *) {
