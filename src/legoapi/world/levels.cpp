@@ -2,6 +2,12 @@
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nu3d/nutex.h"
 
+#include <string.h>
+
+extern void *LevelHackData;
+extern void *OldLevelHackData;
+extern i32 LevelHackSize;
+extern i32 LevelHackSendTimer;
 extern void *LevelProgressData;
 extern i32 LEVELOBJECTCOUNT;
 extern i32 AREACOUNT;
@@ -23,7 +29,12 @@ void ResetLevel(WORLDINFO_s *, char *, i32) {
 void ClearLevData() {
 }
 
-void SetLevelHack(i32) {
+void *SetLevelHack(i32 size) {
+    memset(LevelHackData, 0, 0x80);
+    memset(OldLevelHackData, 0, 0x80);
+    LevelHackSize = size;
+    LevelHackSendTimer = 0;
+    return LevelHackData;
 }
 
 void Areas_OpenAll(i32) {

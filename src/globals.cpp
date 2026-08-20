@@ -166,6 +166,11 @@ LEVELDATA *TATOOINEC_LDATA = NULL;
 LEVELDATA *TATOOINEE_LDATA = NULL;
 LEVELDATA *TEMPLEB_LDATA = NULL;
 LEVELDATA *TEMPLESTATUS_LDATA = NULL;
+
+void *LevelHackData = NULL;
+void *OldLevelHackData = NULL;
+i32 LevelHackSize = 0;
+i32 LevelHackSendTimer = 0;
 i32 new_level_from_menu = 0;
 i32 BGLOAD = 0;
 
