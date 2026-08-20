@@ -25,6 +25,11 @@ set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/core/input/t
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/world.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/levelconfig.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/levels.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/areas.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/boss.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/leveldata.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/levelobjects.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/levelstreaming.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/mission.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/missions.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 
