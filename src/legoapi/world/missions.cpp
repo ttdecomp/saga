@@ -94,11 +94,10 @@ void CheckMissionEnd(MISSIONSYS *ms) {
     u32 hi;
     i32 i;
 
+    obj = FindGameObject((u32)ms->mission->find_char, 0, 0, 1, 0);
     if (ms->timer.time_elapsed < 3.0f) {
         return;
     }
-
-    obj = FindGameObject((u32)ms->mission->find_char, 0, 0, 1, 0);
     if (GetMenuID() == 9) {
         return;
     }

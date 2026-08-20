@@ -831,7 +831,7 @@ void WorldInfo_UpdateRoomVisibility(WORLDINFO *world, i32 param) {
 }
 
 void WorldInfo_ReArrangeBuffers(i32 area1, i32 area2) {
-    VARIPTR *bufferEnd = (VARIPTR *)&WorldInfo[0].unknown_0140[0x5178];
+    VARIPTR *bufferEnd = (VARIPTR *)&WorldInfo[1].unknown_0108;
 
     if (area1 == area2 || area1 == -1) {
         if (area1 != -1 && (ADataList[area1].flags & AREAFLAG_SINGLE_BUFFER) != 0) {
@@ -840,7 +840,7 @@ void WorldInfo_ReArrangeBuffers(i32 area1, i32 area2) {
     } else if ((ADataList[area1].flags & AREAFLAG_SINGLE_BUFFER) != 0) {
         LWORLD = &WorldInfo[0];
         WORLD = &WorldInfo[0];
-        if (WorldInfo[0].unknown_0108.addr <= bufferEnd->addr) {
+        if (WorldInfo[0].unknown_0108.addr < bufferEnd->addr) {
             return;
         }
         bufferEnd->addr = WorldInfo[0].unknown_0108.addr;
@@ -848,7 +848,7 @@ void WorldInfo_ReArrangeBuffers(i32 area1, i32 area2) {
         return;
     }
 
-    if (WorldInfo[0].unknown_0108.addr <= bufferEnd->addr) {
+    if (WorldInfo[0].unknown_0108.addr < bufferEnd->addr) {
         return;
     }
     usize end = WorldInfo[0].unknown_0108.addr;

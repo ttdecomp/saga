@@ -348,26 +348,28 @@ NUFPCOMJMP LevelConfig_AfterLoad_GenericKeywords[] = {
     {NULL, NULL},
 };
 
-i32 Text_StripComments(char *text, char *dest, i32) {
+i32 Text_StripComments(char *text, char *dest, i32 param) {
     char *start = text;
-    i32 length = NuStrLen(text);
+    char *end = text + NuStrLen(text);
     char *out = dest;
-    while (text <= start + length) {
+    while (text <= end) {
         char c = *text;
         if (c == '#' || c == ';' || (c == '/' && text[1] == '/')) {
             if (c == '/') {
                 text++;
             }
-            do {
+            while (c != '\r' && c != '\n' && c != '\0') {
                 c = *++text;
-            } while (c != '\r' && c != '\n' && c != '\0');
+            }
+            *out++ = c;
+            text++;
         } else {
-            if (c == ',' || c == '=') {
+            if (param != 0 && (c == ',' || c == '=')) {
                 c = ' ';
             }
             *out++ = c;
+            text++;
         }
-        text++;
     }
     *out = '\0';
     return (i32)(out - dest);
@@ -2188,16 +2190,14 @@ void GameAnimSys_ClearProgress(i32 idx) {
     if (idx < 0) {
         return;
     }
-    i32 *progress = (i32 *)&gameanimsysprogress;
-    if (idx >= progress[0]) {
+    if (idx >= gameanimsysprogress.count) {
         return;
     }
     u8 *data = gameanimsysprogress.entries[idx];
-    i32 size = progress[1];
-    if (size <= 0) {
+    if (gameanimsysprogress.entry_size <= 0) {
         return;
     }
-    for (i32 i = 0; i < size; i++) {
+    for (i32 i = 0; i < gameanimsysprogress.entry_size; i++) {
         data[i] = 0;
     }
 }
@@ -2209,11 +2209,7 @@ void ClearLevelProgress(i32 index, WORLDINFO *world) {
         *(u32 *)(entry + 0x281c) = 0;
         *(u32 *)(entry + 0x2810) = 0x49f42400;
         if (world != NULL) {
-            u32 *src = (u32 *)((u8 *)world + 0x15c);
-            u32 *dst = (u32 *)entry;
-            for (i32 i = 0xa00; i != 0; i--) {
-                *dst++ = *src++;
-            }
+            memcpy(entry, (u8 *)world + 0x15c, 0x2800);
         }
     }
     GizmoSysClearLevelProgress(NULL, index);
@@ -2279,7 +2275,7 @@ void Level_LoadConfigFile(WORLDINFO *world) {
     world->unknown_010c = bytesRead;
     if (bytesRead > 0) {
         ((char *)world->giz_buffer.void_ptr)[bytesRead] = '\0';
-        bytesRead = Text_StripComments((char *)world->giz_buffer.void_ptr, ConfigBuffer, 0);
+        bytesRead = Text_StripComments((char *)world->giz_buffer.void_ptr, ConfigBuffer, 1);
         world->unknown_010c = bytesRead;
     }
 }
