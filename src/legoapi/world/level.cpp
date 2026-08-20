@@ -2373,7 +2373,7 @@ void Level_LoadConfigFile(WORLDINFO *world) {
     ConfigBuffer[0] = '\0';
     sprintf(name, "%s.txt", world->config_file);
 
-    world->giz_buffer.void_ptr = (void *)((usize)world->giz_buffer.void_ptr + 3U & ~3U);
+    world->giz_buffer.void_ptr = (void *)ALIGN((usize)world->giz_buffer.void_ptr, 4);
     i32 bytesRead = NuFileLoadBuffer(name, world->giz_buffer.void_ptr, 0x10000);
     world->config_count = bytesRead;
     if (bytesRead > 0) {

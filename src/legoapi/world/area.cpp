@@ -576,7 +576,7 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
     level = Level;
 
     if (area != -1 && area != last_area) {
-        characterbuffer_ptr.addr = (characterbuffer_ptr.addr + 3) & ~3U;
+        characterbuffer_ptr.addr = ALIGN(characterbuffer_ptr.addr, 4);
         NuStrCpy(pathbuf, "levels\\");
         NuStrCat(pathbuf, ADataList[area].dir);
         NuStrCat(pathbuf, "\\");
@@ -588,7 +588,7 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
             scene->display_list->flags |= NU_DISPLAYSCENE_FLAG_NEEDS_BUILD;
 
         if ((ADataList[area].flags & 5) != 0 && area != last_area) {
-            characterbuffer_ptr.addr = (characterbuffer_ptr.addr + 3) & ~3U;
+            characterbuffer_ptr.addr = ALIGN(characterbuffer_ptr.addr, 4);
             scene = NuGScnRead(&characterbuffer_ptr, characterbuffer_end, "stuff\\vehicle_things.gsc");
             vehicle_scene = scene;
             if (scene != NULL && scene->display_list != NULL)
@@ -598,7 +598,7 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
 
     if (HUB_ADATA != NULL && HUB_ADATA->field27_0x7c == area) {
         if (area != last_area) {
-            characterbuffer_ptr.addr = (characterbuffer_ptr.addr + 0x3f) & ~0x3fU;
+            characterbuffer_ptr.addr = ALIGN(characterbuffer_ptr.addr, 0x40);
             scene = NuGScnRead(&characterbuffer_ptr, characterbuffer_end, "stuff\\icons\\starwars_icons_all.gsc");
             big_icon_scene = scene;
             if (scene != NULL && scene->display_list != NULL)

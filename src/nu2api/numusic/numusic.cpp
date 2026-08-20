@@ -138,7 +138,7 @@ void NuMusic::InitData(const char *file, VARIPTR *buffer_start, VARIPTR buffer_e
     album = (Album *)((usize)this->string_pool_end + 3U & 0xfffffffc);
     if (albumPtr == album) {
         tracksPtr = this->tracks;
-        alloced = (Track *)((u32)((usize)&albumPtr[count].name + 3U) & 0xfffffffc);
+        alloced = (Track *)ALIGN((usize)&albumPtr[count].name, 4);
         pTVar3 = tracksPtr;
         if (tracksPtr == alloced)
             goto LAB_003203e6;
