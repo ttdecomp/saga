@@ -85,7 +85,7 @@ extern i32 Lap;
 extern f32 LevTime;
 extern char AreaGlobals[0x34];
 extern i32 Door_UseCutCam;
-extern void *Player[8];
+extern GameObject_s *Player[8];
 extern char PlayerProgress[0x80];
 extern u8 DEFAULT_PLAYERHITPOINTS;
 extern i32 Area_PlayerModelCount;

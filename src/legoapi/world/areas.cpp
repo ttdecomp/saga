@@ -126,10 +126,10 @@ void ClearUpAreaData() {
 
     if (HIGHGAMEOBJECT > 0) {
         for (i = 0; i < HIGHGAMEOBJECT; i++) {
-            u8 *obj = (u8 *)Obj + i * 0x10e4;
-            if (*(u8 *)(obj + 0x1f8) & 1) {
-                FreeTorpedoPacket((struct TORPEDOPACKET_s **)(obj + 0xcb4));
-                RemoveGameObject((struct GameObject_s *)obj, 1);
+            GameObject_s *obj = (GameObject_s *)((u8 *)Obj + i * 0x10e4);
+            if (obj->apiobj.field_0x1f8 & 1) {
+                FreeTorpedoPacket((TORPEDOPACKET_s **)&obj->torpedo);
+                RemoveGameObject(obj, 1);
             }
         }
     }
@@ -262,7 +262,7 @@ have_jump:
     }
     for (i = 0; i < 8; i++) {
         if (Player[i] != NULL) {
-            *(u8 *)((char *)Player[i] + 0x108b) = *(u8 *)((char *)Player[i] + 0x108a);
+            Player[i]->current_hp = Player[i]->hitpoints;
         }
         ((u8 *)PlayerProgress)[i * 0x10 + 0x8] = DEFAULT_PLAYERHITPOINTS;
     }

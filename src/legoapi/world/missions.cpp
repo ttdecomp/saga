@@ -18,7 +18,7 @@ void EndMission(MISSIONSYS *ms, i32 param1, i32 param2) {
     if (netclient == 0 || param2 == 0) {
         ms->field8_0x1d = (u8)param1;
         SetBonusWinner(qrand() / 0x8000);
-        if (Player[BonusWinner] != NULL && *(i8 *)((char *)Player[BonusWinner] + 0x1f8) < 0) {
+        if (Player[BonusWinner] != NULL && *(i8 *)&Player[BonusWinner]->apiobj.field_0x1f8 < 0) {
         } else {
             BonusWinner = (BonusWinner == 0);
         }
@@ -42,7 +42,7 @@ void EndChallenge(i32 param1, i32 param2) {
     if (netclient == 0 || param2 == 0) {
         ChallengeMode = param1;
         SetBonusWinner(qrand() / 0x8000);
-        if (Player[BonusWinner] != NULL && *(i8 *)((char *)Player[BonusWinner] + 0x1f8) < 0) {
+        if (Player[BonusWinner] != NULL && *(i8 *)&Player[BonusWinner]->apiobj.field_0x1f8 < 0) {
         } else {
             BonusWinner = (BonusWinner == 0);
         }
@@ -88,6 +88,12 @@ MISSIONDATA *Mission_Active(MISSIONSYS *ms) {
 }
 
 void CheckMissionEnd(MISSIONSYS *ms) {
+    // NOTE: accessing the mission masks/sign byte via the APIOBJECT fields
+    // (instead of raw byte offsets) shifts GCC 4.7's register allocation for
+    // the 8-player loop, dropping the fuzzy match (~89% -> ~77%) even though
+    // the generated instructions are functionally identical. There is no
+    // source form that both uses the named fields and reproduces the original
+    // register allocation, so the cleaner field-based version is kept.
     GameObject_s *player;
     GameObject_s *obj;
     u32 lo;
@@ -107,21 +113,21 @@ void CheckMissionEnd(MISSIONSYS *ms) {
         hi = 0;
         for (i = 0; i < HIGHGAMEOBJECT; i++) {
             GameObject_s *candidate = (GameObject_s *)((char *)Obj + i * 0x10e4);
-            if ((*(u16 *)((char *)candidate + 0x1f8) & 0x1001) == 0x1001 &&
-                *(u8 *)((char *)candidate + 0x287) == 0 && *(u8 *)((char *)candidate + 0x27c) == 0xff) {
-                lo |= *(u32 *)((char *)candidate + 0x1e4);
-                hi |= *(u32 *)((char *)candidate + 0x1e8);
+            if ((candidate->apiobj.field_0x1f8 & 0x1001) == 0x1001 && candidate->apiobj.field_0x287 == 0 &&
+                candidate->apiobj.field_0x27c == 0xff) {
+                lo |= candidate->apiobj.field_0x1e4;
+                hi |= candidate->apiobj.field_0x1e8;
             }
         }
     } else {
-        lo = *(u32 *)((char *)obj + 0x1e4);
-        hi = *(u32 *)((char *)obj + 0x1e8);
+        lo = obj->apiobj.field_0x1e4;
+        hi = obj->apiobj.field_0x1e8;
     }
 
     for (i = 0; i < 8; i++) {
         player = Player[i];
-        if (player != NULL && *(i8 *)((char *)player + 0x1f8) < 0) {
-            if ((lo & *(u32 *)((char *)player + 0x1ec)) | (hi & *(u32 *)((char *)player + 0x1f0))) {
+        if (player != NULL && *(i8 *)&player->apiobj.field_0x1f8 < 0) {
+            if ((lo & player->apiobj.field_0x1ec) | (hi & player->apiobj.field_0x1f0)) {
                 EndMission(ms, 2, 1);
                 return;
             }
@@ -146,7 +152,7 @@ void Mission_FindTarget(MISSIONSYS *ms, u64 *target) {
     if (target != NULL) {
         u64 v = 0;
         if (obj != NULL) {
-            v = *(u64 *)((char *)obj + 0x1e4);
+            v = *(u64 *)&obj->apiobj.field_0x1e4;
         }
         *target = v;
     }

@@ -89,13 +89,13 @@ void Players_Init(void) {
 
                 if (UsePlayerList == 0) {
                     slot = g->apiobj.field_0x289;
-                    g->apiobj.field252_0x1f8 = (u8)((g->apiobj.field252_0x1f8 & 0x7f) | ((slot == 0) << 7));
+                    *(u8 *)&g->apiobj.field_0x1f8 = (u8)((*(u8 *)&g->apiobj.field_0x1f8 & 0x7f) | ((slot == 0) << 7));
                     PlayerProgress[slot].hitpoints = g->current_hp;
                     g->field_0x106e = 0;
                 } else {
                     char c = g->apiobj.field_0x27c;
-                    g->apiobj.field252_0x1f8 =
-                        (u8)((g->apiobj.field252_0x1f8 & 0x7f) | (PlayerProgress[c].field_0x6 << 7));
+                    *(u8 *)&g->apiobj.field_0x1f8 =
+                        (u8)((*(u8 *)&g->apiobj.field_0x1f8 & 0x7f) | (PlayerProgress[c].field_0x6 << 7));
 
                     if (Area == last_area) {
                         if (UsePlayerList == 1) {
