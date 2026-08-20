@@ -13,16 +13,6 @@
 AREADATA *ADataList = NULL;
 AREADATA *HUB_ADATA = NULL;
 
-struct LEV {
-    byte pad0[0x64];
-    u32 flags;
-    byte pad1[0xaf - 0x68];
-    u8 unknown_0af;
-    byte pad2[0xd4 - 0xb0];
-    i8 unknown_0d4;
-    byte pad3[0x144 - 0xd5];
-};
-
 AREAFIXUP AreaFixUp_LSW[1] = {{NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL}};
 
 i32 Area = -1;
@@ -457,7 +447,7 @@ struct LEVELDATA_s *Area_FindStatusLevel(AREADATA *area, i32 *indexDest) {
     i32 bound = (u32)area->field28_0x7d * 2 - 2;
     levelIdx = (i32)area->field2_0x60[0];
     i = 0;
-    level = (LEVELDATA *)&((LEV *)LDataList)[levelIdx];
+    level = &LDataList[levelIdx];
 
     while (1) {
         if ((((u8 *)&level->flags)[1] & 4) != 0) {
@@ -468,7 +458,7 @@ struct LEVELDATA_s *Area_FindStatusLevel(AREADATA *area, i32 *indexDest) {
         }
         levelIdx = (i32) * (i16 *)((u8 *)area->field2_0x60 + i + 2);
         i += 2;
-        level = (LEVELDATA *)&((LEV *)LDataList)[levelIdx];
+        level = &LDataList[levelIdx];
     }
 
     if (indexDest != NULL) {
@@ -484,20 +474,20 @@ LEVELDATA *Area_FindNextPlayLevel(i32 levelIdx) {
     i32 areaLevelIdx;
     LEVELDATA *result;
 
-    level = (LEVELDATA *)&((LEV *)LDataList)[levelIdx];
-    areaIdx = ((LEV *)level)->unknown_0af;
-    areaLevelIdx = (i8)((LEV *)level)->unknown_0d4;
+    level = &LDataList[levelIdx];
+    areaIdx = (u8)level->unknown_0af;
+    areaLevelIdx = (i8)level->unknown_0d4;
     result = level;
 
     if (areaIdx != 0xff) {
         if (areaLevelIdx < (i32)(ADataList[areaIdx].field28_0x7d - 1)) {
-            result = (LEVELDATA *)&((LEV *)LDataList)[ADataList[areaIdx].field2_0x60[areaLevelIdx]];
+            result = &LDataList[ADataList[areaIdx].field2_0x60[areaLevelIdx]];
             if (((u8 *)&result->flags)[0] & (LEVEL_INTRO | LEVEL_MIDTRO | LEVEL_OUTRO)) {
                 while (areaLevelIdx != (i32)ADataList[areaIdx].field28_0x7d - 2) {
                     areaLevelIdx++;
-                    if ((((u8 *)&((LEV *)LDataList)[ADataList[areaIdx].field2_0x60[areaLevelIdx]].flags)[0] &
+                    if ((((u8 *)&LDataList[ADataList[areaIdx].field2_0x60[areaLevelIdx]].flags)[0] &
                          (LEVEL_INTRO | LEVEL_MIDTRO | LEVEL_OUTRO)) == 0) {
-                        return (LEVELDATA *)&((LEV *)LDataList)[ADataList[areaIdx].field2_0x60[areaLevelIdx]];
+                        return &LDataList[ADataList[areaIdx].field2_0x60[areaLevelIdx]];
                     }
                 }
                 return level;
