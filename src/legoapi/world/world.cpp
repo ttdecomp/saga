@@ -70,7 +70,6 @@ u32 LEGOOBJ_DEFAULTLASTCOIN = -1;
 
 PLAYERDATA *apicharsys;
 
-
 // --- World-module helpers (kept with the WorldInfo API) ---
 
 void SetAreaPickupGravity(i32 area, i32 level) {
@@ -563,7 +562,7 @@ after_area:
         GameAIScriptAddLevelSfx(world, &world->ai_sys->scripts);
 
         world->climb_object_sys = (CLIMBOBJECTSYS_s *)CreateClimbObjectSys(&world->giz_buffer, &world->unknown_0108,
-                                                                            (i32)(u8)level->max_climb_objs);
+                                                                           (i32)(u8)level->max_climb_objs);
     } else {
         world->ai_loaded = 1;
     }
@@ -638,8 +637,7 @@ abort:
 i32 WorldInfo_Reset(WORLDINFO *world, i32 level_idx) {
     if (world->loaded != 0) {
         SetLevelExBlowupFlags(0);
-        if (world->level_idx == level_idx && (u8)LDataList[level_idx].unknown_0af != 0xff &&
-            new_level_from_menu == 0) {
+        if (world->level_idx == level_idx && (u8)LDataList[level_idx].unknown_0af != 0xff && new_level_from_menu == 0) {
             return 0;
         }
         WorldInfo_Dump(world);

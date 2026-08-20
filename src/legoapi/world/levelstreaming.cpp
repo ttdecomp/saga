@@ -5,8 +5,8 @@
 void LevelStreaming_Update(WORLDINFO_s *world) {
     i32 i;
 
-    if (LOADEROFF == 0 && BGLOAD != 0 && world->area != NULL &&
-        (*(u16 *)((char *)world->area + 0x7a) & 8) == 0 && NewLData == 0) {
+    if (LOADEROFF == 0 && BGLOAD != 0 && world->area != NULL && (*(u16 *)((char *)world->area + 0x7a) & 8) == 0 &&
+        NewLData == 0) {
         if (Mission_Active(NULL) == 0) {
             no_more_loads = 0;
             other_level = -1;

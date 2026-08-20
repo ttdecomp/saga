@@ -570,7 +570,7 @@ static __used__ void LoadAreaData(bgprocinfo_s *) {
     void *list;
     void *story_list;
 
-area = Area;
+    area = Area;
     saved_max_fps = nuapi.max_fps;
     nuapi.max_fps = 0x1e;
     level = Level;
@@ -619,8 +619,7 @@ area = Area;
     }
 
     if (makefreeplaymodellist != 0) {
-        if ((ADataList[area].flags & AREAFLAG_VEHICLE_AREA) != 0 ||
-            (Area_PlayerModelCount > 1 && BonusArea == 0)) {
+        if ((ADataList[area].flags & AREAFLAG_VEHICLE_AREA) != 0 || (Area_PlayerModelCount > 1 && BonusArea == 0)) {
             MakeFreePlayModelList(Area_PlayerModelList[0], Area_PlayerModelList[2], area, level, 0);
         } else {
             MakeFreePlayModelList(id_DEFAULTCHARACTER[0], id_DEFAULTCHARACTER[1], area, level, 0);
@@ -667,8 +666,7 @@ icon_scenes:
         Customiser_SetAnimsToLoad((CUSTOMISER *)CharacterCustomiser, 0);
 
     if (area != -1 && (ADataList[area].flags & 0x62) == 0) {
-        if (ADataList[area].episode_index <= 2 ||
-            (ANEWHOPE_ADATA != NULL && ANEWHOPE_ADATA->field27_0x7c == area) ||
+        if (ADataList[area].episode_index <= 2 || (ANEWHOPE_ADATA != NULL && ANEWHOPE_ADATA->field27_0x7c == area) ||
             (PODSPRINT_ADATA != NULL && PODSPRINT_ADATA->field27_0x7c == area) ||
             (BONUS_GUNSHIP_ADATA != NULL && BONUS_GUNSHIP_ADATA->field27_0x7c == area)) {
             Particles_LoadAreaPage("stuff\\char_lsw1.ptl");

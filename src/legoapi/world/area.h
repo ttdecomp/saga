@@ -71,7 +71,6 @@ typedef struct AREAFIXUP {
     void *draw_status_fn;
 } AREAFIXUP;
 
-
 AREADATA *Area_FindByName(char *name, i32 *indexDest);
 
 AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, i32 count, i32 *countDest);

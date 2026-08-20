@@ -100,8 +100,8 @@ void LoadGrassFile(WORLDINFO *world) {
     if (Grass_Available != 0) {
         sprintf(path, "%s.gra", config);
         if (NuFileExists(path)) {
-            i32 page = edgraLoadPage(path, world->current_gscn, *(i32 *)&world->terrain,
-                                     &world->giz_buffer, &world->unknown_0108);
+            i32 page = edgraLoadPage(path, world->current_gscn, *(i32 *)&world->terrain, &world->giz_buffer,
+                                     &world->unknown_0108);
             world->page_grass = page;
         }
     }

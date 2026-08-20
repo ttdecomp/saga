@@ -326,7 +326,6 @@ static void Credits_Update_Game(WORLDINFO *) {
 static void Credits_Draw_Game(WORLDINFO *) {
 }
 
-
 static void Titles_Init(WORLDINFO *) {
 }
 static void Titles_Update(WORLDINFO *) {
@@ -725,7 +724,6 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         level->draw_status_fn = (void *)DrawStatusScreen;
         level->flags = (level->flags & ~0xa) | 0x400;
     }
-
 
     {
         LEVELDATA *level = Level_FindByName("credits", NULL);
