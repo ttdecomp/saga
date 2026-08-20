@@ -313,8 +313,8 @@ struct LEVELDATA_s *Area_FindStatusLevel(AREADATA *area, i32 *indexDest) {
         return NULL;
     }
 
-    i32 bound = (u32)area->level_count * 2 - 2;
-    levelIdx = (i32)area->levels[0];
+    i32 bound = area->level_count * 2 - 2;
+    levelIdx = area->levels[0];
     i = 0;
     level = &LDataList[levelIdx];
 
