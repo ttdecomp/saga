@@ -453,8 +453,8 @@ LEVELDATA *Levels_ConfigureList(char *file, VARIPTR *buf, VARIPTR *buf_end, i32 
             } else if (NuStrICmp(parser->word_buf, "outro_level") == 0) {
                 cur_level->flags |= LEVEL_OUTRO;
             } else if (NuStrICmp(parser->word_buf, "status_level") == 0) {
-                cur_level->flags &= ~LEVEL_UNKNOWN_FLAG_2;
-                cur_level->flags &= ~LEVEL_UNKNOWN_FLAG_8;
+                cur_level->flags &= ~LEVEL_GAMEPLAY;
+                cur_level->flags &= ~LEVEL_TERRAIN;
                 cur_level->flags |= LEVEL_STATUS;
             } else if (NuStrICmp(parser->word_buf, "newgame_level") == 0) {
                 if (NEWGAME_LDATA == NULL) {
@@ -477,7 +477,7 @@ LEVELDATA *Levels_ConfigureList(char *file, VARIPTR *buf, VARIPTR *buf_end, i32 
 
             cur_level->idx = n;
 
-            cur_level->flags = 0xe;
+            cur_level->flags = LEVEL_GAMEPLAY | LEVEL_UNKNOWN_FLAG_4 | LEVEL_TERRAIN;
 
             cur_level->load_fn = NULL;
             cur_level->init_fn = NULL;
@@ -514,7 +514,7 @@ LEVELDATA *Levels_ConfigureList(char *file, VARIPTR *buf, VARIPTR *buf_end, i32 
             cur_level->mipmap_mode = 0x03;
             cur_level->blob_shadow_alpha = 0x7f;
             cur_level->unknown_0ae = -1;
-            cur_level->unknown_0af = -1;
+            cur_level->area_index = -1;
 
             cur_level->unknown_0b8 = 0x50;
 
@@ -535,7 +535,7 @@ LEVELDATA *Levels_ConfigureList(char *file, VARIPTR *buf, VARIPTR *buf_end, i32 
             cur_level->cam_lateral_dist = 0.0f;
             cur_level->unknown_0cc = 2e+06f;
 
-            cur_level->unknown_0d4 = -1;
+            cur_level->area_level_index = -1;
             cur_level->blob_shadow_fade_near = 5;
             cur_level->blob_shadow_fade_far = 10;
             cur_level->cam_pos_seek = 5;
@@ -701,7 +701,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         level->init_fn = (void *)Titles_Init;
         level->update_fn = (void *)Titles_Update;
         level->draw_fn = (void *)Titles_Draw;
-        level->flags &= ~0xa;
+        level->flags &= ~(LEVEL_GAMEPLAY | LEVEL_TERRAIN);
         level->music_index = (i16)GetMusicIndex("titles", MusicInfo, -1);
 
         i32 handle = music_man.GetTrackHandle(TRACK_CLASS_QUIET, "titles");
@@ -722,7 +722,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
     if (level != NULL) {
         level->update_fn = (void *)UpdateStatusScreen;
         level->draw_status_fn = (void *)DrawStatusScreen;
-        level->flags = (level->flags & ~0xa) | 0x400;
+        level->flags = (level->flags & ~(LEVEL_GAMEPLAY | LEVEL_TERRAIN)) | LEVEL_STATUS;
     }
 
     {
@@ -2363,7 +2363,7 @@ void LevelConfig_AfterLoad(LEVELDATA *level, char *buffer, nufpcomjmp_s *keyword
             level->blob_shadow_fade_near = level->blob_shadow_fade_far;
         }
         level->field91_0x118 = level->data_display.unknown_14;
-        level->flags |= 1;
+        level->flags |= LEVEL_CONFIG_LOADED;
     }
 }
 

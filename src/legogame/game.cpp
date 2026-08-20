@@ -166,8 +166,8 @@ void InitGameAfterConfig(void) {
             if (799 < level->unknown_060) {
                 // level->levels = tab;
             }
-            level->unknown_0af = 0xff;
-            level->unknown_0d4 = 0xff;
+            level->area_index = 0xff;
+            level->area_level_index = 0xff;
             if (iVar3 < 1) {
                 areaIndex = 0;
             } else {
@@ -178,11 +178,11 @@ void InitGameAfterConfig(void) {
                         i32 iVar4 = 0;
                         do {
                             if (area->levels[iVar4] == i) {
-                                level->unknown_0af = (byte)areaIndex;
-                                level->unknown_0d4 = (byte)iVar4;
+                                level->area_index = (byte)areaIndex;
+                                level->area_level_index = (byte)iVar4;
                                 episode = (byte)areaIndex;
                             } else {
-                                episode = level->unknown_0af;
+                                episode = level->area_index;
                             }
                             if (episode != 0xff) {
                                 areaIndex = areaIndex + 1;

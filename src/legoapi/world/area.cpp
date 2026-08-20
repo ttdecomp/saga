@@ -67,8 +67,8 @@ static AREAFIXUP AreaFixUp_LSW[1] = {{NULL, NULL, NULL, NULL, NULL, NULL, NULL, 
 
 i32 Area = -1;
 
-i32 AREA_DEFAULTBONUSTIMETRIALTIME = 0x12C;
-i32 AREA_DEFAULTCHALLENGETIME = 0x258;
+i32 AREA_DEFAULTBONUSTIMETRIALTIME = 300;
+i32 AREA_DEFAULTCHALLENGETIME = 600;
 
 AREADATA *Area_FindByName(char *name, i32 *indexDest) {
     for (i32 i = 0; i < AREACOUNT; i++) {
@@ -325,8 +325,8 @@ struct LEVELDATA_s *Area_FindStatusLevel(AREADATA *area, i32 *indexDest) {
 
 LEVELDATA *Area_FindNextPlayLevel(i32 levelIdx) {
     LEVELDATA *level = &LDataList[levelIdx];
-    i32 areaIdx = level->unknown_0af;
-    i32 areaLevelIdx = level->unknown_0d4;
+    i32 areaIdx = level->area_index;
+    i32 areaLevelIdx = level->area_level_index;
     LEVELDATA *result = level;
 
     if (areaIdx != -1) {

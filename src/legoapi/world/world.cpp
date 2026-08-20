@@ -485,7 +485,7 @@ after_area:
     CharScenes_LevelLoad(world);
 
     // SockSys for certain level types
-    if ((level->flags & 0xe2) == 2) {
+    if ((level->flags & (LEVEL_GAMEPLAY | LEVEL_INTRO | LEVEL_MIDTRO | LEVEL_OUTRO)) == LEVEL_GAMEPLAY) {
         world->sock_sys = SockSysInit(&world->giz_buffer, world->unknown_0108, world->current_gscn);
     }
 
@@ -540,7 +540,8 @@ after_area:
     }
 
     // AI system loading
-    if ((level->flags & 0xe2) == 2 && level != (LEVELDATA *)PLATFORM_LDATA) {
+    if ((level->flags & (LEVEL_GAMEPLAY | LEVEL_INTRO | LEVEL_MIDTRO | LEVEL_OUTRO)) == LEVEL_GAMEPLAY &&
+        level != (LEVELDATA *)PLATFORM_LDATA) {
         world->ai_loaded = 0;
         ai_buf_size = 0x1cc00;
         if (RETAKED_LDATA != NULL && level == (LEVELDATA *)RETAKED_LDATA) {
@@ -638,7 +639,7 @@ abort:
 i32 WorldInfo_Reset(WORLDINFO *world, i32 level_idx) {
     if (world->loaded != 0) {
         SetLevelExBlowupFlags(0);
-        if (world->level_idx == level_idx && (u8)LDataList[level_idx].unknown_0af != 0xff && new_level_from_menu == 0) {
+        if (world->level_idx == level_idx && (u8)LDataList[level_idx].area_index != 0xff && new_level_from_menu == 0) {
             return 0;
         }
         WorldInfo_Dump(world);
@@ -680,7 +681,7 @@ i32 WorldInfo_Reset(WORLDINFO *world, i32 level_idx) {
     if (level_idx != -1) {
         LEVELDATA *levelData = &LDataList[level_idx];
         world->current_level = levelData;
-        i32 areaIdx = (i8)levelData->unknown_0af;
+        i32 areaIdx = (i8)levelData->area_index;
         world->level_sub_id = areaIdx;
         if (areaIdx != -1) {
             world->area = &ADataList[areaIdx];
@@ -694,7 +695,7 @@ i32 WorldInfo_Reset(WORLDINFO *world, i32 level_idx) {
         world->page_grass = -1;
         world->page_bridge = -1;
 
-        i32 progress_index = (i8)levelData->unknown_0d4;
+        i32 progress_index = (i8)levelData->area_level_index;
         if (progress_index > 0xb || progress_index == -1) {
             world->level_progress = NULL;
         } else {

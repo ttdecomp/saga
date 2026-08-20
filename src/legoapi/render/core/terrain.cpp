@@ -50,7 +50,7 @@ extern "C" void *TerrainInitEx(i32 param1, void *buf, void *buf_end, i32 param2,
 void LoadTerrainFile(WORLDINFO *world) {
     char path[256];
     world->terrain = NULL;
-    if ((world->current_level->flags & LEVEL_UNKNOWN_FLAG_8) != 0) {
+    if ((world->current_level->flags & LEVEL_TERRAIN) != 0) {
         NuStrCpy(path, world->config_file);
         LEVELDATA *level = world->current_level;
         if (level == (LEVELDATA *)PLATFORM_LDATA) {

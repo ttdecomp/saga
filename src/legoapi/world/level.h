@@ -29,15 +29,17 @@ typedef struct leveldatadisplay_s {
 } LEVELDATADISPLAY;
 
 enum {
-    LEVEL_UNKNOWN_FLAG_2 = 1 << 1,
-    LEVEL_UNKNOWN_FLAG_8 = 1 << 3,
-    LEVEL_INTRO = 1 << 5,
-    LEVEL_MIDTRO = 1 << 6,
-    LEVEL_OUTRO = 1 << 7,
-    LEVEL_TEST = 1 << 9,
-    LEVEL_STATUS = 1 << 10,
-    LEVEL_NEWGAME = 1 << 16,
-    LEVEL_LOADGAME = 1 << 17,
+    LEVEL_CONFIG_LOADED = 1 << 0,  // 0x1  set once level config has been (re)loaded
+    LEVEL_GAMEPLAY = 1 << 1,       // 0x2  playable level (has world: SockSys/AI loaded)
+    LEVEL_UNKNOWN_FLAG_4 = 1 << 2, // 0x4  set by default on level_start
+    LEVEL_TERRAIN = 1 << 3,        // 0x8  level has a terrain file
+    LEVEL_INTRO = 1 << 5,          // 0x20
+    LEVEL_MIDTRO = 1 << 6,         // 0x40
+    LEVEL_OUTRO = 1 << 7,          // 0x80
+    LEVEL_TEST = 1 << 9,           // 0x200
+    LEVEL_STATUS = 1 << 10,        // 0x400
+    LEVEL_NEWGAME = 1 << 16,       // 0x10000
+    LEVEL_LOADGAME = 1 << 17,      // 0x20000
 };
 
 typedef struct LEVELDATA_s {
@@ -72,7 +74,7 @@ typedef struct LEVELDATA_s {
 
     char blob_shadow_alpha;
     char unknown_0ae;
-    char unknown_0af;
+    char area_index;
 
     f32 cam_tilt;
 
@@ -97,7 +99,7 @@ typedef struct LEVELDATA_s {
     char unknown_0d2;
     char unknown_0d3;
 
-    char unknown_0d4;
+    char area_level_index;
 
     char blob_shadow_fade_near;
     char blob_shadow_fade_far;
