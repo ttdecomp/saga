@@ -138,6 +138,17 @@ extern void bgPostRequest(void *, void *, void *, i32);
 extern void NuTimeGet(void *);
 extern f32 NuTimeSeconds(void *);
 
+extern i32 Area_PlayerModelCount;
+extern i32 Area_StoryModelCount;
+extern i16 Area_PlayerModelList[1];
+extern i32 Area_FreePlayModelCount;
+extern i16 Area_FreePlayModelList[1];
+extern i32 Area_MissionModelCount;
+extern i16 Area_MissionModelList[1];
+extern i16 AreaMusic;
+extern void *MissionSys;
+extern void *Area_StoryModelList;
+
 struct AIROW_s;
 struct nuqthdr_s;
 struct nunativegscene_s;
@@ -259,7 +270,31 @@ void Areas_OpenAll(i32 mode) {
     }
 }
 
-void Area_Configure(i32, i32, EXTRAMODEL *, i16 *) {
+void Area_Configure(i32 area, i32 param, EXTRAMODEL *models, i16 *s) {
+    i16 area_music = -1;
+
+    Area_PlayerModelCount = 0;
+    Area_StoryModelCount = 0;
+    Area_PlayerModelList[0] = -1;
+    ((i16 *)Area_StoryModelList)[0] = -1;
+    Area_FreePlayModelCount = 0;
+    Area_FreePlayModelList[0] = -1;
+    Area_MissionModelCount = 0;
+    Area_MissionModelList[0] = -1;
+    ((i16 *)LevelLoad)[0] = -1;
+    LevelLoadCount = 0;
+    if (area != -1) {
+        u8 *ad = *(u8 **)&ADataList + area * 0x9c;
+        area_music = *(i16 *)(ad + 0x88);
+        *(i32 *)(ad + 0x80) = 0;
+        *(u8 *)(ad + 0x7f) = 0;
+    }
+    AreaMusic = area_music;
+    if (Mission_Active((struct MISSIONSYS_s *)MissionSys) != 0) {
+        if (*(u8 *)((char *)MissionSys + 0x1f) != 0) {
+            return;
+        }
+    }
 }
 
 void ClearUpAreaData() {

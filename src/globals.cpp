@@ -169,6 +169,15 @@ LEVELDATA *TEMPLEB_LDATA = NULL;
 LEVELDATA *TEMPLESTATUS_LDATA = NULL;
 
 void *LevelHackData = NULL;
+i32 Area_PlayerModelCount = 0;
+i32 Area_StoryModelCount = 0;
+i16 Area_PlayerModelList[1] = {0};
+i32 Area_FreePlayModelCount = 0;
+i16 Area_FreePlayModelList[1] = {0};
+i32 Area_MissionModelCount = 0;
+i16 Area_MissionModelList[1] = {0};
+i16 AreaMusic = 0;
+
 i32 LOADEROFF = 0;
 i32 no_more_loads = 0;
 i32 other_level = 0;
