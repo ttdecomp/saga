@@ -440,7 +440,6 @@ struct LEVELSPLINE {};
 struct LoadedUniqueShaderRecord {};
 struct MENU_s;
 struct MISSIONSAVE_s;
-struct MISSIONSYS_s {};
 struct MemoryBuffer;
 struct NARROWSOCKEXCEPTION {};
 struct NUGCUTCHAR_s;
