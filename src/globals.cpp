@@ -169,6 +169,10 @@ LEVELDATA *TEMPLEB_LDATA = NULL;
 LEVELDATA *TEMPLESTATUS_LDATA = NULL;
 
 void *LevelHackData = NULL;
+i32 Customiser_AccessoriesLoaded = 0;
+void *vehicle_scene = NULL;
+void *CharacterCustomiser = NULL;
+
 void *OldLevelHackData = NULL;
 i32 LevelHackSize = 0;
 i32 LevelHackSendTimer = 0;

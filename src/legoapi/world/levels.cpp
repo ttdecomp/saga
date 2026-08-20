@@ -46,6 +46,28 @@ extern void NewCutScene(CUTINFO *, CUTSYS *, char *, i32);
 extern void ClearLevelProgress(i32, struct WORLDINFO_s *);
 extern char Game[0x7e58];
 extern char BackupGame[0x7e58];
+extern i32 Customiser_AccessoriesLoaded;
+extern void *vehicle_scene;
+extern void *CharacterCustomiser;
+extern i32 HIGHGAMEOBJECT;
+extern void *Obj;
+extern i32 Area;
+extern i32 last_area;
+extern void *big_icon_scene;
+extern void *area_scene;
+
+struct TORPEDOPACKET_s;
+struct GameObject_s;
+struct CUSTOMISER;
+void FreeTorpedoPacket(struct TORPEDOPACKET_s **);
+void RemoveGameObject(struct GameObject_s *, i32);
+void IconScenes_Dump(void);
+void CharScenes_AreaDump(void);
+void Particles_DumpAreaPage(void);
+void Customiser_RestoreModelTextureIDs(struct CUSTOMISER *);
+void Customiser_DumpAccessories(struct CUSTOMISER *);
+extern "C" void APIDumpCharacterModels(i32);
+extern "C" void NuGScnRemove(void *);
 
 struct AIROW_s;
 struct nuqthdr_s;
@@ -126,6 +148,45 @@ void Area_Configure(i32, i32, EXTRAMODEL *, i16 *) {
 }
 
 void ClearUpAreaData() {
+    i32 i;
+
+    if (HIGHGAMEOBJECT > 0) {
+        for (i = 0; i < HIGHGAMEOBJECT; i++) {
+            u8 *obj = (u8 *)Obj + i * 0x10e4;
+            if (*(u8 *)(obj + 0x1f8) & 1) {
+                FreeTorpedoPacket((struct TORPEDOPACKET_s **)(obj + 0xcb4));
+                RemoveGameObject((struct GameObject_s *)obj, 1);
+            }
+        }
+    }
+    if (Area != -1 && Area == last_area) {
+        return;
+    }
+    switch (Customiser_AccessoriesLoaded) {
+        case 2:
+            Customiser_RestoreModelTextureIDs((struct CUSTOMISER *)CharacterCustomiser);
+            break;
+        case 1:
+            Customiser_DumpAccessories((struct CUSTOMISER *)CharacterCustomiser);
+            break;
+    }
+    Customiser_AccessoriesLoaded = 0;
+    APIDumpCharacterModels(0);
+    IconScenes_Dump();
+    CharScenes_AreaDump();
+    if (big_icon_scene != NULL) {
+        NuGScnRemove(big_icon_scene);
+        big_icon_scene = NULL;
+    }
+    if (area_scene != NULL) {
+        NuGScnRemove(area_scene);
+        area_scene = NULL;
+    }
+    if (vehicle_scene != NULL) {
+        NuGScnRemove(vehicle_scene);
+        vehicle_scene = NULL;
+    }
+    Particles_DumpAreaPage();
 }
 
 i32 GetTableLocator(void) {
