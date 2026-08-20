@@ -137,6 +137,13 @@ extern "C" f32 NuVecDistSqr(void *, void *, i32);
 extern void bgPostRequest(void *, void *, void *, i32);
 extern void NuTimeGet(void *);
 extern f32 NuTimeSeconds(void *);
+extern "C" void *NuFParCreate(const char *);
+extern "C" i32 NuFParDestroy(void *);
+extern "C" i32 NuFParGetLine(void *);
+extern "C" i32 NuFParGetWord(void *);
+extern "C" void NuStrCpy(char *, const char *);
+extern "C" void NuStrCat(char *, const char *);
+extern "C" i32 NuStrICmp(const char *, const char *);
 
 extern i32 Area_PlayerModelCount;
 extern i32 Area_StoryModelCount;
@@ -293,6 +300,49 @@ void Area_Configure(i32 area, i32 param, EXTRAMODEL *models, i16 *s) {
     if (Mission_Active((struct MISSIONSYS_s *)MissionSys) != 0) {
         if (*(u8 *)((char *)MissionSys + 0x1f) != 0) {
             return;
+        }
+    }
+    if (area != -1) {
+        char path[256];
+        void *fp;
+        i32 count = 0;
+        i32 in_area = 0;
+        char area_buf[0x1e8];
+        NuStrCpy(path, "levels\\");
+        NuStrCat(path, *(char **)&ADataList + area * 0x9c);
+        NuStrCat(path, "\\");
+        NuStrCat(path, *(char **)&ADataList + area * 0x9c + 0x40);
+        NuStrCat(path, ".txt");
+        fp = NuFParCreate(path);
+        if (fp != NULL) {
+            while (NuFParGetLine(fp) != 0) {
+                NuFParGetWord(fp);
+                if (*(char *)fp + 0x510 == NULL) {
+                    continue;
+                }
+                if (in_area) {
+                    if (NuStrICmp(*(char **)((char *)fp + 0x510), "area_end") == 0) {
+                        in_area = 0;
+                        if (*(i16 *)(area_buf + 0x1e0) != 0) {
+                            count++;
+                        }
+                        continue;
+                    }
+                } else {
+                    if (NuStrICmp(*(char **)((char *)fp + 0x510), "area_start") == 0) {
+                        if (count <= 9) {
+                            *(i16 *)(area_buf + 0x1e0) = 0;
+                            *(u8 *)(area_buf + 0x1e7) &= 0xfe;
+                            *(u8 *)(area_buf + 0x1e4) = 0xff;
+                            *(u8 *)(area_buf + 0x1e5) = 0xff;
+                            *(u8 *)(area_buf + 0x1e6) = 0xff;
+                            in_area = 1;
+                        }
+                        continue;
+                    }
+                }
+            }
+            NuFParDestroy(fp);
         }
     }
 }
