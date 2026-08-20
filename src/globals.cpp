@@ -169,6 +169,17 @@ LEVELDATA *TEMPLEB_LDATA = NULL;
 LEVELDATA *TEMPLESTATUS_LDATA = NULL;
 
 void *LevelHackData = NULL;
+i32 LOADEROFF = 0;
+i32 no_more_loads = 0;
+i32 other_level = 0;
+i32 other_level_override = 0;
+i32 CUTSTOPGAME = 0;
+void *CutStopInfo = NULL;
+i32 WaitingForLevelTime = 0;
+i32 LevelLoadCount = 0;
+void *LevelLoad = NULL;
+i32 LEGOSPL_SPLIT = 0;
+
 i32 LSW1 = 0;
 i32 LSW2 = 0;
 i32 Arcade = 0;

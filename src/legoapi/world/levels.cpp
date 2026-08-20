@@ -108,6 +108,36 @@ extern void ClearTakeOverObjectSys(void);
 extern void Door_Reset(void);
 extern void ResetMinikitCounter(void);
 
+extern i32 LOADEROFF;
+extern i32 BGLOAD;
+extern void *NewLData;
+extern void *LDataList;
+extern i32 no_more_loads;
+extern i32 other_level;
+extern i32 other_level_override;
+extern i32 CUTSTOPGAME;
+extern void *CutStopInfo;
+extern i32 WaitingForLevelTime;
+extern i32 LevelLoadCount;
+extern void *LevelLoad;
+extern i32 LEGOSPL_SPLIT;
+extern f32 g_BgLoadDelayHackTimer;
+
+struct MISSIONSYS_s;
+struct nuvec_s;
+struct SOCKPOSITION_s;
+extern i32 Mission_Active(struct MISSIONSYS_s *);
+extern i32 bgGetProcActive(void);
+extern i32 Players_AveragePos(struct nuvec_s *, struct SOCKPOSITION_s *);
+extern i32 InStory(void);
+extern i32 WorldInfo_OtherLevel(void *);
+extern i32 CutScenePlayer_Active(void);
+extern i32 InsideLineXZ(f32, f32, f32, f32, f32, f32);
+extern "C" f32 NuVecDistSqr(void *, void *, i32);
+extern void bgPostRequest(void *, void *, void *, i32);
+extern void NuTimeGet(void *);
+extern f32 NuTimeSeconds(void *);
+
 struct AIROW_s;
 struct nuqthdr_s;
 struct nunativegscene_s;
@@ -352,7 +382,47 @@ void KillBossCompleteLevel(i32 a, i32 b, float c) {
     }
 }
 
-void LevelStreaming_Update(WORLDINFO_s *) {
+void LevelStreaming_Update(WORLDINFO_s *world) {
+    i32 i;
+
+    if (LOADEROFF == 0 && BGLOAD != 0 && *(void **)((char *)world + 0x12c) != NULL &&
+        (*(u16 *)(*(char **)((char *)world + 0x12c) + 0x7a) & 8) == 0 && NewLData == 0) {
+        if (Mission_Active(NULL) == 0) {
+            no_more_loads = 0;
+            other_level = -1;
+            if (no_more_loads == 0 && other_level_override != -1) {
+                other_level = other_level_override;
+            }
+            if (CUTSTOPGAME != 0 && CutStopInfo != NULL && *(i16 *)((char *)CutStopInfo + 0xec) != -1) {
+                i32 cutlevel = *(i16 *)((char *)CutStopInfo + 0xec);
+                i32 curlevel = *(i32 *)((char *)world + 0x11c);
+                if (*(u8 *)((char *)LDataList + cutlevel * 0x144 + 0xaf) ==
+                    *(u8 *)((char *)LDataList + curlevel * 0x144 + 0xaf)) {
+                    other_level = cutlevel;
+                }
+            }
+            if ((*(u8 *)(*(char **)((char *)world + 0x128) + 0x64) & 0xe0) == 0) {
+                u8 *pos = (u8 *)world; // placeholder
+                if (Players_AveragePos((struct nuvec_s *)(pos + 0x54), NULL) != 0) {
+                    other_level = -1;
+                    if (*(i32 *)((char *)world + 0x46a0) > 0) {
+                        f32 best = 1000000.0f;
+                        for (i = 0; i < *(i32 *)((char *)world + 0x46a0); i++) {
+                            u8 *entry = *(u8 **)((char *)world + 0x469c) + i * 0x120;
+                            i32 lev = *(i16 *)(entry + 0xf0);
+                            if (lev != *(i32 *)((char *)world + 0x11c)) {
+                                f32 d = NuVecDistSqr(entry + 0xd4, pos + 0x54, 0);
+                                if (d < best) {
+                                    best = d;
+                                    other_level = *(i16 *)(entry + 0xf0);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 void Areas_ConfigureResidents(variptr_u *, variptr_u *) {
