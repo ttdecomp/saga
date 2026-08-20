@@ -1,6 +1,27 @@
 #include "decomp.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/world/world.h"
 #include "nu2api/nu3d/nutex.h"
+
+GIZFORCE_s *GizForce_FindByName(GIZFORCESYS_s *, char *);
+
+void NegotiationsA_Init(WORLDINFO_s *world) {
+    GIZFORCE_s *f = GizForce_FindByName(world->giz_force_sys, "Force3");
+    if (f != NULL)
+        f->strength_0x6c = 0.4f;
+    f = GizForce_FindByName(world->giz_force_sys, "Force2");
+    if (f != NULL)
+        f->strength_0x6c = 0.4f;
+    f = GizForce_FindByName(world->giz_force_sys, "Force72");
+    if (f != NULL)
+        f->strength_0x6c = 0.75f;
+}
+
+void NegotiationsB_Init(WORLDINFO_s *world) {
+    GIZFORCE_s *f = GizForce_FindByName(world->giz_force_sys, "Force10");
+    if (f != NULL)
+        f->strength_0x6c = 0.5f;
+}
 
 struct AIROW_s;
 struct nuqthdr_s;
@@ -53,12 +74,6 @@ void PodRaceBUpdate(WORLDINFO_s *) {
 }
 
 void PodRaceCUpdate(WORLDINFO_s *) {
-}
-
-void NegotiationsA_Init(WORLDINFO_s *) {
-}
-
-void NegotiationsB_Init(WORLDINFO_s *) {
 }
 
 void PodRaceAlwasyUpdate(WORLDINFO_s *) {

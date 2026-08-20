@@ -5,6 +5,8 @@
 #include "nu2api/nucore/bgproc.h"
 #include "nu2api/nucore/common.h"
 
+struct GIZFORCESYS_s;
+
 struct AREADATA_s;
 struct LEVEL_PROGRESS_s;
 struct APIDEBRISSYS_s;
@@ -126,7 +128,8 @@ typedef struct WORLDINFO_s {
     struct spawnsys_s *spawn_sys;   // 0x46a4
     char filler6b[0x46ac - 0x46a8]; // 0x46a8 .. 0x46ac
     GIZTURRETSYS_s *giz_turret_sys; // 0x46ac
-    char filler7[0x46f0 - 0x46b0];  // 0x46b0 .. 0x46f0
+    GIZFORCESYS_s *giz_force_sys;   // 0x46b0
+    char filler7[0x46f0 - 0x46b4];  // 0x46b4 .. 0x46f0
 
     GRABBER_s *grabber; // 0x46f0
 

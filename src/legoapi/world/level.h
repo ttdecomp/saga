@@ -57,7 +57,7 @@ typedef struct LEVELDATA_s {
     void *reset_fn;
     void *update_fn;
     void *always_update_fn;
-    void *draw_fn;
+    void (*draw_fn)(WORLDINFO *);
     void *draw_status_fn;
 
     LEVELDATADISPLAY data_display;
@@ -193,7 +193,7 @@ typedef struct LEVELFIXUP {
     void *reset_fn;
     void *update_fn;
     void *always_update_fn;
-    void *draw_fn;
+    void (*draw_fn)(WORLDINFO *);
     void *draw_status_fn;
 } LEVELFIXUP;
 

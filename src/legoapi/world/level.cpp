@@ -13,6 +13,7 @@
 #include "nu2api/nufile/nufpar.h"
 #include "nu2api/numath/nuvec.h"
 #include "nu2api/numusic/numusic.h"
+#include "legoapi/world/levels/level_functions.h"
 
 extern "C" char ConfigBuffer[0x10000];
 
@@ -25,7 +26,6 @@ LEVELDATA *levelconfig_ldata = NULL;
 
 extern i16 GetMusicIndex(char *, nusound_filename_info_s *, i32);
 
-#include "legoapi/world/levels/level_functions.h"
 static void Credits_Init_Game(WORLDINFO *) {
 }
 static void Credits_Update_Game(WORLDINFO *) {
@@ -352,9 +352,8 @@ LEVELDATA *Level_FindByName(char *name, i32 *idx_out) {
 }
 
 void Level_Draw(WORLDINFO *world) {
-    void (*drawFn)(WORLDINFO *) = (void (*)(WORLDINFO *))world->current_level->draw_fn;
-    if (drawFn != NULL) {
-        drawFn(world);
+    if (world->current_level->draw_fn != NULL) {
+        world->current_level->draw_fn(world);
     }
 }
 
@@ -407,7 +406,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
     if (level != NULL) {
         level->init_fn = (void *)Titles_Init;
         level->update_fn = (void *)Titles_Update;
-        level->draw_fn = (void *)Titles_Draw;
+        level->draw_fn = Titles_Draw;
         level->flags &= ~(LEVEL_GAMEPLAY | LEVEL_TERRAIN);
         level->music_index = (i16)GetMusicIndex("titles", MusicInfo, -1);
 
@@ -438,7 +437,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         if (level != NULL) {
             level->init_fn = (void *)Credits_Init_Game;
             level->update_fn = (void *)Credits_Update_Game;
-            level->draw_fn = (void *)Credits_Draw_Game;
+            level->draw_fn = Credits_Draw_Game;
             level->draw_status_fn = (void *)Credits_DrawPanel;
             level->flags = 0;
         }
@@ -451,7 +450,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
             level->init_fn = (void *)Hub_Init;
             level->reset_fn = (void *)Hub_Reset;
             level->update_fn = (void *)Hub_Update;
-            level->draw_fn = (void *)Hub_Draw3D;
+            level->draw_fn = Hub_Draw3D;
             level->draw_status_fn = (void *)Hub_DrawPanel;
         }
     }
@@ -649,7 +648,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
             level->reset_fn = (void *)PodRaceAReset;
             level->update_fn = (void *)PodRaceAUpdate;
             level->always_update_fn = (void *)PodRaceA_AlwaysUpdate;
-            level->draw_fn = (void *)PodRaceADraw;
+            level->draw_fn = PodRaceADraw;
             level->draw_status_fn = (void *)PodRacePanel;
         }
     }
@@ -697,7 +696,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         if (level != NULL) {
             level->init_fn = (void *)AnakinsFlightB_Init;
             level->update_fn = (void *)AnakinsFlightB_Update;
-            level->draw_fn = (void *)AnakinsFlightB_Draw;
+            level->draw_fn = AnakinsFlightB_Draw;
         }
     }
 
@@ -828,7 +827,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         if (level != NULL) {
             level->init_fn = (void *)GunshipA_Init;
             level->update_fn = (void *)GunshipA_Update;
-            level->draw_fn = (void *)GunshipA_Draw;
+            level->draw_fn = GunshipA_Draw;
         }
     }
 
@@ -913,7 +912,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
             level->init_fn = (void *)ChrisDogFightAInit;
             level->reset_fn = (void *)ChrisDogFightAReset;
             level->update_fn = (void *)ChrisDogFightAUpdate;
-            level->draw_fn = (void *)ChrisDogFightADraw;
+            level->draw_fn = ChrisDogFightADraw;
         }
     }
 
@@ -924,7 +923,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
             level->init_fn = (void *)FactoryB_Init;
             level->reset_fn = (void *)FactoryB_Reset;
             level->update_fn = (void *)FactoryB_Update;
-            level->draw_fn = (void *)FactoryB_Draw;
+            level->draw_fn = FactoryB_Draw;
         }
     }
 
@@ -1022,7 +1021,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
             level->init_fn = (void *)KaminoE_Init;
             level->always_update_fn = (void *)KaminoE_AlwaysUpdate;
             level->update_fn = (void *)KaminoE_Update;
-            level->draw_fn = (void *)KaminoE_Draw;
+            level->draw_fn = KaminoE_Draw;
         }
     }
 
@@ -1385,7 +1384,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
             level->init_fn = (void *)DeathStarEscapeB_Init;
             level->update_fn = (void *)DeathStarEscapeB_Update;
             level->always_update_fn = (void *)DeathStarEscapeB_AlwaysUpdate;
-            level->draw_fn = (void *)DeathStarEscapeB_Draw;
+            level->draw_fn = DeathStarEscapeB_Draw;
         }
     }
 
@@ -1435,7 +1434,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         if (level != NULL) {
             level->init_fn = (void *)DeathStarBattleDInit;
             level->update_fn = (void *)DeathStarBattleDUpdate;
-            level->draw_fn = (void *)DeathStarBattleDDraw;
+            level->draw_fn = DeathStarBattleDDraw;
             level->reset_fn = (void *)DeathStarBattleDReset;
         }
     }
@@ -1447,7 +1446,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
             level->init_fn = (void *)HothBattleA_Init;
             level->reset_fn = (void *)HothBattleA_Reset;
             level->update_fn = (void *)HothBattleA_Update;
-            level->draw_fn = (void *)HothBattleA_Draw;
+            level->draw_fn = HothBattleA_Draw;
         }
     }
 
@@ -1465,7 +1464,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
             level->init_fn = (void *)HothBattleC_Init;
             level->reset_fn = (void *)HothBattleC_Reset;
             level->update_fn = (void *)HothBattleC_Update;
-            level->draw_fn = (void *)HothBattleC_Draw;
+            level->draw_fn = HothBattleC_Draw;
         }
     }
 
@@ -1482,7 +1481,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         if (level != NULL) {
             level->init_fn = (void *)HothBattleE_Init;
             level->update_fn = (void *)HothBattleE_Update;
-            level->draw_fn = (void *)HothBattleE_Draw;
+            level->draw_fn = HothBattleE_Draw;
             level->draw_status_fn = (void *)HothBattleE_Panel;
         }
     }
@@ -1571,7 +1570,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         if (level != NULL) {
             level->init_fn = (void *)AsteroidChaseD_Init;
             level->update_fn = (void *)AsteroidChaseD_Update;
-            level->draw_fn = (void *)AsteroidChaseD_Panel;
+            level->draw_fn = AsteroidChaseD_Panel;
         }
     }
 
@@ -1798,7 +1797,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         if (level != NULL) {
             level->init_fn = (void *)DeathStar2BattleFire_Init;
             level->update_fn = (void *)DeathStar2BattleFire_Update;
-            level->draw_fn = (void *)DeathStar2BattleFire_Draw;
+            level->draw_fn = DeathStar2BattleFire_Draw;
         }
     }
 
@@ -1808,7 +1807,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         if (level != NULL) {
             level->init_fn = (void *)DeathStar2BattleFire_Init;
             level->update_fn = (void *)DeathStar2BattleFire_Update;
-            level->draw_fn = (void *)DeathStar2BattleFire_Draw;
+            level->draw_fn = DeathStar2BattleFire_Draw;
         }
     }
 
@@ -1818,7 +1817,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         if (level != NULL) {
             level->init_fn = (void *)DeathStar2BattleFire_Init;
             level->update_fn = (void *)DeathStar2BattleFire_Update;
-            level->draw_fn = (void *)DeathStar2BattleFire_Draw;
+            level->draw_fn = DeathStar2BattleFire_Draw;
         }
     }
 
@@ -1845,7 +1844,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         SARLACCPITA_LDATA = level;
         if (level != NULL) {
             level->reset_fn = (void *)SarlaccPitA_Reset;
-            level->draw_fn = (void *)SarlaccPitA_Draw;
+            level->draw_fn = SarlaccPitA_Draw;
         }
     }
 

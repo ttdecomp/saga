@@ -711,6 +711,8 @@ struct GIZBUILDIT_s {
     void GetMechObjectInterface();
 };
 struct GIZFORCE_s {
+    undefined field0_0x0[0x6c];
+    float strength_0x6c;
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };

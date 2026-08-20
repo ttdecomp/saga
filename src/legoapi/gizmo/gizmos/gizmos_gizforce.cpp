@@ -10,7 +10,8 @@ void GizForce_Complete(GIZFORCE_s *) {
 void GizForce_ResetLOS(GameObject_s *) {
 }
 
-void GizForce_FindByName(GIZFORCESYS_s *, char *) {
+GIZFORCE_s *GizForce_FindByName(GIZFORCESYS_s *, char *) {
+    return NULL;
 }
 
 void GizForce_TotalScore(void *) {
