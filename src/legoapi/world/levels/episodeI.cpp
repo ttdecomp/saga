@@ -6,6 +6,13 @@
 #include "legoapi/world/world.h"
 #include "legoapi/world/level_shared.h"
 #include "nu2api/nu3d/nutex.h"
+#include "nu2api/nu3d/nuspline.h"
+#include "nu2api/numath/nurand.h"
+#include "nu2api/numath/nutrig.h"
+#include "nu2api/numath/nufloat.h"
+#include "nu2api/numath/numtx.h"
+#include "legoapi/core/input/qrand.h"
+#include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
 
 extern "C" void *AIPathFindLocator(AISYS_s *, char *);
 struct GameObject_s;
@@ -36,7 +43,6 @@ void TBCLOSEFN(char *, i32);
 void UpdatePodRaceLapDisplay(float);
 extern f32 FRAMETIME;
 extern struct AREADATA_s *PODRACE_ADATA;
-extern i32 Lap;
 static void *PodRace;
 static i32 mushroom_collapse;
 static i32 mushroom_nattempts_per_increment;
@@ -51,12 +57,10 @@ void PodKeyReset(void);
 i32 InStory(void);
 extern struct LEVELDATA_s *PODRACEOUTRO1_LDATA;
 extern struct LEVELDATA_s *PODRACESTATUS_LDATA;
-extern i32 other_level_override;
 static void *pod_pacemaker;
 static void *pod_avalanche_cutscene;
 i32 pod_lap_start;
 CUTINFO *CutScene_Find(CUTSYS *, char *);
-void NewCutScene(CUTINFO *, CUTSYS *, char *, i32);
 void CutScene_SnapToEnd(CUTINFO *);
 extern u32 client_mines[];
 extern void *minesys;
@@ -84,9 +88,6 @@ static i16 gungan_0x92cb8;
 static i16 gungan_0x92cbc[8];
 static void *gungan_0x92bb4[8];
 static void *gungan_0x92c34[8];
-struct NURAND;
-extern "C" i32 NuRand(NURAND *);
-extern "C" float NuFloatRand(NURAND *);
 struct nuvec_s;
 struct AIPATHINFO_s;
 struct AIGROUP_s;
@@ -96,13 +97,11 @@ void *AddDynamicCreature(i32, nuvec_s *, i32, char *, AIPATHINFO_s *, AIGROUP_s 
 extern i16 id_STAP;
 extern void *FadeSys;
 extern i32 Paused;
-extern i32 CUTSTOPGAME;
 extern i32 MiniCutCam;
 extern struct LEVELDATA_s *PODRACEB_LDATA;
 extern float GameTimer[];
 void TickTockSfx(void);
 float SeekLinearF(float, float, float);
-i32 qrand(void);
 static i32 pod_092d40;
 static i32 pod_092d48;
 static i32 pod_092d44;
@@ -112,13 +111,11 @@ static float pod_0xd460;
 static float pod_092d70[5];
 extern "C" void NuSpecialSetVisibility(void *, i32);
 void Hint_SetComplete(i32);
-extern "C" i32 NuSpecialExistsFn(void *);
 extern "C" void *NuSpecialGetDrawMtx(void *);
 extern "C" i32 NuSpecialClipTestExtents(void *, void *);
 extern i32 retakeg_netpacket;
 extern void *podrace_netpacket;
 extern "C" void Text3DEx(char *, i32, float, float, float, float, float, i32, i32, i32, i32, i32);
-extern "C" float NuFmod(float, float);
 extern float PodRace_sniper_start_fire_radius;
 extern float PodRace_sniper_fire_radius;
 extern float PodRace_sniper_fire_range_time;
@@ -129,7 +126,6 @@ extern struct LEVELDATA_s *PODSPRINTA_LDATA;
 extern void *player2;
 extern void *player;
 extern void *game_cutscenes;
-extern i32 VehicleAreaRememberSpeed;
 void CutScene_StoppedFn_LSW(CUTINFO *);
 void CutScene_SnapToEnd(CUTINFO *);
 extern i32 podsprint_netpacket;
@@ -154,10 +150,6 @@ i32 SetLevelHack(i32);
 static void PodSprint_InitAISpline(WORLDINFO_s *, void *, char *);
 void *BoltType_FindByID(i32, WORLDINFO_s *);
 void Bolt_Add(GameObject_s *, nuvec_s *, numtx_s *, i32, i32);
-extern "C" i32 NuAtan2D(float, float);
-extern "C" void NuMtxSetRotationX(void *, i32);
-extern "C" void NuMtxRotateY(void *, i32);
-extern "C" i32 NuRandInt(void);
 extern i16 id_ROYALGUARD;
 static void *retakeg_guard_a;
 static void *retakeg_guard_b;
@@ -170,13 +162,8 @@ extern i16 id_XWING;
 extern i16 id_SNOWSPEEDER;
 extern i16 id_MILLENNIUMFALCON;
 extern i16 id_NEW_REPUBLIC_GUNSHIP;
-extern "C" NUGSPLINE *NuSplineFind(NUGSCN *, char *);
-extern "C" f32 NuRandFloat(void);
 struct PLAYERDATA;
-extern "C" void NuMtxSetIdentity(void *);
-extern "C" void NuMtxTranslate(void *, void *);
 extern "C" void NuSpecialDrawAt(void *, void *);
-extern "C" i32 NuSpecialExistsFn(void *);
 
 static struct {
     void *field_0x0; // 0x0  MaulA anim message 1
@@ -262,8 +249,8 @@ static __used__ void PodRaceSnipersUpdate() {
                             temp_yrot = NuAtan2D(dx, -dy);
                             temp_xrot = NuAtan2D(-*(float *)(s + 0x64), dx);
                             void *mtx[4];
-                            NuMtxSetRotationX(mtx, (i32)(u16)temp_xrot);
-                            NuMtxRotateY(mtx, (i32)(u16)temp_yrot);
+                            NuMtxSetRotationX((NUMTX *)mtx, (i32)(u16)temp_xrot);
+                            NuMtxRotateY((NUMTX *)mtx, (i32)(u16)temp_yrot);
                             Bolt_Add(NULL, (nuvec_s *)(s + 0xc), (numtx_s *)mtx, bolttype, 0);
                         }
                     }
@@ -480,8 +467,8 @@ void PodRaceADraw(WORLDINFO_s *world) {
         for (i32 i = 0; i < 0x40; i++) {
             u32 bit = 1u << (i & 0x1f);
             if (((i < 0x20 ? client_mines[0x300 / 4] : client_mines[0x304 / 4]) & bit) != 0) {
-                NuMtxSetIdentity(mtx);
-                NuMtxTranslate(mtx, &client_mines[i * 3]);
+                NuMtxSetIdentity((NUMTX *)mtx);
+                NuMtxTranslate((NUMTX *)mtx, (NUVEC *)&client_mines[i * 3]);
                 NuSpecialDrawAt(minesys, mtx);
             }
         }
@@ -491,8 +478,8 @@ void PodRaceADraw(WORLDINFO_s *world) {
         u8 *end = (u8 *)minesys + 0x70c;
         for (; entry < end; entry += 0x1c) {
             if (*(u32 *)entry != 0) {
-                NuMtxSetIdentity(mtx);
-                NuMtxTranslate(mtx, entry + 0x4);
+                NuMtxSetIdentity((NUMTX *)mtx);
+                NuMtxTranslate((NUMTX *)mtx, (NUVEC *)(entry + 0x4));
                 NuSpecialDrawAt(minesys, mtx);
             }
         }
