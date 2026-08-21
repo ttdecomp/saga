@@ -19,6 +19,8 @@ extern char LevHSpecial[];
 extern "C" void NuSpecialSetVisibility(void *, i32);
 extern GIZAIMESSAGESYS_s *gizaimessagesys;
 GIZAIMESSAGE_s *CheckGizAIMessage(GIZAIMESSAGESYS_s *, const char *, GIZAIMESSAGE_s *);
+extern "C" struct nuvec_s *NuSpecialGetPos(void *);
+void GizObstacle_EvalAveragePosAndRadius(GIZOBSTACLE_s *, i32);
 
 static struct {
     void *field_0x0; // 0x0  MaulA anim message 1
@@ -270,7 +272,72 @@ void RetakeD_Init(WORLDINFO_s *world) {
     }
 }
 
-void RetakeE_Init(WORLDINFO_s *) {
+void RetakeE_Init(WORLDINFO_s *world) {
+    GIZMOBLOWUP_s *g = GizmoBlowUp_FindByName(world, "box_deton_011");
+    if (g != NULL)
+        g->field_0xa0 |= 2;
+
+    GIZOBSTACLE_s *obs;
+    u8 *n;
+    struct nuvec_s *pos;
+
+    obs = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle3");
+    if (obs != NULL) {
+        n = *(u8 **)((u8 *)obs + 0x34);
+        n = *(u8 **)(n + 0x18);
+        while (n != NULL) {
+            pos = NuSpecialGetPos(n + 0x4);
+            pos->z -= 0.75f;
+            GizObstacle_EvalAveragePosAndRadius(obs, 2);
+            *(f32 *)((u8 *)obs + 0x18) = pos->z;
+            *(f32 *)((u8 *)obs + 0x24) = pos->z;
+            *(u32 *)((u8 *)obs + 0x3c) = 0x41700000;
+            n = *(u8 **)n;
+        }
+    }
+
+    obs = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle12");
+    if (obs != NULL) {
+        n = *(u8 **)((u8 *)obs + 0x34);
+        n = *(u8 **)(n + 0x18);
+        while (n != NULL) {
+            pos = NuSpecialGetPos(n + 0x4);
+            pos->z += 0.75f;
+            GizObstacle_EvalAveragePosAndRadius(obs, 2);
+            *(f32 *)((u8 *)obs + 0x18) = pos->z;
+            *(u32 *)((u8 *)obs + 0x1c) = *(u32 *)pos;
+            *(u32 *)((u8 *)obs + 0x20) = *(u32 *)((u8 *)pos + 0x4);
+            *(f32 *)((u8 *)obs + 0x24) = pos->z;
+            *(u32 *)((u8 *)obs + 0x3c) = 0x41700000;
+            n = *(u8 **)n;
+        }
+    }
+
+    obs = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle11");
+    if (obs != NULL) {
+        n = *(u8 **)((u8 *)obs + 0x34);
+        n = *(u8 **)(n + 0x18);
+        while (n != NULL) {
+            *(u32 *)((u8 *)obs + 0x1c) = *(u32 *)pos;
+            *(u32 *)((u8 *)obs + 0x20) = *(u32 *)((u8 *)pos + 0x4);
+            *(f32 *)((u8 *)obs + 0x24) = pos->z;
+            *(u32 *)((u8 *)obs + 0x3c) = 0x41700000;
+            n = *(u8 **)n;
+        }
+    }
+
+    obs = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle13");
+    if (obs != NULL) {
+        n = *(u8 **)((u8 *)obs + 0x34);
+        n = *(u8 **)(n + 0x18);
+        while (n != NULL) {
+            *(u32 *)((u8 *)obs + 0x1c) = *(u32 *)pos;
+            *(u32 *)((u8 *)obs + 0x20) = *(u32 *)((u8 *)pos + 0x4);
+            *(f32 *)((u8 *)obs + 0x24) = pos->z;
+            *(u32 *)((u8 *)obs + 0x3c) = 0x41700000;
+            n = *(u8 **)n;
+        }
+    }
 }
 
 void RetakeG_Init(WORLDINFO_s *) {
