@@ -119,6 +119,12 @@ extern struct LEVELDATA_s *PODSPRINTA_LDATA;
 extern void *player2;
 extern void *player;
 extern i32 podsprint_netpacket;
+extern void *GameCam;
+extern i32 pause_rndr_on;
+static i32 pod_092d30;
+static void UpdatePodRaceMines(void);
+static void *CreatePodRaceMine(nuvec_s *);
+static void UpdatePacemakerDisplay(void *);
 i32 SetLevelHack(i32);
 static void PodSprint_InitAISpline(WORLDINFO_s *, void *, char *);
 void *BoltType_FindByID(i32, WORLDINFO_s *);
@@ -571,7 +577,45 @@ void PodRaceCReset(WORLDINFO_s *world) {
 void PodRaceUpdate(WORLDINFO_s *, float) {
 }
 
-void PodRaceAUpdate(WORLDINFO_s *) {
+void PodRaceAUpdate(WORLDINFO_s *world) {
+    if (pod_pacemaker != 0) {
+        if (*(float *)((u8 *)FadeSys + 0x4) == 0.0f || pause_rndr_on != 0)
+            pod_092d30 = 0.0f;
+    }
+    PodRaceUpdate(world, FRAMETIME);
+    if (netclient != 0) {
+        UpdatePodRaceMines();
+        return;
+    }
+    if (Lap > 3 || MiniCutCam != 0) {
+        UpdatePodRaceMines();
+        return;
+    }
+    float t = *(float *)((u8 *)minesys + 0x744) + FRAMETIME;
+    *(float *)((u8 *)minesys + 0x744) = t;
+    if (t > 1.0f) {
+        if (*(float *)((u8 *)minesys + 0x710) == 1000000000.0f) {
+            float v = *(float *)((u8 *)GameCam + 0x2c);
+            *(float *)((u8 *)minesys + 0x710) = v;
+            if (100.0f > v) {
+                float r = 0.5f - NuRandFloat() * 60.0f;
+                nuvec_s *vec = (nuvec_s *)((u8 *)&r - 0xc);
+                NuVecRotateY((NUVEC *)vec, (NUVEC *)vec, *(u16 *)((u8 *)GameCam + 0x686));
+                nuvec_s p;
+                NuVecAdd((NUVEC *)&p, (NUVEC *)vec, (NUVEC *)((u8 *)GameCam - 0x80));
+                if (CreatePodRaceMine(&p) != NULL)
+                    *(float *)((u8 *)minesys + 0x710) = *(float *)((u8 *)GameCam + 0x2c);
+            }
+        }
+    }
+}
+
+static void UpdatePodRaceMines(void) {
+}
+static void *CreatePodRaceMine(nuvec_s *a) {
+    return NULL;
+}
+static void UpdatePacemakerDisplay(void *a) {
 }
 
 void PodRaceBUpdate(WORLDINFO_s *) {
