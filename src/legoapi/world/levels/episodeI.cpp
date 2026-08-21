@@ -43,6 +43,10 @@ static i32 mushroom_nattempts_per_increment;
 static i32 mushroom_n_attempts;
 static i32 podhurry_i;
 void PodKeyReset(void);
+i32 InStory(void);
+extern struct LEVELDATA_s *PODRACEOUTRO1_LDATA;
+extern struct LEVELDATA_s *PODRACESTATUS_LDATA;
+extern i32 other_level_override;
 extern u32 client_mines[];
 extern void *minesys;
 extern "C" void NuMtxSetIdentity(void *);
@@ -254,7 +258,18 @@ void PodRace_IncreaseLap() {
     Lap++;
 }
 
-void PodRaceA_AlwaysUpdate(WORLDINFO_s *) {
+void PodRaceA_AlwaysUpdate(WORLDINFO_s *world) {
+    PodRaceAlwasyUpdate(world);
+    if (Lap == 3) {
+        if (InStory() != 0) {
+            if (PODRACEOUTRO1_LDATA != NULL) {
+                other_level_override = *(i16 *)((u8 *)PODRACEOUTRO1_LDATA + 0x62);
+                return;
+            }
+        }
+        if (PODRACESTATUS_LDATA != NULL)
+            other_level_override = *(i16 *)((u8 *)PODRACESTATUS_LDATA + 0x62);
+    }
 }
 
 i32 PodRace_InStartCountdown(WORLDINFO_s *world) {
