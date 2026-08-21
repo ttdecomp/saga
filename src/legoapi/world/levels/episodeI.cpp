@@ -136,6 +136,15 @@ void PodSprint_GetIAlongVals(nugspline_s *, i16 *, i16 *) {
 void PodSprint_InStartCountdown(WORLDINFO_s *) {
 }
 
+void AnakinsFlightB_Draw(WORLDINFO_s *) {
+}
+
+void AnakinsFlightB_Init(WORLDINFO_s *) {
+}
+
+void AnakinsFlightB_Update(WORLDINFO_s *) {
+}
+
 void RetakeD_Init(WORLDINFO_s *) {
 }
 
