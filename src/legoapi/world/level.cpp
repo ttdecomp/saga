@@ -398,24 +398,6 @@ void Level_RegisterGameConfigKeywords(nufpcomjmp_s *beforeLoadKeywords, nufpcomj
     Level_ConfigAfterLoad_GameKeywords = afterLoadKeywords;
 }
 
-// Helpers for FixUpLevels: look up a level by name, cache it in a global,
-// and install its handler functions. Expands to exactly the original code.
-#define LEVEL_FIXUP_LDATA(name, ldata, ...)                                                                            \
-    {                                                                                                                  \
-        LEVELDATA *level = Level_FindByName(name, NULL);                                                               \
-        ldata = level;                                                                                                 \
-        if (level != NULL) {                                                                                           \
-            __VA_ARGS__                                                                                                \
-        }                                                                                                              \
-    }
-#define LEVEL_FIXUP(name, ...)                                                                                         \
-    {                                                                                                                  \
-        LEVELDATA *level = Level_FindByName(name, NULL);                                                               \
-        if (level != NULL) {                                                                                           \
-            __VA_ARGS__                                                                                                \
-        }                                                                                                              \
-    }
-
 void FixUpLevels(LEVELFIXUP *fixup) {
     Levels_FixUp(fixup);
 
@@ -461,16 +443,44 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
-    LEVEL_FIXUP("map", level->load_fn = Hub_Load; level->init_fn = Hub_Init; level->reset_fn = Hub_Reset;
-                level->update_fn = Hub_Update; level->draw_fn = Hub_Draw3D; level->draw_status_fn = Hub_DrawPanel;)
+    {
+        LEVELDATA *level = Level_FindByName("map", NULL);
+        if (level != NULL) {
+            level->load_fn = Hub_Load;
+            level->init_fn = Hub_Init;
+            level->reset_fn = Hub_Reset;
+            level->update_fn = Hub_Update;
+            level->draw_fn = Hub_Draw3D;
+            level->draw_status_fn = Hub_DrawPanel;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("speederchase_a", SPEEDERCHASEA_LDATA, level->init_fn = SpeederChaseA_Init;
-                      level->reset_fn = SpeederChaseA_Reset; level->update_fn = SpeederChaseA_Update;
-                      level->draw_status_fn = SpeederChaseA_Panel;)
+    {
+        LEVELDATA *level = Level_FindByName("speederchase_a", NULL);
+        SPEEDERCHASEA_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = SpeederChaseA_Init;
+            level->reset_fn = SpeederChaseA_Reset;
+            level->update_fn = SpeederChaseA_Update;
+            level->draw_status_fn = SpeederChaseA_Panel;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("negotiations_a", NEGOTIATIONSA_LDATA, level->init_fn = NegotiationsA_Init;)
+    {
+        LEVELDATA *level = Level_FindByName("negotiations_a", NULL);
+        NEGOTIATIONSA_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = NegotiationsA_Init;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("negotiations_b", NEGOTIATIONSB_LDATA, level->init_fn = NegotiationsB_Init;)
+    {
+        LEVELDATA *level = Level_FindByName("negotiations_b", NULL);
+        NEGOTIATIONSB_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = NegotiationsB_Init;
+        }
+    }
 
     {
         LEVELDATA *level = Level_FindByName("negotiations_c", NULL);
@@ -503,11 +513,29 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
-    LEVEL_FIXUP_LDATA("rescue_b", RESCUEB_LDATA, level->init_fn = RescueB_Init;)
+    {
+        LEVELDATA *level = Level_FindByName("rescue_b", NULL);
+        RESCUEB_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = RescueB_Init;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("rescue_c", RESCUEC_LDATA, level->init_fn = RescueC_Init;)
+    {
+        LEVELDATA *level = Level_FindByName("rescue_c", NULL);
+        RESCUEC_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = RescueC_Init;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("rescue_e", RESCUEE_LDATA, level->init_fn = RescueE_Init;)
+    {
+        LEVELDATA *level = Level_FindByName("rescue_e", NULL);
+        RESCUEE_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = RescueE_Init;
+        }
+    }
 
     {
         LEVELDATA *level = Level_FindByName("PodRace_Arrival1", NULL);
@@ -581,7 +609,12 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
-    LEVEL_FIXUP("ANewHope_A", level->init_fn = ANewHopeA_Init;)
+    {
+        LEVELDATA *level = Level_FindByName("ANewHope_A", NULL);
+        if (level != NULL) {
+            level->init_fn = ANewHopeA_Init;
+        }
+    }
 
     {
         LEVELDATA *level = Level_FindByName("ANewHope_B", NULL);
@@ -595,17 +628,42 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
-    LEVEL_FIXUP_LDATA("podrace_b", PODRACEB_LDATA, level->init_fn = PodRaceBInit; level->reset_fn = PodRaceBReset;
-                      level->update_fn = PodRaceBUpdate; level->always_update_fn = PodRaceAlwasyUpdate;
-                      level->draw_status_fn = PodRacePanel;)
+    {
+        LEVELDATA *level = Level_FindByName("podrace_b", NULL);
+        PODRACEB_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = PodRaceBInit;
+            level->reset_fn = PodRaceBReset;
+            level->update_fn = PodRaceBUpdate;
+            level->always_update_fn = PodRaceAlwasyUpdate;
+            level->draw_status_fn = PodRacePanel;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("podrace_a", PODRACEA_LDATA, level->init_fn = PodRaceAInit; level->reset_fn = PodRaceAReset;
-                      level->update_fn = PodRaceAUpdate; level->always_update_fn = PodRaceA_AlwaysUpdate;
-                      level->draw_fn = PodRaceADraw; level->draw_status_fn = PodRacePanel;)
+    {
+        LEVELDATA *level = Level_FindByName("podrace_a", NULL);
+        PODRACEA_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = PodRaceAInit;
+            level->reset_fn = PodRaceAReset;
+            level->update_fn = PodRaceAUpdate;
+            level->always_update_fn = PodRaceA_AlwaysUpdate;
+            level->draw_fn = PodRaceADraw;
+            level->draw_status_fn = PodRacePanel;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("podrace_c", PODRACEC_LDATA, level->init_fn = PodRaceCInit; level->reset_fn = PodRaceCReset;
-                      level->update_fn = PodRaceCUpdate; level->always_update_fn = PodRaceAlwasyUpdate;
-                      level->draw_status_fn = PodRacePanel;)
+    {
+        LEVELDATA *level = Level_FindByName("podrace_c", NULL);
+        PODRACEC_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = PodRaceCInit;
+            level->reset_fn = PodRaceCReset;
+            level->update_fn = PodRaceCUpdate;
+            level->always_update_fn = PodRaceAlwasyUpdate;
+            level->draw_status_fn = PodRacePanel;
+        }
+    }
 
     {
         LEVELDATA *level = Level_FindByName("?", NULL);
@@ -621,12 +679,26 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
-    LEVEL_FIXUP_LDATA("PodSprint_A", PODSPRINTA_LDATA, level->init_fn = PodSprintA_Init;
-                      level->reset_fn = PodSprintA_Reset; level->update_fn = PodSprintA_Update;
-                      level->draw_status_fn = PodSprintA_Panel;)
+    {
+        LEVELDATA *level = Level_FindByName("PodSprint_A", NULL);
+        PODSPRINTA_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = PodSprintA_Init;
+            level->reset_fn = PodSprintA_Reset;
+            level->update_fn = PodSprintA_Update;
+            level->draw_status_fn = PodSprintA_Panel;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("AnakinsFlight_B", ANAKINSFLIGHTB_LDATA, level->init_fn = AnakinsFlightB_Init;
-                      level->update_fn = AnakinsFlightB_Update; level->draw_fn = AnakinsFlightB_Draw;)
+    {
+        LEVELDATA *level = Level_FindByName("AnakinsFlight_B", NULL);
+        ANAKINSFLIGHTB_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = AnakinsFlightB_Init;
+            level->update_fn = AnakinsFlightB_Update;
+            level->draw_fn = AnakinsFlightB_Draw;
+        }
+    }
 
     {
         LEVELDATA *level = Level_FindByName("retake_intro1", NULL);
@@ -656,27 +728,91 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
-    LEVEL_FIXUP_LDATA("retake_d", RETAKED_LDATA, level->init_fn = RetakeD_Init;)
+    {
+        LEVELDATA *level = Level_FindByName("retake_d", NULL);
+        RETAKED_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = RetakeD_Init;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("retake_e", RETAKEE_LDATA, level->init_fn = RetakeE_Init;)
+    {
+        LEVELDATA *level = Level_FindByName("retake_e", NULL);
+        RETAKEE_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = RetakeE_Init;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("retake_g", RETAKEG_LDATA, level->init_fn = RetakeG_Init; level->reset_fn = RetakeG_Reset;
-                      level->update_fn = RetakeG_Update; level->draw_status_fn = RetakeG_Panel;)
+    {
+        LEVELDATA *level = Level_FindByName("retake_g", NULL);
+        RETAKEG_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = RetakeG_Init;
+            level->reset_fn = RetakeG_Reset;
+            level->update_fn = RetakeG_Update;
+            level->draw_status_fn = RetakeG_Panel;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("Maul_A", MAULA_LDATA, level->init_fn = MaulA_Init; level->reset_fn = MaulA_Reset;
-                      level->update_fn = MaulA_Update; level->draw_status_fn = MaulA_Panel;)
+    {
+        LEVELDATA *level = Level_FindByName("Maul_A", NULL);
+        MAULA_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = MaulA_Init;
+            level->reset_fn = MaulA_Reset;
+            level->update_fn = MaulA_Update;
+            level->draw_status_fn = MaulA_Panel;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("Maul_B", MAULB_LDATA, level->init_fn = MaulB_Init;)
+    {
+        LEVELDATA *level = Level_FindByName("Maul_B", NULL);
+        MAULB_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = MaulB_Init;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("Maul_D", MAULD_LDATA, level->init_fn = MaulD_Init; level->update_fn = MaulD_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("Maul_D", NULL);
+        MAULD_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = MaulD_Init;
+            level->update_fn = MaulD_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("Maul_E", MAULE_LDATA, level->init_fn = MaulE_Init; level->update_fn = MaulE_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("Maul_E", NULL);
+        MAULE_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = MaulE_Init;
+            level->update_fn = MaulE_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("Maul_F", MAULF_LDATA, level->init_fn = MaulF_Init; level->reset_fn = MaulF_Reset;
-                      level->update_fn = MaulF_Update; level->draw_status_fn = MaulF_Panel;)
+    {
+        LEVELDATA *level = Level_FindByName("Maul_F", NULL);
+        MAULF_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = MaulF_Init;
+            level->reset_fn = MaulF_Reset;
+            level->update_fn = MaulF_Update;
+            level->draw_status_fn = MaulF_Panel;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("Jedi_B", JEDI_B_LDATA, level->init_fn = JediB_Init; level->reset_fn = JediB_Reset;
-                      level->update_fn = JediB_Update; level->draw_status_fn = JediB_DrawPanel;)
+    {
+        LEVELDATA *level = Level_FindByName("Jedi_B", NULL);
+        JEDI_B_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = JediB_Init;
+            level->reset_fn = JediB_Reset;
+            level->update_fn = JediB_Update;
+            level->draw_status_fn = JediB_DrawPanel;
+        }
+    }
 
     {
         LEVELDATA *level = Level_FindByName("Jedi_Outro", NULL);
@@ -695,26 +831,73 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
-    LEVEL_FIXUP_LDATA("gunship_b", GUNSHIPB_LDATA, level->reset_fn = GunshipB_Reset;)
+    {
+        LEVELDATA *level = Level_FindByName("gunship_b", NULL);
+        GUNSHIPB_LDATA = level;
+        if (level != NULL) {
+            level->reset_fn = GunshipB_Reset;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("bonus_gunship_a", BONUS_GUNSHIPA_LDATA, level->reset_fn = BonusGunshipA_Reset;
-                      level->update_fn = BonusGunshipA_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("bonus_gunship_a", NULL);
+        BONUS_GUNSHIPA_LDATA = level;
+        if (level != NULL) {
+            level->reset_fn = BonusGunshipA_Reset;
+            level->update_fn = BonusGunshipA_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("bonus_gunship_b", BONUS_GUNSHIPB_LDATA, level->init_fn = BonusGunshipB_Init;
-                      level->reset_fn = BonusGunshipB_Reset; level->update_fn = BonusGunshipB_Update;
-                      level->draw_status_fn = BonusGunshipB_Panel;)
+    {
+        LEVELDATA *level = Level_FindByName("bonus_gunship_b", NULL);
+        BONUS_GUNSHIPB_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = BonusGunshipB_Init;
+            level->reset_fn = BonusGunshipB_Reset;
+            level->update_fn = BonusGunshipB_Update;
+            level->draw_status_fn = BonusGunshipB_Panel;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("pursuit_a", BOUNTYHUNTERPURSUITA_LDATA, level->init_fn = BountyHunterPursuitA_Init;
-                      level->reset_fn = BountyHunterPursuitA_Reset; level->update_fn = BountyHunterPursuitA_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("pursuit_a", NULL);
+        BOUNTYHUNTERPURSUITA_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = BountyHunterPursuitA_Init;
+            level->reset_fn = BountyHunterPursuitA_Reset;
+            level->update_fn = BountyHunterPursuitA_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("pursuit_b", BOUNTYHUNTERPURSUITB_LDATA, level->init_fn = BountyHunterPursuitB_Init;
-                      level->reset_fn = BountyHunterPursuitB_Reset; level->update_fn = BountyHunterPursuitB_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("pursuit_b", NULL);
+        BOUNTYHUNTERPURSUITB_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = BountyHunterPursuitB_Init;
+            level->reset_fn = BountyHunterPursuitB_Reset;
+            level->update_fn = BountyHunterPursuitB_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("pursuit_c", BOUNTYHUNTERPURSUITC_LDATA, level->init_fn = BountyHunterPursuitC_Init;
-                      level->reset_fn = BountyHunterPursuitC_Reset; level->update_fn = BountyHunterPursuitC_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("pursuit_c", NULL);
+        BOUNTYHUNTERPURSUITC_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = BountyHunterPursuitC_Init;
+            level->reset_fn = BountyHunterPursuitC_Reset;
+            level->update_fn = BountyHunterPursuitC_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("pursuit_d", BOUNTYHUNTERPURSUITD_LDATA, level->init_fn = BountyHunterPursuitD_Init;
-                      level->reset_fn = BountyHunterPursuitD_Reset; level->update_fn = BountyHunterPursuitD_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("pursuit_d", NULL);
+        BOUNTYHUNTERPURSUITD_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = BountyHunterPursuitD_Init;
+            level->reset_fn = BountyHunterPursuitD_Reset;
+            level->update_fn = BountyHunterPursuitD_Update;
+        }
+    }
 
     {
         LEVELDATA *level = Level_FindByName("pursuit_e", NULL);
@@ -733,8 +916,16 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
-    LEVEL_FIXUP_LDATA("Factory_B", FACTORYB_LDATA, level->init_fn = FactoryB_Init; level->reset_fn = FactoryB_Reset;
-                      level->update_fn = FactoryB_Update; level->draw_fn = FactoryB_Draw;)
+    {
+        LEVELDATA *level = Level_FindByName("Factory_B", NULL);
+        FACTORYB_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = FactoryB_Init;
+            level->reset_fn = FactoryB_Reset;
+            level->update_fn = FactoryB_Update;
+            level->draw_fn = FactoryB_Draw;
+        }
+    }
 
     {
         LEVELDATA *level = Level_FindByName("Factory_D", NULL);
@@ -750,10 +941,25 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
-    LEVEL_FIXUP_LDATA("Factory_G", FACTORYG_LDATA, level->init_fn = FactoryG_Init; level->update_fn = FactoryG_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("Factory_G", NULL);
+        FACTORYG_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = FactoryG_Init;
+            level->update_fn = FactoryG_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("Dooku_C", DOOKUC_LDATA, level->init_fn = DookuC_Init; level->reset_fn = DookuC_Reset;
-                      level->update_fn = DookuC_Update; level->draw_status_fn = DookuC_DrawPanel;)
+    {
+        LEVELDATA *level = Level_FindByName("Dooku_C", NULL);
+        DOOKUC_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = DookuC_Init;
+            level->reset_fn = DookuC_Reset;
+            level->update_fn = DookuC_Update;
+            level->draw_status_fn = DookuC_DrawPanel;
+        }
+    }
 
     {
         LEVELDATA *level = Level_FindByName("Dooku_Outro", NULL);
@@ -769,11 +975,30 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
-    LEVEL_FIXUP("?", level->reset_fn = KaminoC_Reset; level->init_fn = KaminoC_Init; level->update_fn = KaminoC_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("?", NULL);
+        if (level != NULL) {
+            level->reset_fn = KaminoC_Reset;
+            level->init_fn = KaminoC_Init;
+            level->update_fn = KaminoC_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("Kamino_D", KAMINOD_LDATA, level->init_fn = KaminoD_Init;)
+    {
+        LEVELDATA *level = Level_FindByName("Kamino_D", NULL);
+        KAMINOD_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = KaminoD_Init;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("Kamino_Outro1", KAMINOOUTRO_LDATA, level->init_fn = KaminoOutro_Init;)
+    {
+        LEVELDATA *level = Level_FindByName("Kamino_Outro1", NULL);
+        KAMINOOUTRO_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = KaminoOutro_Init;
+        }
+    }
 
     {
         LEVELDATA *level = Level_FindByName("Kamino_Outro1", NULL);
@@ -788,14 +1013,34 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
-    LEVEL_FIXUP_LDATA("Kamino_E", KAMINOE_LDATA, level->reset_fn = KaminoE_Reset; level->init_fn = KaminoE_Init;
-                      level->always_update_fn = KaminoE_AlwaysUpdate; level->update_fn = KaminoE_Update;
-                      level->draw_fn = KaminoE_Draw;)
+    {
+        LEVELDATA *level = Level_FindByName("Kamino_E", NULL);
+        KAMINOE_LDATA = level;
+        if (level != NULL) {
+            level->reset_fn = KaminoE_Reset;
+            level->init_fn = KaminoE_Init;
+            level->always_update_fn = KaminoE_AlwaysUpdate;
+            level->update_fn = KaminoE_Update;
+            level->draw_fn = KaminoE_Draw;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("Kamino_F", KAMINOF_LDATA, level->init_fn = KaminoF_Init;)
+    {
+        LEVELDATA *level = Level_FindByName("Kamino_F", NULL);
+        KAMINOF_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = KaminoF_Init;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("NB_Kamino_a", NB_KAMINOALDATA_LDATA, level->init_fn = NbKaminoA_Init;
-                      level->always_update_fn = KaminoA_AlwaysUpdate;)
+    {
+        LEVELDATA *level = Level_FindByName("NB_Kamino_a", NULL);
+        NB_KAMINOALDATA_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = NbKaminoA_Init;
+            level->always_update_fn = KaminoA_AlwaysUpdate;
+        }
+    }
 
     {
         LEVELDATA *level = Level_FindByName("Dogfight_A", NULL);
@@ -830,8 +1075,15 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
-    LEVEL_FIXUP_LDATA("Cruiser_D", CRUISERD_LDATA, level->init_fn = CruiserDInit; level->reset_fn = CruiserDReset;
-                      level->update_fn = CruiserDUpdate;)
+    {
+        LEVELDATA *level = Level_FindByName("Cruiser_D", NULL);
+        CRUISERD_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = CruiserDInit;
+            level->reset_fn = CruiserDReset;
+            level->update_fn = CruiserDUpdate;
+        }
+    }
 
     {
         LEVELDATA *level = Level_FindByName("Cruiser_E", NULL);
@@ -847,10 +1099,23 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
-    LEVEL_FIXUP_LDATA("Grievous_A", GRIEVOUSA_LDATA, level->init_fn = GrievousA_Init; level->reset_fn = GrievousA_Reset;
-                      level->update_fn = GrievousA_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("Grievous_A", NULL);
+        GRIEVOUSA_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = GrievousA_Init;
+            level->reset_fn = GrievousA_Reset;
+            level->update_fn = GrievousA_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("temple_A", TEMPLEA_LDATA, level->init_fn = TempleA_Init;)
+    {
+        LEVELDATA *level = Level_FindByName("temple_A", NULL);
+        TEMPLEA_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = TempleA_Init;
+        }
+    }
 
     {
         LEVELDATA *level = Level_FindByName("temple_b", NULL);
@@ -886,40 +1151,125 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
-    LEVEL_FIXUP_LDATA("Kashyyyk_B", KASHYYYKB_LDATA, level->init_fn = KashyyykB_Init; level->reset_fn = KashyyykB_Reset;
-                      level->update_fn = KashyyykB_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("Kashyyyk_B", NULL);
+        KASHYYYKB_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = KashyyykB_Init;
+            level->reset_fn = KashyyykB_Reset;
+            level->update_fn = KashyyykB_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("Kashyyyk_C", KASHYYYKC_LDATA, level->init_fn = KashyyykC_Init;
-                      level->update_fn = KashyyykC_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("Kashyyyk_C", NULL);
+        KASHYYYKC_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = KashyyykC_Init;
+            level->update_fn = KashyyykC_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("Kashyyyk_D", KASHYYYKD_LDATA, level->init_fn = KashyyykD_Init; level->reset_fn = KashyyykD_Reset;
-                      level->update_fn = KashyyykD_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("Kashyyyk_D", NULL);
+        KASHYYYKD_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = KashyyykD_Init;
+            level->reset_fn = KashyyykD_Reset;
+            level->update_fn = KashyyykD_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("vader_a", VADERA_LDATA, level->init_fn = VaderA_Init; level->reset_fn = VaderA_Reset;
-                      level->update_fn = VaderA_Update; level->draw_status_fn = VaderA_DrawPanel;)
+    {
+        LEVELDATA *level = Level_FindByName("vader_a", NULL);
+        VADERA_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = VaderA_Init;
+            level->reset_fn = VaderA_Reset;
+            level->update_fn = VaderA_Update;
+            level->draw_status_fn = VaderA_DrawPanel;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("vader_b", VADERB_LDATA, level->init_fn = VaderB_Init; level->reset_fn = VaderB_Reset;
-                      level->update_fn = VaderB_Update; level->draw_status_fn = VaderB_DrawPanel;)
+    {
+        LEVELDATA *level = Level_FindByName("vader_b", NULL);
+        VADERB_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = VaderB_Init;
+            level->reset_fn = VaderB_Reset;
+            level->update_fn = VaderB_Update;
+            level->draw_status_fn = VaderB_DrawPanel;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("vader_c", VADERC_LDATA, level->init_fn = VaderC_Init; level->reset_fn = VaderC_Reset;
-                      level->update_fn = VaderC_Update; level->draw_status_fn = VaderC_DrawPanel;)
+    {
+        LEVELDATA *level = Level_FindByName("vader_c", NULL);
+        VADERC_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = VaderC_Init;
+            level->reset_fn = VaderC_Reset;
+            level->update_fn = VaderC_Update;
+            level->draw_status_fn = VaderC_DrawPanel;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("BlockadeRunner_B", BLOCKADERUNNERB_LDATA, level->init_fn = BlockadeRunnerB_Init;
-                      level->update_fn = BlockadeRunnerB_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("BlockadeRunner_B", NULL);
+        BLOCKADERUNNERB_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = BlockadeRunnerB_Init;
+            level->update_fn = BlockadeRunnerB_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("BlockadeRunner_C", BLOCKADERUNNERC_LDATA, level->init_fn = BlockadeRunnerC_Init;)
+    {
+        LEVELDATA *level = Level_FindByName("BlockadeRunner_C", NULL);
+        BLOCKADERUNNERC_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = BlockadeRunnerC_Init;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("BlockadeRunner_D", BLOCKADERUNNERD_LDATA, level->reset_fn = BlockadeRunnerD_Reset;
-                      level->update_fn = BlockadeRunnerD_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("BlockadeRunner_D", NULL);
+        BLOCKADERUNNERD_LDATA = level;
+        if (level != NULL) {
+            level->reset_fn = BlockadeRunnerD_Reset;
+            level->update_fn = BlockadeRunnerD_Update;
+        }
+    }
 
-    LEVEL_FIXUP("BlockadeRunner_D", level->init_fn = TatooineB_Init;)
+    {
+        LEVELDATA *level = Level_FindByName("BlockadeRunner_D", NULL);
+        if (level != NULL) {
+            level->init_fn = TatooineB_Init;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("tatooine_c", TATOOINEC_LDATA, level->init_fn = TatooineC_Init;)
+    {
+        LEVELDATA *level = Level_FindByName("tatooine_c", NULL);
+        TATOOINEC_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = TatooineC_Init;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("moseisley_a", MOSEISLEYA_LDATA, level->init_fn = MosEisleyA_Init;)
+    {
+        LEVELDATA *level = Level_FindByName("moseisley_a", NULL);
+        MOSEISLEYA_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = MosEisleyA_Init;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("moseisley_b", MOSEISLEYB_LDATA, level->init_fn = MosEisleyB_Init;
-                      level->update_fn = MosEisleyB_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("moseisley_b", NULL);
+        MOSEISLEYB_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = MosEisleyB_Init;
+            level->update_fn = MosEisleyB_Update;
+        }
+    }
 
     {
         LEVELDATA *level = Level_FindByName("moseisley_c", NULL);
@@ -937,11 +1287,24 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
-    LEVEL_FIXUP_LDATA("moseisley_e", MOSEISLEYE_LDATA, level->init_fn = MosEisleyE_Init;
-                      level->reset_fn = MosEisleyE_Reset; level->update_fn = MosEisleyE_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("moseisley_e", NULL);
+        MOSEISLEYE_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = MosEisleyE_Init;
+            level->reset_fn = MosEisleyE_Reset;
+            level->update_fn = MosEisleyE_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("tatooine_a", TATOOINEA_LDATA, level->init_fn = TatooineA_Init;
-                      level->update_fn = TatooineA_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("tatooine_a", NULL);
+        TATOOINEA_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = TatooineA_Init;
+            level->update_fn = TatooineA_Update;
+        }
+    }
 
     {
         LEVELDATA *level = Level_FindByName("tatooine_a", NULL);
@@ -972,12 +1335,24 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
-    LEVEL_FIXUP_LDATA("deathstarrescue_b", DEATHSTARRESCUEB_LDATA, level->init_fn = DeathStarRescueB_Init;
-                      level->update_fn = DeathStarRescueB_Update;
-                      level->always_update_fn = DeathStarRescueB_AlwaysUpdate;)
+    {
+        LEVELDATA *level = Level_FindByName("deathstarrescue_b", NULL);
+        DEATHSTARRESCUEB_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = DeathStarRescueB_Init;
+            level->update_fn = DeathStarRescueB_Update;
+            level->always_update_fn = DeathStarRescueB_AlwaysUpdate;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("deathstarrescue_c", DEATHSTARRESCUEC_LDATA, level->init_fn = DeathStarRescueC_Init;
-                      level->always_update_fn = DeathStarRescueC_AlwaysUpdate;)
+    {
+        LEVELDATA *level = Level_FindByName("deathstarrescue_c", NULL);
+        DEATHSTARRESCUEC_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = DeathStarRescueC_Init;
+            level->always_update_fn = DeathStarRescueC_AlwaysUpdate;
+        }
+    }
 
     {
         LEVELDATA *level = Level_FindByName("deathstarrescue_d", NULL);
@@ -993,17 +1368,43 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
-    LEVEL_FIXUP_LDATA("deathstarescape_a", DEATHSTARESCAPEA_LDATA, level->init_fn = DeathStarEscapeA_Init;
-                      level->update_fn = DeathStarEscapeA_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("deathstarescape_a", NULL);
+        DEATHSTARESCAPEA_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = DeathStarEscapeA_Init;
+            level->update_fn = DeathStarEscapeA_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("deathstarescape_b", DEATHSTARESCAPEB_LDATA, level->init_fn = DeathStarEscapeB_Init;
-                      level->update_fn = DeathStarEscapeB_Update;
-                      level->always_update_fn = DeathStarEscapeB_AlwaysUpdate; level->draw_fn = DeathStarEscapeB_Draw;)
+    {
+        LEVELDATA *level = Level_FindByName("deathstarescape_b", NULL);
+        DEATHSTARESCAPEB_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = DeathStarEscapeB_Init;
+            level->update_fn = DeathStarEscapeB_Update;
+            level->always_update_fn = DeathStarEscapeB_AlwaysUpdate;
+            level->draw_fn = DeathStarEscapeB_Draw;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("deathstarescape_c", DEATHSTARESCAPEC_LDATA, level->init_fn = DeathStarEscapeC_Init;
-                      level->update_fn = DeathStarEscapeC_Update; level->reset_fn = DeathStarEscapeC_Reset;)
+    {
+        LEVELDATA *level = Level_FindByName("deathstarescape_c", NULL);
+        DEATHSTARESCAPEC_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = DeathStarEscapeC_Init;
+            level->update_fn = DeathStarEscapeC_Update;
+            level->reset_fn = DeathStarEscapeC_Reset;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("deathstarescape_d", DEATHSTARESCAPED_LDATA, level->update_fn = DeathStarEscapeD_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("deathstarescape_d", NULL);
+        DEATHSTARESCAPED_LDATA = level;
+        if (level != NULL) {
+            level->update_fn = DeathStarEscapeD_Update;
+        }
+    }
 
     {
         LEVELDATA *level = Level_FindByName("deathstarbattle_a", NULL);
@@ -1019,16 +1420,35 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
-    LEVEL_FIXUP_LDATA("deathstarbattle_c", DEATHSTARBATTLEC_LDATA,
-                      level->always_update_fn = DeathStarBattleC_AlwaysUpdate;)
+    {
+        LEVELDATA *level = Level_FindByName("deathstarbattle_c", NULL);
+        DEATHSTARBATTLEC_LDATA = level;
+        if (level != NULL) {
+            level->always_update_fn = DeathStarBattleC_AlwaysUpdate;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("deathstarbattle_d", DEATHSTARBATTLED_LDATA, level->init_fn = DeathStarBattleDInit;
-                      level->update_fn = DeathStarBattleDUpdate; level->draw_fn = DeathStarBattleDDraw;
-                      level->reset_fn = DeathStarBattleDReset;)
+    {
+        LEVELDATA *level = Level_FindByName("deathstarbattle_d", NULL);
+        DEATHSTARBATTLED_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = DeathStarBattleDInit;
+            level->update_fn = DeathStarBattleDUpdate;
+            level->draw_fn = DeathStarBattleDDraw;
+            level->reset_fn = DeathStarBattleDReset;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("hothbattle_a", HOTHBATTLEA_LDATA, level->init_fn = HothBattleA_Init;
-                      level->reset_fn = HothBattleA_Reset; level->update_fn = HothBattleA_Update;
-                      level->draw_fn = HothBattleA_Draw;)
+    {
+        LEVELDATA *level = Level_FindByName("hothbattle_a", NULL);
+        HOTHBATTLEA_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = HothBattleA_Init;
+            level->reset_fn = HothBattleA_Reset;
+            level->update_fn = HothBattleA_Update;
+            level->draw_fn = HothBattleA_Draw;
+        }
+    }
 
     {
         LEVELDATA *level = Level_FindByName("hothbattle_b", NULL);
@@ -1083,27 +1503,76 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
-    LEVEL_FIXUP_LDATA("hothescape_b", HOTHESCAPEB_LDATA, level->init_fn = HothEscapeB_Init;
-                      level->update_fn = HothEscapeB_Update; level->reset_fn = HothEscapeB_Reset;)
+    {
+        LEVELDATA *level = Level_FindByName("hothescape_b", NULL);
+        HOTHESCAPEB_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = HothEscapeB_Init;
+            level->update_fn = HothEscapeB_Update;
+            level->reset_fn = HothEscapeB_Reset;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("hothescape_c", HOTHESCAPEC_LDATA, level->init_fn = HothEscapeC_Init;
-                      level->update_fn = HothEscapeC_Update; level->always_update_fn = HothEscapeC_AlwaysUpdate;
-                      level->reset_fn = HothEscapeC_Reset;)
+    {
+        LEVELDATA *level = Level_FindByName("hothescape_c", NULL);
+        HOTHESCAPEC_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = HothEscapeC_Init;
+            level->update_fn = HothEscapeC_Update;
+            level->always_update_fn = HothEscapeC_AlwaysUpdate;
+            level->reset_fn = HothEscapeC_Reset;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("hothescape_d", HOTHESCAPED_LDATA, level->init_fn = HothEscapeD_Init;
-                      level->update_fn = HothEscapeD_Update; level->reset_fn = HothEscapeD_Reset;)
+    {
+        LEVELDATA *level = Level_FindByName("hothescape_d", NULL);
+        HOTHESCAPED_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = HothEscapeD_Init;
+            level->update_fn = HothEscapeD_Update;
+            level->reset_fn = HothEscapeD_Reset;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("AsteroidChase_A", ASTEROIDCHASEA_LDATA, level->init_fn = AsteroidChaseA_Init;
-                      level->reset_fn = AsteroidChaseA_Reset; level->update_fn = AsteroidChaseA_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("AsteroidChase_A", NULL);
+        ASTEROIDCHASEA_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = AsteroidChaseA_Init;
+            level->reset_fn = AsteroidChaseA_Reset;
+            level->update_fn = AsteroidChaseA_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("AsteroidChase_B", ASTEROIDCHASEB_LDATA, level->init_fn = AsteroidChaseB_Init;
-                      level->reset_fn = AsteroidChaseB_Reset; level->update_fn = AsteroidChaseB_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("AsteroidChase_B", NULL);
+        ASTEROIDCHASEB_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = AsteroidChaseB_Init;
+            level->reset_fn = AsteroidChaseB_Reset;
+            level->update_fn = AsteroidChaseB_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("AsteroidChase_C", ASTEROIDCHASEC_LDATA, level->init_fn = AsteroidChaseC_Init;
-                      level->reset_fn = AsteroidChaseC_Reset; level->update_fn = AsteroidChaseC_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("AsteroidChase_C", NULL);
+        ASTEROIDCHASEC_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = AsteroidChaseC_Init;
+            level->reset_fn = AsteroidChaseC_Reset;
+            level->update_fn = AsteroidChaseC_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("AsteroidChase_D", ASTEROIDCHASED_LDATA, level->init_fn = AsteroidChaseD_Init;
-                      level->update_fn = AsteroidChaseD_Update; level->draw_fn = AsteroidChaseD_Panel;)
+    {
+        LEVELDATA *level = Level_FindByName("AsteroidChase_D", NULL);
+        ASTEROIDCHASED_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = AsteroidChaseD_Init;
+            level->update_fn = AsteroidChaseD_Update;
+            level->draw_fn = AsteroidChaseD_Panel;
+        }
+    }
 
     {
         LEVELDATA *level = Level_FindByName("AsteroidChase_Midtro", NULL);
@@ -1134,21 +1603,59 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
-    LEVEL_FIXUP("dagobah_d", level->init_fn = DagobahE_Init;)
+    {
+        LEVELDATA *level = Level_FindByName("dagobah_d", NULL);
+        if (level != NULL) {
+            level->init_fn = DagobahE_Init;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("dagobah_b", DAGOBAHB_LDATA, level->init_fn = DagobahB_Init; level->reset_fn = DagobahB_Reset;)
+    {
+        LEVELDATA *level = Level_FindByName("dagobah_b", NULL);
+        DAGOBAHB_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = DagobahB_Init;
+            level->reset_fn = DagobahB_Reset;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("dagobah_c", DAGOBAHC_LDATA, level->init_fn = DagobahC_Init;
-                      level->draw_status_fn = DagobahC_Panel;)
+    {
+        LEVELDATA *level = Level_FindByName("dagobah_c", NULL);
+        DAGOBAHC_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = DagobahC_Init;
+            level->draw_status_fn = DagobahC_Panel;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("CloudCityTrap_A", CLOUDCITYTRAPA_LDATA, level->init_fn = CloudCityTrapA_Init;
-                      level->update_fn = CloudCityTrapA_Update; level->reset_fn = CloudCityTrapA_Reset;)
+    {
+        LEVELDATA *level = Level_FindByName("CloudCityTrap_A", NULL);
+        CLOUDCITYTRAPA_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = CloudCityTrapA_Init;
+            level->update_fn = CloudCityTrapA_Update;
+            level->reset_fn = CloudCityTrapA_Reset;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("CloudCityTrap_B", CLOUDCITYTRAPB_LDATA, level->init_fn = CloudCityTrapB_Init;
-                      level->update_fn = CloudCityTrapB_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("CloudCityTrap_B", NULL);
+        CLOUDCITYTRAPB_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = CloudCityTrapB_Init;
+            level->update_fn = CloudCityTrapB_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("CloudCityTrap_C", CLOUDCITYTRAPC_LDATA, level->reset_fn = CloudCityTrapC_Reset;
-                      level->update_fn = CloudCityTrapC_Update; level->draw_status_fn = CloudCityTrapC_Panel;)
+    {
+        LEVELDATA *level = Level_FindByName("CloudCityTrap_C", NULL);
+        CLOUDCITYTRAPC_LDATA = level;
+        if (level != NULL) {
+            level->reset_fn = CloudCityTrapC_Reset;
+            level->update_fn = CloudCityTrapC_Update;
+            level->draw_status_fn = CloudCityTrapC_Panel;
+        }
+    }
 
     {
         LEVELDATA *level = Level_FindByName("CloudCityTrap_Outro", NULL);
@@ -1184,17 +1691,43 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
-    LEVEL_FIXUP_LDATA("jabbaspalace_a", JABBASPALACEA_LDATA, level->init_fn = JabbasPalaceA_Init;
-                      level->reset_fn = JabbasPalaceA_Reset; level->update_fn = JabbasPalaceA_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("jabbaspalace_a", NULL);
+        JABBASPALACEA_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = JabbasPalaceA_Init;
+            level->reset_fn = JabbasPalaceA_Reset;
+            level->update_fn = JabbasPalaceA_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("jabbaspalace_b", JABBASPALACEB_LDATA, level->init_fn = JabbasPalaceB_Init;
-                      level->reset_fn = JabbasPalaceB_Reset;)
+    {
+        LEVELDATA *level = Level_FindByName("jabbaspalace_b", NULL);
+        JABBASPALACEB_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = JabbasPalaceB_Init;
+            level->reset_fn = JabbasPalaceB_Reset;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("jabbaspalace_d", JABBASPALACED_LDATA, level->reset_fn = JabbasPalaceD_Reset;)
+    {
+        LEVELDATA *level = Level_FindByName("jabbaspalace_d", NULL);
+        JABBASPALACED_LDATA = level;
+        if (level != NULL) {
+            level->reset_fn = JabbasPalaceD_Reset;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("jabbaspalace_e", JABBASPALACEE_LDATA, level->init_fn = JabbasPalaceE_Init;
-                      level->reset_fn = JabbasPalaceE_Reset; level->update_fn = JabbasPalaceE_Update;
-                      level->draw_status_fn = JabbasPalaceE_Panel;)
+    {
+        LEVELDATA *level = Level_FindByName("jabbaspalace_e", NULL);
+        JABBASPALACEE_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = JabbasPalaceE_Init;
+            level->reset_fn = JabbasPalaceE_Reset;
+            level->update_fn = JabbasPalaceE_Update;
+            level->draw_status_fn = JabbasPalaceE_Panel;
+        }
+    }
 
     {
         LEVELDATA *level = Level_FindByName("jabbaspalace_Outro", NULL);
@@ -1258,14 +1791,35 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
-    LEVEL_FIXUP_LDATA("DeathStar2Battle_E", DEATHSTAR2BATTLEE_LDATA, level->init_fn = DeathStar2BattleFire_Init;
-                      level->update_fn = DeathStar2BattleFire_Update; level->draw_fn = DeathStar2BattleFire_Draw;)
+    {
+        LEVELDATA *level = Level_FindByName("DeathStar2Battle_E", NULL);
+        DEATHSTAR2BATTLEE_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = DeathStar2BattleFire_Init;
+            level->update_fn = DeathStar2BattleFire_Update;
+            level->draw_fn = DeathStar2BattleFire_Draw;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("DeathStar2Battle_F", DEATHSTAR2BATTLEF_LDATA, level->init_fn = DeathStar2BattleFire_Init;
-                      level->update_fn = DeathStar2BattleFire_Update; level->draw_fn = DeathStar2BattleFire_Draw;)
+    {
+        LEVELDATA *level = Level_FindByName("DeathStar2Battle_F", NULL);
+        DEATHSTAR2BATTLEF_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = DeathStar2BattleFire_Init;
+            level->update_fn = DeathStar2BattleFire_Update;
+            level->draw_fn = DeathStar2BattleFire_Draw;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("DeathStar2Battle_G", DEATHSTAR2BATTLEG_LDATA, level->init_fn = DeathStar2BattleFire_Init;
-                      level->update_fn = DeathStar2BattleFire_Update; level->draw_fn = DeathStar2BattleFire_Draw;)
+    {
+        LEVELDATA *level = Level_FindByName("DeathStar2Battle_G", NULL);
+        DEATHSTAR2BATTLEG_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = DeathStar2BattleFire_Init;
+            level->update_fn = DeathStar2BattleFire_Update;
+            level->draw_fn = DeathStar2BattleFire_Draw;
+        }
+    }
 
     {
         LEVELDATA *level = Level_FindByName("DeathStar2Battle_Midtro", NULL);
@@ -1285,26 +1839,79 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
-    LEVEL_FIXUP_LDATA("SarlaccPit_A", SARLACCPITA_LDATA, level->reset_fn = SarlaccPitA_Reset;
-                      level->draw_fn = SarlaccPitA_Draw;)
+    {
+        LEVELDATA *level = Level_FindByName("SarlaccPit_A", NULL);
+        SARLACCPITA_LDATA = level;
+        if (level != NULL) {
+            level->reset_fn = SarlaccPitA_Reset;
+            level->draw_fn = SarlaccPitA_Draw;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("SarlaccPit_B", SARLACCPITB_LDATA, level->init_fn = SarlaccPitB_Init;
-                      level->reset_fn = SarlaccPitB_Reset; level->update_fn = SarlaccPitB_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("SarlaccPit_B", NULL);
+        SARLACCPITB_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = SarlaccPitB_Init;
+            level->reset_fn = SarlaccPitB_Reset;
+            level->update_fn = SarlaccPitB_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("SarlaccPit_C", SARLACCPITC_LDATA, level->init_fn = SarlaccPitC_Init;
-                      level->reset_fn = SarlaccPitC_Reset; level->update_fn = SarlaccPitC_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("SarlaccPit_C", NULL);
+        SARLACCPITC_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = SarlaccPitC_Init;
+            level->reset_fn = SarlaccPitC_Reset;
+            level->update_fn = SarlaccPitC_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("lego_city", LEGOCITY_LDATA, level->init_fn = LegoCity_Init; level->reset_fn = LegoCity_Reset;
-                      level->update_fn = LegoCity_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("lego_city", NULL);
+        LEGOCITY_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = LegoCity_Init;
+            level->reset_fn = LegoCity_Reset;
+            level->update_fn = LegoCity_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("Senate_a", SENATEA_LDATA, level->init_fn = SenateA_Init;)
+    {
+        LEVELDATA *level = Level_FindByName("Senate_a", NULL);
+        SENATEA_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = SenateA_Init;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("new_town", NEWTOWN_LDATA, level->init_fn = NewTown_Init; level->reset_fn = NewTown_Reset;
-                      level->update_fn = NewTown_Update;)
+    {
+        LEVELDATA *level = Level_FindByName("new_town", NULL);
+        NEWTOWN_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = NewTown_Init;
+            level->reset_fn = NewTown_Reset;
+            level->update_fn = NewTown_Update;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("platform", PLATFORM_LDATA, level->init_fn = Platform_Init; level->reset_fn = Platform_Reset;)
+    {
+        LEVELDATA *level = Level_FindByName("platform", NULL);
+        PLATFORM_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = Platform_Init;
+            level->reset_fn = Platform_Reset;
+        }
+    }
 
-    LEVEL_FIXUP_LDATA("E1CharacterBonus_A", E1CHARACTERBONUSA_LDATA, level->init_fn = E1CharacterBonus_Init;)
+    {
+        LEVELDATA *level = Level_FindByName("E1CharacterBonus_A", NULL);
+        E1CHARACTERBONUSA_LDATA = level;
+        if (level != NULL) {
+            level->init_fn = E1CharacterBonus_Init;
+        }
+    }
 
     {
         LEVELDATA *level = Level_FindByName("E2VehicleBonus_A", NULL);
