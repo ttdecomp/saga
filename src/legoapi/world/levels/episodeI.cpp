@@ -28,7 +28,7 @@ static GIZAIMESSAGE_s *RetakeG_TotalGuards_msg;
 static GIZAIMESSAGE_s *RetakeG_GuardsToRescue_msg;
 extern i16 trooper_boltid;
 extern i8 trooper_side[];
-extern i32 hothtroopers;
+extern void *hothtroopers;
 extern i32 TimingBarSet;
 i16 BoltType_FindIDByName(char *, WORLDINFO_s *);
 void TBOPENFN(char *, i32);
@@ -1134,9 +1134,11 @@ void AnakinsFlightB_Init(WORLDINFO_s *world) {
     trooper_side[0] = 0;
     trooper_side[1] = 0;
     trooper_side[2] = 0;
-    NuSpecialFind(world->current_gscn, (void **)LevHSpecial, "minifig_1_1");
-    NuSpecialFind(world->current_gscn, (void **)((char *)LevHSpecial + 0xc), "minifig_1_2");
-    NuSpecialFind(world->current_gscn, (void **)((char *)LevHSpecial + 0x18), "minifig_1_3");
+    i32 count = NuSpecialFind(world->current_gscn, (void **)LevHSpecial, "minifig_1_1") != NULL;
+    count += NuSpecialFind(world->current_gscn, (void **)((u8 *)LevHSpecial + 0xc), "minifig_1_2") != NULL;
+    count += NuSpecialFind(world->current_gscn, (void **)((u8 *)LevHSpecial + 0x18), "minifig_1_3") != NULL;
+    if (count == 3)
+        hothtroopers = (void *)LevHSpecial;
 }
 
 void AnakinsFlightB_Update(WORLDINFO_s *) {
