@@ -55,8 +55,8 @@ extern void NewCutScene(CUTINFO *, CUTSYS *, char *, i32);
 extern void ClearLevelProgress(i32, struct WORLDINFO_s *);
 
 // --- Areas (areas.cpp) ---
-extern char Game[0x7e58];
-extern char BackupGame[0x7e58];
+extern struct GAMESAVE_s Game;
+extern struct GAMESAVE_s BackupGame;
 extern i32 Customiser_AccessoriesLoaded;
 extern NUGSCN *vehicle_scene;
 extern CUSTOMISER *CharacterCustomiser;
@@ -66,7 +66,7 @@ extern i32 Area;
 extern i32 last_area;
 extern NUGSCN *big_icon_scene;
 extern NUGSCN *area_scene;
-extern void *HUB_LDATA;
+extern struct LEVELDATA_s *HUB_LDATA;
 extern i32 LSW1;
 extern i32 LSW2;
 extern i32 Arcade;
@@ -84,10 +84,10 @@ extern i32 LevelChange;
 extern i32 BombGenerator_PlayerBomb[2];
 extern i32 Lap;
 extern f32 LevTime;
-extern char AreaGlobals[0x34];
+extern i32 AreaGlobals;
 extern i32 Door_UseCutCam;
 extern GameObject_s *Player[8];
-extern char PlayerProgress[0x80];
+extern struct playerprogress_s PlayerProgress[8];
 extern i32 DEFAULT_PLAYERHITPOINTS;
 extern i32 Area_PlayerModelCount;
 extern i32 Area_StoryModelCount;
@@ -97,7 +97,7 @@ extern i16 Area_FreePlayModelList[104];
 extern i32 Area_MissionModelCount;
 extern APICHARACTERMODELLIST_s Area_MissionModelList[52];
 extern i16 AreaMusic;
-extern void *MissionSys;
+extern struct MISSIONSYS_s *MissionSys;
 extern APICHARACTERMODELLIST_s Area_StoryModelList[52];
 extern void *LevelLoad;
 extern i32 LevelLoadCount;
@@ -105,7 +105,7 @@ extern i32 LevelLoadCount;
 // --- Level streaming (levelstreaming.cpp) ---
 extern i32 LOADEROFF;
 extern i32 BGLOAD;
-extern void *NewLData;
+extern struct LEVELDATA_s *NewLData;
 extern i32 no_more_loads;
 extern i32 other_level;
 extern i32 other_level_override;
@@ -115,7 +115,7 @@ extern i32 WaitingForLevelTime;
 extern f32 g_BgLoadDelayHackTimer;
 
 // --- Level objects (levelobjects.cpp) ---
-extern void *ObjTabList;
+extern struct LEVELOBJECT *ObjTabList;
 
 // --- Function prototypes ---
 extern i32 Store_IsPackUnlocked(i32);

@@ -5,6 +5,8 @@
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/world.h"
 #include "legoapi/world/level_shared.h"
+#include "globals.h"
+#include "legoapi/characters/core/players.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nu3d/nuspline.h"
 #include "nu2api/numath/nurand.h"
@@ -68,8 +70,6 @@ extern i32 nethost;
 extern i32 clients_mines_bitfield[];
 extern i32 pod_mines_bitfield[];
 extern i32 mine_count;
-struct PLAYERDATA;
-extern PLAYERDATA *apicharsys;
 extern i16 id_ANAKINSPOD;
 static float pod_roll[2];
 static float pod_roll_target[2];
@@ -157,7 +157,6 @@ extern i16 id_XWING;
 extern i16 id_SNOWSPEEDER;
 extern i16 id_MILLENNIUMFALCON;
 extern i16 id_NEW_REPUBLIC_GUNSHIP;
-struct PLAYERDATA;
 extern "C" void NuSpecialDrawAt(void *, void *);
 
 static struct {

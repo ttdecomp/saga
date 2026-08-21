@@ -13,7 +13,7 @@ void Areas_OpenAll(i32 mode) {
         return;
     }
     if (AREACOUNT > 0) {
-        comp = (u8 *)Game + 0x7834;
+        comp = (u8 *)&Game + 0x7834;
         for (i = 0; i < AREACOUNT; i++) {
             area = *(u8 **)&ADataList + i * 0x9c;
             open = 1;
@@ -45,7 +45,7 @@ void Areas_OpenAll(i32 mode) {
             comp += 0xc;
         }
     }
-    *(u8 *)((u8 *)Game + 0x3) = 1;
+    *(u8 *)((u8 *)&Game + 0x3) = 1;
     if (WORLD != NULL && *(void **)((char *)WORLD + 0x128) == (void *)HUB_LDATA) {
         Hub_LockUnlockDoors(WORLD);
     } else {
@@ -173,18 +173,18 @@ void ClearAreaProgress(i32 a, i32 b) {
     for (i = 0; i < 12; i++) {
         ClearLevelProgress(i, NULL);
     }
-    *(i32 *)BackupGame = *(i32 *)((u8 *)Game + 0x7bfc);
+    *(i32 *)&BackupGame = *(i32 *)((u8 *)&Game + 0x7bfc);
     if (b == 0 || a == -1) {
         return;
     }
-    *(i32 *)((u8 *)Game + 0x14) = 0;
+    *(i32 *)((u8 *)&Game + 0x14) = 0;
     area = *(u8 **)&ADataList + a * 0x9c;
     if (*(u8 *)(area + 0x7d) == 0) {
         return;
     }
     for (i = 0; i < *(u8 *)(area + 0x7d); i++) {
         levelIdx = *(i16 *)(area + 0x60 + i * 2);
-        memcpy((u8 *)Game + levelIdx * 0x54 + 0x11, (u8 *)BackupGame + levelIdx * 0x54 + 0x11, 0x53);
+        memcpy((u8 *)&Game + levelIdx * 0x54 + 0x11, (u8 *)&BackupGame + levelIdx * 0x54 + 0x11, 0x53);
     }
 }
 
@@ -247,7 +247,7 @@ have_jump:
     if (Area == -1) {
         area_ep = 0;
     } else {
-        area_ep = *(u8 *)((char *)Game + 0x7831 + Area * 12);
+        area_ep = *(u8 *)((char *)&Game + 0x7831 + Area * 12);
     }
     *(u8 *)((char *)AreaGlobals + 0xc) = area_ep;
     *(u8 *)((char *)AreaGlobals + 0x14) = area_ep;
@@ -269,7 +269,7 @@ have_jump:
         ((u8 *)PlayerProgress)[i * 0x10 + 0x8] = DEFAULT_PLAYERHITPOINTS;
     }
     ResetTimer(&AreaTimer, 0.0f);
-    memcpy(BackupGame, (char *)WORLD + 0x15c, 0x7e58);
+    memcpy(&BackupGame, (char *)WORLD + 0x15c, 0x7e58);
     NewAreaMusicChanges();
     VehicleAreaRememberSpeed = 0;
     ClearTakeOverObjectSys();

@@ -37,9 +37,5 @@ typedef struct MISSIONSYS_s MISSIONSYS;
 
 MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, MISSIONSAVE *save);
 
-extern "C" {
-#endif
-    extern MISSIONSYS *MissionSys;
-#ifdef __cplusplus
-}
+extern MISSIONSYS *MissionSys;
 #endif
