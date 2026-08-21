@@ -42,6 +42,11 @@ static i32 mushroom_collapse;
 static i32 mushroom_nattempts_per_increment;
 static i32 mushroom_n_attempts;
 static i32 podhurry_i;
+extern i32 g_lowEndLevelBehaviour;
+static i32 max_nsnipers;
+static i32 PodRace_nsnipers;
+static float PodRace_sniper_fire_time;
+static u8 PodRace_snipers[0xa0];
 void PodKeyReset(void);
 i32 InStory(void);
 extern struct LEVELDATA_s *PODRACEOUTRO1_LDATA;
@@ -65,7 +70,60 @@ extern i16 id_ANAKINSPOD;
 static float pod_roll[2];
 static float pod_roll_target[2];
 static float pod_animtime[2];
+static float pod_countdown;
+static float pod_092d00;
+static float pod_092d10;
+extern float FRAMETIME;
+extern float gungan_a_time_Normal;
+extern float gungan_a_time_LowEnd;
+extern i32 active_neutral_count;
+extern i32 active_baddy_count;
+static float gungan_timer;
+static i16 gungan_count;
+static i16 gungan_0x92cb8;
+static i16 gungan_0x92cbc[8];
+static void *gungan_0x92bb4[8];
+static void *gungan_0x92c34[8];
+struct NURAND;
+extern "C" i32 NuRand(NURAND *);
+extern "C" float NuFloatRand(NURAND *);
+struct nuvec_s;
+struct AIPATHINFO_s;
+struct AIGROUP_s;
+struct nugspline_s;
+void *AddDynamicCreature(i32, nuvec_s *, i32, char *, AIPATHINFO_s *, AIGROUP_s *, i32, nugspline_s *, nuvec_s *, i32,
+                         i32);
+extern i16 id_STAP;
+extern void *FadeSys;
+extern i32 Paused;
+extern i32 CUTSTOPGAME;
+extern i32 MiniCutCam;
+extern struct LEVELDATA_s *PODRACEB_LDATA;
+extern float GameTimer;
+void TickTockSfx(void);
+float SeekLinearF(float, float, float);
 i32 qrand(void);
+extern i32 LevGizForce[];
+extern i32 LevPathCnx[];
+extern i32 retakeg_netpacket;
+extern void *podrace_netpacket;
+extern "C" void Text3DEx(char *, i32, float, float, float, float, float, i32, i32, i32, i32, i32);
+extern "C" float NuFmod(float, float);
+extern i16 id_ROYALGUARD;
+static void *retakeg_guard_a;
+static void *retakeg_guard_b;
+void DrawMeleeTargets(i16 *, char *, float *, i32);
+extern void *podsprint;
+extern i16 id_CLONEARC;
+extern i16 id_IMPERIALSHUTTLE;
+extern i16 id_NABOOSTARFIGHTER;
+extern i16 id_XWING;
+extern i16 id_SNOWSPEEDER;
+extern i16 id_MILLENNIUMFALCON;
+extern i16 id_NEW_REPUBLIC_GUNSHIP;
+extern "C" NUGSPLINE *NuSplineFind(NUGSCN *, char *);
+extern "C" f32 NuRandFloat(void);
+struct PLAYERDATA;
 extern "C" void NuMtxSetIdentity(void *);
 extern "C" void NuMtxTranslate(void *, void *);
 extern "C" void NuSpecialDrawAt(void *, void *);
@@ -101,6 +159,26 @@ struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
 static __used__ void PodRaceSnipersReset() {
+    max_nsnipers = (g_lowEndLevelBehaviour >= 1) ? 2 : 5;
+    PodRace_nsnipers = 0;
+    if (Lap != 0) {
+        char buf[0x20];
+        sprintf(buf, "Sniper%d", Lap);
+        void *spline = NuSplineFind(WORLD->current_gscn, buf);
+        if (spline != NULL && *(i16 *)spline > 0 && PodRace_nsnipers <= 9) {
+            i32 idx = 0;
+            i32 off = 0;
+            do {
+                u8 *dst = (u8 *)PodRace_snipers + idx * 0x20;
+                memcpy(dst, *(u8 **)((u8 *)spline + 0x8) + off, 0x18);
+                *(float *)(dst + 0x18) = NuRandFloat() * PodRace_sniper_fire_time + PodRace_sniper_fire_time * 0.5f;
+                *(u32 *)(dst + 0x1c) = 0;
+                idx++;
+                PodRace_nsnipers = idx;
+                off += 0x18;
+            } while (*(i16 *)spline > off / 0xc && idx <= 9);
+        }
+    }
 }
 static __used__ void PodRaceSnipersUpdate() {
 }
@@ -161,7 +239,49 @@ void GunganA_Init(WORLDINFO_s *world) {
     }
 }
 
-void GunganA_Update(WORLDINFO_s *) {
+void GunganA_Update(WORLDINFO_s *world) {
+    if (netclient != 0)
+        return;
+    gungan_timer += FRAMETIME;
+    float maxtime = gungan_a_time_Normal;
+    if (g_lowEndLevelBehaviour != 0)
+        maxtime = gungan_a_time_LowEnd;
+    if (gungan_count == 0 || gungan_timer <= maxtime)
+        return;
+    NuRand(NULL);
+    i32 r = NuRand(NULL) % gungan_count;
+    i32 nh = (g_lowEndLevelBehaviour >= 1) ? 14 : 6;
+    i32 nb = (g_lowEndLevelBehaviour >= 1) ? 5 : 4;
+    if (nb > active_neutral_count) {
+        i32 nv = gungan_0x92cb8 + 1;
+        i32 t = (nv >> 2) & 3;
+        nv = (nv & 3) - t;
+        gungan_0x92cb8 = (i16)nv;
+        i32 model = gungan_0x92cbc[nv];
+        void *grp = gungan_0x92bb4[r];
+        i32 r2 = *(i32 *)((u8 *)grp + 0x1c);
+        void *obj = AddDynamicCreature(model, (nuvec_s *)((u8 *)grp + 0x10), r2, (char *)"Wildlife", NULL, NULL, 0,
+                                       NULL, NULL, 0, 0);
+        if (obj != NULL) {
+            *(void **)((u8 *)obj + 0x364) = gungan_0x92c34[r];
+            if (g_lowEndLevelBehaviour == 0)
+                *(u8 *)((u8 *)obj + 0xf04) &= 0x7f;
+        }
+    } else if (active_baddy_count > nh) {
+        i32 pick = NuRand(NULL);
+        i32 model = (pick & 1) ? id_STAP : 0;
+        char *name = (char *)((pick & 1) ? "STAP" : "Battledroid");
+        void *grp = gungan_0x92bb4[r];
+        i32 r2 = *(i32 *)((u8 *)grp + 0x1c);
+        void *obj = AddDynamicCreature(model, (nuvec_s *)((u8 *)grp + 0x10), r2, name, NULL, NULL, 0, NULL, NULL, 0, 0);
+        if (obj != NULL) {
+            *(void **)((u8 *)obj + 0x364) = gungan_0x92c34[r];
+            if (g_lowEndLevelBehaviour == 0)
+                *(u8 *)((u8 *)obj + 0xf04) &= 0x7f;
+        }
+    } else {
+        gungan_timer = 0.25f - NuFloatRand(NULL) * 0.5f;
+    }
 }
 
 void RescueA_Init(WORLDINFO_s *world) {
@@ -182,7 +302,43 @@ void RescueA_Init(WORLDINFO_s *world) {
 void RescueB_Init(WORLDINFO_s *) {
 }
 
-void RescueC_Init(WORLDINFO_s *) {
+void RescueC_Init(WORLDINFO_s *world) {
+    GIZMOBLOWUP_s *g;
+    if ((g = GizmoBlowUp_FindByName(world, "pod31")) != NULL)
+        g->field_0x124 = 1;
+    if ((g = GizmoBlowUp_FindByName(world, "pod11")) != NULL)
+        g->field_0x124 = 1;
+    if ((g = GizmoBlowUp_FindByName(world, "pod51")) != NULL)
+        g->field_0x124 = 1;
+    if ((g = GizmoBlowUp_FindByName(world, "pod21")) != NULL)
+        g->field_0x124 = 1;
+    if ((g = GizmoBlowUp_FindByName(world, "target_a31")) != NULL)
+        g->field_0x124 = 1;
+    if ((g = GizmoBlowUp_FindByName(world, "target_a51")) != NULL)
+        g->field_0x124 = 1;
+    if ((g = GizmoBlowUp_FindByName(world, "target_a41")) != NULL)
+        g->field_0x124 = 1;
+    if ((g = GizmoBlowUp_FindByName(world, "target_a61")) != NULL)
+        g->field_0x124 = 1;
+    if ((g = GizmoBlowUp_FindByName(world, "flower_tub31")) != NULL)
+        g->field_0x124 = 1;
+    if ((g = GizmoBlowUp_FindByName(world, "flower_tub1")) != NULL)
+        g->field_0xa0 |= 2;
+    char buf[0x1c];
+    for (i32 i = 1; i <= 9; i++) {
+        sprintf(buf, "window_balcony%d", i);
+        if ((g = GizmoBlowUp_FindByName(world, buf)) != NULL) {
+            g->field_0x124 = 1;
+            g->field_0xa0 |= 2;
+        }
+    }
+    for (i32 i = 0xa; i <= 0xc; i++) {
+        sprintf(buf, "window_balcon%d", i);
+        if ((g = GizmoBlowUp_FindByName(world, buf)) != NULL) {
+            g->field_0x124 = 1;
+            g->field_0xa0 |= 2;
+        }
+    }
 }
 
 void RescueE_Init(WORLDINFO_s *world) {
@@ -235,7 +391,37 @@ void PodRaceBInit(WORLDINFO_s *world) {
 void PodRaceCInit(WORLDINFO_s *) {
 }
 
-void PodRacePanel(WORLDINFO_s *) {
+void PodRacePanel(WORLDINFO_s *world) {
+    if (netclient != 0) {
+        pod_countdown = *(float *)((u8 *)podrace_netpacket + 0xc);
+        if (pod_countdown > 0.0f) {
+            u8 *entry = (u8 *)world->lev_objs + (Lap + 0x135) * 0x10;
+            if (entry[0xe] != 0)
+                return;
+            Text3DEx((char *)0, 0, 1.0f, 0.1f, 0.1f, 0.1f, 0, 0, 0, 0, 0x3f, 0);
+        } else {
+            if (pod_092d00 > 0.0f && PodRace != NULL && *(float *)((u8 *)PodRace + 0xaf08) > 0.0f) {
+                char buf[0x20];
+                sprintf(buf, "%i", (i32) * (float *)((u8 *)PodRace + 0xaf08) + 1);
+                if (NuFmod(*(float *)((u8 *)PodRace + 0xaf08), 1.0f) < 0.7f)
+                    Text3DEx(buf, 0, 0.4f, 1.0f, 0.75f, 0.75f, 0.75f, 0, 0xff, 0x3f, 0, (u8)(i32)(128.0f * pod_092d00));
+            }
+            if (pod_092d10 > 0.0f && PodRace != NULL && *(float *)((u8 *)PodRace + 0xaf00) > 0.0f) {
+                char buf[0x20];
+                sprintf(buf, "%i", (i32) * (float *)((u8 *)PodRace + 0xaf00) + 1);
+                if (NuFmod(*(float *)((u8 *)PodRace + 0xaf00), 1.0f) < 0.7f)
+                    Text3DEx(buf, 0, 0.4f, 1.0f, 0.75f, 0.75f, 0.75f, 0, 0, 0, 0, (u8)(i32)(128.0f * pod_092d10));
+            }
+        }
+    } else {
+        *(float *)((u8 *)podrace_netpacket + 0xc) = pod_countdown;
+        if (pod_092d00 > 0.0f && PodRace != NULL && *(float *)((u8 *)PodRace + 0xaf08) > 0.0f) {
+            char buf[0x20];
+            sprintf(buf, "%i", (i32) * (float *)((u8 *)PodRace + 0xaf08) + 1);
+            if (NuFmod(*(float *)((u8 *)PodRace + 0xaf08), 1.0f) < 0.7f)
+                Text3DEx(buf, 0, 0.4f, 1.0f, 0.75f, 0.75f, 0.75f, 0, 0xff, 0x3f, 0, (u8)(i32)(128.0f * pod_092d00));
+        }
+    }
 }
 
 void PodRaceReset() {
@@ -396,12 +582,36 @@ void ResetPodStuff() {
 void SetPodMergeAnims(ANIMPACKET_s *, i32) {
 }
 
-void UpdatePodRaceLapDisplay(float) {
+void UpdatePodRaceLapDisplay(float arg) {
+    float v = arg;
+    if (*(float *)((u8 *)FadeSys + 0x4) != 0.0f || MiniCutCam != 0 || CUTSTOPGAME != 0) {
+        pod_countdown = 0.0f;
+        pod_092d00 = 0.0f;
+        pod_092d10 = 0.0f;
+        if (Paused == 0) {
+            i32 oldhurry = podhurry_i;
+            if (PodRace != NULL && *(float *)((u8 *)PodRace + 0xaf08) < 10.0f) {
+                podhurry_i = (i32) * (float *)((u8 *)PodRace + 0xaf08);
+                if (pod_092d00 < 1.0f)
+                    pod_092d00 = v * 2.0f + pod_092d00 < 1.0f ? v * 2.0f + pod_092d00 : 1.0f;
+                if (podhurry_i > 0 && oldhurry != podhurry_i) {
+                    TickTockSfx();
+                    if (Paused != 0)
+                        return;
+                }
+            }
+        }
+    } else if (Paused == 0) {
+        v = arg;
+        if (Paused == 0)
+            pod_countdown = SeekLinearF(1.0f, v + v, pod_countdown);
+    }
+    if (PodRace != NULL && *(float *)((u8 *)PodRace + 0xaf00) > 0.0f && pod_092d10 < 1.0f)
+        pod_092d10 = v * 2.0f + pod_092d10 < 1.0f ? v * 2.0f + pod_092d10 : 1.0f;
 }
 
 void PodSprintA_Init(WORLDINFO_s *) {
 }
-
 void PodSprintA_Panel(WORLDINFO_s *) {
 }
 
@@ -411,10 +621,50 @@ void PodSprintA_Reset(WORLDINFO_s *) {
 void PodSprintA_Update(WORLDINFO_s *) {
 }
 
-void PodSprint_RollMul(GameObject_s *) {
+float PodSprint_RollMul(GameObject_s *obj) {
+    u16 id = obj->id;
+    if (id == id_CLONEARC || id == id_IMPERIALSHUTTLE || id == id_NABOOSTARFIGHTER)
+        return 0.6f;
+    if (id == id_XWING || id == id_SNOWSPEEDER || id == id_MILLENNIUMFALCON || id == id_NEW_REPUBLIC_GUNSHIP)
+        return 0.8f;
+    return 1.0f;
 }
 
-void PodSprint_GetIAlongVals(nugspline_s *, i16 *, i16 *) {
+void PodSprint_GetIAlongVals(nugspline_s *spline, i16 *out1, i16 *out2) {
+    if (spline == NULL)
+        return;
+    u8 *ps = (u8 *)podsprint;
+    i32 idx = -1;
+    if (spline == *(void **)(ps + 0x8))
+        idx = 0;
+    else if (spline == *(void **)(ps + 0x18))
+        idx = 1;
+    else if (spline == *(void **)(ps + 0x28))
+        idx = 2;
+    else if (spline == *(void **)(ps + 0x38))
+        idx = 3;
+    else if (spline == *(void **)(ps + 0x48))
+        idx = 4;
+    else if (spline == *(void **)(ps + 0x58))
+        idx = 5;
+    else
+        return;
+    i32 b = (i8)ps[0x8f];
+    if (b != 0) {
+        i32 a = b, esi;
+        if (b <= 4)
+            esi = b - 1;
+        else {
+            esi = 4;
+            a = 5;
+        }
+        i32 base = idx << 3;
+        *out1 = *(i16 *)(ps + 0xc + (base + esi) * 2);
+        *out2 = *(i16 *)(ps + 0xc + (base + a) * 2);
+    } else {
+        *out1 = 0;
+        *out2 = *(i16 *)(ps + 0xc + (idx << 4));
+    }
 }
 
 void PodSprint_InStartCountdown(WORLDINFO_s *) {
@@ -573,10 +823,54 @@ void RetakeG_Init(WORLDINFO_s *world) {
 void RetakeG_Reset(WORLDINFO_s *) {
 }
 
-void RetakeG_Update(WORLDINFO_s *) {
+void RetakeG_Update(WORLDINFO_s *world) {
+    i16 *np = (i16 *)&retakeg_netpacket;
+    if (netclient != 0) {
+        *(float *)((u8 *)retakeg_guard_b + 0x28) = (float)np[1];
+        *(float *)((u8 *)retakeg_guard_a + 0x28) = (float)np[0];
+    } else {
+        np[1] = (i16) * (float *)((u8 *)retakeg_guard_b + 0x28);
+        np[0] = (i16) * (float *)((u8 *)retakeg_guard_a + 0x28);
+    }
+    u8 *g0 = (u8 *)LevGizForce[0];
+    u8 *g1 = (u8 *)LevGizForce[1];
+    if (g0 != NULL && *(u32 *)(g0 + 0x40) != 0 && g1 != NULL && *(u32 *)(g1 + 0x40) != 0) {
+        for (i32 i = 0; i < 6; i++) {
+            u8 *obj = (i < 3) ? g0 : g1;
+            u8 *obj40 = *(u8 **)(obj + 0x40);
+            u8 *cnx = (u8 *)LevPathCnx[i];
+            if (cnx != NULL) {
+                if (*(u32 *)(obj40 + 0x24) & 4) {
+                    *(u32 *)cnx &= 0x7fffffff;
+                    *(u32 *)(cnx + 4) &= 0x7fffffff;
+                } else {
+                    *(u32 *)cnx |= 0x80000000;
+                    *(u32 *)(cnx + 4) |= 0x80000000;
+                }
+            }
+        }
+    }
 }
 
-void RetakeG_Panel(WORLDINFO_s *) {
+void RetakeG_Panel(WORLDINFO_s *world) {
+    char buf[0x10];
+    i16 countbuf[6];
+    for (i32 i = 0; i < 6; i++) {
+        buf[i] = 1;
+        countbuf[i] = id_ROYALGUARD;
+    }
+    if (retakeg_guard_a != NULL && *(float *)((u8 *)retakeg_guard_a + 0x28) > 0.0f && retakeg_guard_b != NULL &&
+        *(float *)((u8 *)retakeg_guard_b + 0x28) > 0.0f) {
+        i32 n = (i32) * (float *)((u8 *)retakeg_guard_b + 0x28);
+        if (n > 6)
+            n = 6;
+        if (n > 0)
+            memset(buf, 0, n);
+    }
+    i32 m = (i32) * (float *)((u8 *)retakeg_guard_a + 0x28);
+    if (m > 6)
+        m = 6;
+    DrawMeleeTargets(countbuf, buf, NULL, m);
 }
 
 void MaulA_Init(WORLDINFO_s *world) {
