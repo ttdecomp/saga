@@ -106,6 +106,15 @@ void PodRace_InStartCountdown(WORLDINFO_s *) {
 void PodLevel(AREADATA_s *) {
 }
 
+void ResetPodStuff() {
+}
+
+void SetPodMergeAnims(ANIMPACKET_s *, i32) {
+}
+
+void UpdatePodRaceLapDisplay(float) {
+}
+
 void PodSprintA_Init(WORLDINFO_s *) {
 }
 
@@ -116,6 +125,33 @@ void PodSprintA_Reset(WORLDINFO_s *) {
 }
 
 void PodSprintA_Update(WORLDINFO_s *) {
+}
+
+void PodSprint_RollMul(GameObject_s *) {
+}
+
+void PodSprint_GetIAlongVals(nugspline_s *, i16 *, i16 *) {
+}
+
+void PodSprint_InStartCountdown(WORLDINFO_s *) {
+}
+
+void RetakeD_Init(WORLDINFO_s *) {
+}
+
+void RetakeE_Init(WORLDINFO_s *) {
+}
+
+void RetakeG_Init(WORLDINFO_s *) {
+}
+
+void RetakeG_Reset(WORLDINFO_s *) {
+}
+
+void RetakeG_Update(WORLDINFO_s *) {
+}
+
+void RetakeG_Panel(WORLDINFO_s *) {
 }
 
 void MaulA_Init(WORLDINFO_s *) {
