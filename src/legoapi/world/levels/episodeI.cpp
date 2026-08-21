@@ -26,6 +26,13 @@ extern "C" void *AIPAthFindPathCnx(AISYS_s *, i32, char *, void *);
 extern i32 retakeg_netpacket;
 static GIZAIMESSAGE_s *RetakeG_TotalGuards_msg;
 static GIZAIMESSAGE_s *RetakeG_GuardsToRescue_msg;
+extern i16 trooper_boltid;
+extern i8 trooper_side[];
+extern i32 hothtroopers;
+extern i32 TimingBarSet;
+i16 BoltType_FindIDByName(char *, WORLDINFO_s *);
+void TBOPENFN(char *, i32);
+void TBCLOSEFN(char *, i32);
 
 static struct {
     void *field_0x0; // 0x0  MaulA anim message 1
@@ -234,10 +241,23 @@ void PodSprint_GetIAlongVals(nugspline_s *, i16 *, i16 *) {
 void PodSprint_InStartCountdown(WORLDINFO_s *) {
 }
 
-void AnakinsFlightB_Draw(WORLDINFO_s *) {
+void AnakinsFlightB_Draw(WORLDINFO_s *world) {
+    if (TimingBarSet == 5) {
+        TBOPENFN("mini", 5);
+        if (TimingBarSet == 5) {
+            TBCLOSEFN("mini", 5);
+        }
+    }
 }
 
-void AnakinsFlightB_Init(WORLDINFO_s *) {
+void AnakinsFlightB_Init(WORLDINFO_s *world) {
+    trooper_boltid = BoltType_FindIDByName("trooper_red", world);
+    trooper_side[0] = 0;
+    trooper_side[1] = 0;
+    trooper_side[2] = 0;
+    NuSpecialFind(world->current_gscn, (void **)LevHSpecial, "minifig_1_1");
+    NuSpecialFind(world->current_gscn, (void **)((char *)LevHSpecial + 0xc), "minifig_1_2");
+    NuSpecialFind(world->current_gscn, (void **)((char *)LevHSpecial + 0x18), "minifig_1_3");
 }
 
 void AnakinsFlightB_Update(WORLDINFO_s *) {
