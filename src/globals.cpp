@@ -4,6 +4,8 @@
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nusound/nusound.h"
+
+struct GIZAIMESSAGESYS_s;
 #include "legoapi/core/input/timer.h"
 #include "legoapi/world/area.h"
 
@@ -335,6 +337,7 @@ i32 LevelLocator = 0;
 i32 LevGizObst[8] = {0};
 i32 LevBlowUp[5] = {0};
 i32 LevGizmo[12] = {0};
+GIZAIMESSAGESYS_s *gizaimessagesys = NULL;
 i32 LevSfxId[4] = {0};
 i32 LevelCodeSpline[8] = {0};
 i32 LevGizForce[4] = {0};

@@ -86,7 +86,7 @@ See the [docs/](docs/) directory.
 | `gameframework` | 65.4% | 12.5% | 100.0% |
 | `gamelib` | 5.5% | 0.9% | 5.0% |
 | `java` | 10.5% | 0.0% | 0.0% |
-| `legoapi` | 4.8% | 4.1% | 5.3% |
+| `legoapi` | 4.9% | 4.1% | 5.3% |
 | `legoapi/actions` | 1.7% | 0.5% | - |
 | `legoapi/ai` | 2.0% | 0.0% | - |
 | `legoapi/audio` | 2.9% | 0.0% | - |
@@ -100,7 +100,7 @@ See the [docs/](docs/) directory.
 | `legoapi/misc` | 2.2% | 0.5% | - |
 | `legoapi/props` | 7.3% | 2.4% | 13.0% |
 | `legoapi/render` | 2.3% | 1.5% | 0.5% |
-| `legoapi/world` | 13.2% | 22.8% | 0.3% |
+| `legoapi/world` | 13.3% | 22.8% | 0.3% |
 | `legogame` | 4.2% | 0.0% | 100.0% |
 | `nu2api` | 27.1% | 19.4% | 81.5% |
 

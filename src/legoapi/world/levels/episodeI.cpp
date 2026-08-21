@@ -15,6 +15,10 @@ extern i16 id_FALUMPASET;
 extern i16 id_DARTHMAUL;
 GameObject_s *FindGameObject(i32, u32, i32, i32, i32);
 void DrawBossHitPoints(GameObject_s *);
+extern char LevHSpecial[];
+extern "C" void NuSpecialSetVisibility(void *, i32);
+extern GIZAIMESSAGESYS_s *gizaimessagesys;
+GIZAIMESSAGE_s *CheckGizAIMessage(GIZAIMESSAGESYS_s *, const char *, GIZAIMESSAGE_s *);
 
 static struct {
     void *field_0x0; // 0x0  MaulA anim message 1
@@ -250,10 +254,21 @@ void RetakeG_Update(WORLDINFO_s *) {
 void RetakeG_Panel(WORLDINFO_s *) {
 }
 
-void MaulA_Init(WORLDINFO_s *) {
+void MaulA_Init(WORLDINFO_s *world) {
+    PODRACELEVELS.field_0x0 = CheckGizAIMessage(gizaimessagesys, "MaulOnTheRun", NULL);
+    PODRACELEVELS.field_0x10 = CheckGizAIMessage(gizaimessagesys, "Hits", NULL);
+    NuSpecialFind(world->current_gscn, (void **)(LevHSpecial + 0x30), "engine_1c");
+    NuSpecialFind(world->current_gscn, (void **)(LevHSpecial + 0x3c), "engine_2c");
+    NuSpecialFind(world->current_gscn, (void **)(LevHSpecial + 0x48), "engine_1d");
+    NuSpecialFind(world->current_gscn, (void **)(LevHSpecial + 0x54), "engine_2d");
 }
 
-void MaulA_Reset(WORLDINFO_s *) {
+void MaulA_Reset(WORLDINFO_s *world) {
+    NuSpecialSetVisibility(LevHSpecial + 0x30, 0);
+    NuSpecialSetVisibility(LevHSpecial + 0x3c, 0);
+    NuSpecialSetVisibility(LevHSpecial + 0x48, 0);
+    NuSpecialSetVisibility(LevHSpecial + 0x54, 0);
+    PODRACELEVELS.field_0x20 = FindGameObject(id_DARTHMAUL, 1, 1, 0, 0);
 }
 
 void MaulA_Update(WORLDINFO_s *) {
