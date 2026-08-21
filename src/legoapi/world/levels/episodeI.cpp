@@ -52,7 +52,7 @@ i32 InStory(void);
 extern struct LEVELDATA_s *PODRACEOUTRO1_LDATA;
 extern struct LEVELDATA_s *PODRACESTATUS_LDATA;
 extern i32 other_level_override;
-static i32 pod_pacemaker;
+static void *pod_pacemaker;
 static void *pod_avalanche_cutscene;
 i32 pod_lap_start;
 CUTINFO *CutScene_Find(CUTSYS *, char *);
@@ -731,7 +731,26 @@ static void UpdatePodRaceMines(void) {
 static void *CreatePodRaceMine(nuvec_s *a) {
     return NULL;
 }
-static void UpdatePacemakerDisplay(void *a) {
+extern float pacemaker_alpha_table[];
+void *AddGameMessage(char *, nuvec_s *, float, nuvec_s *, float, unsigned char, unsigned char, unsigned char, u32,
+                     float);
+static void UpdatePacemakerDisplay(void *lev_objs) {
+    float v[3];
+    v[0] = *(float *)((u8 *)pod_pacemaker + 0x190);
+    v[1] = 0.75f + *(float *)((u8 *)pod_pacemaker + 0x194);
+    v[2] = *(float *)((u8 *)pod_pacemaker + 0x198);
+    void *msg = AddGameMessage(" ", (nuvec_s *)v, 0.08f, NULL, 0.0f, 0xff, 0x3f, 0x3f, 0x10083, 0);
+    if (msg != NULL) {
+        i32 idx = ((i32)(16384.0f * pod_092d30) >> 1) & 0x7fff;
+        *(u16 *)((u8 *)msg + 0xe6) = 0x134;
+        *(u8 *)((u8 *)msg + 0xf7) = (u8)(i32)(128.0f * pacemaker_alpha_table[idx]);
+        if (*(u8 *)((u8 *)*(void **)lev_objs + 0x134e) != 0) {
+            u8 *o = *(u8 **)lev_objs;
+            *(u32 *)((u8 *)msg + 0xe8) = *(u32 *)(o + 0x1340);
+            *(u32 *)((u8 *)msg + 0xec) = *(u32 *)(o + 0x1344);
+            *(u32 *)((u8 *)msg + 0xf0) = *(u32 *)(o + 0x1348);
+        }
+    }
 }
 
 void PodRaceBUpdate(WORLDINFO_s *world) {
