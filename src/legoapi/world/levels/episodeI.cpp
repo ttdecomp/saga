@@ -476,21 +476,21 @@ void PodRaceInit(WORLDINFO_s *world) {
 
 void PodRaceADraw(WORLDINFO_s *world) {
     if (netclient != 0) {
+        float mtx[16];
         for (i32 i = 0; i < 0x40; i++) {
             u32 bit = 1u << (i & 0x1f);
             if (((i < 0x20 ? client_mines[0x300 / 4] : client_mines[0x304 / 4]) & bit) != 0) {
-                void *mtx = 0; // local matrix placeholder
                 NuMtxSetIdentity(mtx);
                 NuMtxTranslate(mtx, &client_mines[i * 3]);
                 NuSpecialDrawAt(minesys, mtx);
             }
         }
     } else if (NuSpecialExistsFn(minesys) != 0) {
+        float mtx[16];
         u8 *entry = (u8 *)minesys + 0xc;
         u8 *end = (u8 *)minesys + 0x70c;
         for (; entry < end; entry += 0x1c) {
             if (*(u32 *)entry != 0) {
-                void *mtx = 0;
                 NuMtxSetIdentity(mtx);
                 NuMtxTranslate(mtx, entry + 0x4);
                 NuSpecialDrawAt(minesys, mtx);
