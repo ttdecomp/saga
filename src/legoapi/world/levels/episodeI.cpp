@@ -971,7 +971,38 @@ void PodSprintA_Init(WORLDINFO_s *world) {
     NuSpecialFind(world->current_gscn, (void **)((u8 *)LevHSpecial + 0x264), "bigrock_eight");
 }
 
-static void PodSprint_InitAISpline(WORLDINFO_s *world, void *a, char *b) {
+i32 XZLinesIntersect(nuvec_s *, nuvec_s *, nuvec_s *, nuvec_s *, float *, float *);
+static void PodSprint_InitAISpline(WORLDINFO_s *world, void *sp, char *b) {
+    u8 *spl = *(u8 **)sp;
+    i32 i = 0;
+    for (i32 esi = 0; esi < (i32)(i16)(*(u16 *)spl) - 1; esi++) {
+        if (i <= 5) {
+            u8 *pts = *(u8 **)(spl + 0x8);
+            u8 *p0 = pts + esi * 0xc;
+            u8 *p1 = pts + (esi + 1) * 0xc;
+            if (i & 1) {
+                u8 *sp2 = *(u8 **)podsprint;
+                u8 *pts2 = *(u8 **)(sp2 + 0x8);
+                float x0, y0;
+                if (XZLinesIntersect((nuvec_s *)p0, (nuvec_s *)p1, (nuvec_s *)(pts2 + 0xc), (nuvec_s *)(pts2 + 0x18),
+                                     &x0, &y0)) {
+                    *(u16 *)((u8 *)sp + 0x4 + i * 2) = (u16)esi;
+                    i++;
+                }
+            } else {
+                u8 *sp2 = *(u8 **)((u8 *)podsprint + 4);
+                u8 *pts2 = *(u8 **)(sp2 + 0x8);
+                float x0, y0;
+                if (XZLinesIntersect((nuvec_s *)p0, (nuvec_s *)p1, (nuvec_s *)(pts2 + 0xc), (nuvec_s *)(pts2 + 0x18),
+                                     &x0, &y0)) {
+                    *(u16 *)((u8 *)sp + 0x4 + i * 2) = (u16)esi;
+                    i++;
+                }
+            }
+        }
+    }
+    if (*(u16 *)((u8 *)sp + 0xe) == 0)
+        *(u16 *)((u8 *)sp + 0xe) = *(u16 *)spl;
 }
 void PodSprintA_Panel(WORLDINFO_s *world) {
     u8 *ps = (u8 *)podsprint;
