@@ -37,6 +37,10 @@ void UpdatePodRaceLapDisplay(float);
 extern f32 FRAMETIME;
 extern struct AREADATA_s *PODRACE_ADATA;
 extern i32 Lap;
+static void *PodRace;
+static i32 mushroom_collapse;
+static i32 mushroom_nattempts_per_increment;
+static i32 mushroom_n_attempts;
 
 static struct {
     void *field_0x0; // 0x0  MaulA anim message 1
@@ -168,7 +172,13 @@ void PodRaceAInit(WORLDINFO_s *world) {
     PodRaceInit(world);
 }
 
-void PodRaceBInit(WORLDINFO_s *) {
+void PodRaceBInit(WORLDINFO_s *world) {
+    PodRaceInit(world);
+    mushroom_collapse = 0;
+    mushroom_nattempts_per_increment = 1;
+    mushroom_n_attempts = 0;
+    if (Lap <= 1)
+        *(float *)((u8 *)PodRace + 0xaf00) = 3.0f;
 }
 
 void PodRaceCInit(WORLDINFO_s *) {
@@ -212,7 +222,11 @@ void PodRace_IncreaseLap() {
 void PodRaceA_AlwaysUpdate(WORLDINFO_s *) {
 }
 
-void PodRace_InStartCountdown(WORLDINFO_s *) {
+i32 PodRace_InStartCountdown(WORLDINFO_s *world) {
+    if (world->area != NULL && world->area == PODRACE_ADATA && PodRace != NULL &&
+        *(float *)((u8 *)PodRace + 0xaf00) > 4.158760129802644e+21f)
+        return 1;
+    return 0;
 }
 
 i32 PodLevel(AREADATA_s *area) {
