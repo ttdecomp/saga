@@ -370,6 +370,7 @@ i32 podsprint_netpacket = 0;
 void *game_cutscenes = NULL;
 void *player = NULL;
 void *player2 = NULL;
+i32 avg_currentspeed_mul = 0;
 void *GameCam = NULL;
 i32 pause_rndr_on = 0;
 

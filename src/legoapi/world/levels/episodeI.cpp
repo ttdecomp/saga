@@ -638,7 +638,32 @@ void PodRaceCReset(WORLDINFO_s *world) {
     }
 }
 
-void PodRaceUpdate(WORLDINFO_s *, float) {
+extern i32 avg_currentspeed_mul;
+extern "C" void PlaySfx(char *);
+void PodRaceUpdate(WORLDINFO_s *world, float dt) {
+    if (netclient != 0)
+        return;
+    if (*(float *)((u8 *)PodRace + 0xaf00) <= 0.0f)
+        return;
+    avg_currentspeed_mul = 0;
+    *(float *)((u8 *)PodRace + 0xaf08) = *(float *)((u8 *)PodRace + 0xaf0c);
+    if (Player[0] != NULL && *(i8 *)((u8 *)Player[0] + 0x1f8) < 0)
+        return;
+    if (Player[1] != NULL && *(i8 *)((u8 *)Player[1] + 0x1f8) >= 0)
+        *(u32 *)((u8 *)Player[1] + 0xc34) = 0;
+    i32 n = (i32) * (float *)((u8 *)PodRace + 0xaf00);
+    i32 o = (i32) * (float *)((u8 *)PodRace + 0xaf08);
+    if (n != o)
+        PlaySfx("Pod_Race_Light");
+    for (i32 i = 0; i < 0x10; i++) {
+        u8 *entry = (u8 *)PodRace + 0xa580 + i * 0x98;
+        if (*(void **)((u8 *)PodRace + 0xa614 + i * 0x98) == NULL)
+            continue;
+        u32 *p = *(u32 **)(entry + 0x80);
+        if (p != NULL) {
+            // process mine entry
+        }
+    }
 }
 
 void PodRaceAUpdate(WORLDINFO_s *world) {
