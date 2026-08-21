@@ -306,7 +306,11 @@ void MaulE_Init(WORLDINFO_s *) {
 void MaulE_Update(WORLDINFO_s *) {
 }
 
-void MaulF_Init(WORLDINFO_s *) {
+void MaulF_Init(WORLDINFO_s *world) {
+    PODRACELEVELS.field_0x0 = CheckGizAIMessage(gizaimessagesys, "ShowHearts", NULL);
+    NuSpecialFind(world->current_gscn, (void **)(LevHSpecial + 0x0), "throw_object1");
+    NuSpecialFind(world->current_gscn, (void **)(LevHSpecial + 0xc), "throw_object2");
+    NuSpecialFind(world->current_gscn, (void **)(LevHSpecial + 0x18), "throw_object3");
 }
 
 void MaulF_Reset(WORLDINFO_s *world) {
