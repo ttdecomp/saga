@@ -77,7 +77,6 @@ static float pod_animtime[2];
 static float pod_countdown;
 static float pod_092d00;
 static float pod_092d10;
-extern float FRAMETIME;
 extern float gungan_a_time_Normal;
 extern float gungan_a_time_LowEnd;
 extern i32 active_neutral_count;
