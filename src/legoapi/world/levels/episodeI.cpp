@@ -33,6 +33,10 @@ extern i32 TimingBarSet;
 i16 BoltType_FindIDByName(char *, WORLDINFO_s *);
 void TBOPENFN(char *, i32);
 void TBCLOSEFN(char *, i32);
+void UpdatePodRaceLapDisplay(float);
+extern f32 FRAMETIME;
+extern struct AREADATA_s *PODRACE_ADATA;
+extern i32 Lap;
 
 static struct {
     void *field_0x0; // 0x0  MaulA anim message 1
@@ -160,7 +164,8 @@ void PodRaceInit(WORLDINFO_s *) {
 void PodRaceADraw(WORLDINFO_s *) {
 }
 
-void PodRaceAInit(WORLDINFO_s *) {
+void PodRaceAInit(WORLDINFO_s *world) {
+    PodRaceInit(world);
 }
 
 void PodRaceBInit(WORLDINFO_s *) {
@@ -196,10 +201,12 @@ void PodRaceBUpdate(WORLDINFO_s *) {
 void PodRaceCUpdate(WORLDINFO_s *) {
 }
 
-void PodRaceAlwasyUpdate(WORLDINFO_s *) {
+void PodRaceAlwasyUpdate(WORLDINFO_s *world) {
+    UpdatePodRaceLapDisplay(FRAMETIME);
 }
 
 void PodRace_IncreaseLap() {
+    Lap++;
 }
 
 void PodRaceA_AlwaysUpdate(WORLDINFO_s *) {
@@ -208,7 +215,8 @@ void PodRaceA_AlwaysUpdate(WORLDINFO_s *) {
 void PodRace_InStartCountdown(WORLDINFO_s *) {
 }
 
-void PodLevel(AREADATA_s *) {
+i32 PodLevel(AREADATA_s *area) {
+    return PODRACE_ADATA != NULL && PODRACE_ADATA == area;
 }
 
 void ResetPodStuff() {

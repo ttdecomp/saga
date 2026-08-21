@@ -311,7 +311,6 @@ i32 BonusCoinTotal = 0;
 void *Door_Last = NULL;
 i32 LevelChange = 0;
 i32 BombGenerator_PlayerBomb[2] = {0};
-i32 Lap = 0;
 f32 LevTime = 0.0f;
 
 i32 Customiser_AccessoriesLoaded = 0;
@@ -342,6 +341,8 @@ i16 trooper_boltid = 0;
 i8 trooper_side[3] = {0};
 i32 hothtroopers = 0;
 i32 TimingBarSet = 0;
+AREADATA *PODRACE_ADATA = NULL;
+i32 Lap = 0;
 GIZAIMESSAGESYS_s *gizaimessagesys = NULL;
 i32 LevSfxId[4] = {0};
 i32 LevelCodeSpline[8] = {0};
