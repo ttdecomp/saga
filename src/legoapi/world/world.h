@@ -6,6 +6,7 @@
 #include "nu2api/nucore/common.h"
 
 struct GIZFORCESYS_s;
+struct GIZOBSTACLESYS_s;
 
 struct AREADATA_s;
 struct LEVEL_PROGRESS_s;
@@ -122,14 +123,14 @@ typedef struct WORLDINFO_s {
     CLIMBOBJECTSYS_s *climb_object_sys;
     MechAutoJumpManager *mech_auto_jump_manager;
 
-    char filler6a[0x469c - 0x4684]; // 0x4684 .. 0x469c
-    void *portal_list;              // 0x469c
-    i32 portal_count;               // 0x46a0
-    struct spawnsys_s *spawn_sys;   // 0x46a4
-    char filler6b[0x46ac - 0x46a8]; // 0x46a8 .. 0x46ac
-    GIZTURRETSYS_s *giz_turret_sys; // 0x46ac
-    GIZFORCESYS_s *giz_force_sys;   // 0x46b0
-    char filler7[0x46f0 - 0x46b4];  // 0x46b4 .. 0x46f0
+    char filler6a[0x469c - 0x4684];     // 0x4684 .. 0x469c
+    void *portal_list;                  // 0x469c
+    i32 portal_count;                   // 0x46a0
+    struct spawnsys_s *spawn_sys;       // 0x46a4
+    GIZOBSTACLESYS_s *giz_obstacle_sys; // 0x46a8
+    GIZTURRETSYS_s *giz_turret_sys;     // 0x46ac
+    GIZFORCESYS_s *giz_force_sys;       // 0x46b0
+    char filler7[0x46f0 - 0x46b4];      // 0x46b4 .. 0x46f0
 
     GRABBER_s *grabber; // 0x46f0
 

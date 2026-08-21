@@ -721,6 +721,8 @@ struct GIZMOBLOWUP_s {
     void GetMechObjectInterface();
 };
 struct GIZOBSTACLE_s {
+    undefined field0_0x0[0xa1];
+    u8 field_a1_0xa1;
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };

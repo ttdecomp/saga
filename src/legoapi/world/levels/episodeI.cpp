@@ -3,6 +3,7 @@
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nutex.h"
 GIZFORCE_s *GizForce_FindByName(GIZFORCESYS_s *, char *);
+GIZOBSTACLE_s *GizObstacle_FindByName(GIZOBSTACLESYS_s *, char *);
 struct AIROW_s;
 struct nuqthdr_s;
 struct nunativegscene_s;
@@ -129,7 +130,10 @@ void MaulA_Update(WORLDINFO_s *) {
 void MaulA_Panel(WORLDINFO_s *) {
 }
 
-void MaulB_Init(WORLDINFO_s *) {
+void MaulB_Init(WORLDINFO_s *world) {
+    GIZOBSTACLE_s *o = GizObstacle_FindByName(world->giz_obstacle_sys, "Obstacle19");
+    if (o != NULL)
+        o->field_a1_0xa1 |= 1;
 }
 
 void MaulD_Init(WORLDINFO_s *) {
