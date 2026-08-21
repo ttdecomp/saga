@@ -579,7 +579,15 @@ void ResetPodStuff() {
     }
 }
 
-void SetPodMergeAnims(ANIMPACKET_s *, i32) {
+void SetPodMergeAnims(ANIMPACKET_s *packet, i32 index) {
+    u8 *a = (u8 *)packet;
+    i16 frame = (pod_roll[index] > 0.0f) ? 0x26 : 0x4f;
+    *(u16 *)(a + 0x3a) = 1;
+    *(u16 *)(a + 0x42) = frame;
+    float m = pod_animtime[index];
+    *(float *)(a + 0x10) = m;
+    *(float *)(a + 0x14) = m;
+    *(u32 *)(a + 0x44) = *(u32 *)&pod_roll[index] & 0x7fffffff;
 }
 
 void UpdatePodRaceLapDisplay(float arg) {
