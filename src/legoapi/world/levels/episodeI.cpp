@@ -91,7 +91,19 @@ void GunganA_Init(WORLDINFO_s *world) {
 void GunganA_Update(WORLDINFO_s *) {
 }
 
-void RescueA_Init(WORLDINFO_s *) {
+void RescueA_Init(WORLDINFO_s *world) {
+    GIZMOBLOWUP_s *g = GizmoBlowUp_FindByName(world, "deton_021");
+    if (g != NULL)
+        g->field_0xa0 |= 2;
+    g = GizmoBlowUp_FindByName(world, "deton_011");
+    if (g != NULL)
+        g->field_0xa0 |= 2;
+    g = GizmoBlowUp_FindByName(world, "pod_071");
+    if (g != NULL)
+        g->field_0xa0 |= 2;
+    g = GizmoBlowUp_FindByName(world, "pod_081");
+    if (g != NULL)
+        g->field_0xa0 |= 2;
 }
 
 void RescueB_Init(WORLDINFO_s *) {
@@ -100,7 +112,10 @@ void RescueB_Init(WORLDINFO_s *) {
 void RescueC_Init(WORLDINFO_s *) {
 }
 
-void RescueE_Init(WORLDINFO_s *) {
+void RescueE_Init(WORLDINFO_s *world) {
+    GIZMOBLOWUP_s *g = GizmoBlowUp_FindByName(world, "roof_light61");
+    if (g != NULL)
+        g->field_0xa0 |= 2;
 }
 
 void PodRaceInit(WORLDINFO_s *) {
