@@ -489,7 +489,6 @@ struct ThingLevelData {};
 struct ThingRemoveData {};
 struct VirtualStackAllocator;
 struct VuMtx;
-struct __sFILE {};
 struct _vum_s {};
 struct _vuv_s;
 struct ani3_animheader_s;
@@ -717,6 +716,14 @@ struct GIZFORCE_s {
     void GetMechObjectInterface();
 };
 struct GIZMOBLOWUP_s {
+    undefined field0_0x0[0x50];
+    char field_0x50[0x60];      // 0x50 .. 0xb0
+    float field_0xb0;           // 0xb0
+    undefined field_0xb4[0x6c]; // 0xb4 .. 0x120
+    void *field_0x120;          // 0x120
+    u8 field_0x124;             // 0x124
+    undefined field_0x125[3];
+    float field_0x128; // 0x128
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };

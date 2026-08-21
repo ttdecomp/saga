@@ -2,6 +2,7 @@
 
 struct VuVec;
 struct GIZOBSTACLE_s;
+struct GIZOBSTACLESYS_s;
 
 struct GizObstacleObjectInterface {
     GizObstacleObjectInterface(GIZOBSTACLE_s &);
@@ -12,3 +13,5 @@ struct GizObstacleObjectInterface {
     void TargetedFlash();
     virtual ~GizObstacleObjectInterface();
 };
+
+GIZOBSTACLE_s *GizObstacle_FindByName(GIZOBSTACLESYS_s *, char *);

@@ -1,9 +1,28 @@
+#include <stdio.h>
+#include <string.h>
+
 #include "decomp.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nutex.h"
-GIZFORCE_s *GizForce_FindByName(GIZFORCESYS_s *, char *);
-GIZOBSTACLE_s *GizObstacle_FindByName(GIZOBSTACLESYS_s *, char *);
+
+extern "C" void *AIPathFindLocator(AISYS_s *, char *);
+extern i32 netclient;
+extern i16 id_KAADU;
+extern i16 id_GUNGAN;
+extern i16 id_FALUMPASET;
+
+static struct {
+    undefined field0_0x0[2];
+    u16 count_0x2;
+    void *table_0x4[0x20];
+    void *table2_0x84[0x20];
+    undefined field_0x104[8];
+    i16 g1_0x10c;
+    i16 g2_0x10e;
+    i16 g3_0x110;
+    i16 g4_0x112;
+} gungan_a;
 struct AIROW_s;
 struct nuqthdr_s;
 struct nunativegscene_s;
@@ -31,7 +50,42 @@ void NegotiationsB_Init(WORLDINFO_s *world) {
         f->strength_0x6c = 0.5f;
 }
 
-void GunganA_Init(WORLDINFO_s *) {
+void GunganA_Init(WORLDINFO_s *world) {
+    if (netclient == 0) {
+        memset(&gungan_a, 0, sizeof(gungan_a));
+        gungan_a.g1_0x10c = id_KAADU;
+        gungan_a.g2_0x10e = id_GUNGAN;
+        gungan_a.g3_0x110 = id_FALUMPASET;
+        gungan_a.g4_0x112 = id_GUNGAN;
+        for (i32 i = 0; i < 32; i++) {
+            char buf[16];
+            sprintf(buf, "origin_%d", i);
+            gungan_a.table_0x4[i] = AIPathFindLocator(world->ai_sys, buf);
+            sprintf(buf, "target_%d", i);
+            gungan_a.table2_0x84[i] = AIPathFindLocator(world->ai_sys, buf);
+            if (gungan_a.table_0x4[i] == NULL || gungan_a.table2_0x84[i] == NULL)
+                break;
+            gungan_a.count_0x2++;
+        }
+    }
+    GIZMOBLOWUP_s *b = GizmoBlowUp_FindByName(world, "Trunk2_exp11");
+    if (b != NULL) {
+        UpdateMidPos(b);
+        b->field_0x124 = 1;
+        b->field_0x128 = b->field_0xb0;
+        GIZMOBLOWUP_s *b2 = GizmoBlowUp_FindByName(world, "leaves_exp11");
+        if (b2 != NULL) {
+            b2->field_0x124 = 1;
+            b2->field_0x120 = (void *)&b->field_0x50;
+            b2->field_0x128 = b->field_0xb0;
+        }
+        GIZMOBLOWUP_s *b3 = GizmoBlowUp_FindByName(world, "branch3_exp11");
+        if (b3 != NULL) {
+            b3->field_0x124 = 1;
+            b3->field_0x120 = (void *)&b->field_0x50;
+            b3->field_0x128 = b->field_0xb0;
+        }
+    }
 }
 
 void GunganA_Update(WORLDINFO_s *) {

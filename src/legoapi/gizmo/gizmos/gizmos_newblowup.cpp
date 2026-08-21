@@ -19,7 +19,8 @@ void GizmoBlowUpTypeBlowUp(WORLDINFO_s *, i32, nuvec_s *) {
 void GizmoBlowUp_AddEffects(nuvec_s *, GIZMOBLOWUP_s *, i32, i32, GameObject_s *) {
 }
 
-void GizmoBlowUp_FindByName(WORLDINFO_s *, char *) {
+GIZMOBLOWUP_s *GizmoBlowUp_FindByName(WORLDINFO_s *, char *) {
+    return NULL;
 }
 
 void GizmoBlowUp_FindFromPlatID(WORLDINFO_s *, i32) {
