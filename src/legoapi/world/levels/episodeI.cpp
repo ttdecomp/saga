@@ -99,12 +99,20 @@ extern i32 Paused;
 extern i32 CUTSTOPGAME;
 extern i32 MiniCutCam;
 extern struct LEVELDATA_s *PODRACEB_LDATA;
-extern float GameTimer;
+extern float GameTimer[];
 void TickTockSfx(void);
 float SeekLinearF(float, float, float);
 i32 qrand(void);
-extern i32 LevGizForce[];
-extern i32 LevPathCnx[];
+static i32 pod_092d40;
+static i32 pod_092d48;
+static i32 pod_092d44;
+static float pod_0xd440;
+static float pod_0xd430;
+static float pod_0xd460;
+void Hint_SetComplete(i32);
+extern "C" i32 NuSpecialExistsFn(void *);
+extern "C" void *NuSpecialGetDrawMtx(void *);
+extern "C" i32 NuSpecialClipTestExtents(void *, void *);
 extern i32 retakeg_netpacket;
 extern void *podrace_netpacket;
 extern "C" void Text3DEx(char *, i32, float, float, float, float, float, i32, i32, i32, i32, i32);
@@ -659,7 +667,66 @@ static void *CreatePodRaceMine(nuvec_s *a) {
 static void UpdatePacemakerDisplay(void *a) {
 }
 
-void PodRaceBUpdate(WORLDINFO_s *) {
+void PodRaceBUpdate(WORLDINFO_s *world) {
+    if (Lap == 2) {
+        if (*(float *)((u8 *)PodRace + 0xaf04) > 1.0f && pod_092d40 != 0) {
+            switch (*(u8 *)((u8 *)LevFlag + 1)) {
+                case 0:
+                    if (*(float *)((u8 *)GameCam + 0x2c) > pod_0xd440) {
+                        NewCutScene(NULL, world->cutscene_sys, "ep1_podrace_mushroom0", 1);
+                        *(u8 *)((u8 *)LevFlag + 1) = 1;
+                    }
+                    break;
+                case 1:
+                    if (pod_avalanche_cutscene != NULL &&
+                        (*(u8 *)((u8 *)*(void **)((u8 *)pod_avalanche_cutscene + 0x4) + 0x89) & 0x10)) {
+                        NewCutScene(NULL, world->cutscene_sys, "EP1_PODRACE_MUSHROOM1", 1);
+                        pod_0xd460 = pod_0xd440;
+                        *(u8 *)((u8 *)LevFlag + 1) = 2;
+                    }
+                    break;
+                case 2:
+                    pod_0xd460 -= FRAMETIME;
+                    if (pod_0xd460 > 0.0f) {
+                        if (*(float *)((u8 *)GameCam + 0x2c) > pod_0xd440)
+                            *(u8 *)((u8 *)LevFlag + 1) = 3;
+                    } else {
+                        NewCutScene(NULL, world->cutscene_sys, "EP1_PODRACE_MUSHROOM2", 1);
+                        pod_092d48++;
+                        if (pod_092d44 > 0 && pod_092d48 % pod_092d44 == 0) {
+                            pod_0xd440 = pod_0xd440 + pod_0xd440 < pod_0xd430 ? pod_0xd440 + pod_0xd440 : pod_0xd430;
+                        }
+                        *(u8 *)((u8 *)LevFlag + 1) = 4;
+                    }
+                    break;
+                case 3:
+                    if (NuSpecialExistsFn(LevHSpecial) != 0 &&
+                        NuSpecialClipTestExtents(LevHSpecial, NuSpecialGetDrawMtx(LevHSpecial)) == 0)
+                        *(u8 *)((u8 *)LevFlag + 1) = 4;
+                    break;
+            }
+        }
+    }
+    if (pod_pacemaker != 0) {
+        if (*(float *)((u8 *)FadeSys + 0x4) != 0.0f && pause_rndr_on == 0) {
+            float t = GameTimer[2];
+            pod_092d30 = pod_092d30 + FRAMETIME * 2.0f < 1.0f ? pod_092d30 + FRAMETIME * 2.0f : 1.0f;
+            if (NuFmod(t, 1.0f) > 0.1f)
+                UpdatePacemakerDisplay(world->lev_objs);
+        } else {
+            pod_092d30 = 0.0f;
+        }
+    }
+    UpdatePodRaceLapDisplay(FRAMETIME);
+    PodRaceUpdate(world, FRAMETIME);
+    if (Lap == 1) {
+        if (*(u8 *)LevFlag == 0) {
+            if (GameTimer[0] > 10.0f) {
+                Hint_SetComplete(0x27e);
+                *(u8 *)LevFlag = 1;
+            }
+        }
+    }
 }
 
 void PodRaceCUpdate(WORLDINFO_s *) {
