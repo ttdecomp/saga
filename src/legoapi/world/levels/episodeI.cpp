@@ -15,17 +15,14 @@
 #include "nu2api/numath/numtx.h"
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
+#include "legoapi/world/levels/episodeI_shared.h"
 
-extern "C" void *AIPathFindLocator(AISYS_s *, char *);
 struct GameObject_s;
 GameObject_s *FindGameObject(i32, u32, i32, i32, i32);
 void DrawBossHitPoints(GameObject_s *);
-extern "C" void NuSpecialSetVisibility(void *, i32);
 GIZAIMESSAGE_s *CheckGizAIMessage(GIZAIMESSAGESYS_s *, const char *, GIZAIMESSAGE_s *);
-extern "C" struct nuvec_s *NuSpecialGetPos(void *);
 void GizObstacle_EvalAveragePosAndRadius(GIZOBSTACLE_s *, i32);
 i32 SetLevelHack(i32);
-extern "C" void *AIPAthFindPathCnx(AISYS_s *, i32, char *, void *);
 static GIZAIMESSAGE_s *RetakeG_TotalGuards_msg;
 static GIZAIMESSAGE_s *RetakeG_GuardsToRescue_msg;
 i16 BoltType_FindIDByName(char *, WORLDINFO_s *);
@@ -76,21 +73,13 @@ static float pod_0xd430;
 static float pod_0xd460;
 static float pod_092d70[5];
 void Hint_SetComplete(i32);
-extern "C" void *NuSpecialGetDrawMtx(void *);
-extern "C" i32 NuSpecialClipTestExtents(void *, void *);
-extern "C" void Text3DEx(char *, i32, float, float, float, float, float, i32, i32, i32, i32, i32);
 static i32 pod_sniper_toggle;
 void CutScene_StoppedFn_LSW(CUTINFO *);
 void ResetPodStuff(void);
 struct nuhspecial_s;
 void DrawPanel3DObject(float, float, float, float, float, float, u16, u16, u16, nuhspecial_s *, i32, float);
-extern "C" void *AISysFindArea(void *, char *);
-extern "C" i16 FindGameDebris(void *, char *);
-extern "C" i32 PARTLookupType(char *);
-extern "C" float AnimEndFrame(void *, i32);
 struct flightspline_s;
 void FlightSpline_Init(WORLDINFO_s *, flightspline_s *, i32);
-extern "C" float NuSpecialGetOriginRadius(void *);
 static i32 pod_092d30;
 static void UpdatePodRaceMines(void);
 static void *CreatePodRaceMine(nuvec_s *);
@@ -101,7 +90,6 @@ void Bolt_Add(GameObject_s *, nuvec_s *, numtx_s *, i32, i32);
 static void *retakeg_guard_a;
 static void *retakeg_guard_b;
 void DrawMeleeTargets(i16 *, char *, float *, i32);
-extern "C" void NuSpecialDrawAt(void *, void *);
 
 static struct {
     void *field_0x0; // 0x0  MaulA anim message 1
@@ -563,7 +551,6 @@ void PodRaceCReset(WORLDINFO_s *world) {
     }
 }
 
-extern "C" void PlaySfx(char *);
 void PodRaceUpdate(WORLDINFO_s *world, float dt) {
     if (netclient != 0)
         return;
@@ -650,8 +637,6 @@ void PodRaceAUpdate(WORLDINFO_s *world) {
     }
 }
 
-extern "C" void *AddGameDebris(void *, i32, void *);
-extern "C" void AddFiniteShotPART(i32, void *, i32);
 void PodLoseSpeed(GameObject_s *, i32, i32);
 struct GAMECAMERA_s;
 void GameCam_NewShake(GAMECAMERA_s *, float, float, float);
