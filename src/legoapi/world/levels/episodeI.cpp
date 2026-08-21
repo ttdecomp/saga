@@ -733,7 +733,10 @@ void PodSprint_GetIAlongVals(nugspline_s *spline, i16 *out1, i16 *out2) {
     }
 }
 
-void PodSprint_InStartCountdown(WORLDINFO_s *) {
+float PodSprint_InStartCountdown(WORLDINFO_s *world) {
+    if (world->current_level != PODSPRINTA_LDATA)
+        return 0.0f;
+    return *(float *)((u8 *)podsprint + 0x84);
 }
 
 void AnakinsFlightB_Draw(WORLDINFO_s *world) {
