@@ -1,6 +1,7 @@
 #include "legoapi/legoapi_types.h"
 
-void CutScene_Find(CUTSYS *, char *) {
+CUTINFO *CutScene_Find(CUTSYS *, char *) {
+    return NULL;
 }
 
 void CutScenes_End() {

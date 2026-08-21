@@ -47,6 +47,11 @@ i32 InStory(void);
 extern struct LEVELDATA_s *PODRACEOUTRO1_LDATA;
 extern struct LEVELDATA_s *PODRACESTATUS_LDATA;
 extern i32 other_level_override;
+static i32 pod_pacemaker;
+i32 pod_lap_start;
+CUTINFO *CutScene_Find(CUTSYS *, char *);
+void NewCutScene(CUTINFO *, CUTSYS *, char *, i32);
+void CutScene_SnapToEnd(CUTINFO *);
 extern u32 client_mines[];
 extern void *minesys;
 extern "C" void NuMtxSetIdentity(void *);
@@ -235,7 +240,30 @@ void PodRaceAReset(WORLDINFO_s *) {
 void PodRaceBReset(WORLDINFO_s *) {
 }
 
-void PodRaceCReset(WORLDINFO_s *) {
+void PodRaceCReset(WORLDINFO_s *world) {
+    PodRaceReset();
+    switch (Lap) {
+        case 1:
+            pod_lap_start = 2;
+            break;
+        case 2:
+            pod_lap_start = 5;
+            break;
+        case 3:
+            pod_lap_start = 8;
+            break;
+        default:
+            break;
+    }
+    pod_pacemaker = 0;
+    PodRaceSnipersReset();
+    CUTINFO *cs = CutScene_Find(world->cutscene_sys, "ep1_podrace_avalanche");
+    if (cs != NULL) {
+        if (Lap == 2)
+            NewCutScene(cs, world->cutscene_sys, 0, 1);
+        else if (Lap == 3)
+            CutScene_SnapToEnd(cs);
+    }
 }
 
 void PodRaceUpdate(WORLDINFO_s *, float) {
