@@ -41,6 +41,8 @@ static void *PodRace;
 static i32 mushroom_collapse;
 static i32 mushroom_nattempts_per_increment;
 static i32 mushroom_n_attempts;
+static i32 podhurry_i;
+void PodKeyReset(void);
 extern u32 client_mines[];
 extern void *minesys;
 extern "C" void NuMtxSetIdentity(void *);
@@ -216,6 +218,11 @@ void PodRacePanel(WORLDINFO_s *) {
 }
 
 void PodRaceReset() {
+    *(u32 *)((u8 *)PodRace + 0xaf04) = 0;
+    memset((u8 *)PodRace + 0xa580, 0, 0x980);
+    *(u8 *)((u8 *)PodRace + 0xaf20) &= 0xfc;
+    podhurry_i = -1;
+    PodKeyReset();
 }
 
 void PodRaceAReset(WORLDINFO_s *) {
