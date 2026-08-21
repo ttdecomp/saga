@@ -337,6 +337,7 @@ i32 LevelLocator = 0;
 i32 LevGizObst[8] = {0};
 i32 LevBlowUp[5] = {0};
 i32 LevGizmo[12] = {0};
+i32 retakeg_netpacket = 0;
 GIZAIMESSAGESYS_s *gizaimessagesys = NULL;
 i32 LevSfxId[4] = {0};
 i32 LevelCodeSpline[8] = {0};

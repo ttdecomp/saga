@@ -4,6 +4,7 @@
 #include "decomp.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/world.h"
+#include "legoapi/world/level_shared.h"
 #include "nu2api/nu3d/nutex.h"
 
 extern "C" void *AIPathFindLocator(AISYS_s *, char *);
@@ -15,12 +16,16 @@ extern i16 id_FALUMPASET;
 extern i16 id_DARTHMAUL;
 GameObject_s *FindGameObject(i32, u32, i32, i32, i32);
 void DrawBossHitPoints(GameObject_s *);
-extern char LevHSpecial[];
 extern "C" void NuSpecialSetVisibility(void *, i32);
 extern GIZAIMESSAGESYS_s *gizaimessagesys;
 GIZAIMESSAGE_s *CheckGizAIMessage(GIZAIMESSAGESYS_s *, const char *, GIZAIMESSAGE_s *);
 extern "C" struct nuvec_s *NuSpecialGetPos(void *);
 void GizObstacle_EvalAveragePosAndRadius(GIZOBSTACLE_s *, i32);
+i32 SetLevelHack(i32);
+extern "C" void *AIPAthFindPathCnx(AISYS_s *, i32, char *, void *);
+extern i32 retakeg_netpacket;
+static GIZAIMESSAGE_s *RetakeG_TotalGuards_msg;
+static GIZAIMESSAGE_s *RetakeG_GuardsToRescue_msg;
 
 static struct {
     void *field_0x0; // 0x0  MaulA anim message 1
@@ -340,7 +345,30 @@ void RetakeE_Init(WORLDINFO_s *world) {
     }
 }
 
-void RetakeG_Init(WORLDINFO_s *) {
+void RetakeG_Init(WORLDINFO_s *world) {
+    char buf[0x10];
+    retakeg_netpacket = SetLevelHack(4);
+    RetakeG_TotalGuards_msg = CheckGizAIMessage(gizaimessagesys, "TotalGuards", NULL);
+    RetakeG_GuardsToRescue_msg = CheckGizAIMessage(gizaimessagesys, "GuardsToRescue", NULL);
+    LevGizForce[0] = (i32)(usize)GizForce_FindByName(world->giz_force_sys, "force6");
+    LevPathCnx[0] = (i32)(usize)AIPAthFindPathCnx(world->ai_sys, 0, "stack1_b", buf);
+    LevPathCnx[1] = (i32)(usize)AIPAthFindPathCnx(world->ai_sys, 0, "stack1_a", buf);
+    LevPathCnx[2] = (i32)(usize)AIPAthFindPathCnx(world->ai_sys, 0, "stack1_c", buf);
+    LevPathCnx[3] = (i32)(usize)AIPAthFindPathCnx(world->ai_sys, 0, "stack1_d", buf);
+    LevGizForce[1] = (i32)(usize)GizForce_FindByName(world->giz_force_sys, "force3");
+    LevPathCnx[4] = (i32)(usize)AIPAthFindPathCnx(world->ai_sys, 0, "stack2_b", buf);
+    LevPathCnx[5] = (i32)(usize)AIPAthFindPathCnx(world->ai_sys, 0, "stack2_a", buf);
+    LevPathCnx[6] = (i32)(usize)AIPAthFindPathCnx(world->ai_sys, 0, "stack2_c", buf);
+    LevPathCnx[7] = (i32)(usize)AIPAthFindPathCnx(world->ai_sys, 0, "stack2_d", buf);
+    GIZFORCE_s *f = GizForce_FindByName(world->giz_force_sys, "Force18");
+    if (f != NULL)
+        f->strength_0x6c = 0.85f;
+    f = GizForce_FindByName(world->giz_force_sys, "Force19");
+    if (f != NULL)
+        f->strength_0x6c = 0.85f;
+    f = GizForce_FindByName(world->giz_force_sys, "Force20");
+    if (f != NULL)
+        f->strength_0x6c = 0.85f;
 }
 
 void RetakeG_Reset(WORLDINFO_s *) {
@@ -355,17 +383,17 @@ void RetakeG_Panel(WORLDINFO_s *) {
 void MaulA_Init(WORLDINFO_s *world) {
     PODRACELEVELS.field_0x0 = CheckGizAIMessage(gizaimessagesys, "MaulOnTheRun", NULL);
     PODRACELEVELS.field_0x10 = CheckGizAIMessage(gizaimessagesys, "Hits", NULL);
-    NuSpecialFind(world->current_gscn, (void **)(LevHSpecial + 0x30), "engine_1c");
-    NuSpecialFind(world->current_gscn, (void **)(LevHSpecial + 0x3c), "engine_2c");
-    NuSpecialFind(world->current_gscn, (void **)(LevHSpecial + 0x48), "engine_1d");
-    NuSpecialFind(world->current_gscn, (void **)(LevHSpecial + 0x54), "engine_2d");
+    NuSpecialFind(world->current_gscn, (void **)((char *)LevHSpecial + 0x30), "engine_1c");
+    NuSpecialFind(world->current_gscn, (void **)((char *)LevHSpecial + 0x3c), "engine_2c");
+    NuSpecialFind(world->current_gscn, (void **)((char *)LevHSpecial + 0x48), "engine_1d");
+    NuSpecialFind(world->current_gscn, (void **)((char *)LevHSpecial + 0x54), "engine_2d");
 }
 
 void MaulA_Reset(WORLDINFO_s *world) {
-    NuSpecialSetVisibility(LevHSpecial + 0x30, 0);
-    NuSpecialSetVisibility(LevHSpecial + 0x3c, 0);
-    NuSpecialSetVisibility(LevHSpecial + 0x48, 0);
-    NuSpecialSetVisibility(LevHSpecial + 0x54, 0);
+    NuSpecialSetVisibility((char *)LevHSpecial + 0x30, 0);
+    NuSpecialSetVisibility((char *)LevHSpecial + 0x3c, 0);
+    NuSpecialSetVisibility((char *)LevHSpecial + 0x48, 0);
+    NuSpecialSetVisibility((char *)LevHSpecial + 0x54, 0);
     PODRACELEVELS.field_0x20 = FindGameObject(id_DARTHMAUL, 1, 1, 0, 0);
 }
 
@@ -406,9 +434,9 @@ void MaulE_Update(WORLDINFO_s *) {
 
 void MaulF_Init(WORLDINFO_s *world) {
     PODRACELEVELS.field_0x0 = CheckGizAIMessage(gizaimessagesys, "ShowHearts", NULL);
-    NuSpecialFind(world->current_gscn, (void **)(LevHSpecial + 0x0), "throw_object1");
-    NuSpecialFind(world->current_gscn, (void **)(LevHSpecial + 0xc), "throw_object2");
-    NuSpecialFind(world->current_gscn, (void **)(LevHSpecial + 0x18), "throw_object3");
+    NuSpecialFind(world->current_gscn, (void **)((char *)LevHSpecial + 0x0), "throw_object1");
+    NuSpecialFind(world->current_gscn, (void **)((char *)LevHSpecial + 0xc), "throw_object2");
+    NuSpecialFind(world->current_gscn, (void **)((char *)LevHSpecial + 0x18), "throw_object3");
 }
 
 void MaulF_Reset(WORLDINFO_s *world) {
