@@ -48,6 +48,7 @@ extern struct LEVELDATA_s *PODRACEOUTRO1_LDATA;
 extern struct LEVELDATA_s *PODRACESTATUS_LDATA;
 extern i32 other_level_override;
 static i32 pod_pacemaker;
+static void *pod_avalanche_cutscene;
 i32 pod_lap_start;
 CUTINFO *CutScene_Find(CUTSYS *, char *);
 void NewCutScene(CUTINFO *, CUTSYS *, char *, i32);
@@ -237,7 +238,24 @@ void PodRaceReset() {
 void PodRaceAReset(WORLDINFO_s *) {
 }
 
-void PodRaceBReset(WORLDINFO_s *) {
+void PodRaceBReset(WORLDINFO_s *world) {
+    PodRaceReset();
+    switch (Lap) {
+        case 1:
+            pod_lap_start = 1;
+            break;
+        case 2:
+            pod_lap_start = 4;
+            break;
+        case 3:
+            pod_lap_start = 7;
+            break;
+    }
+    pod_pacemaker = 0;
+    *(u8 *)LevFlag = 0;
+    *((u8 *)LevFlag + 1) = 0;
+    pod_avalanche_cutscene = CutScene_Find(world->cutscene_sys, "EP1_PODRACE_MUSHROOM0");
+    NuSpecialFind(world->current_gscn, (void **)LevHSpecial, "collapsing_mush");
 }
 
 void PodRaceCReset(WORLDINFO_s *world) {
