@@ -298,7 +298,7 @@ struct TouchHacks {
     void CheckForAboutToRunIntoKillTerrain(GameObject_s &, float);
     void CheckForAboutToRunOffAnEdge(GameObject_s &, float);
     void CheckJumpForLandingSpot(GameObject_s &, float);
-    void CleanupAllMechObjectInterfaces(WORLDINFO_s *);
+    static void CleanupAllMechObjectInterfaces(WORLDINFO_s *);
     void FindBombTarget(GameObject_s &);
     void GetFlashColour();
     void GetIncomingPartRange();

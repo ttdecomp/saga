@@ -54,11 +54,15 @@ def find_src_file(name, src):
         if rel.startswith(prefix):
             rel = rel[len(prefix):]
             break
+    # Unit names carry the object extension (e.g. "Foo.cpp.o"); strip it so we
+    # can resolve to the actual source file ("Foo.cpp").
+    if rel.endswith(".o"):
+        rel = rel[:-2]
     direct = os.path.join(src, rel)
     if os.path.isfile(direct):
         return os.path.relpath(direct, src)
 
-    base = os.path.basename(name)
+    base = os.path.basename(rel)
     if not base or "." not in base:
         return None
     cands = []

@@ -49,8 +49,8 @@ extern "C" void *TerrainInitEx(i32 param1, void *buf, void *buf_end, i32 param2,
 }
 void LoadTerrainFile(WORLDINFO *world) {
     char path[256];
-    *(i32 *)&world->unknown_0140[0x281c] = 0;
-    if ((world->current_level->flags & LEVEL_UNKNOWN_FLAG_8) != 0) {
+    world->terrain = NULL;
+    if ((world->current_level->flags & LEVEL_TERRAIN) != 0) {
         NuStrCpy(path, world->config_file);
         LEVELDATA *level = world->current_level;
         if (level == (LEVELDATA *)PLATFORM_LDATA) {
@@ -58,15 +58,16 @@ void LoadTerrainFile(WORLDINFO *world) {
             level = world->current_level;
         }
         world->giz_buffer.addr = ALIGN(world->giz_buffer.addr, 4);
-        void *terrain = TerrainInitEx(*(i32 *)&world->unknown_0140[0x011c], &world->giz_buffer, &world->unknown_0108, 0,
+        // i32 read into the progress_data region (offset 0x25c).
+        void *terrain = TerrainInitEx(*(i32 *)((char *)world + 0x25c), &world->giz_buffer, &world->unknown_0108, 0,
                                       path, world->current_gscn, 0, (u32)(u16)level->max_ter_groups,
                                       (u32)(u16)level->max_ter_groups, (u32)(u16)level->max_ter_platforms);
-        *(void **)&world->unknown_0140[0x281c] = terrain;
+        world->terrain = terrain;
     }
 }
 void LoadGrassFile(WORLDINFO *world) {
     char path[268];
-    *(i32 *)&world->unknown_0140[0x2964] = -1;
+    world->page_grass = -1;
     Grass_Available = 1;
     char *config = world->config_file;
 
@@ -99,36 +100,37 @@ void LoadGrassFile(WORLDINFO *world) {
     if (Grass_Available != 0) {
         sprintf(path, "%s.gra", config);
         if (NuFileExists(path)) {
-            i32 page = edgraLoadPage(path, world->current_gscn, *(i32 *)&world->unknown_0140[0x281c],
-                                     &world->giz_buffer, &world->unknown_0108);
-            *(i32 *)&world->unknown_0140[0x2964] = page;
+            i32 page = edgraLoadPage(path, world->current_gscn, *(i32 *)&world->terrain, &world->giz_buffer,
+                                     &world->unknown_0108);
+            world->page_grass = page;
         }
     }
 }
 void LoadBridgeFile(WORLDINFO *world) {
     char path[256];
-    *(i32 *)&world->unknown_0140[0x2968] = -1;
+    world->page_bridge = -1;
     sprintf(path, "%s.bri", world->config_file);
     if (NuFileExists(path)) {
         i32 page = edbriLoadPage(path, world->current_gscn);
-        *(i32 *)&world->unknown_0140[0x2968] = page;
+        world->page_bridge = page;
     }
 }
 void LoadPartFile(WORLDINFO *world) {
     char path[256];
-    *(i32 *)&world->unknown_0140[0x295c] = -1;
-    edpartSetParticlePage(*(i32 *)&world->unknown_0140[0x2958]);
+    world->page_part = -1;
+    edpartSetParticlePage(world->page_pp);
 
     if ((world->current_level->flags & (LEVEL_OUTRO | LEVEL_MIDTRO | LEVEL_INTRO)) == 0) {
         sprintf(path, "%s.par", world->config_file);
         i32 page = -1;
         if (NuFileExists(path)) {
             page = edpartLoadPage(path, 1, world->current_gscn);
-            *(i32 *)&world->unknown_0140[0x295c] = page;
+            world->page_part = page;
         }
         void *partDebrisSys =
             InitPartDebris(&world->giz_buffer, &world->unknown_0108, 0x40, PDEBCOUNT, (char **)PDebNameList, page);
-        *(void **)&world->unknown_0140[0x2960] = partDebrisSys;
+        // 0x2aa0 is both the anim page handle and, here, the part-debris system.
+        world->page_anim = (i32)(usize)partDebrisSys;
     }
 }
 void ScanTerrId(void *) {

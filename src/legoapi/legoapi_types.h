@@ -353,7 +353,6 @@ struct AITRIGGERSET_s {};
 struct ANIMLIST_s {};
 struct ANIMPACKET_s {};
 struct ANIMREDIRECT {};
-struct APICHARACTERMODELLIST_s {};
 struct AREADATA_s;
 struct AREASAVE_s {};
 struct ATTRACTO_s;
@@ -437,11 +436,9 @@ struct LEVELDATA_s;
 struct LEVELOBJECT {};
 struct LEVELSCRIPTPROCESS_s;
 struct LEVELSPLINE {};
-#include "legoapi/world/LEVEL_PROGRESS.h"
 struct LoadedUniqueShaderRecord {};
 struct MENU_s;
 struct MISSIONSAVE_s;
-struct MISSIONSYS_s {};
 struct MemoryBuffer;
 struct NARROWSOCKEXCEPTION {};
 struct NUGCUTCHAR_s;
@@ -492,7 +489,6 @@ struct ThingLevelData {};
 struct ThingRemoveData {};
 struct VirtualStackAllocator;
 struct VuMtx;
-struct __sFILE {};
 struct _vum_s {};
 struct _vuv_s;
 struct ani3_animheader_s;
@@ -714,14 +710,28 @@ struct GIZBUILDIT_s {
     void GetMechObjectInterface();
 };
 struct GIZFORCE_s {
+    undefined field0_0x0[0x6c];
+    float strength_0x6c;
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };
 struct GIZMOBLOWUP_s {
+    undefined field0_0x0[0x50];
+    char field_0x50[0x50];      // 0x50 .. 0xa0
+    i32 field_0xa0;             // 0xa0
+    char field_0xa4[0xc];       // 0xa4 .. 0xb0
+    float field_0xb0;           // 0xb0
+    undefined field_0xb4[0x6c]; // 0xb4 .. 0x120
+    void *field_0x120;          // 0x120
+    u8 field_0x124;             // 0x124
+    undefined field_0x125[3];
+    float field_0x128; // 0x128
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };
 struct GIZOBSTACLE_s {
+    undefined field0_0x0[0xa1];
+    u8 field_a1_0xa1;
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };

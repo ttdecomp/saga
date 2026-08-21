@@ -47,13 +47,13 @@ extern "C" {
     void NuPortalVisibility(NUGSCN *scene);
     void NuGScnRndr3(NUGSCN *scene);
     void NuGScnUpdate(NUGSCN *gscn, i32 param);
-    void *NuGScnRead(VARIPTR *buf, VARIPTR buf_end, char *path);
+    NUGSCN *NuGScnRead(VARIPTR *buf, VARIPTR buf_end, char *path);
     void NuGScnReadFromMemory(NUGSCN *scene);
     void NuGHGFixup(NUGSCN *scene);
     void NuRndrInitWorld(void);
 }
 i32 NuGScnUploadGfxDataFromFilePS(VARIPTR *buf, VARIPTR *buf_end, i32 file);
-void NuSpecialFind(NUGSCN *scene, void **dest, char *name);
+void *NuSpecialFind(NUGSCN *scene, void **dest, char *name);
 void SetCameraZoom(f32 zoom);
 
 // --- terrain.cpp — terrain / debris / grass / bridge / particles ---

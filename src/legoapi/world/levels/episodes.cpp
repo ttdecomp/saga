@@ -10,33 +10,6 @@ struct SHOPINPUT;
 void BossKilled(i32) {
 }
 
-void MaulA_Init(WORLDINFO_s *) {
-}
-
-void MaulB_Init(WORLDINFO_s *) {
-}
-
-void MaulD_Init(WORLDINFO_s *) {
-}
-
-void MaulE_Init(WORLDINFO_s *) {
-}
-
-void MaulF_Init(WORLDINFO_s *) {
-}
-
-void MaulA_Panel(WORLDINFO_s *) {
-}
-
-void MaulA_Reset(WORLDINFO_s *) {
-}
-
-void MaulF_Panel(WORLDINFO_s *) {
-}
-
-void MaulF_Reset(WORLDINFO_s *) {
-}
-
 void VaderA_Init(WORLDINFO_s *) {
 }
 
@@ -44,39 +17,6 @@ void VaderB_Init(WORLDINFO_s *) {
 }
 
 void VaderC_Init(WORLDINFO_s *) {
-}
-
-void MaulA_Update(WORLDINFO_s *) {
-}
-
-void MaulD_Update(WORLDINFO_s *) {
-}
-
-void MaulE_Update(WORLDINFO_s *) {
-}
-
-void MaulF_Update(WORLDINFO_s *) {
-}
-
-void RescueA_Init(WORLDINFO_s *) {
-}
-
-void RescueB_Init(WORLDINFO_s *) {
-}
-
-void RescueC_Init(WORLDINFO_s *) {
-}
-
-void RescueE_Init(WORLDINFO_s *) {
-}
-
-void RetakeD_Init(WORLDINFO_s *) {
-}
-
-void RetakeE_Init(WORLDINFO_s *) {
-}
-
-void RetakeG_Init(WORLDINFO_s *) {
 }
 
 void SenateA_Init(WORLDINFO_s *) {
@@ -100,15 +40,6 @@ void VaderB_Reset(WORLDINFO_s *) {
 void VaderC_Reset(WORLDINFO_s *) {
 }
 
-void ResetPodStuff() {
-}
-
-void RetakeG_Panel(WORLDINFO_s *) {
-}
-
-void RetakeG_Reset(WORLDINFO_s *) {
-}
-
 void VaderA_Update(WORLDINFO_s *) {
 }
 
@@ -122,9 +53,6 @@ void CoinTotal_Draw(i32, float, float, i32, float, i32, i32, i32) {
 }
 
 void InitSuperStory(i32) {
-}
-
-void RetakeG_Update(WORLDINFO_s *) {
 }
 
 void TatooineA_Init(WORLDINFO_s *) {
@@ -151,19 +79,10 @@ void MosEisleyD_Init(WORLDINFO_s *) {
 void MosEisleyE_Init(WORLDINFO_s *) {
 }
 
-void PodSprintA_Init(WORLDINFO_s *) {
-}
-
 void DoubleScoreAlpha() {
 }
 
 void MosEisleyE_Reset(WORLDINFO_s *) {
-}
-
-void PodSprintA_Panel(WORLDINFO_s *) {
-}
-
-void PodSprintA_Reset(WORLDINFO_s *) {
 }
 
 void SarlaccPitA_Draw(WORLDINFO_s *) {
@@ -173,9 +92,6 @@ void SarlaccPitB_Init(WORLDINFO_s *) {
 }
 
 void SarlaccPitC_Init(WORLDINFO_s *) {
-}
-
-void SetPodMergeAnims(ANIMPACKET_s *, i32) {
 }
 
 void TatooineA_Update(WORLDINFO_s *) {
@@ -200,12 +116,6 @@ void MosEisleyB_Update(WORLDINFO_s *) {
 }
 
 void MosEisleyE_Update(WORLDINFO_s *) {
-}
-
-void PodSprintA_Update(WORLDINFO_s *) {
-}
-
-void PodSprint_RollMul(GameObject_s *) {
 }
 
 void SarlaccPitA_Reset(WORLDINFO_s *) {
@@ -328,12 +238,6 @@ void VaderA_GoneThroughDoor(WORLDINFO_s *, DOOR_s *) {
 void MosEisleyD_AlwaysUpdate(WORLDINFO_s *) {
 }
 
-void PodSprint_GetIAlongVals(nugspline_s *, i16 *, i16 *) {
-}
-
-void UpdatePodRaceLapDisplay(float) {
-}
-
 void BountyHunterPursuitA_Init(WORLDINFO_s *) {
 }
 
@@ -359,9 +263,6 @@ void BountyHunterPursuitC_Reset(WORLDINFO_s *) {
 }
 
 void BountyHunterPursuitD_Reset(WORLDINFO_s *) {
-}
-
-void PodSprint_InStartCountdown(WORLDINFO_s *) {
 }
 
 void BountyHunterPursuitA_Update(WORLDINFO_s *) {

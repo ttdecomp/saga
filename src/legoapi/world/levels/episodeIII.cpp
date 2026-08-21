@@ -66,12 +66,3 @@ void KashyyykC_Update(WORLDINFO_s *) {
 
 void KashyyykD_Update(WORLDINFO_s *) {
 }
-
-void AnakinsFlightB_Draw(WORLDINFO_s *) {
-}
-
-void AnakinsFlightB_Init(WORLDINFO_s *) {
-}
-
-void AnakinsFlightB_Update(WORLDINFO_s *) {
-}

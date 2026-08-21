@@ -54,6 +54,26 @@ The `objdiff` tool may be installed by running
 if you prefer a command-line tool,
 `cargo install --git https://github.com/encounter/objdiff.git objdiff-cli`).
 
+## Development Scripts
+
+The `scripts/` directory contains a few small helpers:
+
+- `check_duplicate_definitions.py` — scans the source tree for duplicate type
+  (struct/class/union/enum) definitions. Given `--build <dir>` it also runs
+  `nm` over the compiled objects to report duplicate symbols (local and global,
+  text and data), which catches static (file-local) functions/variables that the
+  linker silently allows. The symbol check is advisory by default; pass
+  `--fail-on-symbols` to make it an error.
+- `check_symbols.py` — diffs the defined text symbols of the build against the
+  original binary, so you can see exactly which functions are still missing.
+- `matching_report.py` — turns an objdiff `report.json` into per-directory
+  matching-progress tables and can write them back into `README.md`.
+- `objdiffdiff.py` — compares two objdiff `report.json` files and reports
+  regressions.
+
+`check_duplicate_definitions.py` and `check_symbols.py` are run automatically as
+part of the `lint` build target.
+
 ## Style Guidelines
 
 ## Clang-Format

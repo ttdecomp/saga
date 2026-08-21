@@ -1,4 +1,4 @@
-#include "legoapi/episodes/mission.h"
+#include "legoapi/world/mission.h"
 
 #include "legoapi/characters/core/character.h"
 #include "legoapi/world/level.h"
@@ -19,20 +19,11 @@ MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *buffer
     MISSIONSYS *dest;
     i32 charId;
     MISSIONSYS sys;
-    MISSIONSAVE local_c;
     i16 *buffer;
-
-    sys.character_ids[6] = 2475;
-    sys.character_ids[7] = 79;
 
     fp = NuFParCreate(file);
     if (fp != NULL) {
-        dest = &sys;
-
-        for (i = 12; i != 0; i--) {
-            dest->length = 0;
-            dest = (MISSIONSYS *)((usize)dest + 4);
-        }
+        memset(&sys, 0, sizeof(sys));
 
         sys.flags = 1;
         buffer = (i16 *)((usize)bufferStart->void_ptr + 3U & 0xfffffffc);
@@ -74,14 +65,12 @@ MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *buffer
                 } else {
                     i = NuStrICmp(fp->word_buf, "mission");
                     if (i == 0) {
-                        *buffer = -1;
+                        buffer[0] = -1;
                         buffer[1] = -1;
                         buffer[2] = -1;
                         buffer[3] = -1;
-                        buffer[4] = -0x7960;
-                        buffer[5] = 1;
-                        buffer[6] = -0x7960;
-                        buffer[7] = 1;
+                        *(i32 *)(buffer + 4) = 0x186a0;
+                        *(i32 *)(buffer + 6) = 0x186a0;
                         buffer[8] = 0xb4;
                         *(byte *)(buffer + 9) = sys.count;
                     LAB_004f0bd0:

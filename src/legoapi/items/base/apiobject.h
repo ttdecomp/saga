@@ -44,18 +44,27 @@ typedef struct PAI_s {
 } PAI;
 
 typedef struct APIOBJECT_s {
-    void *objptr; // 0x00
-    undefined field_0x4[0x1f4];
-    u8 field252_0x1f8; // 0x1f8
-    undefined field_0x1f9[0x33];
-    f32 viewdistance;  // 0x22c
-    f32 heardistance;  // 0x230
-    f32 maxviewheight; // 0x234
-    f32 minviewheight; // 0x238
+    void *objptr;                // 0x00
+    undefined field_0x4[0x1dc];  // 0x04 .. 0x1e0
+    f32 field_0x1e0;             // 0x1e0
+    u32 field_0x1e4;             // 0x1e4  mission kill-mask lo
+    u32 field_0x1e8;             // 0x1e8  mission kill-mask hi
+    u32 field_0x1ec;             // 0x1ec  player mission-complete mask lo
+    u32 field_0x1f0;             // 0x1f0  player mission-complete mask hi
+    u32 field_0x1f4;             // 0x1f4
+    u16 field_0x1f8;             // 0x1f8  flags (bit0 in-use, low-byte bit7 dying, 0x1000/0x2000)
+    u8 field_0x1fa;              // 0x1fa
+    undefined field_0x1fb[0x31]; // 0x1fb .. 0x22c
+    f32 viewdistance;            // 0x22c
+    f32 heardistance;            // 0x230
+    f32 maxviewheight;           // 0x234
+    f32 minviewheight;           // 0x238
     undefined field_0x23c[0x40];
-    char field_0x27c; // 0x27c
-    undefined field_0x27d[0xc];
-    u8 field_0x289; // 0x289
+    char field_0x27c;           // 0x27c  player/character slot (0xff = none)
+    undefined field_0x27d[0xa]; // 0x27d .. 0x287
+    u8 field_0x287;             // 0x287  owner/controller player index
+    u8 field_0x288;             // 0x288
+    u8 field_0x289;             // 0x289
     undefined field_0x28a[0x16];
     u32 field387_0x2a0; // 0x2a0
     u32 field388_0x2a4; // 0x2a4
@@ -105,7 +114,7 @@ typedef struct GameObject_s {
     u8 pad_108f[0x10b0 - 0x108f]; // 0x108f .. 0x10b0
     void *opponent;               // 0x10b0
     void *last_attacker;          // 0x10b4
-    u8 pad_10b8[0x10b8 - 0x10b8]; // tail (empty)
+    u8 pad_10b8[0x10e4 - 0x10b8]; // 0x10b8 .. 0x10e4 (tail)
     void ClearAddons();
     void ClearMechObjectInterface();
     void GetAddons(bool);

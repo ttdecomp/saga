@@ -1,4 +1,4 @@
-#include "legoapi/episodes/episode.h"
+#include "legoapi/world/levels/episode.h"
 
 #include "globals.h"
 #include "legoapi/world/area.h"
@@ -11,7 +11,7 @@ u32 Episode_FindAreaFromFlags(EPISODEDATA *ep, u32 flags, u32 want) {
     for (i32 i = 0; i < (i32)ep->area_count; i++) {
         AREADATA *a = &ADataList[ep->area_ids[i]];
         if ((a->flags & flags) == want) {
-            return (u8)a->field27_0x7c;
+            return (u8)a->index;
         }
     }
     return 0xffffffff;
@@ -101,7 +101,7 @@ EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *b
                     if (!found) {
                         episode->area_ids[areaCount] = (i16)areaIndex;
                         episode->area_count = (u8)(areaCount + 1);
-                        if ((area->flags & 6) == 0) {
+                        if ((area->flags & (AREAFLAG_ENDING_AREA | AREAFLAG_BONUS_AREA)) == 0) {
                             episode->regular_areas += 1;
                         }
                     }

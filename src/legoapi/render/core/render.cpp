@@ -84,7 +84,7 @@ static NUGSCN *NuReadGraphicsData(VARIPTR *buf, VARIPTR *buf_end, char *path, NU
 
 // --- Extern "C": NuGScn functions have C linkage in original ---
 extern "C" {
-    void *NuGScnRead(VARIPTR *buf, VARIPTR buf_end, char *path) {
+    NUGSCN *NuGScnRead(VARIPTR *buf, VARIPTR buf_end, char *path) {
         RemoveDirectionalMaps = 1;
         RemoveNormalMaps = 1;
         NUGSCN *scene = NuReadGraphicsData(buf, &buf_end, path, NULL);
@@ -100,10 +100,11 @@ extern "C" {
     }
 } // extern "C"
 
-void NuSpecialFind(NUGSCN *scene, void **dest, char *name) {
+void *NuSpecialFind(NUGSCN *scene, void **dest, char *name) {
     (void)scene;
     (void)dest;
     (void)name;
+    return NULL;
 }
 
 void DrawCables() {

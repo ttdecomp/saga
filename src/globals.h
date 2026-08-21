@@ -2,7 +2,7 @@
 
 #include "decomp.h"
 #include "legoapi/world/level.h"
-#include "legoapi/episodes/mission.h"
+#include "legoapi/world/mission.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nucore/common.h"
 
@@ -189,6 +189,39 @@ extern "C" {
         char field39_0x7d08[336];
     };
 
+    struct CHARCAT_s {
+        undefined field0_0x0[4];
+        u32 field1_0x4;
+        i32 field2_0x8;
+    };
+
+    struct ARCADEITEM_s {
+        undefined field0_0x0[0xc];
+        char field_c_0xc;
+    };
+
+    struct ARCADE_MODE_s {
+        undefined field0_0x0[8];
+        i32 field8_0x8;
+    };
+
+    struct GAME_CUSTOMISER_s {
+        undefined field0_0x0[0x6c];
+        i16 field6c_0x6c;
+        i16 field6e_0x6e;
+    };
+
+    struct VEHICLECOLLECTION_s {
+        void *field0_0x0;
+        undefined field4_0x4[2];
+        u16 count_0x6;
+    };
+
+    struct EXTRAMODELLISTENTRY_s {
+        i16 *model_list;
+        void *field4_0x4;
+    };
+
     extern i32 PAL;
     extern f32 FRAMETIME;
     extern f32 DEFAULTFPS;
@@ -263,6 +296,14 @@ extern "C" {
     extern f32 GameTimer[2];
     extern i32 AreaGlobals;
 
+    extern i32 BonusWinner;
+    extern i32 BonusWinFlag;
+    extern i32 ChallengeMode;
+    extern struct TIMER_s ChallengeTimer;
+    extern i32 HIGHGAMEOBJECT;
+    extern void *Obj;
+    extern f32 AreaPickupGravity;
+
     extern i32 LevObjRef_FirstObj;
     extern i32 LevObjRef_LastObj;
     extern i32 LevObjRef_FirstRefObj;
@@ -301,6 +342,156 @@ extern "C" {
     extern i32 last_area;
     extern LEVELDATA *LastLData;
     extern LEVELDATA *TITLES_LDATA;
+    extern LEVELDATA *STATUS_LDATA;
+    extern LEVELDATA *ASTEROIDCHASEMITRO_LDATA;
+    extern LEVELDATA *BOUNTYHUNTERPURSUITE_LDATA;
+    extern LEVELDATA *CLOUDCITYESCAPEB_LDATA;
+    extern LEVELDATA *CLOUDCITYTRAPOUTRO_LDATA;
+    extern LEVELDATA *CRUISERB_LDATA;
+    extern LEVELDATA *CRUISERE_LDATA;
+    extern LEVELDATA *CRUISERG_LDATA;
+    extern LEVELDATA *DAGOBAHD_LDATA;
+    extern LEVELDATA *DEATHSTAR2BATTLEB_LDATA;
+    extern LEVELDATA *DEATHSTAR2BATTLEMIDTRO_LDATA;
+    extern LEVELDATA *DEATHSTARBATTLEA_LDATA;
+    extern LEVELDATA *DEATHSTARBATTLEB_LDATA;
+    extern LEVELDATA *DEATHSTARRESCUEA_LDATA;
+    extern LEVELDATA *DEATHSTARRESCUED_LDATA;
+    extern LEVELDATA *DEATHSTARRESCUEE_LDATA;
+    extern LEVELDATA *DOGFIGHTA_LDATA;
+    extern LEVELDATA *DOOKUOUTRO_LDATA;
+    extern LEVELDATA *E1CHARACTERBONUSA_LDATA;
+    extern LEVELDATA *E2VEHICLEBONUSA_LDATA;
+    extern LEVELDATA *ENDORBATTLEB_LDATA;
+    extern LEVELDATA *ENDORBATTLEC_LDATA;
+    extern LEVELDATA *ENDORBATTLED_LDATA;
+    extern LEVELDATA *FACTORYD_LDATA;
+    extern LEVELDATA *FACTORYF_LDATA;
+    extern LEVELDATA *GUNGAN_B_LDATA;
+    extern LEVELDATA *HOTHBATTLEB_LDATA;
+    extern LEVELDATA *HOTHBATTLED_LDATA;
+    extern LEVELDATA *HOTHBATTLEOUTRO_LDATA;
+    extern LEVELDATA *JABBASPALACE_OUTRO_LDATA;
+    extern LEVELDATA *JEDI_OUTRO_LDATA;
+    extern LEVELDATA *KAMINOC_LDATA;
+    extern LEVELDATA *MOSEISLEYC_LDATA;
+    extern LEVELDATA *NEGOTIATIONSC_LDATA;
+    extern LEVELDATA *PODRACEOUTRO1_LDATA;
+    extern LEVELDATA *PODRACESTATUS_LDATA;
+    extern LEVELDATA *RETAKEB_LDATA;
+    extern LEVELDATA *RETAKEINTRO1_LDATA;
+    extern LEVELDATA *RETAKEINTRO2_LDATA;
+    extern LEVELDATA *RETAKEINTRO3_LDATA;
+    extern LEVELDATA *SENATEA_LDATA;
+    extern LEVELDATA *TATOOINEC_LDATA;
+    extern LEVELDATA *TATOOINEE_LDATA;
+    extern LEVELDATA *TEMPLEB_LDATA;
+    extern LEVELDATA *TEMPLESTATUS_LDATA;
+    extern LEVELDATA *SPEEDERCHASEA_LDATA;
+    extern LEVELDATA *NEGOTIATIONSA_LDATA;
+    extern LEVELDATA *NEGOTIATIONSB_LDATA;
+    extern LEVELDATA *GUNGAN_A_LDATA;
+    extern LEVELDATA *RESCUEA_LDATA;
+    extern LEVELDATA *RESCUEB_LDATA;
+    extern LEVELDATA *RESCUEC_LDATA;
+    extern LEVELDATA *RESCUEE_LDATA;
+    extern LEVELDATA *PODRACEB_LDATA;
+    extern LEVELDATA *PODRACEA_LDATA;
+    extern LEVELDATA *PODRACEC_LDATA;
+    extern LEVELDATA *PODSPRINTA_LDATA;
+    extern LEVELDATA *ANAKINSFLIGHTB_LDATA;
+    extern LEVELDATA *RETAKED_LDATA;
+    extern LEVELDATA *RETAKEE_LDATA;
+    extern LEVELDATA *RETAKEG_LDATA;
+    extern LEVELDATA *MAULA_LDATA;
+    extern LEVELDATA *MAULB_LDATA;
+    extern LEVELDATA *MAULD_LDATA;
+    extern LEVELDATA *MAULE_LDATA;
+    extern LEVELDATA *MAULF_LDATA;
+    extern LEVELDATA *JEDI_B_LDATA;
+    extern LEVELDATA *GUNSHIPA_LDATA;
+    extern LEVELDATA *GUNSHIPB_LDATA;
+    extern LEVELDATA *BONUS_GUNSHIPA_LDATA;
+    extern LEVELDATA *BONUS_GUNSHIPB_LDATA;
+    extern LEVELDATA *BOUNTYHUNTERPURSUITA_LDATA;
+    extern LEVELDATA *BOUNTYHUNTERPURSUITB_LDATA;
+    extern LEVELDATA *BOUNTYHUNTERPURSUITC_LDATA;
+    extern LEVELDATA *BOUNTYHUNTERPURSUITD_LDATA;
+    extern LEVELDATA *FACTORYB_LDATA;
+    extern LEVELDATA *FACTORYG_LDATA;
+    extern LEVELDATA *DOOKUC_LDATA;
+    extern LEVELDATA *KAMINOD_LDATA;
+    extern LEVELDATA *KAMINOOUTRO_LDATA;
+    extern LEVELDATA *KAMINOE_LDATA;
+    extern LEVELDATA *KAMINOF_LDATA;
+    extern LEVELDATA *NB_KAMINOALDATA_LDATA;
+    extern LEVELDATA *CRUISERA_LDATA;
+    extern LEVELDATA *CRUISERC_LDATA;
+    extern LEVELDATA *CRUISERD_LDATA;
+    extern LEVELDATA *GRIEVOUSA_LDATA;
+    extern LEVELDATA *TEMPLEA_LDATA;
+    extern LEVELDATA *TEMPLEC_LDATA;
+    extern LEVELDATA *KASHYYYKA_LDATA;
+    extern LEVELDATA *KASHYYYKB_LDATA;
+    extern LEVELDATA *KASHYYYKC_LDATA;
+    extern LEVELDATA *KASHYYYKD_LDATA;
+    extern LEVELDATA *VADERA_LDATA;
+    extern LEVELDATA *VADERB_LDATA;
+    extern LEVELDATA *VADERC_LDATA;
+    extern LEVELDATA *BLOCKADERUNNERB_LDATA;
+    extern LEVELDATA *BLOCKADERUNNERC_LDATA;
+    extern LEVELDATA *BLOCKADERUNNERD_LDATA;
+    extern LEVELDATA *MOSEISLEYA_LDATA;
+    extern LEVELDATA *MOSEISLEYB_LDATA;
+    extern LEVELDATA *MOSEISLEYD_LDATA;
+    extern LEVELDATA *MOSEISLEYE_LDATA;
+    extern LEVELDATA *TATOOINEA_LDATA;
+    extern LEVELDATA *TATOOINED_LDATA;
+    extern LEVELDATA *DEATHSTARRESCUEB_LDATA;
+    extern LEVELDATA *DEATHSTARRESCUEC_LDATA;
+    extern LEVELDATA *DEATHSTARESCAPEA_LDATA;
+    extern LEVELDATA *DEATHSTARESCAPEB_LDATA;
+    extern LEVELDATA *DEATHSTARESCAPEC_LDATA;
+    extern LEVELDATA *DEATHSTARESCAPED_LDATA;
+    extern LEVELDATA *DEATHSTARBATTLEC_LDATA;
+    extern LEVELDATA *DEATHSTARBATTLED_LDATA;
+    extern LEVELDATA *HOTHBATTLEA_LDATA;
+    extern LEVELDATA *HOTHBATTLEC_LDATA;
+    extern LEVELDATA *HOTHBATTLEE_LDATA;
+    extern LEVELDATA *HOTHESCAPEA_LDATA;
+    extern LEVELDATA *HOTHESCAPEB_LDATA;
+    extern LEVELDATA *HOTHESCAPEC_LDATA;
+    extern LEVELDATA *HOTHESCAPED_LDATA;
+    extern LEVELDATA *ASTEROIDCHASEA_LDATA;
+    extern LEVELDATA *ASTEROIDCHASEB_LDATA;
+    extern LEVELDATA *ASTEROIDCHASEC_LDATA;
+    extern LEVELDATA *ASTEROIDCHASED_LDATA;
+    extern LEVELDATA *DAGOBAHA_LDATA;
+    extern LEVELDATA *DAGOBAHB_LDATA;
+    extern LEVELDATA *DAGOBAHC_LDATA;
+    extern LEVELDATA *CLOUDCITYTRAPA_LDATA;
+    extern LEVELDATA *CLOUDCITYTRAPB_LDATA;
+    extern LEVELDATA *CLOUDCITYTRAPC_LDATA;
+    extern LEVELDATA *CLOUDCITYESCAPEA_LDATA;
+    extern LEVELDATA *CLOUDCITYESCAPEC_LDATA;
+    extern LEVELDATA *JABBASPALACEA_LDATA;
+    extern LEVELDATA *JABBASPALACEB_LDATA;
+    extern LEVELDATA *JABBASPALACED_LDATA;
+    extern LEVELDATA *JABBASPALACEE_LDATA;
+    extern LEVELDATA *ENDORBATTLEA_LDATA;
+    extern LEVELDATA *DEATHSTAR2BATTLEA_LDATA;
+    extern LEVELDATA *DEATHSTAR2BATTLED_LDATA;
+    extern LEVELDATA *DEATHSTAR2BATTLEE_LDATA;
+    extern LEVELDATA *DEATHSTAR2BATTLEF_LDATA;
+    extern LEVELDATA *DEATHSTAR2BATTLEG_LDATA;
+    extern LEVELDATA *EMPERORFIGHTA_LDATA;
+    extern LEVELDATA *SARLACCPITA_LDATA;
+    extern LEVELDATA *SARLACCPITB_LDATA;
+    extern LEVELDATA *SARLACCPITC_LDATA;
+    extern LEVELDATA *LEGOCITY_LDATA;
+    extern LEVELDATA *NEWTOWN_LDATA;
+    extern LEVELDATA *PLATFORM_LDATA;
+    extern LEVELDATA *CREDITS_LDATA;
     extern i32 new_level_from_menu;
     extern i32 BGLOAD;
 
@@ -318,6 +509,19 @@ extern "C" {
     extern i32 newlevelfrommenu_newmenuid;
     extern i32 newlevelfrommenu_newmenuy;
     extern i32 NextArea_FreePlay;
+
+    extern i32 FreePlayModelCount;
+    extern i32 FreePlayResidentCount;
+    extern i32 FreePlayBonusCount;
+    extern CHARCAT_s *CharCategory;
+    extern i32 CHARCATEGORYCOUNT;
+    extern EXTRAMODELLISTENTRY_s ExtraModelList[];
+    extern VEHICLECOLLECTION_s VehicleCollection;
+    extern ARCADEITEM_s ArcadeItem;
+    extern ARCADE_MODE_s Arcade_Mode[];
+    extern GAME_CUSTOMISER_s *Game_Customiser;
+    extern APICHARACTERMODELLIST_s FreePlayModelList[];
+    extern APICHARACTERMODELLIST_s Hub_ModelList[];
 
 #ifdef __cplusplus
 }

@@ -49,8 +49,8 @@ extern i32 UsePlayerList;
 extern i16 PlayerList[8];
 extern i32 PlayerID[2];
 extern i32 GAMEDEMO;
-extern i16 Area_PlayerIDList[8];
-extern i16 Area_StoryModelList[8];
+extern i16 Area_PlayerIDList[9];
+extern APICHARACTERMODELLIST_s Area_StoryModelList[52];
 extern PLAYERPROGRESS PlayerProgress[8];
 extern i32 Hub_UsePlayerList;
 extern i32 LevelChangesInArea;
@@ -60,14 +60,13 @@ extern SOCKPOSITION OldPlrSPos[8];
 extern char Batarang[8 * 0xb4];
 extern void *PlayerSuit[8];
 extern u8 PlayerTorpedoCount[8];
-extern COINPACKET *CoinPacket;
+extern COINPACKET CoinPacket[2];
 extern u32 BackUpPlayers[];
-extern void *GizForceLOSInfo;
-extern u8 DEFAULT_PLAYERHITPOINTS;
-extern u16 LEGOOBJ_DEFAULTLASTCOIN;
+extern char GizForceLOSInfo[0xc60];
+extern i32 DEFAULT_PLAYERHITPOINTS;
+extern u32 LEGOOBJ_DEFAULTLASTCOIN;
 
 extern PLAYERDATA *apicharsys;
-extern TORPEDOPACKET TorpedoPackets[16];
 
 // ---- Helper functions called by Players_Init ----
 

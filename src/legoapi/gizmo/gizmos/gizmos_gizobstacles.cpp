@@ -10,7 +10,8 @@ void GizObstacles_Hit(void *, GIZOBSTACLE_s *, nuvec_s *, i32, i32) {
 void GizObstacle_JumpToEnd(GIZOBSTACLE_s *) {
 }
 
-void GizObstacle_FindByName(GIZOBSTACLESYS_s *, char *) {
+GIZOBSTACLE_s *GizObstacle_FindByName(GIZOBSTACLESYS_s *, char *) {
+    return NULL;
 }
 
 void GizObstacle_FindNearest(GIZOBSTACLESYS_s *, nuvec_s *, GameObject_s *, float *, i32) {

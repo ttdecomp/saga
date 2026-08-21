@@ -3,6 +3,11 @@
 #include "legoapi/world/world.h"
 #include "nu2api/nucore/common.h"
 
+struct LEVEL_PROGRESS_s {
+    char data[0x2800];
+    i32 flags;
+};
+
 typedef struct leveldatadisplay_s {
     f32 unknown_00;
     f32 unknown_04;
@@ -24,15 +29,17 @@ typedef struct leveldatadisplay_s {
 } LEVELDATADISPLAY;
 
 enum {
-    LEVEL_UNKNOWN_FLAG_2 = 1 << 1,
-    LEVEL_UNKNOWN_FLAG_8 = 1 << 3,
-    LEVEL_INTRO = 1 << 5,
-    LEVEL_MIDTRO = 1 << 6,
-    LEVEL_OUTRO = 1 << 7,
-    LEVEL_TEST = 1 << 9,
-    LEVEL_STATUS = 1 << 10,
-    LEVEL_NEWGAME = 1 << 16,
-    LEVEL_LOADGAME = 1 << 17,
+    LEVEL_CONFIG_LOADED = 1 << 0,  // 0x1  set once level config has been (re)loaded
+    LEVEL_GAMEPLAY = 1 << 1,       // 0x2  playable level (has world: SockSys/AI loaded)
+    LEVEL_UNKNOWN_FLAG_4 = 1 << 2, // 0x4  set by default on level_start
+    LEVEL_TERRAIN = 1 << 3,        // 0x8  level has a terrain file
+    LEVEL_INTRO = 1 << 5,          // 0x20
+    LEVEL_MIDTRO = 1 << 6,         // 0x40
+    LEVEL_OUTRO = 1 << 7,          // 0x80
+    LEVEL_TEST = 1 << 9,           // 0x200
+    LEVEL_STATUS = 1 << 10,        // 0x400
+    LEVEL_NEWGAME = 1 << 16,       // 0x10000
+    LEVEL_LOADGAME = 1 << 17,      // 0x20000
 };
 
 typedef struct LEVELDATA_s {
@@ -45,13 +52,13 @@ typedef struct LEVELDATA_s {
 
     u32 flags;
 
-    void *load_fn;
-    void *init_fn;
-    void *reset_fn;
-    void *update_fn;
-    void *always_update_fn;
-    void *draw_fn;
-    void *draw_status_fn;
+    void (*load_fn)(WORLDINFO *, VARIPTR *, VARIPTR *);
+    void (*init_fn)(WORLDINFO *);
+    void (*reset_fn)(WORLDINFO *);
+    void (*update_fn)(WORLDINFO *);
+    void (*always_update_fn)(WORLDINFO *);
+    void (*draw_fn)(WORLDINFO *);
+    void (*draw_status_fn)(WORLDINFO *);
 
     LEVELDATADISPLAY data_display;
 
@@ -67,7 +74,7 @@ typedef struct LEVELDATA_s {
 
     char blob_shadow_alpha;
     char unknown_0ae;
-    char unknown_0af;
+    char area_index;
 
     f32 cam_tilt;
 
@@ -92,7 +99,7 @@ typedef struct LEVELDATA_s {
     char unknown_0d2;
     char unknown_0d3;
 
-    char unknown_0d4;
+    char area_level_index;
 
     char blob_shadow_fade_near;
     char blob_shadow_fade_far;
@@ -103,11 +110,6 @@ typedef struct LEVELDATA_s {
     char unknown_0d9;
     char unknown_0da;
     char unknown_0db;
-
-    char unknown_0dc;
-    char unknown_0dd;
-    char unknown_0de;
-    char unknown_0df;
 
     f32 conveyor_x_speed;
     f32 conveyor_z_speed;
@@ -161,26 +163,19 @@ typedef struct LEVELDATA_s {
     i16 field91_0x118;
     u8 field92_0x11a;
     u8 field93_0x11b;
-    i16 field94_0x11c;
-    i16 field95_0x11e;
 
     f32 unknown_11c;
     f32 unknown_120;
-
-    f32 unknown_124;
 
     f32 wind_speed;
     f32 wind_size;
 
     i32 music_tracks[3][2];
-
-    // Additional fields referenced by WorldInfo_Load
-    char filler_0x80[0x2c]; // padding from 0x80 to 0xac
-    char unknown_0ac;       // mipmap mode for scene loading
-    char filler_0xad[0x53]; // padding to 0x103
-    u8 unknown_103;         // max climb objects
-    u16 max_gameantinodes;  // at some offset after 0x103
 } LEVELDATA;
+
+#ifndef HOST_BUILD
+static_assert(sizeof(void *) != 4 || sizeof(LEVELDATA_s) == 0x144, "LEVELDATA_s size mismatch");
+#endif
 
 typedef struct LEVELOBJECT_s {
     u8 kind;
@@ -193,19 +188,20 @@ typedef struct LEVELOBJECT_s {
 typedef struct LEVELFIXUP {
     char *name;
     LEVELDATA **level;
-    void *load_fn;
-    void *init_fn;
-    void *reset_fn;
-    void *update_fn;
-    void *always_update_fn;
-    void *draw_fn;
-    void *draw_status_fn;
+    void (*load_fn)(WORLDINFO *, VARIPTR *, VARIPTR *);
+    void (*init_fn)(WORLDINFO *);
+    void (*reset_fn)(WORLDINFO *);
+    void (*update_fn)(WORLDINFO *);
+    void (*always_update_fn)(WORLDINFO *);
+    void (*draw_fn)(WORLDINFO *);
+    void (*draw_status_fn)(WORLDINFO *);
 } LEVELFIXUP;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
     extern LEVELDATA *LDataList;
+    extern LEVELDATA *levelconfig_ldata;
 
     extern LEVELDATA *NEWGAME_LDATA;
     extern LEVELDATA *LOADGAME_LDATA;

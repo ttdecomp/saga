@@ -4,6 +4,15 @@
 
 #include "nu2api/nu3d/nuportal.h"
 
+struct nudisplayscene_s {
+    u8 pad0[0x74];
+    u8 flags;
+};
+
+enum {
+    NU_DISPLAYSCENE_FLAG_NEEDS_BUILD = 0x10,
+};
+
 typedef struct nugscn_s { /* PlaceHolder Structure */
     undefined field0_0x0;
     undefined field1_0x1;
@@ -481,8 +490,8 @@ extern "C" {
 #endif
 
     void NuGScnRndr3(NUGSCN *scene);
-    void *NuGScnRead(VARIPTR *buf, VARIPTR buf_end, char *path);
-    void NuSpecialFind(NUGSCN *scene, void **dest, char *name);
+    NUGSCN *NuGScnRead(VARIPTR *buf, VARIPTR buf_end, char *path);
+    void *NuSpecialFind(NUGSCN *scene, void **dest, char *name);
 
 #ifdef __cplusplus
 }

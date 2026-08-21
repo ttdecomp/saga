@@ -3,13 +3,13 @@
 #include "globals.h"
 #include "legoapi/world/area.h"
 #include "legoapi/characters/core/character.h"
-#include "legoapi/episodes/episode.h"
-#include "legogame/game.h"
+#include "legoapi/world/levels/episode.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nucore/bgproc.h"
 #include "nu2api/numusic/numusic.h"
 #include "nu2api/numusic/sfx.h"
 #include "nu2api/nusound/nusound.h"
+#include "legogame/game.h"
 
 static void LoadPermData(BGPROCINFO *proc) {
     VARIPTR legalTex;
