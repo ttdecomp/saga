@@ -119,8 +119,17 @@ extern struct LEVELDATA_s *PODSPRINTA_LDATA;
 extern void *player2;
 extern void *player;
 extern i32 podsprint_netpacket;
+void ResetPodStuff(void);
 extern void *GameCam;
 extern i32 pause_rndr_on;
+extern float podanimendframe;
+extern "C" void *AISysFindArea(void *, char *);
+extern "C" i16 FindGameDebris(void *, char *);
+extern "C" i32 PARTLookupType(char *);
+extern "C" float AnimEndFrame(void *, i32);
+struct flightspline_s;
+void FlightSpline_Init(WORLDINFO_s *, flightspline_s *, i32);
+extern "C" float NuSpecialGetOriginRadius(void *);
 static i32 pod_092d30;
 static void UpdatePodRaceMines(void);
 static void *CreatePodRaceMine(nuvec_s *);
@@ -414,7 +423,39 @@ void RescueE_Init(WORLDINFO_s *world) {
         g->field_0xa0 |= 2;
 }
 
-void PodRaceInit(WORLDINFO_s *) {
+void PodRaceInit(WORLDINFO_s *world) {
+    podrace_netpacket = (void *)(i32)SetLevelHack(0x14);
+    u8 *buf = *(u8 **)((u8 *)world + 0x5120);
+    PodRace = buf;
+    if (buf == NULL)
+        return;
+    memset(buf, 0, 0xaf24);
+    if (netclient != 0) {
+        memset(minesys, 0, 0x1d2 * 4);
+        memset(client_mines, 0, 0xc5 * 4);
+        if (NuSpecialFind(vehicle_scene, (void **)minesys, "mine") != NULL) {
+            *(float *)(buf + 0x70c) = NuSpecialGetOriginRadius(minesys);
+            char b2[0x20];
+            for (i32 i = 0; i < 10; i++) {
+                sprintf(b2, "nomine_%d", i);
+                *(void **)(buf + 0x714 + (i32) * (i16 *)(buf + 0x73c) * 4) = AISysFindArea(WORLD->ai_sys, b2);
+                *(i16 *)(buf + 0x73c) += 1;
+            }
+            *(u16 *)(buf + 0x73e) = FindGameDebris(WORLD->debris_sys, "MINE_POP");
+            *(u32 *)(buf + 0x740) = PARTLookupType("POD_MINE_PART");
+        }
+    } else {
+        FlightSpline_Init(world, (flightspline_s *)buf, 0x20);
+    }
+    PodKeyReset();
+    ResetPodStuff();
+    u8 *sys = (u8 *)apicharsys;
+    i16 id = *(i16 *)((u8 *)*(void **)(sys + 0x1c) + (i32)id_ANAKINSPOD * 2);
+    if (id != -1) {
+        u8 *entry = *(u8 **)(sys + 0x18) + (i32)id * 0x54;
+        if (*(void **)((u8 *)*(void **)(entry + 0xc) + 0x4) != NULL)
+            podanimendframe = AnimEndFrame(entry, 1);
+    }
 }
 
 void PodRaceADraw(WORLDINFO_s *world) {

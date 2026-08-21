@@ -53,7 +53,7 @@ extern "C" {
     void NuRndrInitWorld(void);
 }
 i32 NuGScnUploadGfxDataFromFilePS(VARIPTR *buf, VARIPTR *buf_end, i32 file);
-void NuSpecialFind(NUGSCN *scene, void **dest, char *name);
+void *NuSpecialFind(NUGSCN *scene, void **dest, char *name);
 void SetCameraZoom(f32 zoom);
 
 // --- terrain.cpp — terrain / debris / grass / bridge / particles ---

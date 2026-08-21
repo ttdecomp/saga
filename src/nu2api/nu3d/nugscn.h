@@ -491,7 +491,7 @@ extern "C" {
 
     void NuGScnRndr3(NUGSCN *scene);
     NUGSCN *NuGScnRead(VARIPTR *buf, VARIPTR buf_end, char *path);
-    void NuSpecialFind(NUGSCN *scene, void **dest, char *name);
+    void *NuSpecialFind(NUGSCN *scene, void **dest, char *name);
 
 #ifdef __cplusplus
 }

@@ -79,7 +79,7 @@ See the [docs/](docs/) directory.
 
 | Directory | Fuzzy % | Funcs % | Data % |
 |---|---|---|---|
-| `(root)` | 0.6% | 0.0% | 67.5% |
+| `(root)` | 0.6% | 0.0% | 67.4% |
 | `MechInputTouch` | 4.8% | 0.0% | 0.0% |
 | `editor` | 2.5% | 0.0% | - |
 | `gameapi` | 6.5% | 1.4% | 94.8% |

@@ -100,10 +100,11 @@ extern "C" {
     }
 } // extern "C"
 
-void NuSpecialFind(NUGSCN *scene, void **dest, char *name) {
+void *NuSpecialFind(NUGSCN *scene, void **dest, char *name) {
     (void)scene;
     (void)dest;
     (void)name;
+    return NULL;
 }
 
 void DrawCables() {

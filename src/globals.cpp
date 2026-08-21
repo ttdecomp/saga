@@ -369,6 +369,8 @@ i16 temp_xrot = 0;
 i32 podsprint_netpacket = 0;
 void *GameCam = NULL;
 i32 pause_rndr_on = 0;
+
+float podanimendframe = 0.0f;
 GIZAIMESSAGESYS_s *gizaimessagesys = NULL;
 i32 LevSfxId[4] = {0};
 i32 LevelCodeSpline[8] = {0};
