@@ -55,6 +55,10 @@ void NewCutScene(CUTINFO *, CUTSYS *, char *, i32);
 void CutScene_SnapToEnd(CUTINFO *);
 extern u32 client_mines[];
 extern void *minesys;
+extern i32 nethost;
+extern i32 clients_mines_bitfield[];
+extern i32 pod_mines_bitfield[];
+extern i32 mine_count;
 extern "C" void NuMtxSetIdentity(void *);
 extern "C" void NuMtxTranslate(void *, void *);
 extern "C" void NuSpecialDrawAt(void *, void *);
@@ -235,7 +239,33 @@ void PodRaceReset() {
     PodKeyReset();
 }
 
-void PodRaceAReset(WORLDINFO_s *) {
+void PodRaceAReset(WORLDINFO_s *world) {
+    PodRaceReset();
+    switch (Lap) {
+        case 1:
+            pod_lap_start = 3;
+            break;
+        case 2:
+            pod_lap_start = 6;
+            break;
+        case 3:
+            pod_lap_start = 9;
+            break;
+        default:
+            break;
+    }
+    pod_pacemaker = 0;
+    *(u32 *)((u8 *)minesys + 0x710) = 0x4e6e6b28;
+    clients_mines_bitfield[0] = 0;
+    clients_mines_bitfield[1] = 0;
+    *(u32 *)((u8 *)minesys + 0x744) = 0;
+    pod_mines_bitfield[0] = 0;
+    pod_mines_bitfield[1] = 0;
+    memset((u8 *)minesys + 0xc, 0, 0x1c0 * 4);
+    memset(client_mines, 0, 0xc5 * 4);
+    mine_count = 0;
+    if (Lap == 3 && nethost == 0 && netclient == 0)
+        NewCutScene(NULL, world->cutscene_sys, "ep1_podrace_sebulba", 1);
 }
 
 void PodRaceBReset(WORLDINFO_s *world) {
