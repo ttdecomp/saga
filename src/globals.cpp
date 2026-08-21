@@ -376,6 +376,7 @@ i32 pause_rndr_on = 0;
 
 float podanimendframe = 0.0f;
 float pacemaker_alpha_table[0x8000] = {0};
+void *game_objects = NULL;
 GIZAIMESSAGESYS_s *gizaimessagesys = NULL;
 i32 LevSfxId[4] = {0};
 i32 LevelCodeSpline[8] = {0};

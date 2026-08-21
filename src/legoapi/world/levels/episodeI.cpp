@@ -726,7 +726,44 @@ void PodRaceAUpdate(WORLDINFO_s *world) {
     }
 }
 
+extern void *game_objects;
+extern "C" void *AddGameDebris(void *, i32, void *);
+extern "C" void AddFiniteShotPART(i32, void *, i32);
+void PodLoseSpeed(GameObject_s *, i32, i32);
+struct GAMECAMERA_s;
+void GameCam_NewShake(GAMECAMERA_s *, float, float, float);
+void GameCam_HitJudder(void);
 static void UpdatePodRaceMines(void) {
+    void *minesarr[0x20];
+    i32 minecount = 0;
+    u8 *gstart = *(u8 **)game_objects;
+    for (u8 *obj = gstart; obj < gstart + 0x43900; obj += 0x10e4) {
+        if (obj != NULL && (*(u16 *)(obj + 0x1f8) & 0x1001) == 0x1001 && obj != (u8 *)pod_pacemaker)
+            minesarr[minecount++] = obj;
+    }
+    if (netclient == 0) {
+        u8 *entry = (u8 *)minesys + 0xc;
+        for (; entry < (u8 *)minesys + 0x70c; entry += 0x1c) {
+            if (*(u32 *)entry != 0) {
+                u8 *cam = *(u8 **)GameCam;
+                float dx = *(float *)(cam + 0x11c) - *(float *)(entry + 0x4);
+                float dy = *(float *)(cam + 0x114) - *(float *)(entry + 0xc);
+                float d = dx * *(float *)(cam + 0x110) + dy * *(float *)(cam + 0x114);
+                d *= *(float *)(entry + 0x70c);
+                if (d < *(float *)((u8 *)pod_pacemaker + 0x190)) {
+                    if ((i16)PodRace_snipers[0] != -1)
+                        AddGameDebris(WORLD->debris_sys, *(u16 *)((u8 *)PodRace + 0x73e), entry + 0x4);
+                    if (*(i32 *)((u8 *)PodRace + 0x740) != -1)
+                        AddFiniteShotPART(*(i32 *)((u8 *)PodRace + 0x740), entry + 0x4, 1);
+                    GameCam_HitJudder();
+                    GameCam_NewShake((GAMECAMERA_s *)*(void **)GameCam, 0.75f, 1.0f, 1.0f);
+                    PlaySfx("Explode1");
+                    PodLoseSpeed((GameObject_s *)minesarr[0], 1, 1);
+                    *(u32 *)entry = 0;
+                }
+            }
+        }
+    }
 }
 static void *CreatePodRaceMine(nuvec_s *a) {
     return NULL;
