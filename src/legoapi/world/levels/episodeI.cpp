@@ -661,11 +661,38 @@ void PodRaceUpdate(WORLDINFO_s *world, float dt) {
             continue;
         u32 *p = *(u32 **)(entry + 0x80);
         if (p != NULL) {
-            // process mine entry
         }
     }
 }
-
+void PodSprintA_Update(WORLDINFO_s *world) {
+    VehicleAreaRememberSpeed = 0x3f800000;
+    if (nethost != 0) {
+        u8 *ps = (u8 *)podsprint;
+        *(i16 *)podsprint_netpacket = (i16)(i8)ps[0x8e];
+        *(i16 *)((u8 *)podsprint_netpacket + 6) = (i16) * (float *)(ps + 0x84);
+        *(i16 *)((u8 *)podsprint_netpacket + 8) = (i16) * (float *)(ps + 0x88);
+        if (netclient == 0) {
+            if (*(float *)(ps + 0x84) > 0.0f && *(float *)((u8 *)FadeSys + 0x4) == 0.0f) {
+                float v = *(float *)(ps + 0x84);
+                if (Player[0] == NULL) {
+                    if (Player[1] != NULL) {
+                        if (v > 0.0f) {
+                            if (2.9f > v) {
+                                *(u32 *)((u8 *)Player[1] + 0xee0) = 0x4e6e6b28;
+                                if (1.5f <= v) {
+                                    i32 n = (i32)v;
+                                    i32 o = (i32) * (float *)(ps + 0x84);
+                                    if (n != o)
+                                        PlaySfx("Pod_Race_Light");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 void PodRaceAUpdate(WORLDINFO_s *world) {
     if (pod_pacemaker != 0) {
         if (*(float *)((u8 *)FadeSys + 0x4) == 0.0f || pause_rndr_on != 0)
@@ -1040,9 +1067,6 @@ void PodSprintA_Reset(WORLDINFO_s *world) {
     }
     PodRaceSnipersReset();
     *(void **)(ps + 0x7c) = AISysFindArea(world->ai_sys, "Boulders");
-}
-
-void PodSprintA_Update(WORLDINFO_s *) {
 }
 
 float PodSprint_RollMul(GameObject_s *obj) {
