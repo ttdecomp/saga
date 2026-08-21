@@ -236,7 +236,38 @@ void AnakinsFlightB_Init(WORLDINFO_s *) {
 void AnakinsFlightB_Update(WORLDINFO_s *) {
 }
 
-void RetakeD_Init(WORLDINFO_s *) {
+void RetakeD_Init(WORLDINFO_s *world) {
+    GIZMOBLOWUP_s *g;
+    g = GizmoBlowUp_FindByName(world, "lattice_a11");
+    if (g != NULL) {
+        g->field_0x128 = 0.5f;
+        g->field_0x124 = 1;
+    }
+    g = GizmoBlowUp_FindByName(world, "lattice_b11");
+    if (g != NULL) {
+        g->field_0x128 = 0.5f;
+        g->field_0x124 = 1;
+    }
+    g = GizmoBlowUp_FindByName(world, "lattice_c11");
+    if (g != NULL) {
+        g->field_0x128 = 0.5f;
+        g->field_0x124 = 1;
+    }
+    g = GizmoBlowUp_FindByName(world, "lattice_d11");
+    if (g != NULL) {
+        g->field_0x128 = 0.5f;
+        g->field_0x124 = 1;
+    }
+    g = GizmoBlowUp_FindByName(world, "lattice_e11");
+    if (g != NULL) {
+        g->field_0x128 = 0.5f;
+        g->field_0x124 = 1;
+    }
+    g = GizmoBlowUp_FindByName(world, "lattice_f11");
+    if (g != NULL) {
+        g->field_0x128 = 0.5f;
+        g->field_0x124 = 1;
+    }
 }
 
 void RetakeE_Init(WORLDINFO_s *) {
