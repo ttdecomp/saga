@@ -3,12 +3,12 @@
 #include "decomp.h"
 #include "nu2api/nucore/common.h"
 
-struct charfixup_s {
+struct CHARFIXUP {
     char *name;
     i16 *id;
 };
 
-typedef struct charfixup_s CHARFIXUP;
+typedef struct CHARFIXUP CHARFIXUP;
 
 struct gamecharacterdata_s { /* PlaceHolder Structure */
     undefined field0_0x0;

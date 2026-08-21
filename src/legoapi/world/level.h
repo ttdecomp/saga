@@ -8,7 +8,7 @@ struct LEVEL_PROGRESS_s {
     i32 flags;
 };
 
-typedef struct leveldatadisplay_s {
+typedef struct LEVELDATADISPLAY {
     f32 unknown_00;
     f32 unknown_04;
 
@@ -177,7 +177,7 @@ typedef struct LEVELDATA_s {
 static_assert(sizeof(void *) != 4 || sizeof(LEVELDATA_s) == 0x144, "LEVELDATA_s size mismatch");
 #endif
 
-typedef struct LEVELOBJECT_s {
+typedef struct LEVELOBJECT {
     u8 kind;
     u8 pad_01;
     u8 pad_02;

@@ -106,7 +106,6 @@ extern i32 LevelLoadCount;
 extern i32 LOADEROFF;
 extern i32 BGLOAD;
 extern void *NewLData;
-extern void *LDataList;
 extern i32 no_more_loads;
 extern i32 other_level;
 extern i32 other_level_override;

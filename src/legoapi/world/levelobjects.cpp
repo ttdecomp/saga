@@ -1,4 +1,5 @@
 #include "legoapi/world/level_shared.h"
+#include "legoapi/world/level.h"
 
 #include <string.h>
 

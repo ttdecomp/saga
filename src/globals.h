@@ -10,7 +10,7 @@
 
 extern "C" {
 #endif
-    typedef struct { /* PlaceHolder Structure */
+    typedef struct CHEAT { /* PlaceHolder Structure */
         char *name;
         undefined field1_0x4;
         undefined field2_0x5;
@@ -308,7 +308,7 @@ extern "C" {
     extern i32 LevObjRef_LastObj;
     extern i32 LevObjRef_FirstRefObj;
 
-    extern struct LEVELOBJECT_s *ObjTabList;
+    extern LEVELOBJECT *ObjTabList;
     extern i32 LEVELOBJECTCOUNT;
     extern i32 LEVELOBJECTMAX;
     extern i32 EXTRALEVELOBJECTCOUNT;

@@ -1,5 +1,6 @@
 #include "decomp.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/world/level.h"
 
 void GameShadow(GameObject_s *, nuvec_s *, float, i32) {
 }
