@@ -109,6 +109,7 @@ static i32 pod_092d44;
 static float pod_0xd440;
 static float pod_0xd430;
 static float pod_0xd460;
+static float pod_092d70[5];
 void Hint_SetComplete(i32);
 extern "C" i32 NuSpecialExistsFn(void *);
 extern "C" void *NuSpecialGetDrawMtx(void *);
@@ -126,6 +127,10 @@ static i32 pod_sniper_toggle;
 extern struct LEVELDATA_s *PODSPRINTA_LDATA;
 extern void *player2;
 extern void *player;
+extern void *game_cutscenes;
+extern i32 VehicleAreaRememberSpeed;
+void CutScene_StoppedFn_LSW(CUTINFO *);
+void CutScene_SnapToEnd(CUTINFO *);
 extern i32 podsprint_netpacket;
 void ResetPodStuff(void);
 extern void *GameCam;
@@ -619,7 +624,7 @@ void PodRaceCReset(WORLDINFO_s *world) {
         if (Lap == 2)
             NewCutScene(cs, world->cutscene_sys, 0, 1);
         else if (Lap == 3)
-            CutScene_SnapToEnd(cs);
+            CutScene_SnapToEnd((CUTINFO *)cs);
     }
 }
 
@@ -874,7 +879,52 @@ static void PodSprint_InitAISpline(WORLDINFO_s *world, void *a, char *b) {
 void PodSprintA_Panel(WORLDINFO_s *) {
 }
 
-void PodSprintA_Reset(WORLDINFO_s *) {
+void PodSprintA_Reset(WORLDINFO_s *world) {
+    u8 *ps = (u8 *)podsprint;
+    pod_092d70[4] = -1.0f;
+    pod_092d70[1] = -1.0f;
+    pod_092d70[0] = -1.0f;
+    pod_092d70[2] = -1.0f;
+    pod_092d70[3] = -1.0f;
+    u8 b = ps[0x92];
+    ps[0x78] = 0;
+    ps[0x92] = b & 0xef;
+    ps[0x88] = 0;
+    if ((b & 0xc) != 0 || (netclient != 0 && *(i16 *)podsprint_netpacket > 2)) {
+        ps[0x8e] = 3;
+        ps[0x8f] = 4;
+        ps[0x92] &= 0xf2;
+        VehicleAreaRememberSpeed = 0x3f800000;
+        void *p = player;
+        if (p != NULL && (*(u8 *)((u8 *)p + 0x1f9) & 0x10)) {
+            *(float *)((u8 *)p + 0xdc8) = 1.0f;
+            *(float *)((u8 *)p + 0x68) = 0.0f;
+            *(float *)((u8 *)p + 0x6c) = 0.0f;
+            *(float *)((u8 *)p + 0x70) = *(float *)((u8 *)*(void **)((u8 *)*(void **)((u8 *)p + 0x54) + 0x24) + 0x1c);
+            NuVecRotateY((NUVEC *)((u8 *)p + 0x68), (NUVEC *)((u8 *)p + 0x68), *(u16 *)((u8 *)p + 0x276));
+        } else if (player2 != NULL && (*(u8 *)((u8 *)player2 + 0x1f9) & 0x10)) {
+            *(float *)((u8 *)player2 + 0xdc8) = 1.0f;
+            *(float *)((u8 *)player2 + 0x68) = 0.0f;
+            *(float *)((u8 *)player2 + 0x6c) = 0.0f;
+            *(float *)((u8 *)player2 + 0x70) =
+                *(float *)((u8 *)*(void **)((u8 *)*(void **)((u8 *)player2 + 0x54) + 0x24) + 0x1c);
+            NuVecRotateY((NUVEC *)((u8 *)player2 + 0x68), (NUVEC *)((u8 *)player2 + 0x68),
+                         *(u16 *)((u8 *)player2 + 0x276));
+        }
+        void *cs = *(void **)((u8 *)game_cutscenes + 0x1c);
+        if (cs != NULL) {
+            CutScene_SnapToEnd((CUTINFO *)cs);
+            CutScene_StoppedFn_LSW((CUTINFO *)cs);
+        }
+    } else {
+        ps[0x8e] = 1;
+        ps[0x8f] = 0;
+        ps[0x92] &= 0xfe;
+        *(float *)(ps + 0x84) = 3.0f;
+        pod_092d10 = 0.0f;
+    }
+    PodRaceSnipersReset();
+    *(void **)(ps + 0x7c) = AISysFindArea(world->ai_sys, "Boulders");
 }
 
 void PodSprintA_Update(WORLDINFO_s *) {

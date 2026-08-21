@@ -367,6 +367,9 @@ float PodRace_sniper_fire_range_time = 0.0f;
 i16 temp_yrot = 0;
 i16 temp_xrot = 0;
 i32 podsprint_netpacket = 0;
+void *game_cutscenes = NULL;
+void *player = NULL;
+void *player2 = NULL;
 void *GameCam = NULL;
 i32 pause_rndr_on = 0;
 
