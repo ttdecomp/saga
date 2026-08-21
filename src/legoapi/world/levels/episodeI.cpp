@@ -59,6 +59,13 @@ extern i32 nethost;
 extern i32 clients_mines_bitfield[];
 extern i32 pod_mines_bitfield[];
 extern i32 mine_count;
+struct PLAYERDATA;
+extern PLAYERDATA *apicharsys;
+extern i16 id_ANAKINSPOD;
+static float pod_roll[2];
+static float pod_roll_target[2];
+static float pod_animtime[2];
+i32 qrand(void);
 extern "C" void NuMtxSetIdentity(void *);
 extern "C" void NuMtxTranslate(void *, void *);
 extern "C" void NuSpecialDrawAt(void *, void *);
@@ -360,6 +367,30 @@ i32 PodLevel(AREADATA_s *area) {
 }
 
 void ResetPodStuff() {
+    u8 *sys = (u8 *)apicharsys;
+    i16 val = *(i16 *)((u8 *)*(void **)(sys + 0x1c) + (i32)id_ANAKINSPOD * 2);
+    float *fp = NULL;
+    if (val != -1) {
+        u8 *entry = *(u8 **)(sys + 0x18) + (i32)val * 0x54;
+        fp = *(float **)((u8 *)*(void **)(entry + 0xc) + 0x4);
+    }
+    if (fp != NULL && *fp > 0.0f) {
+        pod_animtime[0] = 1.0f;
+        pod_roll_target[0] = 0.0f;
+        pod_roll[0] = 0.0f;
+        pod_roll_target[1] = 0.0f;
+        pod_animtime[1] = 1.0f;
+        pod_roll[1] = 0.0f;
+        pod_animtime[0] = (float)qrand() * 1.5259021893143654e-05f * (*fp - 1.0f) + pod_animtime[0];
+        pod_animtime[1] = (float)qrand() * 1.5259021893143654e-05f * (*fp - 1.0f) + pod_animtime[1];
+    } else {
+        pod_roll_target[0] = 0.0f;
+        pod_roll_target[1] = 0.0f;
+        pod_roll[0] = 0.0f;
+        pod_roll[1] = 0.0f;
+        pod_animtime[0] = 1.0f;
+        pod_animtime[1] = 1.0f;
+    }
 }
 
 void SetPodMergeAnims(ANIMPACKET_s *, i32) {
