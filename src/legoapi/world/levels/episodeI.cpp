@@ -136,6 +136,8 @@ void ResetPodStuff(void);
 extern void *GameCam;
 extern i32 pause_rndr_on;
 extern float podanimendframe;
+struct nuhspecial_s;
+void DrawPanel3DObject(float, float, float, float, float, float, u16, u16, u16, nuhspecial_s *, i32, float);
 extern "C" void *AISysFindArea(void *, char *);
 extern "C" i16 FindGameDebris(void *, char *);
 extern "C" i32 PARTLookupType(char *);
@@ -519,7 +521,7 @@ void PodRacePanel(WORLDINFO_s *world) {
             u8 *entry = (u8 *)world->lev_objs + (Lap + 0x135) * 0x10;
             if (entry[0xe] != 0)
                 return;
-            Text3DEx((char *)0, 0, 1.0f, 0.1f, 0.1f, 0.1f, 0, 0, 0, 0, 0x3f, 0);
+            Text3DEx((char *)0, 0, 1.0f, 0.1f, 0.1f, 0.1f, (u16)0, (u16)0, (u16)0, 0, 0x3f, 0);
         } else {
             if (pod_092d00 > 0.0f && PodRace != NULL && *(float *)((u8 *)PodRace + 0xaf08) > 0.0f) {
                 char buf[0x20];
@@ -876,7 +878,51 @@ void PodSprintA_Init(WORLDINFO_s *world) {
 
 static void PodSprint_InitAISpline(WORLDINFO_s *world, void *a, char *b) {
 }
-void PodSprintA_Panel(WORLDINFO_s *) {
+void PodSprintA_Panel(WORLDINFO_s *world) {
+    u8 *ps = (u8 *)podsprint;
+    if (*(float *)((u8 *)FadeSys + 0x4) != 0.0f || MiniCutCam != 0 || CUTSTOPGAME != 0) {
+        pod_countdown = 0.0f;
+        pod_092d00 = 0.0f;
+        pod_092d10 = 0.0f;
+        if (Paused == 0) {
+            float v = *(float *)(ps + 0x84);
+            if (v > 0.0f) {
+                char buf[0x20];
+                i32 n = (i32)v + 1;
+                if (n > 3)
+                    n = 3;
+                sprintf(buf, "%i", n);
+                float m = NuFmod(v, 1.0f);
+                if (m < 0.7f) {
+                    m = (m - 0.7f) / -0.1f + 1.0f;
+                    Text3DEx(buf, 0, 0.4f, 1.0f, m * 0.75f, m * 0.75f, m * 0.75f, 0, 0xff, 0, 0,
+                             (u8)(i32)(128.0f * pod_092d10));
+                }
+            }
+        }
+        if (pod_countdown > 0.0f) {
+            i32 idx = 0x135 + (i8)ps[0x8e];
+            if (((u8 *)world->lev_objs)[idx * 0x10 + 0xe] == 0) {
+                float c = *(float *)((u8 *)&pod_092d10);
+                float f = *(float *)((u8 *)FadeSys + 0x4);
+                DrawPanel3DObject(0.0f, f, 1.0f, 0.1f, 0.1f, 0.1f, (u16)0, (u16)0, (u16)0,
+                                  (nuhspecial_s *)((u8 *)world->lev_objs + idx * 0x10), 0, c);
+            }
+        }
+    } else {
+        if (MiniCutCam == 0 && CUTSTOPGAME == 0) {
+            if (*(float *)(ps + 0x84) > 0.0f) {
+                if (Paused == 0) {
+                    float d = pod_092d10;
+                    if (1.0f > d)
+                        pod_092d10 = d + FRAMETIME * 2.0f < 1.0f ? d + FRAMETIME * 2.0f : 1.0f;
+                }
+                pod_countdown = 0.0f;
+            } else {
+                pod_countdown = SeekLinearF(1.0f, FRAMETIME * 2.0f, pod_countdown);
+            }
+        }
+    }
 }
 
 void PodSprintA_Reset(WORLDINFO_s *world) {
