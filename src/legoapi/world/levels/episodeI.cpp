@@ -907,31 +907,30 @@ void SetPodMergeAnims(ANIMPACKET_s *packet, i32 index) {
 }
 
 void UpdatePodRaceLapDisplay(float arg) {
-    float v = arg;
     if (*(float *)((u8 *)FadeSys + 0x4) != 0.0f || MiniCutCam != 0 || CUTSTOPGAME != 0) {
         pod_countdown = 0.0f;
         pod_092d00 = 0.0f;
         pod_092d10 = 0.0f;
-        if (Paused == 0) {
+        if (Paused != 0)
+            goto lapdisplay;
+        if (PodRace != NULL && *(float *)((u8 *)PodRace + 0xaf08) < 10.0f) {
             i32 oldhurry = podhurry_i;
-            if (PodRace != NULL && *(float *)((u8 *)PodRace + 0xaf08) < 10.0f) {
-                podhurry_i = (i32) * (float *)((u8 *)PodRace + 0xaf08);
-                if (pod_092d00 < 1.0f)
-                    pod_092d00 = v * 2.0f + pod_092d00 < 1.0f ? v * 2.0f + pod_092d00 : 1.0f;
-                if (podhurry_i > 0 && oldhurry != podhurry_i) {
-                    TickTockSfx();
-                    if (Paused != 0)
-                        return;
-                }
+            podhurry_i = (i32) * (float *)((u8 *)PodRace + 0xaf08);
+            if (pod_092d00 < 1.0f)
+                pod_092d00 = pod_092d00 + arg * 2.0f < 1.0f ? pod_092d00 + arg * 2.0f : 1.0f;
+            if (podhurry_i > 0 && oldhurry != podhurry_i) {
+                TickTockSfx();
+                if (Paused != 0)
+                    return;
             }
         }
     } else if (Paused == 0) {
-        v = arg;
-        if (Paused == 0)
-            pod_countdown = SeekLinearF(1.0f, v + v, pod_countdown);
+        pod_countdown = SeekLinearF(1.0f, arg + arg, pod_countdown);
+        return;
     }
+lapdisplay:
     if (PodRace != NULL && *(float *)((u8 *)PodRace + 0xaf00) > 0.0f && pod_092d10 < 1.0f)
-        pod_092d10 = v * 2.0f + pod_092d10 < 1.0f ? v * 2.0f + pod_092d10 : 1.0f;
+        pod_092d10 = pod_092d10 + arg * 2.0f < 1.0f ? pod_092d10 + arg * 2.0f : 1.0f;
 }
 
 void PodSprintA_Init(WORLDINFO_s *world) {
