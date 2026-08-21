@@ -109,6 +109,21 @@ extern i32 retakeg_netpacket;
 extern void *podrace_netpacket;
 extern "C" void Text3DEx(char *, i32, float, float, float, float, float, i32, i32, i32, i32, i32);
 extern "C" float NuFmod(float, float);
+extern float PodRace_sniper_start_fire_radius;
+extern float PodRace_sniper_fire_radius;
+extern float PodRace_sniper_fire_range_time;
+extern i16 temp_yrot;
+extern i16 temp_xrot;
+static i32 pod_sniper_toggle;
+extern struct LEVELDATA_s *PODSPRINTA_LDATA;
+extern void *player2;
+extern void *player;
+void *BoltType_FindByID(i32, WORLDINFO_s *);
+void Bolt_Add(GameObject_s *, nuvec_s *, numtx_s *, i32, i32);
+extern "C" i32 NuAtan2D(float, float);
+extern "C" void NuMtxSetRotationX(void *, i32);
+extern "C" void NuMtxRotateY(void *, i32);
+extern "C" i32 NuRandInt(void);
 extern i16 id_ROYALGUARD;
 static void *retakeg_guard_a;
 static void *retakeg_guard_b;
@@ -181,6 +196,49 @@ static __used__ void PodRaceSnipersReset() {
     }
 }
 static __used__ void PodRaceSnipersUpdate() {
+    i32 bolttype = (WORLD->current_level == PODSPRINTA_LDATA) ? 0x29 : 0x28;
+    void *bt = BoltType_FindByID(bolttype, WORLD);
+    i32 n = PodRace_nsnipers;
+    if (n <= 0 || max_nsnipers <= 0)
+        return;
+    for (i32 i = 0; i < n && i < max_nsnipers; i++) {
+        u8 *s = (u8 *)PodRace_snipers + i * 0x20;
+        void *target = NULL;
+        u8 *p0 = (u8 *)Player[0];
+        if (p0 != NULL && (*(u16 *)(p0 + 0x1f8) & 0x1001) == 0x1001) {
+            target = p0;
+        } else {
+            u8 *p1 = (u8 *)Player[1];
+            if (p1 != NULL && (*(u16 *)(p1 + 0x1f8) & 0x1001) == 0x1001)
+                target = p1;
+        }
+        if (target != NULL) {
+            float dx = *(float *)((u8 *)target + 0x80) - *(float *)(s + 0xc);
+            float dy = *(float *)((u8 *)target + 0x88) - *(float *)(s + 0x14);
+            float dist2 = dx * dx + dy * dy;
+            if (dist2 > PodRace_sniper_start_fire_radius * PodRace_sniper_start_fire_radius) {
+                if (dist2 <= PodRace_sniper_fire_radius * PodRace_sniper_fire_radius) {
+                    *(float *)(s + 0x1c) = PodRace_sniper_fire_range_time;
+                } else {
+                    *(float *)(s + 0x18) += FRAMETIME;
+                    if (*(float *)(s + 0x18) >= PodRace_sniper_fire_time) {
+                        *(float *)(s + 0x18) = 0.0f;
+                        if (*(float *)(s + 0x1c) > 0.0f) {
+                            // fire
+                            temp_yrot = NuAtan2D(dx, -dy);
+                            temp_xrot = NuAtan2D(-*(float *)(s + 0x64), dx);
+                            void *mtx[4];
+                            NuMtxSetRotationX(mtx, (i32)(u16)temp_xrot);
+                            NuMtxRotateY(mtx, (i32)(u16)temp_yrot);
+                            Bolt_Add(NULL, (nuvec_s *)(s + 0xc), (numtx_s *)mtx, bolttype, 0);
+                        }
+                    }
+                }
+            }
+        } else {
+            *(float *)(s + 0x18) += FRAMETIME;
+        }
+    }
 }
 
 void NegotiationsA_Init(WORLDINFO_s *world) {
