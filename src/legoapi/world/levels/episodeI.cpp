@@ -41,6 +41,12 @@ static void *PodRace;
 static i32 mushroom_collapse;
 static i32 mushroom_nattempts_per_increment;
 static i32 mushroom_n_attempts;
+extern u32 client_mines[];
+extern void *minesys;
+extern "C" void NuMtxSetIdentity(void *);
+extern "C" void NuMtxTranslate(void *, void *);
+extern "C" void NuSpecialDrawAt(void *, void *);
+extern "C" i32 NuSpecialExistsFn(void *);
 
 static struct {
     void *field_0x0; // 0x0  MaulA anim message 1
@@ -165,7 +171,29 @@ void RescueE_Init(WORLDINFO_s *world) {
 void PodRaceInit(WORLDINFO_s *) {
 }
 
-void PodRaceADraw(WORLDINFO_s *) {
+void PodRaceADraw(WORLDINFO_s *world) {
+    if (netclient != 0) {
+        for (i32 i = 0; i < 0x40; i++) {
+            u32 bit = 1u << (i & 0x1f);
+            if (((i < 0x20 ? client_mines[0x300 / 4] : client_mines[0x304 / 4]) & bit) != 0) {
+                void *mtx = 0; // local matrix placeholder
+                NuMtxSetIdentity(mtx);
+                NuMtxTranslate(mtx, &client_mines[i * 3]);
+                NuSpecialDrawAt(minesys, mtx);
+            }
+        }
+    } else if (NuSpecialExistsFn(minesys) != 0) {
+        u8 *entry = (u8 *)minesys + 0xc;
+        u8 *end = (u8 *)minesys + 0x70c;
+        for (; entry < end; entry += 0x1c) {
+            if (*(u32 *)entry != 0) {
+                void *mtx = 0;
+                NuMtxSetIdentity(mtx);
+                NuMtxTranslate(mtx, entry + 0x4);
+                NuSpecialDrawAt(minesys, mtx);
+            }
+        }
+    }
 }
 
 void PodRaceAInit(WORLDINFO_s *world) {
