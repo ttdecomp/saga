@@ -110,6 +110,7 @@ static float pod_0xd440;
 static float pod_0xd430;
 static float pod_0xd460;
 static float pod_092d70[5];
+extern "C" void NuSpecialSetVisibility(void *, i32);
 void Hint_SetComplete(i32);
 extern "C" i32 NuSpecialExistsFn(void *);
 extern "C" void *NuSpecialGetDrawMtx(void *);
@@ -736,7 +737,43 @@ void PodRaceBUpdate(WORLDINFO_s *world) {
     }
 }
 
-void PodRaceCUpdate(WORLDINFO_s *) {
+void PodRaceCUpdate(WORLDINFO_s *world) {
+    if (pod_pacemaker != 0) {
+        if (*(float *)((u8 *)FadeSys + 0x4) != 0.0f && pause_rndr_on == 0) {
+            float t = pod_092d30 + FRAMETIME * 2.0f;
+            pod_092d30 = t < 1.0f ? t : 1.0f;
+            if (NuFmod(GameTimer[2], 1.0f) > 0.1f)
+                UpdatePacemakerDisplay(world->lev_objs);
+        } else {
+            pod_092d30 = 0.0f;
+        }
+    }
+    UpdatePodRaceLapDisplay(FRAMETIME);
+    PodRaceUpdate(world, FRAMETIME);
+    PodRaceSnipersUpdate();
+    switch (*(u8 *)LevFlag) {
+        case 0: {
+            CUTINFO *cs = CutScene_Find(world->cutscene_sys, "Ep1_Podrace_TuskenRaiders");
+            if (cs != NULL && (*(u8 *)((u8 *)*(void **)((u8 *)cs + 0x4) + 0x89) & 0x10))
+                *(u8 *)LevFlag = 1;
+            break;
+        }
+        case 1: {
+            i32 none = 1;
+            for (i32 off = 0xc; off <= 0x6c; off += 0xc) {
+                void *sp = (u8 *)LevHSpecial + off;
+                if (NuSpecialExistsFn(sp) != 0) {
+                    NuSpecialSetVisibility(sp, 1);
+                    none = 0;
+                }
+            }
+            if (none)
+                *(u8 *)LevFlag = 2;
+            break;
+        }
+        default:
+            break;
+    }
 }
 
 void PodRaceAlwasyUpdate(WORLDINFO_s *world) {
