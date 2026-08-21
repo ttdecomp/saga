@@ -118,6 +118,9 @@ static i32 pod_sniper_toggle;
 extern struct LEVELDATA_s *PODSPRINTA_LDATA;
 extern void *player2;
 extern void *player;
+extern i32 podsprint_netpacket;
+i32 SetLevelHack(i32);
+static void PodSprint_InitAISpline(WORLDINFO_s *, void *, char *);
 void *BoltType_FindByID(i32, WORLDINFO_s *);
 void Bolt_Add(GameObject_s *, nuvec_s *, numtx_s *, i32, i32);
 extern "C" i32 NuAtan2D(float, float);
@@ -676,7 +679,45 @@ void UpdatePodRaceLapDisplay(float arg) {
         pod_092d10 = v * 2.0f + pod_092d10 < 1.0f ? v * 2.0f + pod_092d10 : 1.0f;
 }
 
-void PodSprintA_Init(WORLDINFO_s *) {
+void PodSprintA_Init(WORLDINFO_s *world) {
+    u8 *ps = (u8 *)podsprint;
+    memset(ps, 0, 0x94);
+    podsprint_netpacket = SetLevelHack(0xa);
+    ps[0x0] = 0;
+    void *s = NuSplineFind(world->current_gscn, "finish_line");
+    *(void **)(ps + 0x0) = s;
+    if (s != NULL && *(i16 *)s <= 1)
+        *(void **)(ps + 0x0) = NULL;
+    s = NuSplineFind(world->current_gscn, "halfway");
+    *(void **)(ps + 0x4) = s;
+    if (s != NULL && *(i16 *)s <= 1)
+        *(void **)(ps + 0x4) = NULL;
+    *(void **)(ps + 0x68) = CheckGizAIMessage(gizaimessagesys, "Lap", NULL);
+    *(u32 *)((u8 *)*(void **)(ps + 0x68) + 0x28) = 0;
+    *(void **)(ps + 0x6c) = CheckGizAIMessage(gizaimessagesys, "sebulba_max_speed", NULL);
+    *(void **)(ps + 0x70) = CheckGizAIMessage(gizaimessagesys, "sebulba_min_speed", NULL);
+    *(void **)(ps + 0x74) = CheckGizAIMessage(gizaimessagesys, "sebulba_speed_step", NULL);
+    *(u32 *)(ps + 0x8) = 0;
+    *(u32 *)(ps + 0xc) = 0;
+    *(u32 *)(ps + 0x10) = 0;
+    *(u32 *)(ps + 0x14) = 0;
+    s = NuSplineFind(world->current_gscn, "ai_sebulba");
+    *(void **)(ps + 0x8) = s;
+    if (s != NULL && *(void **)(ps + 0x0) != NULL && *(void **)(ps + 0x4) != NULL)
+        PodSprint_InitAISpline(world, ps + 0x8, (char *)0);
+    *(u32 *)(ps + 0x18) = 0;
+    *(u32 *)(ps + 0x1c) = 0;
+    *(u32 *)(ps + 0x20) = 0;
+    *(u32 *)(ps + 0x24) = 0;
+    s = NuSplineFind(world->current_gscn, "ai_general");
+    *(void **)(ps + 0x18) = s;
+    if (s != NULL && *(void **)(ps + 0x0) != NULL && *(void **)(ps + 0x4) != NULL)
+        PodSprint_InitAISpline(world, ps + 0x18, (char *)0);
+    NuSpecialFind(world->current_gscn, (void **)((u8 *)LevHSpecial + 0x258), "bigrock_five");
+    NuSpecialFind(world->current_gscn, (void **)((u8 *)LevHSpecial + 0x264), "bigrock_eight");
+}
+
+static void PodSprint_InitAISpline(WORLDINFO_s *world, void *a, char *b) {
 }
 void PodSprintA_Panel(WORLDINFO_s *) {
 }
