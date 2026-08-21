@@ -512,7 +512,14 @@ void PodRaceBInit(WORLDINFO_s *world) {
         *(float *)((u8 *)PodRace + 0xaf00) = 3.0f;
 }
 
-void PodRaceCInit(WORLDINFO_s *) {
+void PodRaceCInit(WORLDINFO_s *world) {
+    PodRaceInit(world);
+    *(u8 *)LevFlag = 0;
+    char buf[0x20];
+    for (i32 i = 1; i <= 0xa; i++) {
+        sprintf(buf, "boost0%i", i);
+        NuSpecialFind(world->current_gscn, (void **)((u8 *)LevHSpecial + (i - 1) * 0xc), buf);
+    }
 }
 
 void PodRacePanel(WORLDINFO_s *world) {
