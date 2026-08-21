@@ -7,10 +7,28 @@
 #include "nu2api/nu3d/nutex.h"
 
 extern "C" void *AIPathFindLocator(AISYS_s *, char *);
+struct GameObject_s;
 extern i32 netclient;
 extern i16 id_KAADU;
 extern i16 id_GUNGAN;
 extern i16 id_FALUMPASET;
+extern i16 id_DARTHMAUL;
+GameObject_s *FindGameObject(i32, u32, i32, i32, i32);
+void DrawBossHitPoints(GameObject_s *);
+
+static struct {
+    void *field_0x0; // 0x0  MaulA anim message 1
+    void *field_0x4;
+    void *field_0x8;
+    void *field_0xc;
+    void *field_0x10; // 0x10 MaulA anim message 2
+    void *field_0x14;
+    void *field_0x18;
+    void *field_0x1c;
+    void *field_0x20; // 0x20 Maul boss object
+    void *field_0x24;
+    void *field_0x28;
+} PODRACELEVELS;
 
 static struct {
     undefined field0_0x0[2];
@@ -241,7 +259,18 @@ void MaulA_Reset(WORLDINFO_s *) {
 void MaulA_Update(WORLDINFO_s *) {
 }
 
-void MaulA_Panel(WORLDINFO_s *) {
+void MaulA_Panel(WORLDINFO_s *world) {
+    if (netclient == 0) {
+        if (PODRACELEVELS.field_0x20 != NULL && PODRACELEVELS.field_0x0 != NULL &&
+            *(float *)((u8 *)PODRACELEVELS.field_0x0 + 0x28) == 0.0f && PODRACELEVELS.field_0x10 != NULL) {
+            *(u8 *)((u8 *)PODRACELEVELS.field_0x20 + 0x108a) = 3;
+            *(u8 *)((u8 *)PODRACELEVELS.field_0x20 + 0x108b) =
+                (u8)(i32) * (float *)((u8 *)PODRACELEVELS.field_0x10 + 0x28);
+            DrawBossHitPoints((GameObject_s *)PODRACELEVELS.field_0x20);
+        } else {
+            DrawBossHitPoints(NULL);
+        }
+    }
 }
 
 void MaulB_Init(WORLDINFO_s *world) {
@@ -265,11 +294,20 @@ void MaulE_Update(WORLDINFO_s *) {
 void MaulF_Init(WORLDINFO_s *) {
 }
 
-void MaulF_Reset(WORLDINFO_s *) {
+void MaulF_Reset(WORLDINFO_s *world) {
+    PODRACELEVELS.field_0x20 = FindGameObject(id_DARTHMAUL, 1, 1, 0, 0);
 }
 
 void MaulF_Update(WORLDINFO_s *) {
 }
 
-void MaulF_Panel(WORLDINFO_s *) {
+void MaulF_Panel(WORLDINFO_s *world) {
+    if (netclient == 0) {
+        if (PODRACELEVELS.field_0x20 != NULL && PODRACELEVELS.field_0x0 != NULL &&
+            *(float *)((u8 *)PODRACELEVELS.field_0x0 + 0x28) == 1.0f) {
+            DrawBossHitPoints((GameObject_s *)PODRACELEVELS.field_0x20);
+        } else {
+            DrawBossHitPoints(NULL);
+        }
+    }
 }

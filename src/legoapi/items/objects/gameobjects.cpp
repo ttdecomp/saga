@@ -359,7 +359,8 @@ void TakeOverCode(GameObject_s *, i32) {
 void InitExtraList() {
 }
 
-void FindGameObject(i32, u32, i32, i32, i32) {
+GameObject_s *FindGameObject(i32, u32, i32, i32, i32) {
+    return NULL;
 }
 
 void KillGameObject(GameObject_s *, i32, i32) {
