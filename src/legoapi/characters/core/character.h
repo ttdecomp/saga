@@ -331,3 +331,21 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+
+// Model id globals (assigned from the character name table in character.cpp)
+extern "C" {
+    extern i16 id_KAADU;
+    extern i16 id_GUNGAN;
+    extern i16 id_FALUMPASET;
+    extern i16 id_DARTHMAUL;
+    extern i16 id_ANAKINSPOD;
+    extern i16 id_STAP;
+    extern i16 id_ROYALGUARD;
+    extern i16 id_CLONEARC;
+    extern i16 id_IMPERIALSHUTTLE;
+    extern i16 id_NABOOSTARFIGHTER;
+    extern i16 id_XWING;
+    extern i16 id_SNOWSPEEDER;
+    extern i16 id_MILLENNIUMFALCON;
+    extern i16 id_NEW_REPUBLIC_GUNSHIP;
+}

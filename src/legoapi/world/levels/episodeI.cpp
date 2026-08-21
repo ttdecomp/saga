@@ -18,69 +18,42 @@
 
 extern "C" void *AIPathFindLocator(AISYS_s *, char *);
 struct GameObject_s;
-extern i32 netclient;
-extern i16 id_KAADU;
-extern i16 id_GUNGAN;
-extern i16 id_FALUMPASET;
-extern i16 id_DARTHMAUL;
 GameObject_s *FindGameObject(i32, u32, i32, i32, i32);
 void DrawBossHitPoints(GameObject_s *);
 extern "C" void NuSpecialSetVisibility(void *, i32);
-extern GIZAIMESSAGESYS_s *gizaimessagesys;
 GIZAIMESSAGE_s *CheckGizAIMessage(GIZAIMESSAGESYS_s *, const char *, GIZAIMESSAGE_s *);
 extern "C" struct nuvec_s *NuSpecialGetPos(void *);
 void GizObstacle_EvalAveragePosAndRadius(GIZOBSTACLE_s *, i32);
 i32 SetLevelHack(i32);
 extern "C" void *AIPAthFindPathCnx(AISYS_s *, i32, char *, void *);
-extern i32 retakeg_netpacket;
 static GIZAIMESSAGE_s *RetakeG_TotalGuards_msg;
 static GIZAIMESSAGE_s *RetakeG_GuardsToRescue_msg;
-extern i16 trooper_boltid;
-extern i8 trooper_side[];
-extern void *hothtroopers;
-extern i32 TimingBarSet;
 i16 BoltType_FindIDByName(char *, WORLDINFO_s *);
 void TBOPENFN(char *, i32);
 void TBCLOSEFN(char *, i32);
 void UpdatePodRaceLapDisplay(float);
-extern f32 FRAMETIME;
-extern struct AREADATA_s *PODRACE_ADATA;
 static void *PodRace;
 static i32 mushroom_collapse;
 static i32 mushroom_nattempts_per_increment;
 static i32 mushroom_n_attempts;
 static i32 podhurry_i;
-extern i32 g_lowEndLevelBehaviour;
 static i32 max_nsnipers;
 static i32 PodRace_nsnipers;
 static float PodRace_sniper_fire_time;
 static u8 PodRace_snipers[0xa0];
 void PodKeyReset(void);
 i32 InStory(void);
-extern struct LEVELDATA_s *PODRACEOUTRO1_LDATA;
-extern struct LEVELDATA_s *PODRACESTATUS_LDATA;
 static void *pod_pacemaker;
 static void *pod_avalanche_cutscene;
 i32 pod_lap_start;
 CUTINFO *CutScene_Find(CUTSYS *, char *);
 void CutScene_SnapToEnd(CUTINFO *);
-extern u32 client_mines[];
-extern void *minesys;
-extern i32 nethost;
-extern i32 clients_mines_bitfield[];
-extern i32 pod_mines_bitfield[];
-extern i32 mine_count;
-extern i16 id_ANAKINSPOD;
 static float pod_roll[2];
 static float pod_roll_target[2];
 static float pod_animtime[2];
 static float pod_countdown;
 static float pod_092d00;
 static float pod_092d10;
-extern float gungan_a_time_Normal;
-extern float gungan_a_time_LowEnd;
-extern i32 active_neutral_count;
-extern i32 active_baddy_count;
 static float gungan_timer;
 static i16 gungan_count;
 static i16 gungan_0x92cb8;
@@ -93,12 +66,6 @@ struct AIGROUP_s;
 struct nugspline_s;
 void *AddDynamicCreature(i32, nuvec_s *, i32, char *, AIPATHINFO_s *, AIGROUP_s *, i32, nugspline_s *, nuvec_s *, i32,
                          i32);
-extern i16 id_STAP;
-extern void *FadeSys;
-extern i32 Paused;
-extern i32 MiniCutCam;
-extern struct LEVELDATA_s *PODRACEB_LDATA;
-extern float GameTimer[];
 void TickTockSfx(void);
 float SeekLinearF(float, float, float);
 static i32 pod_092d40;
@@ -111,24 +78,10 @@ static float pod_092d70[5];
 void Hint_SetComplete(i32);
 extern "C" void *NuSpecialGetDrawMtx(void *);
 extern "C" i32 NuSpecialClipTestExtents(void *, void *);
-extern void *podrace_netpacket;
 extern "C" void Text3DEx(char *, i32, float, float, float, float, float, i32, i32, i32, i32, i32);
-extern float PodRace_sniper_start_fire_radius;
-extern float PodRace_sniper_fire_radius;
-extern float PodRace_sniper_fire_range_time;
-extern i16 temp_yrot;
-extern i16 temp_xrot;
 static i32 pod_sniper_toggle;
-extern struct LEVELDATA_s *PODSPRINTA_LDATA;
-extern void *player2;
-extern void *player;
-extern void *game_cutscenes;
 void CutScene_StoppedFn_LSW(CUTINFO *);
-extern i32 podsprint_netpacket;
 void ResetPodStuff(void);
-extern void *GameCam;
-extern i32 pause_rndr_on;
-extern float podanimendframe;
 struct nuhspecial_s;
 void DrawPanel3DObject(float, float, float, float, float, float, u16, u16, u16, nuhspecial_s *, i32, float);
 extern "C" void *AISysFindArea(void *, char *);
@@ -145,18 +98,9 @@ static void UpdatePacemakerDisplay(void *);
 static void PodSprint_InitAISpline(WORLDINFO_s *, void *, char *);
 void *BoltType_FindByID(i32, WORLDINFO_s *);
 void Bolt_Add(GameObject_s *, nuvec_s *, numtx_s *, i32, i32);
-extern i16 id_ROYALGUARD;
 static void *retakeg_guard_a;
 static void *retakeg_guard_b;
 void DrawMeleeTargets(i16 *, char *, float *, i32);
-extern void *podsprint;
-extern i16 id_CLONEARC;
-extern i16 id_IMPERIALSHUTTLE;
-extern i16 id_NABOOSTARFIGHTER;
-extern i16 id_XWING;
-extern i16 id_SNOWSPEEDER;
-extern i16 id_MILLENNIUMFALCON;
-extern i16 id_NEW_REPUBLIC_GUNSHIP;
 extern "C" void NuSpecialDrawAt(void *, void *);
 
 static struct {
@@ -619,7 +563,6 @@ void PodRaceCReset(WORLDINFO_s *world) {
     }
 }
 
-extern i32 avg_currentspeed_mul;
 extern "C" void PlaySfx(char *);
 void PodRaceUpdate(WORLDINFO_s *world, float dt) {
     if (netclient != 0)
@@ -707,7 +650,6 @@ void PodRaceAUpdate(WORLDINFO_s *world) {
     }
 }
 
-extern void *game_objects;
 extern "C" void *AddGameDebris(void *, i32, void *);
 extern "C" void AddFiniteShotPART(i32, void *, i32);
 void PodLoseSpeed(GameObject_s *, i32, i32);
@@ -749,7 +691,6 @@ static void UpdatePodRaceMines(void) {
 static void *CreatePodRaceMine(nuvec_s *a) {
     return NULL;
 }
-extern float pacemaker_alpha_table[];
 void *AddGameMessage(char *, nuvec_s *, float, nuvec_s *, float, unsigned char, unsigned char, unsigned char, u32,
                      float);
 static void UpdatePacemakerDisplay(void *lev_objs) {
