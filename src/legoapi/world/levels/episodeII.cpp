@@ -62,8 +62,11 @@ struct kamino_e_state_s {
     f32 field_0x28; // 0x28
 };
 static struct kamino_e_state_s *kamino_e_state;
-static void *kamino_e_special;  // kamino_e named scene object
-static i32 pursuit_state[0x20]; // bounty-hunter pursuit state
+static void *kamino_e_special;   // kamino_e named scene object
+static i32 pursuit_state[0x20];  // bounty-hunter pursuit state
+static i16 gunship_bolts[2];     // gun-ship bolt type ids
+static u8 gunship_flags[0xa];    // gun-ship weapon-select flags
+static void *gunship_weapons[4]; // gun-ship gizmo weapons
 
 // Episode 2 level handlers, in the game's Episode_II progression:
 // pursuit (coruscant bounty-hunter) / kamino / factory (geonosis droid
@@ -117,7 +120,14 @@ void BountyHunterPursuitA_Reset(WORLDINFO_s *world) {
         b->field_0x9f |= 0x20;
 }
 
-void BountyHunterPursuitB_Reset(WORLDINFO_s *) {
+void BountyHunterPursuitB_Reset(WORLDINFO_s *world) {
+    LevGizmo[0] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitb_1");
+    LevGizmo[1] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitb_2");
+    LevGizmo[2] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitb_3");
+    LevGizmo[3] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitb_4");
+    LevGizmo[4] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitb_5");
+    LevGizmo[5] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitb_6");
+    pursuit_state[0] = (i32)(usize)GetNamedGameObject(world->ai_sys, "pursuitb_exit");
 }
 
 void BountyHunterPursuitC_Reset(WORLDINFO_s *) {
@@ -333,13 +343,38 @@ void JediB_DrawPanel(WORLDINFO_s *) {
 // Gunship (Gunship_A / Gunship_B)
 // ===========================================================================
 
-void GunshipA_Init(WORLDINFO_s *) {
+void GunshipA_Init(WORLDINFO_s *world) {
+    gunship_bolts[1] = (i16)BoltType_FindIDByName("gunbolt2", world);
+    gunship_bolts[0] = (i16)BoltType_FindIDByName("gunbolt1", world);
+    gunship_flags[0] = 0;
+    gunship_flags[1] = 0;
+    gunship_flags[2] = 0;
+    gunship_flags[3] = 0;
+    gunship_flags[4] = 0;
+    gunship_flags[5] = 1;
+    gunship_flags[6] = 1;
+    gunship_flags[7] = 1;
+    gunship_flags[8] = 1;
+    gunship_flags[9] = 1;
+    InitMiniSnowTroopers(world, 0xa, 0x20, 0);
+    gunship_weapons[0] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "gunw1");
+    gunship_weapons[1] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "gunw2");
+    gunship_weapons[2] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "gunw3");
+    gunship_weapons[3] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "gunw4");
 }
 
 void GunshipA_Update(WORLDINFO_s *) {
 }
 
-void GunshipA_Draw(WORLDINFO_s *) {
+void GunshipA_Draw(WORLDINFO_s *world) {
+    if (TimingBarSet == 5) {
+        TBOPENFN("gun_timing", 5);
+        DrawMiniSnowTroopers(world);
+    } else {
+        DrawMiniSnowTroopers(world);
+        if (TimingBarSet == 5)
+            TBCLOSEFN("gun_timing", 5);
+    }
 }
 
 void GunshipB_Reset(WORLDINFO_s *world) {

@@ -169,5 +169,6 @@ void *BoltType_FindByID(i32, WORLDINFO_s *);
 void Bolt_Add(GameObject_s *, nuvec_s *, numtx_s *, i32, i32);
 void TBOPENFN(char *, i32);
 void TBCLOSEFN(char *, i32);
+void InitMiniSnowTroopers(WORLDINFO_s *, i32, i32, i32);
 
 #endif // LEGOAPI_WORLD_LEVEL_SHARED_H
