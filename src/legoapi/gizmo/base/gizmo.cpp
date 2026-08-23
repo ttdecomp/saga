@@ -682,7 +682,8 @@ void GizmoSysReset(GIZMOSYS_s *, void *, i32) {
 void GizmoFindByData(GIZMOSYS_s *, i32, void *) {
 }
 
-void GizmoFindByName(GIZMOSYS_s *, i32, char *) {
+GIZMO *GizmoFindByName(GIZMOSYS *, i32, char *) {
+    return NULL;
 }
 
 void GizmoSysSetGame() {

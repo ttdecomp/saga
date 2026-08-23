@@ -48,6 +48,7 @@ extern i32 AREACOUNT;
 extern void *ADataList;
 extern void *LevelProgressData;
 extern void CompleteLevel(WORLDINFO_s *);
+void StoreLevelProgress(WORLDINFO_s *);
 extern WORLDINFO_s *WORLD;
 i32 KillBoss(i32, i32, float);
 extern void GoToNewLevel(i32);
@@ -159,5 +160,15 @@ struct AIROW_s;
 struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
+struct numtx_s;
+
+// Level-subsystem entry points used by the episode level files.
+void *SetLevelHack(i32);
+void ResetLevel(WORLDINFO_s *, char *, i32);
+i16 BoltType_FindIDByName(char *, WORLDINFO_s *);
+void *BoltType_FindByID(i32, WORLDINFO_s *);
+void Bolt_Add(GameObject_s *, nuvec_s *, numtx_s *, i32, i32);
+void TBOPENFN(char *, i32);
+void TBCLOSEFN(char *, i32);
 
 #endif // LEGOAPI_WORLD_LEVEL_SHARED_H

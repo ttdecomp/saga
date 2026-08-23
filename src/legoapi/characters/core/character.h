@@ -349,4 +349,6 @@ extern "C" {
     extern i16 id_SNOWSPEEDER;
     extern i16 id_MILLENNIUMFALCON;
     extern i16 id_NEW_REPUBLIC_GUNSHIP;
+    extern i16 id_COUNTDOOKU;
+    extern i16 id_JANGOFETT;
 }

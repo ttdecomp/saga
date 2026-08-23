@@ -140,3 +140,13 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+
+// Level-facing convenience helpers (C++ linkage); game-gizmo lookups and
+// AI-message channels used by the episode level files.
+struct WORLDINFO_s;
+struct GIZAIMESSAGESYS_s;
+struct GIZAIMESSAGE_s;
+GIZMO *GizmoFindByName(GIZMOSYS *gizmo_sys, i32 type_id, char *name);
+void ResetPaintPuzzle(WORLDINFO_s *world);
+GIZAIMESSAGE_s *CheckGizAIMessage(GIZAIMESSAGESYS_s *, char const *, GIZAIMESSAGE_s *);
+GIZAIMESSAGE_s *SetGizAIMessage(GIZAIMESSAGESYS_s *, char const *, float, GIZAIMESSAGE_s *);

@@ -45,3 +45,4 @@ void StartDoorPositions(void);
 void *Door_FindByIndex(struct WORLDINFO_s *world, i32 a, i32 b, struct nuvec_s *c);
 
 void *Door_FindByName(struct WORLDINFO_s *world, char *name);
+void Doors_SetLastDoor(DOOR_s *door);

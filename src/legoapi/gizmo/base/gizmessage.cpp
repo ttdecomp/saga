@@ -10,7 +10,8 @@ struct SHOPINPUT;
 void GetGizAIMessage(GIZAIMESSAGESYS_s *, char const *, GIZAIMESSAGE_s *) {
 }
 
-void SetGizAIMessage(GIZAIMESSAGESYS_s *, char const *, float, GIZAIMESSAGE_s *) {
+GIZAIMESSAGE_s *SetGizAIMessage(GIZAIMESSAGESYS_s *, char const *, float, GIZAIMESSAGE_s *) {
+    return NULL;
 }
 
 GIZAIMESSAGE_s *CheckGizAIMessage(GIZAIMESSAGESYS_s *, char const *, GIZAIMESSAGE_s *) {
