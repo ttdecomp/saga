@@ -361,8 +361,10 @@ void FactoryG_Update(WORLDINFO_s *world) {
         complete++;
     if (GizForce_Complete(force_array[3]))
         complete++;
-    if (ObiWan == NULL)
+    if (ObiWan == NULL) {
+        ObiWan = (GameObject_s *)FindGameObject((i32)(i16)id_OBIWANKENOBIJEDIMASTER, 0x400, 0, 1, 0);
         return;
+    }
     if (complete == 4) {
         if (FreePlay == 0)
             NewCutScene(NULL, world->cutscene_sys, "factory_escape", 1);
