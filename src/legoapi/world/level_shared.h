@@ -17,7 +17,6 @@ extern void *OldLevelHackData;
 extern i32 LevelHackSize;
 extern i32 LevelHackSendTimer;
 
-extern i32 LevFlag[4];
 extern i32 LevHSpecial[264];
 extern i32 LevSfxFlag[4];
 extern void *dynamic_antinodes;

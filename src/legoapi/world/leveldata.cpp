@@ -2,6 +2,8 @@
 
 #include <string.h>
 
+extern i32 LevFlag[4]; // shared per-level 16-byte state scratch
+
 void ResetLevel(WORLDINFO_s *, char *, i32) {
 }
 

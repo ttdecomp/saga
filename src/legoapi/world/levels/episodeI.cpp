@@ -22,6 +22,16 @@
 #include "nu2api/numath/nurand.h"
 #include "nu2api/numath/nutrig.h"
 
+// This level's view of the shared 16-byte LevFlag scratch. byte0 holds the
+// pod-race progress state, byte1 the mushroom-collapse state.
+struct LEVFLAGBYTES_s {
+    u8 podrace_state;  // 0x00
+    u8 mushroom_state; // 0x01
+    u8 pad[14];        // 0x02
+};
+static_assert(sizeof(struct LEVFLAGBYTES_s) == 16, "LevFlag must be 16 bytes");
+extern struct LEVFLAGBYTES_s LevFlag;
+
 // Episode 1 level handlers: negotiations / gungan / rescue / podrace /
 // podsprint / retake / maul / anakins-flight. This is the only implemented
 // level file; episodes II-VI are still stubs.
@@ -122,13 +132,6 @@ struct PACEMAKERDATA_s {
     u32 color3; // 0x1348
     char pad_0x134c[0x134e - 0x134c];
     u8 enabled; // 0x134e
-};
-
-// Byte flags packed into the first LevFlag int.
-struct LEVFLAGBYTES_s {
-    u8 podrace_state;  // byte 0
-    u8 mushroom_state; // byte 1
-    u8 pad[2];
 };
 
 // AI locator view used as gungan spawn groups (AIPathFindLocator results:
@@ -836,25 +839,25 @@ void PodRaceBUpdate(WORLDINFO_s *world) {
         GAMECAMERA_s *gamcam = GameCam;
         CUTINFO *cut = (CUTINFO *)mushroom0_cut;
         if (PodRace->mushroom_timer > 1.0f && mushroom_collapse != 0) {
-            switch (((LEVFLAGBYTES_s *)LevFlag)->mushroom_state) {
+            switch (LevFlag.mushroom_state) {
                 case 0:
                     if (gamcam->zoom > mushroom0_along) {
                         NewCutScene(NULL, world->cutscene_sys, "ep1_podrace_mushroom0", 1);
-                        ((LEVFLAGBYTES_s *)LevFlag)->mushroom_state = 1;
+                        LevFlag.mushroom_state = 1;
                     }
                     break;
                 case 1:
                     if (cut != NULL && (((CUTSCENEDATA_s *)cut->scene)->flags & 0x10)) {
                         NewCutScene(NULL, world->cutscene_sys, "EP1_PODRACE_MUSHROOM1", 1);
                         mushroom_countdown = mushroom_time_available;
-                        ((LEVFLAGBYTES_s *)LevFlag)->mushroom_state = 2;
+                        LevFlag.mushroom_state = 2;
                     }
                     break;
                 case 2:
                     mushroom_countdown -= FRAMETIME;
                     if (mushroom_countdown > 0.0f) {
                         if (gamcam->zoom > mushroom2_along)
-                            ((LEVFLAGBYTES_s *)LevFlag)->mushroom_state = 3;
+                            LevFlag.mushroom_state = 3;
                     } else {
                         NewCutScene(NULL, world->cutscene_sys, "EP1_PODRACE_MUSHROOM2", 1);
                         mushroom_n_attempts++;
@@ -865,13 +868,13 @@ void PodRaceBUpdate(WORLDINFO_s *world) {
                                     ? mushroom_time_available + mushroom_time_increment
                                     : mushroom_max_time_available;
                         }
-                        ((LEVFLAGBYTES_s *)LevFlag)->mushroom_state = 4;
+                        LevFlag.mushroom_state = 4;
                     }
                     break;
                 case 3:
                     if (NuSpecialExistsFn(LevHSpecial) != 0 &&
                         NuSpecialClipTestExtents(LevHSpecial, NuSpecialGetDrawMtx(LevHSpecial)) == 0)
-                        ((LEVFLAGBYTES_s *)LevFlag)->mushroom_state = 4;
+                        LevFlag.mushroom_state = 4;
                     break;
             }
         }
@@ -890,10 +893,10 @@ void PodRaceBUpdate(WORLDINFO_s *world) {
     UpdatePodRaceLapDisplay(FRAMETIME);
     PodRaceUpdate(world, FRAMETIME);
     if (Lap == 1) {
-        if (((LEVFLAGBYTES_s *)LevFlag)->podrace_state == 0) {
+        if (LevFlag.podrace_state == 0) {
             if (GameTimer[0] > 10.0f) {
                 Hint_SetComplete(0x27e);
-                ((LEVFLAGBYTES_s *)LevFlag)->podrace_state = 1;
+                LevFlag.podrace_state = 1;
             }
         }
     }
@@ -913,11 +916,11 @@ void PodRaceCUpdate(WORLDINFO_s *world) {
     UpdatePodRaceLapDisplay(FRAMETIME);
     PodRaceUpdate(world, FRAMETIME);
     PodRaceSnipersUpdate();
-    switch (((LEVFLAGBYTES_s *)LevFlag)->podrace_state) {
+    switch (LevFlag.podrace_state) {
         case 0: {
             CUTINFO *cs = CutScene_Find(world->cutscene_sys, "Ep1_Podrace_TuskenRaiders");
             if (cs != NULL && (((CUTSCENEDATA_s *)((CUTINFO *)cs)->scene)->flags & 0x10))
-                ((LEVFLAGBYTES_s *)LevFlag)->podrace_state = 1;
+                LevFlag.podrace_state = 1;
             break;
         }
         case 1: {
@@ -930,7 +933,7 @@ void PodRaceCUpdate(WORLDINFO_s *world) {
                 }
             }
             if (none)
-                ((LEVFLAGBYTES_s *)LevFlag)->podrace_state = 2;
+                LevFlag.podrace_state = 2;
             break;
         }
         default:
@@ -987,8 +990,8 @@ void PodRaceBReset(WORLDINFO_s *world) {
             break;
     }
     pod_pacemaker = 0;
-    ((LEVFLAGBYTES_s *)LevFlag)->podrace_state = 0;
-    ((LEVFLAGBYTES_s *)LevFlag)->mushroom_state = 0;
+    LevFlag.podrace_state = 0;
+    LevFlag.mushroom_state = 0;
     mushroom0_cut = CutScene_Find(world->cutscene_sys, "EP1_PODRACE_MUSHROOM0");
     NuSpecialFind(world->current_gscn, &((LEVHSENT_s *)LevHSpecial)[0].special, "collapsing_mush", 1);
 }
@@ -1089,7 +1092,7 @@ void PodRaceInit(WORLDINFO_s *world) {
 
 void PodRaceCInit(WORLDINFO_s *world) {
     PodRaceInit(world);
-    ((LEVFLAGBYTES_s *)LevFlag)->podrace_state = 0;
+    LevFlag.podrace_state = 0;
     char buf[0x20];
     LEVHSENT_s *slots = (LEVHSENT_s *)LevHSpecial;
     sprintf(buf, "boost0%i", 1);
@@ -1135,7 +1138,7 @@ void PodRaceCInit(WORLDINFO_s *world) {
             NuSpecialSetVisibility(&slots[8].special, 1);
         if (NuSpecialExistsFn(&slots[9].special) != 0)
             NuSpecialSetVisibility(&slots[9].special, 1);
-        ((LEVFLAGBYTES_s *)LevFlag)->podrace_state = 2;
+        LevFlag.podrace_state = 2;
     } else {
         if (NuSpecialExistsFn(&slots[0].special) != 0)
             NuSpecialSetVisibility(&slots[0].special, 0);

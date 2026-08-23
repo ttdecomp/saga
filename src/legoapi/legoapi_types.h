@@ -424,7 +424,9 @@ struct GAMEAUDIO {};
 // NuVecRotateY. Note the global points 0x80 bytes into its enclosing block:
 // the original computes a position vector at GameCam - 0x80.
 struct GAMECAMERA_s {
-    char pad_0x00[0x2c];
+    char pad_0x00[1];
+    u8 field_0x01; // 0x01  camera mode / state byte
+    char pad_0x02[0x2c - 0x02];
     float zoom; // 0x2c
     char pad_0x30[0x110 - 0x30];
     NUVEC dir; // 0x110 forward direction
@@ -773,7 +775,8 @@ struct GIZFORCE_s {
 };
 struct GIZMOBLOWUP_s {
     undefined field0_0x0[0x50];
-    char field_0x50[0x50];      // 0x50 .. 0xa0
+    char field_0x50[0x4f];      // 0x50 .. 0x9f
+    u8 field_0x9f;              // 0x9f  state/flags byte
     i32 field_0xa0;             // 0xa0
     char field_0xa4[0xc];       // 0xa4 .. 0xb0
     float field_0xb0;           // 0xb0
@@ -823,8 +826,9 @@ struct PATHCNXDATA_s {
 
 // Cutscene scene data (byte flag at 0x89).
 struct CUTSCENEDATA_s {
-    char pad_0x00[0x89];
-    u8 flags; // 0x89
+    char pad_0x00[0x88];
+    u8 field_0x88; // 0x88  flags byte
+    u8 flags;      // 0x89
 };
 
 // Player sub-object (through APIOBJECT::field_0x54).

@@ -46,8 +46,10 @@ typedef struct PAI_s {
 } PAI;
 
 typedef struct APIOBJECT_s {
-    void *objptr;                         // 0x00
-    undefined field_0x4[0x50];            // 0x04 .. 0x54
+    void *objptr;              // 0x00
+    undefined field_0x4[0x24]; // 0x04 .. 0x28
+    f32 field_0x28;            // 0x28
+    undefined field_0x2c[0x54 - 0x2c];
     void *field_0x54;                     // 0x54
     undefined field_0x58[0x10];           // 0x58 .. 0x68
     f32 field_0x68;                       // 0x68
@@ -92,7 +94,11 @@ typedef struct GameObject_s {
     APIOBJECT apiobj;             // 0x0000 .. 0x02a8
     u8 pad_2a8[0x18];             // 0x02a8 .. 0x02c0
     PAI ai;                       // 0x02c0 .. 0x04b0
-    u8 pad_4b0[0x7ec - 0x4b0];    // 0x04b0 .. 0x07ec
+    u8 pad_4b0[0x661 - 0x4b0];    // 0x04b0 .. 0x0661
+    u8 field_0x661;               // 0x0661
+    u8 pad_662[0x68c - 0x662];    // 0x0662 .. 0x068c
+    f32 field_0x68c;              // 0x068c
+    u8 pad_690[0x7ec - 0x690];    // 0x0690 .. 0x07ec
     COINPACKET *coinpacket;       // 0x07ec
     void *gizforce_los_info;      // 0x07f0
     u8 pad_7f4[0xc34 - 0x7f4];    // 0x07f4 .. 0x0c34

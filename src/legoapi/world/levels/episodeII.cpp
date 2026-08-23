@@ -22,6 +22,21 @@ struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
 
+// This level's view of the shared 16-byte LevFlag scratch. byte0 holds the
+// bonus-gunship milestone state; byte1 a secondary state.
+enum GUNSHIP_STATE_e {
+    GUNSHIP_INACTIVE = 0, // never entered
+    GUNSHIP_ACTIVE = 1,   // player aboard / stage running
+    GUNSHIP_WON = 2,      // stage finished
+};
+struct GUNSHIP_LEVFLAG_s {
+    u8 progress; // 0x00 -> GUNSHIP_STATE_e
+    u8 exit;     // 0x01
+    u8 pad[14];  // 0x02
+};
+static_assert(sizeof(struct GUNSHIP_LEVFLAG_s) == 16, "LevFlag must be 16 bytes");
+extern struct GUNSHIP_LEVFLAG_s LevFlag;
+
 // --- Cross-file entry points / id globals ---
 //
 // AIPAthFindPathCnx remains local here because it is called with a different
@@ -38,10 +53,17 @@ extern "C" {
 // that KaminoC_Init clears via memset of the enclosing disco struct, which is
 // why readers cannot be constant-folded.
 static u8 kaminodisco;
-static i32 dooku_c;            // _ZL7dooku_c
-static i32 dooku_state[4];     // dooku level state (hit counters / node)
-static void *kamino_e_state;   // kamino_e level state block
-static void *kamino_e_special; // kamino_e named scene object
+static i32 dooku_c;        // _ZL7dooku_c
+static i32 dooku_state[4]; // dooku level state (hit counters / node)
+
+// kamino_e level state block and hud scene object.
+struct kamino_e_state_s {
+    char pad_0x00[0x28];
+    f32 field_0x28; // 0x28
+};
+static struct kamino_e_state_s *kamino_e_state;
+static void *kamino_e_special;  // kamino_e named scene object
+static i32 pursuit_state[0x20]; // bounty-hunter pursuit state
 
 // Episode 2 level handlers, in the game's Episode_II progression:
 // pursuit (coruscant bounty-hunter) / kamino / factory (geonosis droid
@@ -58,15 +80,15 @@ static void *kamino_e_special; // kamino_e named scene object
 void BountyHunterPursuitA_Init(WORLDINFO_s *world) {
     GIZMOBLOWUP_s *b;
     if ((b = GizmoBlowUp_FindByName(world, "Jango")) != NULL)
-        *((u8 *)b + 0x9f) |= 0x20;
+        b->field_0x9f |= 0x20;
     if ((b = GizmoBlowUp_FindByName(world, "b1")) != NULL)
-        *((u8 *)b + 0x9f) |= 0x20;
+        b->field_0x9f |= 0x20;
     if ((b = GizmoBlowUp_FindByName(world, "b2")) != NULL)
-        *((u8 *)b + 0x9f) |= 0x20;
+        b->field_0x9f |= 0x20;
     if ((b = GizmoBlowUp_FindByName(world, "b3")) != NULL)
-        *((u8 *)b + 0x9f) |= 0x20;
+        b->field_0x9f |= 0x20;
     if ((b = GizmoBlowUp_FindByName(world, "b4")) != NULL)
-        *((u8 *)b + 0x9f) |= 0x20;
+        b->field_0x9f |= 0x20;
 }
 
 void BountyHunterPursuitB_Init(WORLDINFO_s *) {
@@ -78,7 +100,21 @@ void BountyHunterPursuitC_Init(WORLDINFO_s *) {
 void BountyHunterPursuitD_Init(WORLDINFO_s *) {
 }
 
-void BountyHunterPursuitA_Reset(WORLDINFO_s *) {
+void BountyHunterPursuitA_Reset(WORLDINFO_s *world) {
+    pursuit_state[0] = 0;
+    pursuit_state[1] = 0;
+    pursuit_state[0] = (i32)(usize)GetNamedGameObject(world->ai_sys, "pursuit_a");
+    GIZMOBLOWUP_s *b;
+    if ((b = GizmoBlowUp_FindByName(world, "za1")) != NULL)
+        b->field_0x9f |= 0x20;
+    if ((b = GizmoBlowUp_FindByName(world, "za2")) != NULL)
+        b->field_0x9f |= 0x20;
+    if ((b = GizmoBlowUp_FindByName(world, "za3")) != NULL)
+        b->field_0x9f |= 0x20;
+    if ((b = GizmoBlowUp_FindByName(world, "za4")) != NULL)
+        b->field_0x9f |= 0x20;
+    if ((b = GizmoBlowUp_FindByName(world, "za5")) != NULL)
+        b->field_0x9f |= 0x20;
 }
 
 void BountyHunterPursuitB_Reset(WORLDINFO_s *) {
@@ -87,7 +123,20 @@ void BountyHunterPursuitB_Reset(WORLDINFO_s *) {
 void BountyHunterPursuitC_Reset(WORLDINFO_s *) {
 }
 
-void BountyHunterPursuitD_Reset(WORLDINFO_s *) {
+void BountyHunterPursuitD_Reset(WORLDINFO_s *world) {
+    pursuit_state[0] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_1");
+    pursuit_state[1] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_2");
+    pursuit_state[2] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_3");
+    pursuit_state[3] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_4");
+    pursuit_state[4] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_5");
+    pursuit_state[5] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_6");
+    pursuit_state[6] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_7");
+    pursuit_state[7] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_8");
+    pursuit_state[8] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_9");
+    pursuit_state[9] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_10");
+    pursuit_state[10] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_11");
+    pursuit_state[11] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_12");
+    pursuit_state[12] = (i32)(usize)GetNamedGameObject(world->ai_sys, "pursuitd_last");
 }
 
 void BountyHunterPursuitA_Update(WORLDINFO_s *) {
@@ -110,15 +159,15 @@ i32 KaminoInside() {
     if (WORLD->area != NULL && WORLD->area == KAMINO_ADATA) {
         if (WORLD->current_level == KAMINOA_LDATA) {
             if (CUTSTOPGAME == 0) {
-                if (*((u8 *)GameCam + 1) == 5)
+                if (GameCam->field_0x01 == 5)
                     return 1;
-                if (*((u8 *)GameCam + 1) == 6)
+                if (GameCam->field_0x01 == 6)
                     return 1;
             } else {
                 return 1;
             }
         } else if (WORLD->current_level == KAMINOE_LDATA) {
-            if (CUTSTOPGAME == 0 && *((u8 *)GameCam + 1) != 0x1e)
+            if (CUTSTOPGAME == 0 && GameCam->field_0x01 != 0x1e)
                 return 1;
         }
     }
@@ -132,14 +181,14 @@ i32 KaminoDiscoOn() {
 i32 KaminoInDiscoRoom() {
     i32 r = 0;
     if (WORLD->current_level == KAMINOC_LDATA)
-        r = (*((u8 *)GameCam + 1) == 0x15);
+        r = (GameCam->field_0x01 == 0x15);
     return r;
 }
 
 void KaminoA_AlwaysUpdate(WORLDINFO_s *) {
     bool v = 0;
     if (CUTSTOPGAME == 0) {
-        u8 b = *((u8 *)GameCam + 1);
+        u8 b = GameCam->field_0x01;
         if (b != 5)
             v = (b != 6);
     }
@@ -174,15 +223,15 @@ void KaminoE_Update(WORLDINFO_s *) {
 void KaminoE_AlwaysUpdate(WORLDINFO_s *) {
     bool v = 1;
     if (CUTSTOPGAME == 0)
-        v = (*((u8 *)GameCam + 1) == 0x1e);
+        v = (GameCam->field_0x01 == 0x1e);
     object_switches[1] = v;
 }
 
 void KaminoE_Draw(WORLDINFO_s *world) {
     if (netclient == 0) {
-        if (kamino_e_state != NULL && *(float *)((u8 *)kamino_e_state + 0x28) > 0.0f) {
+        if (kamino_e_state != NULL && kamino_e_state->field_0x28 > 0.0f) {
             GameObject_s *obj = (GameObject_s *)FindGameObject((i32)(i16)id_JANGOFETT, 1, 1, 1, 0);
-            if (obj != NULL && kamino_e_state != NULL && *(float *)((u8 *)obj + 0x28) == 1.0f)
+            if (obj != NULL && kamino_e_state != NULL && obj->apiobj.field_0x28 == 1.0f)
                 DrawBossHitPoints(obj);
         }
     }
@@ -212,7 +261,7 @@ void KaminoF_Init(WORLDINFO_s *world) {
 void KaminoOutro_Init(WORLDINFO_s *) {
     bool v = 0;
     if (CUTSTOPGAME == 0) {
-        u8 b = *((u8 *)GameCam + 1);
+        u8 b = GameCam->field_0x01;
         if (b != 5)
             v = (b != 6);
     }
@@ -240,12 +289,12 @@ void FactoryB_Init(WORLDINFO_s *) {
 
 void FactoryB_Reset(WORLDINFO_s *world) {
     ResetPaintPuzzle(world);
-    factoryb_cut = (void *)(usize)NewCutScene(NULL, world->cutscene_sys, "fb_cut", 0);
+    factoryb_cut = (CUTINFO *)NewCutScene(NULL, world->cutscene_sys, "fb_cut", 0);
     if (factoryb_cut != NULL) {
-        void *scene = *(void **)((u8 *)factoryb_cut + 4);
+        CUTSCENEDATA_s *scene = (CUTSCENEDATA_s *)factoryb_cut->scene;
         if (scene != NULL) {
-            *((u8 *)scene + 0x88) |= 2;
-            *((u8 *)scene + 0x88) |= 8;
+            scene->field_0x88 |= 2;
+            scene->field_0x88 |= 8;
         }
     }
     factoryb_conveyor_stopped_msg = CheckGizAIMessage(gizaimessagesys, "conv_stopped", NULL);
@@ -319,36 +368,35 @@ void GunShip_DragBombSeekBlowUp(GameObject_s *) {
 
 void BonusGunshipA_Reset(WORLDINFO_s *) {
     gunship_player_dead = 0;
-    if (*((char *)LevFlag) == 1)
-        *((char *)LevFlag) = 2;
-    *((char *)LevFlag + 1) = 0;
+    if (LevFlag.progress == GUNSHIP_ACTIVE)
+        LevFlag.progress = GUNSHIP_WON;
+    LevFlag.exit = 0;
     bonus_gunship_store_progress_flag = 0;
 }
 
 void BonusGunshipA_Update(WORLDINFO_s *world) {
-    if (*((char *)LevFlag) == 0) {
+    if (LevFlag.progress == GUNSHIP_INACTIVE) {
         bool found = false;
-        if (Player[0] != NULL && *((u8 *)Player[0] + 0x661) == 0 && *(float *)((u8 *)Player[0] + 0x68c) > 0.001f) {
+        if (Player[0] != NULL && Player[0]->field_0x661 == 0 && Player[0]->field_0x68c > 0.001f) {
             found = true;
-        } else if (Player[1] != NULL && *((u8 *)Player[1] + 0x661) == 0 &&
-                   *(float *)((u8 *)Player[1] + 0x68c) > 0.001f) {
+        } else if (Player[1] != NULL && Player[1]->field_0x661 == 0 && Player[1]->field_0x68c > 0.001f) {
             found = true;
         }
         if (found) {
             if (netclient != 0) {
-                *((char *)LevFlag) = 1;
+                LevFlag.progress = GUNSHIP_ACTIVE;
             } else {
                 Doors_SetLastDoor((DOOR_s *)Door_FindByName(world, "bonus_door"));
                 bonus_gunship_store_progress_flag = 1;
                 StoreLevelProgress(world);
                 bonus_gunship_store_progress_flag = 0;
-                *((char *)LevFlag) = 1;
+                LevFlag.progress = GUNSHIP_ACTIVE;
             }
         }
     }
     if (gunship_player_dead == 0) {
-        if ((Player[0] != NULL && *((u8 *)Player[0] + 0x287) != 0) ||
-            (Player[1] != NULL && *((u8 *)Player[1] + 0x287) != 0)) {
+        if ((Player[0] != NULL && Player[0]->apiobj.field_0x287 != 0) ||
+            (Player[1] != NULL && Player[1]->apiobj.field_0x287 != 0)) {
             gunship_player_dead = 1;
             ResetLevel(world, "bonus", 1);
         }
@@ -357,12 +405,12 @@ void BonusGunshipA_Update(WORLDINFO_s *world) {
 
 void BonusGunshipB_Init(WORLDINFO_s *world) {
     bonusgunshipb_netpacket = SetLevelHack(0xc);
-    LevGizObst[0] = (i32)(usize)GizObstacle_FindByName((GIZOBSTACLESYS_s *)*(void **)((u8 *)world + 0x46a8), "obs");
+    LevGizObst[0] = (i32)(usize)GizObstacle_FindByName(world->giz_obstacle_sys, "obs");
 }
 
 void BonusGunshipB_Reset(WORLDINFO_s *) {
-    *((char *)LevFlag) = 0;
-    *((char *)LevFlag + 1) = 0;
+    LevFlag.progress = GUNSHIP_INACTIVE;
+    LevFlag.exit = 0;
     MiscTime = 0;
     gunship_player_dead = 0;
     bonus_gunship_store_progress_flag = 0;
@@ -372,7 +420,7 @@ void BonusGunshipB_Update(WORLDINFO_s *) {
 }
 
 void BonusGunshipB_Panel(WORLDINFO_s *) {
-    if (*((char *)LevFlag) == 1) {
+    if (LevFlag.progress == GUNSHIP_ACTIVE) {
         if (MiscTime > 60.0f)
             DrawTimer((i32)MiscTime + 1, 0, 0);
     }
@@ -422,7 +470,7 @@ void DookuC_DrawPanel(WORLDINFO_s *) {
     if (netclient != 0)
         return;
     GameObject_s *obj = (GameObject_s *)FindGameObject((i32)(i16)id_COUNTDOOKU, 1, 1, 1, 0);
-    if (obj != NULL && dooku_c != 0 && *((float *)((u8 *)obj + 0x28)) == 1.0f)
+    if (obj != NULL && dooku_c != 0 && obj->apiobj.field_0x28 == 1.0f)
         DrawBossHitPoints(obj);
 }
 

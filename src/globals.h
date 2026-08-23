@@ -565,7 +565,8 @@ extern void *kaminoe_netpacket;
 extern void *bonusgunshipb_netpacket;
 extern i32 LevForce;
 extern u8 dookuC_nodesNeedUpdating;
-extern void *factoryb_cut;
+struct CUTINFO;
+extern CUTINFO *factoryb_cut;
 extern void *factoryb_conveyor_stopped_msg;
 extern float podanimendframe;
 extern PODSPRINT_s podsprint; // held by value in the original (0x94 bytes)
