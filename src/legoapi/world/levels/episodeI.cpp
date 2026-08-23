@@ -545,41 +545,41 @@ void GunganA_Update(WORLDINFO_s *world) {
     float maxtime = gungan_a_time_Normal;
     if (g_lowEndLevelBehaviour != 0)
         maxtime = gungan_a_time_LowEnd;
-    if (gungan_a.count == 0 || gungan_a.spawn_timer <= maxtime)
-        return;
-    NuRand(NULL);
-    i32 r = NuRand(NULL) % gungan_a.count;
-    // Original selects via sbb: normal path caps 14 neutrals / 4 baddies,
-    // low-end path 6 / 3.
-    i32 nh = (g_lowEndLevelBehaviour == 0) ? 14 : 6;
-    i32 nb = (g_lowEndLevelBehaviour == 0) ? 4 : 3;
-    if (nb > active_neutral_count) {
-        i32 nv = (gungan_a.model_index + 1) % 4;
-        gungan_a.model_index = (i16)nv;
-        i32 model = gungan_a.models[nv];
-        GUNGAN_GROUP_s *grp = (GUNGAN_GROUP_s *)gungan_a.origins[r];
-        GameObject_s *obj = AddDynamicCreature(model, &grp->pos, grp->rot, "Wildlife", (AIPATHINFO_s *)grp->pathinfo,
-                                               NULL, 0, NULL, NULL, 0, 0);
-        if (obj != NULL) {
-            obj->ai.field_0x364 = gungan_a.targets[r];
-            if (g_lowEndLevelBehaviour == 0)
-                obj->field_0xf04 &= 0x7f;
+    if (gungan_a.count != 0 && gungan_a.spawn_timer > maxtime) {
+        NuRand(NULL);
+        i32 r = NuRand(NULL) % gungan_a.count;
+        // Original selects via sbb: normal path caps 14 neutrals / 4 baddies,
+        // low-end path 6 / 3.
+        i32 nh = (g_lowEndLevelBehaviour == 0) ? 14 : 6;
+        i32 nb = (g_lowEndLevelBehaviour == 0) ? 4 : 3;
+        if (nb > active_neutral_count) {
+            i32 nv = (gungan_a.model_index + 1) % 4;
+            gungan_a.model_index = (i16)nv;
+            i32 model = gungan_a.models[nv];
+            GUNGAN_GROUP_s *grp = (GUNGAN_GROUP_s *)gungan_a.origins[r];
+            GameObject_s *obj = AddDynamicCreature(model, &grp->pos, grp->rot, "Wildlife",
+                                                   (AIPATHINFO_s *)grp->pathinfo, NULL, 0, NULL, NULL, 0, 0);
+            if (obj != NULL) {
+                obj->ai.field_0x364 = gungan_a.targets[r];
+                if (g_lowEndLevelBehaviour == 0)
+                    obj->field_0xf04 &= 0x7f;
+            }
+        } else if (active_baddy_count > nh) {
+            i32 pick = NuRand(NULL);
+            i32 model = (pick & 1) ? id_STAP : id_BATTLEDROID;
+            const char *name = (pick & 1) ? "STAP" : "Battledroid";
+            GUNGAN_GROUP_s *grp = (GUNGAN_GROUP_s *)gungan_a.origins[r];
+            GameObject_s *obj =
+                (GameObject_s *)AddDynamicCreature(model, &grp->pos, grp->rot, const_cast<char *>(name),
+                                                   (AIPATHINFO_s *)grp->pathinfo, NULL, 0, NULL, NULL, 0, 0);
+            if (obj != NULL) {
+                obj->ai.field_0x364 = gungan_a.targets[r];
+                if (g_lowEndLevelBehaviour == 0)
+                    obj->field_0xf04 &= 0x7f;
+            }
+        } else {
+            gungan_a.spawn_timer = 0.25f - NuFloatRand(NULL) * 0.5f;
         }
-    } else if (active_baddy_count > nh) {
-        i32 pick = NuRand(NULL);
-        i32 model = (pick & 1) ? id_STAP : id_BATTLEDROID;
-        const char *name = (pick & 1) ? "STAP" : "Battledroid";
-        GUNGAN_GROUP_s *grp = (GUNGAN_GROUP_s *)gungan_a.origins[r];
-        GameObject_s *obj =
-            (GameObject_s *)AddDynamicCreature(model, &grp->pos, grp->rot, const_cast<char *>(name),
-                                               (AIPATHINFO_s *)grp->pathinfo, NULL, 0, NULL, NULL, 0, 0);
-        if (obj != NULL) {
-            obj->ai.field_0x364 = gungan_a.targets[r];
-            if (g_lowEndLevelBehaviour == 0)
-                obj->field_0xf04 &= 0x7f;
-        }
-    } else {
-        gungan_a.spawn_timer = 0.25f - NuFloatRand(NULL) * 0.5f;
     }
 }
 
