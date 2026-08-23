@@ -214,7 +214,15 @@ void KaminoC_Reset(WORLDINFO_s *) {
 void KaminoC_Update(WORLDINFO_s *) {
 }
 
-void KaminoD_Init(WORLDINFO_s *) {
+void KaminoD_Init(WORLDINFO_s *world) {
+    char buf[0x20];
+    for (i32 i = 1;; i++) {
+        sprintf(buf, "kam%d", i);
+        GIZOBSTACLE_s *g = GizObstacle_FindByName(world->giz_obstacle_sys, buf);
+        if (g == NULL || g->field_0x3c != 0.0f)
+            break;
+        g->field_0x3c = 13.5f;
+    }
 }
 
 void KaminoE_Init(WORLDINFO_s *world) {
