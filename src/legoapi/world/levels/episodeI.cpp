@@ -739,6 +739,12 @@ void PodRacePanel(WORLDINFO_s *world) {
             if (NuFmod(PodRace->lap_display, 1.0f) < 0.7f)
                 Text3DEx(buf, 0, 0.4f, 1.0f, 0.75f, 0.75f, 0.75f, 0, 0xff, 0x3f, 0, (u8)(i32)(128.0f * podhurryalpha));
         }
+        if (podstartracealpha > 0.0f && PodRace != NULL && PodRace->lap_countdown > 0.0f) {
+            char buf[0x20];
+            sprintf(buf, "%i", (i32)PodRace->lap_countdown + 1);
+            if (NuFmod(PodRace->lap_countdown, 1.0f) < 0.7f)
+                Text3DEx(buf, 0, 0.4f, 1.0f, 0.75f, 0.75f, 0.75f, 0, 0, 0, 0, (u8)(i32)(128.0f * podstartracealpha));
+        }
     }
 }
 
