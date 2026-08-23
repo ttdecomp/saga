@@ -872,7 +872,7 @@ void PodRaceBUpdate(WORLDINFO_s *world) {
         if (PodRace->mushroom_timer > 1.0f && mushroom_collapse != 0) {
             switch (((LEVFLAGBYTES_s *)LevFlag)->mushroom_state) {
                 case 0:
-                    if (gamcam->zoom > mushroom_time_available) {
+                    if (gamcam->zoom > mushroom0_along) {
                         NewCutScene(NULL, world->cutscene_sys, "ep1_podrace_mushroom0", 1);
                         ((LEVFLAGBYTES_s *)LevFlag)->mushroom_state = 1;
                     }
@@ -887,7 +887,7 @@ void PodRaceBUpdate(WORLDINFO_s *world) {
                 case 2:
                     mushroom_countdown -= FRAMETIME;
                     if (mushroom_countdown > 0.0f) {
-                        if (gamcam->zoom > mushroom_time_available)
+                        if (gamcam->zoom > mushroom2_along)
                             ((LEVFLAGBYTES_s *)LevFlag)->mushroom_state = 3;
                     } else {
                         NewCutScene(NULL, world->cutscene_sys, "EP1_PODRACE_MUSHROOM2", 1);
