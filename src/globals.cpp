@@ -1,6 +1,7 @@
 #include <stddef.h>
 
 #include "globals.h"
+#include "legoapi/legoapi_types.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nusound/nusound.h"
@@ -290,7 +291,7 @@ i32 no_more_loads = 0;
 i32 other_level = 0;
 i32 other_level_override = 0;
 i32 CUTSTOPGAME = 0;
-void *FadeSys = NULL;
+FadeSystem *FadeSys = NULL;
 i32 Paused = 0;
 i32 MiniCutCam = 0;
 void *CutStopInfo = NULL;
@@ -307,7 +308,7 @@ i32 BuildUpTotal = 0;
 i32 BuildUpDone = 0;
 AREADATA *HOTHBATTLE_ADATA = NULL;
 TIMER AreaTimer;
-i32 VehicleAreaRememberSpeed = 0;
+f32 VehicleAreaRememberSpeed = 0;
 i32 OldBonusScore[2] = {0};
 i32 BonusScore[2] = {0};
 i32 BonusCoinTotal = 0;
@@ -331,7 +332,7 @@ void *dynamic_antinodes = NULL;
 i32 LevInstAnim[12] = {0};
 i32 LevArea[4] = {0};
 i32 LevPathNodes[8] = {0};
-i32 LevPathCnx[16] = {0};
+void *LevPathCnx[16] = {0};
 i32 LevGameObject[8] = {0};
 i32 LevGamePart[8] = {0};
 i32 LevAIMessage[8] = {0};
@@ -339,48 +340,61 @@ i32 LevelLocator = 0;
 i32 LevGizObst[8] = {0};
 i32 LevBlowUp[5] = {0};
 i32 LevGizmo[12] = {0};
-i32 retakeg_netpacket = 0;
+RETAKEGNETPACKET_s *retakeg_netpacket = NULL;
 i16 trooper_boltid = 0;
 i8 trooper_side[3] = {0};
-void *hothtroopers = NULL;
+nuhspecial_s *hothtroopers = NULL;
 i32 TimingBarSet = 0;
 AREADATA *PODRACE_ADATA = NULL;
 i32 Lap = 0;
 u32 client_mines[0x200] = {0};
-void *minesys = NULL;
+MINESYS_s minesys;
 i32 nethost = 0;
 i32 clients_mines_bitfield[2] = {0};
 i32 pod_mines_bitfield[2] = {0};
 i32 mine_count = 0;
-void *podsprint = NULL;
-void *retakeg_guard_a = NULL;
-void *retakeg_guard_b = NULL;
-void *podrace_netpacket = NULL;
-float gungan_a_time_Normal = 0.0f;
-float gungan_a_time_LowEnd = 0.0f;
+PODSPRINT_s podsprint;
+PODRACENETPACKET_s *podrace_netpacket = NULL;
+// Initial values from the original .data image (res/libTTapp.so 0x623c60/0x623c70).
+float gungan_a_time_Normal = 0.5f;
+float gungan_a_time_LowEnd = 0.75f;
 i32 active_neutral_count = 0;
 i32 active_baddy_count = 0;
 i16 id_STAP = -1;
-float PodRace_sniper_start_fire_radius = 0.0f;
-float PodRace_sniper_fire_radius = 0.0f;
-float PodRace_sniper_fire_range_time = 0.0f;
+
+// Unmangled globals from the original binary (C linkage). Initial values
+// match the .data image of res/libTTapp.so.
+extern "C" {
+    i32 podrace_section = 0;
+    i32 max_nsnipers = 0;
+    i32 PodRace_nsnipers = 0;
+    SNIPER_s PodRace_snipers[5];
+    float PodRace_sniper_fire_time = 0.25f;
+    float PodRace_sniper_start_fire_radius = 90.0f;
+    float PodRace_sniper_fire_radius = 2.5f;
+    float PodRace_sniper_fire_range_time = 2.0f;
+    float pod_roll[2] = {0.0f, 0.0f};
+    float pod_roll_target[2] = {0.0f, 0.0f};
+    float pod_animtime[2] = {1.0f, 1.0f};
+}
+
 i16 temp_yrot = 0;
 i16 temp_xrot = 0;
-i32 podsprint_netpacket = 0;
-void *game_cutscenes = NULL;
-void *player = NULL;
-void *player2 = NULL;
+PODSPRINTNETPACKET_s *podsprint_netpacket = NULL;
+GAMECUTSCENES_s game_cutscenes;
+GameObject_s *player = NULL;
+GameObject_s *player2 = NULL;
 i32 avg_currentspeed_mul = 0;
-void *GameCam = NULL;
+GAMECAMERA_s *GameCam = NULL;
 i32 pause_rndr_on = 0;
 
 float podanimendframe = 0.0f;
 float pacemaker_alpha_table[0x8000] = {0};
-void *game_objects = NULL;
+GameObject_s **game_objects = NULL;
 GIZAIMESSAGESYS_s *gizaimessagesys = NULL;
 i32 LevSfxId[4] = {0};
 i32 LevelCodeSpline[8] = {0};
-i32 LevGizForce[4] = {0};
+GIZFORCE_s *LevGizForce[4] = {0};
 i32 LevAIPathNode[4] = {0};
 i32 LevBoltIgnorePlatIds[2] = {0};
 i32 LevPlatID[2] = {0};

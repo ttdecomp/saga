@@ -491,7 +491,9 @@ extern "C" {
 
     void NuGScnRndr3(NUGSCN *scene);
     NUGSCN *NuGScnRead(VARIPTR *buf, VARIPTR buf_end, char *path);
-    void *NuSpecialFind(NUGSCN *scene, void **dest, char *name);
+    // The trailing flags argument is passed as 1 by every caller in the
+    // original binary; the original implementation never reads it.
+    i32 NuSpecialFind(NUGSCN *scene, void **dest, char *name, i32 flags);
 
 #ifdef __cplusplus
 }

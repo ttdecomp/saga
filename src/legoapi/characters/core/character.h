@@ -340,6 +340,7 @@ extern "C" {
     extern i16 id_DARTHMAUL;
     extern i16 id_ANAKINSPOD;
     extern i16 id_STAP;
+    extern i16 id_BATTLEDROID;
     extern i16 id_ROYALGUARD;
     extern i16 id_CLONEARC;
     extern i16 id_IMPERIALSHUTTLE;

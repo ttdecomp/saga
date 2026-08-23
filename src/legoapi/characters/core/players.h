@@ -25,7 +25,8 @@ typedef struct playerprogress_s {
 // Character system (apicharsys).  field7_0x1c is a player model id list,
 // field8_0x20 is a CHARACTERDATA array (stride 0x4c).
 typedef struct playerdata_s {
-    undefined field0_0x0[0x1c];
+    undefined field0_0x0[0x18];
+    void *field_0x18;           // 0x18  character data array (stride 0x54)
     i16 *playermodelids;        // field7_0x1c (pointer to player model id list)
     CHARACTERDATA char_data[8]; // field8_0x20
 } PLAYERDATA;

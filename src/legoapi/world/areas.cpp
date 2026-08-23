@@ -271,7 +271,7 @@ have_jump:
     ResetTimer(&AreaTimer, 0.0f);
     memcpy(&BackupGame, (char *)WORLD + 0x15c, 0x7e58);
     NewAreaMusicChanges();
-    VehicleAreaRememberSpeed = 0;
+    VehicleAreaRememberSpeed = 0.0f;
     ClearTakeOverObjectSys();
     BonusScore[0] = OldBonusScore[0];
     BonusScore[1] = OldBonusScore[1];

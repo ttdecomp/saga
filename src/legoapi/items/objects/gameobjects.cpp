@@ -397,11 +397,13 @@ void PowerUp_Particles(WORLDINFO_s *, nuvec_s *) {
 void UpdateGameObjects(WORLDINFO_s *) {
 }
 
-void AddDynamicCreature(i32, nuvec_s *, i32, char *, AIPATHINFO_s *, AIGROUP_s *, i32, nugspline_s *, nuvec_s *, i32,
-                        i32) {
+GameObject_s *AddDynamicCreature(i32, nuvec_s *, i32, char *, AIPATHINFO_s *, AIGROUP_s *, i32, nugspline_s *,
+                                 nuvec_s *, i32, i32) {
+    return NULL;
 }
 
-void GetNamedGameObject(AISYS_s *, char *) {
+GameObject_s *GetNamedGameObject(AISYS_s *, char *) {
+    return NULL;
 }
 
 void TakeOverGameObject(GameObject_s *, GameObject_s *, i32, i32) {

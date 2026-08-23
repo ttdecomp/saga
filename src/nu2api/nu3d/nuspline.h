@@ -6,7 +6,7 @@
 #include "nu2api/numath/nuvec.h"
 
 typedef struct nugspline_s {
-    u16 length;
+    i16 length; // signed: the original compares it with jle/movswl
     u16 pt_size;
     char *name;
 

@@ -100,11 +100,12 @@ extern "C" {
     }
 } // extern "C"
 
-void *NuSpecialFind(NUGSCN *scene, void **dest, char *name) {
+i32 NuSpecialFind(NUGSCN *scene, void **dest, char *name, i32 flags) {
     (void)scene;
     (void)dest;
     (void)name;
-    return NULL;
+    (void)flags;
+    return 0;
 }
 
 void DrawCables() {

@@ -522,40 +522,65 @@ extern APICHARACTERMODELLIST_s Hub_ModelList[];
 // --- PodRace / PodSprint shared globals (used by ep1 podrace levels) ---
 struct GIZAIMESSAGESYS_s;
 struct AREADATA_s;
+struct MINESYS_s;   // full type in legoapi/legoapi_types.h
+struct PODSPRINT_s; // full type in legoapi/legoapi_types.h
+struct PODRACENETPACKET_s;
+struct PODSPRINTNETPACKET_s;
+struct RETAKEGNETPACKET_s;
+struct SNIPER_s;
+struct FadeSystem;
+struct GIZFORCE_s;
+struct GAMECAMERA_s;
+struct GameObject_s;
+struct nuhspecial_s;
+struct GAMECUTSCENES_s; // full type in legoapi/legoapi_types.h
 extern GIZAIMESSAGESYS_s *gizaimessagesys;
-extern i32 retakeg_netpacket;
 extern i16 trooper_boltid;
 extern i8 trooper_side[3];
-extern void *hothtroopers;
+extern nuhspecial_s *hothtroopers;
 extern i32 TimingBarSet;
 extern struct AREADATA_s *PODRACE_ADATA;
 extern u32 client_mines[];
-extern void *minesys;
+extern MINESYS_s minesys; // held by value in the original (0x748 bytes)
 extern i32 nethost;
 extern i32 mine_count;
 extern float gungan_a_time_Normal;
 extern float gungan_a_time_LowEnd;
 extern i32 active_neutral_count;
 extern i32 active_baddy_count;
-extern void *FadeSys;
+extern FadeSystem *FadeSys;
 extern i32 Paused;
 extern i32 MiniCutCam;
-extern void *podrace_netpacket;
-extern i32 podsprint_netpacket;
-extern void *GameCam;
+extern PODRACENETPACKET_s *podrace_netpacket;
+extern PODSPRINTNETPACKET_s *podsprint_netpacket;
+extern GAMECAMERA_s *GameCam;
 extern i32 pause_rndr_on;
 extern float podanimendframe;
-extern void *podsprint;
-extern void *game_objects;
+extern PODSPRINT_s podsprint; // held by value in the original (0x94 bytes)
+extern GameObject_s **game_objects;
 extern float pacemaker_alpha_table[];
 extern i32 clients_mines_bitfield[2];
 extern i32 pod_mines_bitfield[2];
-extern float PodRace_sniper_start_fire_radius;
-extern float PodRace_sniper_fire_radius;
-extern float PodRace_sniper_fire_range_time;
+extern GAMECUTSCENES_s game_cutscenes; // held by value in the original (0x28 bytes)
+
+// Unmangled globals from the original binary (C linkage).
+extern "C" {
+    extern RETAKEGNETPACKET_s *retakeg_netpacket; // pointer from SetLevelHack(4)
+    extern i32 podrace_section;
+    extern i32 max_nsnipers;
+    extern i32 PodRace_nsnipers;
+    extern SNIPER_s PodRace_snipers[5];
+    extern float PodRace_sniper_fire_time;
+    extern float PodRace_sniper_start_fire_radius;
+    extern float PodRace_sniper_fire_radius;
+    extern float PodRace_sniper_fire_range_time;
+    extern float pod_roll[2];
+    extern float pod_roll_target[2];
+    extern float pod_animtime[2];
+}
 extern i16 temp_yrot;
 extern i16 temp_xrot;
 extern i32 avg_currentspeed_mul;
-extern void *player2;
-extern void *player;
-extern void *game_cutscenes;
+extern GameObject_s *player2;
+extern GameObject_s *player;
+extern GAMECUTSCENES_s game_cutscenes;

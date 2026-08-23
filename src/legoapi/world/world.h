@@ -160,7 +160,11 @@ typedef struct WORLDINFO_s {
 
     GIZBOMBGENSYS_s *giz_bombgen_sys;
 
-    char filler14[0x516c - 0x50ec];
+    char filler14a[0x5120 - 0x50ec];
+
+    void *podrace; // 0x5120  per-level PodRace state block
+
+    char filler14b[0x516c - 0x5124];
 
     TRAFFICANIMSYS_s *trafficanim_sys; // 0x516c
 

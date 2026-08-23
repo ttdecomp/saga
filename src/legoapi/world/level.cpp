@@ -26,6 +26,10 @@ LEVELDATA *levelconfig_ldata = NULL;
 
 extern i16 GetMusicIndex(char *, nusound_filename_info_s *, i32);
 
+extern "C" {
+    struct LEVELDATA_s *PODRACELEVELS[11]; // Arrival1-4, Intro, B, C, A, Outro1, Outro2, Status
+}
+
 static void Credits_Init_Game(WORLDINFO *) {
 }
 static void Credits_Update_Game(WORLDINFO *) {
@@ -537,70 +541,61 @@ void FixUpLevels(LEVELFIXUP *fixup) {
         }
     }
 
+    // PodRace_Arrival/Intro/Outro array — original fills PODRACELEVELS[11]
+    // order matches .rodata 0x565c20: Arrival1-4, Intro, B, C, A, Outro1, Outro2, Status
     {
         LEVELDATA *level = Level_FindByName("PodRace_Arrival1", NULL);
-        if (level != NULL) {
-        }
+        PODRACELEVELS[0] = level;
     }
 
     {
         LEVELDATA *level = Level_FindByName("PodRace_Arrival2", NULL);
-        if (level != NULL) {
-        }
+        PODRACELEVELS[1] = level;
     }
 
     {
         LEVELDATA *level = Level_FindByName("PodRace_Arrival3", NULL);
-        if (level != NULL) {
-        }
+        PODRACELEVELS[2] = level;
     }
 
     {
         LEVELDATA *level = Level_FindByName("PodRace_Arrival4", NULL);
-        if (level != NULL) {
-        }
+        PODRACELEVELS[3] = level;
     }
 
     {
         LEVELDATA *level = Level_FindByName("PodRace_Intro", NULL);
-        if (level != NULL) {
-        }
+        PODRACELEVELS[4] = level;
     }
 
     {
         LEVELDATA *level = Level_FindByName("PodRace_B", NULL);
-        if (level != NULL) {
-        }
+        PODRACELEVELS[5] = level;
     }
 
     {
         LEVELDATA *level = Level_FindByName("PodRace_C", NULL);
-        if (level != NULL) {
-        }
+        PODRACELEVELS[6] = level;
     }
 
     {
         LEVELDATA *level = Level_FindByName("PodRace_A", NULL);
-        if (level != NULL) {
-        }
+        PODRACELEVELS[7] = level;
     }
 
     {
-        LEVELDATA *level = Level_FindByName("PodRace_A", NULL);
-        if (level != NULL) {
-        }
+        LEVELDATA *level = Level_FindByName("PodRace_Outro1", NULL);
+        PODRACELEVELS[8] = level;
     }
 
     {
         LEVELDATA *level = Level_FindByName("PodRace_Outro2", NULL);
-        if (level != NULL) {
-        }
+        PODRACELEVELS[9] = level;
     }
 
     {
         LEVELDATA *level = Level_FindByName("PodRace_Status", NULL);
-        if (level != NULL) {
-        }
+        PODRACELEVELS[10] = level;
     }
 
     {

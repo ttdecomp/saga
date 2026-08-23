@@ -173,7 +173,7 @@ void CharScenes_LevelLoad(WORLDINFO *world) {
                 NUGSCN *scene = NuGScnRead(&world->giz_buffer, buf_end, path);
                 *entry = scene;
                 if (scene != NULL) {
-                    NuSpecialFind(scene, (void **)(entry + 1), CDataList[i].file);
+                    NuSpecialFind(scene, (void **)(entry + 1), CDataList[i].file, 1);
                 }
             }
         }
