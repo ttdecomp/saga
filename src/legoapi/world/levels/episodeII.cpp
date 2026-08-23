@@ -392,7 +392,8 @@ void GunshipA_Init(WORLDINFO_s *world) {
     gunship_weapons[3] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "gunw4");
 }
 
-void GunshipA_Update(WORLDINFO_s *) {
+void GunshipA_Update(WORLDINFO_s *world) {
+    UpdateMiniSnowTroopers(world);
 }
 
 void GunshipA_Draw(WORLDINFO_s *world) {
