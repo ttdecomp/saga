@@ -51,7 +51,10 @@ typedef struct APIOBJECT_s {
     f32 field_0x28;            // 0x28
     undefined field_0x2c[0x54 - 0x2c];
     void *field_0x54;                     // 0x54
-    undefined field_0x58[0x10];           // 0x58 .. 0x68
+    undefined field_0x58[0x4];            // 0x58 .. 0x5c
+    f32 field_0x5c;                       // 0x5c
+    f32 field_0x60;                       // 0x60
+    f32 field_0x64;                       // 0x64
     f32 field_0x68;                       // 0x68
     f32 field_0x6c;                       // 0x6c
     f32 field_0x70;                       // 0x70

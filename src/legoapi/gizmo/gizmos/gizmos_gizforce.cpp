@@ -4,7 +4,9 @@
 void GizForce_Throw(GameObject_s *, GIZFORCE_s *, float, float, i32) {
 }
 
-void GizForce_Complete(GIZFORCE_s *) {
+i32 GizForce_Complete(GIZFORCE_s *) {
+    (void)0;
+    return 0;
 }
 
 void GizForce_ResetLOS(GameObject_s *) {

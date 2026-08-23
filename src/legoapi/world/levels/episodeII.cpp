@@ -337,19 +337,40 @@ void FactoryG_Init(WORLDINFO_s *world) {
         return;
     GIZMO *g = GizmoFindByName(world->gizmo_sys, force_gizmotype_id, "force_g1");
     if (g != NULL)
-        force_array[0] = *(i32 *)g;
+        force_array[0] = (GIZFORCE_s *)g->object;
     g = GizmoFindByName(world->gizmo_sys, force_gizmotype_id, "force_g2");
     if (g != NULL)
-        force_array[1] = *(i32 *)g;
+        force_array[1] = (GIZFORCE_s *)g->object;
     g = GizmoFindByName(world->gizmo_sys, force_gizmotype_id, "force_g3");
     if (g != NULL)
-        force_array[2] = *(i32 *)g;
+        force_array[2] = (GIZFORCE_s *)g->object;
     g = GizmoFindByName(world->gizmo_sys, force_gizmotype_id, "force_g4");
     if (g != NULL)
-        force_array[3] = *(i32 *)g;
+        force_array[3] = (GIZFORCE_s *)g->object;
 }
 
-void FactoryG_Update(WORLDINFO_s *) {
+void FactoryG_Update(WORLDINFO_s *world) {
+    if (netclient != 0)
+        return;
+    i32 complete = 0;
+    if (GizForce_Complete(force_array[0]))
+        complete++;
+    if (GizForce_Complete(force_array[1]))
+        complete++;
+    if (GizForce_Complete(force_array[2]))
+        complete++;
+    if (GizForce_Complete(force_array[3]))
+        complete++;
+    if (ObiWan == NULL)
+        return;
+    if (complete == 4) {
+        if (FreePlay == 0)
+            NewCutScene(NULL, world->cutscene_sys, "factory_escape", 1);
+    } else {
+        ObiWan->apiobj.field_0x5c = 79.2f;
+        ObiWan->apiobj.field_0x60 = 0.75f;
+        ObiWan->apiobj.field_0x64 = -10.5f;
+    }
 }
 
 // ===========================================================================

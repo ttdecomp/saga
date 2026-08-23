@@ -15,3 +15,4 @@ struct GizForceObjectInterface {
 };
 
 GIZFORCE_s *GizForce_FindByName(GIZFORCESYS_s *, char *);
+i32 GizForce_Complete(GIZFORCE_s *);
