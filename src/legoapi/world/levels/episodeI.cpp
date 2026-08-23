@@ -921,7 +921,7 @@ void PodRaceBUpdate(WORLDINFO_s *world) {
             float t = GameTimer[2];
             pod_pacemaker_alpha =
                 pod_pacemaker_alpha + FRAMETIME * 2.0f < 1.0f ? pod_pacemaker_alpha + FRAMETIME * 2.0f : 1.0f;
-            if (NuFmod(t, 1.0f) > 0.1f)
+            if (NuFmod(t, 0.2f) > 0.1f)
                 UpdatePacemakerDisplay(world->lev_objs);
         } else {
             pod_pacemaker_alpha = 0.0f;
@@ -944,7 +944,7 @@ void PodRaceCUpdate(WORLDINFO_s *world) {
         if (FadeSys->fade != 0.0f && pause_rndr_on == 0) {
             float t = pod_pacemaker_alpha + FRAMETIME * 2.0f;
             pod_pacemaker_alpha = t < 1.0f ? t : 1.0f;
-            if (NuFmod(GameTimer[2], 1.0f) > 0.1f)
+            if (NuFmod(GameTimer[2], 0.2f) > 0.1f)
                 UpdatePacemakerDisplay(world->lev_objs);
         } else {
             pod_pacemaker_alpha = 0.0f;
