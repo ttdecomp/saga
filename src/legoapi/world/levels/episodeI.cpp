@@ -714,7 +714,7 @@ void PodRacePanel(WORLDINFO_s *world) {
             nuhspecial_s *entry = &((nuhspecial_s *)world->lev_objs)[Lap + 0x135];
             if (entry->enabled != 0)
                 return;
-            Text3DEx(NULL, 0, 1.0f, 0.1f, 0.1f, 0.1f, (u16)0, (u16)0, (u16)0, 0, 0x3f, 0);
+            Text3DEx(NULL, 0, 1.0f, 0.16f, 0.16f, 0.16f, (u16)0, (u16)0, (u16)0, 0, 0x3f, 0);
         } else {
             if (podhurryalpha > 0.0f && PodRace != NULL && PodRace->lap_display > 0.0f) {
                 char buf[0x20];
