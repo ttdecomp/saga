@@ -294,7 +294,22 @@ void NbKaminoA_Init(WORLDINFO_s *world) {
 // Geonosis — droid factory (Factory_B / Factory_G)
 // ===========================================================================
 
-void FactoryB_Init(WORLDINFO_s *) {
+void FactoryB_Init(WORLDINFO_s *world) {
+    factoryb_netpacket = SetLevelHack(0x4);
+    InitPaintPuzzle(world);
+    GIZOBSTACLE_s *conv[9] = {0};
+    conv[1] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv1");
+    conv[2] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv2");
+    conv[3] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv3");
+    conv[4] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv4");
+    conv[5] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv5");
+    conv[6] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv6");
+    conv[7] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv7");
+    conv[8] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv8");
+    for (i32 i = 1; i <= 8; i++) {
+        if (conv[i] != NULL)
+            conv[i]->field_0xdc = 0;
+    }
 }
 
 void FactoryB_Reset(WORLDINFO_s *world) {
@@ -317,7 +332,21 @@ void FactoryB_Draw(WORLDINFO_s *) {
     DrawPaintLights();
 }
 
-void FactoryG_Init(WORLDINFO_s *) {
+void FactoryG_Init(WORLDINFO_s *world) {
+    if (netclient != 0)
+        return;
+    GIZMO *g = GizmoFindByName(world->gizmo_sys, force_gizmotype_id, "force_g1");
+    if (g != NULL)
+        force_array[0] = *(i32 *)g;
+    g = GizmoFindByName(world->gizmo_sys, force_gizmotype_id, "force_g2");
+    if (g != NULL)
+        force_array[1] = *(i32 *)g;
+    g = GizmoFindByName(world->gizmo_sys, force_gizmotype_id, "force_g3");
+    if (g != NULL)
+        force_array[2] = *(i32 *)g;
+    g = GizmoFindByName(world->gizmo_sys, force_gizmotype_id, "force_g4");
+    if (g != NULL)
+        force_array[3] = *(i32 *)g;
 }
 
 void FactoryG_Update(WORLDINFO_s *) {

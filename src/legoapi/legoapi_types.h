@@ -800,6 +800,8 @@ struct GIZOBSTACLE_s {
     f32 field_0x3c; // 0x3c
     char pad_0x40[0xa1 - 0x40];
     u8 field_a1_0xa1;
+    char pad_0xa2[0xdc - 0xa2];
+    i32 field_0xdc; // 0xdc
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };
