@@ -1079,9 +1079,37 @@ void PodRaceInit(WORLDINFO_s *world) {
         if (NuSpecialFind(vehicle_scene, (void **)&mines->pad_0x00, "mine", 1) != 0) {
             mines->mine_radius = NuSpecialGetOriginRadius(&mines->pad_0x00);
             char b2[0x20];
-            for (i32 i = 0; i < 10; i++) {
-                sprintf(b2, "nomine_%d", i);
-                mines->nomine_areas[mines->nomine_count++] = AISysFindArea(WORLD->ai_sys, b2);
+            {
+                sprintf(b2, "nomine_%d", 0);
+                mines->nomine_areas[mines->nomine_count] = AISysFindArea(WORLD->ai_sys, b2);
+                mines->nomine_count++;
+                sprintf(b2, "nomine_%d", 1);
+                mines->nomine_areas[mines->nomine_count] = AISysFindArea(WORLD->ai_sys, b2);
+                mines->nomine_count++;
+                sprintf(b2, "nomine_%d", 2);
+                mines->nomine_areas[mines->nomine_count] = AISysFindArea(WORLD->ai_sys, b2);
+                mines->nomine_count++;
+                sprintf(b2, "nomine_%d", 3);
+                mines->nomine_areas[mines->nomine_count] = AISysFindArea(WORLD->ai_sys, b2);
+                mines->nomine_count++;
+                sprintf(b2, "nomine_%d", 4);
+                mines->nomine_areas[mines->nomine_count] = AISysFindArea(WORLD->ai_sys, b2);
+                mines->nomine_count++;
+                sprintf(b2, "nomine_%d", 5);
+                mines->nomine_areas[mines->nomine_count] = AISysFindArea(WORLD->ai_sys, b2);
+                mines->nomine_count++;
+                sprintf(b2, "nomine_%d", 6);
+                mines->nomine_areas[mines->nomine_count] = AISysFindArea(WORLD->ai_sys, b2);
+                mines->nomine_count++;
+                sprintf(b2, "nomine_%d", 7);
+                mines->nomine_areas[mines->nomine_count] = AISysFindArea(WORLD->ai_sys, b2);
+                mines->nomine_count++;
+                sprintf(b2, "nomine_%d", 8);
+                mines->nomine_areas[mines->nomine_count] = AISysFindArea(WORLD->ai_sys, b2);
+                mines->nomine_count++;
+                sprintf(b2, "nomine_%d", 9);
+                mines->nomine_areas[mines->nomine_count] = AISysFindArea(WORLD->ai_sys, b2);
+                mines->nomine_count++;
             }
             mines->mine_debris = FindGameDebris(WORLD->debris_sys, "MINE_POP");
             mines->mine_part = PARTLookupType("POD_MINE_PART");
