@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "decomp.h"
+#include "legoapi/world/level.h"
 #include "globals.h"
 #include "legoapi/ai/core/ai_sys_stubs.h"
 #include "legoapi/audio/sfx.h"
@@ -16,8 +17,8 @@
 #include "legoapi/misc.h"
 #include "legoapi/render/fx.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/world/levels/levels.h"
 #include "legoapi/render/core/render.h"
-#include "legoapi/world/level_shared.h"
 #include "legoapi/world/world_shared.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nuspecial.h"

@@ -1,7 +1,9 @@
-#include "legoapi/world/level_shared.h"
 #include "legoapi/world/level.h"
 
 #include <string.h>
+
+extern i32 Mission_Active(struct MISSIONSYS_s *);
+extern i32 Players_AveragePos(struct nuvec_s *, struct SOCKPOSITION_s *);
 
 void LevelStreaming_Update(WORLDINFO_s *world) {
     i32 i;

@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "decomp.h"
+#include "legoapi/world/level.h"
 #include "globals.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
@@ -12,8 +13,8 @@
 #include "legoapi/cutscenes/cutscenes.h"
 #include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/world/levels/levels.h"
 #include "legoapi/render/core/render.h"
-#include "legoapi/world/level_shared.h"
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nu3d/nutex.h"
 // This level's view of the shared 16-byte LevFlag scratch. byte0 holds the
@@ -502,7 +503,7 @@ void BonusGunshipA_Update(WORLDINFO_s *world) {
 
 void BonusGunshipB_Init(WORLDINFO_s *world) {
     bonusgunshipb_netpacket = (struct BONUSGUNSHIP_NETPACKET_s *)SetLevelHack(0xc);
-    LevGizObst[0] = (i32)(usize)GizObstacle_FindByName(world->giz_obstacle_sys, "obs");
+    LevGizObst[0] = GizObstacle_FindByName(world->giz_obstacle_sys, "obs");
 }
 
 void BonusGunshipB_Reset(WORLDINFO_s *) {

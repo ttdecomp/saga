@@ -1,6 +1,36 @@
-#include "legoapi/world/level_shared.h"
 
 #include <string.h>
+#include "globals.h"
+#include "legoapi/world/level.h"
+#include "legoapi/world/area.h"
+#include "legoapi/legoapi_types.h"
+#include "nu2api/nucore/nustring.h"
+
+// Cross-module entry points used by this file (declared locally since they have
+// no single shared header in the reconstructed source).  The NuFPar* helpers are
+// taken as void* (untyped parser handle) to match the open/close contract.
+extern i32 Store_IsPackUnlocked(i32);
+extern void ReCalculateCompletionPoints(void);
+extern void Hub_LockUnlockDoors(struct WORLDINFO_s *);
+extern void FreeTorpedoPacket(struct TORPEDOPACKET_s **);
+extern void RemoveGameObject(struct GameObject_s *, i32);
+extern void IconScenes_Dump(void);
+extern void CharScenes_AreaDump(void);
+extern void Particles_DumpAreaPage(void);
+extern void Customiser_RestoreModelTextureIDs(struct CUSTOMISER *);
+extern void Customiser_DumpAccessories(struct CUSTOMISER *);
+extern "C" void APIDumpCharacterModels(i32);
+extern "C" void NuGScnRemove(void *);
+extern void SuperCounters_Reset(i32);
+extern void NewAreaMusicChanges(void);
+extern void ClearTakeOverObjectSys(void);
+extern void Door_Reset(void);
+extern void ResetMinikitCounter(void);
+extern i32 Mission_Active(struct MISSIONSYS_s *);
+extern "C" void *NuFParCreate(const char *);
+extern "C" i32 NuFParDestroy(void *);
+extern "C" i32 NuFParGetLine(void *);
+extern "C" i32 NuFParGetWord(void *);
 
 void Areas_OpenAll(i32 mode) {
     i32 i;

@@ -1,4 +1,5 @@
-#include "legoapi/world/level_shared.h"
+#include "legoapi/world/level.h"
+#include "globals.h"
 
 i32 KillBoss(i32, i32, float) {
     return 0;

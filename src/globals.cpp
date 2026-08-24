@@ -1,6 +1,7 @@
 #include <stddef.h>
 
 #include "globals.h"
+#include "legoapi/world/levels/levels.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nucore/common.h"
@@ -337,7 +338,7 @@ i32 LevGameObject[8] = {0};
 i32 LevGamePart[8] = {0};
 i32 LevAIMessage[8] = {0};
 i32 LevelLocator = 0;
-i32 LevGizObst[8] = {0};
+void *LevGizObst[8] = {0};
 i32 LevBlowUp[5] = {0};
 i32 LevGizmo[12] = {0};
 RETAKEGNETPACKET_s *retakeg_netpacket = NULL;
@@ -463,6 +464,9 @@ AREADATA *BONUS_GUNSHIP_ADATA = NULL;
 AREADATA *JEDI_ADATA = NULL;
 AREADATA *DOOKU_ADATA = NULL;
 i32 CHARPAK = 0;
+i32 texanimbits = 0;
+u32 trenchrun[8] = {0};
+LEVELDATA *DEATHSTARBATTLEMIDTRO_LDATA = NULL;
 i32 apiloadcharactermodels_nopakfile = 0;
 i32 loadareadata_loadlevel = 0;
 i32 AreaDataLoaded = 1;

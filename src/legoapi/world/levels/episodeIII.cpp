@@ -1,4 +1,5 @@
 #include "decomp.h"
+#include "legoapi/world/level.h"
 #include "globals.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/items/objects/gameobjects.h"
@@ -7,8 +8,8 @@
 #include "legoapi/gizmo/base/GizForceObjectInterface.h"
 #include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/world/levels/levels.h"
 #include "legoapi/world/world.h"
-#include "legoapi/world/level_shared.h"
 #include "nu2api/nu3d/nuspecial.h"
 
 extern i32 LevFlag[4];

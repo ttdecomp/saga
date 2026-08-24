@@ -13,7 +13,7 @@
 #include "nu2api/nufile/nufpar.h"
 #include "nu2api/numath/nuvec.h"
 #include "nu2api/numusic/numusic.h"
-#include "legoapi/world/levels/level_functions.h"
+#include "legoapi/world/levels/levels.h"
 
 extern "C" char ConfigBuffer[0x10000];
 

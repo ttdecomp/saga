@@ -1,7 +1,10 @@
-#include "legoapi/world/level_shared.h"
 #include "legoapi/world/level.h"
 
 #include <string.h>
+
+extern "C" i32 NuSpecialExistsFn(void *);
+extern "C" void *NuSpecialGetInstanceix(void *);
+extern "C" i16 FindPlatInst(void *);
 
 void *LevObj_FindByPlatID(WORLDINFO_s *world, i32 platID) {
     i32 count = LEVELOBJECTCOUNT;
