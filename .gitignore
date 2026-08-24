@@ -26,3 +26,6 @@ vgcore.*
 report_old.json
 report.md
 opencode.jsonc
+
+.build/.work/
+.work/

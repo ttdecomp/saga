@@ -10,7 +10,7 @@ struct HINT_s;
 #include "legoapi/world/area.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/core/config/cheat.h"
-#include "legoapi/episodes/episode.h"
+#include "legoapi/world/levels/episode.h"
 #include "legoapi/world/level.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/core/input/qrand.h"
@@ -59,7 +59,8 @@ void Players_Init(void) {
 
         if (LevelChangesInArea == 0 && UsePlayerList != 0 && PlayerProgress[0].field_0x6 == 0 &&
             PlayerProgress[1].field_0x6 != 0 && FreePlay == 0 && (WORLD->area->flags & 5) == 1 && list0 != -1 &&
-            list0 == Area_StoryModelList[0] && list[1] != -1 && list[1] == Area_StoryModelList[2] && list0 != list[1]) {
+            list0 == Area_StoryModelList[0].model_id && list[1] != -1 && list[1] == Area_StoryModelList[2].model_id &&
+            list0 != list[1]) {
             list[0] = list[1];
             list[1] = list0;
         }
@@ -89,13 +90,13 @@ void Players_Init(void) {
 
                 if (UsePlayerList == 0) {
                     slot = g->apiobj.field_0x289;
-                    g->apiobj.field252_0x1f8 = (u8)((g->apiobj.field252_0x1f8 & 0x7f) | ((slot == 0) << 7));
+                    *(u8 *)&g->apiobj.field_0x1f8 = (u8)((*(u8 *)&g->apiobj.field_0x1f8 & 0x7f) | ((slot == 0) << 7));
                     PlayerProgress[slot].hitpoints = g->current_hp;
                     g->field_0x106e = 0;
                 } else {
                     char c = g->apiobj.field_0x27c;
-                    g->apiobj.field252_0x1f8 =
-                        (u8)((g->apiobj.field252_0x1f8 & 0x7f) | (PlayerProgress[c].field_0x6 << 7));
+                    *(u8 *)&g->apiobj.field_0x1f8 =
+                        (u8)((*(u8 *)&g->apiobj.field_0x1f8 & 0x7f) | (PlayerProgress[c].field_0x6 << 7));
 
                     if (Area == last_area) {
                         if (UsePlayerList == 1) {
@@ -254,7 +255,7 @@ void Players_InitPositions(WORLDINFO *world) {
 
     // --- hub exit-door lookup ---
     if (HUB_ADATA != NULL && HUB_ADATA == world->area) {
-        if (world->unknown_0120 != last_area && hub_from_cutsceneplayer == 0) {
+        if (world->level_sub_id != last_area && hub_from_cutsceneplayer == 0) {
             if (hub_from_superstory != -1) {
                 i32 area =
                     Episode_FindAreaFromFlags((EPISODEDATA *)((char *)EDataList + hub_from_superstory * 0x1c), 5, 5);
@@ -586,6 +587,8 @@ void PostResetCode(GameObject_s *obj) {
         *(u16 *)(p + 0xe1c) = 0;
     }
 }
+
+static TORPEDOPACKET TorpedoPackets[16];
 
 TORPEDOPACKET *GetTorpedoPacket(void) __attribute__((optimize("unroll-loops")));
 TORPEDOPACKET *GetTorpedoPacket(void) {

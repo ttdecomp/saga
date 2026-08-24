@@ -25,7 +25,8 @@ void routeEditor_Process(nupad_s *) {
 void DumpShaderAttributes(u32) {
 }
 
-void InModelListDataFlags(APICHARACTERMODELLIST_s *, u32, u32, i32, i32) {
+i32 InModelListDataFlags(APICHARACTERMODELLIST_s *, u32, u32, i32, i32) {
+    return 0;
 }
 
 void antinodeEditor_Enter() {

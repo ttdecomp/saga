@@ -1,5 +1,17 @@
 #!/bin/bash
 
+# force the C numeric locale so %.2f and awk comparisons use '.' as the
+# decimal separator regardless of the developer's environment
+export LC_NUMERIC=C
+
+# run clang-format on all tracked source files and stage the results
+SRC_FILES=$(git ls-files '*.cpp' '*.h' '*.c' '*.hpp' | while read -r f; do [ -f "$f" ] && echo "$f"; done)
+if [ -n "$SRC_FILES" ]; then
+    echo "$SRC_FILES" | xargs clang-format -i || exit 1
+    # shellcheck disable=SC2086
+    git add -- $SRC_FILES || exit 1
+fi
+
 # build and generate objdiff report
 cmake -B build . && cmake --build build || exit 1
 cargo build --release --manifest-path gonk/Cargo.toml || exit 1

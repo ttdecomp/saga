@@ -4,13 +4,16 @@
 void GizForce_Throw(GameObject_s *, GIZFORCE_s *, float, float, i32) {
 }
 
-void GizForce_Complete(GIZFORCE_s *) {
+i32 GizForce_Complete(GIZFORCE_s *) {
+    (void)0;
+    return 0;
 }
 
 void GizForce_ResetLOS(GameObject_s *) {
 }
 
-void GizForce_FindByName(GIZFORCESYS_s *, char *) {
+GIZFORCE_s *GizForce_FindByName(GIZFORCESYS_s *, char *) {
+    return NULL;
 }
 
 void GizForce_TotalScore(void *) {
@@ -19,7 +22,8 @@ void GizForce_TotalScore(void *) {
 void GizForce_UpdateHint(HINT_s *) {
 }
 
-void GizForces_FindForce(WORLDINFO_s *, char *) {
+GIZFORCE_s *GizForces_FindForce(WORLDINFO_s *, char *) {
+    return NULL;
 }
 
 void GizForce_AnimComplete(GIZFORCE_s *) {

@@ -1,5 +1,6 @@
 #include "decomp.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/world/level.h"
 
 void GameShadow(GameObject_s *, nuvec_s *, float, i32) {
 }
@@ -359,7 +360,8 @@ void TakeOverCode(GameObject_s *, i32) {
 void InitExtraList() {
 }
 
-void FindGameObject(i32, u32, i32, i32, i32) {
+GameObject_s *FindGameObject(i32, u32, i32, i32, i32) {
+    return NULL;
 }
 
 void KillGameObject(GameObject_s *, i32, i32) {
@@ -395,11 +397,13 @@ void PowerUp_Particles(WORLDINFO_s *, nuvec_s *) {
 void UpdateGameObjects(WORLDINFO_s *) {
 }
 
-void AddDynamicCreature(i32, nuvec_s *, i32, char *, AIPATHINFO_s *, AIGROUP_s *, i32, nugspline_s *, nuvec_s *, i32,
-                        i32) {
+GameObject_s *AddDynamicCreature(i32, nuvec_s *, i32, char *, AIPATHINFO_s *, AIGROUP_s *, i32, nugspline_s *,
+                                 nuvec_s *, i32, i32) {
+    return NULL;
 }
 
-void GetNamedGameObject(AISYS_s *, char *) {
+GameObject_s *GetNamedGameObject(AISYS_s *, char *) {
+    return NULL;
 }
 
 void TakeOverGameObject(GameObject_s *, GameObject_s *, i32, i32) {
@@ -438,7 +442,20 @@ void ReStoreStatusTakeOverObjectSys(i32) {
 
 extern "C" {
 
-    void InModelList(void) {
+    i32 InModelList(APICHARACTERMODELLIST_s *list, i32 id, i32 *out_index) {
+        if (list != NULL) {
+            i32 i = 0;
+            for (; list->model_id != -1; list++, i++) {
+                if (list->model_id == id) {
+                    if (out_index != NULL)
+                        *out_index = i;
+                    return 1;
+                }
+            }
+        }
+        if (out_index != NULL)
+            *out_index = -1;
+        return 0;
     }
 
 } // extern "C"

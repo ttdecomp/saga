@@ -180,3 +180,46 @@ void isHothBattleWaveCreature(GameObject_s *) {
 
 void HothBattle_ManageBackgroundCreatures() {
 }
+
+// ===========================================================================
+// Asteroid chase (AsteroidChase_A / B / C / D)
+// ===========================================================================
+
+void AsteroidChaseA_Init(WORLDINFO_s *) {
+}
+
+void AsteroidChaseB_Init(WORLDINFO_s *) {
+}
+
+void AsteroidChaseB_Draw(WORLDINFO_s *) {
+}
+
+void AsteroidChaseC_Init(WORLDINFO_s *) {
+}
+
+void AsteroidChaseD_Init(WORLDINFO_s *) {
+}
+
+void AsteroidChaseA_Reset(WORLDINFO_s *) {
+}
+
+void AsteroidChaseB_Reset(WORLDINFO_s *) {
+}
+
+void AsteroidChaseC_Reset(WORLDINFO_s *) {
+}
+
+void AsteroidChaseD_Panel(WORLDINFO_s *) {
+}
+
+void AsteroidChaseA_Update(WORLDINFO_s *) {
+}
+
+void AsteroidChaseB_Update(WORLDINFO_s *) {
+}
+
+void AsteroidChaseC_Update(WORLDINFO_s *) {
+}
+
+void AsteroidChaseD_Update(WORLDINFO_s *) {
+}

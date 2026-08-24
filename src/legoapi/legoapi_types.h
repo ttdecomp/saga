@@ -3,6 +3,7 @@
 #pragma once
 
 #include "nu2api/nucore/fixed_width.h"
+#include "nu2api/numath/nuvec.h"
 
 #include "legoapi/items/base/apiobject.h"
 #include "MechInputTouch/MechInputTouch_types.h"
@@ -351,9 +352,17 @@ struct AISCRIPT_s;
 struct AITRIGGERSETSYS_s {};
 struct AITRIGGERSET_s {};
 struct ANIMLIST_s {};
-struct ANIMPACKET_s {};
+struct ANIMPACKET_s {
+    char pad_0x00[0x10];
+    float time;  // 0x10
+    float time2; // 0x14
+    char pad_0x18[0x3a - 0x18];
+    u16 field_0x3a; // 0x3a
+    char pad_0x3c[0x42 - 0x3c];
+    u16 frame;      // 0x42
+    f32 field_0x44; // 0x44
+};
 struct ANIMREDIRECT {};
-struct APICHARACTERMODELLIST_s {};
 struct AREADATA_s;
 struct AREASAVE_s {};
 struct ATTRACTO_s;
@@ -365,7 +374,7 @@ struct CABLE_s {};
 struct CHARACTERDATA_s {};
 struct CHARACTERMODEL_s {};
 struct CHARCATEGORY {};
-struct CHARFIXUP {};
+struct CHARFIXUP;
 struct CHARPIVOT {};
 struct CHARPLATFORMSYS_s {};
 struct CHARVARIANT {};
@@ -375,7 +384,10 @@ struct COINPACKET_s {};
 struct CUSTOMISER {};
 struct CUSTOMISESAVE_s {};
 struct CUSTOMPIECE {};
-struct CUTINFO {};
+struct CUTINFO {
+    char pad_0x00[0x4];
+    void *scene; // 0x04
+};
 struct CUTSCENESYS {};
 struct CUTSYS {};
 struct ClassItem {};
@@ -405,13 +417,49 @@ struct GAMEANTINODEDATA_s {};
 struct GAMEANTINODESYS_s {};
 struct GAMEANTINODE_s {};
 struct GAMEAUDIO {};
-struct GAMECAMERA_s {};
+// Camera state (GameCam). Field meanings derived from the pod-race code in
+// the original binary: zoom is compared against spawn distances, the 0x110
+// vector is the camera forward direction (dot product against mine offsets),
+// the 0x11c vector is the camera position (NuVecSub source), and yrot feeds
+// NuVecRotateY. Note the global points 0x80 bytes into its enclosing block:
+// the original computes a position vector at GameCam - 0x80.
+struct GAMECAMERA_s {
+    char pad_0x00[1];
+    u8 field_0x01; // 0x01  camera mode / state byte
+    char pad_0x02[0x2c - 0x02];
+    float zoom; // 0x2c
+    char pad_0x30[0x110 - 0x30];
+    NUVEC dir; // 0x110 forward direction
+    NUVEC pos; // 0x11c camera position
+    char pad_0x128[0x686 - 0x128];
+    u16 yrot; // 0x686
+};
 struct GAMECHARACTERDATA_s {};
-struct GAMEMESSAGE_s {};
+
+// game_cutscenes wrapper (pointer at 0x1c).
+// game_cutscenes (0x28 bytes, held by value).
+struct GAMECUTSCENES_s {
+    char pad_0x00[0x1c];
+    void *cutscene; // 0x1c active cutscene
+    char pad_0x20[0x28 - 0x20];
+};
+
+struct GAMEMESSAGE_s {
+    char pad_0x00[0xe6];
+    u16 icon;   // 0xe6
+    u32 color1; // 0xe8
+    u32 color2; // 0xec
+    u32 color3; // 0xf0
+    char pad_0xf4[0xf7 - 0xf4];
+    u8 alpha; // 0xf7
+};
 struct GAMEPAD_s {};
 struct GIZACTIONDEFN_s {};
 struct GIZAIMESSAGESYS_s {};
-struct GIZAIMESSAGE_s;
+struct GIZAIMESSAGE_s {
+    char pad_0x00[0x28];
+    float value; // 0x28
+};
 struct GIZBOMBGENSYS_s {};
 struct GIZFLOWPROGRESS_s {};
 struct GIZFLOW_s {};
@@ -432,16 +480,14 @@ struct HOTHBATTLE_MELEE_s {};
 struct HashRedirect {};
 struct HashedKey {};
 struct LANGUAGEDATA {};
-struct LEVELDATADISPLAY {};
+struct LEVELDATADISPLAY;
 struct LEVELDATA_s;
-struct LEVELOBJECT {};
+struct LEVELOBJECT;
 struct LEVELSCRIPTPROCESS_s;
 struct LEVELSPLINE {};
-#include "legoapi/world/LEVEL_PROGRESS.h"
 struct LoadedUniqueShaderRecord {};
 struct MENU_s;
 struct MISSIONSAVE_s;
-struct MISSIONSYS_s {};
 struct MemoryBuffer;
 struct NARROWSOCKEXCEPTION {};
 struct NUGCUTCHAR_s;
@@ -492,7 +538,6 @@ struct ThingLevelData {};
 struct ThingRemoveData {};
 struct VirtualStackAllocator;
 struct VuMtx;
-struct __sFILE {};
 struct _vum_s {};
 struct _vuv_s;
 struct ani3_animheader_s;
@@ -525,7 +570,12 @@ struct nuglobalrndrstate_s {};
 struct nugraph_s {};
 struct nugscn_s;
 struct nugspline_s;
-struct nuhspecial_s;
+struct nuhspecial_s {
+    void *special; // 0x00
+    char pad_0x04[0xe - 0x04];
+    u8 enabled; // 0x0e
+    char pad_0x0f[0x10 - 0x0f];
+};
 struct nuinstanim_s {};
 struct numtl_s;
 struct numtx_s;
@@ -696,6 +746,8 @@ struct FadeStillWipe {
     void UpdateFade();
 };
 struct FadeSystem {
+    char pad_0x00[0x4];
+    float fade; // 0x04  current fade amount
     void AddFade(FadeBase *);
     void Draw();
     void Init();
@@ -714,16 +766,98 @@ struct GIZBUILDIT_s {
     void GetMechObjectInterface();
 };
 struct GIZFORCE_s {
+    char pad_0x00[0x40];
+    void *field_0x40; // 0x40
+    float field_0x44; // 0x44  force strength threshold / start value
+    char pad_0x48[0x6c - 0x48];
+    float strength_0x6c;
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };
 struct GIZMOBLOWUP_s {
+    undefined field0_0x0[0x50];
+    char field_0x50[0x4f];      // 0x50 .. 0x9f
+    u8 field_0x9f;              // 0x9f  state/flags byte
+    i32 field_0xa0;             // 0xa0
+    char field_0xa4[0x8];       // 0xa4 .. 0xac
+    void *field_0xac;           // 0xac
+    float field_0xb0;           // 0xb0
+    undefined field_0xb4[0x6c]; // 0xb4 .. 0x120
+    void *field_0x120;          // 0x120
+    u8 field_0x124;             // 0x124
+    undefined field_0x125[3];
+    float field_0x128; // 0x128
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };
 struct GIZOBSTACLE_s {
+    char pad_0x00[0x18];
+    f32 field_0x18; // 0x18
+    f32 field_0x1c; // 0x1c
+    f32 field_0x20; // 0x20
+    f32 field_0x24; // 0x24
+    char pad_0x28[0x34 - 0x28];
+    void *field_0x34; // 0x34
+    char pad_0x38[0x3c - 0x38];
+    f32 field_0x3c; // 0x3c
+    char pad_0x40[0xa1 - 0x40];
+    u8 field_a1_0xa1;
+    char pad_0xa2[0xdc - 0xa2];
+    i32 field_0xdc; // 0xdc
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
+};
+
+// Node in the obstacle linked list (field_0x34 → field_0x18 chain).
+struct GIZOBSTACLENODE_s {
+    void *next;    // 0x00
+    void *special; // 0x04
+    char pad_0x08[0x18 - 0x08];
+    void *field_0x18; // 0x18
+};
+
+// Object referenced by GIZFORCE_s::field_0x40 (flags at 0x24).
+struct GIZFORCEOBJ_s {
+    char pad_0x00[0x24];
+    u32 flags; // 0x24
+};
+
+// Path connection flags (LevPathCnx entries).
+struct PATHCNXDATA_s {
+    u32 flags0; // 0x00
+    u32 flags4; // 0x04
+};
+
+// Cutscene scene data (byte flag at 0x89).
+struct CUTSCENEDATA_s {
+    char pad_0x00[0x88];
+    u8 field_0x88; // 0x88  flags byte
+    u8 flags;      // 0x89
+};
+
+// Player sub-object (through APIOBJECT::field_0x54).
+struct PLAYERSUBOBJ_s {
+    char pad_0x00[0x24];
+    void *field_0x24; // 0x24
+};
+
+// Second-level player sub-object (float at 0x1c).
+struct PLAYERSUBOBJ2_s {
+    char pad_0x00[0x1c];
+    float value; // 0x1c
+};
+
+// Character entry inside apicharsys character-data array (stride 0x54).
+struct PODCHARENTRY_s {
+    char pad_0x00[0xc];
+    void *model;                // 0x0c
+    char pad_0x10[0x54 - 0x10]; // pad to the 0x54-byte stride
+};
+
+// Model data referenced by PODCHARENTRY_s::model.
+struct PODMODELDATA_s {
+    char pad_0x00[0x4];
+    float *value; // 0x04 pointer to the pod model's speed value
 };
 struct GIZPANEL_s {
     void ClearMechObjectInterface();
@@ -794,6 +928,31 @@ struct MemoryManager {
     void AllocPool(u32, i32);
     void FreePool(void *, u32);
 };
+// One mine entry (0x1c bytes, MINESYS_s::mines[64] starting at 0x0c).
+struct MINEENTRY_s {
+    u32 active;       // 0x00
+    NUVEC pos;        // 0x04
+    float grow;       // 0x10 grows by FRAMETIME each update
+    float grow_alpha; // 0x14 clamped copy of grow (max 1.0); used as the draw scale
+    u16 rotx;         // 0x18 draw pre-rotation about X
+    u16 roty;         // 0x1a draw pre-rotation about Y
+};
+
+// Mine system (minesys global, 0x748 bytes). Layout from the original
+// pod-race code: PodRaceInit fills the header + radius/areas/debris ids,
+// UpdatePodRaceMines iterates mines[] and uses the timers.
+struct MINESYS_s {
+    char pad_0x00[0xc];     // 0x00  holds the "mine" special handle at 0x00
+    MINEENTRY_s mines[64];  // 0x0c .. 0x70c
+    float mine_radius;      // 0x70c NuSpecialGetOriginRadius(mine special)
+    float spawn_timer;      // 0x710 seeded from camera zoom / 1000000000.0f sentinel
+    void *nomine_areas[10]; // 0x714 AISysFindArea("nomine_N")
+    i16 nomine_count;       // 0x73c
+    i16 mine_debris;        // 0x73e FindGameDebris("MINE_POP")
+    i32 mine_part;          // 0x740 PARTLookupType("POD_MINE_PART")
+    float update_timer;     // 0x744
+};
+
 struct MoveToMarker {
     void BlowUp();
     void FadeOut();
@@ -872,6 +1031,49 @@ struct PlaceableNameControl {
     void cbChanged(eduimenu_s *, eduiitem_s *, u32);
     void cbSelectObject(eduimenu_s *, eduiitem_s *, u32);
 };
+// Pod race net packet (podrace_netpacket).
+struct PODRACENETPACKET_s {
+    char pad_0x00[0xc];
+    float countdown; // 0x0c
+};
+
+// One AI spline slot inside the pod sprint state. Type name from the original
+// local symbol _ZL22PodSprint_InitAISplineP11WORLDINFO_sP20PODSPRINT_AISPLINE_sPc.
+struct PODSPRINT_AISPLINE_s {
+    struct nugspline_s *spline; // 0x00
+    i16 vals[6];                // 0x04
+};
+
+// Pod sprint state (podsprint, 0x94 bytes).
+struct PODSPRINT_s {
+    struct nugspline_s *finish_line; // 0x00
+    struct nugspline_s *halfway;     // 0x04
+    PODSPRINT_AISPLINE_s ai[6];      // 0x08
+    GIZAIMESSAGE_s *lap_msg;         // 0x68
+    GIZAIMESSAGE_s *max_speed_msg;   // 0x6c
+    GIZAIMESSAGE_s *min_speed_msg;   // 0x70
+    GIZAIMESSAGE_s *speed_step_msg;  // 0x74
+    void *field_0x78;                // 0x78 pacemaker/boulders object (dword write in the original)
+    void *boulders;                  // 0x7c  AIArea from AISysFindArea("Boulders")
+    float field_0x80;                // 0x80 pacemaker alpha
+    float speed;                     // 0x84 sebulba speed (integer part drives the lap lights)
+    float field_0x88;                // 0x88 second speed channel (sent as net->speed2)
+    char pad_0x8c[0x8e - 0x8c];
+    u8 ai_state; // 0x8e
+    u8 ai_index; // 0x8f signed; index into PODSPRINT_AISPLINE_s::vals
+    char pad_0x90[0x92 - 0x90];
+    u8 flags; // 0x92
+    char pad_0x93[0x94 - 0x93];
+};
+
+// Pod-sprint network packet (podsprint_netpacket).
+struct PODSPRINTNETPACKET_s {
+    i16 ai_state; // 0x00
+    char pad_0x02[0x6 - 0x2];
+    i16 speed;  // 0x06
+    i16 speed2; // 0x08
+};
+
 struct PropertyMenu {
     void AddObject(ClassObject &);
     void ClearObjecs();
@@ -909,6 +1111,22 @@ struct PropertyTool {
     void ediMenuRetrieveMetrics(eduimenu_s *);
     void ediMenuStoreMetrics(eduimenu_s *);
 };
+// Retake-G network packet (retakeg_netpacket).
+struct RETAKEGNETPACKET_s {
+    i16 guard_a; // 0x00
+    i16 guard_b; // 0x02
+};
+
+// Pod-race sniper entry (PodRace_snipers[5], 0x40 bytes each). The first two
+// vectors overlay consecutive spline points; the position is copied from the
+// sniper's spline via a 0x18-byte copy.
+struct SNIPER_s {
+    NUVEC prev;       // 0x00 first spline point (unused)
+    NUVEC pos;        // 0x0c actual sniper position
+    float fire_timer; // 0x18
+    float state;      // 0x1c
+}; // 0x20 bytes: the original strides this array by 0x20
+
 struct SceneInstance {
     void GetCurrentPosition() const;
     void GetCurrentTransform() const;

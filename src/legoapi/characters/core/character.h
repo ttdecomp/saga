@@ -3,12 +3,12 @@
 #include "decomp.h"
 #include "nu2api/nucore/common.h"
 
-struct charfixup_s {
+struct CHARFIXUP {
     char *name;
     i16 *id;
 };
 
-typedef struct charfixup_s CHARFIXUP;
+typedef struct CHARFIXUP CHARFIXUP;
 
 struct gamecharacterdata_s { /* PlaceHolder Structure */
     undefined field0_0x0;
@@ -331,3 +331,26 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+
+// Model id globals (assigned from the character name table in character.cpp)
+extern "C" {
+    extern i16 id_KAADU;
+    extern i16 id_GUNGAN;
+    extern i16 id_FALUMPASET;
+    extern i16 id_DARTHMAUL;
+    extern i16 id_ANAKINSPOD;
+    extern i16 id_STAP;
+    extern i16 id_BATTLEDROID;
+    extern i16 id_ROYALGUARD;
+    extern i16 id_CLONEARC;
+    extern i16 id_IMPERIALSHUTTLE;
+    extern i16 id_NABOOSTARFIGHTER;
+    extern i16 id_XWING;
+    extern i16 id_SNOWSPEEDER;
+    extern i16 id_MILLENNIUMFALCON;
+    extern i16 id_NEW_REPUBLIC_GUNSHIP;
+    extern i16 id_COUNTDOOKU;
+    extern i16 id_OBIWANKENOBIJEDIMASTER;
+    extern i16 id_GRIEVOUS;
+    extern i16 id_JANGOFETT;
+}

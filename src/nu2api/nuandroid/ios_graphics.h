@@ -5,13 +5,13 @@
 #ifdef __cplusplus
 i32 NuCheckGLErrorsFL(const char *file, i32 line);
 
+extern i32 g_isLowEndDevice;
+
+extern i32 g_backingWidth;
+extern i32 g_backingHeight;
+
 extern "C" {
 #endif
-    extern i32 g_isLowEndDevice;
-
-    extern i32 g_backingWidth;
-    extern i32 g_backingHeight;
-
     i32 NuIOS_IsLowEndDevice(void);
 
     char *NuIOS_GetDocumentsPath(void);

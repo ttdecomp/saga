@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Detect multiple definitions of the same struct/class/union/enum tag.
+"""Detect multiple definitions of the same struct/class/union/enum tag,
+and (optionally, when given a build directory) duplicate object symbols.
 
 A type is a DEFINITION (as opposed to a forward declaration) when its tag is
 followed by a body, e.g.:
@@ -23,15 +24,37 @@ redefinition, and an opaque placeholder shadowing a real type hides the
 canonical definition. This script flags every tag that has more than one
 definition anywhere in the tree, so those duplicates can be consolidated.
 
+When a build directory is supplied (``--build``), the script also runs the
+archiver ``nm`` over every compiled object file and reports any *defined*
+symbol (local and global, text and data) that is present in more than one
+object. The linker already rejects duplicate *global* strong symbols, but it
+silently accepts duplicate *local/static* symbols (they are private to each
+translation unit) -- those are the ones a source scan cannot see and a link
+never complains about. Weak symbols (inline functions / templates) are
+excluded, since multiple weak definitions are normal and intended.
+
 Exit code is 0 when no duplicate definitions are found, 1 otherwise.
 """
 
 import argparse
 import os
 import re
+import subprocess
 import sys
 
 SRC_EXTENSIONS = {".h", ".hh", ".hpp", ".hxx", ".c", ".cc", ".cpp", ".cxx"}
+
+# Strong (allocated) symbol types we consider real definitions. Weak (W/V)
+# and global (G) are excluded because multiple weak definitions (inline
+# functions, templates, COMDAT) are normal; undefined (U), debug (N), absolute
+# (A) and special (I) are not definitions.
+_SYMBOL_TYPES = set("TtDdBbRrCcSs")
+
+# Relative path of the NDK nm we use to read the object files' symbol tables.
+_NM_RELPATH = (
+    "ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/linux-x86_64/bin/"
+    "i686-linux-android-nm"
+)
 
 # Tag kinds and their keywords. enum needs care: "enum Foo : int { ... }".
 KEYWORDS = ("struct", "class", "union")
@@ -185,13 +208,117 @@ def find_definitions(text):
     return defs
 
 
+def is_noise_symbol(name):
+    """True for symbols that are legitimately defined once per translation unit
+    and are not meaningful duplicates:
+      * assembler-internal labels (.L##, .LC## constant pools) -- C identifiers
+        cannot start with '.';
+      * compiler-generated PIC thunks (__x86.get_pc_thunk.*);
+      * static-init/destruction trampolines and tcf cleanups.
+    """
+    if name.startswith(".L"):
+        return True
+    if "__x86.get_pc_thunk." in name:
+        return True
+    if "__static_initialization_and_destruction_" in name:
+        return True
+    if name.startswith("_GLOBAL__sub_I_") or name.startswith("_GLOBAL__sub_D_"):
+        return True
+    if "__tcf_" in name:
+        return True
+    return False
+
+
+def find_nm(script_dir):
+    """Locate the NDK nm binary: prefer $NM, else the bundled NDK path."""
+    env = os.environ.get("NM")
+    if env and os.path.isfile(env):
+        return env
+    root = os.path.dirname(os.path.abspath(script_dir))
+    candidate = os.path.join(root, _NM_RELPATH)
+    if os.path.isfile(candidate):
+        return candidate
+    return None
+
+
+def collect_defined_symbols(object_file, nm):
+    """Return the set of defined symbol names (strong, non-weak) in ``object_file``."""
+    try:
+        proc = subprocess.run(
+            [nm, "--defined-only", object_file],
+            capture_output=True,
+            text=True,
+            errors="replace",
+        )
+    except OSError as e:
+        print(f"warning: cannot run nm on {object_file}: {e}", file=sys.stderr)
+        return set()
+    if proc.returncode != 0:
+        print(f"warning: nm failed on {object_file}", file=sys.stderr)
+        return set()
+    out = set()
+    for line in proc.stdout.splitlines():
+        parts = line.split()
+        if len(parts) >= 3 and parts[-2] in _SYMBOL_TYPES:
+            name = parts[-1]
+            if is_noise_symbol(name):
+                continue
+            out.add(name)
+    return out
+
+
+def check_duplicate_symbols(build_dir, nm):
+    """Find symbols defined in more than one object file under ``build_dir``.
+
+    Returns (symbol -> [object_file, ...]) for every duplicated symbol. The
+    original split objects (build/split) are skipped -- they are the reference,
+    not our compilation.
+    """
+    objects = []
+    for dirpath, _dirnames, filenames in os.walk(build_dir):
+        # Skip the reference split objects, third-party external test builds,
+        # and CMake's compiler-id probe objects (not part of any real target).
+        if os.sep + "split" + os.sep in dirpath + os.sep:
+            continue
+        if os.sep + "external" + os.sep in dirpath + os.sep:
+            continue
+        if "CompilerId" in dirpath:
+            continue
+        for fn in filenames:
+            if fn.endswith(".o"):
+                objects.append(os.path.join(dirpath, fn))
+    if not objects:
+        return {}
+
+    symbol_to_obj = {}
+    for obj in objects:
+        for sym in collect_defined_symbols(obj, nm):
+            symbol_to_obj.setdefault(sym, set()).add(obj)
+
+    return {sym: objs for sym, objs in symbol_to_obj.items() if len(objs) > 1}
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("src", help="source root directory to scan (e.g. src/)")
     ap.add_argument(
+        "--build",
+        default=None,
+        help="build directory to scan for duplicate symbols in compiled objects "
+        "(default: 'build' if present)",
+    )
+    ap.add_argument(
         "--verbose",
         action="store_true",
         help="print every definition found, not just duplicates",
+    )
+    ap.add_argument(
+        "--fail-on-symbols",
+        action="store_true",
+        help="also return a non-zero exit code when duplicate object symbols are "
+        "found (by default they are reported but not treated as an error, since "
+        "static-inline/static-const header functions are legitimately repeated "
+        "in every translation unit)",
     )
     args = ap.parse_args()
 
@@ -232,21 +359,60 @@ def main():
         key: files for key, files in by_tag.items() if sum(files.values()) > 1
     }
 
-    if not duplicates:
-        print("OK: no duplicate type definitions found")
-        return 0
+    code = 0
 
-    print("Found type(s) defined in more than one place:\n")
-    for kw, tag in sorted(duplicates, key=lambda k: k[1]):
-        files = duplicates[(kw, tag)]
-        n = sum(files.values())
-        empty_mark = "  [empty placeholder(s)]" if (kw, tag) in empty else ""
-        print(f"  {kw} {tag}  ({n} definitions){empty_mark}")
-        for path, count in sorted(files.items()):
-            rel = os.path.relpath(path, os.path.dirname(root))
-            print(f"      {rel}:{count}")
-        print()
-    return 1
+    if duplicates:
+        code = 1
+        print("Found type(s) defined in more than one place:\n")
+        for kw, tag in sorted(duplicates, key=lambda k: k[1]):
+            files = duplicates[(kw, tag)]
+            n = sum(files.values())
+            empty_mark = "  [empty placeholder(s)]" if (kw, tag) in empty else ""
+            print(f"  {kw} {tag}  ({n} definitions){empty_mark}")
+            for path, count in sorted(files.items()):
+                rel = os.path.relpath(path, os.path.dirname(root))
+                print(f"      {rel}:{count}")
+            print()
+
+    # Duplicate object symbols (local + global, text + data).
+    build_dir = args.build
+    if build_dir is None:
+        default_build = os.path.join(os.path.dirname(os.path.dirname(root)), "build")
+        if os.path.isdir(default_build):
+            build_dir = default_build
+    if build_dir is not None:
+        build_dir = os.path.abspath(build_dir)
+        if not os.path.isdir(build_dir):
+            print(f"error: --build is not a directory: {build_dir}", file=sys.stderr)
+            return 2
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        nm = find_nm(script_dir)
+        if nm is None:
+            print("warning: could not find NDK nm; skipping duplicate-symbol check",
+                  file=sys.stderr)
+        else:
+            dup_symbols = check_duplicate_symbols(build_dir, nm)
+            if dup_symbols:
+                if args.fail_on_symbols:
+                    code = 1
+                print("\nFound symbol(s) defined in more than one object file:\n")
+                for sym in sorted(dup_symbols):
+                    objs = sorted(dup_symbols[sym])
+                    print(f"  {sym}  ({len(objs)} objects)")
+                    for obj in objs:
+                        rel = os.path.relpath(obj, os.path.dirname(build_dir))
+                        print(f"      {rel}")
+                    print()
+                print(
+                    "note: symbols repeated across many objects are usually "
+                    "static-inline/static-const header functions (expected per "
+                    "translation unit); a symbol in just two different .cpp "
+                    "objects is a real duplicate definition."
+                )
+
+    if code == 0:
+        print("OK: no duplicate definitions found")
+    return code
 
 
 if __name__ == "__main__":

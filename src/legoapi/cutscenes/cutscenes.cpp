@@ -1,6 +1,7 @@
 #include "legoapi/legoapi_types.h"
 
-void CutScene_Find(CUTSYS *, char *) {
+CUTINFO *CutScene_Find(CUTSYS *, char *) {
+    return NULL;
 }
 
 void CutScenes_End() {
@@ -63,7 +64,8 @@ void CutScene_PreUpdateFn_LSW(CUTINFO *) {
 void CutScene_PostUpdateFn_LSW() {
 }
 
-void CutScene_PlayingOrRequested(CUTINFO *) {
+bool CutScene_PlayingOrRequested(CUTINFO *) {
+    return false;
 }
 
 void CutScene_ReplaceCharacterModelFn_LSW(CUTINFO *, NUGCUTCHAR_s *) {
@@ -72,7 +74,8 @@ void CutScene_ReplaceCharacterModelFn_LSW(CUTINFO *, NUGCUTCHAR_s *) {
 void ResetScene(nugscn_s *, SCENEPROGRESS_s *) {
 }
 
-void NewCutScene(CUTINFO *, CUTSYS *, char *, i32) {
+i32 NewCutScene(CUTINFO *, CUTSYS *, char *, i32) {
+    return 0;
 }
 
 void Exit_LSW_Update(STATUS_STAGE_s *, STATUSPACKET_s *, float) {

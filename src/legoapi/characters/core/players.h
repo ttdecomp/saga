@@ -25,7 +25,8 @@ typedef struct playerprogress_s {
 // Character system (apicharsys).  field7_0x1c is a player model id list,
 // field8_0x20 is a CHARACTERDATA array (stride 0x4c).
 typedef struct playerdata_s {
-    undefined field0_0x0[0x1c];
+    undefined field0_0x0[0x18];
+    void *field_0x18;           // 0x18  character data array (stride 0x54)
     i16 *playermodelids;        // field7_0x1c (pointer to player model id list)
     CHARACTERDATA char_data[8]; // field8_0x20
 } PLAYERDATA;
@@ -49,8 +50,8 @@ extern i32 UsePlayerList;
 extern i16 PlayerList[8];
 extern i32 PlayerID[2];
 extern i32 GAMEDEMO;
-extern i16 Area_PlayerIDList[8];
-extern i16 Area_StoryModelList[8];
+extern i16 Area_PlayerIDList[9];
+extern APICHARACTERMODELLIST_s Area_StoryModelList[52];
 extern PLAYERPROGRESS PlayerProgress[8];
 extern i32 Hub_UsePlayerList;
 extern i32 LevelChangesInArea;
@@ -60,14 +61,13 @@ extern SOCKPOSITION OldPlrSPos[8];
 extern char Batarang[8 * 0xb4];
 extern void *PlayerSuit[8];
 extern u8 PlayerTorpedoCount[8];
-extern COINPACKET *CoinPacket;
+extern COINPACKET CoinPacket[2];
 extern u32 BackUpPlayers[];
-extern void *GizForceLOSInfo;
-extern u8 DEFAULT_PLAYERHITPOINTS;
-extern u16 LEGOOBJ_DEFAULTLASTCOIN;
+extern char GizForceLOSInfo[0xc60];
+extern i32 DEFAULT_PLAYERHITPOINTS;
+extern u32 LEGOOBJ_DEFAULTLASTCOIN;
 
 extern PLAYERDATA *apicharsys;
-extern TORPEDOPACKET TorpedoPackets[16];
 
 // ---- Helper functions called by Players_Init ----
 
@@ -98,3 +98,5 @@ void ChatterSfx(GameObject_s *g, i32 a, float b);
 void Move_VEHICLE(GameObject_s *g);
 extern "C" void ComplexSockPosition(void *a, void *b, i32 c, i32 d, SOCKPOSITION *out);
 void *CutScenePlayer_Available(void);
+
+void KillPlayer(GameObject_s *player, i32 cause, i32 unknown, struct nuvec_s *);

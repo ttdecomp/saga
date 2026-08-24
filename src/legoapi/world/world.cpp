@@ -1,10 +1,11 @@
 #include "legoapi/world/world.h"
-#include "legoapi/world/LEVEL_PROGRESS.h"
+#include "legoapi/world/level.h"
 #include "legoapi/world/world_shared.h"
 
 #include <stdio.h>
 #include <string.h>
 
+#include "gamelib/util/gamelib_util_types.h"
 #include "gameapi/edtools/edstubs.h"
 #include "gameapi/gui/apimenu.h"
 #include "globals.h"
@@ -12,6 +13,7 @@
 #include "legoapi/characters/core/character.h"
 #include "legoapi/world/level.h"
 #include "legoapi/characters/core/players.h"
+#include "legoapi/items/base/collection.h"
 #include "legoapi/props/system/socksys.h"
 #include "legoapi/core/input/timer.h"
 #include "legogame/game.h"
@@ -23,19 +25,19 @@
 #include "nu2api/nufile/nufpar.h"
 
 // Globals shared across world loading — defined here until moved to globals.cpp
-TIMER *LevelTimer = NULL;
+TIMER LevelTimer;
 i32 abort_load = 0;
-char *ConfigBuffer = NULL;
+char ConfigBuffer[0x10000];
 i32 numtl_force_mipmode = 0;
 i32 GAMEDEMO = 0;
-void *big_icon_scene = NULL;
-void *area_scene = NULL;
-void *things_scene = NULL;
+NUGSCN *big_icon_scene = NULL;
+NUGSCN *area_scene = NULL;
+NUGSCN *things_scene = NULL;
 LEVELDATA *PLATFORM_LDATA = NULL;
-void *RETAKED_LDATA = NULL;
-void *CREDITS_LDATA = NULL;
-u32 Text_Language = 0;
-nufpcomjmp_s *LevelConfigKeywords_AfterLoad = NULL;
+LEVELDATA *RETAKED_LDATA = NULL;
+LEVELDATA *CREDITS_LDATA = NULL;
+u32 Text_Language = 1;
+nufpcomjmp_s LevelConfigKeywords_AfterLoad;
 
 // --- Players globals ---
 // NOTE: `WORLD` (WORLDINFO) field offsets in world.h are an approximation; the
@@ -49,9 +51,9 @@ i32 PLAYERCOUNT = 0;
 i32 netclient = 0;
 i32 UsePlayerList = 0;
 i16 PlayerList[8];
-i32 PlayerID[2];
-i16 Area_PlayerIDList[8];
-i16 Area_StoryModelList[8];
+i32 PlayerID[2] = {-1, -1};
+i16 Area_PlayerIDList[9];
+APICHARACTERMODELLIST_s Area_StoryModelList[52];
 PLAYERPROGRESS PlayerProgress[8];
 i32 Hub_UsePlayerList = 0;
 i32 LevelChangesInArea = 0;
@@ -61,22 +63,31 @@ SOCKPOSITION OldPlrSPos[8];
 char Batarang[8 * 0xb4];
 void *PlayerSuit[8];
 u8 PlayerTorpedoCount[8];
-COINPACKET COINPACKETS[2];
-COINPACKET *CoinPacket = COINPACKETS;
+COINPACKET CoinPacket[2];
 u32 BackUpPlayers[0x872];
-void *GizForceLOSInfo;
-u8 DEFAULT_PLAYERHITPOINTS = 100;
-u16 LEGOOBJ_DEFAULTLASTCOIN = 50;
+char GizForceLOSInfo[0xc60];
+i32 DEFAULT_PLAYERHITPOINTS = 8;
+u32 LEGOOBJ_DEFAULTLASTCOIN = -1;
 
 PLAYERDATA *apicharsys;
-
-TORPEDOPACKET TorpedoPackets[16];
 
 // --- World-module helpers (kept with the WorldInfo API) ---
 
 void SetAreaPickupGravity(i32 area, i32 level) {
-    (void)area;
-    (void)level;
+    AreaPickupGravity = -6.0f;
+    if (area < 0 || area >= AREACOUNT) {
+        return;
+    }
+    AREADATA *ad = &ADataList[area];
+    if (ad->flags & AREAFLAG_NOPICKUPGRAVITY) {
+        if ((*(u8 *)((char *)LDataList + level * 0x144 + 0x66) & 0x40) == 0) {
+            AreaPickupGravity = 0.0f;
+            return;
+        }
+    }
+    if (ad->flags & AREAFLAG_VEHICLE_AREA) {
+        AreaPickupGravity = -20.0f;
+    }
 }
 void WorldInfo_Dump(WORLDINFO *world) {
     (void)world;
@@ -87,7 +98,29 @@ void StoreSceneProgress(NUGSCN *gscn, SCENEPROGRESS_s *progress, i32 param) {
     (void)param;
 }
 void SaveSceneObjectAnimTFactors(NUGSCN *gscn) {
-    (void)gscn;
+    i32 count;
+    char *p;
+    void *obj;
+
+    if (gscn == NULL) {
+        return;
+    }
+    if (*(void **)((char *)gscn + 0x110) != NULL) {
+        return;
+    }
+    count = *(i32 *)((char *)gscn + 0x1c);
+    p = *(char **)((char *)gscn + 0x20) + count * 0x50;
+    if (count == 0) {
+        return;
+    }
+    do {
+        p -= 0x50;
+        obj = *(void **)(p + 0x48);
+        if (obj != NULL) {
+            *(f32 *)((char *)obj + 0x54) = *(f32 *)((char *)obj + 0x40);
+        }
+        count--;
+    } while (count != 0);
 }
 void CalculateWorldSize(WORLDINFO *world) {
     (void)world;
@@ -189,7 +222,7 @@ void WorldInfo_Init(WORLDINFO *world) {
     }
 
     // Start page loading for various subsystems
-    i32 *page_handles = (i32 *)&world->unknown_0140[0x2958];
+    i32 *page_handles = (i32 *)&world->page_pp;
     if (page_handles[0] != -1) {
         edppStartPage(page_handles[0]);
     }
@@ -202,7 +235,7 @@ void WorldInfo_Init(WORLDINFO *world) {
 
     // Terrain initialization
     noterraininit();
-    void *terrain_cur = *(void **)&world->unknown_0140[0x281c];
+    void *terrain_cur = world->terrain;
     TerrainSetCur(terrain_cur);
     TerrSetPlatScanDist((f32)(u8)world->current_level->unknown_0db);
 
@@ -228,7 +261,9 @@ void WorldInfo_Init(WORLDINFO *world) {
     // Level progress copy
     LEVEL_PROGRESS_s *progress = (LEVEL_PROGRESS_s *)world->level_progress;
     if (NOSOUND == 0 && progress != NULL && (progress->flags & 1) == 0) {
-        i32 *src = (i32 *)&world->filler0[0x5c];
+        // Progress payload lives at the tail of the name/config buffer region;
+        // there is no named field for it, so the source is addressed raw.
+        i32 *src = (i32 *)&world->name[0x5c];
         i32 *dst = (i32 *)&progress->data;
         for (i32 i = 0xa00; i != 0; i--) {
             *dst = *src;
@@ -244,13 +279,13 @@ void WorldInfo_Init(WORLDINFO *world) {
     PlayerItemTypes_Reset(world);
     Players_Init();
     rtlResetDynamic();
-    SetPartRTLSet(*(i32 *)&world->unknown_0140[0x2974]);
+    SetPartRTLSet(world->rtl_set_id);
 
     WorldInfo_UpdateRoomVisibility(world, 1);
 
     // Level init function
     if (world->current_level->init_fn != NULL) {
-        ((void (*)(WORLDINFO *))world->current_level->init_fn)(world);
+        world->current_level->init_fn(world);
     }
 
     // The game hook may provide a menu and Y position for the newly loaded
@@ -280,7 +315,7 @@ void WorldInfo_Init(WORLDINFO *world) {
     NewMenu(local_menu_id, local_menu_y, -1);
 
     if (NOSOUND == 0) {
-        ResetTimer(LevelTimer, 0.0f);
+        ResetTimer(&LevelTimer, 0.0f);
     }
 
     if ((world->current_level->flags & (LEVEL_OUTRO | LEVEL_MIDTRO | LEVEL_INTRO)) == 0) {
@@ -292,7 +327,8 @@ void WorldInfo_Init(WORLDINFO *world) {
 
     InitGameObjectLights();
 
-    *(i32 *)&world->unknown_0140[0x5034] = 1; // field_0x5174
+    // Unreferenced padding slot (0x5174); no named field.
+    *(i32 *)((char *)world + 0x5174) = 1;
 
     // Init last function
     Game_WorldInfo_InitLast(world);
@@ -302,7 +338,7 @@ void WorldInfo_Load(WORLDINFO *world) {
     char buf[268];
     char titles[64];
     LEVELDATA *level;
-    void *cutscene_scene;
+    NUGSCN *cutscene_scene;
     i32 *page_handles;
     i32 aligned_buf;
     char ai_name[4];
@@ -318,7 +354,7 @@ void WorldInfo_Load(WORLDINFO *world) {
 
     Level_LoadConfigFile(world);
 
-    if (abort_load != 0 || (world->unknown_010c > 0 && (LevelConfig_BeforeLoad(world->current_level, ConfigBuffer,
+    if (abort_load != 0 || (world->config_count > 0 && (LevelConfig_BeforeLoad(world->current_level, ConfigBuffer,
                                                                                Level_ConfigBeforeLoad_GameKeywords),
                                                         abort_load != 0))) {
         goto abort;
@@ -348,10 +384,10 @@ void WorldInfo_Load(WORLDINFO *world) {
         NuStrCat(buf, ".gsc");
 
         numtl_force_mipmode = (i32)(u8)level->mipmap_mode + 1;
-        world->current_gscn = (NUGSCN *)NuGScnRead(&world->giz_buffer, world->unknown_0108, buf);
+        world->current_gscn = NuGScnRead(&world->giz_buffer, world->unknown_0108, buf);
         numtl_force_mipmode = 0;
 
-        StoreSceneProgress(world->current_gscn, (SCENEPROGRESS_s *)&world->filler0[0x15c], 1);
+        StoreSceneProgress(world->current_gscn, (SCENEPROGRESS_s *)world->progress_data, 1);
         SaveSceneObjectAnimTFactors(world->current_gscn);
 
         if (world->current_gscn != NULL) {
@@ -364,8 +400,7 @@ void WorldInfo_Load(WORLDINFO *world) {
     // Load pictures for titles/credits
     if (level == TITLES_LDATA || level == CREDITS_LDATA) {
         numtl_force_mipmode = (i32)(u8)level->mipmap_mode + 1;
-        world->icons_gscn =
-            (NUGSCN *)NuGScnRead(&world->giz_buffer, world->unknown_0108, "levels\\titles\\pictures.gsc");
+        world->icons_gscn = NuGScnRead(&world->giz_buffer, world->unknown_0108, "levels\\titles\\pictures.gsc");
         if (abort_load != 0)
             goto abort;
     }
@@ -382,7 +417,7 @@ void WorldInfo_Load(WORLDINFO *world) {
         goto abort;
 
     // Configure bolt types
-    if (world->unknown_010c > 0) {
+    if (world->config_count > 0) {
         BoltTypes_Configure(world, ConfigBuffer);
     }
 
@@ -425,21 +460,21 @@ void WorldInfo_Load(WORLDINFO *world) {
 after_area:
     // Load big icon scene for hub/status levels
     if ((level == HUB_LDATA || (level->flags & LEVEL_STATUS) != 0) && big_icon_scene == NULL) {
-        world->icons_gscn =
-            (NUGSCN *)NuGScnRead(&world->giz_buffer, world->unknown_0108, "stuff\\icons\\starwars_icons_all.gsc");
+        world->icons_gscn = NuGScnRead(&world->giz_buffer, world->unknown_0108, "stuff\\icons\\starwars_icons_all.gsc");
     }
 
     // Determine which scene to use for cutscenes
     cutscene_scene = area_scene;
-    if (cutscene_scene == NULL || world->area == NULL || (world->area->flags & 0x400) == 0) {
+    if (cutscene_scene == NULL || world->area == NULL || (world->area->flags & AREAFLAG_OVERRIDE_THINGS_SCENE) == 0) {
         cutscene_scene = things_scene;
     }
 
     // Load cutscenes
-    page_handles = (i32 *)&world->unknown_0140[0x2958];
+    page_handles = (i32 *)&world->page_pp;
     world->cutscene_sys = (CUTSYS *)CutScenes_Load(
-        ConfigBuffer, world->current_gscn, (NUGSCN *)cutscene_scene, page_handles[0], &world->giz_buffer,
-        &world->unknown_0108, *(i32 *)&world->unknown_0140[0x011c], *(i32 *)&world->unknown_0140[0x0120], world);
+        ConfigBuffer, world->current_gscn, cutscene_scene, page_handles[0], &world->giz_buffer,
+        // 0x25c/0x260 are i32 reads into the progress_data region.
+        &world->unknown_0108, *(i32 *)((char *)world + 0x25c), *(i32 *)((char *)world + 0x260), world);
     if (abort_load != 0)
         goto abort;
 
@@ -450,7 +485,7 @@ after_area:
     CharScenes_LevelLoad(world);
 
     // SockSys for certain level types
-    if ((level->flags & 0xe2) == 2) {
+    if ((level->flags & (LEVEL_GAMEPLAY | LEVEL_INTRO | LEVEL_MIDTRO | LEVEL_OUTRO)) == LEVEL_GAMEPLAY) {
         world->sock_sys = SockSysInit(&world->giz_buffer, world->unknown_0108, world->current_gscn);
     }
 
@@ -459,8 +494,8 @@ after_area:
     BoltTypes_Init(world);
 
     // Config-based subsystem initialization
-    if (world->unknown_010c > 0) {
-        LevelConfig_AfterLoad(world->current_level, ConfigBuffer, LevelConfigKeywords_AfterLoad);
+    if (world->config_count > 0) {
+        LevelConfig_AfterLoad(world->current_level, ConfigBuffer, &LevelConfigKeywords_AfterLoad);
         EquivalentObjects_Configure(world, ConfigBuffer);
         Teleports_Configure(world, ConfigBuffer);
         Doors_Configure(world, ConfigBuffer);
@@ -475,7 +510,7 @@ after_area:
 
     // SockSys configuration
     if (world->sock_sys != NULL) {
-        if (world->unknown_010c > 0) {
+        if (world->config_count > 0) {
             SockSys_Configure(world->sock_sys, ConfigBuffer, 0, &world->giz_buffer, &world->unknown_0108,
                               world->current_gscn);
         }
@@ -485,7 +520,9 @@ after_area:
     }
 
     // Terrain/grass/bridge loading
-    if (world->area != NULL && (world->area->flags & 5) == 5 &&
+    if (world->area != NULL &&
+        (world->area->flags & (AREAFLAG_VEHICLE_AREA | AREAFLAG_BONUS_AREA)) ==
+            (AREAFLAG_VEHICLE_AREA | AREAFLAG_BONUS_AREA) &&
         (level->flags & (LEVEL_STATUS | LEVEL_OUTRO | LEVEL_MIDTRO | LEVEL_INTRO)) == 0) {
         CharacterMiniKits_Load((COLLECTION_s *)MiniKitCollection, world, &world->giz_buffer, &world->unknown_0108);
         if (abort_load != 0)
@@ -503,8 +540,9 @@ after_area:
     }
 
     // AI system loading
-    if ((level->flags & 0xe2) == 2 && level != (LEVELDATA *)PLATFORM_LDATA) {
-        *(i32 *)&world->unknown_0140[0x29a4] = 0;
+    if ((level->flags & (LEVEL_GAMEPLAY | LEVEL_INTRO | LEVEL_MIDTRO | LEVEL_OUTRO)) == LEVEL_GAMEPLAY &&
+        level != (LEVELDATA *)PLATFORM_LDATA) {
+        world->ai_loaded = 0;
         ai_buf_size = 0x1cc00;
         if (RETAKED_LDATA != NULL && level == (LEVELDATA *)RETAKED_LDATA) {
             ai_buf_size = 0x1e800;
@@ -526,9 +564,9 @@ after_area:
         GameAIScriptAddLevelSfx(world, &world->ai_sys->scripts);
 
         world->climb_object_sys = (CLIMBOBJECTSYS_s *)CreateClimbObjectSys(&world->giz_buffer, &world->unknown_0108,
-                                                                           (i32)(u8)level->unknown_103);
+                                                                           (i32)(u8)level->max_climb_objs);
     } else {
-        *(i32 *)&world->unknown_0140[0x29a4] = 1;
+        world->ai_loaded = 1;
     }
 
     if (abort_load != 0)
@@ -541,17 +579,17 @@ after_area:
 
     // Lights
     if ((level->flags & LEVEL_STATUS) == 0) {
-        *(i32 *)&world->unknown_0140[0x2978] = -1;
-        *(i32 *)&world->unknown_0140[0x297c] = 0;
+        world->rtl_id = -1;
+        world->light_dir = 0;
     } else {
         light_path = world->config_file;
         LoadLights(world, light_path);
-        rtl_id = rtlFindByUserId(*(i32 *)&world->unknown_0140[0x2974], 1);
-        *(i32 *)&world->unknown_0140[0x2978] = rtl_id;
+        rtl_id = rtlFindByUserId(world->rtl_set_id, 1);
+        world->rtl_id = rtl_id;
         if (rtl_id != -1) {
-            rtlGetDirection(*(i32 *)&world->unknown_0140[0x2974], rtl_id, (void **)&world->unknown_0140[0x297c]);
+            rtlGetDirection(world->rtl_set_id, rtl_id, (void **)&world->light_dir);
         } else {
-            *(i32 *)&world->unknown_0140[0x297c] = 0;
+            world->light_dir = 0;
         }
     }
 
@@ -559,14 +597,14 @@ after_area:
         goto abort;
 
     // More config-based subsystems
-    if (world->unknown_010c > 0) {
+    if (world->config_count > 0) {
         RippleEffects_Configure(world, ConfigBuffer);
         PortalDoors_Configure(world, ConfigBuffer);
         if (abort_load != 0)
             goto abort;
     }
 
-    GizmoSysAddGizmos((GIZMOSYS_s *)world->gizmo_sys, (GIZFLOW_s *)*(void **)&world->unknown_0140[0x298c], world);
+    GizmoSysAddGizmos((GIZMOSYS_s *)world->gizmo_sys, (GIZFLOW_s *)world->giz_flow, world);
     if (abort_load != 0)
         goto abort;
 
@@ -585,11 +623,12 @@ after_area:
 
     // Level load function
     if (level->load_fn != NULL) {
-        ((void (*)(WORLDINFO *, void *, void *))level->load_fn)(world, &world->giz_buffer, &world->unknown_0108);
+        level->load_fn(world, &world->giz_buffer, &world->unknown_0108);
     }
 
-    SetAreaPickupGravity(*(i32 *)&world->unknown_0140[0x0120], *(i32 *)&world->unknown_0140[0x011c]);
-    world->unknown_0110 = 1;
+    // i32 reads into the progress_data region (0x260/0x25c).
+    SetAreaPickupGravity(*(i32 *)((char *)world + 0x260), *(i32 *)((char *)world + 0x25c));
+    world->loaded = 1;
     return;
 
 abort:
@@ -598,75 +637,77 @@ abort:
 }
 
 i32 WorldInfo_Reset(WORLDINFO *world, i32 level_idx) {
-    SetLevelExBlowupFlags(0);
-    if (world->unknown_0110 != 0 && world->unknown_011c == level_idx && LDataList != NULL && level_idx >= 0 &&
-        LDataList[level_idx].unknown_0af != -1 && new_level_from_menu == 0) {
-        return 0;
+    if (world->loaded != 0) {
+        SetLevelExBlowupFlags(0);
+        if (world->level_idx == level_idx && (u8)LDataList[level_idx].area_index != 0xff && new_level_from_menu == 0) {
+            return 0;
+        }
+        WorldInfo_Dump(world);
+    } else {
+        SetLevelExBlowupFlags(0);
     }
 
-    if (world->unknown_0110 != 0) {
-        WorldInfo_Dump(world);
-    }
     if (new_level_from_menu != 0) {
-        WORLDINFO *other = world == &WorldInfo[0] ? &WorldInfo[1] : &WorldInfo[0];
-        if (other->unknown_0110 != 0 && other->unknown_011c == level_idx) {
+        WORLDINFO *other = world + 1;
+        if (WORLD != world) {
+            other = WORLD;
+        }
+        if (other->loaded != 0 && other->level_idx == level_idx) {
             WorldInfo_Dump(other);
         }
     }
 
-    // Save buffer pointers
-    void *bufStart = *(void **)&world->filler0[0xFC];
+    // Save buffer cursors before clearing the world.
+    void *bufStart = world->buffer_start;
     void *bufEnd = world->unknown_0108.void_ptr;
 
-    // Clear the world and the portion of the streaming buffer owned by it.
-    // The original keeps the two buffer cursors across a reset, but does not
-    // leave stale level data in the newly selected world.
-    if (bufStart != NULL && bufEnd != NULL && (char *)bufEnd > (char *)bufStart) {
-        memset(bufStart, 0, (size_t)((char *)bufEnd - (char *)bufStart));
-    }
-    // The loader owns the prefix through 0x51b0.  The trailing processor and
-    // timer storage is initialized separately and survives a level reset.
+    TouchHacks::CleanupAllMechObjectInterfaces(world);
+
     memset(world, 0, 0x51b0);
 
-    // Restore buffer pointers
+    // Restore the buffer cursors: 0x108, then 0x100, then 0x104 (giz_buffer).
     world->unknown_0108.void_ptr = bufEnd;
-    *(void **)&world->filler0[0xFC] = bufStart;
+    world->buffer_start = bufStart;
     world->giz_buffer.void_ptr = bufStart;
-
-    i32 *all_pages = (i32 *)&world->unknown_0140[0x2958];
-    for (i32 i = 0; i != 6; ++i) {
-        all_pages[i] = -1;
+    if ((char *)bufEnd > (char *)bufStart) {
+        memset(bufStart, 0, (usize)((char *)bufEnd - (char *)bufStart));
     }
 
     // Set level info
-    world->unknown_011c = level_idx;
-    world->unknown_0120 = -1;
-    world->unknown_0124 = -1;
+    world->level_idx = level_idx;
+    world->level_sub_id = -1;
+    world->area_sub_id = -1;
 
-    // These page handles live in the level-owned portion of WORLDINFO.  A
-    // reset must invalidate every page, otherwise the next load can mistake
-    // a handle from the previous level for an already loaded resource.
     if (level_idx != -1) {
         LEVELDATA *levelData = &LDataList[level_idx];
         world->current_level = levelData;
-        i32 areaIdx = (i8)levelData->unknown_0af;
-        world->unknown_0120 = areaIdx;
+        i32 areaIdx = (i8)levelData->area_index;
+        world->level_sub_id = areaIdx;
         if (areaIdx != -1) {
             world->area = &ADataList[areaIdx];
-            world->unknown_0124 = (i8)ADataList[areaIdx].episode_index;
+            world->area_sub_id = (i8)ADataList[areaIdx].episode_index;
         }
 
-        i32 progress_index = (i8)levelData->unknown_0d4;
-        if (progress_index >= 0 && progress_index < 12 && LevelProgressData != NULL) {
-            world->level_progress = (LEVEL_PROGRESS_s *)((u8 *)LevelProgressData + progress_index * 0x2e24);
+        // Invalidate every page handle (0x2a98 .. 0x2aac).
+        world->page_pp = -1;
+        world->page_part = -1;
+        world->page_anim = -1;
+        world->page_grass = -1;
+        world->page_bridge = -1;
+
+        i32 progress_index = (i8)levelData->area_level_index;
+        if (progress_index > 0xb || progress_index == -1) {
+            world->level_progress = NULL;
+        } else {
+            world->level_progress = (LEVEL_PROGRESS_s *)((char *)LevelProgressData + progress_index * 0x2e24);
         }
 
         // Build config file path
-        NuStrCpy(world->filler0, "levels\\");
-        NuStrCat(world->filler0, levelData->dir);
-        NuStrCat(world->filler0, "\\");
-        NuStrCat(world->filler0, levelData->name);
-        NuStrCpy(world->config_file, world->filler0);
+        NuStrCpy(world->name, "levels\\");
+        NuStrCat(world->name, levelData->dir);
+        NuStrCpy(world->config_file, world->name);
+        NuStrCat(world->config_file, "\\");
+        NuStrCat(world->config_file, levelData->name);
         ResetLevSfx(world);
     }
 
@@ -709,7 +750,7 @@ void WorldInfo_StreamLevel(BGPROCINFO *bg_info) {
 
     waiting_for_level = -1;
 
-    if (LWORLD->unknown_0110 != 0) {
+    if (LWORLD->loaded != 0) {
         level_already_loaded = next_level;
     }
 
@@ -732,8 +773,8 @@ i32 WorldInfo_OtherLevel(WORLDINFO *world) {
         other = &WorldInfo[1];
     }
 
-    if (other->unknown_0110 != 0) {
-        return other->unknown_011c;
+    if (other->loaded != 0) {
+        return other->level_idx;
     }
 
     return -1;
@@ -742,7 +783,7 @@ i32 WorldInfo_OtherLevel(WORLDINFO *world) {
 void WorldInfo_Register(WORLDINFO *world) {
     edbitsRegisterBaseScene(world->current_gscn);
     edanimRegisterBaseScene(world->current_gscn);
-    edbitsRegisterBaseTerrain(*(void **)&world->unknown_0140[0x281c]);
+    edbitsRegisterBaseTerrain(world->terrain);
 }
 
 void WorldInfo_ClearAllIfScreenFaded(void) {
@@ -756,13 +797,11 @@ void WorldInfo_ClearAllIfScreenFaded(void) {
 }
 
 void WorldInfo_LoadObjectAnimFile(WORLDINFO *world) {
-    i32 *object_anim_page = (i32 *)&world->unknown_0140[0x2960];
-    if (*object_anim_page == -1) {
+    if (world->page_anim == -1) {
         char path[256];
-        strcpy(path, world->config_file);
-        strcat(path, ".anm");
+        sprintf(path, "%s.anm", world->config_file);
         if (NuFileExists(path)) {
-            *object_anim_page = edanimLoadPage(path, world->current_gscn);
+            world->page_anim = edanimLoadPage(path, world->current_gscn);
         }
     }
 }
@@ -783,9 +822,12 @@ void WorldInfo_DrawScene(WORLDINFO *world) {
 }
 
 void WorldInfo_UpdateRoomVisibility(WORLDINFO *world, i32 param) {
-    u8 *visBuf = (u8 *)&world->unknown_0140[0x2851]; // field_0x2991
-    world->unknown_0140[0x2850] = 1;                 // field_0x2990
-    *(u8 **)&world->unknown_0140[0x2954] = visBuf;   // field_0x2a94
+    // NOTE: using the named `rooms_visible` field (vs a raw byte offset) shifts
+    // GCC 4.7's register allocation for the 0x100-byte memset alignment path,
+    // dropping the fuzzy match (~70% -> ~65%) with identical instructions.
+    u8 *visBuf = world->rooms_visible;
+    world->room_visibility_flag = 1;
+    world->rooms_visible_ptr = visBuf;
     memset(visBuf, 0, 0x100);
 
     if (param == 0 && world->current_gscn != NULL && world->current_gscn->field5_0x8 > 0) {
@@ -799,7 +841,7 @@ void WorldInfo_UpdateRoomVisibility(WORLDINFO *world, i32 param) {
 }
 
 void WorldInfo_ReArrangeBuffers(i32 area1, i32 area2) {
-    VARIPTR *bufferEnd = (VARIPTR *)&WorldInfo[0].unknown_0140[0x5178];
+    VARIPTR *bufferEnd = (VARIPTR *)&WorldInfo[1].unknown_0108;
 
     if (area1 == area2 || area1 == -1) {
         if (area1 != -1 && (ADataList[area1].flags & AREAFLAG_SINGLE_BUFFER) != 0) {
@@ -808,7 +850,7 @@ void WorldInfo_ReArrangeBuffers(i32 area1, i32 area2) {
     } else if ((ADataList[area1].flags & AREAFLAG_SINGLE_BUFFER) != 0) {
         LWORLD = &WorldInfo[0];
         WORLD = &WorldInfo[0];
-        if (WorldInfo[0].unknown_0108.addr <= bufferEnd->addr) {
+        if (WorldInfo[0].unknown_0108.addr < bufferEnd->addr) {
             return;
         }
         bufferEnd->addr = WorldInfo[0].unknown_0108.addr;
@@ -816,10 +858,92 @@ void WorldInfo_ReArrangeBuffers(i32 area1, i32 area2) {
         return;
     }
 
-    if (WorldInfo[0].unknown_0108.addr <= bufferEnd->addr) {
+    if (WorldInfo[0].unknown_0108.addr < bufferEnd->addr) {
         return;
     }
     usize end = WorldInfo[0].unknown_0108.addr;
     WorldInfo[0].unknown_0108.addr = bufferEnd->addr;
     bufferEnd->addr = end + EditBufferEndSize;
+}
+
+extern "C" {
+    i32 Collection_Got(i32);
+    i32 InModelList(APICHARACTERMODELLIST_s *, i32, i32 *);
+    extern i16 id_DARTHVADER;
+    extern i16 id_THEEMPEROR;
+    extern i16 id_GRANDMOFFTARKIN;
+    extern i16 id_IMPERIALOFFICER;
+    extern i16 id_IMPERIALSHUTTLEPILOT;
+}
+
+i32 InModelListDataFlags(APICHARACTERMODELLIST_s *, u32, u32, i32, i32);
+i32 RandomIDFromFlags(u32, u32, i32, APICHARACTERMODELLIST_s *, i32);
+void Collection_GetIDList(COLLECTION_s *, u32, u32, i16 *, i32 *, i32 *, i32);
+
+void MakeFreePlayModelList(i32 model1, i32 model2, i32 area, i32 level, i32 param5) {
+    i32 flags = 0;
+    if (WORLD != NULL && WORLD->area != NULL && WORLD->area == HUB_ADATA && bonusmodearcade != 0)
+        flags = Arcade_Mode[ArcadeItem.field_c_0xc * 3].field8_0x8;
+
+    FreePlayModelCount = 0;
+    FreePlayResidentCount = 0;
+    FreePlayBonusCount = 0;
+    if (model1 == -1)
+        model2 = -1;
+
+    AREADATA *ad = &ADataList[area];
+
+    if ((ad->flags & (AREAFLAG_VEHICLE_AREA | AREAFLAG_BONUS_AREA)) == (AREAFLAG_VEHICLE_AREA | AREAFLAG_BONUS_AREA)) {
+        i32 count = 0;
+        i32 models[2] = {model1, model2};
+        for (i32 i = 0; i < 2; i++) {
+            i32 m = models[i];
+            if (m == -1)
+                break;
+            if (count > 0x2f)
+                continue;
+            if (count > 1) {
+                if (FreePlayModelList[0].model_id == m)
+                    continue;
+                i32 j;
+                for (j = 1; j < count; j++) {
+                    if (FreePlayModelList[j].model_id == m)
+                        break;
+                }
+                if (j != count)
+                    continue;
+            }
+            FreePlayModelList[count].model_id = m;
+            FreePlayModelList[count].count = 1;
+            count++;
+            FreePlayModelList[count].model_id = -1;
+        }
+        FreePlayModelCount = count;
+    } else {
+        i32 count = 0;
+        i32 models[2] = {model1, model2};
+        for (i32 i = 0; i < 2; i++) {
+            i32 m = models[i];
+            if (m == -1)
+                break;
+            if (count > 0x2f)
+                continue;
+            if (count > 1) {
+                if (FreePlayModelList[0].model_id == m)
+                    continue;
+                i32 j;
+                for (j = 1; j < count; j++) {
+                    if (FreePlayModelList[j].model_id == m)
+                        break;
+                }
+                if (j != count)
+                    continue;
+            }
+            FreePlayModelList[count].model_id = m;
+            FreePlayModelList[count].count = 1;
+            count++;
+            FreePlayModelList[count].model_id = -1;
+        }
+        FreePlayModelCount = count;
+    }
 }

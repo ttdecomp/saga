@@ -725,6 +725,13 @@ pub fn split() -> anyhow::Result<()> {
         let output_relative_path = command
             .output
             .strip_prefix("CMakeFiles/saga.dir/src")
+            .ok()
+            .or_else(|| {
+                // Newer cmake emits absolute output paths in compile_commands.json;
+                // strip the build directory first, then the per-TU src prefix.
+                let abs = command.output.strip_prefix(&command.directory).ok()?;
+                abs.strip_prefix("CMakeFiles/saga.dir/src").ok()
+            })
             .expect("failed to strip prefix");
         let output_path = std::path::Path::new("build/split").join(output_relative_path);
 

@@ -277,9 +277,6 @@ void MenuUpdateSaveCancel(MENU_s *) {
 void MenuUpdateSelectMode(MENU_s *) {
 }
 
-void MakeFreePlayModelList(i32, i32, i32, i32, i32) {
-}
-
 void MenuDrawDeleteConfirm(MENU_s *) {
 }
 

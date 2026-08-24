@@ -191,7 +191,7 @@ void *Door_FindByIndex(struct WORLDINFO_s *world, i32 a, i32 b, struct nuvec_s *
                         i32 i = 0;
                         do {
                             i16 s = d->level;
-                            if (((d->flags & 4) == 0) && s != -1 && (s == b || LDataList[s].unknown_0af == a)) {
+                            if (((d->flags & 4) == 0) && s != -1 && (s == b || LDataList[s].area_index == a)) {
                                 f32 dist = NuVecDistSqr((NUVEC *)c, &d->pos, NULL);
                                 count = w->ndoors;
                                 if (dist < best) {
@@ -208,7 +208,7 @@ void *Door_FindByIndex(struct WORLDINFO_s *world, i32 a, i32 b, struct nuvec_s *
                     struct DOOR_s *bestDoor = NULL;
                     i32 i = 0;
                     do {
-                        if (((d->flags & 4) == 0) && d->level != -1 && LDataList[d->level].unknown_0af == a) {
+                        if (((d->flags & 4) == 0) && d->level != -1 && LDataList[d->level].area_index == a) {
                             f32 dist = NuVecDistSqr((NUVEC *)c, &d->pos, NULL);
                             count = w->ndoors;
                             if (dist < best) {
@@ -224,7 +224,7 @@ void *Door_FindByIndex(struct WORLDINFO_s *world, i32 a, i32 b, struct nuvec_s *
                 if (b == -1) {
                     i32 i = 0;
                     do {
-                        if (((d->flags & 4) == 0) && d->level != -1 && LDataList[d->level].unknown_0af == a) {
+                        if (((d->flags & 4) == 0) && d->level != -1 && LDataList[d->level].area_index == a) {
                             return d;
                         }
                         i++;
@@ -238,7 +238,7 @@ void *Door_FindByIndex(struct WORLDINFO_s *world, i32 a, i32 b, struct nuvec_s *
                             if (s == b) {
                                 return d;
                             }
-                            if (LDataList[s].unknown_0af == a) {
+                            if (LDataList[s].area_index == a) {
                                 return d;
                             }
                         }

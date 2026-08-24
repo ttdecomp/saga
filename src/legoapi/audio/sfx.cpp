@@ -99,7 +99,7 @@ extern "C" {
     void PlayMusic(void) {
     }
 
-    void PlaySfx(void) {
+    void PlaySfx(char *, struct nuvec_s *) {
     }
 
     void PlaySfxAndSetPitch(void) {
