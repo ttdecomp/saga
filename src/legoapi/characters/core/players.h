@@ -98,3 +98,5 @@ void ChatterSfx(GameObject_s *g, i32 a, float b);
 void Move_VEHICLE(GameObject_s *g);
 extern "C" void ComplexSockPosition(void *a, void *b, i32 c, i32 d, SOCKPOSITION *out);
 void *CutScenePlayer_Available(void);
+
+void KillPlayer(GameObject_s *player, i32 cause, i32 unknown, struct nuvec_s *);

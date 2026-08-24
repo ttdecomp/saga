@@ -15,3 +15,4 @@ struct GizObstacleObjectInterface {
 };
 
 GIZOBSTACLE_s *GizObstacle_FindByName(GIZOBSTACLESYS_s *, char *);
+void GizObstacle_EvalAveragePosAndRadius(GIZOBSTACLE_s *obstacle, i32 unknown);

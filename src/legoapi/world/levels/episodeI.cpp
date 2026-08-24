@@ -9,10 +9,16 @@
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/cutscenes/cutscenes.h"
 #include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
+#include "legoapi/characters/motion.h"
 #include "legoapi/items/objects/gameobjects.h"
+#include "legoapi/menus/core/gamehint.h"
+#include "legoapi/menus/core/gamemessage.h"
+#include "legoapi/misc.h"
+#include "legoapi/render/fx.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/render/core/render.h"
 #include "legoapi/world/level_shared.h"
+#include "legoapi/world/world_shared.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nu3d/nuspline.h"
@@ -49,55 +55,16 @@ extern "C" {
     // AIPAthFindPathCnx is called with a different arity here than in
     // episodeII (both byte-matched), so it stays local rather than in a header.
     void *AIPAthFindPathCnx(AISYS_s *, i32, char *, void *); // original name keeps the typo
-
-    // legoapi/render/fx — debris and particles
-    i16 FindGameDebris(void *, char *);
-    void *AddGameDebris(void *, i32, void *);
-    i32 PARTLookupType(char *);
-    void AddFiniteShotPART(i32, void *, i32);
-
-    // legoapi/characters/motion/gameanim.cpp
-    float AnimEndFrame(void *, i32);
 }
 
 // --- Cross-file entry points (C++ linkage) ---------------------------------
 
-// legoapi/gizmo/base — obstacle evaluation
-void GizObstacle_EvalAveragePosAndRadius(GIZOBSTACLE_s *, i32);
-
-// legoapi/actions/character/speederchase.cpp
-void PodKeyReset(void);
-
-// legoapi/characters — dynamic spawns and melee panel
-GameObject_s *AddDynamicCreature(i32, nuvec_s *, i32, char *, AIPATHINFO_s *, AIGROUP_s *, i32, nugspline_s *,
-                                 nuvec_s *, i32, i32);
-void DrawMeleeTargets(i16 *, char *, float *, i32);
-
-// legoapi/characters/core/players.cpp
-void KillPlayer(GameObject_s *, i32, i32, nuvec_s *);
-
-// misc single consumers
-i32 InStory(void);                                            // cutscenes.cpp (also declared in world_shared.h)
-void ChrisAllocLevelStuff(WORLDINFO_s *world);                // chris.cpp
-float SeekLinearF(float, float, float);                       // nu2api/numath
-void Hint_SetComplete(i32);                                   // hints
-void ResetPodStuff(void);                                     // below
-void FlightSpline_Init(WORLDINFO_s *, flightspline_s *, i32); // render/fx/edsplines.cpp
-void PodLoseSpeed(GameObject_s *, i32, i32);                  // characters/motion
-void GameCam_NewShake(GAMECAMERA_s *, float, float, float);   // characters/motion/camera.cpp
-void GameCam_HitJudder(void);
-void *AddGameMessage(char *, nuvec_s *, float, nuvec_s *, float, unsigned char, unsigned char, unsigned char, u32,
-                     float);
-i32 XZLinesIntersect(nuvec_s *, nuvec_s *, nuvec_s *, nuvec_s *, float *, float *);
-
+void ResetPodStuff(void); // below
 // PodSprintA_Update boulder-seek state.
 extern "C" {
     float boulder_offset_y = 0.0f;
     float boulder_offset_y_seek = 15.0f;
 }
-float SeekValF(float, float, float);    // legoapi/characters/motion/move.cpp
-void StoreLevelProgress(WORLDINFO_s *); // game.cpp
-
 void UpdatePodRaceLapDisplay(float); // defined below
 
 // --- File-local layout types -----------------------------------------------

@@ -16,12 +16,6 @@
 #include "legoapi/world/level_shared.h"
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nu3d/nutex.h"
-
-struct AIROW_s;
-struct nuqthdr_s;
-struct nunativegscene_s;
-struct SHOPINPUT;
-
 // This level's view of the shared 16-byte LevFlag scratch. byte0 holds the
 // bonus-gunship milestone state; byte1 a secondary state.
 enum GUNSHIP_STATE_e {
@@ -215,13 +209,20 @@ void KaminoC_Update(WORLDINFO_s *) {
 }
 
 void KaminoD_Init(WORLDINFO_s *world) {
-    char buf[0x10];
-    for (i32 i = 1; i < 14; i++) {
-        sprintf(buf, "kam%d", i);
+    for (i32 i = 1; i < 13; i++) {
+        char buf[0x10];
+        sprintf(buf, "DOT%i", i);
         GIZOBSTACLE_s *g = GizObstacle_FindByName(world->giz_obstacle_sys, buf);
-        if (g->field_0x3c != 0.0f)
+        if (g->field_0x3c != 0.0f) {
             break;
+        }
+
         g->field_0x3c = 13.5f;
+    }
+
+    GIZMOBLOWUP_s *target = GizmoBlowUp_FindByName(world, "target_a11");
+    if (target != NULL) {
+        target->field_0x124 = 1;
     }
 }
 
