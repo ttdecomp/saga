@@ -50,6 +50,8 @@ extern void CompleteLevel(WORLDINFO_s *);
 void StoreLevelProgress(WORLDINFO_s *);
 extern WORLDINFO_s *WORLD;
 i32 KillBoss(i32, i32, float);
+void KillBossNewLevel(i32, i32, float, i32);
+void KillBossCompleteLevel(i32, i32, float);
 extern void GoToNewLevel(i32);
 extern i32 NewCutScene(CUTINFO *, CUTSYS *, char *, i32);
 extern void ClearLevelProgress(i32, struct WORLDINFO_s *);

@@ -215,11 +215,11 @@ void KaminoC_Update(WORLDINFO_s *) {
 }
 
 void KaminoD_Init(WORLDINFO_s *world) {
-    char buf[0x20];
-    for (i32 i = 1;; i++) {
+    char buf[0x10];
+    for (i32 i = 1; i < 14; i++) {
         sprintf(buf, "kam%d", i);
         GIZOBSTACLE_s *g = GizObstacle_FindByName(world->giz_obstacle_sys, buf);
-        if (g == NULL || g->field_0x3c != 0.0f)
+        if (g->field_0x3c != 0.0f)
             break;
         g->field_0x3c = 13.5f;
     }
@@ -559,7 +559,15 @@ void DookuC_Reset(WORLDINFO_s *world) {
     NuSpecialFind(world->current_gscn, (void **)&dooku_state[1], "dooku_node", 1);
 }
 
-void DookuC_Update(WORLDINFO_s *) {
+void DookuC_Update(WORLDINFO_s *world) {
+    if (netclient == 0) {
+        if (FreePlay != 0) {
+            KillBossCompleteLevel((i32)(i16)id_COUNTDOOKU, 0, 0.0f);
+        } else if (DOOKUOUTRO_LDATA != NULL) {
+            KillBossNewLevel((i32)(i16)id_COUNTDOOKU, 0, 0.0f, DOOKUOUTRO_LDATA->idx);
+        }
+    }
+    DrawForceBackEffect((nuhspecial_s *)dooku_state[1]);
 }
 
 void DookuC_DrawPanel(WORLDINFO_s *) {
