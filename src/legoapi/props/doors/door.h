@@ -9,15 +9,17 @@ struct WORLDINFO_s;
 typedef struct doorspline_s DOORSPLINE;
 
 struct DOOR_s {
-    char name[0xa0];         // 0x000
-    DOORSPLINE *spl;         // 0x0a0
-    char pad1[0xd4 - 0xa4];  // 0x0a4
-    NUVEC pos;               // 0x0d4
-    char pad2[0xf0 - 0xe0];  // 0x0e0
-    i16 level;               // 0x0f0
-    char pad3[0xf5 - 0xf2];  // 0x0f2
-    u8 flags;                // 0x0f5
-    char pad4[0x120 - 0xf6]; // 0x0f6
+    char name[0xa0];        // 0x000
+    DOORSPLINE *spl;        // 0x0a0
+    char pad1[0xd4 - 0xa4]; // 0x0a4
+    NUVEC pos;              // 0x0d4
+    char pad2[0xf0 - 0xe0]; // 0x0e0
+    i16 level;              // 0x0f0
+    char pad3[0xf5 - 0xf2]; // 0x0f2
+    u8 flags;               // 0x0f5
+    char pad4[0x1];         // 0x0f6
+    u8 field_0xf7;          // 0x0f7 (sync with player)
+    char pad5[0x120 - 0xf8];
 };
 
 // ---- Hub exit-door bookkeeping ----

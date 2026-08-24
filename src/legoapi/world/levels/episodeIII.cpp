@@ -2,6 +2,7 @@
 #include "globals.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/items/objects/gameobjects.h"
+#include "legoapi/props/doors/door.h"
 #include "legoapi/gizmo/base/GizObstacleObjectInterface.h"
 #include "legoapi/gizmo/base/GizForceObjectInterface.h"
 #include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
@@ -209,7 +210,9 @@ void VaderB_DrawPanel(WORLDINFO_s *) {
 void VaderC_DrawPanel(WORLDINFO_s *) {
 }
 
-void VaderA_GoneThroughDoor(WORLDINFO_s *, DOOR_s *) {
+void VaderA_GoneThroughDoor(WORLDINFO_s *, DOOR_s *door) {
+    if (netclient == 0 && door != NULL)
+        door->field_0xf7 = 1;
 }
 
 static __used__ void VaderA_StartCollapseStage(WORLDINFO_s *) {
