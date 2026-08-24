@@ -216,11 +216,22 @@ void NuRenderDevice::BeginCriticalSection(const char *file, i32 line) {
 }
 
 void NuRenderDevice::EndCriticalSection(const char *file, i32 line) {
+#ifdef HOST_BUILD
+    pthread_mutex_unlock(&this->mutex2);
+#else
     UNIMPLEMENTED();
+#endif
 }
 
 void NuRenderDevice::SwapBuffers() {
+#ifdef HOST_BUILD
+    glFlush();
+    if (this->egl_display != EGL_NO_DISPLAY && this->pbuffers[3] != EGL_NO_SURFACE) {
+        eglSwapBuffers(this->egl_display, this->pbuffers[3]);
+    }
+#else
     UNIMPLEMENTED();
+#endif
 }
 
 void NuRenderDevice::OnWindowCreated(ANativeWindow *window) {

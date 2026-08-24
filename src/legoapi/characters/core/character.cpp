@@ -471,7 +471,7 @@ CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR 
     if (500 < count) {
         count = 500;
     }
-    bufferStart->void_ptr = (void *)(bufferStart->addr + 3U & 0xfffffffc);
+    bufferStart->void_ptr = (void *)ALIGN(bufferStart->addr, 4);
     characterdata = (CHARACTERDATA *)bufferStart->void_ptr;
     i = 0;
 
@@ -552,7 +552,7 @@ CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR 
             characterdata[j].file = (char *)((i32)filenameOffsets[j] + (usize)bufferStart->void_ptr);
         }
         bufferStart->void_ptr = (void *)((usize)bufferStart->void_ptr + offset);
-        bufferStart->void_ptr = (void *)((usize)bufferStart->void_ptr + 3U & 0xfffffffc);
+        bufferStart->void_ptr = (void *)ALIGN((usize)bufferStart->void_ptr, 4);
         if (0 < count2) {
             if (dataList != NULL) {
                 *dataList = (gamecharacterdata_s *)bufferStart->void_ptr;
@@ -562,7 +562,7 @@ CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR 
                 bufferStart->void_ptr = (void *)((usize)bufferStart->void_ptr + count2);
             }
         }
-        bufferStart->void_ptr = (void *)((usize)bufferStart->void_ptr + 3U & 0xfffffffc);
+        bufferStart->void_ptr = (void *)ALIGN((usize)bufferStart->void_ptr, 4);
         if (countDest != (i32 *)0x0) {
             *countDest = i;
         }

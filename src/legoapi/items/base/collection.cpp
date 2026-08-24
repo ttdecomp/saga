@@ -58,7 +58,7 @@ void Collection_Configure(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd) 
     nufpar_s *fp = NuFParCreate(file);
     if (fp != NULL) {
         CollectCount = 0;
-        collect = (COLLECTID *)(bufferStart->addr + 3U & 0xfffffffc);
+        collect = (COLLECTID *)ALIGN(bufferStart->addr, 4);
         CollectList = collect;
         bufferStart->void_ptr = collect;
 

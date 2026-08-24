@@ -135,7 +135,7 @@ void NuMusic::InitData(const char *file, VARIPTR *buffer_start, VARIPTR buffer_e
     Track *pTVar3;
 
     Album *albumPtr = this->albums;
-    album = (Album *)((usize)this->string_pool_end + 3U & 0xfffffffc);
+    album = (Album *)ALIGN((usize)this->string_pool_end, 4);
     if (albumPtr == album) {
         tracksPtr = this->tracks;
         alloced = (Track *)ALIGN((usize)&albumPtr[count].name, 4);
@@ -174,7 +174,7 @@ void NuMusic::InitData(const char *file, VARIPTR *buffer_start, VARIPTR buffer_e
 
 LAB_003203e6:
     f32 *pfVar2 = this->indexes;
-    f32 *__dest = (f32 *)((u32)((usize)&tracksPtr[track_count].path + 3U) & 0xfffffffc);
+    f32 *__dest = (f32 *)ALIGN((usize)&tracksPtr[track_count].path, 4);
     i32 local_20;
     if (pfVar2 == __dest) {
         local_20 = this->index_count;

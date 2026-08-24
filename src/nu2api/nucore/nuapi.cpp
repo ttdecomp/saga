@@ -6,6 +6,7 @@
 #include "decomp.h"
 
 #include "nu2api/nu3d/numtl.h"
+#include "nu2api/nu3d/nutex.h"
 
 NUAPI nuapi;
 
@@ -124,6 +125,7 @@ i32 NuInitHardware(VARIPTR *buf, VARIPTR *buf_end, i32 heap_size, ...) {
     va_end(args);
 
     NuInitHardwarePS(buf, buf_end, heap_size);
+    NuTexInitEx(buf, 0xbb8);
     NuMtlInitEx(buf, 512);
 
     return 0;

@@ -26,7 +26,7 @@ MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *buffer
         memset(&sys, 0, sizeof(sys));
 
         sys.flags = 1;
-        buffer = (i16 *)((usize)bufferStart->void_ptr + 3U & 0xfffffffc);
+        buffer = (i16 *)ALIGN((usize)bufferStart->void_ptr, 4);
         bufferStart->void_ptr = buffer;
         sys.mission_save = save;
         sys.length = (usize)buffer;
@@ -138,10 +138,10 @@ MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *buffer
 
         NuFParDestroy(fp);
         if (sys.count != 0) {
-            dest = (MISSIONSYS *)((usize)bufferStart->void_ptr + 3U & 0xfffffffc);
+            dest = (MISSIONSYS *)ALIGN((usize)bufferStart->void_ptr, 4);
             bufferStart->void_ptr = dest;
             memmove(dest, &sys, 0x30);
-            bufferStart->void_ptr = (void *)((usize)bufferStart->void_ptr + 0x33U & 0xfffffffc);
+            bufferStart->void_ptr = (void *)ALIGN((usize)bufferStart->void_ptr + 0x30, 4);
             return dest;
         }
     }

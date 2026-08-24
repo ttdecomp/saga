@@ -1,17 +1,17 @@
-#include <EGL/egl.h>
 #include <SDL3/SDL.h>
 
+#include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "decomp.h"
-#include "gameframework/saveload.h"
 #include "globals.h"
-#include "legogame/startup.h"
-#include "legogame/target.h"
 #include "nu2api/nu3d/NuRenderDevice.h"
 #include "nu2api/nu3d/nuscreen.hpp"
-#include "nu2api/nuplatform/nudevicespecs.hpp"
+#include "nu2api/nufile/nufile.h"
 #include "nu2api/nuplatform/nuplatform.h"
+
+extern "C" i32 NuMain(i32 argc, char **argv); // the real game boot (batman.cpp)
 
 const char VIDEO_DRIVER[] =
 #ifdef _WIN32
@@ -21,26 +21,38 @@ const char VIDEO_DRIVER[] =
 #endif
     ;
 
+static bool g_headless = false;
+
+// Host platform specific (PS) bootstrap: open a window and hand it to the
+// engine's render device so it can create its EGL/GLES2 context. This is the
+// only real window work; the game itself is booted by NuMain() below. Video is
+// required; audio is optional (its backend may be absent), so it is tolerated.
 void host_init() {
     SDL_SetHint(SDL_HINT_VIDEO_DRIVER, VIDEO_DRIVER);
-    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
-        LOG_ERR("SDL_Init failed: %s", SDL_GetError());
-        exit(1);
-    }
 
-    SDL_Window *window = SDL_CreateWindow("title", 1280, 720, 0);
+    if (!SDL_Init(SDL_INIT_VIDEO)) {
+        LOG_ERR("SDL_Init(VIDEO) failed: %s", SDL_GetError());
+        LOG_ERR("headless mode (no window)");
+        g_headless = true;
+        return;
+    }
+    SDL_InitSubSystem(SDL_INIT_AUDIO); // best effort
+
+    // SDL3 shows windows by default.
+    SDL_Window *window = SDL_CreateWindow("saga", 1280, 720, 0);
     if (!window) {
         LOG_ERR("SDL_CreateWindow failed: %s", SDL_GetError());
-        exit(1);
+        g_headless = true;
+        return;
     }
 
     if (strcmp(SDL_GetCurrentVideoDriver(), VIDEO_DRIVER) != 0) {
-        LOG_ERR("Unexpected video driver: %s", SDL_GetCurrentVideoDriver());
-        exit(1);
+        LOG_ERR("unexpected video driver: %s", SDL_GetCurrentVideoDriver());
+        g_headless = true;
+        return;
     }
 
     SDL_PropertiesID prop_id = SDL_GetWindowProperties(window);
-
 #ifdef _WIN32
     HWND handle = (HWND)SDL_GetPointerProperty(prop_id, SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
 #else
@@ -50,45 +62,42 @@ void host_init() {
     g_renderDevice.OnWindowCreated((ANativeWindow *)handle);
 }
 
-int test_window(int argc, char **argv) {
-    host_init();
+// Open the game wad over the engine's NuDat file system. The real Android
+// entry does this before calling NuMain so every asset (incl. the first
+// "legal" texture) is readable by path.
+void nufile_open_wad() {
+    static char pbuf[0x1000000];
+    VARIPTR p = VARIPTR{.void_ptr = &pbuf};
+    NuDatSet(NuDatOpen("res/main.1060.com.wb.lego.tcs.obb", &p, 0));
+}
 
+int test_window(int argc, char **argv) {
+    host_init();       // PS: SDL window + EGL context
+    nufile_open_wad(); // PS/entry: make the wad readable, then NuMain
+
+    // The Android boot selects the platform the engine targets; the legal
+    // texture is stored per-platform (`_ios.tex`), so pick the PVRTC one.
     NuPlatform::Create();
     NuPlatform::Get()->SetCurrentPlatform(ANDROID_PVRTC_PLATFORM);
 
-    if (!NuScreen::Exists()) {
-        NuScreen::Create();
+    NuMain(argc, argv); // the actual game boot: InitOnce + LoadPerm (reads
+                        // the legal texture) + post-config init
+
+    // Present the engine's frame output. The per-frame scene/legal draw is
+    // still being reconstructed, so this drives the engine's present path.
+    Uint64 start = SDL_GetTicks();
+    int frames = 0;
+    while (SDL_GetTicks() - start < 3000) {
+        SDL_Event ev;
+        while (SDL_PollEvent(&ev)) {
+            if (ev.type == SDL_EVENT_QUIT)
+                goto done;
+        }
+        g_renderDevice.SwapBuffers();
+        SDL_Delay(16);
+        frames++;
     }
-
-#ifdef HOST_BUILD
-    host_init();
-#endif
-
-    g_renderDevice.Initialize();
-
-    g_isLowestEndDevice = 1;
-    g_isLowEndDevice = 1;
-    g_isMidRangeDevice = 0;
-    i32 specs = NuDeviceSpecs::ms_instance->specs;
-    if (specs == 1) {
-        g_isLowestEndDevice = 0;
-        g_isLowEndDevice = 0;
-        g_isMidRangeDevice = 1;
-        g_lowEndLevelBehaviour = 0;
-    } else if (specs < 1 || 3 < specs) {
-        g_lowEndLevelBehaviour = 1;
-    } else {
-        g_isLowestEndDevice = 0;
-        g_isLowEndDevice = 0;
-        g_lowEndLevelBehaviour = 0;
-    }
-
-    InitOnce(argc, argv);
-    TriggerExtraDataLoad();
-
-    StartPerm();
-    LoadPerm();
-    EndPerm();
-
-    return 0;
+done:
+    LOG_INFO("presented %d frames (headless=%d)", frames, g_headless);
+    _exit(0);
 }
