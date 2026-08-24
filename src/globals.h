@@ -9,27 +9,19 @@
 // ----------------------------------------------------------------------
 // Placeholder save-game / model-list structures.
 // ----------------------------------------------------------------------
-typedef struct CHEAT { /* PlaceHolder Structure */
-    char *name;
-    undefined field1_0x4;
-    undefined field2_0x5;
-    undefined field3_0x6;
-    undefined field4_0x7;
-    byte enabled; /* Created by retype action */
-    undefined field6_0x9;
-    undefined field7_0xa;
-    u8 area;
-    undefined field9_0xc;
-    undefined field10_0xd;
-    undefined field11_0xe;
-    undefined field12_0xf;
-    char *code;
-    undefined field14_0x14;
-    undefined field15_0x15;
-    undefined field16_0x16;
-    undefined field17_0x17;
-    char *extra_name;
-    u32 flag;
+// A single cheat unlock. The master table `Cheat` (in .data) is a
+// `CHEAT` array terminated by a `name == NULL` entry.
+typedef struct CHEAT {
+    char *name;          /* 0x00  lookup key / display name (e.g. "DARKSIDE") */
+    u8 *flag_ptr;        /* 0x04  pointer to the tCHEAT_<name> gameplay flag byte */
+    u8 enabled;          /* 0x08  the player has bought/unlocked this cheat */
+    u8 reserved_0x09[2]; /* 0x09 .. 0x0a  reserved (always 0; never accessed) */
+    i8 area;             /* 0x0b  area this cheat unlocks in (-1 = any) */
+    i32 level;           /* 0x0c  owning level (-1 = any level) */
+    char *code;          /* 0x10  cheat-code string the player can type */
+    i32 cost;            /* 0x14  stud cost to buy the cheat */
+    char *extra_name;    /* 0x18  name shown once the cheat is owned */
+    u32 flag;            /* 0x1c  effect bitmask (see CheatFlag) */
 } CHEAT;
 
 struct OPTIONSSAVE_s { /* PlaceHolder Structure */

@@ -445,7 +445,9 @@ struct GAMECUTSCENES_s {
 };
 
 struct GAMEMESSAGE_s {
-    char pad_0x00[0xe6];
+    char pad_0x00[0xd4];
+    f32 scale; // 0xd4  in-world text scale
+    char pad_0xd8[0xe6 - 0xd8];
     u16 icon;   // 0xe6
     u32 color1; // 0xe8
     u32 color2; // 0xec

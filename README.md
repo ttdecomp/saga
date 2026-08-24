@@ -91,7 +91,7 @@ See the [docs/](docs/) directory.
 | `legoapi/ai` | 2.0% | 0.0% | - |
 | `legoapi/audio` | 2.9% | 0.0% | - |
 | `legoapi/characters` | 3.4% | 0.6% | 39.5% |
-| `legoapi/core` | 9.4% | 4.5% | 2.8% |
+| `legoapi/core` | 9.9% | 5.0% | 0.5% |
 | `legoapi/cutscenes` | 2.9% | 0.0% | 100.0% |
 | `legoapi/gizmo` | 4.9% | 4.7% | 0.4% |
 | `legoapi/gizmos` | 12.2% | 4.2% | 100.0% |
@@ -100,7 +100,7 @@ See the [docs/](docs/) directory.
 | `legoapi/misc` | 2.2% | 0.5% | - |
 | `legoapi/props` | 7.3% | 2.4% | 13.0% |
 | `legoapi/render` | 2.3% | 1.5% | 0.5% |
-| `legoapi/world` | 19.2% | 27.6% | 0.1% |
+| `legoapi/world` | 19.2% | 27.4% | 0.1% |
 | `legogame` | 4.2% | 0.0% | 100.0% |
 | `nu2api` | 27.1% | 19.4% | 81.5% |
 

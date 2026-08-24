@@ -1,6 +1,7 @@
 #include "legogame/startup.h"
 
 #include "globals.h"
+#include "legoapi/core/config/cheat.h"
 #include "legoapi/world/area.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/world/levels/episode.h"
@@ -51,6 +52,8 @@ static void LoadPermData(BGPROCINFO *proc) {
         LOG_INFO("Episode %d: %hu areas", i, EDataList[i].area_count);
     }
     LOG_INFO("Loaded %d episodes", EPISODECOUNT);
+
+    Cheats_Init(Cheat);
 
     InitGameAfterConfig();
 }
