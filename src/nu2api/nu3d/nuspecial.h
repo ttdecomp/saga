@@ -17,6 +17,7 @@ extern "C" {
     void *NuSpecialGetDrawMtx(void *special);
     struct nuvec_s *NuSpecialGetPos(void *special);
     void NuSpecialDrawAt(void *special, void *mtx);
+    void NuSpecialSetDrawPos(void *special, void *pos);
     i32 NuSpecialClipTestExtents(void *special, void *mtx);
     float NuSpecialGetOriginRadius(void *special);
 }

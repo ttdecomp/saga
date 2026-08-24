@@ -5,6 +5,7 @@
 #include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/world.h"
+#include "nu2api/nu3d/nuspecial.h"
 #include "legoapi/render/core/render.h"
 #include "nu2api/nu3d/nutex.h"
 
@@ -65,7 +66,17 @@ void CruiserDUpdate(WORLDINFO_s *) {
 // Grievous (Grievous_A)
 // ===========================================================================
 
-void GrievousA_Init(WORLDINFO_s *) {
+void GrievousA_Init(WORLDINFO_s *world) {
+    GIZMOBLOWUP_s *b;
+    if ((b = GizmoBlowUp_FindByName(world, "grievous_1")) != NULL) {
+        nuvec_s pos = {5.42f, 2.76f, 1.79f};
+        NuSpecialSetDrawPos(b->field_0xac, &pos);
+        UpdateMidPos(b);
+    }
+    if ((b = GizmoBlowUp_FindByName(world, "grievous_2")) != NULL)
+        b->field_0x124 = 1;
+    if ((b = GizmoBlowUp_FindByName(world, "grievous_3")) != NULL)
+        b->field_0x124 = 1;
 }
 
 void GrievousA_Reset(WORLDINFO_s *) {
