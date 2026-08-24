@@ -5,6 +5,9 @@ if(POLICY CMP0135)
 endif()
 
 option(BUILD_FOR_HOST "Build for host system" OFF)
+# When ON, build a plain 64-bit native host executable (no -m32 i686, no ASan).
+# The default OFF keeps the decomp-oriented 32-bit i686 + AddressSanitizer build.
+option(SAGA_HOST_NATIVE "Build 64-bit native host without 32-bit i686/ASan flags" OFF)
 
 include("${CMAKE_SOURCE_DIR}/cmake/ndk.cmake")
 
@@ -36,8 +39,10 @@ if (BUILD_FOR_HOST)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-stack-protector -msse2")
 
     if (NOT CMAKE_HOST_WIN32)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -march=i686 -fsanitize=address")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32 -march=i686 -fsanitize=address")
+        if (NOT SAGA_HOST_NATIVE)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -march=i686 -fsanitize=address")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32 -march=i686 -fsanitize=address")
+        endif()
     endif()
 else()
     message(STATUS "Using Android NDK toolchain: ${NDK_TOOLCHAIN}")
