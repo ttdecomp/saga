@@ -1,7 +1,13 @@
 #include "decomp.h"
 #include "globals.h"
+#include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/render/core/render.h"
 #include "nu2api/nu3d/nutex.h"
+
+static i16 vader_a_count; // Vader A panel guard
+static i16 vader_a_sub;   // Vader A countdown subtitle
+
 // Episode 3 level handlers, in the game's Episode_III progression:
 // dogfight / cruiser / grievous / kashyyyk / temple / vader / a-new-hope.
 
@@ -112,7 +118,12 @@ void KashyyykD_Update(WORLDINFO_s *) {
 // Temple (Temple_A / Temple_C)
 // ===========================================================================
 
-void TempleA_Init(WORLDINFO_s *) {
+void TempleA_Init(WORLDINFO_s *world) {
+    GIZMOBLOWUP_s *b;
+    if ((b = GizmoBlowUp_FindByName(world, "temple_statue")) != NULL)
+        b->field_0xa0 |= 2;
+    if ((b = GizmoBlowUp_FindByName(world, "temple_pillar")) != NULL)
+        b->field_0xa0 |= 2;
 }
 
 void TempleC_Init(WORLDINFO_s *) {
@@ -155,6 +166,12 @@ void VaderC_Update(WORLDINFO_s *) {
 }
 
 void VaderA_DrawPanel(WORLDINFO_s *) {
+    if (vader_a_count <= 2) {
+        if (vader_a_count != 0) {
+            DrawTimer(vader_a_sub, 0, 0);
+            vader_a_sub = 0;
+        }
+    }
 }
 
 void VaderB_DrawPanel(WORLDINFO_s *) {
