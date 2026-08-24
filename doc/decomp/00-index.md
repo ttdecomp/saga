@@ -27,6 +27,7 @@ All claims below were verified by live experiments with the actual toolchain (Au
 | [06-target-binary.md](06-target-binary.md) | Target binary reference: segments, symbol census, TU identification, address conventions (nm vs Ghidra +0x10000), Ghidra state |
 | [07-diagnostics.md](07-diagnostics.md) | Mismatch investigation loop + catalog of 16 mismatch causes with verified fixes |
 | [08-asm-review.md](08-asm-review.md) | Command-only assembly-diff review workflow (symbol→TU→classified list→text diff→source interleave); the extraction half of 07 §A |
+| [09-objdiff-cli.md](09-objdiff-cli.md) | **Per-symbol diffing with `scripts/objdiff-cli.py`** — the primary tool for agents to inspect one function's mismatch; vs `objdiff` (GUI/CLI) for manual and whole-repo work |
 
 ## 3. Agent routing (read this first)
 
@@ -34,6 +35,7 @@ All claims below were verified by live experiments with the actual toolchain (Au
 |---|---|
 | Write or fix a function body | 02 (codegen), 04 (types), 05 (naming/stubs); check the file's -O level (01 §opt) |
 | Investigate a non-matching function | 07 (workflow), 08 (asm-level commands), 03 §8 (get per-function numbers), 06 §7 (find its TU) |
+| See exactly where a single function diverges from the original | **09** (`scripts/objdiff-cli.py <symbol>`) — the primary per-symbol diff tool |
 | Review a non-matching function's assembly | 08 (full workflow: classified list, text diff, source interleave), 07 §C (causes) |
 | Find why a function mismatches at asm level | 08 §3d/e (extract the diff) → 07 §B/C (catalog + decision tree) |
 | Add a new source file / rename one | 03 §7 (pairing pitfalls!) + 05 §authoring |

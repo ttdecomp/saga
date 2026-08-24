@@ -58,6 +58,14 @@ if you prefer a command-line tool,
 
 The `scripts/` directory contains a few small helpers:
 
+- `objdiff-cli.py` — **the primary tool for inspecting why a single symbol does
+  not match.** It runs `objdiff-cli diff` against the symbol, discards the
+  noisy JSON, and prints only the instructions where the recompiled code and
+  the original diverge, aligned with context and decompiling hints (resolved
+  call/jump targets, string and float constants, referenced data). It is aimed
+  at automated/agent use — one mangled symbol at a time. For manual and
+  whole-repository work (aggregate `report.json`, the interactive UI), use the
+  `objdiff` GUI/CLI directly. See `doc/decomp/09-objdiff-cli.md`.
 - `check_duplicate_definitions.py` — scans the source tree for duplicate type
   (struct/class/union/enum) definitions. Given `--build <dir>` it also runs
   `nm` over the compiled objects to report duplicate symbols (local and global,
