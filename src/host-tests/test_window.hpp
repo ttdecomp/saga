@@ -6,8 +6,6 @@
 #include <unistd.h>
 #include <vector>
 
-#include <GLES2/gl2.h>
-
 #include "decomp.h"
 #include "globals.h"
 #include "nu2api/nu3d/NuRenderDevice.h"
@@ -105,28 +103,26 @@ done:
     // PS present-loop readback: grab whatever the engine drew and write it to a
     // PPM so a human/check can confirm non-blank content (e.g. the legal screen).
     if (!g_headless) {
-        GLint vp[4];
-        glGetIntegerv(GL_VIEWPORT, vp);
-        int rbw = vp[2], rbh = vp[3];
-        if (rbw <= 0) {
-            rbw = 1280;
-            rbh = 720;
-        }
-        std::vector<u8> px((usize)rbw * rbh * 4);
-        glReadPixels(0, 0, rbw, rbh, GL_RGBA, GL_UNSIGNED_BYTE, px.data());
-        FILE *f = fopen("window.ppm", "wb");
-        if (f) {
-            fprintf(f, "P6\n%d %d\n255\n", rbw, rbh);
-            // GL readback is bottom-up; flip rows for the PPM.
-            std::vector<u8> row((usize)rbw * 4);
-            for (int y = 0; y < rbh; y++) {
-                memcpy(row.data(), &px[((usize)(rbh - 1 - y)) * rbw * 4], (usize)rbw * 4);
-                for (int x = 0; x < rbw; x++) {
-                    fwrite(&row[(usize)x * 4], 1, 3, f); // RGBA -> RGB
+        std::vector<u8> px(1280 * 720 * 4);
+        int packed = g_renderDevice.HostReadbackPixels(1280, 720, px.data());
+        if (packed > 0) {
+            int rbw = packed / 1000, rbh = packed % 1000;
+            FILE *f = fopen("window.ppm", "wb");
+            if (f) {
+                fprintf(f, "P6\n%d %d\n255\n", rbw, rbh);
+                // GL readback is bottom-up; flip rows for the PPM.
+                std::vector<u8> row((usize)rbw * 4);
+                for (int y = 0; y < rbh; y++) {
+                    memcpy(row.data(), &px[((usize)(rbh - 1 - y)) * rbw * 4], (usize)rbw * 4);
+                    for (int x = 0; x < rbw; x++) {
+                        fwrite(&row[(usize)x * 4], 1, 3, f); // RGBA -> RGB
+                    }
                 }
+                fclose(f);
+                LOG_INFO("wrote window.ppm %dx%d", rbw, rbh);
             }
-            fclose(f);
-            LOG_INFO("wrote window.ppm %dx%d", rbw, rbh);
+        } else {
+            LOG_WARN("readback: no window surface/context, skipping PPM");
         }
     }
     LOG_INFO("presented %d frames (headless=%d)", frames, g_headless);

@@ -239,6 +239,29 @@ void NuRenderDevice::OnWindowCreated(ANativeWindow *window) {
     CheckForRenderWindowInitialisation();
 }
 
+#ifdef HOST_BUILD
+i32 NuRenderDevice::HostReadbackPixels(u32 max_w, u32 max_h, u8 *rgba) {
+    if (egl_display == EGL_NO_DISPLAY || pbuffers[3] == EGL_NO_SURFACE || contexts[3] == EGL_NO_CONTEXT) {
+        return 0;
+    }
+    eglMakeCurrent(egl_display, pbuffers[3], pbuffers[3], contexts[3]);
+
+    EGLint w = 0, h = 0;
+    eglQuerySurface(egl_display, pbuffers[3], EGL_WIDTH, &w);
+    eglQuerySurface(egl_display, pbuffers[3], EGL_HEIGHT, &h);
+    if (w <= 0 || h <= 0 || max_w == 0 || max_h == 0) {
+        return 0;
+    }
+    u32 cw = (u32)w < max_w ? (u32)w : max_w;
+    u32 ch = (u32)h < max_h ? (u32)h : max_h;
+
+    glViewport(0, 0, (GLsizei)cw, (GLsizei)ch);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadPixels(0, 0, (GLsizei)cw, (GLsizei)ch, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+    return (i32)(cw * 1000 + ch); // pack w*1000+h
+}
+#endif
+
 EGLConfig NuRenderDevice::SelectEGLConfig() {
     static EGLint egl_attribs[] = {EGL_DEPTH_SIZE,      24, //
                                    EGL_LEVEL,           0,  //
