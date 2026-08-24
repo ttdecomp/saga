@@ -1,5 +1,7 @@
 #include "decomp.h"
 #include "globals.h"
+#include "legoapi/characters/core/players.h"
+#include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/gizmo/base/GizObstacleObjectInterface.h"
 #include "legoapi/gizmo/base/GizForceObjectInterface.h"
 #include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
@@ -9,8 +11,9 @@
 #include "legoapi/render/core/render.h"
 #include "nu2api/nu3d/nutex.h"
 
-static i16 vader_a_count; // Vader A panel guard
-static i16 vader_a_sub;   // Vader A countdown subtitle
+static GameObject_s *Grievous_obj; // current Grievous boss object
+static i16 vader_a_count;          // Vader A panel guard
+static i16 vader_a_sub;            // Vader A countdown subtitle
 
 // Episode 3 level handlers, in the game's Episode_III progression:
 // dogfight / cruiser / grievous / kashyyyk / temple / vader / a-new-hope.
@@ -80,6 +83,11 @@ void GrievousA_Init(WORLDINFO_s *world) {
 }
 
 void GrievousA_Reset(WORLDINFO_s *) {
+    if (netclient != 0)
+        return;
+    Grievous_obj = (GameObject_s *)FindGameObject((i32)(i16)id_GRIEVOUS, 1, 1, 0, 0);
+    if (Grievous_obj != NULL)
+        DrawBossHitPoints(Grievous_obj);
 }
 
 void GrievousA_Update(WORLDINFO_s *) {
