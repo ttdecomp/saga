@@ -1,5 +1,6 @@
 #include "decomp.h"
 #include "globals.h"
+#include "legoapi/gizmo/base/GizForceObjectInterface.h"
 #include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/render/core/render.h"
@@ -81,7 +82,10 @@ void KashyyykA_Init(WORLDINFO_s *) {
 void KashyyykB_Init(WORLDINFO_s *) {
 }
 
-void KashyyykC_Init(WORLDINFO_s *) {
+void KashyyykC_Init(WORLDINFO_s *world) {
+    GIZFORCE_s *f = GizForces_FindForce(world, "kashyyyk_boss");
+    if (f != NULL && f->strength_0x6c == 0.0f)
+        f->strength_0x6c = 1.0f;
 }
 
 void KashyyykD_Init(WORLDINFO_s *) {

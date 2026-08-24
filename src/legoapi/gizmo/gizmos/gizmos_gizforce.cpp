@@ -22,7 +22,8 @@ void GizForce_TotalScore(void *) {
 void GizForce_UpdateHint(HINT_s *) {
 }
 
-void GizForces_FindForce(WORLDINFO_s *, char *) {
+GIZFORCE_s *GizForces_FindForce(WORLDINFO_s *, char *) {
+    return NULL;
 }
 
 void GizForce_AnimComplete(GIZFORCE_s *) {
