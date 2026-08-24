@@ -357,7 +357,7 @@ extern NUGSCN *area_scene;
 // ------------------------------------------------------------------------
 extern f32 DoubleScoreTime;
 extern f32 GameTimer[2];
-extern i32 AreaGlobals;
+extern void *AreaGlobals;
 extern i32 HIGHGAMEOBJECT;
 extern void *Obj;
 extern f32 AreaPickupGravity;

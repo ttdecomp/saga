@@ -59,7 +59,7 @@ void InitChallenge(i32) {
     ChallengeMode = 1;
     ResetTimer(&ChallengeTimer, 0.0f);
     Cheats_TurnOff(0);
-    *(i32 *)((char *)&AreaGlobals + 0x1c) = 0;
+    *(i32 *)((char *)AreaGlobals + 0x1c) = 0;
 }
 
 void Mission_Clear(MISSIONSYS *ms) {

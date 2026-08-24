@@ -1928,9 +1928,9 @@ void Level_Update(WORLDINFO *world) {
         }
     }
 
-    if (AreaGlobals == 0) {
+    if (*(i32 *)AreaGlobals == 0) {
         if (Cheats_CheckFlags(0x2000) != 0) {
-            AreaGlobals = 1;
+            *(i32 *)AreaGlobals = 1;
         }
     }
 }

@@ -140,7 +140,7 @@ NUGSCN *vehicle_scene = NULL;
 // ------------------------------------------------------------------------
 f32 DoubleScoreTime = 0.0f;
 f32 GameTimer[2] = {0.0f, 0.0f};
-i32 AreaGlobals = 0;
+void *AreaGlobals = NULL;
 i32 HIGHGAMEOBJECT = 0;
 void *Obj = NULL;
 f32 AreaPickupGravity = 0.0f;
