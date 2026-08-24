@@ -768,7 +768,8 @@ struct GIZBUILDIT_s {
 struct GIZFORCE_s {
     char pad_0x00[0x40];
     void *field_0x40; // 0x40
-    char pad_0x44[0x6c - 0x44];
+    float field_0x44; // 0x44  force strength threshold / start value
+    char pad_0x48[0x6c - 0x48];
     float strength_0x6c;
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
