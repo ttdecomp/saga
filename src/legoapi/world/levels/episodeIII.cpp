@@ -1,8 +1,10 @@
 #include "decomp.h"
 #include "globals.h"
+#include "legoapi/gizmo/base/GizObstacleObjectInterface.h"
 #include "legoapi/gizmo/base/GizForceObjectInterface.h"
 #include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/world/world.h"
 #include "legoapi/render/core/render.h"
 #include "nu2api/nu3d/nutex.h"
 
@@ -194,5 +196,12 @@ static __used__ void VaderA_StartCollapseStage(WORLDINFO_s *) {
 // A New Hope (ANewHope_A)
 // ===========================================================================
 
-void ANewHopeA_Init(WORLDINFO_s *) {
+void ANewHopeA_Init(WORLDINFO_s *world) {
+    GIZOBSTACLE_s *g;
+    if ((g = GizObstacle_FindByName(world->giz_obstacle_sys, "anewhope_1")) != NULL)
+        g->field_a1_0xa1 |= 1;
+    if ((g = GizObstacle_FindByName(world->giz_obstacle_sys, "anewhope_2")) != NULL)
+        g->field_a1_0xa1 |= 1;
+    if ((g = GizObstacle_FindByName(world->giz_obstacle_sys, "anewhope_3")) != NULL)
+        g->field_a1_0xa1 |= 1;
 }
