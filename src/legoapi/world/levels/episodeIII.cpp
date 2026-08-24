@@ -1,18 +1,27 @@
 #include "decomp.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nu3d/nutex.h"
-
-struct AIROW_s;
-struct nuqthdr_s;
-struct nunativegscene_s;
-struct SHOPINPUT;
-
 // Episode 3 level handlers, in the game's Episode_III progression:
 // dogfight / cruiser / grievous / kashyyyk / temple / vader / a-new-hope.
 
 // ===========================================================================
 // Dogfight (Dogfight_A)
 // ===========================================================================
+
+void ChrisDogFightAInit(WORLDINFO_s *) {
+}
+
+void ChrisDogFightAReset(WORLDINFO_s *) {
+}
+
+void ChrisDogFightAUpdate(WORLDINFO_s *) {
+}
+
+void ChrisDogFightADraw(WORLDINFO_s *) {
+}
+
+void ChrisDogFightAPanel(WORLDINFO_s *) {
+}
 
 // ===========================================================================
 // Cruiser (Cruiser_A / Cruiser_C / Cruiser_D)
