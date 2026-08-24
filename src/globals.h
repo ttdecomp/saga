@@ -565,7 +565,13 @@ extern i32 bonus_gunship_store_progress_flag;
 extern float MiscTime;
 extern void *kaminoe_netpacket;
 extern void *factoryb_netpacket;
-extern void *bonusgunshipb_netpacket;
+struct BONUSGUNSHIP_NETPACKET_s {
+    u8 state; // 0x00 (LevFlag.progress sync)
+    u8 sub;   // 0x01 (LevFlag.substate sync)
+    u8 pad[2];
+    float time; // 0x04
+};
+extern struct BONUSGUNSHIP_NETPACKET_s *bonusgunshipb_netpacket;
 extern i32 LevForce;
 extern u8 dookuC_nodesNeedUpdating;
 struct CUTINFO;

@@ -500,7 +500,7 @@ void BonusGunshipA_Update(WORLDINFO_s *world) {
 }
 
 void BonusGunshipB_Init(WORLDINFO_s *world) {
-    bonusgunshipb_netpacket = SetLevelHack(0xc);
+    bonusgunshipb_netpacket = (struct BONUSGUNSHIP_NETPACKET_s *)SetLevelHack(0xc);
     LevGizObst[0] = (i32)(usize)GizObstacle_FindByName(world->giz_obstacle_sys, "obs");
 }
 
@@ -512,7 +512,31 @@ void BonusGunshipB_Reset(WORLDINFO_s *) {
     bonus_gunship_store_progress_flag = 0;
 }
 
-void BonusGunshipB_Update(WORLDINFO_s *) {
+void BonusGunshipB_Update(WORLDINFO_s *world) {
+    if (netclient != 0) {
+        LevFlag.progress = bonusgunshipb_netpacket->state;
+        LevFlag.exit = bonusgunshipb_netpacket->sub;
+        MiscTime = bonusgunshipb_netpacket->time;
+    } else {
+        if (gunship_player_dead == 0 && ((Player[0] != NULL && Player[0]->apiobj.field_0x287 != 0) ||
+                                         (Player[1] != NULL && Player[1]->apiobj.field_0x287 != 0))) {
+            gunship_player_dead = 1;
+            ResetLevel(world, "bonus_gunship", 1);
+        }
+        bonusgunshipb_netpacket->state = LevFlag.progress;
+        bonusgunshipb_netpacket->sub = LevFlag.exit;
+        bonusgunshipb_netpacket->time = MiscTime;
+    }
+    if (LevFlag.progress == 0) {
+        if (LevDeaths > 0) {
+            float x = (float)LevDeaths * LevDeaths + 1.0f;
+            if (GameTimer[0] >= x)
+                LevFlag.progress = GUNSHIP_ACTIVE;
+        }
+    } else if (LevFlag.progress == GUNSHIP_ACTIVE) {
+        if (MiscTime > 5.0f)
+            MiscTime = 5.0f;
+    }
 }
 
 void BonusGunshipB_Panel(WORLDINFO_s *) {
