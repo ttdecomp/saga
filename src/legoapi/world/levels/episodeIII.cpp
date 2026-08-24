@@ -1,4 +1,5 @@
 #include "decomp.h"
+#include "globals.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nu3d/nutex.h"
 // Episode 3 level handlers, in the game's Episode_III progression:
@@ -140,6 +141,8 @@ void VaderB_Reset(WORLDINFO_s *) {
 }
 
 void VaderC_Reset(WORLDINFO_s *) {
+    vader_c.field_0x94 = 0;
+    vader_c.field_0x95 = 0;
 }
 
 void VaderA_Update(WORLDINFO_s *) {

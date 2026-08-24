@@ -396,6 +396,7 @@ void *factoryb_netpacket = NULL;
 struct BONUSGUNSHIP_NETPACKET_s *bonusgunshipb_netpacket = NULL;
 i32 LevForce = 0;
 u8 dookuC_nodesNeedUpdating = 0;
+struct vader_c_s vader_c = {0};
 CUTINFO *factoryb_cut = NULL;
 void *factoryb_conveyor_stopped_msg = NULL;
 i32 bonus_gunship_store_progress_flag = 0;

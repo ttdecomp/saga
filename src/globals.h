@@ -574,6 +574,14 @@ struct BONUSGUNSHIP_NETPACKET_s {
 extern struct BONUSGUNSHIP_NETPACKET_s *bonusgunshipb_netpacket;
 extern i32 LevForce;
 extern u8 dookuC_nodesNeedUpdating;
+// Vader C boss level state.
+struct vader_c_s {
+    char pad_0x00[0x94];
+    u8 field_0x94; // 0x94
+    u8 field_0x95; // 0x95
+    char pad_0x96[2];
+};
+extern struct vader_c_s vader_c;
 struct CUTINFO;
 extern CUTINFO *factoryb_cut;
 extern void *factoryb_conveyor_stopped_msg;
