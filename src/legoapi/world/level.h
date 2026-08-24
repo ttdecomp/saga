@@ -269,97 +269,6 @@ void LevelConfig_AfterLoad(LEVELDATA *level, char *buffer, nufpcomjmp_s *keyword
 
 void Level_LoadConfigFile(WORLDINFO *world);
 
-// ---------------------------------------------------------------------------
-// Level-loading shared state & cross-TU entry points (previously level_shared.h).
-// The definitions live in globals.cpp / the owning subsystem .cpp files; they
-// are declared here as the level-subsystem header so the level files share them.
-// ---------------------------------------------------------------------------
-
-// --- Level data (leveldata.cpp) ---
-extern void *LevelHackData;
-extern void *OldLevelHackData;
-extern i32 LevelHackSize;
-extern i32 LevelHackSendTimer;
-extern i32 LevHSpecial[264];
-extern i32 LevSfxFlag[4];
-extern void *dynamic_antinodes;
-extern i32 LevInstAnim[12];
-extern i32 LevArea[4];
-extern i32 LevPathNodes[8];
-extern void *LevPathCnx[16];
-extern i32 LevGameObject[8];
-extern i32 LevGamePart[8];
-extern i32 LevAIMessage[8];
-extern i32 LevelLocator;
-extern void *LevGizObst[8];
-extern i32 LevBlowUp[5];
-extern i32 LevGizmo[12];
-extern i32 LevSfxId[4];
-extern i32 LevelCodeSpline[8];
-extern GIZFORCE_s *LevGizForce[4];
-extern i32 LevAIPathNode[4];
-extern i32 LevBoltIgnorePlatIds[2];
-extern i32 LevPlatID[2];
-extern i32 LevPathCnxDir;
-extern i32 LevDeaths;
-extern i32 LevLock[4];
-extern i32 LevSafePlatID[2];
-
-// --- Level streaming (levelstreaming.cpp) ---
-extern i32 LOADEROFF;
-extern i32 BGLOAD;
-extern struct LEVELDATA_s *NewLData;
-extern i32 no_more_loads;
-extern i32 other_level;
-extern i32 other_level_override;
-void LevelStreaming_DoorOverride(WORLDINFO_s *, struct LEVELDATA_s *, float, float *);
-extern i32 CUTSTOPGAME;
-extern void *CutStopInfo;
-extern i32 WaitingForLevelTime;
-extern f32 g_BgLoadDelayHackTimer;
-
-// --- Areas extra state (areas.cpp), defined in globals.cpp ---
-extern struct GAMESAVE_s BackupGame;
-extern CUSTOMISER *CharacterCustomiser;
-extern i32 Customiser_AccessoriesLoaded;
-extern NUGSCN *vehicle_scene;
-extern NUGSCN *big_icon_scene;
-extern NUGSCN *area_scene;
-extern i32 LSW1;
-extern i32 LSW2;
-extern i32 Arcade;
-extern f32 HIGHJUMPHEIGHT;
-extern i32 BuildUpTotal;
-extern i32 BuildUpDone;
-extern struct AREADATA_s *HOTHBATTLE_ADATA;
-extern TIMER AreaTimer;
-extern f32 VehicleAreaRememberSpeed;
-extern i32 OldBonusScore[2];
-extern i32 BonusScore[2];
-extern i32 BonusCoinTotal;
-extern void *Door_Last;
-extern i32 LevelChange;
-extern i32 BombGenerator_PlayerBomb[2];
-extern i32 Lap;
-extern f32 LevTime;
-extern i32 Door_UseCutCam;
-extern i32 Area_PlayerModelCount;
-extern i32 Area_StoryModelCount;
-extern i16 Area_PlayerModelList[24];
-extern i32 Area_FreePlayModelCount;
-extern i16 Area_FreePlayModelList[104];
-extern i32 Area_MissionModelCount;
-extern APICHARACTERMODELLIST_s Area_MissionModelList[52];
-extern i16 AreaMusic;
-extern APICHARACTERMODELLIST_s Area_StoryModelList[52];
-extern void *LevelLoad;
-extern i32 LevelLoadCount;
-
-// --- Level objects / progress data ---
-extern struct LEVELOBJECT *ObjTabList;
-extern i32 LEVELOBJECTCOUNT;
-extern void *LevelProgressData;
-
 // --- Cross-TU function prototypes (level-loading entry points) ---
 extern void CompleteLevel(WORLDINFO_s *);
 void StoreLevelProgress(WORLDINFO_s *);
@@ -378,10 +287,5 @@ void TBCLOSEFN(char *, i32);
 void InitMiniSnowTroopers(WORLDINFO_s *, i32, i32, i32);
 void UpdateMiniSnowTroopers(WORLDINFO_s *);
 
-// --- Shared game-object / player state ---
-extern GameObject_s *Player[8];
-extern struct playerprogress_s PlayerProgress[8];
-extern i32 DEFAULT_PLAYERHITPOINTS;
-extern struct MISSIONSYS_s *MissionSys;
-
+void LevelStreaming_DoorOverride(WORLDINFO_s *, struct LEVELDATA_s *, float, float *);
 #endif

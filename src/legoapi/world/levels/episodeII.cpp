@@ -116,12 +116,12 @@ void BountyHunterPursuitA_Reset(WORLDINFO_s *world) {
 }
 
 void BountyHunterPursuitB_Reset(WORLDINFO_s *world) {
-    LevGizmo[0] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitb_1");
-    LevGizmo[1] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitb_2");
-    LevGizmo[2] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitb_3");
-    LevGizmo[3] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitb_4");
-    LevGizmo[4] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitb_5");
-    LevGizmo[5] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitb_6");
+    LevGizmo[0] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitb_1");
+    LevGizmo[1] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitb_2");
+    LevGizmo[2] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitb_3");
+    LevGizmo[3] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitb_4");
+    LevGizmo[4] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitb_5");
+    LevGizmo[5] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitb_6");
     pursuit_state[0] = (i32)(usize)GetNamedGameObject(world->ai_sys, "pursuitb_exit");
 }
 
@@ -441,14 +441,14 @@ void GunshipA_Draw(WORLDINFO_s *world) {
 }
 
 void GunshipB_Reset(WORLDINFO_s *world) {
-    LevGizmo[0] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "gun1");
-    LevGizmo[1] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "gun2");
-    LevGizmo[2] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "gun3");
-    LevGizmo[3] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "gun4");
-    LevGizmo[4] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "gun5");
-    LevGizmo[5] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "gun6");
-    LevGizmo[6] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "gun7");
-    LevGizmo[7] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "gun8");
+    LevGizmo[0] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "gun1");
+    LevGizmo[1] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "gun2");
+    LevGizmo[2] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "gun3");
+    LevGizmo[3] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "gun4");
+    LevGizmo[4] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "gun5");
+    LevGizmo[5] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "gun6");
+    LevGizmo[6] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "gun7");
+    LevGizmo[7] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "gun8");
 }
 
 i32 GunshipInLevel(LEVELDATA_s *level) {
@@ -602,28 +602,4 @@ void DookuC_DrawPanel(WORLDINFO_s *) {
     GameObject_s *obj = (GameObject_s *)FindGameObject((i32)(i16)id_COUNTDOOKU, 1, 1, 1, 0);
     if (obj != NULL && dooku_c != 0 && obj->apiobj.field_0x28 == 1.0f)
         DrawBossHitPoints(obj);
-}
-
-// ===========================================================================
-// New Town (bonus; original episodeII.cpp TU member)
-// ===========================================================================
-
-void NewTown_Init(WORLDINFO_s *world) {
-    LevGizmo[0] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "newtown");
-    char buf[0x18];
-    i32 i = 1;
-    for (;;) {
-        sprintf(buf, "%i", i);
-        GIZMOBLOWUP_s *g = GizmoBlowUp_FindByName(world, buf);
-        if (g == NULL)
-            break;
-        g->field_0xa0 |= 2;
-        i++;
-    }
-}
-
-void NewTown_Reset(WORLDINFO_s *) {
-}
-
-void NewTown_Update(WORLDINFO_s *) {
 }

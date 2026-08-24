@@ -1,4 +1,5 @@
 #include "legoapi/world/level.h"
+#include "globals.h"
 
 #include <string.h>
 

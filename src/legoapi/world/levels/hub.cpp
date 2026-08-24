@@ -119,16 +119,7 @@ static __used__ void Hub_DrawSuperBonusStats(AREADATA_s *, float) {
 static __used__ void Hub_MakeListCharactersAvailable(i16 *) {
 }
 
-void LegoCity_Init(WORLDINFO_s *) {
-}
-
 void WipeBackToHub() {
-}
-
-void LegoCity_Reset(WORLDINFO_s *) {
-}
-
-void LegoCity_Update(WORLDINFO_s *) {
 }
 
 void Condition_InHubArea(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {

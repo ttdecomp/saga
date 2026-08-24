@@ -1,6 +1,7 @@
 
 #include <string.h>
 #include "legoapi/world/level.h"
+#include "globals.h"
 
 extern i32 LevFlag[4]; // shared per-level 16-byte state scratch
 
