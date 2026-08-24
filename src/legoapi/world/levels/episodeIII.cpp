@@ -11,6 +11,8 @@
 #include "legoapi/render/core/render.h"
 #include "nu2api/nu3d/nutex.h"
 
+static GIZAIMESSAGE_s *KashyyykA_msg_TotalWookies;
+static GIZAIMESSAGE_s *KashyyykA_msg_WookiesToRescue;
 static GameObject_s *Grievous_obj; // current Grievous boss object
 static i16 vader_a_count;          // Vader A panel guard
 static i16 vader_a_sub;            // Vader A countdown subtitle
@@ -116,6 +118,8 @@ void KashyyykA_Panel(WORLDINFO_s *) {
 }
 
 void KashyyykA_Reset(WORLDINFO_s *) {
+    KashyyykA_msg_TotalWookies = CheckGizAIMessage(gizaimessagesys, "TotalWookies", NULL);
+    KashyyykA_msg_WookiesToRescue = CheckGizAIMessage(gizaimessagesys, "WookiesToRescue", NULL);
 }
 
 void KashyyykB_Reset(WORLDINFO_s *) {
