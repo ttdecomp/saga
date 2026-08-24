@@ -119,7 +119,16 @@ done:
                     }
                 }
                 fclose(f);
-                LOG_INFO("wrote window.ppm %dx%d", rbw, rbh);
+                // Summarize content: count non-grey/black pixels so a human/check
+                // can quickly confirm a textured frame (e.g. the legal screen).
+                u64 nonblack = 0;
+                for (int i = 0; i < rbw * rbh; i++) {
+                    u8 r = px[((usize)i) * 4 + 0], g = px[((usize)i) * 4 + 1], b = px[((usize)i) * 4 + 2];
+                    if (r > 8 || g > 8 || b > 8) {
+                        nonblack++;
+                    }
+                }
+                LOG_INFO("wrote window.ppm %dx%d  non-black px=%llu", rbw, rbh, (unsigned long long)nonblack);
             }
         } else {
             LOG_WARN("readback: no window surface/context, skipping PPM");
