@@ -1,27 +1,33 @@
 #include <stddef.h>
 
 #include "globals.h"
-#include "legoapi/world/levels/levels.h"
+#include "legoapi/core/input/timer.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/world/area.h"
+#include "legoapi/world/levels/levels.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nusound/nusound.h"
 
-struct GIZAIMESSAGESYS_s;
-#include "legoapi/core/input/timer.h"
-#include "legoapi/world/area.h"
-
 struct CUSTOMISER;
+struct GIZAIMESSAGESYS_s;
 
-void *PlayerItemType = 0;
-i32 PLAYERITEMTYPECOUNT = 0;
+// ----------------------------------------------------------------------
+// Shared game globals, grouped by subsystem. See src/globals.h.
+// ----------------------------------------------------------------------
 
+// ------------------------------------------------------------------------
+// Frame rate & timestep
+// ------------------------------------------------------------------------
 i32 PAL = 0;
 f32 FRAMETIME = 0;
 f32 DEFAULTFPS = 0;
 f32 DEFAULTFRAMETIME = 0;
 f32 MAXFRAMETIME = 0;
 
+// ------------------------------------------------------------------------
+// Super buffer / memory arena
+// ------------------------------------------------------------------------
 i32 SUPERBUFFERSIZE = 0x2EB8EEB;
 VARIPTR permbuffer_base;
 VARIPTR original_permbuffer_base;
@@ -29,14 +35,35 @@ VARIPTR superbuffer_end;
 VARIPTR permbuffer_ptr;
 VARIPTR permbuffer_end;
 
+// ------------------------------------------------------------------------
+// Title & display strings
+// ------------------------------------------------------------------------
 char prodcode[16] = {0};
 char *iconname = "lego.ico";
 char unicodename[64] = "LEGO Star Wars Saga";
+const char *theEmptyString = "";
 
+// ------------------------------------------------------------------------
+// Episode / area counts
+// ------------------------------------------------------------------------
 i32 EPISODECOUNT = 0;
 i32 AREACOUNT = 0;
+
+// ------------------------------------------------------------------------
+// Game save state
+// ------------------------------------------------------------------------
 GAMESAVE_s Game = {0};
 GAMESAVE_s BackupGame = {0};
+
+// ------------------------------------------------------------------------
+// Character customiser
+// ------------------------------------------------------------------------
+i32 Customiser_AccessoriesLoaded = 0;
+CUSTOMISER *CharacterCustomiser = NULL;
+
+// ------------------------------------------------------------------------
+// Completion & bonus points
+// ------------------------------------------------------------------------
 i32 COMPLETIONPOINTS = 0;
 i32 POINTS_PER_CHARACTER = 0;
 i32 POINTS_PER_SUPERBONUSCOMPLETE = 0;
@@ -56,228 +83,108 @@ i32 GOLDBRICKFORSUPERSTORY = 0;
 i32 GOLDBRICKFORCHALLENGE = 0;
 i32 POINTS_PER_SUPERSTORY = 0;
 i32 GOLDBRICKPOINTS = 0;
-
 i32 CompletionPointInfo[7] = {0};
+i32 OldBonusScore[2] = {0};
+i32 BonusScore[2] = {0};
+i32 BonusCoinTotal = 0;
 
+// ------------------------------------------------------------------------
+// Audio & music
+// ------------------------------------------------------------------------
 NUSOUND_FILENAME_INFO *MusicInfo = NULL;
 NUSOUND_FILENAME_INFO *g_music = NULL;
 u8 g_BackgroundUsedFogColour = 0;
 u32 SFX_MUSIC_COUNT = 0;
-
-NUCAMERA *pNuCam = NULL;
-
 i32 NOSOUND = 0;
+i16 AreaMusic = 0;
+i32 LevMusicAction = 0;
+i32 LevMusicAmbient = 0;
+i32 LevMusicOtherAction = 0;
+i32 LevMusicOtherAmbient = 0;
 
-const char *theEmptyString = "";
+// ------------------------------------------------------------------------
+// Camera
+// ------------------------------------------------------------------------
+NUCAMERA *pNuCam = NULL;
+GAMECAMERA_s *GameCam = NULL;
 
+// ------------------------------------------------------------------------
+// Platform & device info
+// ------------------------------------------------------------------------
 ANativeWindow *g_appWindow = NULL;
-
 char g_deviceManufacturer[256] = {0};
 char g_deviceModel[256] = {0};
-
-i32 g_forceSysMemVbs = 0;
-
-i32 g_forceETC1 = 0;
-
 i32 g_isLowestEndDevice = 0;
 i32 g_isLowEndDevice = 0;
 i32 g_isMidRangeDevice = 0;
 i32 g_lowEndLevelBehaviour = 0;
 
+// ------------------------------------------------------------------------
+// Render / compatibility options
+// ------------------------------------------------------------------------
+i32 g_forceSysMemVbs = 0;
+i32 g_forceETC1 = 0;
+i32 Reflections_On = 1;
+i32 disable_narrow_socks = 0;
+i32 script_spline_selected = 0;
+f32 character_farclip = 0.0f;
+i32 texanimbits = 0;
+
+// ------------------------------------------------------------------------
+// Group scenes (NUGSCN)
+// ------------------------------------------------------------------------
+NUGSCN *vehicle_scene = NULL;
+
+// ------------------------------------------------------------------------
+// Gameplay timers & area state
+// ------------------------------------------------------------------------
 f32 DoubleScoreTime = 0.0f;
 f32 GameTimer[2] = {0.0f, 0.0f};
 i32 AreaGlobals = 0;
+i32 HIGHGAMEOBJECT = 0;
+void *Obj = NULL;
+f32 AreaPickupGravity = 0.0f;
+f32 HIGHJUMPHEIGHT = 0.0f;
+TIMER AreaTimer;
+f32 VehicleAreaRememberSpeed = 0;
+f32 LevTime = 0.0f;
+i32 Lap = 0;
 
+// ------------------------------------------------------------------------
+// Bonus / arcade / challenge mode
+// ------------------------------------------------------------------------
 i32 BonusWinner = 0;
 i32 BonusWinFlag = 0;
 i32 ChallengeMode = 0;
 TIMER ChallengeTimer;
-i32 HIGHGAMEOBJECT = 0;
-void *Obj = NULL;
-f32 AreaPickupGravity = 0.0f;
+i32 LSW1 = 0;
+i32 LSW2 = 0;
+i32 Arcade = 0;
+i32 BuildUpTotal = 0;
+i32 BuildUpDone = 0;
+void *Door_Last = NULL;
+i32 LevelChange = 0;
+i32 BombGenerator_PlayerBomb[2] = {0};
+i32 BonusArea = 0;
 
-i32 LevObjRef_FirstObj = 0;
-i32 LevObjRef_LastObj = 0;
-i32 LevObjRef_FirstRefObj = 0;
+// ------------------------------------------------------------------------
+// Player & character objects
+// ------------------------------------------------------------------------
+i16 temp_yrot = 0;
+i16 temp_xrot = 0;
+GameObject_s *player = NULL;
+GameObject_s *player2 = NULL;
+i32 avg_currentspeed_mul = 0;
+i32 pause_rndr_on = 0;
+u8 object_switches[0x80] = {0};
+GIZFORCE_s *force_array[4] = {0};
+GameObject_s *ObiWan = NULL;
+GameObject_s **game_objects = NULL;
 
-LEVELOBJECT *ObjTabList = NULL;
-i32 LEVELOBJECTCOUNT = 0;
-i32 LEVELOBJECTMAX = 0;
-i32 EXTRALEVELOBJECTCOUNT = 0;
-
-char *ExtraLevelObject_NameTable = NULL;
-i32 ExtraLevelObject_NameTableSize = 0;
-i32 ExtraLevelObject_NameTableIndex = 0;
-
-LEVELDATA *NewLData = NULL;
-LEVELDATA *HUB_LDATA = NULL;
-i32 grab_screen_image = 0;
+// ------------------------------------------------------------------------
+// Character preview / free-play model lists
+// ------------------------------------------------------------------------
 i32 FreePlay = 0;
-i32 waiting_for_new_level = 0;
-
-void *LevelProgressData = NULL;
-
-GameAnimSysProgress gameanimsysprogress = {0, 0, NULL};
-
-nufpcomjmp_s *Level_ConfigBeforeLoad_GameKeywords = NULL;
-nufpcomjmp_s *Level_ConfigAfterLoad_GameKeywords = NULL;
-
-u32 EXBLOWUPFLAGS = 0;
-
-i32 BeenAttacked = 0;
-
-i32 last_area = -1;
-LEVELDATA *LastLData = NULL;
-LEVELDATA *TITLES_LDATA = NULL;
-LEVELDATA *STATUS_LDATA = NULL;
-LEVELDATA *ASTEROIDCHASEMITRO_LDATA = NULL;
-LEVELDATA *BOUNTYHUNTERPURSUITE_LDATA = NULL;
-LEVELDATA *CLOUDCITYESCAPEB_LDATA = NULL;
-LEVELDATA *CLOUDCITYTRAPOUTRO_LDATA = NULL;
-LEVELDATA *CRUISERB_LDATA = NULL;
-LEVELDATA *CRUISERE_LDATA = NULL;
-LEVELDATA *CRUISERG_LDATA = NULL;
-LEVELDATA *DAGOBAHD_LDATA = NULL;
-LEVELDATA *DEATHSTAR2BATTLEB_LDATA = NULL;
-LEVELDATA *DEATHSTAR2BATTLEMIDTRO_LDATA = NULL;
-LEVELDATA *DEATHSTARBATTLEA_LDATA = NULL;
-LEVELDATA *DEATHSTARBATTLEB_LDATA = NULL;
-LEVELDATA *DEATHSTARRESCUEA_LDATA = NULL;
-LEVELDATA *DEATHSTARRESCUED_LDATA = NULL;
-LEVELDATA *DEATHSTARRESCUEE_LDATA = NULL;
-LEVELDATA *DOGFIGHTA_LDATA = NULL;
-LEVELDATA *DOOKUOUTRO_LDATA = NULL;
-LEVELDATA *E1CHARACTERBONUSA_LDATA = NULL;
-LEVELDATA *E2VEHICLEBONUSA_LDATA = NULL;
-LEVELDATA *ENDORBATTLEB_LDATA = NULL;
-LEVELDATA *ENDORBATTLEC_LDATA = NULL;
-LEVELDATA *ENDORBATTLED_LDATA = NULL;
-LEVELDATA *FACTORYD_LDATA = NULL;
-LEVELDATA *FACTORYF_LDATA = NULL;
-LEVELDATA *GUNGAN_B_LDATA = NULL;
-LEVELDATA *HOTHBATTLEB_LDATA = NULL;
-LEVELDATA *HOTHBATTLED_LDATA = NULL;
-LEVELDATA *HOTHBATTLEOUTRO_LDATA = NULL;
-LEVELDATA *JABBASPALACE_OUTRO_LDATA = NULL;
-LEVELDATA *JEDI_OUTRO_LDATA = NULL;
-LEVELDATA *KAMINOC_LDATA = NULL;
-LEVELDATA *MOSEISLEYC_LDATA = NULL;
-LEVELDATA *NEGOTIATIONSC_LDATA = NULL;
-LEVELDATA *PODRACEOUTRO1_LDATA = NULL;
-LEVELDATA *PODRACESTATUS_LDATA = NULL;
-LEVELDATA *RETAKEB_LDATA = NULL;
-LEVELDATA *RETAKEINTRO1_LDATA = NULL;
-LEVELDATA *RETAKEINTRO2_LDATA = NULL;
-LEVELDATA *RETAKEINTRO3_LDATA = NULL;
-LEVELDATA *SENATEA_LDATA = NULL;
-LEVELDATA *TATOOINEC_LDATA = NULL;
-LEVELDATA *TATOOINEE_LDATA = NULL;
-LEVELDATA *TEMPLEB_LDATA = NULL;
-LEVELDATA *TEMPLESTATUS_LDATA = NULL;
-LEVELDATA *SPEEDERCHASEA_LDATA = NULL;
-LEVELDATA *NEGOTIATIONSA_LDATA = NULL;
-LEVELDATA *NEGOTIATIONSB_LDATA = NULL;
-LEVELDATA *GUNGAN_A_LDATA = NULL;
-LEVELDATA *RESCUEA_LDATA = NULL;
-LEVELDATA *RESCUEB_LDATA = NULL;
-LEVELDATA *RESCUEC_LDATA = NULL;
-LEVELDATA *RESCUEE_LDATA = NULL;
-LEVELDATA *PODRACEB_LDATA = NULL;
-LEVELDATA *PODRACEA_LDATA = NULL;
-LEVELDATA *PODRACEC_LDATA = NULL;
-LEVELDATA *PODSPRINTA_LDATA = NULL;
-LEVELDATA *ANAKINSFLIGHTB_LDATA = NULL;
-LEVELDATA *RETAKEE_LDATA = NULL;
-LEVELDATA *RETAKEG_LDATA = NULL;
-LEVELDATA *MAULA_LDATA = NULL;
-LEVELDATA *MAULB_LDATA = NULL;
-LEVELDATA *MAULD_LDATA = NULL;
-LEVELDATA *MAULE_LDATA = NULL;
-LEVELDATA *MAULF_LDATA = NULL;
-LEVELDATA *JEDI_B_LDATA = NULL;
-LEVELDATA *GUNSHIPA_LDATA = NULL;
-LEVELDATA *GUNSHIPB_LDATA = NULL;
-LEVELDATA *BONUS_GUNSHIPA_LDATA = NULL;
-LEVELDATA *BONUS_GUNSHIPB_LDATA = NULL;
-LEVELDATA *BOUNTYHUNTERPURSUITA_LDATA = NULL;
-LEVELDATA *BOUNTYHUNTERPURSUITB_LDATA = NULL;
-LEVELDATA *BOUNTYHUNTERPURSUITC_LDATA = NULL;
-LEVELDATA *BOUNTYHUNTERPURSUITD_LDATA = NULL;
-LEVELDATA *FACTORYB_LDATA = NULL;
-LEVELDATA *FACTORYG_LDATA = NULL;
-LEVELDATA *DOOKUC_LDATA = NULL;
-LEVELDATA *KAMINOD_LDATA = NULL;
-LEVELDATA *KAMINOOUTRO_LDATA = NULL;
-LEVELDATA *KAMINOE_LDATA = NULL;
-LEVELDATA *KAMINOF_LDATA = NULL;
-LEVELDATA *NB_KAMINOALDATA_LDATA = NULL;
-LEVELDATA *CRUISERA_LDATA = NULL;
-LEVELDATA *CRUISERC_LDATA = NULL;
-LEVELDATA *CRUISERD_LDATA = NULL;
-LEVELDATA *GRIEVOUSA_LDATA = NULL;
-LEVELDATA *TEMPLEA_LDATA = NULL;
-LEVELDATA *TEMPLEC_LDATA = NULL;
-LEVELDATA *KASHYYYKA_LDATA = NULL;
-LEVELDATA *KASHYYYKB_LDATA = NULL;
-LEVELDATA *KASHYYYKC_LDATA = NULL;
-LEVELDATA *KASHYYYKD_LDATA = NULL;
-LEVELDATA *VADERA_LDATA = NULL;
-LEVELDATA *VADERB_LDATA = NULL;
-LEVELDATA *VADERC_LDATA = NULL;
-LEVELDATA *BLOCKADERUNNERB_LDATA = NULL;
-LEVELDATA *BLOCKADERUNNERC_LDATA = NULL;
-LEVELDATA *BLOCKADERUNNERD_LDATA = NULL;
-LEVELDATA *MOSEISLEYA_LDATA = NULL;
-LEVELDATA *MOSEISLEYB_LDATA = NULL;
-LEVELDATA *MOSEISLEYD_LDATA = NULL;
-LEVELDATA *MOSEISLEYE_LDATA = NULL;
-LEVELDATA *TATOOINEA_LDATA = NULL;
-LEVELDATA *TATOOINED_LDATA = NULL;
-LEVELDATA *DEATHSTARRESCUEB_LDATA = NULL;
-LEVELDATA *DEATHSTARRESCUEC_LDATA = NULL;
-LEVELDATA *DEATHSTARESCAPEA_LDATA = NULL;
-LEVELDATA *DEATHSTARESCAPEB_LDATA = NULL;
-LEVELDATA *DEATHSTARESCAPEC_LDATA = NULL;
-LEVELDATA *DEATHSTARESCAPED_LDATA = NULL;
-LEVELDATA *DEATHSTARBATTLEC_LDATA = NULL;
-LEVELDATA *DEATHSTARBATTLED_LDATA = NULL;
-LEVELDATA *HOTHBATTLEA_LDATA = NULL;
-LEVELDATA *HOTHBATTLEC_LDATA = NULL;
-LEVELDATA *HOTHBATTLEE_LDATA = NULL;
-LEVELDATA *HOTHESCAPEA_LDATA = NULL;
-LEVELDATA *HOTHESCAPEB_LDATA = NULL;
-LEVELDATA *HOTHESCAPEC_LDATA = NULL;
-LEVELDATA *HOTHESCAPED_LDATA = NULL;
-LEVELDATA *ASTEROIDCHASEA_LDATA = NULL;
-LEVELDATA *ASTEROIDCHASEB_LDATA = NULL;
-LEVELDATA *ASTEROIDCHASEC_LDATA = NULL;
-LEVELDATA *ASTEROIDCHASED_LDATA = NULL;
-LEVELDATA *DAGOBAHA_LDATA = NULL;
-LEVELDATA *DAGOBAHB_LDATA = NULL;
-LEVELDATA *DAGOBAHC_LDATA = NULL;
-LEVELDATA *CLOUDCITYTRAPA_LDATA = NULL;
-LEVELDATA *CLOUDCITYTRAPB_LDATA = NULL;
-LEVELDATA *CLOUDCITYTRAPC_LDATA = NULL;
-LEVELDATA *CLOUDCITYESCAPEA_LDATA = NULL;
-LEVELDATA *CLOUDCITYESCAPEC_LDATA = NULL;
-LEVELDATA *JABBASPALACEA_LDATA = NULL;
-LEVELDATA *JABBASPALACEB_LDATA = NULL;
-LEVELDATA *JABBASPALACED_LDATA = NULL;
-LEVELDATA *JABBASPALACEE_LDATA = NULL;
-LEVELDATA *ENDORBATTLEA_LDATA = NULL;
-LEVELDATA *DEATHSTAR2BATTLEA_LDATA = NULL;
-LEVELDATA *DEATHSTAR2BATTLED_LDATA = NULL;
-LEVELDATA *DEATHSTAR2BATTLEE_LDATA = NULL;
-LEVELDATA *DEATHSTAR2BATTLEF_LDATA = NULL;
-LEVELDATA *DEATHSTAR2BATTLEG_LDATA = NULL;
-LEVELDATA *EMPERORFIGHTA_LDATA = NULL;
-LEVELDATA *SARLACCPITA_LDATA = NULL;
-LEVELDATA *SARLACCPITB_LDATA = NULL;
-LEVELDATA *SARLACCPITC_LDATA = NULL;
-LEVELDATA *LEGOCITY_LDATA = NULL;
-LEVELDATA *NEWTOWN_LDATA = NULL;
-
-void *LevelHackData = NULL;
 i32 Area_PlayerModelCount = 0;
 i32 Area_StoryModelCount = 0;
 i16 Area_PlayerModelList[24] = {0};
@@ -285,159 +192,6 @@ i32 Area_FreePlayModelCount = 0;
 i16 Area_FreePlayModelList[104] = {0};
 i32 Area_MissionModelCount = 0;
 APICHARACTERMODELLIST_s Area_MissionModelList[52] = {0};
-i16 AreaMusic = 0;
-
-i32 LOADEROFF = 0;
-i32 no_more_loads = 0;
-i32 other_level = 0;
-i32 other_level_override = 0;
-i32 CUTSTOPGAME = 0;
-FadeSystem *FadeSys = NULL;
-i32 Paused = 0;
-i32 MiniCutCam = 0;
-void *CutStopInfo = NULL;
-i32 WaitingForLevelTime = 0;
-i32 LevelLoadCount = 0;
-void *LevelLoad = NULL;
-i32 LEGOSPL_SPLIT = 0;
-
-i32 LSW1 = 0;
-i32 LSW2 = 0;
-i32 Arcade = 0;
-f32 HIGHJUMPHEIGHT = 0.0f;
-i32 BuildUpTotal = 0;
-i32 BuildUpDone = 0;
-AREADATA *HOTHBATTLE_ADATA = NULL;
-TIMER AreaTimer;
-f32 VehicleAreaRememberSpeed = 0;
-i32 OldBonusScore[2] = {0};
-i32 BonusScore[2] = {0};
-i32 BonusCoinTotal = 0;
-void *Door_Last = NULL;
-i32 LevelChange = 0;
-i32 BombGenerator_PlayerBomb[2] = {0};
-f32 LevTime = 0.0f;
-
-i32 Customiser_AccessoriesLoaded = 0;
-NUGSCN *vehicle_scene = NULL;
-CUSTOMISER *CharacterCustomiser = NULL;
-
-void *OldLevelHackData = NULL;
-i32 LevelHackSize = 0;
-i32 LevelHackSendTimer = 0;
-
-i32 LevFlag[4] = {0};
-i32 LevHSpecial[264] = {0};
-i32 LevSfxFlag[4] = {0};
-void *dynamic_antinodes = NULL;
-i32 LevInstAnim[12] = {0};
-i32 LevArea[4] = {0};
-i32 LevPathNodes[8] = {0};
-void *LevPathCnx[16] = {0};
-i32 LevGameObject[8] = {0};
-i32 LevGamePart[8] = {0};
-i32 LevAIMessage[8] = {0};
-i32 LevelLocator = 0;
-void *LevGizObst[8] = {0};
-i32 LevBlowUp[5] = {0};
-i32 LevGizmo[12] = {0};
-RETAKEGNETPACKET_s *retakeg_netpacket = NULL;
-i16 trooper_boltid = 0;
-i8 trooper_side[3] = {0};
-nuhspecial_s *hothtroopers = NULL;
-i32 TimingBarSet = 0;
-AREADATA *PODRACE_ADATA = NULL;
-i32 Lap = 0;
-u32 client_mines[0x200] = {0};
-MINESYS_s minesys;
-i32 nethost = 0;
-i32 clients_mines_bitfield[2] = {0};
-i32 pod_mines_bitfield[2] = {0};
-i32 mine_count = 0;
-PODSPRINT_s podsprint;
-PODRACENETPACKET_s *podrace_netpacket = NULL;
-// Initial values from the original .data image (res/libTTapp.so 0x623c60/0x623c70).
-float gungan_a_time_Normal = 0.5f;
-float gungan_a_time_LowEnd = 0.75f;
-i32 active_neutral_count = 0;
-i32 active_baddy_count = 0;
-i16 id_STAP = -1;
-
-// Unmangled globals from the original binary (C linkage). Initial values
-// match the .data image of res/libTTapp.so.
-extern "C" {
-    i32 podrace_section = 0;
-    i32 max_nsnipers = 0;
-    i32 PodRace_nsnipers = 0;
-    SNIPER_s PodRace_snipers[5];
-    float PodRace_sniper_fire_time = 0.25f;
-    float PodRace_sniper_start_fire_radius = 90.0f;
-    float PodRace_sniper_fire_radius = 2.5f;
-    float PodRace_sniper_fire_range_time = 2.0f;
-    float pod_roll[2] = {0.0f, 0.0f};
-    float pod_roll_target[2] = {0.0f, 0.0f};
-    float pod_animtime[2] = {1.0f, 1.0f};
-}
-
-i16 temp_yrot = 0;
-i16 temp_xrot = 0;
-PODSPRINTNETPACKET_s *podsprint_netpacket = NULL;
-GAMECUTSCENES_s game_cutscenes;
-GameObject_s *player = NULL;
-GameObject_s *player2 = NULL;
-i32 avg_currentspeed_mul = 0;
-GAMECAMERA_s *GameCam = NULL;
-i32 pause_rndr_on = 0;
-u8 object_switches[0x80] = {0};
-i32 gunship_player_dead = 0;
-GIZFORCE_s *force_array[4] = {0};
-GameObject_s *ObiWan = NULL;
-void *kaminoe_netpacket = NULL;
-void *factoryb_netpacket = NULL;
-struct BONUSGUNSHIP_NETPACKET_s *bonusgunshipb_netpacket = NULL;
-i32 LevForce = 0;
-u8 dookuC_nodesNeedUpdating = 0;
-struct vader_c_s vader_c = {0};
-CUTINFO *factoryb_cut = NULL;
-void *factoryb_conveyor_stopped_msg = NULL;
-i32 bonus_gunship_store_progress_flag = 0;
-float MiscTime = 0.0f;
-LEVELDATA *KAMINOA_LDATA = NULL;
-struct AREADATA_s *KAMINO_ADATA = NULL;
-
-float podanimendframe = 0.0f;
-float pacemaker_alpha_table[0x8000] = {0};
-GameObject_s **game_objects = NULL;
-GIZAIMESSAGESYS_s *gizaimessagesys = NULL;
-i32 LevSfxId[4] = {0};
-i32 LevelCodeSpline[8] = {0};
-GIZFORCE_s *LevGizForce[4] = {0};
-i32 LevAIPathNode[4] = {0};
-i32 LevBoltIgnorePlatIds[2] = {0};
-i32 LevPlatID[2] = {0};
-i32 LevPathCnxDir = 0;
-i32 LevDeaths = 0;
-i32 LevLock[4] = {0};
-i32 LevSafePlatID[2] = {0};
-
-i32 new_level_from_menu = 0;
-i32 BGLOAD = 0;
-
-i32 Reflections_On = 1;
-i32 disable_narrow_socks = 0;
-i32 script_spline_selected = 0;
-f32 character_farclip = 0.0f;
-i32 LevMusicAction = 0;
-i32 LevMusicAmbient = 0;
-i32 LevMusicOtherAction = 0;
-i32 LevMusicOtherAmbient = 0;
-u32 ResetBits = 0;
-
-i32 reset_restart = 0;
-i32 newlevelfrommenu_newmenuid = -1;
-i32 newlevelfrommenu_newmenuy = -1;
-i32 NextArea_FreePlay = 0;
-
 VARIPTR characterbuffer_ptr = {0};
 VARIPTR characterbuffer_end = {0};
 APICHARACTERMODELLIST_s FreePlayModelList[52] = {0};
@@ -456,18 +210,322 @@ void *CurrentCList = NULL;
 void *CurrentStoryCList = NULL;
 i32 CharacterDataLoad = 0;
 i32 makefreeplaymodellist = 0;
-i32 BonusArea = 0;
 i16 id_DEFAULTCHARACTER[2] = {-1, -1};
-AREADATA *ANEWHOPE_ADATA = NULL;
-AREADATA *PODSPRINT_ADATA = NULL;
-AREADATA *BONUS_GUNSHIP_ADATA = NULL;
-AREADATA *JEDI_ADATA = NULL;
-AREADATA *DOOKU_ADATA = NULL;
 i32 CHARPAK = 0;
-i32 texanimbits = 0;
-u32 trenchrun[8] = {0};
-LEVELDATA *DEATHSTARBATTLEMIDTRO_LDATA = NULL;
 i32 apiloadcharactermodels_nopakfile = 0;
+
+// ------------------------------------------------------------------------
+// Level object tables
+// ------------------------------------------------------------------------
+i32 LevObjRef_FirstObj = 0;
+i32 LevObjRef_LastObj = 0;
+i32 LevObjRef_FirstRefObj = 0;
+LEVELOBJECT *ObjTabList = NULL;
+i32 LEVELOBJECTCOUNT = 0;
+i32 LEVELOBJECTMAX = 0;
+i32 EXTRALEVELOBJECTCOUNT = 0;
+char *ExtraLevelObject_NameTable = NULL;
+i32 ExtraLevelObject_NameTableSize = 0;
+i32 ExtraLevelObject_NameTableIndex = 0;
+
+// ------------------------------------------------------------------------
+// Level / area data pointers (LDATA / ADATA)
+// ------------------------------------------------------------------------
+LEVELDATA *ANAKINSFLIGHTB_LDATA = NULL;
+AREADATA *ANEWHOPE_ADATA = NULL;
+LEVELDATA *ASTEROIDCHASEA_LDATA = NULL;
+LEVELDATA *ASTEROIDCHASEB_LDATA = NULL;
+LEVELDATA *ASTEROIDCHASEC_LDATA = NULL;
+LEVELDATA *ASTEROIDCHASED_LDATA = NULL;
+LEVELDATA *ASTEROIDCHASEMITRO_LDATA = NULL;
+LEVELDATA *BLOCKADERUNNERB_LDATA = NULL;
+LEVELDATA *BLOCKADERUNNERC_LDATA = NULL;
+LEVELDATA *BLOCKADERUNNERD_LDATA = NULL;
+LEVELDATA *BONUS_GUNSHIPA_LDATA = NULL;
+LEVELDATA *BONUS_GUNSHIPB_LDATA = NULL;
+AREADATA *BONUS_GUNSHIP_ADATA = NULL;
+LEVELDATA *BOUNTYHUNTERPURSUITA_LDATA = NULL;
+LEVELDATA *BOUNTYHUNTERPURSUITB_LDATA = NULL;
+LEVELDATA *BOUNTYHUNTERPURSUITC_LDATA = NULL;
+LEVELDATA *BOUNTYHUNTERPURSUITD_LDATA = NULL;
+LEVELDATA *BOUNTYHUNTERPURSUITE_LDATA = NULL;
+LEVELDATA *CLOUDCITYESCAPEA_LDATA = NULL;
+LEVELDATA *CLOUDCITYESCAPEB_LDATA = NULL;
+LEVELDATA *CLOUDCITYESCAPEC_LDATA = NULL;
+LEVELDATA *CLOUDCITYTRAPA_LDATA = NULL;
+LEVELDATA *CLOUDCITYTRAPB_LDATA = NULL;
+LEVELDATA *CLOUDCITYTRAPC_LDATA = NULL;
+LEVELDATA *CLOUDCITYTRAPOUTRO_LDATA = NULL;
+LEVELDATA *CRUISERA_LDATA = NULL;
+LEVELDATA *CRUISERB_LDATA = NULL;
+LEVELDATA *CRUISERC_LDATA = NULL;
+LEVELDATA *CRUISERD_LDATA = NULL;
+LEVELDATA *CRUISERE_LDATA = NULL;
+LEVELDATA *CRUISERG_LDATA = NULL;
+LEVELDATA *DAGOBAHA_LDATA = NULL;
+LEVELDATA *DAGOBAHB_LDATA = NULL;
+LEVELDATA *DAGOBAHC_LDATA = NULL;
+LEVELDATA *DAGOBAHD_LDATA = NULL;
+LEVELDATA *DEATHSTAR2BATTLEA_LDATA = NULL;
+LEVELDATA *DEATHSTAR2BATTLEB_LDATA = NULL;
+LEVELDATA *DEATHSTAR2BATTLED_LDATA = NULL;
+LEVELDATA *DEATHSTAR2BATTLEE_LDATA = NULL;
+LEVELDATA *DEATHSTAR2BATTLEF_LDATA = NULL;
+LEVELDATA *DEATHSTAR2BATTLEG_LDATA = NULL;
+LEVELDATA *DEATHSTAR2BATTLEMIDTRO_LDATA = NULL;
+LEVELDATA *DEATHSTARBATTLEA_LDATA = NULL;
+LEVELDATA *DEATHSTARBATTLEB_LDATA = NULL;
+LEVELDATA *DEATHSTARBATTLEC_LDATA = NULL;
+LEVELDATA *DEATHSTARBATTLED_LDATA = NULL;
+LEVELDATA *DEATHSTARBATTLEMIDTRO_LDATA = NULL;
+LEVELDATA *DEATHSTARESCAPEA_LDATA = NULL;
+LEVELDATA *DEATHSTARESCAPEB_LDATA = NULL;
+LEVELDATA *DEATHSTARESCAPEC_LDATA = NULL;
+LEVELDATA *DEATHSTARESCAPED_LDATA = NULL;
+LEVELDATA *DEATHSTARRESCUEA_LDATA = NULL;
+LEVELDATA *DEATHSTARRESCUEB_LDATA = NULL;
+LEVELDATA *DEATHSTARRESCUEC_LDATA = NULL;
+LEVELDATA *DEATHSTARRESCUED_LDATA = NULL;
+LEVELDATA *DEATHSTARRESCUEE_LDATA = NULL;
+LEVELDATA *DOGFIGHTA_LDATA = NULL;
+LEVELDATA *DOOKUC_LDATA = NULL;
+LEVELDATA *DOOKUOUTRO_LDATA = NULL;
+AREADATA *DOOKU_ADATA = NULL;
+LEVELDATA *E1CHARACTERBONUSA_LDATA = NULL;
+LEVELDATA *E2VEHICLEBONUSA_LDATA = NULL;
+LEVELDATA *EMPERORFIGHTA_LDATA = NULL;
+LEVELDATA *ENDORBATTLEA_LDATA = NULL;
+LEVELDATA *ENDORBATTLEB_LDATA = NULL;
+LEVELDATA *ENDORBATTLEC_LDATA = NULL;
+LEVELDATA *ENDORBATTLED_LDATA = NULL;
+LEVELDATA *FACTORYB_LDATA = NULL;
+LEVELDATA *FACTORYD_LDATA = NULL;
+LEVELDATA *FACTORYF_LDATA = NULL;
+LEVELDATA *FACTORYG_LDATA = NULL;
+LEVELDATA *GRIEVOUSA_LDATA = NULL;
+LEVELDATA *GUNGAN_A_LDATA = NULL;
+LEVELDATA *GUNGAN_B_LDATA = NULL;
+LEVELDATA *GUNSHIPA_LDATA = NULL;
+LEVELDATA *GUNSHIPB_LDATA = NULL;
+LEVELDATA *HOTHBATTLEA_LDATA = NULL;
+LEVELDATA *HOTHBATTLEB_LDATA = NULL;
+LEVELDATA *HOTHBATTLEC_LDATA = NULL;
+LEVELDATA *HOTHBATTLED_LDATA = NULL;
+LEVELDATA *HOTHBATTLEE_LDATA = NULL;
+LEVELDATA *HOTHBATTLEOUTRO_LDATA = NULL;
+AREADATA *HOTHBATTLE_ADATA = NULL;
+LEVELDATA *HOTHESCAPEA_LDATA = NULL;
+LEVELDATA *HOTHESCAPEB_LDATA = NULL;
+LEVELDATA *HOTHESCAPEC_LDATA = NULL;
+LEVELDATA *HOTHESCAPED_LDATA = NULL;
+LEVELDATA *HUB_LDATA = NULL;
+LEVELDATA *JABBASPALACEA_LDATA = NULL;
+LEVELDATA *JABBASPALACEB_LDATA = NULL;
+LEVELDATA *JABBASPALACED_LDATA = NULL;
+LEVELDATA *JABBASPALACEE_LDATA = NULL;
+LEVELDATA *JABBASPALACE_OUTRO_LDATA = NULL;
+AREADATA *JEDI_ADATA = NULL;
+LEVELDATA *JEDI_B_LDATA = NULL;
+LEVELDATA *JEDI_OUTRO_LDATA = NULL;
+LEVELDATA *KAMINOA_LDATA = NULL;
+LEVELDATA *KAMINOC_LDATA = NULL;
+LEVELDATA *KAMINOD_LDATA = NULL;
+LEVELDATA *KAMINOE_LDATA = NULL;
+LEVELDATA *KAMINOF_LDATA = NULL;
+LEVELDATA *KAMINOOUTRO_LDATA = NULL;
+struct AREADATA_s *KAMINO_ADATA = NULL;
+LEVELDATA *KASHYYYKA_LDATA = NULL;
+LEVELDATA *KASHYYYKB_LDATA = NULL;
+LEVELDATA *KASHYYYKC_LDATA = NULL;
+LEVELDATA *KASHYYYKD_LDATA = NULL;
+LEVELDATA *LastLData = NULL;
+i32 last_area = -1;
+LEVELDATA *LEGOCITY_LDATA = NULL;
+LEVELDATA *MAULA_LDATA = NULL;
+LEVELDATA *MAULB_LDATA = NULL;
+LEVELDATA *MAULD_LDATA = NULL;
+LEVELDATA *MAULE_LDATA = NULL;
+LEVELDATA *MAULF_LDATA = NULL;
+LEVELDATA *MOSEISLEYA_LDATA = NULL;
+LEVELDATA *MOSEISLEYB_LDATA = NULL;
+LEVELDATA *MOSEISLEYC_LDATA = NULL;
+LEVELDATA *MOSEISLEYD_LDATA = NULL;
+LEVELDATA *MOSEISLEYE_LDATA = NULL;
+LEVELDATA *NB_KAMINOALDATA_LDATA = NULL;
+LEVELDATA *NEGOTIATIONSA_LDATA = NULL;
+LEVELDATA *NEGOTIATIONSB_LDATA = NULL;
+LEVELDATA *NEGOTIATIONSC_LDATA = NULL;
+LEVELDATA *NEWTOWN_LDATA = NULL;
+LEVELDATA *PODRACEA_LDATA = NULL;
+LEVELDATA *PODRACEB_LDATA = NULL;
+LEVELDATA *PODRACEC_LDATA = NULL;
+LEVELDATA *PODRACEOUTRO1_LDATA = NULL;
+LEVELDATA *PODRACESTATUS_LDATA = NULL;
+AREADATA *PODRACE_ADATA = NULL;
+LEVELDATA *PODSPRINTA_LDATA = NULL;
+AREADATA *PODSPRINT_ADATA = NULL;
+LEVELDATA *RESCUEA_LDATA = NULL;
+LEVELDATA *RESCUEB_LDATA = NULL;
+LEVELDATA *RESCUEC_LDATA = NULL;
+LEVELDATA *RESCUEE_LDATA = NULL;
+LEVELDATA *RETAKEB_LDATA = NULL;
+LEVELDATA *RETAKEE_LDATA = NULL;
+LEVELDATA *RETAKEG_LDATA = NULL;
+LEVELDATA *RETAKEINTRO1_LDATA = NULL;
+LEVELDATA *RETAKEINTRO2_LDATA = NULL;
+LEVELDATA *RETAKEINTRO3_LDATA = NULL;
+LEVELDATA *SARLACCPITA_LDATA = NULL;
+LEVELDATA *SARLACCPITB_LDATA = NULL;
+LEVELDATA *SARLACCPITC_LDATA = NULL;
+LEVELDATA *SENATEA_LDATA = NULL;
+LEVELDATA *SPEEDERCHASEA_LDATA = NULL;
+LEVELDATA *STATUS_LDATA = NULL;
+LEVELDATA *TATOOINEA_LDATA = NULL;
+LEVELDATA *TATOOINEC_LDATA = NULL;
+LEVELDATA *TATOOINED_LDATA = NULL;
+LEVELDATA *TATOOINEE_LDATA = NULL;
+LEVELDATA *TEMPLEA_LDATA = NULL;
+LEVELDATA *TEMPLEB_LDATA = NULL;
+LEVELDATA *TEMPLEC_LDATA = NULL;
+LEVELDATA *TEMPLESTATUS_LDATA = NULL;
+LEVELDATA *TITLES_LDATA = NULL;
+u32 trenchrun[8] = {0};
+LEVELDATA *VADERA_LDATA = NULL;
+LEVELDATA *VADERB_LDATA = NULL;
+LEVELDATA *VADERC_LDATA = NULL;
+
+// ------------------------------------------------------------------------
+// Level hack data & progress
+// ------------------------------------------------------------------------
+void *LevelProgressData = NULL;
+GameAnimSysProgress gameanimsysprogress = {0, 0, NULL};
+void *LevelHackData = NULL;
+void *OldLevelHackData = NULL;
+i32 LevelHackSize = 0;
+i32 LevelHackSendTimer = 0;
+
+// ------------------------------------------------------------------------
+// Level load keywords
+// ------------------------------------------------------------------------
+nufpcomjmp_s *Level_ConfigBeforeLoad_GameKeywords = NULL;
+nufpcomjmp_s *Level_ConfigAfterLoad_GameKeywords = NULL;
+
+// ------------------------------------------------------------------------
+// Level streaming & loading
+// ------------------------------------------------------------------------
+LEVELDATA *NewLData = NULL;
+i32 grab_screen_image = 0;
+i32 waiting_for_new_level = 0;
+i32 LOADEROFF = 0;
+i32 no_more_loads = 0;
+i32 other_level = 0;
+i32 other_level_override = 0;
+i32 CUTSTOPGAME = 0;
+void *CutStopInfo = NULL;
+i32 WaitingForLevelTime = 0;
+i32 LevelLoadCount = 0;
+void *LevelLoad = NULL;
+i32 new_level_from_menu = 0;
+i32 BGLOAD = 0;
+i32 reset_restart = 0;
+i32 newlevelfrommenu_newmenuid = -1;
+i32 newlevelfrommenu_newmenuy = -1;
+i32 NextArea_FreePlay = 0;
+
+// ------------------------------------------------------------------------
+// Level script arrays (Lev*)
+// ------------------------------------------------------------------------
+i32 LevFlag[4] = {0};
+i32 LevHSpecial[264] = {0};
+i32 LevSfxFlag[4] = {0};
+void *dynamic_antinodes = NULL;
+i32 LevInstAnim[12] = {0};
+i32 LevArea[4] = {0};
+i32 LevPathNodes[8] = {0};
+void *LevPathCnx[16] = {0};
+i32 LevGameObject[8] = {0};
+i32 LevGamePart[8] = {0};
+i32 LevAIMessage[8] = {0};
+i32 LevelLocator = 0;
+void *LevGizObst[8] = {0};
+i32 LevBlowUp[5] = {0};
+GIZMO *LevGizmo[12] = {0};
+i32 LevForce = 0;
+i32 LevSfxId[4] = {0};
+i32 LevelCodeSpline[8] = {0};
+GIZFORCE_s *LevGizForce[4] = {0};
+i32 LevAIPathNode[4] = {0};
+i32 LevBoltIgnorePlatIds[2] = {0};
+i32 LevPlatID[2] = {0};
+i32 LevPathCnxDir = 0;
+i32 LevDeaths = 0;
+i32 LevLock[4] = {0};
+i32 LevSafePlatID[2] = {0};
+
+// ------------------------------------------------------------------------
+// Network / multiplayer (podrace, gunship, mines)
+// ------------------------------------------------------------------------
+RETAKEGNETPACKET_s *retakeg_netpacket = NULL;
+i16 trooper_boltid = 0;
+i8 trooper_side[3] = {0};
+nuhspecial_s *hothtroopers = NULL;
+i32 TimingBarSet = 0;
+u32 client_mines[0x200] = {0};
+MINESYS_s minesys;
+i32 nethost = 0;
+i32 clients_mines_bitfield[2] = {0};
+i32 pod_mines_bitfield[2] = {0};
+i32 mine_count = 0;
+PODSPRINT_s podsprint;
+PODRACENETPACKET_s *podrace_netpacket = NULL;
+float gungan_a_time_Normal = 0.5f;
+float gungan_a_time_LowEnd = 0.75f;
+i32 active_neutral_count = 0;
+i32 active_baddy_count = 0;
+i16 id_STAP = -1;
+// Unmangled globals from the original binary (C linkage). Initial values
+// match the .data image of res/libTTapp.so.
+extern "C" {
+    i32 podrace_section = 0;
+    i32 max_nsnipers = 0;
+    i32 PodRace_nsnipers = 0;
+    SNIPER_s PodRace_snipers[5];
+    float PodRace_sniper_fire_time = 0.25f;
+    float PodRace_sniper_start_fire_radius = 90.0f;
+    float PodRace_sniper_fire_radius = 2.5f;
+    float PodRace_sniper_fire_range_time = 2.0f;
+    float pod_roll[2] = {0.0f, 0.0f};
+    float pod_roll_target[2] = {0.0f, 0.0f};
+    float pod_animtime[2] = {1.0f, 1.0f};
+}
+PODSPRINTNETPACKET_s *podsprint_netpacket = NULL;
+i32 gunship_player_dead = 0;
+void *kaminoe_netpacket = NULL;
+void *factoryb_netpacket = NULL;
+struct BONUSGUNSHIP_NETPACKET_s *bonusgunshipb_netpacket = NULL;
+u8 dookuC_nodesNeedUpdating = 0;
+struct vader_c_s vader_c = {0};
+CUTINFO *factoryb_cut = NULL;
+void *factoryb_conveyor_stopped_msg = NULL;
+i32 bonus_gunship_store_progress_flag = 0;
+float podanimendframe = 0.0f;
+float pacemaker_alpha_table[0x8000] = {0};
+GIZAIMESSAGESYS_s *gizaimessagesys = NULL;
 i32 loadareadata_loadlevel = 0;
+
+// ------------------------------------------------------------------------
+// Cutscene & system misc
+// ------------------------------------------------------------------------
+void *PlayerItemType = 0;
+i32 PLAYERITEMTYPECOUNT = 0;
+u32 EXBLOWUPFLAGS = 0;
+i32 BeenAttacked = 0;
+FadeSystem *FadeSys = NULL;
+i32 Paused = 0;
+i32 MiniCutCam = 0;
+i32 LEGOSPL_SPLIT = 0;
+GAMECUTSCENES_s game_cutscenes;
+float MiscTime = 0.0f;
+u32 ResetBits = 0;
 i32 AreaDataLoaded = 1;
 i32 Level = 0;
