@@ -310,6 +310,7 @@ extern struct nusound_filename_info_s *MusicInfo;
 extern struct nusound_filename_info_s *g_music;
 extern u32 SFX_MUSIC_COUNT;
 extern u8 g_BackgroundUsedFogColour;
+extern i32 g_BackgroundColour;
 extern i32 NOSOUND;
 extern i32 LevMusicAction;
 extern i32 LevMusicAmbient;

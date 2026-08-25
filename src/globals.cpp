@@ -94,6 +94,7 @@ i32 BonusCoinTotal = 0;
 NUSOUND_FILENAME_INFO *MusicInfo = NULL;
 NUSOUND_FILENAME_INFO *g_music = NULL;
 u8 g_BackgroundUsedFogColour = 0;
+i32 g_BackgroundColour = 0;
 u32 SFX_MUSIC_COUNT = 0;
 i32 NOSOUND = 0;
 i16 AreaMusic = 0;

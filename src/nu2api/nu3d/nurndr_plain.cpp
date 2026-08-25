@@ -1,5 +1,30 @@
 
+#include <string.h>
+
+#include "decomp.h"
+#include "globals.h"
+#include "nu2api/nucore/common.h"
+#include "nu2api/nu3d/nugscn.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/nuvport.h"
+#include "nu2api/nuandroid/ios_graphics.h"
+
+// Current render scene being built (0x218 bytes), in bss like the original
+// remaining.c binding. Referenced as a plain object by all render/present code.
+extern "C" struct nudisplayscene_s currentScene = {0};
+
+// Deferred render-scene ring: completed scenes are copied here by NuRndrEndScene
+// and consumed by the render thread. Scene stride is 0x218; 16 ring slots in the
+// original (0x2180 bytes total).
+extern "C" i32 sceneParametersCount = 0;
+extern "C" struct nudisplayscene_s sceneParameters[16] = {0};
+
 extern "C" {
+    void NuVpGetPosition2(i32 *, i32 *);
+    void NuVpGetSize2(i32 *, i32 *);
+    i32 NuDisplayListAddRenderScene(void);
+    i32 NuDynamicLightIsEnabled(i32);
+    void NuDynamicLightAddRenderScene(i32, i32, i32);
 
     void NuGScnFixupPS(void) {
     }
@@ -87,9 +112,30 @@ extern "C" {
     }
     void NuRndrAxisBright(void) {
     }
-    void NuRndrBeginScene(void) {
+    i32 NuRndrBeginScene(i32 begin_flags) {
+        currentScene.unknown_4c = 0;
+        currentScene.render_scene_id = 0xffffffff;
+        currentScene.clear_flags = 0;
+        currentScene.state_ptr = NULL;
+        currentScene.unknown_24 = NULL;
+        currentScene.unknown_28 = 0;
+        currentScene.unknown_58 = 0;
+        currentScene.unknown_38 = 0;
+        currentScene.unknown_3c = 0;
+        currentScene.unknown_40 = 0xffffffff;
+        currentScene.unknown_48 = 0;
+        currentScene.unknown_ac = 0;
+        currentScene.unknown_c4 = 0;
+        currentScene.unknown_e4 = 0;
+        currentScene.unknown_e0 = 0;
+        currentScene.unknown_178 = 0;
+        currentScene.unknown_174 = 0;
+        currentScene.unknown_188 = 0;
+        currentScene.unknown_214 = 0;
+        return 1;
     }
-    void NuRndrBeginSceneEx(void) {
+    i32 NuRndrBeginSceneEx(i32 begin_flags) {
+        return NuRndrBeginScene(begin_flags);
     }
     void NuRndrBoundingBox(void) {
     }
@@ -101,7 +147,18 @@ extern "C" {
     }
     void NuRndrCircle(void) {
     }
-    void NuRndrClear(void) {
+    void NuRndrClear(i32 clear_flags, i32 bg_colour, f32 alpha) {
+        struct nudisplayscene_s *scene = &currentScene;
+
+        if (NuIOS_IsLowEndDevice() && g_BackgroundUsedFogColour) {
+            bg_colour = g_BackgroundColour;
+        }
+
+        scene->clear_alpha = alpha;
+        scene->clear_flags |= clear_flags;
+        scene->bg_colour = bg_colour;
+        NuVpGetPosition2(&scene->vp_x, &scene->vp_y);
+        NuVpGetSize2(&scene->vp_w, &scene->vp_h);
     }
     void NuRndrCreateBlendShapeDeformerWeightsArray(void) {
     }
@@ -110,8 +167,25 @@ extern "C" {
     void NuRndrEndReflectionRender(void) {
     }
     void NuRndrEndScene(void) {
+        i32 cnt;
+        struct nudisplayscene_s *scn = &currentScene;
+
+        scn->render_scene_id = NuDisplayListAddRenderScene();
+
+        if (scn->unknown_38 != 0 && scn->render_scene_id != -1) {
+            if (NuDynamicLightIsEnabled(scn->unknown_3c)) {
+                NuDynamicLightAddRenderScene(scn->unknown_3c, scn->unknown_40, scn->render_scene_id);
+            }
+            scn->unknown_38 = 0;
+            scn->render_scene_id = -1;
+        }
+
+        cnt = sceneParametersCount;
+        sceneParametersCount = cnt + 1;
+        memcpy(&sceneParameters[cnt], scn, 0x218);
     }
     void NuRndrEndSceneEx(void) {
+        NuRndrEndScene();
     }
     void NuRndrEndShadowReceiveRender(void) {
     }
@@ -125,7 +199,8 @@ extern "C" {
     }
     void NuRndrGlobalFrameCountPause(void) {
     }
-    void NuRndrGradClear(void) {
+    void NuRndrGradClear(i32 a, i32 b, i32 c, f32 d) {
+        NuRndrClear(a, b, d);
     }
     void NuRndrGradRect2di(void) {
     }

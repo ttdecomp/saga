@@ -5,8 +5,43 @@
 #include "nu2api/nu3d/nuportal.h"
 
 struct nudisplayscene_s {
-    u8 pad0[0x74];
-    u8 flags;
+    u32 render_scene_id; // 0x00
+    void *state_ptr;     // 0x04
+    u32 clear_flags;     // 0x08
+    u32 bg_colour;       // 0x0c
+    f32 clear_alpha;     // 0x10
+    i32 vp_x;            // 0x14
+    i32 vp_y;            // 0x18
+    i32 vp_w;            // 0x1c
+    i32 vp_h;            // 0x20
+    void *unknown_24;    // 0x24
+    u32 unknown_28;      // 0x28
+    u8 pad2c[0x0c];      // 0x2c-0x37
+    u32 unknown_38;      // 0x38
+    u32 unknown_3c;      // 0x3c
+    i32 unknown_40;      // 0x40
+    u32 unknown_44;      // 0x44
+    u32 unknown_48;      // 0x48
+    u32 unknown_4c;      // 0x4c
+    u32 unknown_50;      // 0x50
+    u32 unknown_54;      // 0x54
+    u32 unknown_58;      // 0x58
+    u8 pad5c[0x18];      // 0x5c-0x73
+    u8 flags;            // 0x74
+    u8 pad75[0x37];      // 0x75-0xab
+    u32 unknown_ac;      // 0xac
+    u8 padb0[0x14];      // 0xb0-0xc3
+    u32 unknown_c4;      // 0xc4
+    u8 padc8[0x18];      // 0xc8-0xdf
+    u32 unknown_e0;      // 0xe0
+    u32 unknown_e4;      // 0xe4
+    u8 pade8[0x8c];      // 0xe8-0x173
+    u32 unknown_174;     // 0x174
+    u32 unknown_178;     // 0x178
+    u8 pad17c[0x0c];     // 0x17c-0x187
+    u32 unknown_188;     // 0x188
+    u8 pad18c[0x88];     // 0x18c-0x213
+    u32 unknown_214;     // 0x214
 };
 
 enum {
