@@ -11,7 +11,9 @@ typedef struct nudisplaylistitem_s {
 } NUDISPLAYLISTITEM;
 
 typedef struct nudisplaylist_s {
+    char filler[0x24]; // list header state 0x00-0x23
 
+    struct nudisplaylistitem_s *items; // 0x24: next free item cursor (see NuDisplayListAddItem)
 } NUDISPLAYLIST;
 
 #ifdef __cplusplus
