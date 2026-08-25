@@ -6,6 +6,7 @@
 #include "nu2api/nucore/common.h"
 #include "nu2api/nu3d/nugscn.h"
 #include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/numtl.h"
 #include "nu2api/nu3d/nuvport.h"
 #include "nu2api/nuandroid/ios_graphics.h"
 
@@ -18,6 +19,14 @@ extern "C" struct nudisplayscene_s currentScene = {0};
 // original (0x2180 bytes total).
 extern "C" i32 sceneParametersCount = 0;
 extern "C" struct nudisplayscene_s sceneParameters[16] = {0};
+
+// Immediate-mode 2D primitive stream state (globals shared with nuprim.cpp).
+extern u8 *g_NuPrim_StreamBufferPtr;
+i32 g_NuPrim_VertexCount;
+
+// File-static primitive bookkeeping.
+static u16 *g_NuPrim_VertexCountPtr;
+static u16 g_NuPrim_CurrentPrimType;
 
 extern "C" {
     void NuVpGetPosition2(i32 *, i32 *);
@@ -86,13 +95,19 @@ extern "C" {
     }
     void NuMtlSpecialSetUV(void) {
     }
-    void NuPrim2DAddXYZ(void) {
+    void NuPrim2DAddXYZ(float, float, float) {
     }
-    void NuPrim2DBegin(void) {
+    void NuPrim2DBegin(i32, i32, NUMTL *) {
     }
     void NuPrim2DEnd(void) {
+        u16 *cnt_ptr = g_NuPrim_VertexCountPtr;
+        *cnt_ptr = (u16)g_NuPrim_VertexCount;
+        g_NuPrim_VertexCount = 0;
     }
     void NuPrim3DEnd(void) {
+        u16 *cnt_ptr = g_NuPrim_VertexCountPtr;
+        *cnt_ptr = (u16)g_NuPrim_VertexCount;
+        g_NuPrim_VertexCount = 0;
     }
     void NuRndr3dLine(void) {
     }
