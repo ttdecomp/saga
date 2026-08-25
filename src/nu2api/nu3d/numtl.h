@@ -153,13 +153,19 @@ typedef struct numtl_s {
 
     NUSHADERMTLDESC shader_desc;
 
-    char filler4[0x8];
+    char filler4[0x4]; // 0x2BC-0x2BF
+
+    u16 version; // 0x2C0, bumped by NuMtlUpdate, read by display-list submit
+
+    u16 filler5; // 0x2C2
+
 } NUMTL;
 
 #ifdef __cplusplus
 
 void DefaultMtl(NUMTL *mtl);
 void NuMtlCreatePS(NUMTL *mtl, i32 is_3d);
+void NuMtlUpdatePS(NUMTL *mtl);
 
 extern "C" {
 #endif
