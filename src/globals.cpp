@@ -567,6 +567,15 @@ LANGLISTENTRY *Text_LanguageList = Text_LanguageList_Default;
 f32 INTROTEXT_Y = 0.175f;
 f32 INTROTEXT_SCALE = 0.79f;
 
+// BSS 0x127c200 / 0x124f6f0 — QFont & string table pointers
+char **TTab = nullptr;
+char **TTab_Original = nullptr;
+void *QFont2D = nullptr;
+void *QFont2DButtons = nullptr;
+void *QFont3D = nullptr;
+void *QFont3DZ = nullptr;
+void *QFont3DTime = nullptr;
+
 // ------------------------------------------------------------------------
 // Cutscene & system misc
 // ------------------------------------------------------------------------

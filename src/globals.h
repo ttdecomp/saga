@@ -732,3 +732,12 @@ extern LANGLISTENTRY Text_LanguageList_Default[6];
 extern LANGLISTENTRY *Text_LanguageList;
 extern f32 INTROTEXT_Y;
 extern f32 INTROTEXT_SCALE;
+
+// IntroText / QFont globals (TTapp BSS @0x127c200 / 0x124f6f0)
+extern char **TTab;
+extern char **TTab_Original;
+extern void *QFont2D;
+extern void *QFont2DButtons;
+extern void *QFont3D;
+extern void *QFont3DZ;
+extern void *QFont3DTime;

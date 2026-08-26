@@ -79,24 +79,24 @@ See the [docs/](docs/) directory.
 
 | Directory | Fuzzy % | Funcs % | Data % |
 |---|---|---|---|
-| `(root)` | 0.5% | 0.0% | 63.3% |
+| `(root)` | 3.1% | 5.6% | 63.3% |
 | `MechInputTouch` | 4.9% | 0.0% | 0.0% |
 | `editor` | 2.6% | 0.0% | - |
 | `gameapi` | 6.6% | 1.4% | 94.8% |
 | `gameframework` | 65.3% | 12.5% | 100.0% |
 | `gamelib` | 5.6% | 0.9% | 5.0% |
 | `java` | 10.7% | 0.0% | 0.0% |
-| `legoapi` | 5.6% | 4.6% | 9.2% |
+| `legoapi` | 5.6% | 4.7% | 9.2% |
 | `legoapi/actions` | 1.7% | 0.5% | - |
 | `legoapi/ai` | 2.0% | 0.0% | - |
-| `legoapi/audio` | 2.9% | 0.0% | - |
+| `legoapi/audio` | 3.0% | 0.0% | - |
 | `legoapi/characters` | 3.5% | 0.6% | 39.1% |
 | `legoapi/core` | 9.6% | 4.5% | 97.8% |
 | `legoapi/cutscenes` | 3.0% | 0.0% | 100.0% |
 | `legoapi/gizmo` | 4.9% | 4.7% | 0.4% |
 | `legoapi/gizmos` | 12.2% | 4.2% | 100.0% |
 | `legoapi/items` | 2.4% | 0.2% | 4.9% |
-| `legoapi/menus` | 2.4% | 0.0% | 0.0% |
+| `legoapi/menus` | 2.5% | 0.2% | 0.0% |
 | `legoapi/misc` | 2.3% | 0.5% | - |
 | `legoapi/props` | 7.3% | 2.4% | 13.0% |
 | `legoapi/render` | 2.4% | 1.3% | 0.4% |

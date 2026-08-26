@@ -231,12 +231,15 @@ static void LoadPermData(BGPROCINFO *proc) {
     Text_InitDefaultStrings();
     LoadPerm_StringsLoaded = 1;
 
-    // HOST-ONLY: the original fills `IntroText_TextID` from the string table
-    // during perm loading.  Until that lookup is decompiled, seed a valid id
-    // so the loading-screen intro-text timer state machine runs on host exactly
-    // as on device.
+    // Original fills IntroText_TextID from tALONGTIMEAGO (1) via Text_LoadStrings.
+    // Host fetches it through the faithful IntroText_SetTextID path.
     if (IntroText_TextID == -1) {
-        IntroText_TextID = 0;
+        extern void IntroText_SetTextID(i32);
+        // tALONGTIMEAGO == 1 (006a1ec8 B). Use faithful setter so TTab validation runs.
+        IntroText_SetTextID(1);
+        // If TTab not yet resident (host no OBB), fallback to 1 directly for timer to run
+        if (IntroText_TextID == -1)
+            IntroText_TextID = 1;
     }
 
     LOG_INFO("LoadPermData: proc=%p langsel=%d", static_cast<void *>(proc), LoadPerm_LanguageSelect);
@@ -480,22 +483,26 @@ void LoadPerm(void) {
                 }
             }
 
-            // Intro text — draws over the legal background once perm data is
-            // resident.  Alpha ramps in over 0.3 s, holds, then fades out.
+            // Intro text — alpha ramps in over 0.3 s, holds, then fades out.
+            // Compute alpha outside scene, draw inside scene for proper host prim batching.
+            f32 intro_alpha = 0.0f;
+            bool intro_will_draw = false;
             if (PermDataLoaded != 0 && intro_ready) {
                 if (intro_text_timer > kIntroFadeInStart) {
-                    f32 alpha;
                     if (intro_text_timer < 0.6f) {
-                        alpha = (intro_text_timer - kIntroFadeInStart) / kIntroFadeInDuration;
+                        intro_alpha = (intro_text_timer - kIntroFadeInStart) / kIntroFadeInDuration;
                     } else if (kIntroHoldEnd > intro_text_timer) {
-                        alpha = 1.0f;
+                        intro_alpha = 1.0f;
                     } else {
-                        alpha = 1.0f - (intro_text_timer - kIntroHoldEnd) / kIntroFadeOutDuration;
+                        intro_alpha = 1.0f - (intro_text_timer - kIntroHoldEnd) / kIntroFadeOutDuration;
                     }
-
-                    if (alpha > 0.0f) {
-                        IntroText_Draw(alpha);
-                    }
+                    if (intro_alpha > 0.0f)
+                        intro_will_draw = true;
+                    // Clamp like original (no explicit clamp but color calc clamps)
+                    if (intro_alpha < 0.0f)
+                        intro_alpha = 0.0f;
+                    if (intro_alpha > 1.0f)
+                        intro_alpha = 1.0f;
                 }
                 intro_text_timer += FRAMETIME;
                 if (intro_text_timer >= kIntroDuration && legal_timer >= kLegalTimerMax) {
@@ -535,6 +542,11 @@ void LoadPerm(void) {
 
             NuRndrBeginScene();
             NuRndrGradClear(0xf00, 0x80000000, 0x80000000, 1.0f);
+
+            // ---- Intro text (blue screen) — faithful: inside scene, after grad clear ----
+            if (intro_will_draw) {
+                IntroText_Draw(intro_alpha);
+            }
 
             // ---- Legal screen quad ----
             do {
