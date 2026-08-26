@@ -1,6 +1,10 @@
 #include "nu2api/nucore/NuMemoryManager.h"
 
 #include <pthread.h>
+
+#ifdef HOST_BUILD
+#include <execinfo.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -185,6 +189,20 @@ void *NuMemoryManager::_BlockAlloc(u32 size, u32 alignment, u32 flags, const cha
 
 void *NuMemoryManager::_TryBlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, u16 category) {
 #ifdef HOST_BUILD
+    if (size == 3686400) {
+        static int big_alloc_traces = 0;
+        if (big_alloc_traces < 2) {
+            big_alloc_traces++;
+            void *bt[12];
+            int n = backtrace(bt, 12);
+            char **syms = backtrace_symbols(bt, n);
+            LOG_WARN("big-alloc trace:");
+            for (int i = 0; i < n; i++) {
+                LOG_WARN("  #%d %s", i, syms[i]);
+            }
+            free(syms);
+        }
+    }
     LOG_WARN("_TryBlockAlloc(size=%u, alignment=%u, flags=%u, name=%s, category=%u) - replacing with malloc", size,
              alignment, flags, name, category);
     return malloc(size);

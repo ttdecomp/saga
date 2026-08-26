@@ -1,3 +1,6 @@
+#include <string.h>
+#include <stdio.h>
+#include <stdarg.h>
 #include "decomp.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nu3d/nutex.h"
@@ -76,6 +79,58 @@ void DebrisProcessSpheres(uv1deb *, float, debinftype *, debkeydatatype_s *, i32
 void DisplayListPrintItem(nudisplaylistitem_s *, i32, i32, i32 *, i32) {
 }
 
+// Debug-capture output helpers consumed by NuDisplayListCaptureSortPriority.
+// Transcribed from the original C-linkage symbols:
+//   NuHtmlBegin    0x2d5ca0   NuHtmlFlush   0x2d5c30
+//   NuHtmlWrite    0x2d5cd0   NuHtmlHeading1 0x2d5d40
+static char nudl_html_buf[0xc00]; // original bss buffer @0xb9d750-rel
+static char *nudl_html_cursor;    // original @0xb9d720-rel
+static char *nudl_html_end;       // original @0xb9d730-rel
+static void *nudl_html_file;      // original file-handle pointer
+
+extern "C" void NuHtmlFlush(i32 force) {
+    if (nudl_html_cursor > nudl_html_buf || force) {
+        // HOST-ONLY: the original hands the buffer to NuFileWriteString on a
+        // debug dump file; that API is not decompiled yet, so emit to stdout.
+        fwrite(nudl_html_buf, 1, (usize)(nudl_html_cursor - nudl_html_buf), stdout);
+        nudl_html_cursor = nudl_html_buf;
+        nudl_html_end = nudl_html_buf + sizeof(nudl_html_buf);
+    }
+}
+
+extern "C" void NuHtmlBegin(void *file) {
+    nudl_html_file = file;
+    nudl_html_cursor = nudl_html_buf;
+    nudl_html_end = nudl_html_buf + sizeof(nudl_html_buf);
+}
+
+extern "C" void NuHtmlWrite(const char *text) {
+    if (text == NULL || text[0] == '\0') {
+        text = ""; // original substitutes an empty-string constant
+    }
+    // The original vsprintf's with an empty vararg list, i.e. a plain copy.
+    usize len = strlen(text);
+    if ((usize)(nudl_html_end - nudl_html_cursor) > len) {
+        memcpy(nudl_html_cursor, text, len + 1);
+        nudl_html_cursor += len;
+    }
+    NuHtmlFlush(0);
+}
+
+extern "C" void NuHtmlHeading1(const char *fmt, ...) {
+    if (fmt == NULL || fmt[0] == '\0') {
+        fmt = "";
+    }
+    NuHtmlWrite("<h1>");
+    va_list ap;
+    va_start(ap, fmt);
+    char tmp[0xc00];
+    vsnprintf(tmp, sizeof(tmp), fmt, ap);
+    va_end(ap);
+    NuHtmlWrite(tmp);
+    NuHtmlWrite("</h1>");
+}
+
 void AddChunkToRenderStack(particlechunkrendertype_s *, particlechunkrendertype_s **) {
 }
 
@@ -110,9 +165,6 @@ void DebrisGetControlStackLock() {
 }
 
 void DebrisProcessControlChunks(i32) {
-}
-
-void DisplayListLinkDynamicMtls() {
 }
 
 void DisplayListCreateDynMtlList(variptr_u *, variptr_u) {

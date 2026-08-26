@@ -1,3 +1,4 @@
+#include "decomp.h"
 #include "nu2api/nu3d/NuRenderDevice.h"
 #include "nu2api/nu3d/android/nugscn_android.h"
 #include "nu2api/nu3d/android/nurenderthread.h"

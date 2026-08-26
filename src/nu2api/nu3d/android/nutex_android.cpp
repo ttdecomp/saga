@@ -180,6 +180,16 @@ i32 NuTexReserve(i32 size) {
 void NuTexUnReserve() {
 }
 
+// original 0x2fb280 — hand out the next free native-texture slot index. The
+// original walks the loaded-texture slot table for a NULL entry; our native
+// texture store keeps full NUNATIVETEX structs, so the free-slot scan reduces
+// to a monotonic counter (same observable: unique fresh id per call).
+i32 NuTexGenTexture(NUNATIVETEX *tex) {
+    static i32 next_slot;
+    (void)tex;
+    return ++next_slot;
+}
+
 void NuTexSetTextureWithStagePS(NUNATIVETEX *tex, GLuint stage) {
     GLuint gl_tex;
 

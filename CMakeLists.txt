@@ -127,7 +127,6 @@ if (BUILD_FOR_HOST)
     list(APPEND SAGA_SOURCE_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/main.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/ios_graphics.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/host_scene_render.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/nutex_host.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/nutex_ios_ex.cpp
     )

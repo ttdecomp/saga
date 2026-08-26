@@ -1,4 +1,5 @@
 
+#include <string.h>
 #include "nu2api/nucore/common.h"
 #include "nu2api/nucore/nuapi.h"
 #include "nu2api/nu3d/nudlist.h"
@@ -19,10 +20,8 @@ extern "C" {
     void NuTexAnimProcess(void);
     void NuWindAnimate(void);
     void NuTimeBarSetRender(void);
-    void NuRndrSwapScreenEx(void);
+    void NuRndrSwapScreenEx(i32 mode, void (*callback)(void));
 
-    // Bulk display-list manager (nudlist.cpp; original bss @0x11a0080, 0x604 bytes).
-    extern u8 global_dlist_manager[0x604];
     extern VARIPTR *display_list_buffer_end;
     extern VARIPTR rndrstream_free;
     extern VARIPTR rndrstream_end;
@@ -44,17 +43,20 @@ extern "C" {
     static const usize NUDLIST_2D_CRITSEC_OFFSET = 0x5EC;
 
     void NuDisplayListInit(VARIPTR *buf, VARIPTR *buf_end) {
-        *(u8 **)(global_dlist_manager + NUDLIST_2D_STREAM_BASE_OFFSET) =
-            global_dlist_manager + NUDLIST_2D_STREAM_AREA_OFFSET;
+        u8 *mgr = (u8 *)&global_dlist_manager;
+        // The static 2D list starts anchored on the stream-head sentinel:
+        // both `first` (+0x4c8) and `mtl_last` (+0x4cc) point at it so
+        // AddRenderScene treats the chain as empty.
+        *(u8 **)(mgr + NUDLIST_2D_STREAM_BASE_OFFSET) = mgr + NUDLIST_2D_STREAM_AREA_OFFSET;
+        *(u8 **)(mgr + NUDLIST_2D_STREAM_BASE_OFFSET + 4) = mgr + NUDLIST_2D_STREAM_AREA_OFFSET;
 
         DisplayListCreateDynMtlList(buf, *buf_end);
         NuDisplayListResetBuffer();
 
-        *(i32 *)(global_dlist_manager + NUDLIST_2D_CRITSEC_OFFSET) = NuThreadCreateCriticalSection();
+        *(i32 *)(mgr + NUDLIST_2D_CRITSEC_OFFSET) = NuThreadCreateCriticalSection();
     }
 
-    void Nu360_dxClear(void) {
-    }
+    // Nu360_dxClear(u32,u32) is transcribed in nuposteffect_plain.cpp (original 0x317070).
     void Nu360GetCommandLine(void) {
     }
     void NuAToFW(void) {
@@ -321,18 +323,6 @@ extern "C" {
     }
     void NuDisableVBlankE(void) {
     }
-    void NuDisplayListAddClut(void) {
-    }
-    void NuDisplayListAddLightState(void) {
-    }
-    void NuDisplayListAddMaterialState(void) {
-    }
-    void NuDisplayListAddMicrocode(void) {
-    }
-    void NuDisplayListAddRenderScene(void) {
-    }
-    void NuDisplayListAddTexture(void) {
-    }
     void NuDisplayListAnimateMtls(void) {
     }
     void NuDisplayListBeginCriticalSection(void) {
@@ -342,8 +332,6 @@ extern "C" {
     void NuDisplayListCaptureBegin(void) {
     }
     void NuDisplayListCaptureEnd(void) {
-    }
-    void NuDisplayListCaptureSortPriority(void) {
     }
     void NuDisplayListClipSpecials(void) {
     }
@@ -359,19 +347,11 @@ extern "C" {
     }
     void NuDisplayListDraw(void) {
     }
-    void NuDisplayListDraw2D(void) {
-    }
     void NuDisplayListDrawAll(void) {
-    }
-    void NuDisplayListDrawItems(void) {
-    }
-    void NuDisplayListDrawRenderScene(void) {
     }
     void NuDisplayListEndCriticalSection(void) {
     }
     void NuDisplayListEndScene(void) {
-    }
-    void NuDisplayListExecute(void) {
     }
     void NuDisplayListLinkItem(void) {
     }
@@ -413,18 +393,12 @@ extern "C" {
     }
     void NuDisplayListPrepareFaceonPS(void) {
     }
-    void NuDisplayListReset(void) {
-    }
     void NuDisplayListRndrSpecial(void) {
     }
     void NuDisplayListSetFxParam(void) {
     }
-    void NuDisplayListSetItemTable(void) {
-    }
-    void NuDisplayListSwapBuffersBeginFrame(void) {
-    }
-    void NuDisplayListSwapBuffersEndFrame(void) {
-    }
+    // NuDisplayListSwapBuffersBeginFrame / EndFrame are transcribed in full
+    // in nudlist.cpp (originals 0x2eb5d0 / 0x2eaef0).
     void NuDisplayListUpdateSpecial(void) {
     }
     void NuDisplaySceneAdd(void) {
@@ -466,8 +440,6 @@ extern "C" {
     void NuDynamicLightGetProjection(void) {
     }
     void NuDynamicLightGetView(void) {
-    }
-    void NuDynamicLightIsEnabled(void) {
     }
     void NuDynamicLightIsUsedOnSpecials(void) {
     }
@@ -672,7 +644,7 @@ extern "C" {
             preRenderFlashingHack();
         }
 
-        NuRndrSwapScreenEx(); // original: (-1, nuapi_endframe_callbackfn)
+        NuRndrSwapScreenEx(-1, nuapi_endframe_callbackfn);
 
         NUTIME end;
         NUTIME delta2;
@@ -892,8 +864,7 @@ extern "C" {
     }
     void NuHtmlBanner(void) {
     }
-    void NuHtmlBegin(void) {
-    }
+    // NuHtmlBegin(void*) is transcribed in legoapi/misc/supportall.cpp (original 0x2d5ca0).
     void NuHtmlBitmap(void) {
     }
     void NuHtmlEnd(void) {
@@ -902,15 +873,11 @@ extern "C" {
     }
     void NuHtmlHLineGraph(void) {
     }
-    void NuHtmlHeading1(void) {
-    }
     void NuHtmlHeading2(void) {
     }
     void NuHtmlHeading3(void) {
     }
     void NuHtmlVBarGraph(void) {
-    }
-    void NuHtmlWrite(void) {
     }
     void NuIOSMtlInit(void) {
     }
@@ -930,10 +897,71 @@ extern "C" {
         }
         return 16.0f / 9.0f;
     }
+    // Locale string filled by the platform layer (Java nativeSetLanguage on
+    // device; LANG environment on host) and cached result index.
+    char g_language[16] = {0}; // original bss @0x66f440
+    i32 g_languageIndex = -1;  // original .data @0x616b80
+
+    // original 0xe3640 — exact locale-matching ladder of the original.
     i32 NuIOS_GetDeviceLanguage(void) {
-        // Host has no platform locale service; report English like the
-        // default Text_Language.
-        return 1;
+        if (g_languageIndex != -1) {
+            return g_languageIndex;
+        }
+        auto matches = [&](const char *suffix, i32 n) {
+            for (i32 k = 0; k < n; k++) {
+                if (g_language[k] != suffix[k]) {
+                    return false;
+                }
+            }
+            return true;
+        };
+        if (matches("en-us", 5))
+            return g_languageIndex = 0x12;
+        if (matches("en-", 3))
+            return g_languageIndex = 1;
+        if (matches("fr-ca", 5))
+            return g_languageIndex = 2;
+        if (matches("fr-", 3))
+            return g_languageIndex = 2;
+        if (matches("it-", 3))
+            return g_languageIndex = 5;
+        if (matches("de-", 3))
+            return g_languageIndex = 4;
+        if (matches("es-mx", 5))
+            return g_languageIndex = 3;
+        if (matches("es-", 3))
+            return g_languageIndex = 3;
+        if (matches("ja-", 3))
+            return g_languageIndex = 0;
+        if (matches("ko-", 3))
+            return g_languageIndex = 0xd;
+        if (matches("nl-", 3))
+            return g_languageIndex = 6;
+        if (matches("pt-br", 5))
+            return g_languageIndex = 0x10;
+        if (matches("pt-", 3))
+            return g_languageIndex = 7;
+        if (strncmp(g_language, "zh-", 3) == 0)
+            return g_languageIndex = 0x13;
+        if (strncmp(g_language, "hu-", 3) == 0)
+            return g_languageIndex = 1;
+        if (strncmp(g_language, "ru-", 3) == 0)
+            return g_languageIndex = 0xc;
+        if (strncmp(g_language, "pl-", 3) == 0)
+            return g_languageIndex = 0xb;
+        if (strncmp(g_language, "cs-", 3) == 0)
+            return g_languageIndex = 10;
+        if (strncmp(g_language, "el-", 3) == 0)
+            return g_languageIndex = 9;
+        if (strncmp(g_language, "da-", 3) == 0)
+            return g_languageIndex = 8;
+        if (strncmp(g_language, "no-", 3) == 0)
+            return g_languageIndex = 0xf;
+        if (strncmp(g_language, "sv-", 3) == 0)
+            return g_languageIndex = 0xe;
+        if (strncmp(g_language, "fi-", 3) == 0)
+            return g_languageIndex = 0x11;
+        return -1;
     }
     void NuIOS_HardwareSupportsRetina(void) {
     }
@@ -947,14 +975,11 @@ extern "C" {
     }
     void NuIOS_RecordFlurryEvent(void) {
     }
-    void NuIOS_SetVertexFormat(void) {
-    }
+    // NuIOS_SetVertexFormat is transcribed in nuiosdl_gl.cpp (original 0x29c070).
     void NuIOS_ShowAchievements(void) {
     }
-    void NuIOS_WaitForRenderThreadCompletion(void) {
-    }
-    void NuIOS_WakeRenderThread(void) {
-    }
+    // NuIOS_WaitForRenderThreadCompletion is transcribed in ios_graphics.cpp (original 0xe34b0).
+    // NuIOS_WakeRenderThread is transcribed in ios_graphics.cpp (original 0xe3590).
     void NuIToA(void) {
     }
     void NuIToAW(void) {
@@ -1518,17 +1543,12 @@ extern "C" {
     }
     void NuRenderContextSetViewport(void) {
     }
-    void NuRenderContextSetZFunc(void) {
-    }
+    // NuRenderContextSetZFunc is transcribed in nuiosdl_gl.cpp (original 0x2a3860).
     void NuRenderDeviceIsContextValid(void) {
     }
     void NuRenderThreadDestroy(void) {
     }
     void NuRenderThreadIsCurrentThread(void) {
-    }
-    void NuRenderThreadPrepareRender(void) {
-    }
-    void NuRenderThreadStartRender(void) {
     }
     void NuRndIsReflectionGobj(void) {
     }

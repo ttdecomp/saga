@@ -355,11 +355,12 @@ void NuMotionFilterGen::render() {
 void NuSpeedBlurFilter::initResources() {
 }
 
-void NuApplicationState::SetStatus(NUAPPLICATIONSTATUS) {
+void NuApplicationState::SetStatus(NUAPPLICATIONSTATUS value) {
+    status = value;
 }
 
 NUAPPLICATIONSTATUS NuApplicationState::GetStatus() const {
-    return NUAPPLICATIONSTATUS();
+    return status;
 }
 
 NuApplicationState::~NuApplicationState() {

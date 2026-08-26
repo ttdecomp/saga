@@ -51,18 +51,14 @@ extern "C" {
     void DisplayListPrintItemPS(void) {
     }
 
-    void DisplayListSetAlphaPS(void) {
-    }
-
+    // DisplayListSetAlphaPS is fully transcribed in nu3d/nudlist.cpp (original 0x29b8c0 / 0x29b77e).
     void DisplayListSetFxItemParamPS(void) {
     }
 
     void DisplayListSetShadowCasterFlagPS(void) {
     }
 
-    void DisplayListSwapBuffersPS(void) {
-    }
-
+    // DisplayListSwapBuffersPS is fully transcribed in nu3d/nudlist.cpp (original 0x29b8c0 / 0x29b77e).
     void DisplayListUpdateRenderState(void) {
     }
 

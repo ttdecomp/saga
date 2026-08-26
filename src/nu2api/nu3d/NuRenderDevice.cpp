@@ -3,6 +3,7 @@
 #include "decomp.h"
 #include "globals.h"
 #include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nu3d/android/nutex_ios_ex.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nucore/nucore.hpp"
 #include "nu2api/nucore/nustring.h"
@@ -16,7 +17,6 @@
 #include <string.h>
 
 #ifdef HOST_BUILD
-#include "host-tests/nuios/host_scene_render.h"
 #endif
 
 NuRenderDevice g_renderDevice{};
@@ -199,30 +199,41 @@ void NuRenderDevice::SetThisTreadAsRender() {
 
 i32 g_nextGLContextIndex = 0;
 
-void NuRenderDevice::BeginCriticalSection(const char *file, i32 line) {
-    pthread_mutex_lock(&this->mutex2);
+// The original critical sections are reentrant (Android uses counting
+// sections); nested Begin/End pairs like NuIOSInitOpenGLES ->
+// NuIOS_AllocateSystemFramebuffers rely on that. Model the recursion with a
+// thread-local depth: the outermost Begin takes the mutex and binds this
+// thread's GL context, the outermost End releases both.
+static thread_local i32 t_glcs_depth = 0;
 
+void NuRenderDevice::BeginCriticalSection(const char *file, i32 line) {
     static thread_local i32 gl_context_index = -1;
 
-    i32 i = this->lock_count++;
+    if (t_glcs_depth == 0) {
+        pthread_mutex_lock(&this->mutex2);
 
-    if (i == 0) {
-        i = gl_context_index;
-
+        i32 i = gl_context_index;
         if (i == -1) {
             i = g_nextGLContextIndex;
             g_nextGLContextIndex = (g_nextGLContextIndex + 1) % 4;
+            gl_context_index = i;
         }
 
         LOG_DEBUG("this->egl_display: %p, this->pbuffers[%d]: %p, this->contexts[%d]: %p", this->egl_display, i,
                   this->pbuffers[i], i, this->contexts[i]);
         eglMakeCurrent(this->egl_display, this->pbuffers[i], this->pbuffers[i], this->contexts[i]);
     }
+    t_glcs_depth++;
 }
 
 void NuRenderDevice::EndCriticalSection(const char *file, i32 line) {
 #ifdef HOST_BUILD
-    pthread_mutex_unlock(&this->mutex2);
+    if (t_glcs_depth > 0) {
+        t_glcs_depth--;
+    }
+    if (t_glcs_depth == 0) {
+        pthread_mutex_unlock(&this->mutex2);
+    }
 #else
     UNIMPLEMENTED();
 #endif
@@ -235,27 +246,110 @@ static EGLContext g_hostPresentCtx = EGL_NO_CONTEXT;
 
 void NuRenderDevice::SwapBuffers() {
 #ifdef HOST_BUILD
-    // HOST-ONLY: on Android SwapBuffers() runs on the render thread, which
-    // already owns a current context from BeginCriticalSection(). The host
-    // test pumps presents from its own thread, so bind the window context
-    // here first. If the worker currently holds this exact context/surface
-    // pair the call fails and the frame is simply skipped.
+    // HOST: present the FBO texture (g_earlyColorTexture) to the window via
+    // the dedicated present context. The render thread renders to a per-context
+    // FBO wrapping the shared texture; pbuffers[0..2] are 1x1 so the window
+    // would otherwise stay black. This is the only host PS present logic.
+    extern GLuint g_earlyColorTexture;
+    extern bool g_hostReadbackReady;
+    extern u8 g_hostReadbackRGBA[1280 * 720 * 4];
+    extern i32 g_backingWidth, g_backingHeight;
+
+    EGLContext presentCtx = g_hostPresentCtx != EGL_NO_CONTEXT ? g_hostPresentCtx : this->contexts[3];
     bool have_ctx = false;
-    if (this->egl_display != EGL_NO_DISPLAY && this->pbuffers[3] != EGL_NO_SURFACE &&
-        this->contexts[3] != EGL_NO_CONTEXT) {
-        have_ctx = eglMakeCurrent(this->egl_display, this->pbuffers[3], this->pbuffers[3], this->contexts[3]);
+    if (this->egl_display != EGL_NO_DISPLAY && this->pbuffers[3] != EGL_NO_SURFACE && presentCtx != EGL_NO_CONTEXT) {
+        have_ctx = eglMakeCurrent(this->egl_display, this->pbuffers[3], this->pbuffers[3], presentCtx);
         if (!have_ctx) {
-            eglGetError(); // clear so the next attempt starts clean
+            eglGetError();
         }
     }
 
-    // Host-only interim present path (see host-tests/nuios/host_scene_render.h
-    // for why this exists).
-    if (have_ctx) {
-        host_present::Present();
-        glFlush();
+    if (have_ctx && (g_earlyColorTexture != 0 || g_hostReadbackReady)) {
+        static GLuint presentProg = 0;
+        static GLint presentPosLoc = -1, presentUvLoc = -1, presentTexLoc = -1;
+        static GLuint presentVbo = 0, presentTex = 0;
+        if (presentProg == 0) {
+            const char *vs = "attribute vec2 a_position; attribute vec2 a_texcoord; varying vec2 v_uv; void main(){ "
+                             "gl_Position=vec4(a_position,0,1); v_uv=a_texcoord; }";
+            const char *fs = "precision mediump float; varying vec2 v_uv; uniform sampler2D u_tex; void main(){ "
+                             "gl_FragColor=texture2D(u_tex, v_uv); }";
+            GLuint vsh = glCreateShader(GL_VERTEX_SHADER);
+            glShaderSource(vsh, 1, &vs, NULL);
+            glCompileShader(vsh);
+            GLuint fsh = glCreateShader(GL_FRAGMENT_SHADER);
+            glShaderSource(fsh, 1, &fs, NULL);
+            glCompileShader(fsh);
+            presentProg = glCreateProgram();
+            glAttachShader(presentProg, vsh);
+            glAttachShader(presentProg, fsh);
+            glBindAttribLocation(presentProg, 0, "a_position");
+            glBindAttribLocation(presentProg, 1, "a_texcoord");
+            glLinkProgram(presentProg);
+            glDeleteShader(vsh);
+            glDeleteShader(fsh);
+            presentPosLoc = glGetAttribLocation(presentProg, "a_position");
+            presentUvLoc = glGetAttribLocation(presentProg, "a_texcoord");
+            presentTexLoc = glGetUniformLocation(presentProg, "u_tex");
+            glGenBuffers(1, &presentVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, presentVbo);
+            float verts[] = {-1, -1, 0, 0, 1, -1, 1, 0, -1, 1, 0, 1, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1};
+            glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+            glGenTextures(1, &presentTex);
+            glBindTexture(GL_TEXTURE_2D, presentTex);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        }
+        GLuint srcTex = 0;
+        bool useSharedTex = false;
+        if (g_earlyColorTexture != 0 && glIsTexture(g_earlyColorTexture)) {
+            srcTex = g_earlyColorTexture;
+            useSharedTex = true;
+            LOG_WARN("[present] using shared tex %u ready=%d", srcTex, g_hostReadbackReady);
+        }
+        if (!useSharedTex && g_hostReadbackReady) {
+            glBindTexture(GL_TEXTURE_2D, presentTex);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, g_backingWidth, g_backingHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                         g_hostReadbackRGBA);
+            srcTex = presentTex;
+            useSharedTex = true;
+            LOG_WARN("[present] using readback tex %u", srcTex);
+        }
+        if (!useSharedTex) {
+            LOG_WARN("[present] no tex (early %u isTex %d ready %d)", g_earlyColorTexture,
+                     g_earlyColorTexture ? glIsTexture(g_earlyColorTexture) : 0, g_hostReadbackReady);
+        }
+        if (useSharedTex) {
+            EGLint w = 0, h = 0;
+            eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_WIDTH, &w);
+            eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_HEIGHT, &h);
+            if (w > 0 && h > 0)
+                glViewport(0, 0, w, h);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            glDisable(GL_BLEND);
+            glDisable(GL_DEPTH_TEST);
+            glDisable(GL_SCISSOR_TEST);
+            glUseProgram(presentProg);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, srcTex);
+            glUniform1i(presentTexLoc, 0);
+            glBindBuffer(GL_ARRAY_BUFFER, presentVbo);
+            glEnableVertexAttribArray(presentPosLoc);
+            glVertexAttribPointer(presentPosLoc, 2, GL_FLOAT, GL_FALSE, 16, (void *)0);
+            glEnableVertexAttribArray(presentUvLoc);
+            glVertexAttribPointer(presentUvLoc, 2, GL_FLOAT, GL_FALSE, 16, (void *)8);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+            glDisableVertexAttribArray(presentPosLoc);
+            glDisableVertexAttribArray(presentUvLoc);
+            glUseProgram(0);
+        }
     }
+
     if (this->egl_display != EGL_NO_DISPLAY && this->pbuffers[3] != EGL_NO_SURFACE) {
+        if (!have_ctx) {
+            eglMakeCurrent(this->egl_display, this->pbuffers[3], this->pbuffers[3], presentCtx);
+        }
         eglSwapBuffers(this->egl_display, this->pbuffers[3]);
     }
 #else
@@ -270,6 +364,30 @@ void NuRenderDevice::OnWindowCreated(ANativeWindow *window) {
 
 #ifdef HOST_BUILD
 i32 NuRenderDevice::HostReadbackPixels(u32 max_w, u32 max_h, u8 *rgba) {
+    extern u8 g_hostReadbackRGBA[1280 * 720 * 4];
+    extern bool g_hostReadbackReady;
+    extern i32 g_backingWidth, g_backingHeight;
+    // Fast path: the render thread already copied the FBO into the shared CPU
+    // buffer with correct 1280x720 size. No EGL/GL needed.
+    if (g_hostReadbackReady && g_backingWidth > 0 && g_backingHeight > 0) {
+        u32 cw = (u32)g_backingWidth < max_w ? (u32)g_backingWidth : max_w;
+        u32 ch = (u32)g_backingHeight < max_h ? (u32)g_backingHeight : max_h;
+        // g_hostReadbackRGBA is bottom-up (glReadPixels); HostReadback caller
+        // expects bottom-up (test_window does flip). Copy and pack.
+        // Simple memcpy with flip is done by caller; here we just memcpy the
+        // requested region bottom-up as stored.
+        // For simplicity, assume cw==max_w && ch==max_h (1280x720) which the
+        // test uses; otherwise do a row-wise copy.
+        if (cw == (u32)g_backingWidth && ch == (u32)g_backingHeight) {
+            memcpy(rgba, g_hostReadbackRGBA, (usize)cw * ch * 4);
+        } else {
+            for (u32 y = 0; y < ch; y++) {
+                memcpy(rgba + (usize)y * cw * 4, g_hostReadbackRGBA + (usize)y * g_backingWidth * 4, (usize)cw * 4);
+            }
+        }
+        return (i32)(cw * 1000 + ch);
+    }
+
     if (egl_display == EGL_NO_DISPLAY || pbuffer_readback == EGL_NO_SURFACE || context_readback == EGL_NO_CONTEXT) {
         return 0;
     }
@@ -287,11 +405,63 @@ i32 NuRenderDevice::HostReadbackPixels(u32 max_w, u32 max_h, u8 *rgba) {
     u32 cw = (u32)w < max_w ? (u32)w : max_w;
     u32 ch = (u32)h < max_h ? (u32)h : max_h;
 
-    // HOST-ONLY: the last SwapBuffers() left the freshly drawn frame in the
-    // front buffer after the swap, so re-draw the latest snapshot into the
-    // read buffer before reading it back.
-    host_present::Present();
-    glFinish();
+    // Fallback: re-draw the shared texture into the readback pbuffer. This
+    // path is used before the first frame is ready.
+    if (g_earlyColorTexture != 0 && glIsTexture(g_earlyColorTexture)) {
+        // Simple blit of the shared texture into this pbuffer's default FBO
+        // so glReadPixels below sees the last frame. Use the same present
+        // shader as SwapBuffers but targeting this pbuffer.
+        static GLuint rbProg = 0;
+        static GLint rbPosLoc = -1, rbUvLoc = -1, rbTexLoc = -1;
+        static GLuint rbVbo = 0;
+        if (rbProg == 0) {
+            const char *vs = "attribute vec2 a_position; attribute vec2 a_texcoord; varying vec2 v_uv; void main(){ "
+                             "gl_Position=vec4(a_position,0,1); v_uv=a_texcoord; }";
+            const char *fs = "precision mediump float; varying vec2 v_uv; uniform sampler2D u_tex; void main(){ "
+                             "gl_FragColor=texture2D(u_tex, v_uv); }";
+            GLuint vsh = glCreateShader(GL_VERTEX_SHADER);
+            glShaderSource(vsh, 1, &vs, NULL);
+            glCompileShader(vsh);
+            GLuint fsh = glCreateShader(GL_FRAGMENT_SHADER);
+            glShaderSource(fsh, 1, &fs, NULL);
+            glCompileShader(fsh);
+            rbProg = glCreateProgram();
+            glAttachShader(rbProg, vsh);
+            glAttachShader(rbProg, fsh);
+            glBindAttribLocation(rbProg, 0, "a_position");
+            glBindAttribLocation(rbProg, 1, "a_texcoord");
+            glLinkProgram(rbProg);
+            glDeleteShader(vsh);
+            glDeleteShader(fsh);
+            rbPosLoc = glGetAttribLocation(rbProg, "a_position");
+            rbUvLoc = glGetAttribLocation(rbProg, "a_texcoord");
+            rbTexLoc = glGetUniformLocation(rbProg, "u_tex");
+            glGenBuffers(1, &rbVbo);
+            glBindBuffer(GL_ARRAY_BUFFER, rbVbo);
+            float verts[] = {-1, -1, 0, 0, 1, -1, 1, 0, -1, 1, 0, 1, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1};
+            glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+        }
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, (GLsizei)cw, (GLsizei)ch);
+        glDisable(GL_BLEND);
+        glDisable(GL_DEPTH_TEST);
+        glUseProgram(rbProg);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, g_earlyColorTexture);
+        glUniform1i(rbTexLoc, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, rbVbo);
+        glEnableVertexAttribArray(rbPosLoc);
+        glVertexAttribPointer(rbPosLoc, 2, GL_FLOAT, GL_FALSE, 16, (void *)0);
+        glEnableVertexAttribArray(rbUvLoc);
+        glVertexAttribPointer(rbUvLoc, 2, GL_FLOAT, GL_FALSE, 16, (void *)8);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDisableVertexAttribArray(rbPosLoc);
+        glDisableVertexAttribArray(rbUvLoc);
+        glUseProgram(0);
+        glFinish();
+    } else {
+        glFinish();
+    }
 
     glViewport(0, 0, (GLsizei)cw, (GLsizei)ch);
     glPixelStorei(GL_PACK_ALIGNMENT, 1);

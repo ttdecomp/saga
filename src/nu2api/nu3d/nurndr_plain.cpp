@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "decomp.h"
+#include "nu2api/nucore/nucore.hpp"
 #include "globals.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nu3d/nugscn.h"
@@ -12,8 +13,6 @@
 #include "nu2api/nuandroid/ios_graphics.h"
 
 #ifdef HOST_BUILD
-// Host-only interim scene consumer glue (see host-tests/nuios/host_scene_render.h).
-#include "host-tests/nuios/host_scene_render.h"
 #endif
 
 // Current render scene being built (0x218 bytes), in bss like the original
@@ -65,7 +64,10 @@ extern "C" {
     void NuDisplayListLinkMtl(nudisplaylist_s *list, NUMTL *mtl);
     void NuDisplayListLinkItems(nudisplaylist_s *list, i32 count);
     nudisplaylist_s *NuDisplayListGet2dList(void);
-    // Shared renderer state block (original bss @0x119b900, 0x1b0 bytes);
+    // Originals 0x2ccb10/... — texture-animation pump; empty until the texanim
+    // subsystem is transcribed (no texture animations run during boot).
+    // Shared renderer state block
+
     // defined below, inside this extern "C" block.
     extern u8 render_state[0x1b0];
     extern VARIPTR *display_list_buffer;
@@ -184,9 +186,17 @@ extern "C" {
         VARIPTR *buf = NuDisplayListGetBuffer();
 
         nudisplaylist_s *list;
+#ifdef HOST_BUILD
+        // HOST: force 2D through the shared dlist_2d path so the faithful
+        // display-list execute (DrawRenderScene) carries the legal quad.
+        // The original shader-variant path (mtl->display_list) would require
+        // the sort-pri machinery (nused_sort_pris) which the host-boot 2D
+        // path never populates, causing AddRenderScene to return -1 and the
+        // legal to never reach the render thread. This is PS-equivalent.
+        list = NuDisplayListGet2dList();
+        NuDisplayListLinkMtl(list, mtl);
+#else
         if (mtl->display_list != NULL) {
-            // Shader-variant list: mark it dirty and set its bit for this
-            // material's texture layer (original packs into the first item).
             list = mtl->display_list;
             u8 *base = *(u8 **)list;
             base[0x74] |= 2;
@@ -200,6 +210,7 @@ extern "C" {
             list = NuDisplayListGet2dList();
             NuDisplayListLinkMtl(list, mtl);
         }
+#endif
 
         RndrStateSetConstAlphaTint(0, 0, nudrndr_2d_default_state, 0, 0);
         DisplayListUpdateRenderState(list, render_state);
@@ -218,24 +229,11 @@ extern "C" {
         g_NuPrim_CurrentPrimType = (u16)prim_type;
         g_NuPrim_VertexCount = 0;
 
-#ifdef HOST_BUILD
-        // Host-only: remember which material this stream belongs to so the
-        // interim present path can bind its texture (see the note at
-        // host-tests/nuios/host_scene_render.h).
-        host_present::PrimStreamBegin(prim_type, mtl);
-#endif
-
         nurndr_NuDisplayListAddItem(list, 0x93, cursor);
     }
     void NuPrim2DEnd(void) {
         u16 *cnt_ptr = g_NuPrim_VertexCountPtr;
         *cnt_ptr = (u16)g_NuPrim_VertexCount;
-#ifdef HOST_BUILD
-        // Host-only: snapshot the committed 2D stream for the interim present
-        // path. The engine's real consumer is the GLES2 display-list executor
-        // (not yet decompiled); see host-tests/nuios/host_scene_render.h.
-        host_present::PrimStreamEnd();
-#endif
         g_NuPrim_VertexCount = 0;
     }
     void NuPrim3DEnd(void) {
@@ -332,16 +330,12 @@ extern "C" {
         cnt = sceneParametersCount;
         sceneParametersCount = cnt + 1;
         memcpy(&sceneParameters[cnt], scn, 0x218);
-#ifdef HOST_BUILD
-        // Host-only: hand the committed scene to the interim present path and
-        // keep the ring index from overrunning the 16-slot array while the
-        // real display-list consumer has not been decompiled yet (the render
-        // thread would normally drain/reset this).
-        host_present::SceneCommitted(&sceneParameters[cnt]);
-        if (sceneParametersCount >= 15) {
+        // The 16-slot sceneParameters ring is drained by the render thread's
+        // processRenderScenes; clamp it here exactly like the original's modular
+        // index so a stalled consumer cannot corrupt the array.
+        if (sceneParametersCount >= 16) {
             sceneParametersCount = 0;
         }
-#endif
     }
     void NuRndrEndSceneEx(void) {
         NuRndrEndScene();
@@ -469,11 +463,64 @@ extern "C" {
     }
     void NuRndrStrip3d(void) {
     }
-    void NuRndrSwapScreen(void) {
+    extern i32 g_isBlockedInSwapScreen;
+    extern i32 rndr_blend_shape_deformer_wt_cnt;
+    extern i32 rndr_blend_shape_deformer_wt_ptrs_cnt;
+    void NuDebrisRendererFlushBuffers(void);
+    void NuRndrSwapStreamBuffers(void);
+    void NuRenderThreadPrepareRender(void);
+    void NuRenderThreadStartRender(void);
+    void NuShaderManagerBindShader(i32 shader);
+
+    extern "C" void NuDisplayListCheckBuffer(void);
+    extern "C" void NuDisplayListResetBuffer(void);
+    extern "C" void NuRenderThreadLock(void);
+    extern "C" void NuRenderThreadUnlock(void);
+    // original 0x2967db
+    extern "C" i32 NuRndrSwapScreen(void) {
+        NuRenderThreadLock();
+        rndr_blend_shape_deformer_wt_cnt = 0x3f00;
+        rndr_blend_shape_deformer_wt_ptrs_cnt = 0x800;
+        NuRenderThreadPrepareRender();
+        NuShaderManagerBindShader(0);
+        NuDebrisRendererFlushBuffers();
+        NuDisplayListSwapBuffersEndFrame();
+        NuRndrSwapStreamBuffers();
+        NuDisplayListSwapBuffersBeginFrame();
+        NuDisplayListCheckBuffer();
+        NuDisplayListResetBuffer();
+        NuRenderThreadUnlock();
+        NuRenderThreadStartRender();
+
+        for (;;) {
+            NuApplicationState *state = NuCore::GetApplicationState();
+            if (state->GetStatus().status != 1) {
+                break;
+            }
+            g_isBlockedInSwapScreen = 1;
+            NuThreadSleep(1);
+        }
+        g_isBlockedInSwapScreen = 0;
+
+#ifdef HOST_BUILD
+        // HOST-ONLY: on Android the spin above is released by the activity
+        // lifecycle (nativeSetSurface/nativeOnPause flip NUAPPLICATIONSTATUS).
+        // The host window backend has no activity lifecycle, so wait for the
+        // render thread through the engine's own frame-pacing primitive
+        // (original 0xe34b0) to keep the game thread from lapping the safe scene
+        // buffer.
+        NuIOS_WaitForRenderThreadCompletion();
+#endif
+        return 1;
     }
-    void NuRndrSwapScreenEx(void) {
-    }
-    void NuRndrSwapStreamBuffers(void) {
+
+    // original 0x296888
+    extern "C" void NuRndrSwapScreenEx(i32 mode, void (*callback)(void)) {
+        (void)mode;
+        if (callback != NULL) {
+            callback();
+        }
+        NuRndrSwapScreen();
     }
     void NuRndrTrailEx(void) {
     }
@@ -489,127 +536,9 @@ extern "C" {
     }
     void NuShaderGetDirtyMask(void) {
     }
-    void NuShaderManagerBindShader(void) {
-    }
-    void NuShaderManagerDestroy(void) {
-    }
-    void NuShaderManagerDestroyShaders(void) {
-    }
-    void NuShaderManagerForceShader(void) {
-    }
-    void NuShaderManagerGetCurrentShader(void) {
-    }
-    void NuShaderManagerGetInstance(void) {
-    }
-    void NuShaderManagerGetShaderById(void) {
-    }
-    void NuShaderManagerGetShininessFactor(void) {
-    }
-    void NuShaderManagerInit(void) {
-    }
-    void NuShaderManagerLoadCompiledShaders(void) {
-    }
-    void NuShaderManagerReleaseShader(void) {
-    }
-    void NuShaderManagerRetrieveShader(void) {
-    }
-    void NuShaderManagerRetrieveShaderVariant(void) {
-    }
-    void NuShaderManagerSetCurrentShader(void) {
-    }
-    void NuShaderManagerSetElementfv(void) {
-    }
-    void NuShaderManagerSetElementsfv(void) {
-    }
-    void NuShaderManagerSetElementsfv_transpose(void) {
-    }
-    void NuShaderManagerSetShaderSaveFolder(void) {
-    }
-    void NuShaderManagerSetShininessFactor(void) {
-    }
-    void NuShaderManagerSetfv(void) {
-    }
-    void NuShaderObjectBaseUpdateWaterTable(void) {
-    }
-    void NuShaderObjectGLSLAllocateParameter(void) {
-    }
-    void NuShaderObjectGLSLProbeSemantics(void) {
-    }
-    void NuShaderObjectGLSLSetupMaterial(void) {
-    }
-    void NuShaderObjectGLSLSetupTextureStates(void) {
-    }
-    void NuShaderObjectInit(void) {
-    }
-    void NuShaderObjectKeyGenerate2(void) {
-    }
-    void NuShaderObjectKeyGenerate3(void) {
-    }
-    void NuShaderObjectKeyGenerate4(void) {
-    }
-    void NuShaderObjectKeySetUberShaderHash(void) {
-    }
-    void NuShaderObjectLoadFromFile(void) {
-    }
-    void NuShaderObjectSetElementsfv(void) {
-    }
-    void NuShaderObjectSetElementsfv_transpose(void) {
-    }
-    void NuShaderObjectUnserialize(void) {
-    }
     void NuShaderProgramCreateIOS(void) {
     }
     void NuShaderUniformGetByString(void) {
-    }
-    void NuTexAnimAddList(void) {
-    }
-    void NuTexAnimCreate(void) {
-    }
-    void NuTexAnimDestroy(void) {
-    }
-    void NuTexAnimEnvCreate(void) {
-    }
-    void NuTexAnimEnvDestroy(void) {
-    }
-    void NuTexAnimEnvProc(void) {
-    }
-    void NuTexAnimEnvReset(void) {
-    }
-    void NuTexAnimFind(void) {
-    }
-    void NuTexAnimProcess(void) {
-    }
-    void NuTexAnimProcessEx(void) {
-    }
-    void NuTexAnimProcessList(void) {
-    }
-    void NuTexAnimProgAssembleEnd(void) {
-    }
-    void NuTexAnimProgCreate(void) {
-    }
-    void NuTexAnimProgDestroy(void) {
-    }
-    void NuTexAnimProgFind(void) {
-    }
-    void NuTexAnimProgRead(void) {
-    }
-    void NuTexAnimProgReadCFG(void) {
-    }
-    void NuTexAnimProgReadScript(void) {
-    }
-    void NuTexAnimProgRelease(void) {
-    }
-    void NuTexAnimProgSysInit(void) {
-    }
-    void NuTexAnimProgWrite(void) {
-    }
-    void NuTexAnimRemoveList(void) {
-    }
-    void NuTexAnimRestart(void) {
-    }
-    void NuTexAnimSetMask(void) {
-    }
-    void NuTexAnimSetSignals(void) {
     }
     void NuTexCleartid(void) {
     }
@@ -633,5 +562,18 @@ extern "C" {
     }
 }
 
-// Shared renderer state block (original bss @0x119b900, 0x1b0 bytes).
+// Originals 0x2ccb10/... — texture-animation pump; empty until the texanim
+// subsystem is transcribed (no texture animations run during boot).
+extern "C" void NuTexAnimProcess(void) {
+}
+extern "C" void NuTexAnimProcessEx(void) {
+}
+extern "C" void NuTexAnimProcessList(void) {
+}
+
+// Shared renderer state block (original bss @0x119b900, 0x1b0 bytes)
+// with the swap-screen spin flag and blend-shape counters from original bss.
+i32 g_isBlockedInSwapScreen = 0;
+i32 rndr_blend_shape_deformer_wt_cnt = 0;
+i32 rndr_blend_shape_deformer_wt_ptrs_cnt = 0;
 u8 render_state[0x1b0] = {0};

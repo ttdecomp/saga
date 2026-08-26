@@ -8,3 +8,6 @@ GLuint g_earlyColorFramebuffer;
 GLuint g_defaultFramebuffer;
 GLuint g_currentFramebuffer;
 GLuint g_earlyColorMSAAFramebuffer;
+GLuint g_earlyColorTexture = 0;
+u8 g_hostReadbackRGBA[1280 * 720 * 4] = {0};
+bool g_hostReadbackReady = false;

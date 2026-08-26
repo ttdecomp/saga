@@ -151,13 +151,28 @@ i32 NuShaderObjectGenerateGLSLShader(GLuint *shader_dest, GLenum shader_type, co
     return 1;
 }
 
-void NuShaderObjectInit(nushaderobject_s *, nushaderobjectkey_s const *, i32, char const *, i32, u32, eSHADERVERSION) {
+// original 0x30b970 — Init(obj,key,i,uint,uint,version) forwards to
+// InitGLSL(obj,key,i,vshader,pshader) and then probes semantics.
+void NuShaderObjectInit(nushaderobject_s *obj, nushaderobjectkey_s const *key, i32 param, u32 vshader, u32 pshader,
+                        eSHADERVERSION) {
+    NuShaderObjectInitGLSL((nushaderobjectglsl_s *)obj, (nushaderobjectkey_s const *)key, param, vshader, pshader);
+    // NuShaderObjectGLSLProbeSemantics (0x30b560) not transcribed yet; the
+    // uniform semantic table stays empty until SetupMaterial lands.
 }
 
-void NuShaderObjectInit(nushaderobject_s *, nushaderobjectkey_s const *, i32, u32, char const *, i32, eSHADERVERSION) {
-}
-
-void NuShaderObjectInit(nushaderobject_s *, nushaderobjectkey_s const *, i32, u32, u32, eSHADERVERSION) {
+// original 0x30b050 — BaseInit, stash both shader objects, then build and
+// link the GL program; destroy the object when linking failed.
+void NuShaderObjectInitGLSL(nushaderobjectglsl_s *obj, nushaderobjectkey_s const *key, i32 param, u32 vshader,
+                            u32 pshader) {
+    NuShaderObjectBaseInit(&obj->base, (NUSHADEROBJECTKEY *)key, param);
+    obj->vertex_shader = vshader;   // +0x14
+    obj->fragment_shader = pshader; // +0x18
+    if (!NuShaderObjectCombineGLSLShadersIntoProgram(&obj->program, vshader, pshader)) {
+        BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/shaderbuilder/android/nushaderobject.cpp",
+                               298);
+        NuShaderObjectGLSLDestroy(obj);
+        EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/shaderbuilder/android/nushaderobject.cpp", 300);
+    }
 }
 
 void NuShaderObjectInitGLSL(nushaderobjectglsl_s *, nushaderobjectkey_s const *, i32, char const *, i32, char const *,
@@ -170,9 +185,6 @@ void NuShaderObjectInitGLSL(nushaderobjectglsl_s *, nushaderobjectkey_s const *,
 void NuShaderObjectInitGLSL(nushaderobjectglsl_s *, nushaderobjectkey_s const *, i32, u32, char const *, i32) {
 }
 
-void NuShaderObjectInitGLSL(nushaderobjectglsl_s *, nushaderobjectkey_s const *, i32, u32, u32) {
-}
-
 void NuShaderObjectGLSLGetSemanticIndex(char const *, nushaderuniform_e &) {
 }
 
@@ -183,3 +195,9 @@ extern "C" {
     static __used__ void NuShaderProgramSetVertexParamfv(i32, u32, u32, i32) {
     }
 }
+
+// Original exported the mangled C++ spelling too
+// (_Z18NuShaderObjectInitP16nushaderobject_sPK19nushaderobjectkey_siPKcij14eSHADERVERSION).
+asm(".globl _Z18NuShaderObjectInitP16nushaderobject_sPK19nushaderobjectkey_siPKcij14eSHADERVERSION\n"
+    ".set _Z18NuShaderObjectInitP16nushaderobject_sPK19nushaderobjectkey_siPKcij14eSHADERVERSION, "
+    "NuShaderObjectInit\n");

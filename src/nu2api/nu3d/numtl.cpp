@@ -3,9 +3,16 @@
 #include <string.h>
 
 #include "decomp.h"
+#include "nu2api/nu3d/android/nuvertexformat_android.h"
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nufile/nufile.h"
+
+// Shader manager API (transcribed in nushadermanager_plain.cpp).
+extern "C" void *NuShaderManagerRetrieveShader(NUSHADERMTLDESC *desc, void *mtl);
+extern "C" void *NuShaderManagerRetrieveShaderVariant(NUSHADERMTLDESC *desc, void *mtl, i32 variant);
+extern "C" i32 NuShaderManagerGetShaderById(i32 id);
+extern "C" void NuShaderManagerReleaseShader(i32 shader);
 
 static i32 max_materials;
 static NUMTL *material_list;
@@ -112,6 +119,49 @@ NUMTL *NuMtlCreate(i32 count) {
     return mtl;
 }
 
+// original 0x2f24a0 — same allocation sweep as NuMtlCreate, but WITHOUT
+// the attribs byte6 bit7 set (asm has no `orb $0x80,0x46` here), without
+// display-list registration, and the platform pass runs with is_3d=1
+// (no has_no_transform bit). Byte6 clear keeps NuMtlUpdatePS on the
+// RetrieveShaderVariant path instead of the vtx_desc bit2 poke path.
+NUMTL *NuMtlCreate3D(i32 count) {
+    i32 i;
+    i32 j;
+    NUMTL *mtl;
+    NUMTL *next;
+
+    next = NULL;
+
+    for (i = 0; i < count; i++) {
+        mtl = NULL;
+
+        for (j = 0; j < max_materials; j++) {
+            if (!material_list[j].is_used && material_list[j].display_list == NULL) {
+                mtl = &material_list[j];
+                break;
+            }
+        }
+
+        memset(mtl, 0, sizeof(NUMTL));
+
+        DefaultMtl(mtl);
+
+        mtl->is_used = true;
+        mtl->unknown_0_4 = true;
+        mtl->renderplane = numtl_renderplane;
+        // NB: no unknown_6_128 here — original Create3D leaves byte6 clear.
+
+        mtl->next = next;
+        next = mtl;
+    }
+
+    NuDisplayListCreateMtl();
+
+    NuMtlCreatePS(mtl, 1);
+
+    return mtl;
+}
+
 void NuMtlUpdate(NUMTL *mtl) {
     NuMtlUpdatePS(mtl);
     mtl->version++;
@@ -123,7 +173,63 @@ void NuMtlAddEx(numtl_s *, i32) {
 void NuMtlInsert(numtl_s *, i32) {
 }
 
-void NuMtlUpdatePS(numtl_s *) {
+// original 0x29bc50 — refresh the material's shader desc, (re)acquire its
+// shader objects and rebuild the platform vertex declaration.
+void NuMtlUpdatePS(numtl_s *mtl) {
+    if (0 < mtl->tex_id) {
+        mtl->shader_desc.diffuse_map_tex_id[0] = mtl->tex_id;
+
+        i32 count = mtl->shader_desc.unknown_a8;
+        if (count == 0) {
+            count = 1;
+        }
+        mtl->shader_desc.unknown_a8 = count;
+
+        // Vtx-desc tex-unit nibble: at least one unit.
+        u8 b = ((u8 *)&mtl->shader_desc.vtx_desc)[1];
+        u8 units = (b >> 3) & 7;
+        if (units == 0) {
+            units = 1;
+        }
+        ((u8 *)&mtl->shader_desc.vtx_desc)[1] = (b & 199) | (units << 3);
+    }
+
+    if ((((u8 *)&mtl->shader_desc.vtx_desc)[3] & 4) != 0) {
+        mtl->shader_desc.flagsbits_1bb |= 0x80;
+        mtl->shader_desc.flags |= 0x200000;
+    }
+
+    if (0 < mtl->shader_desc.shader_id) {
+        NuShaderManagerReleaseShader(NuShaderManagerGetShaderById(mtl->shader_desc.shader_id));
+    }
+    if (0 < mtl->shader_desc.shader_variant_id) {
+        NuShaderManagerReleaseShader(NuShaderManagerGetShaderById(mtl->shader_desc.shader_variant_id));
+    }
+
+    if (((char *)&mtl->attribs)[6] < 0 && mtl->display_list == NULL) {
+        if (mtl->shader_desc.blendOp2 != 0xff) {
+            ((u8 *)&mtl->shader_desc.vtx_desc)[2] |= 4;
+            void *shader = NuShaderManagerRetrieveShader(&mtl->shader_desc, mtl);
+            if (shader != NULL) {
+                mtl->shader_desc.shader_id = *(i16 *)shader;
+            }
+        }
+    } else if (mtl->shader_desc.blendOp2 != 0xff) {
+        void *shader = NuShaderManagerRetrieveShaderVariant(&mtl->shader_desc, mtl, 0x10);
+        if (shader != NULL) {
+            mtl->shader_desc.shader_variant_id = -1;
+            mtl->shader_desc.shader_id = *(i16 *)shader;
+        }
+    }
+
+    mtl->_vertex_decl = NuGetVertexDeclaration(mtl->shader_desc.vtx_desc);
+
+    if (mtl->tex_id == 0) {
+        i32 packed = ((i32)(mtl->diffuse_color.r * 255.0f) & 0xff) | 0xff000000 |
+                     (((i32)(mtl->diffuse_color.g * 255.0f) & 0xff) << 8) |
+                     (((i32)(mtl->diffuse_color.b * 255.0f) & 0xff) << 16);
+        mtl->shader_desc.diffuse_color[0] = (NUCOLOUR32)packed;
+    }
 }
 
 void NuMtlSetUVOffsetPS(numtl_s *, u32, float, float) {

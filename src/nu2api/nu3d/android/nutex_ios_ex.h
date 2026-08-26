@@ -17,6 +17,12 @@ extern "C" {
 }
 #endif
 
+#ifdef HOST_BUILD
+extern GLuint g_earlyColorTexture;
+extern u8 g_hostReadbackRGBA[1280 * 720 * 4];
+extern bool g_hostReadbackReady;
+#endif
+
 #ifndef GL_COMPRESSED_RGB_S3TC_DXT1_EXT
 #define GL_COMPRESSED_RGB_S3TC_DXT1_EXT 0x83F0
 #endif

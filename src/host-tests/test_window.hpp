@@ -172,6 +172,15 @@ int test_window(int argc, char **argv) {
         if (!legal_saved && frames % 4 == 0) {
             legal_saved = TryCaptureLegalFrame(frames);
         }
+        if (legal_saved) {
+            // The engine main loop runs until quit by design; once the legal
+            // texture is captured the window test is satisfied. HOST-ONLY:
+            // hard-exit because the decompilation has no clean shutdown path
+            // yet (original exits via Android activity lifecycle).
+            LOG_INFO("window test: legal frame saved, exiting");
+            fflush(NULL);
+            _exit(0);
+        }
 
         SDL_Delay(16);
 
@@ -181,8 +190,11 @@ int test_window(int argc, char **argv) {
         }
     }
 done:
+    // HOST-ONLY: detach rather than join — NuMain keeps running (the game loop
+    // never returns on a live device either), and the decompiled shutdown path
+    // is not reachable from the host harness.
     if (g_numain_thread != NULL) {
-        SDL_WaitThread(g_numain_thread, NULL);
+        SDL_DetachThread(g_numain_thread);
         g_numain_thread = NULL;
     }
     // PS present-loop readback: grab whatever the engine drew and write it to a
@@ -216,6 +228,8 @@ done:
                     }
                 }
                 LOG_INFO("wrote window.ppm %dx%d  non-black px=%llu", rbw, rbh, (unsigned long long)nonblack);
+                fflush(NULL);
+                _exit(0);
             }
         } else {
             LOG_WARN("readback: no window surface/context, skipping PPM");

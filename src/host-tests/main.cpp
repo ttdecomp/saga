@@ -2,6 +2,8 @@
 #include "test_window.hpp"
 
 #include <string>
+#include <stdlib.h>
+#include <stdio.h>
 
 // HOST-ONLY: the ASAN runtime inside the host toolchain flags the allocator
 // mismatch coming out of Mesa/LLVM's GL driver stack (new/delete vs their
@@ -22,6 +24,20 @@ const Test tests[] = {
 };
 
 i32 main(i32 argc, char **argv) {
+    // HOST-ONLY: on device Java fills the engine locale string via
+    // nativeSetLanguage before NuMain runs; emulate that from the environment.
+    {
+        const char *lang = getenv("LANG");
+        if (lang == NULL)
+            lang = "en-us";
+        extern char g_language[16];
+        snprintf(g_language, sizeof(g_language), "%.15s", lang);
+        for (char *c = g_language; *c; c++) {
+            if (*c == '_')
+                *c = '-';
+        }
+    }
+
     if (argc < 2) {
         printf("Usage: %s <test>\n", argv[0]);
         printf("Available tests:\n");

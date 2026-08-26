@@ -103,8 +103,7 @@ void NuFadeObjFreeMtxs(numtx_s *, i32) {
 void NuFntDumpReadable(nufnt_s *, char *) {
 }
 
-void NuIOS_SetCullMode(i32) {
-}
+// NuIOS_SetCullMode is transcribed in android/nuiosdl_gl.cpp (original 0x29c110).
 
 void NuLgtArcLaserDraw(i32) {
 }
@@ -133,8 +132,7 @@ void NuIOSDLFogCallback(void *) {
 void NuIOSDLLightmapOld(void *) {
 }
 
-void NuIOSDLMtlCallback(void *) {
-}
+// NuIOSDLMtlCallback is transcribed in android/nuiosdl_gl.cpp (original 0x29c480).
 
 void NuDisplayListCreate(nudisplayscene_s *, variptr_u *, variptr_u, i32, i32, i32, i32, i32, i32, i32) {
 }
@@ -193,8 +191,7 @@ void NuIOSDLDebrisCallback(void *) {
 void NuIOSDLFaceOnCallback(void *) {
 }
 
-void NuIOSDLGeom2DCallback(void *) {
-}
+// NuIOSDLGeom2DCallback is transcribed in android/nuiosdl_gl.cpp (original 0x29d1a0).
 
 void NuIOSDLLightsCallback(void *) {
 }
@@ -301,9 +298,6 @@ void NuIOS_GetNumInAppPurchases() {
 void NuIOS_PurchaseInAppProduct(char *) {
 }
 
-void NuDisplayListCreateMtlDlist(nudisplaylistitem_s *, numtl_s *, variptr_u *, variptr_u) {
-}
-
 void NuHGobjEvalAnimBlend2Root_3(nugscn_s *, ani3_animheader_s *, float, ani3_animheader_s *, float, float, i32,
                                  NUJOINTANIM_s *, numtx_s *,
                                  void (*)(numtx_s *, void *, nuvec_s *, nuvec_s *, nuvec_s *, float), void *) {
@@ -324,8 +318,7 @@ void NuOnlineSetContextProfilePS(i32, i32, i32) {
 void NuCameraTransformScissorClip(nuvec_s *, nuvec_s *, i32, numtx_s *) {
 }
 
-void NuDebrisRendererFlushBuffers() {
-}
+// NuDebrisRendererFlushBuffers is transcribed in android/nuptl_flush.cpp (original 0x296f35).
 
 void NuDisplayListSetInstSurfGeom(void *) {
 }

@@ -33,6 +33,9 @@
 #include "nu2api/numusic/sfx.h"
 #include "nu2api/nusound/nusound.h"
 
+// C++-linkage declarations (defined in nu3d TUs).
+NUMTL *NuMtlCreate3D(i32 count);
+
 // --- Functions without a shared header yet (originals verified to exist).
 // Each declaration's language linkage matches its definition TU. ---
 extern "C" {
@@ -387,6 +390,8 @@ void LoadPerm(void) {
             ReadPads();
             UpdateGameMenu(&GamePad[0], 0);
             UpdateTimer(&GlobalTimer);
+            LOG_WARN("[startup] FRAMETIME=%f t84=%f t8c=%f GlobalTimer=%f", FRAMETIME, t84, t8c,
+                     GlobalTimer.time_elapsed);
 
             menu_flash = (0.1f > NuFmod(GlobalTimer.time_elapsed_mod_seconds, 0.2f));
 
@@ -436,19 +441,24 @@ void LoadPerm(void) {
             }
 
             // One-shot legal material setup from the background-loaded texture.
+            LOG_WARN("[startup] legal_tid=%d legal_mtl=%p t8c=%f", legal_tid, legal_mtl, t8c);
             if (legal_tid != 0 && legal_mtl == NULL) {
-                NUMTL *mtl = NuMtlCreate(1);
+                LOG_WARN("[startup] creating legal mtl for tid %d", legal_tid);
+                NUMTL *mtl = NuMtlCreate3D(1);
                 if (mtl != NULL) {
                     mtl->diffuse_color.r = 1.0f;
                     mtl->diffuse_color.g = 1.0f;
                     mtl->diffuse_color.b = 1.0f;
                     mtl->opacity = 1.0f;
-                    u8 flags1 = *((u8 *)mtl + 0x41);
                     mtl->shader_desc.flags = 0x1000;
                     mtl->tex_id = (i16)legal_tid;
-                    *((u8 *)mtl + 0x41) = (u8)((flags1 & 0xcf) | 0xe0);
-                    u8 attribs = *((u8 *)mtl + 0x40);
-                    *((u8 *)mtl + 0x40) = (u8)((attribs & 0xc0) | 0x22);
+                    // original 0x127c0a..0x127c3b — attribute byte pokes
+                    u8 b1 = *((u8 *)mtl + 0x41);
+                    *((u8 *)mtl + 0x41) = (u8)((b1 & 0x0f) | 0x60);
+                    u8 b0 = *((u8 *)mtl + 0x40);
+                    *((u8 *)mtl + 0x40) = (u8)((b0 & 0xf0) | 0x01);
+                    u8 b2 = *((u8 *)mtl + 0x42);
+                    *((u8 *)mtl + 0x42) = (u8)((b2 & 0x8c) | 0x12);
                     NuMtlUpdate(mtl);
                     legal_mtl = mtl;
                 }

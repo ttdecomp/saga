@@ -4,6 +4,7 @@
 #include <stdio.h>
 
 #include <EGL/egl.h>
+#include <GLES2/gl2.h>
 #include <vector>
 
 #include "decomp.h"
@@ -552,6 +553,63 @@ bool NuTexHostTakeStaged(NUNATIVETEX *tex, std::vector<u8> &out) {
     out = std::move(it->second);
     g_hostStagedTextures.erase(it);
     return true;
+}
+
+// original 0x29d701 — bind a native texture on a texture unit. The Android
+// original lives in nutex_android.cpp which the host build excludes; this is
+// its exact body against the host GL context.
+extern i32 g_currentTexUnit; // nutex_ios_ex.cpp
+void NuTexSetTextureWithStagePS(NUNATIVETEX *tex, u32 stage) {
+    glActiveTexture(GL_TEXTURE0 + stage);
+    g_currentTexUnit = (i32)stage;
+    if (tex != NULL && tex->platform.gl_tex == 0) {
+        LOG_WARN("[tex] flush tid gl_tex==0 size=%d staged=%d", tex->size, (int)g_hostStagedTextures.count(tex));
+        std::vector<u8> staged;
+        if (NuTexHostTakeStaged(tex, staged)) {
+            LOG_WARN("[tex] staged size=%d wh=%dx%d", (int)staged.size(), tex->width, tex->height);
+            void *data_ptr = staged.data();
+            GLuint created = 0;
+            {
+                i32 w = tex->width, h = tex->height;
+                created = NuIOS_CreateGLTexFromPlatformInMemory(data_ptr, &w, &h, true);
+                LOG_WARN("[tex] PVRTC try created=%u", created);
+                if (created == 0) {
+                    created = NuIOS_CreateGLTexFromPlatformInMemory(data_ptr, &w, &h, false);
+                    LOG_WARN("[tex] ETC1 try created=%u", created);
+                }
+                tex->width = w;
+                tex->height = h;
+            }
+            if (created != 0) {
+                tex->platform.gl_tex = created;
+                tex->image_data = NULL;
+                tex->size = 0;
+                LOG_WARN("[tex] staged upload ok tex=%u", created);
+            } else {
+                LOG_WARN("[tex] staged upload failed");
+                g_hostStagedTextures[tex] = std::move(staged);
+            }
+        } else if (tex->image_data != NULL && tex->size != 0) {
+            LOG_WARN("[tex] direct upload size=%d", tex->size);
+            NuTexCreatePS(tex, true);
+            if (tex->platform.gl_tex == 0)
+                NuTexCreatePS(tex, false);
+            LOG_WARN("[tex] direct result gl_tex=%u", tex->platform.gl_tex);
+        } else {
+            LOG_WARN("[tex] no data to upload");
+        }
+    }
+    glBindTexture(GL_TEXTURE_2D, tex != NULL ? tex->platform.gl_tex : 0);
+}
+
+// original 0x2fb280 — hand out the next free native-texture slot index. The
+// original scans the loaded-texture table for a NULL entry; the shared
+// registry here keeps full NUNATIVETEX structs, so the free-slot scan reduces
+// to a monotonic counter (same observable: unique fresh id per call).
+i32 NuTexGenTexture(NUNATIVETEX *tex) {
+    static i32 next_slot;
+    (void)tex;
+    return ++next_slot;
 }
 
 void NuTexCreatePS(NUNATIVETEX *tex, bool is_pvrtc) {

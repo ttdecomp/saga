@@ -28,6 +28,10 @@ struct nushaderobjectglsl_s {
 
 typedef struct nushaderobjectglsl_s NUSHADEROBJECTGLSL;
 
+// original 0x30b050 — BaseInit + stash shaders + combine/link program.
+void NuShaderObjectInitGLSL(nushaderobjectglsl_s *obj, nushaderobjectkey_s const *key, i32 param, u32 vshader,
+                            u32 pshader);
+
 struct glslparamter_s {
     i16 unk1;
     i16 unk2;
