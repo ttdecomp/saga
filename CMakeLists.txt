@@ -5,9 +5,6 @@ if(POLICY CMP0135)
 endif()
 
 option(BUILD_FOR_HOST "Build for host system" OFF)
-# When ON, build a plain 64-bit native host executable (no -m32 i686, no ASan).
-# The default OFF keeps the decomp-oriented 32-bit i686 + AddressSanitizer build.
-option(SAGA_HOST_NATIVE "Build 64-bit native host without 32-bit i686/ASan flags" OFF)
 
 include("${CMAKE_SOURCE_DIR}/cmake/ndk.cmake")
 
@@ -39,10 +36,8 @@ if (BUILD_FOR_HOST)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-stack-protector -msse2")
 
     if (NOT CMAKE_HOST_WIN32)
-        if (NOT SAGA_HOST_NATIVE)
-            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -march=i686 -fsanitize=address")
-            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32 -march=i686 -fsanitize=address")
-        endif()
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -march=i686 -fsanitize=address")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32 -march=i686 -fsanitize=address")
     endif()
 else()
     message(STATUS "Using Android NDK toolchain: ${NDK_TOOLCHAIN}")
@@ -119,14 +114,12 @@ if (BUILD_FOR_HOST)
     # not also compile the Android originals (they would duplicate symbols and
     # pull in Android-only dependencies such as libsquish).
     list(REMOVE_ITEM SAGA_SOURCE_FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nuandroid/ios_graphics.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/android/nutex_android.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/android/nutex_ios_ex.cpp
     )
 
     list(APPEND SAGA_SOURCE_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/main.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/ios_graphics.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/nutex_host.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/nutex_ios_ex.cpp
     )

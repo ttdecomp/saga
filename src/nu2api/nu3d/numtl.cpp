@@ -207,14 +207,14 @@ void NuMtlUpdatePS(numtl_s *mtl) {
     }
 
     if (((char *)&mtl->attribs)[6] < 0 && mtl->display_list == NULL) {
-        if (mtl->shader_desc.blendOp2 != 0xff) {
+        if (mtl->shader_desc.blend_op2 != 0xff) {
             ((u8 *)&mtl->shader_desc.vtx_desc)[2] |= 4;
             void *shader = NuShaderManagerRetrieveShader(&mtl->shader_desc, mtl);
             if (shader != NULL) {
                 mtl->shader_desc.shader_id = *(i16 *)shader;
             }
         }
-    } else if (mtl->shader_desc.blendOp2 != 0xff) {
+    } else if (mtl->shader_desc.blend_op2 != 0xff) {
         void *shader = NuShaderManagerRetrieveShaderVariant(&mtl->shader_desc, mtl, 0x10);
         if (shader != NULL) {
             mtl->shader_desc.shader_variant_id = -1;
@@ -222,7 +222,7 @@ void NuMtlUpdatePS(numtl_s *mtl) {
         }
     }
 
-    mtl->_vertex_decl = NuGetVertexDeclaration(mtl->shader_desc.vtx_desc);
+    mtl->vertex_decl = NuGetVertexDeclaration(mtl->shader_desc.vtx_desc);
 
     if (mtl->tex_id == 0) {
         i32 packed = ((i32)(mtl->diffuse_color.r * 255.0f) & 0xff) | 0xff000000 |

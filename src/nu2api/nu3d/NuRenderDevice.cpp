@@ -4,6 +4,7 @@
 #include "globals.h"
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nu3d/android/nutex_ios_ex.h"
+#include "nu2api/nu3d/nutex.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nucore/nucore.hpp"
 #include "nu2api/nucore/nustring.h"
@@ -11,53 +12,97 @@
 #include "nu2api/nuplatform/nuplatform.h"
 
 #include <EGL/egl.h>
-#include <pthread.h>
 #include <GLES2/gl2.h>
 #include <math.h>
+#include <pthread.h>
 #include <string.h>
 
-#ifdef HOST_BUILD
-#endif
+// ---------------------------------------------------------------------------
+// NuRenderDevice — Android GLES2 render device + host EGL shim
+//
+// Original TU: nu2api.saga/nu3d/android/NuRenderDevice_gles2.cpp
+//  (see doc/source-structure.md). This file merges the device lifetime,
+//  EGL config/context management, extension probing, and the re-entrant
+//  GL critical section that serialises all GL calls on Android. Host
+//  additions (HOST_BUILD) provide a desktop EGL window + readback path
+//  so the host test harness can present and capture frames without
+//  diverging from the shared render path.
+// ---------------------------------------------------------------------------
 
 NuRenderDevice g_renderDevice{};
 
-thread_local i32 gt_glContextIndex;
+// Android render work is dispatched across a small ring of shared EGL
+// contexts (indices 0..3). Index 3 is the "main" / window context; the
+// others are worker contexts. gt_glContextIndex tracks which slot the
+// calling thread was assigned.
+thread_local i32 gt_glContextIndex = 0;
+
+// Host-only present context: a dedicated context in the same share group
+// that the host present thread uses so it never collides with whatever
+// the engine left current on contexts[3].
+#ifdef HOST_BUILD
+static EGLContext g_hostPresentCtx = EGL_NO_CONTEXT;
+#endif
+
+// Re-entrant GL critical section.
+//
+// The original Android code uses a counting critical section — nested
+// Begin/End pairs are common (e.g. NuIOSInitOpenGLES →
+// NuIOS_AllocateSystemFramebuffers). The host port models that with a
+// thread-local recursion depth: only the outermost Begin locks mutex2
+// and binds the thread's assigned context; the outermost End releases
+// both.
+static thread_local i32 s_criticalDepth = 0;
+static i32 g_nextGLContextIndex = 0;
+
+// ---------------------------------------------------------------------------
+// Construction
+// ---------------------------------------------------------------------------
 
 NuRenderDeviceGen::NuRenderDeviceGen() : value(false) {
 }
 
-NuRenderDevice::NuRenderDevice() : NuRenderDeviceGen() {
-    // this->field1_0x4 = 0;
-
+static void InitRecursiveMutex(pthread_mutex_t *mutex) {
     pthread_mutexattr_t attrs;
     pthread_mutexattr_init(&attrs);
-    pthread_mutexattr_settype(&attrs, 1);
-    pthread_mutex_init(&this->mutex, &attrs);
+    pthread_mutexattr_settype(&attrs, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_init(mutex, &attrs);
     pthread_mutexattr_destroy(&attrs);
+}
 
-    // this->field4_0x10 = 0;
-    // this->field5_0x14 = 0;
+NuRenderDevice::NuRenderDevice() : NuRenderDeviceGen() {
+    InitRecursiveMutex(&this->mutex);
+
+    // is_not_amazon_kf — true unless the device is an Amazon Kindle Fire
+    // (manufacturer "Amazon" + model prefix "KF"). Kindle Fire gets a
+    // down-scaled backbuffer path in DetermineBackBufferResolution().
     this->is_not_amazon_kf = true;
-    // this->field45_0x45 = true;
     this->focus = false;
-    // this->field80_0xc0 = 0;
-    // this->field81_0xc4 = 1.3333334;
     this->context_valid = false;
     this->egl_display = EGL_NO_DISPLAY;
-    // this->field61_0x80 = -1;
 
-    this->contexts[0] = EGL_NO_CONTEXT;
-    this->contexts[1] = EGL_NO_CONTEXT;
-    this->contexts[2] = EGL_NO_CONTEXT;
-    this->contexts[3] = EGL_NO_CONTEXT;
+    for (i32 i = 0; i < 4; i++) {
+        this->contexts[i] = EGL_NO_CONTEXT;
+    }
 
+    // field54_0x54 — original bool that selects whether worker contexts
+    // get private 1x1 pbuffers (true) or alias the window surface (false).
+    // Always true on this build.
     this->field54_0x54 = true;
+
     this->backing_width = 1280;
     this->width = 1280;
     this->backing_height = 720;
     this->height = 720;
 }
 
+// ---------------------------------------------------------------------------
+// Optional GLES2 extensions (loaded via eglGetProcAddress)
+// ---------------------------------------------------------------------------
+
+// Untyped proc pointers — kept as in the original; only existence is
+// checked elsewhere. Typed PFN typedefs would be more precise but would
+// diverge from the decompiled signature.
 void (*glGetProgramBinaryOES)();
 void (*glProgramBinaryOES)();
 void (*glDiscardFramebufferEXT)();
@@ -66,113 +111,143 @@ void (*glBindVertexArrayOES)();
 void (*glDeleteVertexArraysOES)();
 
 void NuGLES2ExtensionsInit() {
-    glGetProgramBinaryOES = eglGetProcAddress("glGetProgramBinaryOES");
-    glProgramBinaryOES = eglGetProcAddress("glProgramBinaryOES");
-    glDiscardFramebufferEXT = eglGetProcAddress("glDiscardFramebufferEXT");
-    glGenVertexArraysOES = eglGetProcAddress("glGenVertexArraysOES");
-    glBindVertexArrayOES = eglGetProcAddress("glBindVertexArrayOES");
-    glDeleteVertexArraysOES = eglGetProcAddress("glDeleteVertexArraysOES");
+    glGetProgramBinaryOES = reinterpret_cast<void (*)()>(eglGetProcAddress("glGetProgramBinaryOES"));
+    glProgramBinaryOES = reinterpret_cast<void (*)()>(eglGetProcAddress("glProgramBinaryOES"));
+    glDiscardFramebufferEXT = reinterpret_cast<void (*)()>(eglGetProcAddress("glDiscardFramebufferEXT"));
+    glGenVertexArraysOES = reinterpret_cast<void (*)()>(eglGetProcAddress("glGenVertexArraysOES"));
+    glBindVertexArrayOES = reinterpret_cast<void (*)()>(eglGetProcAddress("glBindVertexArrayOES"));
+    glDeleteVertexArraysOES = reinterpret_cast<void (*)()>(eglGetProcAddress("glDeleteVertexArraysOES"));
 }
 
-bool NuRenderDevice::IsExtensionSupported(const char *exts) {
-    if (strchr(exts, ' ') != NULL || *exts == '\0') {
+// ---------------------------------------------------------------------------
+// Extension string helpers
+// ---------------------------------------------------------------------------
+
+bool NuRenderDevice::IsExtensionSupported(const char *wanted) {
+    // Reject malformed queries: empty string or embedded space would
+    // otherwise match substrings incorrectly.
+    if (wanted[0] == '\0' || strchr(wanted, ' ') != nullptr) {
         return false;
     }
 
-    const char *extensions = this->extensions;
+    const usize wanted_len = strlen(wanted);
+    const char *cursor = this->extensions;
 
-    bool bVar1;
-    const char *name;
-    do {
-        name = strstr(extensions, exts);
-        if (name == NULL) {
+    while (true) {
+        const char *found = strstr(cursor, wanted);
+        if (found == nullptr) {
             return false;
         }
 
-        usize len = strlen(exts);
-        bVar1 = extensions != name;
-        extensions = name + len;
-    } while ((bVar1 && name[-1] != ' ') || (*extensions & 0xdf) != 0);
+        const bool at_start = (found == cursor);
+        const bool preceded_by_space = at_start || found[-1] == ' ';
+        const char terminator = found[wanted_len];
+        // Terminator is either end-of-string ('\0'), space, or other
+        // whitespace — the original uses a case-insensitive space check
+        // via (c & 0xDF) != 0 which effectively treats '\0' as
+        // terminator and space as boundary.
+        const bool followed_by_boundary = (terminator == '\0' || terminator == ' ');
 
-    return true;
+        if (preceded_by_space && followed_by_boundary) {
+            return true;
+        }
+
+        // Whole-word match failed — continue searching past this occurrence.
+        cursor = found + wanted_len;
+    }
 }
 
-i32 _NuCheckGLErrors(const char *file) {
+i32 _NuCheckGLErrors(const char * /*file*/) {
+    // Original is a no-op in release; kept as a hook for debug builds.
     return 0;
 }
 
+// ---------------------------------------------------------------------------
+// Device bring-up
+// ---------------------------------------------------------------------------
+
 void NuRenderDevice::Initialize() {
+    // Wait for the EGL display / window surface to become valid. On
+    // Android this is signalled from the Java activity thread via
+    // OnWindowCreated() → InitialiseOpenGLContext().
     while (!this->context_valid) {
         NuThreadSleep(1);
     }
 
     FrameEnd();
 
-    pthread_mutexattr_t attrs;
-    pthread_mutexattr_init(&attrs);
-    pthread_mutexattr_settype(&attrs, 1);
-    pthread_mutex_init(&this->mutex2, &attrs);
+    InitRecursiveMutex(&this->mutex2);
     NuGLES2ExtensionsInit();
 
     BeginCriticalSection("none", -1);
 
-    EGLint attribs[6] = {0};
-    eglGetConfigAttrib(this->egl_display, this->egl_config, 0x3024, attribs);
-    eglGetConfigAttrib(this->egl_display, this->egl_config, 0x3022, attribs + 1);
-    eglGetConfigAttrib(this->egl_display, this->egl_config, 0x3023, attribs + 2);
-    eglGetConfigAttrib(this->egl_display, this->egl_config, 0x3021, attribs + 3);
-    eglGetConfigAttrib(this->egl_display, this->egl_config, 0x3025, attribs + 4);
-    eglGetConfigAttrib(this->egl_display, this->egl_config, 0x3026, attribs + 5);
+    // Probe the chosen EGL config for logging / diagnostics. The
+    // attribute ids are the standard EGL_*_SIZE values:
+    //  0x3024 EGL_RED_SIZE, 0x3022 EGL_BLUE_SIZE, 0x3023 EGL_GREEN_SIZE,
+    //  0x3021 EGL_ALPHA_SIZE, 0x3025 EGL_DEPTH_SIZE, 0x3026 EGL_STENCIL_SIZE.
+    EGLint config_attribs[6] = {};
+    eglGetConfigAttrib(this->egl_display, this->egl_config, EGL_RED_SIZE, &config_attribs[0]);
+    eglGetConfigAttrib(this->egl_display, this->egl_config, EGL_BLUE_SIZE, &config_attribs[1]);
+    eglGetConfigAttrib(this->egl_display, this->egl_config, EGL_GREEN_SIZE, &config_attribs[2]);
+    eglGetConfigAttrib(this->egl_display, this->egl_config, EGL_ALPHA_SIZE, &config_attribs[3]);
+    eglGetConfigAttrib(this->egl_display, this->egl_config, EGL_DEPTH_SIZE, &config_attribs[4]);
+    eglGetConfigAttrib(this->egl_display, this->egl_config, EGL_STENCIL_SIZE, &config_attribs[5]);
+    (void)config_attribs;
 
     DetermineNominalAspectRatio(this->width, this->height);
-    this->aspect_ratio = (float)this->width / (float)this->height;
+    this->aspect_ratio = static_cast<f32>(this->width) / static_cast<f32>(this->height);
 
     glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &this->max_texture_units);
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &this->max_texture_size);
 
-    this->extensions = (const char *)glGetString(GL_EXTENSIONS);
+    this->extensions = reinterpret_cast<const char *>(glGetString(GL_EXTENSIONS));
 
-    u8 dxt1, atc, pvrtc, etc1;
-    if (this->extensions == NULL) {
-        dxt1 = 0;
-        atc = 0;
-        pvrtc = 0;
-        etc1 = 0;
-    } else {
-        u8 bVar2 = IsExtensionSupported("EXT_texture_compression_dxt1");
-        u8 bVar3 = IsExtensionSupported("GL_EXT_texture_compression_dxt1");
-        dxt1 = bVar3 || bVar2;
-        atc = IsExtensionSupported("GL_AMD_compressed_ATC_texture");
-        pvrtc = IsExtensionSupported("GL_IMG_texture_compression_pvrtc");
-        etc1 = IsExtensionSupported("GL_OES_compressed_ETC1_RGB8_texture");
+    bool has_dxt1 = false;
+    bool has_atc = false;
+    bool has_pvrtc = false;
+    bool has_etc1 = false;
+
+    if (this->extensions != nullptr) {
+        const bool dxt1_ext = IsExtensionSupported("EXT_texture_compression_dxt1");
+        const bool dxt1_gl = IsExtensionSupported("GL_EXT_texture_compression_dxt1");
+        has_dxt1 = dxt1_ext || dxt1_gl;
+        has_atc = IsExtensionSupported("GL_AMD_compressed_ATC_texture");
+        has_pvrtc = IsExtensionSupported("GL_IMG_texture_compression_pvrtc");
+        has_etc1 = IsExtensionSupported("GL_OES_compressed_ETC1_RGB8_texture");
     }
 
     memset(this->enabled_extensions, 0, sizeof(this->enabled_extensions));
 
-    this->enabled_extensions[7] = 1;
-    this->enabled_extensions[1] = dxt1;
-    this->enabled_extensions[2] = dxt1;
-    this->enabled_extensions[6] = dxt1;
-    this->enabled_extensions[17] = etc1;
-    this->enabled_extensions[20] = pvrtc;
-    this->enabled_extensions[21] = pvrtc;
-    this->enabled_extensions[22] = pvrtc;
-    this->enabled_extensions[23] = pvrtc;
-    this->enabled_extensions[24] = atc;
-    this->enabled_extensions[25] = atc;
+    // Always available (uncompressed RGBA).
+    this->enabled_extensions[NUTEX_RGBA32] = 1;
 
-    if (this->extensions != NULL) {
+    // Compressed families — enabled iff the driver advertises support.
+    this->enabled_extensions[NUTEX_DXT1] = has_dxt1;
+    this->enabled_extensions[NUTEX_DX1A] = has_dxt1;
+    this->enabled_extensions[NUTEX_DXT5] = has_dxt1;
+    this->enabled_extensions[NUTEX_ETC1] = has_etc1;
+    this->enabled_extensions[NUTEX_PVRTC2] = has_pvrtc;
+    this->enabled_extensions[NUTEX_PVRTC2A] = has_pvrtc;
+    this->enabled_extensions[NUTEX_PVRTC4] = has_pvrtc;
+    this->enabled_extensions[NUTEX_PVRTC4A] = has_pvrtc;
+    this->enabled_extensions[NUTEX_ATCA] = has_atc;
+    this->enabled_extensions[NUTEX_ATC] = has_atc;
+
+    if (this->extensions != nullptr) {
         this->oes_packed_depth_stencil = IsExtensionSupported("GL_OES_packed_depth_stencil");
         this->oes_depth24 = IsExtensionSupported("GL_OES_depth24");
         this->oes_depth_texture = IsExtensionSupported("GL_OES_depth_texture");
     }
 
-    if (g_forceETC1 == 0 || !etc1) {
-        if (dxt1 != 0) {
+    // Choose the runtime texture-compression platform. g_forceETC1 forces
+    // ETC1 even when better formats are available; otherwise prefer
+    // S3TC → PVRTC → ATC → ETC1.
+    if (g_forceETC1 == 0 || !has_etc1) {
+        if (has_dxt1) {
             NuPlatform::Get()->SetCurrentPlatform(ANDROID_S3TC_PLATFORM);
-        } else if (pvrtc != 0) {
+        } else if (has_pvrtc) {
             NuPlatform::Get()->SetCurrentPlatform(ANDROID_PVRTC_PLATFORM);
-        } else if (atc != 0) {
+        } else if (has_atc) {
             NuPlatform::Get()->SetCurrentPlatform(ANDROID_ATITC_PLATFORM);
         } else {
             NuPlatform::Get()->SetCurrentPlatform(ANDROID_ETC1_PLATFORM);
@@ -190,48 +265,45 @@ void NuRenderDevice::Initialize() {
 }
 
 void NuRenderDevice::FrameEnd() {
-    return;
+    // No-op in this build — original flushed per-frame bookkeeping.
 }
 
 void NuRenderDevice::SetThisTreadAsRender() {
+    // Historical typo preserved: "Tread" for "Thread". Index 3 is the
+    // main render thread's slot.
     gt_glContextIndex = 3;
 }
 
-i32 g_nextGLContextIndex = 0;
+// ---------------------------------------------------------------------------
+// Re-entrant GL critical section
+// ---------------------------------------------------------------------------
 
-// The original critical sections are reentrant (Android uses counting
-// sections); nested Begin/End pairs like NuIOSInitOpenGLES ->
-// NuIOS_AllocateSystemFramebuffers rely on that. Model the recursion with a
-// thread-local depth: the outermost Begin takes the mutex and binds this
-// thread's GL context, the outermost End releases both.
-static thread_local i32 t_glcs_depth = 0;
+void NuRenderDevice::BeginCriticalSection(const char * /*file*/, i32 /*line*/) {
+    static thread_local i32 s_assignedContextIndex = -1;
 
-void NuRenderDevice::BeginCriticalSection(const char *file, i32 line) {
-    static thread_local i32 gl_context_index = -1;
-
-    if (t_glcs_depth == 0) {
+    if (s_criticalDepth == 0) {
         pthread_mutex_lock(&this->mutex2);
 
-        i32 i = gl_context_index;
-        if (i == -1) {
-            i = g_nextGLContextIndex;
+        i32 slot = s_assignedContextIndex;
+        if (slot == -1) {
+            slot = g_nextGLContextIndex;
             g_nextGLContextIndex = (g_nextGLContextIndex + 1) % 4;
-            gl_context_index = i;
+            s_assignedContextIndex = slot;
         }
 
-        LOG_DEBUG("this->egl_display: %p, this->pbuffers[%d]: %p, this->contexts[%d]: %p", this->egl_display, i,
-                  this->pbuffers[i], i, this->contexts[i]);
-        eglMakeCurrent(this->egl_display, this->pbuffers[i], this->pbuffers[i], this->contexts[i]);
+        LOG_DEBUG("this->egl_display: %p, this->pbuffers[%d]: %p, this->contexts[%d]: %p", this->egl_display, slot,
+                  this->pbuffers[slot], slot, this->contexts[slot]);
+        eglMakeCurrent(this->egl_display, this->pbuffers[slot], this->pbuffers[slot], this->contexts[slot]);
     }
-    t_glcs_depth++;
+    s_criticalDepth++;
 }
 
-void NuRenderDevice::EndCriticalSection(const char *file, i32 line) {
+void NuRenderDevice::EndCriticalSection(const char * /*file*/, i32 /*line*/) {
 #ifdef HOST_BUILD
-    if (t_glcs_depth > 0) {
-        t_glcs_depth--;
+    if (s_criticalDepth > 0) {
+        s_criticalDepth--;
     }
-    if (t_glcs_depth == 0) {
+    if (s_criticalDepth == 0) {
         pthread_mutex_unlock(&this->mutex2);
     }
 #else
@@ -239,122 +311,158 @@ void NuRenderDevice::EndCriticalSection(const char *file, i32 line) {
 #endif
 }
 
+// ---------------------------------------------------------------------------
+// Host presentation + readback (HOST_BUILD only)
+// ---------------------------------------------------------------------------
+
 #ifdef HOST_BUILD
-// See note in InitialiseOpenGLContext().
-static EGLContext g_hostPresentCtx = EGL_NO_CONTEXT;
-#endif
+
+namespace {
+
+    struct PresentResources {
+        GLuint program = 0;
+        GLint pos_loc = -1;
+        GLint uv_loc = -1;
+        GLint tex_loc = -1;
+        GLuint vbo = 0;
+        GLuint fallback_tex = 0;
+    };
+
+    void EnsurePresentResources(PresentResources &res) {
+        if (res.program != 0) {
+            return;
+        }
+
+        const char *vertex_src = "attribute vec2 a_position; attribute vec2 a_texcoord; varying vec2 v_uv; "
+                                 "void main(){ gl_Position=vec4(a_position,0,1); v_uv=a_texcoord; }";
+        const char *fragment_src = "precision mediump float; varying vec2 v_uv; uniform sampler2D u_tex; "
+                                   "void main(){ gl_FragColor=texture2D(u_tex, v_uv); }";
+
+        GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vertex_shader, 1, &vertex_src, nullptr);
+        glCompileShader(vertex_shader);
+
+        GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fragment_shader, 1, &fragment_src, nullptr);
+        glCompileShader(fragment_shader);
+
+        res.program = glCreateProgram();
+        glAttachShader(res.program, vertex_shader);
+        glAttachShader(res.program, fragment_shader);
+        glBindAttribLocation(res.program, 0, "a_position");
+        glBindAttribLocation(res.program, 1, "a_texcoord");
+        glLinkProgram(res.program);
+        glDeleteShader(vertex_shader);
+        glDeleteShader(fragment_shader);
+
+        res.pos_loc = glGetAttribLocation(res.program, "a_position");
+        res.uv_loc = glGetAttribLocation(res.program, "a_texcoord");
+        res.tex_loc = glGetUniformLocation(res.program, "u_tex");
+
+        glGenBuffers(1, &res.vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, res.vbo);
+        // Full-screen quad as two triangles (positions + UVs interleaved).
+        const float verts[] = {
+            -1, -1, 0, 0, //
+            1,  -1, 1, 0, //
+            -1, 1,  0, 1, //
+            1,  -1, 1, 0, //
+            1,  1,  1, 1, //
+            -1, 1,  0, 1, //
+        };
+        glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+
+        glGenTextures(1, &res.fallback_tex);
+        glBindTexture(GL_TEXTURE_2D, res.fallback_tex);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    }
+
+    void DrawFullscreenTexturedQuad(const PresentResources &res, GLuint texture) {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glDisable(GL_BLEND);
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_SCISSOR_TEST);
+        glUseProgram(res.program);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glUniform1i(res.tex_loc, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, res.vbo);
+        glEnableVertexAttribArray(res.pos_loc);
+        glVertexAttribPointer(res.pos_loc, 2, GL_FLOAT, GL_FALSE, 16, reinterpret_cast<void *>(0));
+        glEnableVertexAttribArray(res.uv_loc);
+        glVertexAttribPointer(res.uv_loc, 2, GL_FLOAT, GL_FALSE, 16, reinterpret_cast<void *>(8));
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glDisableVertexAttribArray(res.pos_loc);
+        glDisableVertexAttribArray(res.uv_loc);
+        glUseProgram(0);
+    }
+
+} // namespace
 
 void NuRenderDevice::SwapBuffers() {
-#ifdef HOST_BUILD
-    // HOST: present the FBO texture (g_earlyColorTexture) to the window via
-    // the dedicated present context. The render thread renders to a per-context
-    // FBO wrapping the shared texture; pbuffers[0..2] are 1x1 so the window
-    // would otherwise stay black. This is the only host PS present logic.
+    // Present the shared FBO texture (g_earlyColorTexture) to the host
+    // window via the dedicated present context. The render thread draws
+    // into a per-context FBO wrapping that texture; the window's own
+    // default framebuffer is only written here, otherwise it would stay
+    // black because pbuffers[0..2] are 1x1.
     extern GLuint g_earlyColorTexture;
     extern bool g_hostReadbackReady;
     extern u8 g_hostReadbackRGBA[1280 * 720 * 4];
     extern i32 g_backingWidth, g_backingHeight;
 
-    EGLContext presentCtx = g_hostPresentCtx != EGL_NO_CONTEXT ? g_hostPresentCtx : this->contexts[3];
-    bool have_ctx = false;
-    if (this->egl_display != EGL_NO_DISPLAY && this->pbuffers[3] != EGL_NO_SURFACE && presentCtx != EGL_NO_CONTEXT) {
-        have_ctx = eglMakeCurrent(this->egl_display, this->pbuffers[3], this->pbuffers[3], presentCtx);
-        if (!have_ctx) {
+    EGLContext present_ctx = (g_hostPresentCtx != EGL_NO_CONTEXT) ? g_hostPresentCtx : this->contexts[3];
+    bool have_context = false;
+    if (this->egl_display != EGL_NO_DISPLAY && this->pbuffers[3] != EGL_NO_SURFACE && present_ctx != EGL_NO_CONTEXT) {
+        have_context = eglMakeCurrent(this->egl_display, this->pbuffers[3], this->pbuffers[3], present_ctx);
+        if (!have_context) {
             eglGetError();
         }
     }
 
-    if (have_ctx && (g_earlyColorTexture != 0 || g_hostReadbackReady)) {
-        static GLuint presentProg = 0;
-        static GLint presentPosLoc = -1, presentUvLoc = -1, presentTexLoc = -1;
-        static GLuint presentVbo = 0, presentTex = 0;
-        if (presentProg == 0) {
-            const char *vs = "attribute vec2 a_position; attribute vec2 a_texcoord; varying vec2 v_uv; void main(){ "
-                             "gl_Position=vec4(a_position,0,1); v_uv=a_texcoord; }";
-            const char *fs = "precision mediump float; varying vec2 v_uv; uniform sampler2D u_tex; void main(){ "
-                             "gl_FragColor=texture2D(u_tex, v_uv); }";
-            GLuint vsh = glCreateShader(GL_VERTEX_SHADER);
-            glShaderSource(vsh, 1, &vs, NULL);
-            glCompileShader(vsh);
-            GLuint fsh = glCreateShader(GL_FRAGMENT_SHADER);
-            glShaderSource(fsh, 1, &fs, NULL);
-            glCompileShader(fsh);
-            presentProg = glCreateProgram();
-            glAttachShader(presentProg, vsh);
-            glAttachShader(presentProg, fsh);
-            glBindAttribLocation(presentProg, 0, "a_position");
-            glBindAttribLocation(presentProg, 1, "a_texcoord");
-            glLinkProgram(presentProg);
-            glDeleteShader(vsh);
-            glDeleteShader(fsh);
-            presentPosLoc = glGetAttribLocation(presentProg, "a_position");
-            presentUvLoc = glGetAttribLocation(presentProg, "a_texcoord");
-            presentTexLoc = glGetUniformLocation(presentProg, "u_tex");
-            glGenBuffers(1, &presentVbo);
-            glBindBuffer(GL_ARRAY_BUFFER, presentVbo);
-            float verts[] = {-1, -1, 0, 0, 1, -1, 1, 0, -1, 1, 0, 1, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1};
-            glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
-            glGenTextures(1, &presentTex);
-            glBindTexture(GL_TEXTURE_2D, presentTex);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        }
-        GLuint srcTex = 0;
-        bool useSharedTex = false;
+    if (have_context && (g_earlyColorTexture != 0 || g_hostReadbackReady)) {
+        static PresentResources s_present{};
+        EnsurePresentResources(s_present);
+
+        GLuint src_tex = 0;
+        bool has_source = false;
         if (g_earlyColorTexture != 0 && glIsTexture(g_earlyColorTexture)) {
-            srcTex = g_earlyColorTexture;
-            useSharedTex = true;
-            LOG_WARN("[present] using shared tex %u ready=%d", srcTex, g_hostReadbackReady);
+            src_tex = g_earlyColorTexture;
+            has_source = true;
         }
-        if (!useSharedTex && g_hostReadbackReady) {
-            glBindTexture(GL_TEXTURE_2D, presentTex);
+        if (!has_source && g_hostReadbackReady) {
+            // Fallback when the shared texture is not yet available: push
+            // the CPU readback buffer into a host-owned texture.
+            glBindTexture(GL_TEXTURE_2D, s_present.fallback_tex);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, g_backingWidth, g_backingHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE,
                          g_hostReadbackRGBA);
-            srcTex = presentTex;
-            useSharedTex = true;
-            LOG_WARN("[present] using readback tex %u", srcTex);
+            src_tex = s_present.fallback_tex;
+            has_source = true;
         }
-        if (!useSharedTex) {
+        if (!has_source) {
             LOG_WARN("[present] no tex (early %u isTex %d ready %d)", g_earlyColorTexture,
                      g_earlyColorTexture ? glIsTexture(g_earlyColorTexture) : 0, g_hostReadbackReady);
         }
-        if (useSharedTex) {
-            EGLint w = 0, h = 0;
-            eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_WIDTH, &w);
-            eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_HEIGHT, &h);
-            if (w > 0 && h > 0)
-                glViewport(0, 0, w, h);
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-            glDisable(GL_BLEND);
-            glDisable(GL_DEPTH_TEST);
-            glDisable(GL_SCISSOR_TEST);
-            glUseProgram(presentProg);
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, srcTex);
-            glUniform1i(presentTexLoc, 0);
-            glBindBuffer(GL_ARRAY_BUFFER, presentVbo);
-            glEnableVertexAttribArray(presentPosLoc);
-            glVertexAttribPointer(presentPosLoc, 2, GL_FLOAT, GL_FALSE, 16, (void *)0);
-            glEnableVertexAttribArray(presentUvLoc);
-            glVertexAttribPointer(presentUvLoc, 2, GL_FLOAT, GL_FALSE, 16, (void *)8);
-            glDrawArrays(GL_TRIANGLES, 0, 6);
-            glDisableVertexAttribArray(presentPosLoc);
-            glDisableVertexAttribArray(presentUvLoc);
-            glUseProgram(0);
+        if (has_source) {
+            EGLint surf_w = 0;
+            EGLint surf_h = 0;
+            eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_WIDTH, &surf_w);
+            eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_HEIGHT, &surf_h);
+            if (surf_w > 0 && surf_h > 0) {
+                glViewport(0, 0, surf_w, surf_h);
+            }
+            DrawFullscreenTexturedQuad(s_present, src_tex);
         }
     }
 
     if (this->egl_display != EGL_NO_DISPLAY && this->pbuffers[3] != EGL_NO_SURFACE) {
-        if (!have_ctx) {
-            eglMakeCurrent(this->egl_display, this->pbuffers[3], this->pbuffers[3], presentCtx);
+        if (!have_context) {
+            eglMakeCurrent(this->egl_display, this->pbuffers[3], this->pbuffers[3], present_ctx);
         }
         eglSwapBuffers(this->egl_display, this->pbuffers[3]);
     }
-#else
-    UNIMPLEMENTED();
-#endif
 }
 
 void NuRenderDevice::OnWindowCreated(ANativeWindow *window) {
@@ -362,139 +470,122 @@ void NuRenderDevice::OnWindowCreated(ANativeWindow *window) {
     CheckForRenderWindowInitialisation();
 }
 
-#ifdef HOST_BUILD
 i32 NuRenderDevice::HostReadbackPixels(u32 max_w, u32 max_h, u8 *rgba) {
     extern u8 g_hostReadbackRGBA[1280 * 720 * 4];
     extern bool g_hostReadbackReady;
     extern i32 g_backingWidth, g_backingHeight;
-    // Fast path: the render thread already copied the FBO into the shared CPU
-    // buffer with correct 1280x720 size. No EGL/GL needed.
+    extern GLuint g_earlyColorTexture;
+
+    // Fast path: the render thread already resolved the FBO into a shared
+    // CPU buffer at native 1280x720. No GL work needed.
     if (g_hostReadbackReady && g_backingWidth > 0 && g_backingHeight > 0) {
-        u32 cw = (u32)g_backingWidth < max_w ? (u32)g_backingWidth : max_w;
-        u32 ch = (u32)g_backingHeight < max_h ? (u32)g_backingHeight : max_h;
-        // g_hostReadbackRGBA is bottom-up (glReadPixels); HostReadback caller
-        // expects bottom-up (test_window does flip). Copy and pack.
-        // Simple memcpy with flip is done by caller; here we just memcpy the
-        // requested region bottom-up as stored.
-        // For simplicity, assume cw==max_w && ch==max_h (1280x720) which the
-        // test uses; otherwise do a row-wise copy.
-        if (cw == (u32)g_backingWidth && ch == (u32)g_backingHeight) {
-            memcpy(rgba, g_hostReadbackRGBA, (usize)cw * ch * 4);
+        const u32 copy_w = g_backingWidth < (i32)max_w ? (u32)g_backingWidth : max_w;
+        const u32 copy_h = g_backingHeight < (i32)max_h ? (u32)g_backingHeight : max_h;
+        if (copy_w == static_cast<u32>(g_backingWidth) && copy_h == static_cast<u32>(g_backingHeight)) {
+            memcpy(rgba, g_hostReadbackRGBA, static_cast<usize>(copy_w) * copy_h * 4);
         } else {
-            for (u32 y = 0; y < ch; y++) {
-                memcpy(rgba + (usize)y * cw * 4, g_hostReadbackRGBA + (usize)y * g_backingWidth * 4, (usize)cw * 4);
+            for (u32 y = 0; y < copy_h; y++) {
+                memcpy(rgba + static_cast<usize>(y) * copy_w * 4,
+                       g_hostReadbackRGBA + static_cast<usize>(y) * g_backingWidth * 4, static_cast<usize>(copy_w) * 4);
             }
         }
-        return (i32)(cw * 1000 + ch);
+        return static_cast<i32>(copy_w * 1000 + copy_h);
     }
 
     if (egl_display == EGL_NO_DISPLAY || pbuffer_readback == EGL_NO_SURFACE || context_readback == EGL_NO_CONTEXT) {
         return 0;
     }
     if (eglMakeCurrent(egl_display, pbuffer_readback, pbuffer_readback, context_readback) == EGL_FALSE) {
-        eglGetError(); // clear; another MakeCurrent is in flight, skip this read
+        eglGetError(); // clear; another MakeCurrent is in flight — skip this frame
         return 0;
     }
 
-    EGLint w = 0, h = 0;
-    eglQuerySurface(egl_display, pbuffer_readback, EGL_WIDTH, &w);
-    eglQuerySurface(egl_display, pbuffer_readback, EGL_HEIGHT, &h);
-    if (w <= 0 || h <= 0 || max_w == 0 || max_h == 0) {
+    EGLint surf_w = 0;
+    EGLint surf_h = 0;
+    eglQuerySurface(egl_display, pbuffer_readback, EGL_WIDTH, &surf_w);
+    eglQuerySurface(egl_display, pbuffer_readback, EGL_HEIGHT, &surf_h);
+    if (surf_w <= 0 || surf_h <= 0 || max_w == 0 || max_h == 0) {
         return 0;
     }
-    u32 cw = (u32)w < max_w ? (u32)w : max_w;
-    u32 ch = (u32)h < max_h ? (u32)h : max_h;
+    const u32 copy_w = surf_w < (i32)max_w ? (u32)surf_w : max_w;
+    const u32 copy_h = surf_h < (i32)max_h ? (u32)surf_h : max_h;
 
-    // Fallback: re-draw the shared texture into the readback pbuffer. This
-    // path is used before the first frame is ready.
+    // Fallback: re-draw the shared texture into the readback pbuffer so
+    // glReadPixels below sees the last frame. Used before the first CPU
+    // readback is ready.
     if (g_earlyColorTexture != 0 && glIsTexture(g_earlyColorTexture)) {
-        // Simple blit of the shared texture into this pbuffer's default FBO
-        // so glReadPixels below sees the last frame. Use the same present
-        // shader as SwapBuffers but targeting this pbuffer.
-        static GLuint rbProg = 0;
-        static GLint rbPosLoc = -1, rbUvLoc = -1, rbTexLoc = -1;
-        static GLuint rbVbo = 0;
-        if (rbProg == 0) {
-            const char *vs = "attribute vec2 a_position; attribute vec2 a_texcoord; varying vec2 v_uv; void main(){ "
-                             "gl_Position=vec4(a_position,0,1); v_uv=a_texcoord; }";
-            const char *fs = "precision mediump float; varying vec2 v_uv; uniform sampler2D u_tex; void main(){ "
-                             "gl_FragColor=texture2D(u_tex, v_uv); }";
-            GLuint vsh = glCreateShader(GL_VERTEX_SHADER);
-            glShaderSource(vsh, 1, &vs, NULL);
-            glCompileShader(vsh);
-            GLuint fsh = glCreateShader(GL_FRAGMENT_SHADER);
-            glShaderSource(fsh, 1, &fs, NULL);
-            glCompileShader(fsh);
-            rbProg = glCreateProgram();
-            glAttachShader(rbProg, vsh);
-            glAttachShader(rbProg, fsh);
-            glBindAttribLocation(rbProg, 0, "a_position");
-            glBindAttribLocation(rbProg, 1, "a_texcoord");
-            glLinkProgram(rbProg);
-            glDeleteShader(vsh);
-            glDeleteShader(fsh);
-            rbPosLoc = glGetAttribLocation(rbProg, "a_position");
-            rbUvLoc = glGetAttribLocation(rbProg, "a_texcoord");
-            rbTexLoc = glGetUniformLocation(rbProg, "u_tex");
-            glGenBuffers(1, &rbVbo);
-            glBindBuffer(GL_ARRAY_BUFFER, rbVbo);
-            float verts[] = {-1, -1, 0, 0, 1, -1, 1, 0, -1, 1, 0, 1, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1};
-            glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
-        }
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0, 0, (GLsizei)cw, (GLsizei)ch);
-        glDisable(GL_BLEND);
-        glDisable(GL_DEPTH_TEST);
-        glUseProgram(rbProg);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, g_earlyColorTexture);
-        glUniform1i(rbTexLoc, 0);
-        glBindBuffer(GL_ARRAY_BUFFER, rbVbo);
-        glEnableVertexAttribArray(rbPosLoc);
-        glVertexAttribPointer(rbPosLoc, 2, GL_FLOAT, GL_FALSE, 16, (void *)0);
-        glEnableVertexAttribArray(rbUvLoc);
-        glVertexAttribPointer(rbUvLoc, 2, GL_FLOAT, GL_FALSE, 16, (void *)8);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        glDisableVertexAttribArray(rbPosLoc);
-        glDisableVertexAttribArray(rbUvLoc);
-        glUseProgram(0);
+        static PresentResources s_readback{};
+        EnsurePresentResources(s_readback);
+        DrawFullscreenTexturedQuad(s_readback, g_earlyColorTexture);
+        glViewport(0, 0, static_cast<GLsizei>(copy_w), static_cast<GLsizei>(copy_h));
         glFinish();
     } else {
         glFinish();
     }
 
-    glViewport(0, 0, (GLsizei)cw, (GLsizei)ch);
+    glViewport(0, 0, static_cast<GLsizei>(copy_w), static_cast<GLsizei>(copy_h));
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glReadPixels(0, 0, (GLsizei)cw, (GLsizei)ch, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
-    return (i32)(cw * 1000 + ch); // pack w*1000+h
+    glReadPixels(0, 0, static_cast<GLsizei>(copy_w), static_cast<GLsizei>(copy_h), GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+    return static_cast<i32>(copy_w * 1000 + copy_h);
 }
-#endif
+
+#else // !HOST_BUILD
+
+void NuRenderDevice::SwapBuffers() {
+    UNIMPLEMENTED();
+}
+
+void NuRenderDevice::OnWindowCreated(ANativeWindow *window) {
+    InitialiseOpenGLContext(window);
+    CheckForRenderWindowInitialisation();
+}
+
+#endif // HOST_BUILD
+
+// ---------------------------------------------------------------------------
+// EGL config selection + backbuffer sizing
+// ---------------------------------------------------------------------------
 
 EGLConfig NuRenderDevice::SelectEGLConfig() {
-    static EGLint egl_attribs[] = {EGL_DEPTH_SIZE,      24, //
-                                   EGL_LEVEL,           0,  //
-                                   EGL_SURFACE_TYPE,    5,  //
-                                   EGL_RENDERABLE_TYPE, 4,  //
-                                   EGL_CONFORMANT,      4,  //
-                                   EGL_BLUE_SIZE,       5,  //
-                                   EGL_GREEN_SIZE,      6,  //
-                                   EGL_RED_SIZE,        5,  //
-                                   EGL_ALPHA_SIZE,      0,  //
-                                   EGL_STENCIL_SIZE,    0,  EGL_NONE};
+    // Preferred EGL config: 565 colour, 24-bit depth, GLES2 conformant,
+    // pbuffer + window capable.
+    static const EGLint kPreferredAttribs[] = {
+        EGL_DEPTH_SIZE,
+        24, //
+        EGL_LEVEL,
+        0, //
+        EGL_SURFACE_TYPE,
+        EGL_WINDOW_BIT | EGL_PBUFFER_BIT,
+        EGL_RENDERABLE_TYPE,
+        EGL_OPENGL_ES2_BIT,
+        EGL_CONFORMANT,
+        EGL_OPENGL_ES2_BIT,
+        EGL_BLUE_SIZE,
+        5, //
+        EGL_GREEN_SIZE,
+        6, //
+        EGL_RED_SIZE,
+        5, //
+        EGL_ALPHA_SIZE,
+        0, //
+        EGL_STENCIL_SIZE,
+        0, //
+        EGL_NONE,
+    };
 
     pthread_mutex_lock(&this->mutex);
 
-    decltype(egl_attribs) attrib_list;
-    memcpy(attrib_list, egl_attribs, sizeof(egl_attribs));
+    EGLint attrib_list[sizeof(kPreferredAttribs) / sizeof(kPreferredAttribs[0])];
+    memcpy(attrib_list, kPreferredAttribs, sizeof(kPreferredAttribs));
 
-    i32 num_config;
     EGLConfig configs[32];
+    i32 num_configs = 0;
+    EGLBoolean ok = eglChooseConfig(this->egl_display, attrib_list, configs, 32, &num_configs);
 
-    EGLBoolean ret = eglChooseConfig(this->egl_display, attrib_list, configs, 32, &num_config);
-
-    if (num_config == 0 || ret == EGL_FALSE) {
-        attrib_list[1] = 16;
-        eglChooseConfig(this->egl_display, attrib_list, configs, 32, &num_config);
+    if (num_configs == 0 || ok == EGL_FALSE) {
+        // Retry with 16-bit depth if 24-bit is unavailable (older devices).
+        attrib_list[1] = 16; // EGL_DEPTH_SIZE value slot
+        eglChooseConfig(this->egl_display, attrib_list, configs, 32, &num_configs);
     }
 
     pthread_mutex_unlock(&this->mutex);
@@ -503,24 +594,28 @@ EGLConfig NuRenderDevice::SelectEGLConfig() {
 }
 
 void NuRenderDevice::DetermineBackBufferResolution(i32 width, i32 height) {
-    this->backing_width = width;
-    this->backing_height = height;
+    this->backing_width = static_cast<u32>(width);
+    this->backing_height = static_cast<u32>(height);
 
     NuDeviceSpecs::Create();
-    if (this->is_not_amazon_kf != false && NuDeviceSpecs::ms_instance->specs < 3 && this->backing_width > 1280) {
+    // On low-spec non-Kindle devices, clamp width to 1280 to keep fill
+    // rate in check and scale height to preserve aspect.
+    if (this->is_not_amazon_kf && NuDeviceSpecs::ms_instance->specs < 3 && this->backing_width > 1280) {
         this->backing_width = 1280;
-        this->backing_height = (float)height / (float)width * 1280.0f;
+        this->backing_height = static_cast<u32>(static_cast<f32>(height) / static_cast<f32>(width) * 1280.0f);
     }
 }
 
 void NuRenderDevice::InitialiseOpenGLContext(ANativeWindow *window_) {
-    EGLNativeWindowType window = (EGLNativeWindowType)window_;
+    EGLNativeWindowType window = reinterpret_cast<EGLNativeWindowType>(window_);
 
     pthread_mutex_lock(&this->mutex);
 
     this->egl_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 
-    this->is_not_amazon_kf = NuStrICmp(g_deviceManufacturer, "Amazon") != 0 || NuStrNICmp(g_deviceModel, "KF", 2) != 0;
+    // Re-evaluate Kindle Fire detection from the live device properties.
+    this->is_not_amazon_kf =
+        (NuStrICmp(g_deviceManufacturer, "Amazon") != 0 || NuStrNICmp(g_deviceModel, "KF", 2) != 0);
 
     LOG_DEBUG("this->context_valid: %d, this->native_window: %p, window: %p", this->context_valid, this->native_window,
               window);
@@ -530,15 +625,15 @@ void NuRenderDevice::InitialiseOpenGLContext(ANativeWindow *window_) {
 
         EGLint major = 0;
         EGLint minor = 0;
-
         eglInitialize(this->egl_display, &major, &minor);
         eglBindAPI(EGL_OPENGL_ES_API);
 
         this->egl_config = SelectEGLConfig();
 
-        this->pbuffers[3] = eglCreateWindowSurface(this->egl_display, this->egl_config, this->native_window, NULL);
+        this->pbuffers[3] = eglCreateWindowSurface(this->egl_display, this->egl_config, this->native_window, nullptr);
         if (this->pbuffers[3] == EGL_NO_SURFACE) {
             LOG_ERR("eglCreateWindowSurface failed: %d", eglGetError());
+            pthread_mutex_unlock(&this->mutex);
             return;
         }
 
@@ -548,78 +643,83 @@ void NuRenderDevice::InitialiseOpenGLContext(ANativeWindow *window_) {
 
         this->contexts[3] = eglCreateContext(this->egl_display, this->egl_config, EGL_NO_CONTEXT, this->attrib_list);
 
-        EGLContext context3;
+        // Worker contexts share resources with the main context. When
+        // field54_0x54 is set they each get a private 1x1 pbuffer so GL
+        // calls don't need the window surface.
+        EGLContext main_ctx = this->contexts[3];
         if (this->field54_0x54) {
-            EGLint stack_attrib_list[] = {
-                EGL_WIDTH,      1,       EGL_HEIGHT, 1, EGL_TEXTURE_TARGET, EGL_NO_TEXTURE, EGL_TEXTURE_FORMAT,
-                EGL_NO_TEXTURE, EGL_NONE};
-
-            this->pbuffers[0] = eglCreatePbufferSurface(this->egl_display, this->egl_config, stack_attrib_list);
-            this->contexts[0] =
-                eglCreateContext(this->egl_display, this->egl_config, this->contexts[3], this->attrib_list);
-            this->pbuffers[1] = eglCreatePbufferSurface(this->egl_display, this->egl_config, stack_attrib_list);
-            this->contexts[1] =
-                eglCreateContext(this->egl_display, this->egl_config, this->contexts[3], this->attrib_list);
-            this->pbuffers[2] = eglCreatePbufferSurface(this->egl_display, this->egl_config, stack_attrib_list);
-            context3 = this->contexts[3];
+            const EGLint pbuffer_attribs[] = {
+                EGL_WIDTH,          1, //
+                EGL_HEIGHT,         1, //
+                EGL_TEXTURE_TARGET, EGL_NO_TEXTURE,
+                EGL_TEXTURE_FORMAT, EGL_NO_TEXTURE,
+                EGL_NONE,
+            };
+            this->pbuffers[0] = eglCreatePbufferSurface(this->egl_display, this->egl_config, pbuffer_attribs);
+            this->contexts[0] = eglCreateContext(this->egl_display, this->egl_config, main_ctx, this->attrib_list);
+            this->pbuffers[1] = eglCreatePbufferSurface(this->egl_display, this->egl_config, pbuffer_attribs);
+            this->contexts[1] = eglCreateContext(this->egl_display, this->egl_config, main_ctx, this->attrib_list);
+            this->pbuffers[2] = eglCreatePbufferSurface(this->egl_display, this->egl_config, pbuffer_attribs);
         } else {
+            // Alias the window surface — legacy path, not used on host.
             this->pbuffers[0] = this->pbuffers[3];
-            this->contexts[0] =
-                eglCreateContext(this->egl_display, this->egl_config, this->contexts[3], this->attrib_list);
+            this->contexts[0] = eglCreateContext(this->egl_display, this->egl_config, main_ctx, this->attrib_list);
             this->pbuffers[1] = this->pbuffers[3];
-            this->contexts[1] =
-                eglCreateContext(this->egl_display, this->egl_config, this->contexts[3], this->attrib_list);
+            this->contexts[1] = eglCreateContext(this->egl_display, this->egl_config, main_ctx, this->attrib_list);
             this->pbuffers[2] = this->pbuffers[3];
-            context3 = this->contexts[3];
         }
 
-        this->contexts[2] = eglCreateContext(this->egl_display, this->egl_config, context3, attrib_list);
+        this->contexts[2] = eglCreateContext(this->egl_display, this->egl_config, main_ctx, this->attrib_list);
 
 #ifdef HOST_BUILD
-        // HOST-ONLY: dedicated present-side context in the same share group.
-        // On Android the render threads own contexts[0..3]; the host pumps
-        // presents from a separate thread and needs a context that the engine
-        // never binds, otherwise eglMakeCurrent below collides with whatever
-        // the worker left current.
-        g_hostPresentCtx = eglCreateContext(this->egl_display, this->egl_config, this->contexts[3], attrib_list);
+        // Host extras: a present-only context and a dedicated readback
+        // pbuffer/context so HostReadbackPixels never contends with
+        // SwapBuffers on pbuffers[3]. Both share with the main context.
+        g_hostPresentCtx = eglCreateContext(this->egl_display, this->egl_config, main_ctx, this->attrib_list);
 
-        // HOST-ONLY: separate 1x1 pbuffer + share-group context used only by
-        // HostReadbackPixels. EGL forbids two contexts on one surface, so
-        // reading frames back through pbuffers[3] raced with the game
-        // thread's SwapBuffers and silently produced stale/black reads.
-        EGLint rb_attribs[] = {EGL_WIDTH,          1280,           EGL_HEIGHT, 720, EGL_TEXTURE_TARGET, EGL_NO_TEXTURE,
-                               EGL_TEXTURE_FORMAT, EGL_NO_TEXTURE, EGL_NONE};
-        this->pbuffer_readback = eglCreatePbufferSurface(this->egl_display, this->egl_config, rb_attribs);
-        this->context_readback = eglCreateContext(this->egl_display, this->egl_config, this->contexts[3], attrib_list);
+        const EGLint readback_attribs[] = {
+            EGL_WIDTH,          1280, //
+            EGL_HEIGHT,         720,  //
+            EGL_TEXTURE_TARGET, EGL_NO_TEXTURE,
+            EGL_TEXTURE_FORMAT, EGL_NO_TEXTURE,
+            EGL_NONE,
+        };
+        this->pbuffer_readback = eglCreatePbufferSurface(this->egl_display, this->egl_config, readback_attribs);
+        this->context_readback = eglCreateContext(this->egl_display, this->egl_config, main_ctx, this->attrib_list);
 #endif
 
+        // Make worker 0 current briefly to query the actual window size
+        // and set up the nominal backbuffer dimensions.
         eglMakeCurrent(this->egl_display, this->pbuffers[0], this->pbuffers[0], this->contexts[0]);
-        i32 width = 0;
-        i32 height = 0;
+        i32 drawable_w = 0;
+        i32 drawable_h = 0;
+        eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_WIDTH, &drawable_w);
+        eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_HEIGHT, &drawable_h);
+        this->width = static_cast<u32>(drawable_w);
+        this->height = static_cast<u32>(drawable_h);
+        DetermineBackBufferResolution(drawable_w, drawable_h);
 
-        eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_WIDTH, &width);
-        eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_HEIGHT, &height);
-        this->height = height;
-        this->width = width;
-        DetermineBackBufferResolution(width, height);
-
-        EGLint visual_id;
+        EGLint visual_id = 0;
         eglGetConfigAttrib(this->egl_display, this->egl_config, EGL_NATIVE_VISUAL_ID, &visual_id);
-
-        // ANativeWindow_setBuffersGeometry(this->native_window, this->backing_width, this->backing_height, visual_id);
+        (void)visual_id;
+        // Original called ANativeWindow_setBuffersGeometry here; not needed
+        // on host where the SDL-provided window already has the desired
+        // visual.
 
         eglMakeCurrent(this->egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 
-        g_backingWidth = this->backing_width;
-        g_backingHeight = this->backing_height;
-
-        nurndr_pixel_width = this->width;
-        nurndr_pixel_height = this->height;
+        g_backingWidth = static_cast<i32>(this->backing_width);
+        g_backingHeight = static_cast<i32>(this->backing_height);
+        nurndr_pixel_width = static_cast<i32>(this->width);
+        nurndr_pixel_height = static_cast<i32>(this->height);
 
         this->context_valid = true;
 
     } else if (this->native_window != window) {
-        eglMakeCurrent(this->egl_display, 0, 0, 0);
+        // Window was recreated (e.g. orientation change) — tear down the
+        // old window surface. A new one will be created on the next valid
+        // call.
+        eglMakeCurrent(this->egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
         eglDestroySurface(this->egl_display, this->pbuffers[3]);
         eglGetError();
     }
@@ -632,10 +732,16 @@ void NuRenderDevice::InitialiseOpenGLContext(ANativeWindow *window_) {
 }
 
 void NuRenderDevice::CheckForRenderWindowInitialisation() {
+    // Once the window is live and focused, transition the application
+    // state machine so the engine starts submitting frames.
     if (g_appWindow != 0 && this->field48_0x45 == '\0' && this->focus) {
         NuCore::GetApplicationState()->SetStatus(NUAPPLICATIONSTATUS{});
     }
 }
+
+// ---------------------------------------------------------------------------
+// C linkage helpers — the engine calls these without needing the C++ type
+// ---------------------------------------------------------------------------
 
 void NuRenderSetThisTreadAsRender() {
     g_renderDevice.SetThisTreadAsRender();
@@ -652,6 +758,10 @@ void EndCriticalSectionGL(const char *file, i32 line) {
 void NuRenderDeviceSwapBuffers() {
     g_renderDevice.SwapBuffers();
 }
+
+// ---------------------------------------------------------------------------
+// Stubs for iOS/legacy vertex paths that are not used on this platform
+// ---------------------------------------------------------------------------
 
 struct numtl_s;
 typedef struct NuVertexFormatPS NuVertexFormatPS;
@@ -676,11 +786,11 @@ extern "C" {
     }
 
     static __used__ u8 *NuRenderContextGetKTint(void) {
-        return 0;
+        return nullptr;
     }
 
     static __used__ struct numtl_s *NuRenderContextGetMaterialInUse(void) {
-        return 0;
+        return nullptr;
     }
 
     static __used__ void NuRenderContextSetKTint(f32 *) {

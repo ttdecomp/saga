@@ -236,7 +236,7 @@ extern "C" {
     // (table + type*4 - 0x200) addresses the identical entries. Entries for
     // types without a handler are NULL.
     typedef void (*nudl_handler_fn)(void *data);
-    extern const nudl_handler_fn g_nudl_dispatch_table[0x100]; // __ItemFnTable
+    extern nudl_handler_fn g_nudl_dispatch_table[0x100]; // __ItemFnTable
 
     // Transcribed functions (original addresses in nudlist.cpp comments).
     void NuDisplayListExecute(nudisplaylistitem_s *item, u32 item_table);

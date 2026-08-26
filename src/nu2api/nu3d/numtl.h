@@ -96,17 +96,17 @@ typedef struct nushadermtldesc_s {
     f32 unknown_24;      // 0x024
     u8 unknown_28[0x20]; // 0x028..0x047
 
-    u8 blendOp2;   // 0x044 (0xff = no shader retrieval)
-    u8 blendOp3;   // 0x045
-    u8 blendOp4;   // 0x046
+    u8 blend_op2;  // 0x044 (0xff = no shader retrieval)
+    u8 blend_op3;  // 0x045
+    u8 blend_op4;  // 0x046
     u8 unknown_47; // 0x047
 
-    i32 specularMapTID;  // 0x048
-    i32 normalMapTID;    // 0x04C
-    i32 envMapCubicTID;  // 0x050
-    i32 shineMapPS2TID;  // 0x054
-    i32 vtfHeightMapTID; // 0x058
-    i32 vtfNormalMapTID; // 0x05C
+    i32 specular_map_tid;   // 0x048
+    i32 normal_map_tid;     // 0x04C
+    i32 envmap_cubic_tid;   // 0x050
+    i32 shine_map_ps2_tid;  // 0x054
+    i32 vtf_height_map_tid; // 0x058
+    i32 vtf_normal_map_tid; // 0x05C
 
     u8 unknown_60[0x48]; // 0x060..0x0A7
     u8 unknown_a8;       // 0x0A8 (texture-count-ish, forced >= 1)
@@ -184,8 +184,8 @@ typedef struct numtl_s {
 
     NUSHADERMTLDESC shader_desc;
 
-    void *_vertex_decl; // 0x2BC — NuGetVertexDeclaration result (read by the
-                        // material display-list callback at mtl+700)
+    void *vertex_decl; // 0x2BC — NuGetVertexDeclaration result (read by the
+                       // material display-list callback at mtl+700)
 
     u16 version; // 0x2C0, bumped by NuMtlUpdate, read by display-list submit
 

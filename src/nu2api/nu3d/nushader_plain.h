@@ -8,6 +8,7 @@
 
 // Combined shader key (ShaderObjectKey): first dword is the program key the
 // redirect tables and slot cache are keyed on.
+namespace nu2api {
 struct ShaderObjectKey {
     u32 key[4];
 };
@@ -24,8 +25,9 @@ struct LoadedUniqueShaderRecord {
     GLuint gl_shader;
 };
 
-// ShaderMtlDescFilter (original layout: 0x24 bytes).
-struct ShaderMtlDescFilter {
+// ShaderMtlDescFilter (original layout: 0x24 bytes) — plain data view.
+// Named FilterPlain to avoid collision with legoapi's ShaderMtlDescFilter class.
+struct ShaderMtlDescFilterPlain {
     const NUSHADERMTLDESC *desc; // 0x00
     const void *mtl;             // 0x04
     i32 flags_in;                // 0x08 (param_3)
@@ -37,7 +39,6 @@ struct ShaderMtlDescFilter {
     i32 param4; // 0x20 (field8_0x20)
 };
 
-namespace nu2api {
     extern void *g_shaderManager;
 }
 

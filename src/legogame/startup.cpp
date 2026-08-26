@@ -1,9 +1,20 @@
-// Permanent-data loading: LoadPerm / LoadPermData.
+// Startup / permanent-data loading.
 //
-// Original addresses: StartPerm 0x470db0, EndPerm 0x470de0, LoadPerm 0x1bf310,
-// LoadPermData (file-static) 0x1bebd0. The file-statics legal_tid /
-// loadlegal_done / legal_mtl live in this TU in the original as well
-// (_ZL9legal_tid / _ZL14loadlegal_done / _ZL9legal_mtl).
+// This TU owns the permanent arena bootstrap and the loading-screen frame
+// loop.  It corresponds to the original `startup` module:
+//
+//   StartPerm  0x470db0  — reset the permanent bump pointer to the super-buffer base.
+//   EndPerm    0x470de0  — no-op tail (kept for link compatibility).
+//   LoadPerm   0x1bf310  — public entry: chooses the background vs synchronous path.
+//   LoadPermData (file-static) 0x1bebd0 — runs on the bg thread (or inline) and
+//               actually carves the permanent arena: fonts, strings, music, SFX,
+//               level tables, character tables, fades, gizmos, etc.
+//
+// File-statics `legal_tid` / `loadlegal_done` / `legal_mtl` live here in the
+// original as `_ZL9legal_tid` etc., so they stay file-scoped.  Behaviour is
+// faithfully preserved (including the PAL language-select spin and the
+// deliberately inverted legal fade-in quirk).
+
 #include "legogame/startup.h"
 
 #include <string.h>
@@ -11,13 +22,13 @@
 
 #include "globals.h"
 #include "MechInputTouch/MechInputTouch_types.h"
-#include "legoapi/legoapi_types.h"
-#include "legoapi/world/levels/levels.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/core/input/timer.h"
 #include "legoapi/world/area.h"
 #include "legoapi/world/levels/episode.h"
+#include "legoapi/world/levels/levels.h"
+#include "legoapi/legoapi_types.h"
 #include "legogame/game.h"
 #include "nu2api/nu3d/nugscn.h"
 #include "nu2api/nu3d/nuprim.h"
@@ -27,19 +38,22 @@
 #include "nu2api/nucore/bgproc.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nucore/nustring.h"
-#include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nufloat.h"
+#include "nu2api/numath/numtx.h"
 #include "nu2api/numusic/numusic.h"
 #include "nu2api/numusic/sfx.h"
 #include "nu2api/nusound/nusound.h"
 
-// C++-linkage declarations (defined in nu3d TUs).
+// ---------------------------------------------------------------------------
+// Engine symbols defined in other TUs (declared here to avoid pulling large
+// headers).  Linkage matches the defining TU.
+// ---------------------------------------------------------------------------
+
+// C++ linkage — defined in nu3d.
 NUMTL *NuMtlCreate3D(i32 count);
 
-// --- Functions without a shared header yet (originals verified to exist).
-// Each declaration's language linkage matches its definition TU. ---
 extern "C" {
-    // nucore_plain.cpp / nurndr_plain.cpp / editor stubs (extern "C" TUs).
+    // nucore / nurndr plain stubs and editor helpers (extern "C" TUs).
     void NuStringFilterLoad(char *, VARIPTR *, VARIPTR *);
     f32 NuIOS_GetAspectRatio(void);
     i32 NuIOS_GetDeviceLanguage(void);
@@ -64,7 +78,7 @@ extern "C" {
     void DrawMenu(i32 menu_id);
 }
 
-// C++-linkage definitions in their own TUs:
+// C++ linkage — defined in their own TUs.
 void InitMemCard(void);                                         // saveload.cpp
 void Text_LoadFont(char *path, VARIPTR *buf, VARIPTR *buf_end); // text.cpp
 bool Text_IsFontLoaded(void);                                   // text.cpp
@@ -112,13 +126,12 @@ void UpdateTimer(TIMER *timer);
 void IntroText_Draw(f32 alpha);
 void ReadPads(void);
 
-// Globals without headers.
+// Globals / objects declared elsewhere.
 extern i16 id_DEFAULTCHARACTER[2];
 extern i16 id_OBIWANKENOBI;
 extern GAMEPAD_s GamePad[64]; // gamepads.cpp, bss @0x127a500
 extern i32 readpads_always;
 
-// fade.cpp global effect objects.
 extern Fade fade;
 extern FadeWipe fadeWipe;
 extern FadeStillWipe fadeStillWipe;
@@ -128,23 +141,7 @@ void *GameBufferAlloc(VARIPTR *buf, VARIPTR *buf_end, i32 size); // gameobjects.
 struct CHARFIXUP;
 extern CHARFIXUP CharFixUp[222]; // characters.cpp
 
-// float -> IEEE half for the half-UV vertex format.
-static u16 loadperm_f32_to_f16(f32 v) {
-    u32 bits;
-    memcpy(&bits, &v, 4);
-    u32 sign = (bits >> 16) & 0x8000;
-    i32 exp = (i32)((bits >> 23) & 0xff) - 127 + 15;
-    u32 mant = bits & 0x7fffff;
-    if (exp >= 0x1f) {
-        return (u16)(sign | 0x7c00);
-    }
-    if (exp <= 0) {
-        return (u16)sign;
-    }
-    return (u16)(sign | (u32)(exp << 10) | (mant >> 13));
-}
-
-// LSW gameplay hook implementations wired up by LoadPermData.
+// LSW gameplay hooks wired by LoadPermData.
 void CutScene_StartFn_LSW(CUTINFO *);
 void CutScene_PreUpdateFn_LSW(CUTINFO *);
 void CutScene_PostUpdateFn_LSW(void);
@@ -156,44 +153,102 @@ void Bolt_HitCustomFn_LSW(BOLT_s *, nuvec_s *);
 void GameBlowUpBlownUpFn_LSW(GIZMOBLOWUP_s *);
 void GizObstacle_SetDefaultSFXFn_LSW(void *, GIZOBSTACLE_s *);
 
-// File-statics of the original startup TU.
+// ---------------------------------------------------------------------------
+// File-local constants and helpers.
+// ---------------------------------------------------------------------------
+
+namespace {
+
+    constexpr i32 kLevelHackTableBytes = 0x80;
+    constexpr i32 kExtraGizAIMessageCount = 0x40;
+    constexpr usize kSmallHeapSize = 0x200;
+    constexpr usize kLegalTextureReserve = 0x400000; // carved from top of super buffer
+    constexpr f32 kLegalFadeInDuration = 0.3f;
+    constexpr f32 kLegalHoldEnd = 5.3f;
+    constexpr f32 kLegalFadeOutDuration = 0.30000019f;
+    constexpr f32 kLegalVisibleEnd = 5.6f;
+    constexpr f32 kLegalTimerMax = 5.80000019f;
+    constexpr f32 kIntroFadeInStart = 0.3f;
+    constexpr f32 kIntroFadeInDuration = 0.29999995f;
+    constexpr f32 kIntroHoldEnd = 3.3f;
+    constexpr f32 kIntroFadeOutDuration = 0.29999995f;
+    constexpr f32 kIntroDuration = 3.8f;
+    constexpr f32 kMenuFlashPeriod = 0.2f;
+    constexpr f32 kMenuFlashThreshold = 0.1f;
+
+    // Convert IEEE-754 f32 -> IEEE-754 binary16 (half) for the half-UV vertex
+    // format used by `LegalVertex` when `g_NuPrim_NeedsHalfUVs` is set.
+    u16 F32ToF16(f32 value) {
+        u32 bits;
+        memcpy(&bits, &value, sizeof(bits));
+
+        const u32 sign = (bits >> 16) & 0x8000u;
+        i32 exp = static_cast<i32>((bits >> 23) & 0xffu) - 127 + 15;
+        const u32 mant = bits & 0x7fffffu;
+
+        if (exp >= 0x1f) {
+            return static_cast<u16>(sign | 0x7c00u); // inf / overflow -> inf
+        }
+        if (exp <= 0) {
+            return static_cast<u16>(sign); // subnormals flushed to zero
+        }
+        return static_cast<u16>(sign | (static_cast<u32>(exp) << 10) | (mant >> 13));
+    }
+
+} // namespace
+
+// ---------------------------------------------------------------------------
+// File-statics — original TU statics (_ZL* in the original ELF).
+// ---------------------------------------------------------------------------
+
 static i32 legal_tid;       // texture id of the loaded legal screen
 static bool loadlegal_done; // legal texture already attempted
 static NUMTL *legal_mtl;    // material wrapping the legal texture
 
+// ---------------------------------------------------------------------------
+// Permanent-data initialisation (background thread entry).
+// ---------------------------------------------------------------------------
+
 static void LoadPermData(BGPROCINFO *proc) {
     InitMemCard();
 
-    Text_LoadFont(Text_Language == 0 ? (char *)"stuff\\text\\starwars_font_j" : (char *)"stuff\\text\\starwars_font",
-                  &permbuffer_ptr, &permbuffer_end);
+    // Font path depends on language.  `Text_Language == 0` is Japanese in the
+    // original; everything else uses the Latin font.
+    {
+        char *font_path =
+            (Text_Language == 0) ? (char *)"stuff\\text\\starwars_font_j" : (char *)"stuff\\text\\starwars_font";
+        Text_LoadFont(font_path, &permbuffer_ptr, &permbuffer_end);
+    }
 
-    // The language selection is settled before the background request runs.
+    // PAL builds show the language menu — the loader spins here until the menu
+    // writes `LoadPerm_LanguageSelect = 3` ("selection confirmed").
     while (LoadPerm_LanguageSelect != 3) {
     }
 
     Text_InitStringTable(0x70d, &permbuffer_ptr, &permbuffer_end);
-    Text_InitTable((TEXTENTRY *)LSW_Text /* original: &LSW_Text */, 0, 0x70c);
+    Text_InitTable(reinterpret_cast<TEXTENTRY *>(LSW_Text), 0, 0x70c);
     Text_LoadStrings(&permbuffer_ptr, &permbuffer_end);
     Text_InitDefaultStrings();
     LoadPerm_StringsLoaded = 1;
 
-    // HOST-ONLY: the original fills IntroText_TextID from the loaded string
-    // table during permanent-data processing; until that lookup is
-    // decompiled, give it a valid id so the loading-screen timer state
-    // machine (t84/t8c/t88) runs exactly as it does on device.
+    // HOST-ONLY: the original fills `IntroText_TextID` from the string table
+    // during perm loading.  Until that lookup is decompiled, seed a valid id
+    // so the loading-screen intro-text timer state machine runs on host exactly
+    // as on device.
     if (IntroText_TextID == -1) {
         IntroText_TextID = 0;
     }
 
-    LOG_INFO("LoadPermData: proc=%p langsel=%d", (void *)proc, LoadPerm_LanguageSelect);
-    if (proc != NULL && legal_tid == 0 && !loadlegal_done) {
-        // Legal-screen texture, carved from the top of the super buffer.
-        VARIPTR legalTex;
-        legalTex.addr = superbuffer_end.addr - 0x400000;
+    LOG_INFO("LoadPermData: proc=%p langsel=%d", static_cast<void *>(proc), LoadPerm_LanguageSelect);
 
-        legal_tid =
-            NuTexRead((char *)(Text_Language == 2 ? "stuff\\legal\\LEGAL_FRENCH" : "stuff\\legal\\LEGAL_ENGLISH"),
-                      &legalTex, &superbuffer_end);
+    // Legal-screen texture — carved from the top of the super buffer so it
+    // never collides with the permanent bump allocator.  Only attempted once.
+    if (proc != nullptr && legal_tid == 0 && !loadlegal_done) {
+        VARIPTR legal_tex_base;
+        legal_tex_base.addr = superbuffer_end.addr - kLegalTextureReserve;
+
+        const char *legal_path = (Text_Language == 2) ? "stuff\\legal\\LEGAL_FRENCH" : "stuff\\legal\\LEGAL_ENGLISH";
+        legal_tid = NuTexRead(const_cast<char *>(legal_path), &legal_tex_base, &superbuffer_end);
         loadlegal_done = true;
         LOG_INFO("LoadPermData: legal_tid=%d", legal_tid);
     }
@@ -202,17 +257,19 @@ static void LoadPermData(BGPROCINFO *proc) {
 
     NuStringFilterLoad((char *)"stuff\\text\\badwords.txt", &permbuffer_ptr, &permbuffer_end);
 
+    // Audio / rendering permanents.
     MusicInfo = ConfigureMusic((char *)"audio\\music.txt", &permbuffer_ptr, &permbuffer_end);
     RegisterMusic(MusicInfo);
     InitSfx(&permbuffer_ptr, permbuffer_end, "Audio\\Audio.cfg");
     InitStillRender(&permbuffer_ptr, permbuffer_end);
 
-    LevelHackData = GameBufferAlloc(&permbuffer_ptr, &permbuffer_end, 0x80);
-    OldLevelHackData = GameBufferAlloc(&permbuffer_ptr, &permbuffer_end, 0x80);
+    LevelHackData = GameBufferAlloc(&permbuffer_ptr, &permbuffer_end, kLevelHackTableBytes);
+    OldLevelHackData = GameBufferAlloc(&permbuffer_ptr, &permbuffer_end, kLevelHackTableBytes);
     LevelHackSize = 0;
 
     LevelProgress_ReserveBufferSpace(&permbuffer_ptr, permbuffer_end);
 
+    // Fade system — the four global fade objects are registered once.
     FadeSys.Init();
     FadeSys.AddFade(&fade);
     FadeSys.AddFade(&fadeWipe);
@@ -220,28 +277,34 @@ static void LoadPermData(BGPROCINFO *proc) {
     FadeSys.AddFade(&fadeStill);
     pFadeInfo = &FadeSys;
 
-    LevelObjects_InitForGame((LEVELOBJECT *)ObjTab, &permbuffer_ptr, &permbuffer_end, 0x2ee, 0x1f40);
-    LevelSplines_InitForGame((LEVELSPLINE *)SplTab);
+    LevelObjects_InitForGame(reinterpret_cast<LEVELOBJECT *>(ObjTab), &permbuffer_ptr, &permbuffer_end, 0x2ee, 0x1f40);
+    LevelSplines_InitForGame(reinterpret_cast<LEVELSPLINE *>(SplTab));
 
-    saveicon_scene = NuGScnRead(&permbuffer_ptr, *(VARIPTR *)&permbuffer_end, (char *)"stuff\\ps2_bits.gsc");
-    button_scene = NuGScnRead(&permbuffer_ptr, *(VARIPTR *)&permbuffer_end, (char *)"stuff\\pc_bits.gsc");
+    saveicon_scene = NuGScnRead(&permbuffer_ptr, permbuffer_end, (char *)"stuff\\ps2_bits.gsc");
+    button_scene = NuGScnRead(&permbuffer_ptr, permbuffer_end, (char *)"stuff\\pc_bits.gsc");
 
+    // ------------------------------------------------------------------
+    // Tiny bump allocator embedded in `theMemoryManager`.
+    //
+    // Original inlines this at the call site — a 0x200-byte bump region
+    // carved from the *next* 0x200 bytes of the permanent buffer, with a
+    // handful of housekeeping words stored in the global `theMemoryManager`
+    // blob (0x248 bytes).  Offsets below match the original layout.
+    // ------------------------------------------------------------------
     {
-        // Inline theMemoryManager block initialisation (original does this at
-        // the site, no call): a tiny bump allocator over the next 0x200 bytes
-        // of the permanent buffer.
         u8 *mm = theMemoryManager;
-        *(u8 **)(mm + 0x8) = mm; // self pointer
-        *(u32 *)(mm + 0x14) = 0;
-        u32 base = ((u32)permbuffer_ptr.addr + 0xf) & ~0xfu;
-        *(u32 *)(mm + 0x0) = base;
-        *(u32 *)(mm + 0x4) = base + 0x200;
-        permbuffer_ptr.addr = base + 0x200;
-        *(u32 *)(mm + 0x18) = 0x200;
-        // The original stores a self-referential pointer as u32; go through
-        // usize so the truncation is explicit.
-        *(u32 *)(mm + 0xc) = (u32)(usize)(mm + 4);
-        *(u32 *)(mm + 0x10) = 0;
+        *reinterpret_cast<u8 **>(mm + 0x8) = mm; // self pointer
+        *reinterpret_cast<u32 *>(mm + 0x14) = 0;
+
+        const u32 aligned_base = (static_cast<u32>(permbuffer_ptr.addr) + 0xf) & ~0xfu;
+        *reinterpret_cast<u32 *>(mm + 0x0) = aligned_base;
+        *reinterpret_cast<u32 *>(mm + 0x4) = aligned_base + kSmallHeapSize;
+        permbuffer_ptr.addr = aligned_base + kSmallHeapSize;
+
+        *reinterpret_cast<u32 *>(mm + 0x18) = static_cast<u32>(kSmallHeapSize);
+        // Stored as u32 truncation of a host pointer — explicit via usize.
+        *reinterpret_cast<u32 *>(mm + 0xc) = static_cast<u32>(reinterpret_cast<usize>(mm + 4));
+        *reinterpret_cast<u32 *>(mm + 0x10) = 0;
         memset(mm + 0x1c, 0, 0x22c);
     }
 
@@ -252,6 +315,7 @@ static void LoadPermData(BGPROCINFO *proc) {
     LSW_registerStatusScreen();
     initGameHintSys_LSW();
 
+    // Wire LSW gameplay hooks.
     CutScene_StartFn = CutScene_StartFn_LSW;
     CutScene_PreUpdateFn = CutScene_PreUpdateFn_LSW;
     CutScene_PostUpdateFn = CutScene_PostUpdateFn_LSW;
@@ -266,8 +330,9 @@ static void LoadPermData(BGPROCINFO *proc) {
 
     Movies_ConfigureList((char *)"movies\\movies.txt", &permbuffer_ptr, &permbuffer_end);
 
-    SetProceduralAnimationFn((void *)NuAnimBuffProceduralAnimation);
+    SetProceduralAnimationFn(reinterpret_cast<void *>(NuAnimBuffProceduralAnimation));
 
+    // Characters, levels, areas, episodes — each carves from the perm buffer.
     CDataList = ConfigureCharacterList((char *)"chars\\chars.txt", &permbuffer_ptr, &permbuffer_end, 0x154, &CHARCOUNT,
                                        0x120, &GCDataList);
     CharScenes_Init(&permbuffer_ptr, &permbuffer_end);
@@ -278,9 +343,9 @@ static void LoadPermData(BGPROCINFO *proc) {
     PlayerID[0] = id_DEFAULTCHARACTER[0];
     PlayerID[1] = id_OBIWANKENOBI;
 
-    CharCategories_Init((CHARCATEGORY *)LSW_CharCategory);
-    Cheats_Init((CHEAT *)Cheat);
-    CharVariants_Init((CHARVARIANT *)CharVariants_Game, 0x17);
+    CharCategories_Init(reinterpret_cast<CHARCATEGORY *>(LSW_CharCategory));
+    Cheats_Init(reinterpret_cast<CHEAT *>(Cheat));
+    CharVariants_Init(reinterpret_cast<CHARVARIANT *>(CharVariants_Game), 0x17);
 
     LDataList = Levels_ConfigureList((char *)"levels\\levels.txt", &permbuffer_ptr, &permbuffer_end, 0x16d, &LEVELCOUNT,
                                      &Level_SetDefaults);
@@ -295,10 +360,10 @@ static void LoadPermData(BGPROCINFO *proc) {
     NewGame();
     InitGameAfterConfig();
 
-    APICharacterSysInit(&permbuffer_ptr, *(VARIPTR *)&permbuffer_end, CHARCOUNT, 0x30, 0xe9, CDataList, 0x400);
+    APICharacterSysInit(&permbuffer_ptr, permbuffer_end, CHARCOUNT, 0x30, 0xe9, CDataList, 0x400);
     SetActionInfo(ActionInfo, ExtraActionData);
 
-    gizaimessagesys = CreateGizAIMessageSys(&permbuffer_ptr, &permbuffer_end, 0x40);
+    gizaimessagesys = CreateGizAIMessageSys(&permbuffer_ptr, &permbuffer_end, kExtraGizAIMessageCount);
 
     LOG_INFO("LoadPermData: before backdrop");
     permbuffer_ptr.addr = ALIGN(permbuffer_ptr.addr, 0x10);
@@ -309,17 +374,21 @@ static void LoadPermData(BGPROCINFO *proc) {
     LOG_INFO("LoadPermData: before LoadPerm2");
     LoadPerm2();
     LOG_INFO("LoadPermData: after LoadPerm2");
-    if (theGameThings != NULL) {
-        // Original passes the global manager unconditionally; ours is created
-        // by CreateThingManager() which is still a stub on this path.
-        ((GameThingManager *)theGameThings)->AddOnceOnlyThings();
+
+    if (theGameThings != nullptr) {
+        static_cast<GameThingManager *>(theGameThings)->AddOnceOnlyThings();
     }
+
     LOG_INFO("LoadPermData: before RegisterHelpers");
     RegisterHelpers();
 
     permbuffer_ptr.addr = ALIGN(permbuffer_ptr.addr, 0x10);
     PermDataLoaded = 1;
 }
+
+// ---------------------------------------------------------------------------
+// Public permutations — thin wrappers that set up the arena.
+// ---------------------------------------------------------------------------
 
 void StartPerm(void) {
     permbuffer_ptr.addr = permbuffer_base.addr;
@@ -331,56 +400,60 @@ void LoadPerm(void) {
     PermDataLoaded = 0;
 
     WORLDINFO_s *saved_world = WORLD;
-    WORLD = NULL;
+    WORLD = nullptr;
 
-    // Original branch at 0x1bf351: with background loading enabled and the
-    // loader not disabled, run the loading-screen frame loop; otherwise load
-    // synchronously.
+    // With background loading enabled and not forced off, run the
+    // loading-screen path: `LoadPermData` executes on the bg thread while
+    // this thread drives the legal-screen / intro-text frame loop.  Otherwise
+    // everything is done synchronously.
+    // Original branch at 0x1bf351.
     if (BGLOAD != 0 && LOADEROFF == 0) {
-        // Loading-screen path: kick LoadPermData off on the background thread
-        // and run the legal-texture / intro-text frame loop until it finishes.
+        // ---- Loading-screen path ----
 
         pNuCam->mtx = numtx_identity;
         pNuCam->fov = 20.0f;
         pNuCam->aspect = 0.609375f;
         NuCameraSet(pNuCam);
 
-        InitPanel(*((u8 *)&Game + 0xf)); // options byte driving panel setup
+        // Panel setup driven by the options byte at `Game + 0xf`.
+        InitPanel(*reinterpret_cast<u8 *>(&Game + 0xf));
 
-        NuQFntSetCoordinateSystem((NUQFNT_CSMODE)3);
+        NuQFntSetCoordinateSystem(static_cast<NUQFNT_CSMODE>(3));
 
         NUMTX scale;
         NUVEC scl = {0.125f, 0.125f, 0.125f};
         NuMtxSetScale(&scale, &scl);
 
         if (!PAL) {
-            LoadPerm_LanguageSelect = 3;
+            LoadPerm_LanguageSelect = 3; // NTSC: skip the language menu
         } else {
-            // PAL build shows the language menu first.
             for (i32 i = 0; i < LANGUAGECOUNT; i++) {
                 Text_LanguageList[i].language = Text_LanguageList_Default[i].language;
                 Text_LanguageList[i].unknown_4 = Text_LanguageList_Default[i].unknown_4;
             }
         }
 
-        // Amazon devices skip the device-language probe (broken locale service).
+        // Amazon devices skip the locale probe — their locale service returns
+        // garbage in the original release.
         if (NuStrICmp(g_deviceManufacturer, (char *)"Amazon") != 0) {
-            i32 lang = NuIOS_GetDeviceLanguage();
+            const i32 device_lang = NuIOS_GetDeviceLanguage();
             for (i32 i = 0; i < LANGUAGECOUNT; i++) {
-                if (Text_LanguageList[i].language == lang) {
-                    NuLanguageSet(lang);
-                    Text_Language = lang;
+                if (Text_LanguageList[i].language == device_lang) {
+                    NuLanguageSet(device_lang);
+                    Text_Language = static_cast<u32>(device_lang);
                     break;
                 }
             }
         }
 
-        bgPostRequest(LoadPermData, NULL, NULL, 0);
+        bgPostRequest(LoadPermData, nullptr, nullptr, 0);
 
-        f32 t80 = 0.2f; // menu flash timer start
-        f32 t84 = 0.0f; // DrawMenu trigger timer
-        f32 t88 = 0.0f; // intro text timer
-        f32 t8c = 0.0f; // legal texture timer
+        // Timers driving the loading-screen presentation.  Names match the
+        // original stack layout for objdiff readability.
+        f32 menu_flash_timer = 0.2f; // DrawMenu trigger — deliberately 0.2 so t84 == 0.2 fires once
+        f32 intro_gate_timer = 0.0f; // t84 — 1 s lead before legal fade starts
+        f32 intro_text_timer = 0.0f; // t88 — intro text alpha & exit
+        f32 legal_timer = 0.0f;      // t8c — legal fade in / hold / fade out
 
         while (true) {
             NuFrameBegin();
@@ -390,125 +463,118 @@ void LoadPerm(void) {
             ReadPads();
             UpdateGameMenu(&GamePad[0], 0);
             UpdateTimer(&GlobalTimer);
-            LOG_WARN("[startup] FRAMETIME=%f t84=%f t8c=%f GlobalTimer=%f", FRAMETIME, t84, t8c,
-                     GlobalTimer.time_elapsed);
 
-            menu_flash = (0.1f > NuFmod(GlobalTimer.time_elapsed_mod_seconds, 0.2f));
+            menu_flash = (kMenuFlashThreshold > NuFmod(GlobalTimer.time_elapsed_mod_seconds, kMenuFlashPeriod));
 
-            // Original timer semantics (LoadPerm @0x1bf98f..0x1bfe98):
-            //  - before the permanent data arrives, the legal-screen fade-in
-            //    timer t8c counts up to 5.80000019 s, but only after a one-second
-            //    lead time (t84) and only once fonts/strings are ready;
-            //  - once PermDataLoaded is set, the intro text plays over the screen
-            //    and its timer t88 drives the exit at 3.8 s.
+            // Legal fade timer: only advances once fonts & strings are ready
+            // and the language is settled, after a 1 s gate.
             const bool intro_ready = Text_IsFontLoaded() && LoadPerm_StringsLoaded != 0 && IntroText_TextID != -1;
 
-            // The legal-screen fade timer runs in both states once fonts/strings
-            // are ready; the exit below additionally waits for it to expire.
             if (intro_ready && LoadPerm_LanguageSelect == 3) {
-                t84 += FRAMETIME;
-                if (t84 >= 1.0f) {
-                    t8c += FRAMETIME;
-                    if (t8c > 5.80000019f) {
-                        t8c = 5.80000019f;
+                intro_gate_timer += FRAMETIME;
+                if (intro_gate_timer >= 1.0f) {
+                    legal_timer += FRAMETIME;
+                    if (legal_timer > kLegalTimerMax) {
+                        legal_timer = kLegalTimerMax;
                     }
                 }
             }
 
+            // Intro text — draws over the legal background once perm data is
+            // resident.  Alpha ramps in over 0.3 s, holds, then fades out.
             if (PermDataLoaded != 0 && intro_ready) {
-                if (t88 > 0.3f) {
+                if (intro_text_timer > kIntroFadeInStart) {
                     f32 alpha;
-                    if (t88 < 0.6f) {
-                        alpha = (t88 - 0.3f) / 0.29999995f;
-                    } else if (3.3f > t88) {
+                    if (intro_text_timer < 0.6f) {
+                        alpha = (intro_text_timer - kIntroFadeInStart) / kIntroFadeInDuration;
+                    } else if (kIntroHoldEnd > intro_text_timer) {
                         alpha = 1.0f;
                     } else {
-                        alpha = 1.0f - (t88 - 3.3f) / 0.29999995f;
+                        alpha = 1.0f - (intro_text_timer - kIntroHoldEnd) / kIntroFadeOutDuration;
                     }
 
                     if (alpha > 0.0f) {
                         IntroText_Draw(alpha);
                     }
                 }
-                t88 += FRAMETIME;
-                if (t88 >= 3.8f && t8c >= 5.80000019f) {
-                    // Original 0x1bfe52: SetBackgroundMusic(-1), final gradient
-                    // clear, then leave the loop.
+                intro_text_timer += FRAMETIME;
+                if (intro_text_timer >= kIntroDuration && legal_timer >= kLegalTimerMax) {
+                    // Original 0x1bfe52: stop music, final clear, leave loop.
                     SetBackgroundMusic(-1);
                     NuRndrGradClear(0xf00, 0x80000000, 0x80000000, 1.0f);
                     break;
                 }
             }
 
-            // One-shot legal material setup from the background-loaded texture.
-            LOG_WARN("[startup] legal_tid=%d legal_mtl=%p t8c=%f", legal_tid, legal_mtl, t8c);
-            if (legal_tid != 0 && legal_mtl == NULL) {
-                LOG_WARN("[startup] creating legal mtl for tid %d", legal_tid);
+            // One-shot legal material creation from the bg-loaded texture.
+            if (legal_tid != 0 && legal_mtl == nullptr) {
                 NUMTL *mtl = NuMtlCreate3D(1);
-                if (mtl != NULL) {
-                    mtl->diffuse_color.r = 1.0f;
-                    mtl->diffuse_color.g = 1.0f;
-                    mtl->diffuse_color.b = 1.0f;
+                if (mtl != nullptr) {
+                    mtl->diffuse_color = {1.0f, 1.0f, 1.0f};
                     mtl->opacity = 1.0f;
                     mtl->shader_desc.flags = 0x1000;
-                    mtl->tex_id = (i16)legal_tid;
-                    // original 0x127c0a..0x127c3b — attribute byte pokes
-                    u8 b1 = *((u8 *)mtl + 0x41);
-                    *((u8 *)mtl + 0x41) = (u8)((b1 & 0x0f) | 0x60);
-                    u8 b0 = *((u8 *)mtl + 0x40);
-                    *((u8 *)mtl + 0x40) = (u8)((b0 & 0xf0) | 0x01);
-                    u8 b2 = *((u8 *)mtl + 0x42);
-                    *((u8 *)mtl + 0x42) = (u8)((b2 & 0x8c) | 0x12);
+                    mtl->tex_id = static_cast<i16>(legal_tid);
+
+                    // Material attribute flag bytes at mtl+0x40..0x42
+                    // (original 0x127c0a..).  Kept as byte pokes until the
+                    // attrib struct is fully typed; each preserves the
+                    // original mask/or pair.
+                    u8 *flags = reinterpret_cast<u8 *>(mtl) + 0x40;
+                    flags[1] = (flags[1] & 0x0F) | 0x60;
+                    flags[0] = (flags[0] & 0xF0) | 0x01;
+                    flags[2] = (flags[2] & 0x8C) | 0x12;
+
                     NuMtlUpdate(mtl);
                     legal_mtl = mtl;
                 }
             }
 
-            if (t84 == 0.2f) {
+            if (menu_flash_timer == 0.2f) {
                 DrawMenu(0);
             }
 
             NuRndrBeginScene();
             NuRndrGradClear(0xf00, 0x80000000, 0x80000000, 1.0f);
 
-            // --- Legal screen quad ---
+            // ---- Legal screen quad ----
             do {
-                if (t8c <= 0.0f || t8c >= 5.8f || legal_mtl == NULL) {
+                if (legal_timer <= 0.0f || legal_timer >= 5.8f || legal_mtl == nullptr) {
                     break;
                 }
 
                 f32 alpha;
-                if (0.3f > t8c) {
-                    alpha = t8c / 0.3f;
-                } else if (5.3f > t8c) {
+                if (kLegalFadeInDuration > legal_timer) {
+                    alpha = legal_timer / kLegalFadeInDuration;
+                } else if (kLegalHoldEnd > legal_timer) {
                     alpha = 1.0f;
-                } else if (5.6f <= t8c) {
+                } else if (kLegalVisibleEnd <= legal_timer) {
                     break;
                 } else {
-                    alpha = 1.0f - (t8c - 5.3f) / 0.30000019f;
+                    alpha = 1.0f - (legal_timer - kLegalHoldEnd) / kLegalFadeOutDuration;
                 }
 
                 if (alpha <= 0.0f) {
                     break;
                 }
 
-                if (t8c < 0.3f) {
-                    // Original quirk: multiplied by a negative ramp here,
-                    // producing an inverted fade-in. Replicated literally.
-                    alpha *= (t8c - 0.3f) / 0.3f;
+                if (legal_timer < kLegalFadeInDuration) {
+                    // Original quirk: alpha is multiplied by a *negative* ramp
+                    // here, producing an inverted fade-in.  Replicated
+                    // literally for matching.
+                    alpha *= (legal_timer - kLegalFadeInDuration) / kLegalFadeInDuration;
                 }
 
-                u32 colour = ((i32)(alpha * 255.0f)) << 24 | 0x808080;
+                const u32 colour = (static_cast<u32>(alpha * 255.0f) << 24) | 0x808080u;
 
-                f32 aspect = NuIOS_GetAspectRatio();
-                f32 hw;
-                f32 hh;
+                const f32 aspect = NuIOS_GetAspectRatio();
+                f32 half_w;
+                f32 half_h;
                 if (aspect > (16.0f / 9.0f)) {
-                    hh = 0.5f;
-                    hw = aspect * 0.5f / (16.0f / 9.0f);
+                    half_h = 0.5f;
+                    half_w = aspect * 0.5f / (16.0f / 9.0f);
                 } else {
-                    hw = 0.5f;
-                    hh = aspect * 0.5f / (16.0f / 9.0f);
+                    half_w = 0.5f;
+                    half_h = aspect * 0.5f / (16.0f / 9.0f);
                 }
 
                 NuRndrClear(0xb00, 0, 1.0f);
@@ -517,28 +583,40 @@ void LoadPerm(void) {
                 NuPrimSetCoordinateSystem(NUPRIM_SCALEMODE_ABSOLUTE);
                 NuPrim2DBegin(4, 7, legal_mtl);
 
-                for (i32 vtx = 0; vtx < 2; vtx++) {
-                    f32 u = (vtx == 0) ? 0.0f : 1.0f;
-                    f32 v = (vtx == 0) ? 0.0f : 1.0f;
+                struct LegalVertex {
+                    f32 x, y, z;
+                    u32 color;
+                    union {
+                        struct {
+                            f32 u, v;
+                        } full;
+                        struct {
+                            u16 u, v;
+                            u32 pad; // NOLINT(readability-identifier-naming)
+                        } half;
+                    };
+                };
+                static_assert(sizeof(LegalVertex) == 0x18, "LegalVertex is 24 bytes (pos+colour+uv)");
 
-                    u8 *cur = (u8 *)(*g_NuPrim_StreamBufferPtr)->addr;
-                    if (!g_NuPrim_NeedsOverbrightening) {
-                        *(u32 *)(cur + 0xc) = (colour & 0xff000000) | 0x404040;
-                    } else {
-                        *(u32 *)(cur + 0xc) = colour;
-                    }
+                for (i32 vtx = 0; vtx < 2; vtx++) {
+                    const f32 u = (vtx == 0) ? 0.0f : 1.0f;
+                    const f32 v = (vtx == 0) ? 0.0f : 1.0f;
+
+                    auto *vert = reinterpret_cast<LegalVertex *>((*g_NuPrim_StreamBufferPtr)->addr);
+                    vert->color = g_NuPrim_NeedsOverbrightening ? colour : (colour & 0xff000000u) | 0x404040u;
+
                     if (g_NuPrim_NeedsHalfUVs) {
-                        *(u16 *)(cur + 0x10) = loadperm_f32_to_f16(u);
-                        *(u16 *)(cur + 0x12) = loadperm_f32_to_f16(v);
+                        vert->half.u = F32ToF16(u);
+                        vert->half.v = F32ToF16(v);
                     } else {
-                        *(f32 *)(cur + 0x10) = u;
-                        *(f32 *)(cur + 0x14) = v;
+                        vert->full.u = u;
+                        vert->full.v = v;
                     }
 
                     if (vtx == 0) {
-                        NuPrim2DAddXYZ(0.5f - hw, 0.5f - hh, 0.0f);
+                        NuPrim2DAddXYZ(0.5f - half_w, 0.5f - half_h, 0.0f);
                     } else {
-                        NuPrim2DAddXYZ(0.5f + hw, 0.5f + hh, 0.0f);
+                        NuPrim2DAddXYZ(0.5f + half_w, 0.5f + half_h, 0.0f);
                     }
                 }
 
@@ -559,13 +637,13 @@ void LoadPerm(void) {
         }
 
     } else {
-        // No loading screen: load everything synchronously and bail out.
+        // Synchronous path — no loading screen.
         LoadPerm_LanguageSelect = 3;
-        LoadPermData(NULL);
+        LoadPermData(nullptr);
 
-        if (legal_mtl != NULL) {
+        if (legal_mtl != nullptr) {
             NuMtlDestroy(legal_mtl);
-            legal_mtl = NULL;
+            legal_mtl = nullptr;
         }
     }
 
@@ -573,4 +651,5 @@ void LoadPerm(void) {
 }
 
 void EndPerm(void) {
+    // Original is an empty tail — kept so the TU's symbol table matches.
 }

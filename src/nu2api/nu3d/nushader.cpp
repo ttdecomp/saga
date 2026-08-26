@@ -1,11 +1,11 @@
 #include "decomp.h"
+#include "nu2api/nu3d/nu2api_nu3d_types.h"
 #include "nu2api/nu3d/nushader.h"
 
 #include "nu2api/nu3d/NuRenderDevice.h"
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nucore/bgproc.h"
 
-struct eSHADERVERSION {};
 struct nushaderuniform_e {};
 
 static f32 water_theta_step = 0.26666668f;

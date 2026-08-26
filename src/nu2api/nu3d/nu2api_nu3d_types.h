@@ -4,7 +4,8 @@
 
 struct NuScreen;
 struct PartHeader;
-struct eSHADERVERSION;
+struct eSHADERVERSION {};
+union variptr_u;
 struct nugobj_s;
 struct nugscn_s;
 struct numtl_s;
@@ -20,7 +21,7 @@ struct nuvec4_s;
 struct nuvec_s;
 struct rndrstream_s;
 struct uv1debdata;
-struct variptr_u;
+union variptr_u;
 
 struct PartHeader;
 struct nugobj_s {};
@@ -36,7 +37,7 @@ struct nuvec4_s;
 struct nuvec_s;
 struct rndrstream_s;
 struct uv1debdata;
-struct variptr_u;
+union variptr_u;
 
 struct NuScreen {
     void Destroy();

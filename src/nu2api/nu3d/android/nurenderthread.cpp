@@ -28,13 +28,12 @@ static i32 renderThreadIsLocked;
 pthread_t g_renderThread;
 
 // Original file-static double buffers (bss 0x119db.. / 0x119fd..).
-static nudisplayscene_s sceneParameters_safe[16]; // _ZL20sceneParameters_safe
-static i32 sceneParametersCount_safe;             // game-side copy consumed here
-static i32 dynamicLights_safe[64];                // _ZL18dynamicLights_safe
-static i32 dynamicLightsCount_safe;               // _ZL23dynamicLightsCount_safe
+static nudisplayscene_s sceneParameters_safe[16];
+static i32 sceneParametersCount_safe;
+static i32 dynamicLights_safe[64];
+static i32 dynamicLightsCount_safe;
 
 // Special-vertex offset table copied for the render thread every frame.
-// Globals live at 0x11aa640/0x11aa650 in the original.
 extern "C" {
     VARIPTR nuspecial_vertex_offsets;
     i32 nuspecial_vertex_noffsets;
@@ -45,22 +44,24 @@ extern "C" {
     extern struct nudisplayscene_s sceneParameters[16];
     extern i32 sceneParametersCount;
 }
-static VARIPTR nuspecial_vertex_offsets_safe; // _ZL29nuspecial_vertex_offsets_safe
-static i32 nuspecial_vertex_noffsets_safe;    // _ZL30nuspecial_vertex_noffsets_safe
+static VARIPTR nuspecial_vertex_offsets_safe;
+static i32 nuspecial_vertex_noffsets_safe;
 
 // Render-context accumulators reset/read by the frame tail (bss 0x119bb..).
 extern "C" {
-    f32 g_renderContext_gpuTime;        // @0x119bbf4
-    f32 g_renderContext_postEffectTime; // @0x119bbec
-    f32 g_renderContext_3dTime;         // @0x119bbf0
-    f32 g_renderContext_kTint[4];       // @0x119bc54
+    f32 g_renderContext_gpuTime;
+    f32 g_renderContext_postEffectTime;
+    f32 g_renderContext_3dTime;
+    f32 g_renderContext_kTint[4];
 }
-const f32 nuvec4_one[4] = {1.0f, 1.0f, 1.0f, 1.0f}; // original .data @0x625520
-f32 g_renderContext_viewProj[16];                   // render-context view-projection matrix (bss)
-f32 g_renderContext_view[16];                       // render-context view matrix (bss)
+const f32 nuvec4_one[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+f32 g_renderContext_viewProj[16];
+f32 g_renderContext_view[16];
 
 // original 0x2b3620 — dynamic light slot enabled flag lives at light+0x7bc.
 extern "C" i32 NuDynamicLightIsEnabled(i32 light) {
+    // Light is an opaque handle; original checks *(i32*)(light+0x7bc) != 0.
+    // Keep the check verbatim until the light struct is fully typed.
     return *(i32 *)(usize)(light + 0x7bc) != 0;
 }
 extern "C" void NuShaderManagerSetfv(i32 id, const f32 *values);
@@ -69,8 +70,8 @@ void NuIOS_CopyBackbufferToTexture(NUNATIVETEX *tex, bool depth);
 extern "C" i32 NuDynamicLightIsEnabled(i32 light);
 void NuDisplayListDrawRenderScene(i32 render_scene_id);
 extern "C" void NuDisplayListDraw2D(void);
-i32 global_frame_count = 0;        // original bss @0x11a7c40
-i32 global_frame_count_paused = 0; // original bss @0x11a7c30
+i32 global_frame_count = 0;
+i32 global_frame_count_paused = 0;
 
 extern "C" void NuRenderThreadLock(void) {
     BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nurenderthread.cpp", 134);
@@ -95,19 +96,12 @@ void NuRenderThreadCreate(void) {
 }
 
 void *renderThread_main(void *arg) {
-    LOG_WARN("[rt] thread entered");
+    (void)arg;
     NuRenderSetThisTreadAsRender();
-    LOG_WARN("[rt] set-as-render done");
     NuIOSInitOpenGLES();
-    LOG_WARN("[rt] InitOpenGLES done");
 
     for (;;) {
         NuIOS_WaitUntilAllowedToRender();
-        {
-            static i32 rtc = 0;
-            if (rtc++ < 5)
-                LOG_WARN("[rt] frame %d begin", rtc);
-        }
         NuIOS_SetRenderIncomplete();
         BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nurenderthread.cpp", 259);
         NuRenderThreadLock();
@@ -124,10 +118,6 @@ void *renderThread_main(void *arg) {
 // the scene-parameter array into the safe double buffer, collects the dynamic
 // lights referenced by those scenes and resets the game-side counter.
 extern "C" void NuRenderThreadPrepareRender(void) {
-    i32 i;
-    i32 j;
-    i32 light;
-
     // Align the display-list stream cursor (original rounds up to 16).
     display_list_buffer->addr = (usize)((display_list_buffer->addr + 0xf) & ~(usize)0xf);
 
@@ -139,22 +129,21 @@ extern "C" void NuRenderThreadPrepareRender(void) {
     dynamicLightsCount_safe = 0;
     sceneParametersCount_safe = sceneParametersCount;
 
-    for (i = 0; i < sceneParametersCount; i++) {
-        memcpy(&sceneParameters_safe[i], &sceneParameters[i], 0x218);
+    for (i32 i = 0; i < sceneParametersCount; i++) {
+        sceneParameters_safe[i] = sceneParameters[i];
 
-        if (*(i32 *)((u8 *)&sceneParameters[i] + 0x38) != 0) {
-            light = *(i32 *)((u8 *)&sceneParameters[i] + 0x3c);
+        if (sceneParameters[i].unknown_38 != 0) {
+            i32 light = sceneParameters[i].unknown_3c;
             if (NuDynamicLightIsEnabled(light)) {
                 bool found = false;
-                for (j = 0; j < dynamicLightsCount_safe; j++) {
+                for (i32 j = 0; j < dynamicLightsCount_safe; j++) {
                     if (dynamicLights_safe[j] == light) {
                         found = true;
                         break;
                     }
                 }
                 if (!found) {
-                    dynamicLights_safe[dynamicLightsCount_safe] = light;
-                    dynamicLightsCount_safe++;
+                    dynamicLights_safe[dynamicLightsCount_safe++] = light;
                 }
             }
         }
@@ -175,12 +164,7 @@ extern "C" void NuRenderThreadStartRender(void) {
 // optional backbuffer copy-back into a texture. Finishes with Draw2D, the
 // post-effect end and the frame bookkeeping/tail state resets.
 i32 renderThread_processRenderScenes(void) {
-    static f32 times; // _ZZ32renderThread_processRenderScenesE5times
-    i32 i;
-    i32 w;
-    i32 h;
-    i64 cpu_ns;
-    f32 cpu_ms;
+    static f32 times;
     bool drew = false;
 
     NuThreadCriticalSectionBegin(renderThreadCS);
@@ -188,31 +172,19 @@ i32 renderThread_processRenderScenes(void) {
     times += nuapi.frametime;
     _NuTimeBarSlotBegin(-1, 4, "CPU_QUEUE_DRAW");
 
-    for (i = 0; i < sceneParametersCount_safe; i++) {
-        u8 *scn = (u8 *)&sceneParameters_safe[i];
+    for (i32 i = 0; i < sceneParametersCount_safe; i++) {
+        nudisplayscene_s &scn = sceneParameters_safe[i];
 
-        if (*(i32 *)(scn + 0x48) != 0 && !NuPostEffectIsInitialised(0x20)) {
-            *(i32 *)(scn + 0x48) = 0;
-        }
-        if (*(i32 *)(scn + 0x58) != 0 && !NuPostEffectIsInitialised(4)) {
-            *(i32 *)(scn + 0x58) = 0;
-        }
-        if (*(i32 *)(scn + 0xac) != 0 && !NuPostEffectIsInitialised(8)) {
-            *(i32 *)(scn + 0xac) = 0;
-        }
-        if (*(i32 *)(scn + 0xe4) != 0 && !NuPostEffectIsInitialised(0x10)) {
-            *(i32 *)(scn + 0xe4) = 0;
-        }
-        if (*(i32 *)(scn + 0x178) != 0 && !NuPostEffectIsInitialised(0x40)) {
-            *(i32 *)(scn + 0x178) = 0;
-        }
-        if (*(i32 *)(scn + 0x188) != 0 && !NuPostEffectIsInitialised(0x80)) {
-            *(i32 *)(scn + 0x188) = 0;
-        }
+        if (scn.unknown_48 != 0 && !NuPostEffectIsInitialised(0x20)) scn.unknown_48 = 0;
+        if (scn.unknown_58 != 0 && !NuPostEffectIsInitialised(4)) scn.unknown_58 = 0;
+        if (scn.unknown_ac != 0 && !NuPostEffectIsInitialised(8)) scn.unknown_ac = 0;
+        if (scn.unknown_e4 != 0 && !NuPostEffectIsInitialised(0x10)) scn.unknown_e4 = 0;
+        if (scn.unknown_178 != 0 && !NuPostEffectIsInitialised(0x40)) scn.unknown_178 = 0;
+        if (scn.unknown_188 != 0 && !NuPostEffectIsInitialised(0x80)) scn.unknown_188 = 0;
     }
 
     NuPostEffectReset();
-    for (i = 0; i < dynamicLightsCount_safe; i++) {
+    for (i32 i = 0; i < dynamicLightsCount_safe; i++) {
         NuPostEffectAddDynamicLight(dynamicLights_safe[i]);
     }
 
@@ -221,42 +193,34 @@ i32 renderThread_processRenderScenes(void) {
         g_currentFramebuffer = g_earlyColorMSAAFramebuffer;
     }
     glBindFramebuffer(GL_FRAMEBUFFER, g_currentFramebuffer);
-    w = g_backingWidth;
-    h = g_backingHeight;
     glViewport(0, 0, g_backingWidth, g_backingHeight);
 
-    LOG_WARN("[rt] sceneCount=%d", sceneParametersCount_safe);
-    for (i = 0; i < sceneParametersCount_safe; i++) {
-        u8 *scn = (u8 *)&sceneParameters_safe[i];
+    for (i32 i = 0; i < sceneParametersCount_safe; i++) {
+        nudisplayscene_s &scn = sceneParameters_safe[i];
 
-        if (*(i32 *)(scn + 8) != 0) {
-            LOG_WARN("[rt] clear flags 0x%x col 0x%x", *(u32 *)(scn + 8), *(u32 *)(scn + 0xc));
-            NuFramebufferClear(*(u32 *)(scn + 8), *(u32 *)(scn + 0xc));
+        if (scn.clear_flags != 0) {
+            NuFramebufferClear(scn.clear_flags, scn.bg_colour);
             drew = true;
         }
-        if (*(i32 *)scn != -1) {
-            LOG_WARN("[rt] draw RS %d", *(i32 *)scn);
-            NuDisplayListDrawRenderScene(*(i32 *)scn);
+        if (scn.render_scene_id != -1) {
+            NuDisplayListDrawRenderScene(scn.render_scene_id);
             drew = true;
-        } else {
-            LOG_WARN("[rt] RS -1 skip");
         }
-        if (*(i32 *)(scn + 0x214) != 0) {
-            NUNATIVETEX *tex = NuTexGetNative(*(i32 *)(scn + 0x214));
+        if (scn.unknown_214 != 0) {
+            NUNATIVETEX *tex = NuTexGetNative((i32)scn.unknown_214);
             NuIOS_CopyBackbufferToTexture(tex, true);
         }
     }
 
     NuDisplayListDraw2D();
-    LOG_WARN("[rt] Draw2D done drew=%d", drew);
     NuPostEffectEnd();
 
     if (global_frame_count_paused == 0) {
         global_frame_count++;
     }
 
-    cpu_ns = _NuTimeBarSlotEnd(-1, 4);
-    cpu_ms = (f32)((f64)(i32)cpu_ns / 1e6);
+    i64 cpu_ns = _NuTimeBarSlotEnd(-1, 4);
+    f32 cpu_ms = (f32)((f64)(i32)cpu_ns / 1e6);
 
     NuFramebufferSwapBuffers();
     g_boundShader = 0;
