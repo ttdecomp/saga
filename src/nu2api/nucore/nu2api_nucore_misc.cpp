@@ -7,7 +7,7 @@ void NuMemAlloc(i32) {
 void NuHGobjRead(variptr_u *, char *) {
 }
 
-void NuHtmlFlush(i32) {
+static void NuHtmlFlush(i32) {
 }
 
 void NuHtmlTitle(char *) {

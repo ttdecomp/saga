@@ -197,7 +197,7 @@ typedef struct numtl_s {
 
 void DefaultMtl(NUMTL *mtl);
 void NuMtlCreatePS(NUMTL *mtl, i32 is_3d);
-NUMTL *NuMtlCreate3D(i32 count);
+extern "C" NUMTL *NuMtlCreate3D(i32 count);
 extern "C" void NuDisplayListCreateMtl(void); // defined among the nucore_plain stubs
 void NuMtlUpdatePS(NUMTL *mtl);
 

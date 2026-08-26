@@ -24,7 +24,7 @@ void *g_lastPartEffect;
 extern i32 g_forceSysMemVbs; // src/globals.h
 
 // original 0x296f35
-extern "C" void NuDebrisRendererFlushBuffers(void) {
+void NuDebrisRendererFlushBuffers(void) {
     if ((g_UseSysMemVB == 0) && (g_pVBData != NULL) && (g_CurrentVBVertexCount != 0)) {
         BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nuptl_android.c", 0xa4);
         glBindBuffer(GL_ARRAY_BUFFER, g_DebriVB[(g_writeBufferIndex * 4 + g_CurrentDebriVBIndex) % 8]);
@@ -42,8 +42,4 @@ extern "C" void NuDebrisRendererFlushBuffers(void) {
     g_writeBufferIndex = (g_writeBufferIndex + 1) & 1;
 }
 
-// The original library exported this routine under both the unmangled name
-// and the C++-mangled one (_Z28NuDebrisRendererFlushBuffersv); keep both
-// export spellings alive with an assembler alias.
-asm(".globl _Z28NuDebrisRendererFlushBuffersv\n"
-    ".set _Z28NuDebrisRendererFlushBuffersv, NuDebrisRendererFlushBuffers\n");
+// Original provides only the mangled spelling (_Z28NuDebrisRendererFlushBuffersv).

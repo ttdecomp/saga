@@ -124,7 +124,7 @@ NUMTL *NuMtlCreate(i32 count) {
 // display-list registration, and the platform pass runs with is_3d=1
 // (no has_no_transform bit). Byte6 clear keeps NuMtlUpdatePS on the
 // RetrieveShaderVariant path instead of the vtx_desc bit2 poke path.
-NUMTL *NuMtlCreate3D(i32 count) {
+extern "C" NUMTL *NuMtlCreate3D(i32 count) {
     i32 i;
     i32 j;
     NUMTL *mtl;

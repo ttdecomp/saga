@@ -36,12 +36,10 @@ static __used__ i32 SubItemMenu(MENU_s *) {
     return 0;
 }
 
-extern "C" {
-
+namespace {
     void _NuTimeBarSlotBegin(void) {
     }
 
     void _NuTimeBarSlotEnd(void) {
     }
-
-} // extern "C"
+} // namespace

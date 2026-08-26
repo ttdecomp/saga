@@ -88,7 +88,7 @@ static char *nudl_html_cursor;    // original @0xb9d720-rel
 static char *nudl_html_end;       // original @0xb9d730-rel
 static void *nudl_html_file;      // original file-handle pointer
 
-extern "C" void NuHtmlFlush(i32 force) {
+void NuHtmlFlush(i32 force) {
     if (nudl_html_cursor > nudl_html_buf || force) {
         // HOST-ONLY: the original hands the buffer to NuFileWriteString on a
         // debug dump file; that API is not decompiled yet, so emit to stdout.

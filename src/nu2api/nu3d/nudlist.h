@@ -248,7 +248,7 @@ extern "C" {
     void NuDisplayListReset(nudisplaylist_s *dl);
     void NuDisplayListCaptureSortPriority(nusortpri_s *sort_pri);
     void NuDisplayListSetItemTable(i32 which);
-    void DisplayListLinkDynamicMtls(void);
+    static void DisplayListLinkDynamicMtls(void);
     void DisplayListSwapBuffersPS(void);
     void DisplayListSetAlphaPS(nudisplaylistitem_s *prev_item, nudisplaylistitem_s *item, f32 alpha);
     void NuDisplayListAddClut(nudisplaylistitem_s *item, i32 clut_id);

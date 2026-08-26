@@ -7,11 +7,11 @@ extern i32 g_effectFlags;
 extern i32 g_effectsRan;
 extern i32 g_lastFrameEffect;
 
-bool NuPostEffectIsInitialised(u32 mask);
-void NuPostEffectReset(void);
-void NuPostEffectEnd(void);
-void NuPostEffectAddDynamicLight(i32 light);
+extern "C" bool NuPostEffectIsInitialised(u32 mask);
+extern "C" void NuPostEffectReset(void);
+extern "C" void NuPostEffectEnd(void);
+extern "C" void NuPostEffectAddDynamicLight(i32 light);
 
 extern "C" void Nu360_dxClear(u32 clear_flags, u32 colour);
-void NuFramebufferClear(u32 clear_flags, u32 colour);
-void NuFramebufferSwapBuffers(void);
+extern "C" void NuFramebufferClear(u32 clear_flags, u32 colour);
+extern "C" void NuFramebufferSwapBuffers(void);

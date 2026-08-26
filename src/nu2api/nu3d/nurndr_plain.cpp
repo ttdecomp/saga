@@ -42,18 +42,18 @@
 static constexpr i32 kSceneRingCapacity = 16;
 
 extern "C" {
-// Scene currently being built.  Size is 0x218 bytes; original lives in BSS
-// and is referenced as a plain object by all render/present code.
-struct nudisplayscene_s currentScene = {0};
+    // Scene currently being built.  Size is 0x218 bytes; original lives in BSS
+    // and is referenced as a plain object by all render/present code.
+    struct nudisplayscene_s currentScene = {0};
 
-// Deferred ring: NuRndrEndScene copies the completed scene here; the render
-// thread drains it.  Stride is 0x218, 16 slots (0x2180 bytes total) in the
-// original.
-i32 sceneParametersCount = 0;
-struct nudisplayscene_s sceneParameters[kSceneRingCapacity] = {0};
+    // Deferred ring: NuRndrEndScene copies the completed scene here; the render
+    // thread drains it.  Stride is 0x218, 16 slots (0x2180 bytes total) in the
+    // original.
+    i32 sceneParametersCount = 0;
+    struct nudisplayscene_s sceneParameters[kSceneRingCapacity] = {0};
 
-// Shared renderer state block (original BSS @0x119b900, 0x1b0 bytes).
-u8 render_state[0x1b0] = {0};
+    // Shared renderer state block (original BSS @0x119b900, 0x1b0 bytes).
+    u8 render_state[0x1b0] = {0};
 } // extern "C"
 
 // Swap/present pacing flags (original BSS).
@@ -122,27 +122,29 @@ static_assert(sizeof(PrimStreamHeader) == 0x10, "PrimStreamHeader must be 0x10")
 // ---------------------------------------------------------------------------
 
 extern "C" {
-void NuVpGetPosition2(i32 *, i32 *);
-void NuVpGetSize2(i32 *, i32 *);
-i32 NuDisplayListAddRenderScene(void);
-i32 NuDynamicLightIsEnabled(i32);
-void NuDynamicLightAddRenderScene(i32, i32, i32);
-void RndrStateSetConstAlphaTint(i32, i32, const void *, i32, i32);
-void DisplayListUpdateRenderState(void *list, void *state);
-void NuDisplayListLinkMtl(nudisplaylist_s *list, NUMTL *mtl);
-void NuDisplayListLinkItems(nudisplaylist_s *list, i32 count);
-nudisplaylist_s *NuDisplayListGet2dList(void);
+    void NuVpGetPosition2(i32 *, i32 *);
+    void NuVpGetSize2(i32 *, i32 *);
+    i32 NuDisplayListAddRenderScene(void);
+    i32 NuDynamicLightIsEnabled(i32);
+    void NuDynamicLightAddRenderScene(i32, i32, i32);
+    void RndrStateSetConstAlphaTint(i32, i32, const void *, i32, i32);
+    void DisplayListUpdateRenderState(void *list, void *state);
+    void NuDisplayListLinkMtl(nudisplaylist_s *list, NUMTL *mtl);
+    void NuDisplayListLinkItems(nudisplaylist_s *list, i32 count);
+    nudisplaylist_s *NuDisplayListGet2dList(void);
+}
 
-// Frame-present helpers (implemented in nudlist.cpp / nurndr.cpp / platform).
 void NuDebrisRendererFlushBuffers(void);
-void NuRndrSwapStreamBuffers(void);
-void NuRenderThreadPrepareRender(void);
-void NuRenderThreadStartRender(void);
-void NuShaderManagerBindShader(i32 shader);
-void NuDisplayListCheckBuffer(void);
-void NuDisplayListResetBuffer(void);
-void NuRenderThreadLock(void);
-void NuRenderThreadUnlock(void);
+
+extern "C" {
+    void NuRndrSwapStreamBuffers(void);
+    void NuRenderThreadPrepareRender(void);
+    void NuRenderThreadStartRender(void);
+    void NuShaderManagerBindShader(i32 shader);
+    void NuDisplayListCheckBuffer(void);
+    void NuDisplayListResetBuffer(void);
+    void NuRenderThreadLock(void);
+    void NuRenderThreadUnlock(void);
 }
 
 // ---------------------------------------------------------------------------
@@ -388,9 +390,12 @@ extern "C" void NuRndrSwapScreenEx(i32 /*mode*/, void (*callback)(void)) {
 // Originals 0x2ccb10 / ...
 // ---------------------------------------------------------------------------
 
-extern "C" void NuTexAnimProcess(void) {}
-extern "C" void NuTexAnimProcessEx(void) {}
-extern "C" void NuTexAnimProcessList(void) {}
+extern "C" void NuTexAnimProcess(void) {
+}
+extern "C" void NuTexAnimProcessEx(void) {
+}
+extern "C" void NuTexAnimProcessList(void) {
+}
 
 // ---------------------------------------------------------------------------
 // Link stubs — retained for compatibility, not yet implemented
@@ -401,135 +406,262 @@ extern "C" void NuTexAnimProcessList(void) {}
 // subsystem so it is obvious what is still missing.
 
 // Scene / GScn
-extern "C" void NuGScnFixupPS(void) {}
-extern "C" void NuGScnFixupTIDsPS(void) {}
-extern "C" void NuGScnFromVideoMem(void) {}
-extern "C" void NuGScnGetSpecial(void) {}
-extern "C" void NuGScnNumSpecials(void) {}
-extern "C" void NuGScnReadForMultiRender(void) {}
-extern "C" void NuGScnRemove(void) {}
-extern "C" void NuGScnRestoreTIDsPS(void) {}
-extern "C" void NuGScnRndr(void) {}
-extern "C" void NuGScnToVideoMem(void) {}
+extern "C" void NuGScnFixupPS(void) {
+}
+extern "C" void NuGScnFixupTIDsPS(void) {
+}
+extern "C" void NuGScnFromVideoMem(void) {
+}
+extern "C" void NuGScnGetSpecial(void) {
+}
+extern "C" void NuGScnNumSpecials(void) {
+}
+extern "C" void NuGScnReadForMultiRender(void) {
+}
+extern "C" void NuGScnRemove(void) {
+}
+extern "C" void NuGScnRestoreTIDsPS(void) {
+}
+extern "C" void NuGScnRndr(void) {
+}
+extern "C" void NuGScnToVideoMem(void) {
+}
 
 // Material
-extern "C" void NuMtlAnimate(void) {}
-extern "C" void NuMtlAnimateSetMask(void) {}
-extern "C" void NuMtlAnimateSetSpeedScale(void) {}
-extern "C" void NuMtlAnimateShaderMtlTextures(void) {}
-extern "C" void NuMtlCopy(void) {}
-extern "C" void NuMtlCreate3D(void) {}
-extern "C" void NuMtlCreateBuff(void) {}
-extern "C" void NuMtlCreateBuff3D(void) {}
-extern "C" void NuMtlCreateEx(void) {}
-extern "C" void NuMtlCreateEx3D(void) {}
-extern "C" void NuMtlDestroy(NUMTL *mtl) { (void)mtl; }
-extern "C" void NuMtlFindVariantMtl(void) {}
-extern "C" void NuMtlFindVariantMtlFromDesc(void) {}
-extern "C" void NuMtlInitOverride(void) {}
-extern "C" void NuMtlReadEventSetHandler(void) {}
-extern "C" void NuMtlRegisterForOverride(void) {}
-extern "C" void NuMtlSetCurrentRenderPlane(void) {}
-extern "C" void NuMtlSetRenderPlane(void) {}
-extern "C" void NuMtlSetRenderStatesPS(void) {}
-extern "C" void NuMtlSpecialSetUV(void) {}
+extern "C" void NuMtlAnimate(void) {
+}
+extern "C" void NuMtlAnimateSetMask(void) {
+}
+extern "C" void NuMtlAnimateSetSpeedScale(void) {
+}
+extern "C" void NuMtlAnimateShaderMtlTextures(void) {
+}
+extern "C" void NuMtlCopy(void) {
+}
+static void NuMtlCreate3D(void) {
+}
+extern "C" void NuMtlCreateBuff(void) {
+}
+extern "C" void NuMtlCreateBuff3D(void) {
+}
+extern "C" void NuMtlCreateEx(void) {
+}
+extern "C" void NuMtlCreateEx3D(void) {
+}
+extern "C" void NuMtlDestroy(NUMTL *mtl) {
+    (void)mtl;
+}
+extern "C" void NuMtlFindVariantMtl(void) {
+}
+extern "C" void NuMtlFindVariantMtlFromDesc(void) {
+}
+extern "C" void NuMtlInitOverride(void) {
+}
+extern "C" void NuMtlReadEventSetHandler(void) {
+}
+extern "C" void NuMtlRegisterForOverride(void) {
+}
+extern "C" void NuMtlSetCurrentRenderPlane(void) {
+}
+extern "C" void NuMtlSetRenderPlane(void) {
+}
+static void NuMtlSetRenderStatesPS(void) {
+}
+extern "C" void NuMtlSpecialSetUV(void) {
+}
 
 // Debug / visualisation geometry
-extern "C" void NuRndr3dLine(void) {}
-extern "C" void NuRndrAddFootPrint(void) {}
-extern "C" void NuRndrAddShadow(void) {}
-extern "C" void NuRndrAddShadowPrims(void) {}
-extern "C" void NuRndrAnglesZX(void) {}
-extern "C" void NuRndrAxes(void) {}
-extern "C" void NuRndrAxisArrows(void) {}
-extern "C" void NuRndrAxisArrowsMtx(void) {}
-extern "C" void NuRndrAxisBright(void) {}
-extern "C" void NuRndrBoundingBox(void) {}
-extern "C" void NuRndrBurstObjAdd(void) {}
-extern "C" void NuRndrBurstObjAddNoClip(void) {}
-extern "C" void NuRndrBurstObjEnd(void) {}
-extern "C" void NuRndrCircle(void) {}
-extern "C" void NuRndrCreateBlendShapeDeformerWeightsArray(void) {}
-extern "C" void NuRndrDither(void) {}
-extern "C" void NuRndrEndReflectionRender(void) {}
-extern "C" void NuRndrEndShadowReceiveRender(void) {}
-extern "C" void NuRndrFootPrints(void) {}
-extern "C" void NuRndrFx(void) {}
-extern "C" void NuRndrGetCullDebug(void) {}
-extern "C" void NuRndrGlobalFrameCount(void) {}
-extern "C" void NuRndrGlobalFrameCountPause(void) {}
-extern "C" void NuRndrGradRect2di(void) {}
-extern "C" void NuRndrGradRectUV2di(void) {}
-extern "C" void NuRndrGrid(void) {}
-extern "C" void NuRndrHighResScreenGrab(void) {}
-extern "C" void NuRndrLine2d(void) {}
-extern "C" void NuRndrLine2di(void) {}
-extern "C" void NuRndrLine3d(void) {}
-extern "C" void NuRndrLine3dDbg(void) {}
-extern "C" void NuRndrLine3dDbgFlush(void) {}
-extern "C" void NuRndrLineRect2di(void) {}
-extern "C" void NuRndrLineStrip2d(void) {}
-extern "C" void NuRndrLineStrip2di(void) {}
-extern "C" void NuRndrParticleGroup(void) {}
-extern "C" void NuRndrPspDraw(void) {}
-extern "C" void NuRndrRect(void) {}
-extern "C" void NuRndrRect2d(void) {}
-extern "C" void NuRndrRect2di(void) {}
-extern "C" void NuRndrRectUV2di(void) {}
-extern "C" void NuRndrScreenGrabTileBegin(void) {}
-extern "C" void NuRndrScreenGrabTileDeInit(void) {}
-extern "C" void NuRndrScreenGrabTileEnd(void) {}
-extern "C" void NuRndrScreenGrabTileInit(void) {}
-extern "C" void NuRndrSetAmbientLightPS(void) {}
-extern "C" void NuRndrSetAmbientLightSpecular(void) {}
-extern "C" void NuRndrSetBlendData(void) {}
-extern "C" void NuRndrSetCullDebug(void) {}
-extern "C" void NuRndrSetDebBaseRange(void) {}
-extern "C" void NuRndrSetDebBox(void) {}
-extern "C" void NuRndrSetDirectionalLightsPS(void) {}
-extern "C" void NuRndrSetFxMtx(void) {}
-extern "C" void NuRndrSetGlobalMinMipLevel(void) {}
-extern "C" void NuRndrSetGlobalMipMapBias(void) {}
-extern "C" void NuRndrSetParticleRotation(void) {}
-extern "C" void NuRndrSetSpecularLightPS(void) {}
-extern "C" void NuRndrSetWind(void) {}
-extern "C" void NuRndrShadPolys(void) {}
-extern "C" void NuRndrShadowDirCol(void) {}
-extern "C" void NuRndrShadowInit(void) {}
-extern "C" void NuRndrShadowOnOff(void) {}
-extern "C" void NuRndrSolidTri(void) {}
-extern "C" void NuRndrSphere(void) {}
-extern "C" void NuRndrSphereEx(void) {}
-extern "C" void NuRndrSphereMtx(void) {}
-extern "C" void NuRndrSphereTRS(void) {}
-extern "C" void NuRndrStartReflectionRender(void) {}
-extern "C" void NuRndrStartShadowReceiveRender(void) {}
-extern "C" void NuRndrStateGetFogEnabled(void) {}
-extern "C" void NuRndrStateInit(void) {}
-extern "C" void NuRndrStateSetFogEnabled(void) {}
-extern "C" void NuRndrStateSetFogState(void) {}
-extern "C" void NuRndrStateSetSpecularLight(void) {}
-extern "C" void NuRndrStateSetSpecularLightEx(void) {}
-extern "C" void NuRndrStateUpdateCameraState(void) {}
-extern "C" void NuRndrStrip3d(void) {}
-extern "C" void NuRndrTrailEx(void) {}
-extern "C" void NuRndrTri3dClip(void) {}
-extern "C" void NuRndrTriStrip2di(void) {}
-extern "C" void NuRndrTriStrip3dClip(void) {}
-extern "C" void NuRndrWasDrawnUnreflectedGobj(void) {}
-extern "C" void NuRndrWireTri(void) {}
+extern "C" void NuRndr3dLine(void) {
+}
+extern "C" void NuRndrAddFootPrint(void) {
+}
+extern "C" void NuRndrAddShadow(void) {
+}
+extern "C" void NuRndrAddShadowPrims(void) {
+}
+extern "C" void NuRndrAnglesZX(void) {
+}
+extern "C" void NuRndrAxes(void) {
+}
+extern "C" void NuRndrAxisArrows(void) {
+}
+extern "C" void NuRndrAxisArrowsMtx(void) {
+}
+extern "C" void NuRndrAxisBright(void) {
+}
+extern "C" void NuRndrBoundingBox(void) {
+}
+extern "C" void NuRndrBurstObjAdd(void) {
+}
+extern "C" void NuRndrBurstObjAddNoClip(void) {
+}
+extern "C" void NuRndrBurstObjEnd(void) {
+}
+extern "C" void NuRndrCircle(void) {
+}
+extern "C" void NuRndrCreateBlendShapeDeformerWeightsArray(void) {
+}
+extern "C" void NuRndrDither(void) {
+}
+extern "C" void NuRndrEndReflectionRender(void) {
+}
+extern "C" void NuRndrEndShadowReceiveRender(void) {
+}
+extern "C" void NuRndrFootPrints(void) {
+}
+extern "C" void NuRndrFx(void) {
+}
+extern "C" void NuRndrGetCullDebug(void) {
+}
+extern "C" void NuRndrGlobalFrameCount(void) {
+}
+extern "C" void NuRndrGlobalFrameCountPause(void) {
+}
+extern "C" void NuRndrGradRect2di(void) {
+}
+extern "C" void NuRndrGradRectUV2di(void) {
+}
+extern "C" void NuRndrGrid(void) {
+}
+extern "C" void NuRndrHighResScreenGrab(void) {
+}
+extern "C" void NuRndrLine2d(void) {
+}
+extern "C" void NuRndrLine2di(void) {
+}
+extern "C" void NuRndrLine3d(void) {
+}
+extern "C" void NuRndrLine3dDbg(void) {
+}
+extern "C" void NuRndrLine3dDbgFlush(void) {
+}
+extern "C" void NuRndrLineRect2di(void) {
+}
+extern "C" void NuRndrLineStrip2d(void) {
+}
+extern "C" void NuRndrLineStrip2di(void) {
+}
+extern "C" void NuRndrParticleGroup(void) {
+}
+extern "C" void NuRndrPspDraw(void) {
+}
+extern "C" void NuRndrRect(void) {
+}
+extern "C" void NuRndrRect2d(void) {
+}
+extern "C" void NuRndrRect2di(void) {
+}
+extern "C" void NuRndrRectUV2di(void) {
+}
+extern "C" void NuRndrScreenGrabTileBegin(void) {
+}
+extern "C" void NuRndrScreenGrabTileDeInit(void) {
+}
+extern "C" void NuRndrScreenGrabTileEnd(void) {
+}
+extern "C" void NuRndrScreenGrabTileInit(void) {
+}
+extern "C" void NuRndrSetAmbientLightPS(void) {
+}
+extern "C" void NuRndrSetAmbientLightSpecular(void) {
+}
+extern "C" void NuRndrSetBlendData(void) {
+}
+extern "C" void NuRndrSetCullDebug(void) {
+}
+extern "C" void NuRndrSetDebBaseRange(void) {
+}
+extern "C" void NuRndrSetDebBox(void) {
+}
+extern "C" void NuRndrSetDirectionalLightsPS(void) {
+}
+extern "C" void NuRndrSetFxMtx(void) {
+}
+extern "C" void NuRndrSetGlobalMinMipLevel(void) {
+}
+extern "C" void NuRndrSetGlobalMipMapBias(void) {
+}
+extern "C" void NuRndrSetParticleRotation(void) {
+}
+extern "C" void NuRndrSetSpecularLightPS(void) {
+}
+extern "C" void NuRndrSetWind(void) {
+}
+extern "C" void NuRndrShadPolys(void) {
+}
+extern "C" void NuRndrShadowDirCol(void) {
+}
+extern "C" void NuRndrShadowInit(void) {
+}
+extern "C" void NuRndrShadowOnOff(void) {
+}
+extern "C" void NuRndrSolidTri(void) {
+}
+extern "C" void NuRndrSphere(void) {
+}
+extern "C" void NuRndrSphereEx(void) {
+}
+extern "C" void NuRndrSphereMtx(void) {
+}
+extern "C" void NuRndrSphereTRS(void) {
+}
+extern "C" void NuRndrStartReflectionRender(void) {
+}
+extern "C" void NuRndrStartShadowReceiveRender(void) {
+}
+extern "C" void NuRndrStateGetFogEnabled(void) {
+}
+extern "C" void NuRndrStateInit(void) {
+}
+extern "C" void NuRndrStateSetFogEnabled(void) {
+}
+extern "C" void NuRndrStateSetFogState(void) {
+}
+extern "C" void NuRndrStateSetSpecularLight(void) {
+}
+extern "C" void NuRndrStateSetSpecularLightEx(void) {
+}
+extern "C" void NuRndrStateUpdateCameraState(void) {
+}
+extern "C" void NuRndrStrip3d(void) {
+}
+extern "C" void NuRndrTrailEx(void) {
+}
+extern "C" void NuRndrTri3dClip(void) {
+}
+extern "C" void NuRndrTriStrip2di(void) {
+}
+extern "C" void NuRndrTriStrip3dClip(void) {
+}
+extern "C" void NuRndrWasDrawnUnreflectedGobj(void) {
+}
+extern "C" void NuRndrWireTri(void) {
+}
 
 // Shader / texture / vertex state
-extern "C" void NuShaderGetDirtyMask(void) {}
-extern "C" void NuShaderProgramCreateIOS(void) {}
-extern "C" void NuShaderUniformGetByString(void) {}
-extern "C" void NuTexCleartid(void) {}
-extern "C" void NuTexCreateEx(void) {}
-extern "C" void NuTexCreateFramebufferCopy(void) {}
-extern "C" void NuTexDestroy(void) {}
-extern "C" void NuTexGenTexture(void) {}
-extern "C" void NuTexReserveNative(void) {}
-extern "C" void NuTexResolveReference(void) {}
-extern "C" void NuTextureBlendEffect(void) {}
-extern "C" void NuVertexStatesCreate(void) {}
-extern "C" void NuVertexStatesSetGroupState(void) {}
+extern "C" void NuShaderGetDirtyMask(void) {
+}
+extern "C" void NuShaderProgramCreateIOS(void) {
+}
+extern "C" void NuShaderUniformGetByString(void) {
+}
+extern "C" void NuTexCleartid(void) {
+}
+extern "C" void NuTexCreateEx(void) {
+}
+extern "C" void NuTexCreateFramebufferCopy(void) {
+}
+extern "C" void NuTexDestroy(void) {
+}
+static void NuTexGenTexture(void) {
+}
+extern "C" void NuTexReserveNative(void) {
+}
+extern "C" void NuTexResolveReference(void) {
+}
+extern "C" void NuTextureBlendEffect(void) {
+}
+extern "C" void NuVertexStatesCreate(void) {
+}
+extern "C" void NuVertexStatesSetGroupState(void) {
+}

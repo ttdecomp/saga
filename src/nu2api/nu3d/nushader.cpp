@@ -196,8 +196,20 @@ extern "C" {
     }
 }
 
-// Original exported the mangled C++ spelling too
-// (_Z18NuShaderObjectInitP16nushaderobject_sPK19nushaderobjectkey_siPKcij14eSHADERVERSION).
-asm(".globl _Z18NuShaderObjectInitP16nushaderobject_sPK19nushaderobjectkey_siPKcij14eSHADERVERSION\n"
-    ".set _Z18NuShaderObjectInitP16nushaderobject_sPK19nushaderobjectkey_siPKcij14eSHADERVERSION, "
-    "NuShaderObjectInit\n");
+// Additional overloads present in original (char* shader sources)
+void NuShaderObjectInit(nushaderobject_s *obj, nushaderobjectkey_s const *key, i32 param, const char *vshader,
+                        i32 vsize, u32 pshader, eSHADERVERSION version) {
+    (void)vshader;
+    (void)vsize;
+    NuShaderObjectInit(obj, key, param, 0, pshader, version);
+}
+
+void NuShaderObjectInit(nushaderobject_s *obj, nushaderobjectkey_s const *key, i32 param, u32 vshader,
+                        const char *pshader, i32 psize, eSHADERVERSION version) {
+    (void)pshader;
+    (void)psize;
+    NuShaderObjectInit(obj, key, param, vshader, 0, version);
+}
+
+asm(".globl NuShaderObjectInit\n"
+    ".set NuShaderObjectInit, _Z18NuShaderObjectInitP16nushaderobject_sPK19nushaderobjectkey_sijj14eSHADERVERSION\n");

@@ -325,7 +325,6 @@ namespace {
         GLint uv_loc = -1;
         GLint tex_loc = -1;
         GLuint vbo = 0;
-        GLuint fallback_tex = 0;
     };
 
     void EnsurePresentResources(PresentResources &res) {
@@ -362,22 +361,16 @@ namespace {
         glGenBuffers(1, &res.vbo);
         glBindBuffer(GL_ARRAY_BUFFER, res.vbo);
         // Full-screen quad as two triangles (positions + UVs interleaved).
+        // V flipped to present FBO correctly to the window.
         const float verts[] = {
-            -1, -1, 0, 0, //
-            1,  -1, 1, 0, //
-            -1, 1,  0, 1, //
-            1,  -1, 1, 0, //
-            1,  1,  1, 1, //
-            -1, 1,  0, 1, //
+            -1, -1, 0, 1, //
+            1,  -1, 1, 1, //
+            -1, 1,  0, 0, //
+            1,  -1, 1, 1, //
+            1,  1,  1, 0, //
+            -1, 1,  0, 0, //
         };
         glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
-
-        glGenTextures(1, &res.fallback_tex);
-        glBindTexture(GL_TEXTURE_2D, res.fallback_tex);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     }
 
     void DrawFullscreenTexturedQuad(const PresentResources &res, GLuint texture) {
@@ -409,9 +402,6 @@ void NuRenderDevice::SwapBuffers() {
     // default framebuffer is only written here, otherwise it would stay
     // black because pbuffers[0..2] are 1x1.
     extern GLuint g_earlyColorTexture;
-    extern bool g_hostReadbackReady;
-    extern u8 g_hostReadbackRGBA[1280 * 720 * 4];
-    extern i32 g_backingWidth, g_backingHeight;
 
     EGLContext present_ctx = (g_hostPresentCtx != EGL_NO_CONTEXT) ? g_hostPresentCtx : this->contexts[3];
     bool have_context = false;
@@ -422,39 +412,18 @@ void NuRenderDevice::SwapBuffers() {
         }
     }
 
-    if (have_context && (g_earlyColorTexture != 0 || g_hostReadbackReady)) {
+    if (have_context && g_earlyColorTexture != 0 && glIsTexture(g_earlyColorTexture)) {
         static PresentResources s_present{};
         EnsurePresentResources(s_present);
 
-        GLuint src_tex = 0;
-        bool has_source = false;
-        if (g_earlyColorTexture != 0 && glIsTexture(g_earlyColorTexture)) {
-            src_tex = g_earlyColorTexture;
-            has_source = true;
+        EGLint surf_w = 0;
+        EGLint surf_h = 0;
+        eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_WIDTH, &surf_w);
+        eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_HEIGHT, &surf_h);
+        if (surf_w > 0 && surf_h > 0) {
+            glViewport(0, 0, surf_w, surf_h);
         }
-        if (!has_source && g_hostReadbackReady) {
-            // Fallback when the shared texture is not yet available: push
-            // the CPU readback buffer into a host-owned texture.
-            glBindTexture(GL_TEXTURE_2D, s_present.fallback_tex);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, g_backingWidth, g_backingHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE,
-                         g_hostReadbackRGBA);
-            src_tex = s_present.fallback_tex;
-            has_source = true;
-        }
-        if (!has_source) {
-            LOG_WARN("[present] no tex (early %u isTex %d ready %d)", g_earlyColorTexture,
-                     g_earlyColorTexture ? glIsTexture(g_earlyColorTexture) : 0, g_hostReadbackReady);
-        }
-        if (has_source) {
-            EGLint surf_w = 0;
-            EGLint surf_h = 0;
-            eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_WIDTH, &surf_w);
-            eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_HEIGHT, &surf_h);
-            if (surf_w > 0 && surf_h > 0) {
-                glViewport(0, 0, surf_w, surf_h);
-            }
-            DrawFullscreenTexturedQuad(s_present, src_tex);
-        }
+        DrawFullscreenTexturedQuad(s_present, g_earlyColorTexture);
     }
 
     if (this->egl_display != EGL_NO_DISPLAY && this->pbuffers[3] != EGL_NO_SURFACE) {
@@ -471,61 +440,43 @@ void NuRenderDevice::OnWindowCreated(ANativeWindow *window) {
 }
 
 i32 NuRenderDevice::HostReadbackPixels(u32 max_w, u32 max_h, u8 *rgba) {
-    extern u8 g_hostReadbackRGBA[1280 * 720 * 4];
-    extern bool g_hostReadbackReady;
-    extern i32 g_backingWidth, g_backingHeight;
+    // Direct FBO screenshot: attach the shared color texture to a transient
+    // read FBO and pull pixels via glReadPixels. This avoids the intermediate
+    // CPU mirror (g_hostReadbackRGBA) and its per-frame memcpy.
     extern GLuint g_earlyColorTexture;
+    extern i32 g_backingWidth, g_backingHeight;
 
-    // Fast path: the render thread already resolved the FBO into a shared
-    // CPU buffer at native 1280x720. No GL work needed.
-    if (g_hostReadbackReady && g_backingWidth > 0 && g_backingHeight > 0) {
-        const u32 copy_w = g_backingWidth < (i32)max_w ? (u32)g_backingWidth : max_w;
-        const u32 copy_h = g_backingHeight < (i32)max_h ? (u32)g_backingHeight : max_h;
-        if (copy_w == static_cast<u32>(g_backingWidth) && copy_h == static_cast<u32>(g_backingHeight)) {
-            memcpy(rgba, g_hostReadbackRGBA, static_cast<usize>(copy_w) * copy_h * 4);
-        } else {
-            for (u32 y = 0; y < copy_h; y++) {
-                memcpy(rgba + static_cast<usize>(y) * copy_w * 4,
-                       g_hostReadbackRGBA + static_cast<usize>(y) * g_backingWidth * 4, static_cast<usize>(copy_w) * 4);
-            }
-        }
-        return static_cast<i32>(copy_w * 1000 + copy_h);
+    if (g_earlyColorTexture == 0 || g_backingWidth <= 0 || g_backingHeight <= 0 || max_w == 0 || max_h == 0) {
+        return 0;
     }
-
     if (egl_display == EGL_NO_DISPLAY || pbuffer_readback == EGL_NO_SURFACE || context_readback == EGL_NO_CONTEXT) {
         return 0;
     }
     if (eglMakeCurrent(egl_display, pbuffer_readback, pbuffer_readback, context_readback) == EGL_FALSE) {
-        eglGetError(); // clear; another MakeCurrent is in flight — skip this frame
+        eglGetError();
         return 0;
     }
 
-    EGLint surf_w = 0;
-    EGLint surf_h = 0;
-    eglQuerySurface(egl_display, pbuffer_readback, EGL_WIDTH, &surf_w);
-    eglQuerySurface(egl_display, pbuffer_readback, EGL_HEIGHT, &surf_h);
-    if (surf_w <= 0 || surf_h <= 0 || max_w == 0 || max_h == 0) {
-        return 0;
-    }
-    const u32 copy_w = surf_w < (i32)max_w ? (u32)surf_w : max_w;
-    const u32 copy_h = surf_h < (i32)max_h ? (u32)surf_h : max_h;
+    const u32 copy_w = static_cast<u32>(g_backingWidth) < max_w ? static_cast<u32>(g_backingWidth) : max_w;
+    const u32 copy_h = static_cast<u32>(g_backingHeight) < max_h ? static_cast<u32>(g_backingHeight) : max_h;
 
-    // Fallback: re-draw the shared texture into the readback pbuffer so
-    // glReadPixels below sees the last frame. Used before the first CPU
-    // readback is ready.
-    if (g_earlyColorTexture != 0 && glIsTexture(g_earlyColorTexture)) {
-        static PresentResources s_readback{};
-        EnsurePresentResources(s_readback);
-        DrawFullscreenTexturedQuad(s_readback, g_earlyColorTexture);
-        glViewport(0, 0, static_cast<GLsizei>(copy_w), static_cast<GLsizei>(copy_h));
-        glFinish();
-    } else {
-        glFinish();
+    GLuint read_fbo = 0;
+    glGenFramebuffers(1, &read_fbo);
+    glBindFramebuffer(GL_FRAMEBUFFER, read_fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_earlyColorTexture, 0);
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glDeleteFramebuffers(1, &read_fbo);
+        return 0;
     }
 
     glViewport(0, 0, static_cast<GLsizei>(copy_w), static_cast<GLsizei>(copy_h));
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    // Ensure any pending render-thread work on the shared texture is visible.
+    glFinish();
     glReadPixels(0, 0, static_cast<GLsizei>(copy_w), static_cast<GLsizei>(copy_h), GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glDeleteFramebuffers(1, &read_fbo);
     return static_cast<i32>(copy_w * 1000 + copy_h);
 }
 

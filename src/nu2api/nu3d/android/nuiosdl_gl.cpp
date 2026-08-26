@@ -59,9 +59,9 @@ static void NuIOSBindVAO(u32 vao) {
 }
 
 // Shader programmes cached per TU (original file-statics at 0x99b440..).
-static i32 g_faceonProgram = 0;       // _ZL15g_faceonProgram
-static i32 g_faceonDecalProgram = 0;  // _ZL20g_faceonDecalProgram
-static i32 g_debrisProgram = 0;       // _ZL15g_debrisProgram
+static i32 g_faceonProgram = 0;      // _ZL15g_faceonProgram
+static i32 g_faceonDecalProgram = 0; // _ZL20g_faceonDecalProgram
+static i32 g_debrisProgram = 0;      // _ZL15g_debrisProgram
 static i32 g_debrisGlassProgram = 0;
 
 i32 g_DebrisGlassDistortTID = 0; // _ZL23g_DebrisGlassDistortTID @0x99b4c8
@@ -83,7 +83,10 @@ extern i32 g_currentTexUnit; // nutex_ios_ex.cpp
 extern NUAPI nuapi;
 
 static inline isize PtrToArgInt(const void *p) {
-    union { const void *ptr; isize val; } u = {p};
+    union {
+        const void *ptr;
+        isize val;
+    } u = {p};
     return u.val;
 }
 
@@ -93,11 +96,17 @@ static inline i32 NuApiFrameCount() {
 }
 
 static inline u32 ptrToU32(const void *p) {
-    union { const void *ptr; u32 id; } u{p};
+    union {
+        const void *ptr;
+        u32 id;
+    } u{p};
     return u.id;
 }
 static inline const void *u32ToPtr(u32 id) {
-    union { u32 id; const void *ptr; } u{id};
+    union {
+        u32 id;
+        const void *ptr;
+    } u{id};
     return u.ptr;
 }
 
@@ -150,8 +159,8 @@ static constexpr char kGlassDebrisMarker = (char)-0x69; // 0x97
 // original 0x29c110 — mirrors GL cull state, flipping front/back when the
 // reflection pass is active.
 void NuIOS_SetCullMode(i32 mode) {
-    static i32 s_prevCullMode = 0;       // @0x628c50
-    static i32 s_prevReflection = 0;     // @0x628c60
+    static i32 s_prevCullMode = 0;                         // @0x628c50
+    static i32 s_prevReflection = 0;                       // @0x628c60
     static const u32 kGlCullFace[2] = {GL_BACK, GL_FRONT}; // @0x57bcec
 
     if (mode == s_prevCullMode && s_prevReflection == g_renderingReflection) {
@@ -187,14 +196,14 @@ void NuIOS_SetCullMode(i32 mode) {
 // back to raw bytes for the variant-flag byte at 0x1F2.
 
 enum : u32 {
-    kBlendOpaque       = 0,
-    kBlendAlpha        = 1,  // srcA * src + (1-srcA) * dst
-    kBlendAdd          = 2,  // srcA * src + dst
-    kBlendMax          = 3,  // GL_MAX per channel (glow)
-    kBlendAlphaTest10  = 10, // opaque + alpha-test (0x43 ref, func GEQUAL)
+    kBlendOpaque = 0,
+    kBlendAlpha = 1,        // srcA * src + (1-srcA) * dst
+    kBlendAdd = 2,          // srcA * src + dst
+    kBlendMax = 3,          // GL_MAX per channel (glow)
+    kBlendAlphaTest10 = 10, // opaque + alpha-test (0x43 ref, func GEQUAL)
 };
 
-void NuMtlSetRenderStatesPS(numtl_s *mtl) {
+extern "C" void NuMtlSetRenderStatesPS(numtl_s *mtl) {
     const u8 *bytes = (const u8 *)mtl;
 
     // ---- alpha-test setup (mirrors original goto have_alpha flow) ----
@@ -237,8 +246,7 @@ void NuMtlSetRenderStatesPS(numtl_s *mtl) {
         case kBlendAlpha:
             glEnable(GL_BLEND);
             glBlendEquationSeparate(GL_FUNC_ADD, GL_FUNC_ADD);
-            glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA,
-                                GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+            glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
             break;
         case kBlendAdd:
             glEnable(GL_BLEND);
@@ -320,8 +328,7 @@ struct VertexAttribRecord {
     u32 stride;
 };
 
-static void NuIOS_BindVertexAttributesInternal(isize dataAddr, usize baseVertex,
-                                               const u32 *fmtWords, u32 mask) {
+static void NuIOS_BindVertexAttributesInternal(isize dataAddr, usize baseVertex, const u32 *fmtWords, u32 mask) {
     u32 wanted = mask & fmtWords[0];
     u32 toDisable = g_activeAttributes & ~wanted;
     u32 toEnable = ~g_activeAttributes & wanted;
@@ -344,12 +351,10 @@ static void NuIOS_BindVertexAttributesInternal(isize dataAddr, usize baseVertex,
             if (needEnable) {
                 glEnableVertexAttribArray(loc);
             }
-            const VertexAttribRecord *rec =
-                reinterpret_cast<const VertexAttribRecord *>(recordsBase + loc * 6);
-            glVertexAttribPointer(
-                loc, (GLint)rec->comp_count, (GLenum)rec->gl_type,
-                (GLboolean)rec->normalized, (GLsizei)rec->stride,
-                (const void *)(dataAddr + rec->byte_offset + baseVertex * rec->stride));
+            const VertexAttribRecord *rec = reinterpret_cast<const VertexAttribRecord *>(recordsBase + loc * 6);
+            glVertexAttribPointer(loc, (GLint)rec->comp_count, (GLenum)rec->gl_type, (GLboolean)rec->normalized,
+                                  (GLsizei)rec->stride,
+                                  (const void *)(dataAddr + rec->byte_offset + baseVertex * rec->stride));
         }
 
         ++loc;
@@ -360,7 +365,7 @@ static void NuIOS_BindVertexAttributesInternal(isize dataAddr, usize baseVertex,
 }
 
 // original 0x2939fe — bind using the currently bound vertex format.
-void NuIOS_BindVertexAttributesImmediate(isize dataAddr, usize baseVertex) {
+static void NuIOS_BindVertexAttributesImmediate(isize dataAddr, usize baseVertex) {
     NuIOSBindVAO(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     const u32 *fmt = (const u32 *)u32ToPtr(g_boundVertexFormat); // NOLINT
@@ -368,8 +373,7 @@ void NuIOS_BindVertexAttributesImmediate(isize dataAddr, usize baseVertex) {
 }
 
 // original 0x293a65 — bind with an explicit format override (2D path).
-void NuIOS_BindVertexAttributesImmediateOverrideDataLayout(isize dataAddr, usize baseVertex,
-                                                           const u32 *fmt) {
+static void NuIOS_BindVertexAttributesImmediateOverrideDataLayout(isize dataAddr, usize baseVertex, const u32 *fmt) {
     NuIOSBindVAO(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     NuIOS_BindVertexAttributesInternal(dataAddr, baseVertex, fmt, fmt[0]);
@@ -388,62 +392,62 @@ extern "C" void NuIOS_SetVertexFormat(u32 fmt) {
 // i16 param table: pairs of {semantic, loc|class}).
 namespace {
 
-struct ShaderProgramView {
-    u32 pad[2];
-    GLuint gl_prog; // at +8
-    i32 param_count; // at +0xC
-    i16 *params;    // at +0x10 — array of i16 pairs
-};
-
-constexpr i16 kParamViewProj     = 0;       // semantic 0
-constexpr i16 kParamView         = 0x0c;    // semantic 12
-constexpr i16 kParamKonstColourA = 0x30;    // semantic 48
-constexpr i16 kParamTerminator   = (i16)-0x8000;
-
-// The original stores two global colours at fixed rodata addresses
-// (0x6463bc and 0x646360).  They are the debris tint / light constants.
-const void *kDebrisTintA = (const void *)0x6463bc;
-const void *kDebrisTintB = (const void *)0x646360;
-
-const i16 *FindParam(const i16 *params, i32 count, i16 semantic) {
-    if (count <= 0 || params == nullptr) {
-        return nullptr;
-    }
-    for (i32 i = 0; i < count; ++i) {
-        if (params[i * 2] == semantic) {
-            return &params[i * 2];
-        }
-    }
-    // Original falls through to the last entry when not found — mimic that
-    // by returning the last pair so the caller still indexes [1].
-    return &params[(count - 1) * 2];
-}
-
-void UploadDebrisConstants(i32 progHandle) {
-    if (progHandle == 0) {
-        return;
-    }
-    const auto *prog = (const ShaderProgramView *)(uintptr_t)progHandle; // NOLINT
-    i32 count = prog->param_count;
-    const i16 *params = prog->params;
-    if (count < 1 || params == nullptr) {
-        return;
-    }
-
-    auto upload = [&](i16 semantic, i32 vec4Count, const void *src) {
-        const i16 *p = FindParam(params, count, semantic);
-        // Encoding of params[][1]: low 12 bits = uniform location,
-        // high nibble (bits 12..15) encodes the setter-table class.
-        u32 loc = (u32)(p[1] & 0x0fff);
-        u32 klass = ((const u8 *)p)[3] >> 4;
-        (*g_glConstantSetterTable[klass])(loc, vec4Count, src);
+    struct ShaderProgramView {
+        u32 pad[2];
+        GLuint gl_prog;  // at +8
+        i32 param_count; // at +0xC
+        i16 *params;     // at +0x10 — array of i16 pairs
     };
 
-    upload(kParamViewProj,     4, g_renderContext_viewProj);
-    upload(kParamView,         4, g_renderContext_view);
-    upload(kParamKonstColourA, 1, kDebrisTintA);
-    upload(kParamTerminator,   1, kDebrisTintB);
-}
+    constexpr i16 kParamViewProj = 0;        // semantic 0
+    constexpr i16 kParamView = 0x0c;         // semantic 12
+    constexpr i16 kParamKonstColourA = 0x30; // semantic 48
+    constexpr i16 kParamTerminator = (i16)-0x8000;
+
+    // The original stores two global colours at fixed rodata addresses
+    // (0x6463bc and 0x646360).  They are the debris tint / light constants.
+    const void *kDebrisTintA = (const void *)0x6463bc;
+    const void *kDebrisTintB = (const void *)0x646360;
+
+    const i16 *FindParam(const i16 *params, i32 count, i16 semantic) {
+        if (count <= 0 || params == nullptr) {
+            return nullptr;
+        }
+        for (i32 i = 0; i < count; ++i) {
+            if (params[i * 2] == semantic) {
+                return &params[i * 2];
+            }
+        }
+        // Original falls through to the last entry when not found — mimic that
+        // by returning the last pair so the caller still indexes [1].
+        return &params[(count - 1) * 2];
+    }
+
+    void UploadDebrisConstants(i32 progHandle) {
+        if (progHandle == 0) {
+            return;
+        }
+        const auto *prog = (const ShaderProgramView *)(uintptr_t)progHandle; // NOLINT
+        i32 count = prog->param_count;
+        const i16 *params = prog->params;
+        if (count < 1 || params == nullptr) {
+            return;
+        }
+
+        auto upload = [&](i16 semantic, i32 vec4Count, const void *src) {
+            const i16 *p = FindParam(params, count, semantic);
+            // Encoding of params[][1]: low 12 bits = uniform location,
+            // high nibble (bits 12..15) encodes the setter-table class.
+            u32 loc = (u32)(p[1] & 0x0fff);
+            u32 klass = ((const u8 *)p)[3] >> 4;
+            (*g_glConstantSetterTable[klass])(loc, vec4Count, src);
+        };
+
+        upload(kParamViewProj, 4, g_renderContext_viewProj);
+        upload(kParamView, 4, g_renderContext_view);
+        upload(kParamKonstColourA, 1, kDebrisTintA);
+        upload(kParamTerminator, 1, kDebrisTintB);
+    }
 
 } // namespace
 
@@ -511,8 +515,7 @@ void NuIOSDLMtlCallback(void *arg) {
 
         if (isGlass) {
             if (NuIOSDLMtlCallback_refractionRT == 0) {
-                NuIOSDLMtlCallback_refractionRT =
-                    NuTexGenTexture(&NuIOSDLMtlCallback_nativeRefractionTex);
+                NuIOSDLMtlCallback_refractionRT = NuTexGenTexture(&NuIOSDLMtlCallback_nativeRefractionTex);
                 memset(&NuIOSDLMtlCallback_nativeRefractionTex, 0, 8);
             }
             if (NuApiFrameCount() != NuIOSDLMtlCallback_lastFrameCount) {
@@ -540,8 +543,7 @@ void NuIOSDLMtlCallback(void *arg) {
         if (isGlass) {
             glActiveTexture(GL_TEXTURE0);
             g_currentTexUnit = 0;
-            glBindTexture(GL_TEXTURE_2D,
-                          NuIOSDLMtlCallback_nativeRefractionTex.platform.gl_tex);
+            glBindTexture(GL_TEXTURE_2D, NuIOSDLMtlCallback_nativeRefractionTex.platform.gl_tex);
             NUNATIVETEX *distort = NuTexGetNative(g_DebrisGlassDistortTID);
             NuTexSetTextureWithStagePS(distort, 1);
         } else {
@@ -572,8 +574,7 @@ void NuIOSDLGeom2DCallback(void *arg) {
         return;
     }
 
-    i32 shader = NuShaderManagerGetShaderById(
-        g_LastMtl ? g_LastMtl->shader_desc.shader_id : -1);
+    i32 shader = NuShaderManagerGetShaderById(g_LastMtl ? g_LastMtl->shader_desc.shader_id : -1);
 
     struct ShaderObjView {
         u32 pad[4];
@@ -597,8 +598,8 @@ void NuIOSDLGeom2DCallback(void *arg) {
 
     u32 pt = geom->prim_type;
     if (pt < 5) {
-        NuIOS_BindVertexAttributesImmediateOverrideDataLayout(
-            PtrToArgInt(geom->vertices), 0, (const u32 *)g_nuPrimVertexFormat);
+        NuIOS_BindVertexAttributesImmediateOverrideDataLayout(PtrToArgInt(geom->vertices), 0,
+                                                              (const u32 *)g_nuPrimVertexFormat);
         glDrawArrays((GLenum)kPrimModes[pt], 0, (GLsizei)geom->vertex_count);
     }
 }

@@ -60,9 +60,12 @@ f32 g_renderContext_view[16];
 
 // original 0x2b3620 — dynamic light slot enabled flag lives at light+0x7bc.
 extern "C" i32 NuDynamicLightIsEnabled(i32 light) {
-    // Light is an opaque handle; original checks *(i32*)(light+0x7bc) != 0.
-    // Keep the check verbatim until the light struct is fully typed.
-    return *(i32 *)(usize)(light + 0x7bc) != 0;
+    struct Light {
+        u8 pad[0x7bc];
+        i32 enabled;
+    };
+    auto *l = (Light *)(uintptr_t)light; // NOLINT
+    return l->enabled != 0;
 }
 extern "C" void NuShaderManagerSetfv(i32 id, const f32 *values);
 NUNATIVETEX *NuTexGetNative(i32 tex_id);
@@ -175,12 +178,18 @@ i32 renderThread_processRenderScenes(void) {
     for (i32 i = 0; i < sceneParametersCount_safe; i++) {
         nudisplayscene_s &scn = sceneParameters_safe[i];
 
-        if (scn.unknown_48 != 0 && !NuPostEffectIsInitialised(0x20)) scn.unknown_48 = 0;
-        if (scn.unknown_58 != 0 && !NuPostEffectIsInitialised(4)) scn.unknown_58 = 0;
-        if (scn.unknown_ac != 0 && !NuPostEffectIsInitialised(8)) scn.unknown_ac = 0;
-        if (scn.unknown_e4 != 0 && !NuPostEffectIsInitialised(0x10)) scn.unknown_e4 = 0;
-        if (scn.unknown_178 != 0 && !NuPostEffectIsInitialised(0x40)) scn.unknown_178 = 0;
-        if (scn.unknown_188 != 0 && !NuPostEffectIsInitialised(0x80)) scn.unknown_188 = 0;
+        if (scn.unknown_48 != 0 && !NuPostEffectIsInitialised(0x20))
+            scn.unknown_48 = 0;
+        if (scn.unknown_58 != 0 && !NuPostEffectIsInitialised(4))
+            scn.unknown_58 = 0;
+        if (scn.unknown_ac != 0 && !NuPostEffectIsInitialised(8))
+            scn.unknown_ac = 0;
+        if (scn.unknown_e4 != 0 && !NuPostEffectIsInitialised(0x10))
+            scn.unknown_e4 = 0;
+        if (scn.unknown_178 != 0 && !NuPostEffectIsInitialised(0x40))
+            scn.unknown_178 = 0;
+        if (scn.unknown_188 != 0 && !NuPostEffectIsInitialised(0x80))
+            scn.unknown_188 = 0;
     }
 
     NuPostEffectReset();

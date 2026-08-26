@@ -106,7 +106,7 @@ static inline int32_t *accumulator_for_slot(TimeBarSet *rec, int32_t slot) {
 // Reset(-1, 0) — reset every slot in set 0.  The per-slot toggle is
 // flipped so the next End/SlotSet lands in the other buffer, then the
 // newly-inactive accumulator is zeroed.
-void NuTimeBarSlotReset(int32_t set, int32_t slot) {
+extern "C" void NuTimeBarSlotReset(int32_t set, int32_t slot) {
     if (s_timebar_initialised == 0) {
         return;
     }
@@ -138,7 +138,7 @@ void NuTimeBarSlotReset(int32_t set, int32_t slot) {
 // original 0x2d76b0
 // Mark the beginning of a timed region.  Records the current tick and
 // the label pointer for the slot; the matching End computes the delta.
-void _NuTimeBarSlotBegin(int32_t set, int32_t slot, const char *name) {
+extern "C" void _NuTimeBarSlotBegin(int32_t set, int32_t slot, const char *name) {
     if (s_timebar_initialised == 0) {
         return;
     }
@@ -154,7 +154,7 @@ void _NuTimeBarSlotBegin(int32_t set, int32_t slot, const char *name) {
 // Close the timed region opened by _NuTimeBarSlotBegin, accumulate the
 // elapsed microseconds into the double-buffered slot, and return the
 // updated accumulator value.  Returns 0 when profiling is disabled.
-uint32_t _NuTimeBarSlotEnd(int32_t set, int32_t slot) {
+extern "C" uint32_t _NuTimeBarSlotEnd(int32_t set, int32_t slot) {
     if (s_timebar_initialised == 0) {
         return 0;
     }
@@ -182,7 +182,7 @@ uint32_t _NuTimeBarSlotEnd(int32_t set, int32_t slot) {
 // Directly overwrite the accumulator for a slot (used by the render
 // thread to publish GPU timings that come from GL queries rather than
 // CPU wall-clock).  Respects the same double-buffer selection as End.
-void NuTimeBarSlotSet(int32_t set, int32_t slot, int32_t value) {
+extern "C" void NuTimeBarSlotSet(int32_t set, int32_t slot, int32_t value) {
     if (s_timebar_initialised == 0) {
         return;
     }
@@ -195,7 +195,7 @@ void NuTimeBarSlotSet(int32_t set, int32_t slot, int32_t value) {
 
 // original 0x2d7820
 // Update the display name for a slot without touching its timing.
-void NuTimeBarSlotSetName(int32_t set, int32_t slot, const char *name) {
+extern "C" void NuTimeBarSlotSetName(int32_t set, int32_t slot, const char *name) {
     if (s_timebar_initialised == 0) {
         return;
     }

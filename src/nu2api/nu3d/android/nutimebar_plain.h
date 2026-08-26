@@ -9,8 +9,8 @@
 
 #include "decomp.h"
 
-void NuTimeBarSlotReset(int32_t set, int32_t slot);
-void _NuTimeBarSlotBegin(int32_t set, int32_t slot, const char *name);
-uint32_t _NuTimeBarSlotEnd(int32_t set, int32_t slot);
-void NuTimeBarSlotSet(int32_t set, int32_t slot, int32_t value);
-void NuTimeBarSlotSetName(int32_t set, int32_t slot, const char *name);
+extern "C" void NuTimeBarSlotReset(int32_t set, int32_t slot);
+extern "C" void _NuTimeBarSlotBegin(int32_t set, int32_t slot, const char *name);
+extern "C" uint32_t _NuTimeBarSlotEnd(int32_t set, int32_t slot);
+extern "C" void NuTimeBarSlotSet(int32_t set, int32_t slot, int32_t value);
+extern "C" void NuTimeBarSlotSetName(int32_t set, int32_t slot, const char *name);

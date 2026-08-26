@@ -184,7 +184,7 @@ void NuTexUnReserve() {
 // original walks the loaded-texture slot table for a NULL entry; our native
 // texture store keeps full NUNATIVETEX structs, so the free-slot scan reduces
 // to a monotonic counter (same observable: unique fresh id per call).
-i32 NuTexGenTexture(NUNATIVETEX *tex) {
+extern "C" i32 NuTexGenTexture(NUNATIVETEX *tex) {
     static i32 next_slot;
     (void)tex;
     return ++next_slot;

@@ -32,15 +32,15 @@
 
 static constexpr usize kItemSize = 0x10;
 
-static constexpr u8 kItemId_Cnt  = 0;
+static constexpr u8 kItemId_Cnt = 0;
 static constexpr u8 kItemId_Next = 1;
 static constexpr u8 kItemId_Call = 3;
-static constexpr u8 kItemId_Ret  = 4;
+static constexpr u8 kItemId_Ret = 4;
 
-static constexpr u8 kItemType_Mtl        = 0x80;
+static constexpr u8 kItemType_Mtl = 0x80;
 static constexpr u8 kItemType_Terminator = 0x84;
-static constexpr u8 kItemType_Nop        = 0x87;
-static constexpr u8 kItemType_Link       = 0x8d;
+static constexpr u8 kItemType_Nop = 0x87;
+static constexpr u8 kItemType_Link = 0x8d;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Globals
@@ -138,7 +138,9 @@ static NudlTableInit s_nudl_table_init;
 // CurrentItemTable @0x625c84 — points at entry for type 0x80.
 static const nudl_handler_fn *s_current_table = nullptr;
 struct NudlCurrentTableInit {
-    NudlCurrentTableInit() { s_current_table = &g_nudl_dispatch_table[0x80]; }
+    NudlCurrentTableInit() {
+        s_current_table = &g_nudl_dispatch_table[0x80];
+    }
 };
 static NudlCurrentTableInit s_nudl_current_init;
 
@@ -165,13 +167,12 @@ static nudisplaylistitem_s *AddCallItem(nudisplaylist_s *list, u8 type, void *ne
     item->type = type;
     item->id = kItemId_Call;
     item->next = next;
-    list->items = reinterpret_cast<nudisplaylistitem_s *>(
-        reinterpret_cast<u8 *>(list->items) + kItemSize);
-    return reinterpret_cast<nudisplaylistitem_s *>(
-        reinterpret_cast<u8 *>(list->items) - kItemSize);
+    list->items = reinterpret_cast<nudisplaylistitem_s *>(reinterpret_cast<u8 *>(list->items) + kItemSize);
+    return reinterpret_cast<nudisplaylistitem_s *>(reinterpret_cast<u8 *>(list->items) - kItemSize);
 }
 
-extern "C" void NuDisplayListCheckBuffer(void) {}
+extern "C" void NuDisplayListCheckBuffer(void) {
+}
 
 extern "C" nudisplaylist_s *NuDisplayListGet2dList(void) {
     nudisplaylist_s *list = &global_dlist_manager.dlist_2d;
@@ -218,8 +219,8 @@ extern "C" void NuDisplayListExecute(nudisplaylistitem_s *item, u32 table_base) 
         // Walk the linear run until a NEXT links elsewhere.
         while (item->id != kItemId_Next) {
             if (item->id == kItemId_Call) {
-                auto handler = *reinterpret_cast<nudl_handler_fn *>(
-                    static_cast<usize>(table_base) + static_cast<u32>(item->type) * 4u - 0x200u);
+                auto handler = *reinterpret_cast<nudl_handler_fn *>(static_cast<usize>(table_base) +
+                                                                    static_cast<u32>(item->type) * 4u - 0x200u);
                 if (handler) {
                     handler(item->next);
                 }
@@ -245,12 +246,14 @@ extern "C" void NuDisplayListSetItemTable(i32 which) {
     }
 }
 
-extern "C" void DisplayListSwapBuffersPS(void) {}
+extern "C" void DisplayListSwapBuffersPS(void) {
+}
 
-extern "C" void DisplayListSetAlphaPS(nudisplaylistitem_s *prev_item,
-                                      nudisplaylistitem_s *item, f32 alpha) {
-    if (alpha < 0.0f) alpha = 0.0f;
-    if (alpha > 1.0f) alpha = 1.0f;
+extern "C" void DisplayListSetAlphaPS(nudisplaylistitem_s *prev_item, nudisplaylistitem_s *item, f32 alpha) {
+    if (alpha < 0.0f)
+        alpha = 0.0f;
+    if (alpha > 1.0f)
+        alpha = 1.0f;
     *reinterpret_cast<f32 *>(reinterpret_cast<u8 *>(prev_item->next) + 0x3c) = alpha;
     (void)item; // second param kept for original signature parity
 }
@@ -345,7 +348,8 @@ static i32 ClipUsedBlockCount(i32 nclip) {
     // Original keeps signed arithmetic for the (-15) path, but nclip is
     // always >=0 here. Simplified to the unsigned ceil form:
     //   blocks = ((ceil(nclip/8)*2 + 15)/16) + 1
-    if (nclip <= 0) return 0;
+    if (nclip <= 0)
+        return 0;
     i32 words16 = ((nclip + 7) >> 3) * 2; // bytes rounded to 8, doubled
     return (words16 + 15) / 16 + 1;       // 16-byte blocks + sentinel
 }
@@ -421,7 +425,7 @@ extern "C" void NuDisplayListSwapBuffersBeginFrame(void) {
 // NUMTL layout helpers — these fields are at fixed offsets in the original
 // binary (verified against NuDisplayListSwapBuffersEndFrame visibility test).
 #define MTL_BLEND_FLAG(mtl) (*(const u32 *)((const u8 *)(mtl) + 0xb0))
-#define MTL_BLEND_OP2(mtl)  (*(const u8  *)((const u8 *)(mtl) + 0xf8))
+#define MTL_BLEND_OP2(mtl) (*(const u8 *)((const u8 *)(mtl) + 0xf8))
 #define MTL_ATTRIB_DWORD1(mtl) (*(const u32 *)((const u8 *)(mtl) + 0x44))
 
 static void UpdateMaterialClipBits(nudldlistscene_s *scene) {
@@ -432,14 +436,17 @@ static void UpdateMaterialClipBits(nudldlistscene_s *scene) {
     const u8 *cur = scene->mtl_used[buf];
     const u8 *other = scene->mtl_used[buf ^ 1];
     u32 nbytes = (scene->nmtls + 7) >> 3;
-    if (nbytes == 0) return;
+    if (nbytes == 0)
+        return;
 
     for (u32 byte_i = 0; byte_i < nbytes; ++byte_i) {
         u8 cur_byte = cur[byte_i];
-        if (other[byte_i] == cur_byte) continue;
+        if (other[byte_i] == cur_byte)
+            continue;
         for (u32 bit = 0; bit < 8; ++bit) {
             i32 idx = static_cast<i32>(byte_i * 8 + bit);
-            if (idx >= static_cast<i32>(scene->nmtls)) return;
+            if (idx >= static_cast<i32>(scene->nmtls))
+                return;
             NUDISPLAYLIST *dl = scene->dlist_mtls[idx];
             NUMTL *mtl = scene->mtls[dl->mtl_id];
             bool enabled = (cur_byte >> bit) & 1;
@@ -460,8 +467,7 @@ extern "C" i32 NuDisplayListAddRenderScene(void) {
     NUDLIST_MANAGER *mgr = &global_dlist_manager;
     VARIPTR *buf = display_list_buffer;
 
-    nusortpri_s **pris = reinterpret_cast<nusortpri_s **>(
-        (buf->addr + 0xfU) & ~0xfU);
+    nusortpri_s **pris = reinterpret_cast<nusortpri_s **>((buf->addr + 0xfU) & ~0xfU);
     buf->addr = reinterpret_cast<usize>(pris + mgr->nused_sort_pris + 1);
 
     i32 count = 0;
@@ -480,8 +486,7 @@ extern "C" i32 NuDisplayListAddRenderScene(void) {
             }
         } else if ((sc->flags & 2) != 0) {
             // Rebuild this sortpri's material chains into the stream buffer.
-            nusortpri_s *new_sp = reinterpret_cast<nusortpri_s *>(
-                (buf->addr + 3U) & ~0x3U);
+            nusortpri_s *new_sp = reinterpret_cast<nusortpri_s *>((buf->addr + 3U) & ~0x3U);
             nudisplaylistitem_s *area = reinterpret_cast<nudisplaylistitem_s *>(new_sp + 1);
             buf->addr = reinterpret_cast<usize>(new_sp + 1);
 
@@ -494,11 +499,11 @@ extern "C" i32 NuDisplayListAddRenderScene(void) {
             i32 slot = 0;
             for (u32 m = 0; m < sp->nmtls; ++m) {
                 NUDISPLAYLIST *dl = sc->dlist_mtls[static_cast<u32>(sp->mtl_first) + m];
-                if (dl->mtl_last == dl->first) continue;
+                if (dl->mtl_last == dl->first)
+                    continue;
 
                 const nudisplaylistitem_s *hdr =
-                    (dl->mtl_item[1].type == kItemType_Mtl) ? dl->mtl_item + 1
-                                                            : dl->mtl_item + 3;
+                    (dl->mtl_item[1].type == kItemType_Mtl) ? dl->mtl_item + 1 : dl->mtl_item + 3;
                 area[slot] = *hdr;
                 area[slot + 1] = *dl->first;
                 slot += 2;
@@ -520,8 +525,7 @@ extern "C" i32 NuDisplayListAddRenderScene(void) {
         return -1;
     }
 
-    auto *rs = reinterpret_cast<nudisplaylistrenderscene_s *>(
-        (buf->addr + 3U) & ~0x3U);
+    auto *rs = reinterpret_cast<nudisplaylistrenderscene_s *>((buf->addr + 3U) & ~0x3U);
     mgr->front_render_scenes[mgr->nrender_scenes] = rs;
     buf->addr = reinterpret_cast<usize>(rs + 1);
     rs->nsort_pris = count;
@@ -550,8 +554,6 @@ extern "C" void NuDisplayListDrawRenderScene(i32 render_scene_id) {
     // 1×1 pbuffer is not useful on desktop. FBOs are per-context, so each
     // render thread lazily creates its own FBO wrapping the shared texture.
     extern GLuint g_earlyColorTexture;
-    extern u8 g_hostReadbackRGBA[1280 * 720 * 4];
-    extern bool g_hostReadbackReady;
     extern i32 g_backingWidth, g_backingHeight;
 
     GLuint hostPrevFbo = 0;
@@ -560,18 +562,16 @@ extern "C" void NuDisplayListDrawRenderScene(i32 render_scene_id) {
     thread_local GLuint t_hostDepth = 0;
 
     auto ensureHostFbo = [&]() -> bool {
-        if (g_earlyColorTexture == 0) return false;
+        if (g_earlyColorTexture == 0)
+            return false;
         if (t_hostFbo == 0) {
             glGenFramebuffers(1, &t_hostFbo);
             glBindFramebuffer(GL_FRAMEBUFFER, t_hostFbo);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                                   GL_TEXTURE_2D, g_earlyColorTexture, 0);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_earlyColorTexture, 0);
             glGenRenderbuffers(1, &t_hostDepth);
             glBindRenderbuffer(GL_RENDERBUFFER, t_hostDepth);
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16,
-                                  g_backingWidth, g_backingHeight);
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                                      GL_RENDERBUFFER, t_hostDepth);
+            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, g_backingWidth, g_backingHeight);
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, t_hostDepth);
             glCheckFramebufferStatus(GL_FRAMEBUFFER);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
             glBindRenderbuffer(GL_RENDERBUFFER, 0);
@@ -586,25 +586,27 @@ extern "C" void NuDisplayListDrawRenderScene(i32 render_scene_id) {
 
     auto drawLegalFallback = [&]() {
         NUNATIVETEX *legal = NuTexGetNative(1);
-        if (!legal) return;
+        if (!legal)
+            return;
         if (legal->platform.gl_tex == 0 && legal->size != 0) {
             NuTexCreatePS(legal, true);
-            if (legal->platform.gl_tex == 0) NuTexCreatePS(legal, false);
+            if (legal->platform.gl_tex == 0)
+                NuTexCreatePS(legal, false);
         }
-        if (legal->platform.gl_tex == 0) return;
+        if (legal->platform.gl_tex == 0)
+            return;
 
         struct LegalProg {
             GLuint prog = 0;
             GLint posLoc = -1, uvLoc = -1, texLoc = -1;
             GLuint vbo = 0;
             void ensure() {
-                if (prog) return;
-                const char *vs =
-                    "attribute vec2 a_pos; attribute vec2 a_uv; varying vec2 v_uv; "
-                    "void main(){gl_Position=vec4(a_pos,0,1); v_uv=a_uv;}";
-                const char *fs =
-                    "precision mediump float; varying vec2 v_uv; uniform sampler2D u_tex; "
-                    "void main(){gl_FragColor=texture2D(u_tex,v_uv);}";
+                if (prog)
+                    return;
+                const char *vs = "attribute vec2 a_pos; attribute vec2 a_uv; varying vec2 v_uv; "
+                                 "void main(){gl_Position=vec4(a_pos,0,1); v_uv=a_uv;}";
+                const char *fs = "precision mediump float; varying vec2 v_uv; uniform sampler2D u_tex; "
+                                 "void main(){gl_FragColor=texture2D(u_tex,v_uv);}";
                 GLuint vsh = glCreateShader(GL_VERTEX_SHADER);
                 glShaderSource(vsh, 1, &vs, nullptr);
                 glCompileShader(vsh);
@@ -624,8 +626,7 @@ extern "C" void NuDisplayListDrawRenderScene(i32 render_scene_id) {
                 texLoc = glGetUniformLocation(prog, "u_tex");
                 glGenBuffers(1, &vbo);
                 glBindBuffer(GL_ARRAY_BUFFER, vbo);
-                float verts[] = {-1,-1,0,0, 1,-1,1,0, -1,1,0,1,
-                                  1,-1,1,0, 1,1,1,1, -1,1,0,1};
+                float verts[] = {-1, -1, 0, 0, 1, -1, 1, 0, -1, 1, 0, 1, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1};
                 glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
             }
         };
@@ -637,9 +638,9 @@ extern "C" void NuDisplayListDrawRenderScene(i32 render_scene_id) {
         glUniform1i(lp.texLoc, 0);
         glBindBuffer(GL_ARRAY_BUFFER, lp.vbo);
         glEnableVertexAttribArray(lp.posLoc);
-        glVertexAttribPointer(lp.posLoc, 2, GL_FLOAT, GL_FALSE, 16, (void*)0);
+        glVertexAttribPointer(lp.posLoc, 2, GL_FLOAT, GL_FALSE, 16, (void *)0);
         glEnableVertexAttribArray(lp.uvLoc);
-        glVertexAttribPointer(lp.uvLoc, 2, GL_FLOAT, GL_FALSE, 16, (void*)8);
+        glVertexAttribPointer(lp.uvLoc, 2, GL_FLOAT, GL_FALSE, 16, (void *)8);
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_BLEND);
         glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -649,7 +650,8 @@ extern "C" void NuDisplayListDrawRenderScene(i32 render_scene_id) {
     };
 
     hostFboBound = ensureHostFbo();
-    if (hostFboBound) drawLegalFallback();
+    if (hostFboBound)
+        drawLegalFallback();
 #endif
 
     NuThreadCriticalSectionBegin(mgr->loading_critical_section);
@@ -667,10 +669,6 @@ extern "C" void NuDisplayListDrawRenderScene(i32 render_scene_id) {
 
 #ifdef HOST_BUILD
     if (hostFboBound) {
-        glPixelStorei(GL_PACK_ALIGNMENT, 1);
-        glReadPixels(0, 0, g_backingWidth, g_backingHeight,
-                     GL_RGBA, GL_UNSIGNED_BYTE, g_hostReadbackRGBA);
-        g_hostReadbackReady = true;
         glBindFramebuffer(GL_FRAMEBUFFER, hostPrevFbo);
     }
 #endif
@@ -680,9 +678,8 @@ extern "C" void NuDisplayListDrawRenderScene(i32 render_scene_id) {
 // Dynamic material display lists
 // ──────────────────────────────────────────────────────────────────────────────
 
-nudisplaylistitem_s *NuDisplayListCreateMtlDlist(nudisplaylistitem_s * /*item*/,
-                                                NUMTL *mtl, VARIPTR *buff,
-                                                VARIPTR /*buff_end*/) {
+nudisplaylistitem_s *NuDisplayListCreateMtlDlist(nudisplaylistitem_s * /*item*/, NUMTL *mtl, VARIPTR *buff,
+                                                 VARIPTR /*buff_end*/) {
     auto *out = reinterpret_cast<nudisplaylistitem_s *>(buff->addr);
     buff->addr += 8 * kItemSize;
 
@@ -712,10 +709,8 @@ nudisplaylistitem_s *NuDisplayListCreateMtlDlist(nudisplaylistitem_s * /*item*/,
 
 static i32 MtlSortKey(const NUMTL *mtl) {
     // Original: ((char)(u16)mtl[0] >> 4) * 0x20000 + sort_pri
-    return static_cast<i32>(static_cast<i8>(
-               ((*reinterpret_cast<const u16 *>(mtl) >> 4) & 0xff)))
-               * 0x20000
-           + mtl->sort_pri;
+    return static_cast<i32>(static_cast<i8>(((*reinterpret_cast<const u16 *>(mtl) >> 4) & 0xff))) * 0x20000 +
+           mtl->sort_pri;
 }
 
 static void ReassignMtlIds(NUDLIST_MANAGER *mgr) {
@@ -731,10 +726,12 @@ static void RecomputeMtlFirst(NUDLIST_MANAGER *mgr) {
     for (i32 i = 0; i < mgr->dyn_mtl_dlist.nsort_pris; ++i) {
         total += mgr->dyn_mtl_dlist.sort_pris[i].nmtls;
     }
-    if (total == 0) return;
+    if (total == 0)
+        return;
     for (i32 i = 0; i < mgr->dyn_mtl_dlist.nsort_pris; ++i) {
         nusortpri_s *sp = &mgr->dyn_mtl_dlist.sort_pris[i];
-        if (sp->nmtls == 0) continue;
+        if (sp->nmtls == 0)
+            continue;
         for (u32 k = 0; k < total; ++k) {
             if (MtlSortKey(mgr->dyn_mtl_dlist.mtls[k]) == sp->sort_pri) {
                 sp->mtl_first = static_cast<u16>(k);
@@ -744,14 +741,16 @@ static void RecomputeMtlFirst(NUDLIST_MANAGER *mgr) {
     }
 }
 
-void DisplayListLinkDynamicMtls(void) {
+static void DisplayListLinkDynamicMtls(void) {
     NUDLIST_MANAGER *mgr = &global_dlist_manager;
-    if (mgr->nnew_materials == 0 && mgr->ndel_materials == 0) return;
+    if (mgr->nnew_materials == 0 && mgr->ndel_materials == 0)
+        return;
 
     // ── Removal pass ──
     for (i32 di = 0; di < mgr->ndel_materials; ++di) {
         NUMTL *mtl = mgr->del_materials[di];
-        if (!mtl->display_list || mgr->dyn_mtl_dlist.nmtls == 0) continue;
+        if (!mtl->display_list || mgr->dyn_mtl_dlist.nmtls == 0)
+            continue;
 
         // Locate slot.
         i32 idx = -1;
@@ -759,19 +758,25 @@ void DisplayListLinkDynamicMtls(void) {
             idx = 0;
         } else {
             for (u32 j = 1; j < mgr->dyn_mtl_dlist.nmtls; ++j) {
-                if (mgr->dyn_mtl_dlist.mtls[j] == mtl) { idx = static_cast<i32>(j); break; }
+                if (mgr->dyn_mtl_dlist.mtls[j] == mtl) {
+                    idx = static_cast<i32>(j);
+                    break;
+                }
             }
-            if (idx < 0) continue;
+            if (idx < 0)
+                continue;
         }
 
-        if (--mgr->material_used[idx] != 0) continue;
+        if (--mgr->material_used[idx] != 0)
+            continue;
 
         // Find owning sortpri (last key match wins).
         i32 key = MtlSortKey(mtl);
         i32 sp_idx = -1;
         if (mgr->dyn_mtl_dlist.nsort_pris >= 1) {
             for (i32 j = 0; j < mgr->dyn_mtl_dlist.nsort_pris; ++j) {
-                if (key == mgr->dyn_mtl_dlist.sort_pris[j].sort_pri) sp_idx = j;
+                if (key == mgr->dyn_mtl_dlist.sort_pris[j].sort_pri)
+                    sp_idx = j;
             }
         }
         nusortpri_s *sp = (sp_idx >= 0) ? &mgr->dyn_mtl_dlist.sort_pris[sp_idx] : nullptr;
@@ -784,12 +789,10 @@ void DisplayListLinkDynamicMtls(void) {
                 mtl_item[7].id = kItemId_Ret;
                 mtl_item[7].next = nullptr;
             } else if (sp->nmtls != 0) {
-                nudisplaylistitem_s *prev =
-                    mgr->dyn_mtl_dlist.mtls[sp->mtl_first]->display_list->mtl_item;
+                nudisplaylistitem_s *prev = mgr->dyn_mtl_dlist.mtls[sp->mtl_first]->display_list->mtl_item;
                 bool found = (mtl_item == prev[7].next);
                 for (u32 j = 0; !found && j + 1 < sp->nmtls; ++j) {
-                    prev = mgr->dyn_mtl_dlist.mtls[static_cast<u32>(sp->mtl_first) + j + 1]
-                               ->display_list->mtl_item;
+                    prev = mgr->dyn_mtl_dlist.mtls[static_cast<u32>(sp->mtl_first) + j + 1]->display_list->mtl_item;
                     found = (mtl_item == prev[7].next);
                 }
                 if (found) {
@@ -803,9 +806,9 @@ void DisplayListLinkDynamicMtls(void) {
 
         // Free 0x80-byte stream buffer.
         for (u32 j = 0; j < mgr->dyn_mtl_dlist.nmtls; ++j) {
-            if (mgr->mtl_buffers_used[j] != 0
-                && mtl_item == reinterpret_cast<nudisplaylistitem_s *>(
-                       reinterpret_cast<u8 *>(mgr->mtlbuff.addr) + j * 0x80)) {
+            if (mgr->mtl_buffers_used[j] != 0 &&
+                mtl_item ==
+                    reinterpret_cast<nudisplaylistitem_s *>(reinterpret_cast<u8 *>(mgr->mtlbuff.addr) + j * 0x80)) {
                 mgr->mtl_buffers_used[j] = 0;
                 break;
             }
@@ -818,7 +821,10 @@ void DisplayListLinkDynamicMtls(void) {
                     mgr->sort_list = sp->sys_next;
                 } else {
                     for (nusortpri_s *cur = mgr->sort_list; cur; cur = cur->sys_next) {
-                        if (cur->sys_next == sp) { cur->sys_next = sp->sys_next; break; }
+                        if (cur->sys_next == sp) {
+                            cur->sys_next = sp->sys_next;
+                            break;
+                        }
                     }
                 }
                 --mgr->nused_sort_pris;
@@ -829,8 +835,7 @@ void DisplayListLinkDynamicMtls(void) {
             }
 
             // Compact material slots: shift left and re-place evicted tail.
-            NUDISPLAYLIST *tail_dl =
-                mgr->dyn_mtl_dlist.dlist_mtls[mgr->dyn_mtl_dlist.nmtls - 1];
+            NUDISPLAYLIST *tail_dl = mgr->dyn_mtl_dlist.dlist_mtls[mgr->dyn_mtl_dlist.nmtls - 1];
             for (u32 j = static_cast<u32>(idx); j + 1 < mgr->dyn_mtl_dlist.nmtls; ++j) {
                 mgr->dyn_mtl_dlist.mtls[j] = mgr->dyn_mtl_dlist.mtls[j + 1];
                 mgr->dyn_mtl_dlist.dlist_mtls[j] = mgr->dyn_mtl_dlist.dlist_mtls[j + 1];
@@ -850,29 +855,43 @@ void DisplayListLinkDynamicMtls(void) {
     // ── Addition pass ──
     for (i32 ni = 0; ni < mgr->nnew_materials; ++ni) {
         NUMTL *mtl = mgr->new_materials[ni];
-        if (mgr->dyn_mtl_dlist.nmtls <= 0) continue;
+        if (mgr->dyn_mtl_dlist.nmtls <= 0)
+            continue;
 
         // Already present? bump refcount.
         bool present = false;
         i32 idx = -1;
         if (mgr->dyn_mtl_dlist.mtls[0] == mtl) {
-            present = true; idx = 0;
+            present = true;
+            idx = 0;
         } else {
             for (u32 j = 1; j < mgr->dyn_mtl_dlist.nmtls; ++j) {
-                if (mgr->dyn_mtl_dlist.mtls[j] == mtl) { present = true; idx = static_cast<i32>(j); break; }
+                if (mgr->dyn_mtl_dlist.mtls[j] == mtl) {
+                    present = true;
+                    idx = static_cast<i32>(j);
+                    break;
+                }
             }
         }
-        if (present) { ++mgr->material_used[idx]; continue; }
+        if (present) {
+            ++mgr->material_used[idx];
+            continue;
+        }
 
         // Find free slot.
         i32 pos = -1;
-        if (mgr->material_used[0] == 0) pos = 0;
+        if (mgr->material_used[0] == 0)
+            pos = 0;
         else {
             for (u32 j = 1; j < mgr->dyn_mtl_dlist.nmtls; ++j) {
-                if (mgr->material_used[j] == 0) { pos = static_cast<i32>(j); break; }
+                if (mgr->material_used[j] == 0) {
+                    pos = static_cast<i32>(j);
+                    break;
+                }
             }
         }
-        if (pos < 0) continue;
+        if (pos < 0)
+            continue;
 
         // Find free stream buffer.
         i32 buf_off = -0x80;
@@ -888,15 +907,15 @@ void DisplayListLinkDynamicMtls(void) {
         i32 sp_idx = -1;
         if (mgr->dyn_mtl_dlist.nsort_pris > 0) {
             for (i32 j = 0; j < mgr->dyn_mtl_dlist.nsort_pris; ++j) {
-                if (key == mgr->dyn_mtl_dlist.sort_pris[j].sort_pri) sp_idx = j;
+                if (key == mgr->dyn_mtl_dlist.sort_pris[j].sort_pri)
+                    sp_idx = j;
             }
         }
 
         // Insertion position — before first used material with key >= ours.
         i32 insert = pos;
         for (u32 j = 0; j < mgr->dyn_mtl_dlist.nmtls; ++j) {
-            if (mgr->material_used[j] != 0
-                && key <= MtlSortKey(mgr->dyn_mtl_dlist.mtls[j])) {
+            if (mgr->material_used[j] != 0 && key <= MtlSortKey(mgr->dyn_mtl_dlist.mtls[j])) {
                 insert = static_cast<i32>(j);
                 break;
             }
@@ -918,10 +937,8 @@ void DisplayListLinkDynamicMtls(void) {
         NUDISPLAYLIST *dl = mgr->dyn_mtl_dlist.dlist_mtls[insert];
         mtl->display_list = dl;
 
-        VARIPTR buf_ptr{reinterpret_cast<void *>(
-            reinterpret_cast<u8 *>(mgr->mtlbuff.addr) + buf_off)};
-        nudisplaylistitem_s *items =
-            NuDisplayListCreateMtlDlist(dl->mtl_item, mtl, &buf_ptr, mgr->mtlbuffend);
+        VARIPTR buf_ptr{reinterpret_cast<void *>(reinterpret_cast<u8 *>(mgr->mtlbuff.addr) + buf_off)};
+        nudisplaylistitem_s *items = NuDisplayListCreateMtlDlist(dl->mtl_item, mtl, &buf_ptr, mgr->mtlbuffend);
 
         mgr->dyn_mtl_dlist.mtls[insert] = mtl;
         dl->dyn_geom = items + 6;
@@ -942,7 +959,8 @@ void DisplayListLinkDynamicMtls(void) {
                 mgr->sort_list = sp;
             } else {
                 nusortpri_s *cur = mgr->sort_list;
-                while (cur->sys_next && cur->sys_next->sort_pri < key) cur = cur->sys_next;
+                while (cur->sys_next && cur->sys_next->sort_pri < key)
+                    cur = cur->sys_next;
                 sp->sys_next = cur->sys_next;
                 cur->sys_next = sp;
             }
@@ -951,8 +969,7 @@ void DisplayListLinkDynamicMtls(void) {
             sp->nmtls = 1;
         } else {
             sp = &mgr->dyn_mtl_dlist.sort_pris[sp_idx];
-            if (insert != 0
-                && MtlSortKey(mgr->dyn_mtl_dlist.mtls[insert - 1]) == key) {
+            if (insert != 0 && MtlSortKey(mgr->dyn_mtl_dlist.mtls[insert - 1]) == key) {
                 // Splice after previous material's block.
                 auto *anchor = mgr->dyn_mtl_dlist.mtls[insert - 1]->display_list->mtl_item;
                 auto *follow = static_cast<nudisplaylistitem_s *>(anchor[7].next);
@@ -1002,15 +1019,15 @@ extern "C" void NuDisplayListSwapBuffersEndFrame(void) {
 
             for (i32 w = 0; w < words; ++w) {
                 const u8 *curw = cur_words + w * 4;
-                if (*reinterpret_cast<const u32 *>(curw)
-                    == *reinterpret_cast<const u32 *>(other_words + w * 4)) {
+                if (*reinterpret_cast<const u32 *>(curw) == *reinterpret_cast<const u32 *>(other_words + w * 4)) {
                     continue;
                 }
                 for (i32 b = 0; b < 4; ++b) {
                     u8 byte_val = curw[b];
                     for (i32 shift = 0; shift < 8; shift += 2) {
                         i32 obj = w * 16 + b * 4 + shift / 2;
-                        if (obj >= nclip) break;
+                        if (obj >= nclip)
+                            break;
                         u32 code = (byte_val >> shift) & 3;
                         NUCLIPOBJECT *co = &sc->clip_objects[obj];
                         u16 cnt = sc->clip_counts[obj];
@@ -1073,8 +1090,7 @@ extern "C" void NuDisplayListSwapBuffersEndFrame(void) {
         }
     };
 
-    auto copyMaterialGeometry = [&](NUDISPLAYLIST *dl, nudisplaylistitem_s *first,
-                                    nudldlistscene_s *sc) {
+    auto copyMaterialGeometry = [&](NUDISPLAYLIST *dl, nudisplaylistitem_s *first, nudldlistscene_s *sc) {
         *dl->dyn_geom = *first;
         if ((sc->flags & 4) == 0) {
             dl->mtl_last->next = dl->mtl_item->next;
@@ -1093,12 +1109,14 @@ extern "C" void NuDisplayListSwapBuffersEndFrame(void) {
             RndrStateUpdateFx(&tmp_state, sp->items);
             continue;
         }
-        if ((sc->flags & 6) == 0 || sp->nmtls == 0) continue;
+        if ((sc->flags & 6) == 0 || sp->nmtls == 0)
+            continue;
 
         for (u32 m = 0; m < sp->nmtls; ++m) {
             i32 mi = static_cast<i32>(static_cast<u32>(sp->mtl_first) + m);
             NUDISPLAYLIST *dl = sc->dlist_mtls[mi];
-            if (dl->mtl_item->id != kItemId_Cnt) continue;
+            if (dl->mtl_item->id != kItemId_Cnt)
+                continue;
 
             NUMTL *mtl = sc->mtls[mi];
             nuglobalrndrstate_s *ls = sc->local_state;
@@ -1128,17 +1146,14 @@ extern "C" void NuDisplayListSwapBuffersEndFrame(void) {
 
             // Visibility cull — hide materials that fail the scene's flag test.
             u16 scene_flags = *reinterpret_cast<const u16 *>(&sc->flags);
-            if ((scene_flags & 0x1fe0) != 0
-                && ((static_cast<u8>(scene_flags >> 5)
-                     & static_cast<u8>(MTL_ATTRIB_DWORD1(mtl) >> 0xe))
-                    != 0)) {
+            if ((scene_flags & 0x1fe0) != 0 &&
+                ((static_cast<u8>(scene_flags >> 5) & static_cast<u8>(MTL_ATTRIB_DWORD1(mtl) >> 0xe)) != 0)) {
                 dl->mtl_item->id = kItemId_Next;
                 i32 mid = dl->mtl_id;
                 i32 word = (mid >= 0) ? mid >> 3 : (mid + 7) >> 3;
                 i32 bit = mid & 7;
                 u8 *mu = sc->mtl_used[static_cast<u32>(static_cast<u8>(sc->render_buffer >> 7))];
-                mu[word] &= static_cast<u8>(
-                    (static_cast<u32>(-2) << bit) | (0xfffffffeu >> (32 - bit)));
+                mu[word] &= static_cast<u8>((static_cast<u32>(-2) << bit) | (0xfffffffeu >> (32 - bit)));
             }
         }
     }
@@ -1153,4 +1168,5 @@ extern "C" void NuDisplayListSwapBuffersEndFrame(void) {
     NuThreadCriticalSectionEnd(mgr->loading_critical_section);
 }
 
-extern "C" void NuDisplayListDraw2D(void) {}
+extern "C" void NuDisplayListDraw2D(void) {
+}

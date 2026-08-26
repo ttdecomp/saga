@@ -42,12 +42,12 @@
 //
 // The enum below names the bits as they appear in the original binary.
 enum NuPostEffectFlag : i32 {
-    kEffect_BloomOrMain   = 0x04,
-    kEffect_Slot_AC       = 0x08,
-    kEffect_DOF           = 0x10,
-    kEffect_Deferred      = 0x20,
-    kEffect_Slot_178      = 0x40,
-    kEffect_MotionBlur    = 0x80,
+    kEffect_BloomOrMain = 0x04,
+    kEffect_Slot_AC = 0x08,
+    kEffect_DOF = 0x10,
+    kEffect_Deferred = 0x20,
+    kEffect_Slot_178 = 0x40,
+    kEffect_MotionBlur = 0x80,
 };
 
 i32 g_effectFlags;     // bss — see masks above
@@ -61,7 +61,7 @@ i32 g_lastFrameEffect; // bss — last dispatched effect id
 // 32-bit pointers and the host may be 64-bit — the offsets below are byte
 // offsets into the 32-bit layout.
 
-static void *s_deferredFilter;   // +0x54 lightCount, +0x58 lightIds[]; vtable+0x20 = End
+static void *s_deferredFilter; // +0x54 lightCount, +0x58 lightIds[]; vtable+0x20 = End
 static void *s_mainFilter;
 static void *s_motionFilter;
 static void *s_motionAccumFilter;
@@ -70,9 +70,9 @@ static void *s_motionAccumFilter;
 // compiler.  Kept as constants so the transcribed AddDynamicLight / End
 // remain greppable against the original.
 static constexpr usize kFilterOffset_LightCount = 0x54;
-static constexpr usize kFilterOffset_Lights     = 0x58;
-static constexpr usize kFilterVTableOffset_End  = 0x20;                        // byte offset
-static constexpr usize kFilterVTableIndex_End   = kFilterVTableOffset_End / 4; // vtable[8] in original 32-bit layout
+static constexpr usize kFilterOffset_Lights = 0x58;
+static constexpr usize kFilterVTableOffset_End = 0x20;                       // byte offset
+static constexpr usize kFilterVTableIndex_End = kFilterVTableOffset_End / 4; // vtable[8] in original 32-bit layout
 
 // Proxy surface descriptors that the original deferred pass populates with
 // the G-buffer bindings.  On host they are reset to an identity descriptor
@@ -88,10 +88,10 @@ static i32 s_proxyNormalBuffer[12];
 static i32 s_proxyVelocityBuffer[12];
 static i32 s_proxyDepthBuffer[12];
 
-static constexpr i32 kProxyKind_Color    = 0;
-static constexpr i32 kProxyKind_Normal   = 1;
+static constexpr i32 kProxyKind_Color = 0;
+static constexpr i32 kProxyKind_Normal = 1;
 static constexpr i32 kProxyKind_Velocity = 2;
-static constexpr i32 kProxyKind_Depth    = 4;
+static constexpr i32 kProxyKind_Depth = 4;
 
 static inline void ResetProxyBuffer(i32 *proxy, i32 kind) {
     proxy[0] = 0;
@@ -123,13 +123,13 @@ static inline i32 *FilterLights(void *filter) {
 // ── Post-effect API ─────────────────────────────────────────────────────────
 
 // original 0x2ab9c0
-bool NuPostEffectIsInitialised(u32 mask) {
+extern "C" bool NuPostEffectIsInitialised(u32 mask) {
     return (g_effectFlags & static_cast<i32>(mask)) != 0;
 }
 
 // original 0x2ab8b0 — per-frame reset called at the top of
 // renderThread_processRenderScenes before the safe scene list is walked.
-void NuPostEffectReset(void) {
+extern "C" void NuPostEffectReset(void) {
     g_effectsRan = 0;
     g_lastFrameEffect = 0;
 }
@@ -137,7 +137,7 @@ void NuPostEffectReset(void) {
 // original 0x2abc40 — feeds a dynamic light handle into the deferred filter's
 // light list.  The handle is an opaque light pointer; the original checks
 // *(i32*)(light+0x7bc) != 0 before calling (see nurenderthread.cpp).
-void NuPostEffectAddDynamicLight(i32 light) {
+extern "C" void NuPostEffectAddDynamicLight(i32 light) {
     if (s_deferredFilter == nullptr) {
         return;
     }
@@ -150,7 +150,7 @@ void NuPostEffectAddDynamicLight(i32 light) {
 // filter vtable's End (vtable+0x20) for each allocated filter, then resets
 // the G-buffer proxy descriptors.  On host the filters are null so only the
 // proxy reset is observable.
-void NuPostEffectEnd(void) {
+extern "C" void NuPostEffectEnd(void) {
     FilterEnd(s_deferredFilter);
     FilterEnd(s_mainFilter);
     FilterEnd(s_motionFilter);
@@ -174,8 +174,8 @@ extern i32 g_renderContext_zFunc; // defined in nuiosdl_gl.cpp
 
 // Nu-side clear flag bits (DX-style) as passed by the engine.  These are NOT
 // GL bits — they are translated to GL_COLOR/DEPTH/STENCIL_BUFFER_BIT below.
-static constexpr u32 kNuClear_Color   = 0x100;
-static constexpr u32 kNuClear_Depth   = 0x200;
+static constexpr u32 kNuClear_Color = 0x100;
+static constexpr u32 kNuClear_Depth = 0x200;
 static constexpr u32 kNuClear_Stencil = 0x800;
 
 // original 0x317070
@@ -216,7 +216,7 @@ extern "C" void Nu360_dxClear(u32 clear_flags, u32 colour) {
 
 // original 0x2a2720 — Android forwarder; the engine calls this per scene
 // when scn.clear_flags != 0 (see nurenderthread.cpp).
-void NuFramebufferClear(u32 clear_flags, u32 colour) {
+extern "C" void NuFramebufferClear(u32 clear_flags, u32 colour) {
     Nu360_dxClear(clear_flags, colour);
 }
 
@@ -224,5 +224,5 @@ void NuFramebufferClear(u32 clear_flags, u32 colour) {
 // by NuRenderDeviceSwapBuffers() on the render thread (nurenderthread.cpp:
 // renderThread_main).  Kept as an empty definition so the original call site
 // links without ifdef.
-void NuFramebufferSwapBuffers(void) {
+extern "C" void NuFramebufferSwapBuffers(void) {
 }
