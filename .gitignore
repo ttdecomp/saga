@@ -30,4 +30,4 @@ opencode.jsonc
 .build/.work/
 .work/
 .host_scratch/
-window.ppm
+*.ppm

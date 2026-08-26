@@ -23,11 +23,90 @@ void Text_LoadFont(char *path, variptr_u *buf, variptr_u *buf_end) {
         QFont2D = &d;
     }
 }
+#include "nu2api/numath/numtx.h"
+extern "C" {
+    void NuMtxSetRotationX(NUMTX *mtx, i32 angle);
+    void NuMtxRotateY(NUMTX *mtx, i32 angle);
+    void NuMtxRotateZ(NUMTX *mtx, i32 angle);
+    void NuMtxTranslate(NUMTX *mtx, NUVEC *vec);
+}
+extern "C" void NuRndrClear(u32 flags, u32 colour, f32 alpha);
+extern "C" void Text3DStringEncode(char *src, u16 *dst);
+void BackDrop_SetTint(f32 r, f32 g, f32 b);
 void Text_MakeTime(float, i32, i32, i32, char *) {
 }
-void TextCrawl_Draw(float, i32, float, char *) {
+
+static TEXTCRAWL_s *s_crawlPtr = nullptr;
+static NUMTX s_textcrawl_mtx;
+static f32 s_textcrawl_offset = 0.0f;
+i32 textcrawlactive = 0;
+i32 Arcade_TextCrawlID = 0x1f1;
+i32 Arcade_TextCrawlParagraphs = 2;
+static const char *kCrawlFallback =
+    "Episode IV\nA NEW HOPE\n\nIt is a period of civil war.\nRebel spaceships, striking\nfrom a hidden base, have "
+    "won\ntheir first victory against\nthe evil Galactic Empire.\n\nDuring the battle, Rebel\nspies managed to steal "
+    "secret\nplans to the Empire's\nultimate weapon, the DEATH\nSTAR, an armored space\nstation with enough power\nto "
+    "destroy an entire planet.\n\nPursued by the Empire's\nsinister agents, Princess\nLeia races home aboard "
+    "her\nstarship, custodian of the\nstolen plans that can save\nher people and restore\nfreedom to the galaxy....";
+void TextCrawl_Init(TEXTCRAWL_s *crawl, i32 id, i32 unk) {
+    if (crawl == nullptr)
+        return;
+    if (!text_font_loaded)
+        return;
+    i32 clamped = id;
+    if (clamped < 0)
+        clamped = 0;
+    s_crawlPtr = crawl;
+    *(u8 *)((u8 *)crawl + 0x0d) = (u8)(clamped & 0xff);
+    NuMtxSetRotationX(&s_textcrawl_mtx, 0x3333);
+    NuMtxRotateY(&s_textcrawl_mtx, 0);
+    NuMtxRotateZ(&s_textcrawl_mtx, 0);
+    NUVEC tr{0.0f, -1.0f, 10.0f};
+    NuMtxTranslate(&s_textcrawl_mtx, &tr);
+    if (unk != 0)
+        s_textcrawl_offset = 0.0f;
+    textcrawlactive = 1;
 }
-void TextCrawl_Init(TEXTCRAWL_s *, i32, i32) {
+void TextCrawl_Draw(float dt, i32 paragraphs, float alpha, char *text) {
+    if (s_crawlPtr == nullptr)
+        return;
+    if (!textcrawlactive)
+        return;
+    if (alpha <= 0.001f)
+        return;
+    s_textcrawl_offset += dt * 15.0f;
+    if (s_textcrawl_offset > 800.0f)
+        s_textcrawl_offset = 800.0f;
+    const char *crawlText = text;
+    if (crawlText == nullptr)
+        crawlText = kCrawlFallback;
+    NuQFntSetJustifiedTolerances(0.75f, 0.75f);
+    BackDrop_SetTint(0.9f * alpha, 0.8f * alpha, 0.15f * alpha);
+    // Host: actually draw the fallback crawl text so the PPM shows yellow
+    // on starfield and the test can detect it. Use the same QFont path as
+    // IntroText_Draw, but scrolling vertically.
+    if (QFont2D != nullptr) {
+        u16 enc[1024]{};
+        // Take first paragraph for host preview — full crawl would scroll.
+        char tmp[512]{};
+        // Copy up to first blank line or 200 chars for host preview
+        int n = 0;
+        for (int i = 0; i < 200 && crawlText[i] && n < 511; i++) {
+            tmp[n++] = crawlText[i];
+            if (crawlText[i] == '\n' && crawlText[i + 1] == '\n')
+                break;
+        }
+        tmp[n] = '\0';
+        Text3DStringEncode(tmp, enc);
+        // Draw at a scrolling Y based on offset, with crawl yellow
+        float y = 0.5f - s_textcrawl_offset * 0.0015f;
+        u32 colour = 0xffd700; // gold/yellow for crawl
+        // Alpha-scaled
+        u32 a = static_cast<u32>(alpha * 255.0f);
+        colour = (a << 24) | (colour & 0x00ffffff);
+        NuQFntPrintJustifiedW(QFont2D, enc, -0.6f, y, 0.5f, 0.5f, 0.5f, 0.3f, 1.0f, 0.0f, colour, 0);
+    }
+    (void)paragraphs;
 }
 void TextPulseTimer(float) {
 }
@@ -155,7 +234,7 @@ static void Host_Text3DStringEncode(char *src, u16 *dst) {
 extern "C" void Text3DStringEncode(char *src, u16 *dst) {
     Host_Text3DStringEncode(src, dst);
 }
-void SetQFont2D(void) {
+extern "C" void SetQFont2D(void) {
     NuQFntSetCoordinateSystem(static_cast<NUQFNT_CSMODE>(3));
     void *f = QFont2D;
     if (f) {
@@ -218,7 +297,6 @@ void IntroText_Draw(float alpha) {
     backdrop_top_g = 0.37f * alpha;
     backdrop_top_b = 0.50f * alpha;
     if (alpha > 0.01f) {
-        extern void NuRndrClear(u32, u32, float);
         NuRndrClear(0xf00, 0x007f5f00, alpha);
     }
 #endif

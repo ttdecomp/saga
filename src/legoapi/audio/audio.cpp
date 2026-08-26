@@ -23,47 +23,33 @@ void PlayAMusic(i32 a, i32 b, i32 c, i32 d) {
     (void)d;
     LOG_DEBUG("PlayAMusic %d %d %d %d", a, b, c, d);
 }
-
 void GetMusicIndex(char *name, nusound_filename_info_s *table, i32 def) {
     (void)name;
     (void)table;
     (void)def;
-    if (name == nullptr || table == nullptr) {
+    if (name == nullptr || table == nullptr)
         return;
-    }
-    // Decompiled from 0x4df290 helper: linear scan for name.
-    for (nusound_filename_info_s *p = table; p->filename != nullptr; ++p) {
-        if (NuStrICmp(p->filename, name) == 0) {
+    for (auto *p = table; p->filename != nullptr; ++p)
+        if (NuStrICmp(p->filename, name) == 0)
             return;
-        }
-    }
 }
-
 void MusicClearAll() {
     LOG_DEBUG("MusicClearAll");
 #ifdef HOST_BUILD
-    if (NOSOUND) {
+    if (NOSOUND)
         return;
-    }
 #endif
-    // Faithful: stop all voices. music_man.StopAll is stub until decompiled,
-    // so just log. Original would stop both stereo streams.
 }
-
 void SpaceAudioPoint() {
 }
-
 void legoSetCutVolume(float v) {
     (void)v;
 }
-
 void GetAudioFadeLevel() {
 }
-
 void PS2VolumeToScalar(i32 v) {
     (void)v;
 }
-
 void SetBackgroundMusic(i32 track) {
     LOG_INFO("SetBackgroundMusic track=%d (Star Wars theme after intro when track==1)", track);
 #ifdef HOST_BUILD
@@ -78,84 +64,58 @@ void SetBackgroundMusic(i32 track) {
 #endif
     if (track == -1) {
         LOG_INFO("SetBackgroundMusic: stop");
-        // Faithful: stop current music. Original at 0x4df8b0 is NOP on device
-        // in this build, but decomp preserves the intent via music_man.
         music_man.PlayTrack(TRACK_CLASS_NOMUSIC);
         return;
     }
-    // track 1 == opening Star Wars theme (titles quiet track). Faithful: try
-    // quiet first (titles), fall back to action.
     i32 res = music_man.PlayTrack(TRACK_CLASS_QUIET);
-    if (res < 0) {
+    if (res < 0)
         res = music_man.PlayTrack(TRACK_CLASS_ACTION);
-    }
     LOG_INFO("SetBackgroundMusic: PlayTrack result %d", res);
     (void)res;
 }
-
 void legoSetMusicVolume(float v) {
     (void)v;
     LOG_DEBUG("legoSetMusicVolume %f", v);
 }
-
 void ProcessMusicChanges(LEVELDATA_s *level, OPTIONSSAVE_s *opts) {
     (void)opts;
-    if (level == nullptr) {
+    if (level == nullptr)
         return;
-    }
     LOG_DEBUG("ProcessMusicChanges level=%p", (void *)level);
 #ifdef HOST_BUILD
-    if (NOSOUND || MusicInfo == nullptr) {
+    if (NOSOUND || MusicInfo == nullptr)
         return;
-    }
 #endif
-    // Faithful: delegate to GamePlayMusic which selects quiet track handle.
     extern i32 GamePlayMusic(LEVELDATA * l, i32 zero, OPTIONSSAVE * o);
     GamePlayMusic((LEVELDATA *)level, 0, (OPTIONSSAVE *)opts);
 }
-
 void SpaceResetAudioPoint() {
 }
-
 void CheckMusicSwapInstant() {
     LOG_DEBUG("CheckMusicSwapInstant");
 }
-
 void UpdateBackgroundMusic() {
     LOG_DEBUG("UpdateBackgroundMusic");
 #ifdef HOST_BUILD
-    if (NOSOUND || MusicInfo == nullptr) {
+    if (NOSOUND || MusicInfo == nullptr)
         return;
-    }
 #endif
-    // Faithful: would poll music_man.Process(FRAMETIME) on device.
-    // Stubbed until audio thread decompiled, but call is preserved.
 }
-
 extern "C" {
-
     void GetCurPreSeek(void) {
     }
-
     void GetCurrentMusicId(void) {
     }
-
     void GetOppMusicId(void) {
     }
-
     void MusicPreSeek(void) {
     }
-
     void MusicPreSeekNow(void) {
     }
-
     void MusicSeekOffset(void) {
     }
-
     void MusicSeeking(void) {
     }
-
     void MusicState(void) {
     }
-
-} // extern "C"
+}

@@ -536,7 +536,9 @@ struct SoundTable {};
 struct TECHNO_s;
 struct TERRPICKUPSET {};
 struct TERRSET {};
-struct TEXTCRAWL_s {};
+struct TEXTCRAWL_s {
+    u8 pad[32]; // NOLINT(readability-identifier-naming)
+};
 struct TEXTENTRY {};
 struct TORPEDOPACKET_s {};
 struct TRAFFICANIMSYS_s {};

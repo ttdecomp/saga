@@ -431,9 +431,6 @@ static __used__ void DrawParaphernalia(GameObject_s *) {
 static __used__ void DrawFalconSpotLights(GameObject_s *) {
 }
 
-static __used__ void BackDrop_Alpha(float *) {
-}
-
 static __used__ double ApplyAntilights(rtl_s *, rtlidata_s *, float) {
     return {};
 }
@@ -450,15 +447,176 @@ static __used__ void SelectPrevFog() {
 static __used__ void PreWarmGeomsAndBakeVAOs(nudisplayscene_s *, nunativegscene_s *) {
 }
 
-void BackDrop_Draw(float, i32) {
+#include "legoapi/legoapi_types.h"
+#include "nu2api/numath/numtx.h"
+#include "nu2api/nu3d/nurndr.h"
+
+extern "C" {
+    void NuRndrGradClear(i32 a, i32 b, i32 c, f32 d);
+    void NuRndrClear(u32 flags, u32 colour, f32 alpha);
+    i32 NuSpecialFind(NUGSCN *scene, void **dest, char *name, i32 flags);
+    void NuSpecialGetMtx(nuhspecial_s *hs, NUMTX *out);
+    void NuSpecialDrawAtAlpha(nuhspecial_s *hs, NUMTX *mtx, f32 alpha);
 }
+extern i32 qrand(void);
+
+static NUGSCN *s_backdrop_scene = nullptr;
+
+struct BackdropEntry {
+    nuhspecial_s *hs = nullptr;
+    u32 pad0 = 0;
+    u32 pad1 = 0;
+};
+static BackdropEntry s_backdrop_hspecial[4];
+
+static f32 s_backdrop_back_wait = 0.0f;
+
+f32 backdrop_top_r = 0.0f;
+f32 backdrop_top_g = 0.0f;
+f32 backdrop_top_b = 0.0f;
+f32 backdrop_bot_r = 0.0f;
+f32 backdrop_bot_g = 0.0f;
+f32 backdrop_bot_b = 0.0f;
+
+f32 backdrop_top_tr = 0.0f;
+f32 backdrop_top_tg = 0.0f;
+f32 backdrop_top_tb = 0.0f;
+f32 backdrop_bot_tr = 0.0f;
+f32 backdrop_bot_tg = 0.0f;
+f32 backdrop_bot_tb = 0.0f;
+
+i32 backdrop_black = 0;
+
+void (*BackDrop_AlphaFn)(float *) = nullptr;
+
+static __used__ void BackDrop_Alpha(float *alpha) {
+    if (alpha == nullptr)
+        return;
+    if (backdrop_black) {
+        *alpha *= 0.0f;
+    } else if (s_backdrop_back_wait > 0.0f) {
+        *alpha *= 0.5f;
+    }
+}
+
+void BackDrop_Init(char *path, variptr_u *buf, variptr_u *buf_end) {
+    for (auto &e : s_backdrop_hspecial) {
+        e.hs = nullptr;
+        e.pad0 = 0;
+        e.pad1 = 0;
+    }
+    if (s_backdrop_scene != nullptr) {
+    } else {
+        NUGSCN *scn = nullptr;
+        if (buf != nullptr && buf_end != nullptr) {
+            scn = NuGScnRead(buf, *buf_end, path);
+        }
+        if (scn == nullptr) {
+            static NUGSCN dummy{};
+            scn = &dummy;
+        }
+        s_backdrop_scene = scn;
+    }
+    if (s_backdrop_scene == nullptr)
+        return;
+    NuSpecialFind(s_backdrop_scene, (void **)&s_backdrop_hspecial[0].hs, (char *)"ball1", 1);
+    NuSpecialFind(s_backdrop_scene, (void **)&s_backdrop_hspecial[1].hs, (char *)"ball2", 1);
+    NuSpecialFind(s_backdrop_scene, (void **)&s_backdrop_hspecial[2].hs, (char *)"ball3", 1);
+    NuSpecialFind(s_backdrop_scene, (void **)&s_backdrop_hspecial[3].hs, (char *)"ball4", 1);
+    for (auto &e : s_backdrop_hspecial) {
+        if (e.hs == nullptr) {
+            static nuhspecial_s dummyHs{};
+            e.hs = &dummyHs;
+        }
+    }
+}
+
 void BackDrop_Dump() {
+    s_backdrop_scene = nullptr;
+    for (auto &e : s_backdrop_hspecial)
+        e.hs = nullptr;
 }
-void BackDrop_Init(char *, variptr_u *, variptr_u *) {
+
+void BackDrop_Update(float dt) {
+    if (s_backdrop_scene == nullptr)
+        return;
+    NuGScnUpdate(s_backdrop_scene, (i32)(dt * 1000.0f));
+    if (s_backdrop_back_wait > 0.0f) {
+        s_backdrop_back_wait -= dt;
+        if (s_backdrop_back_wait < 0.0f)
+            s_backdrop_back_wait = 0.0f;
+    }
 }
-void BackDrop_Update(float) {
-}
+
 void BackDrop_ResetColours() {
+    backdrop_top_r = 0.0f;
+    backdrop_top_g = 0.0f;
+    backdrop_top_b = 0.0f;
+    backdrop_bot_r = 0.0f;
+    backdrop_bot_g = 0.0f;
+    backdrop_bot_b = 0.0f;
+    backdrop_top_tr = 0.0f;
+    backdrop_top_tg = 0.0f;
+    backdrop_top_tb = 0.0f;
+    backdrop_bot_tr = 0.0f;
+    backdrop_bot_tg = 0.0f;
+    backdrop_bot_tb = 0.0f;
+    s_backdrop_back_wait = 1.0f;
+    backdrop_black = 0;
 }
-void BackDrop_UpdateColours(i32) {
+
+void BackDrop_UpdateColours(i32 instant) {
+    const f32 lerp = (instant != 0) ? 1.0f : 0.05f;
+    auto seek = [&](f32 &cur, f32 tgt) { cur += (tgt - cur) * lerp; };
+    if (backdrop_black) {
+        seek(backdrop_top_r, 0.0f);
+        seek(backdrop_top_g, 0.0f);
+        seek(backdrop_top_b, 0.0f);
+        seek(backdrop_bot_r, 0.0f);
+        seek(backdrop_bot_g, 0.0f);
+        seek(backdrop_bot_b, 0.0f);
+        return;
+    }
+    seek(backdrop_top_r, backdrop_top_tr);
+    seek(backdrop_top_g, backdrop_top_tg);
+    seek(backdrop_top_b, backdrop_top_tb);
+    seek(backdrop_bot_r, backdrop_bot_tr);
+    seek(backdrop_bot_g, backdrop_bot_tg);
+    seek(backdrop_bot_b, backdrop_bot_tb);
+}
+
+void BackDrop_SetTint(f32 r, f32 g, f32 b) {
+    backdrop_top_r = r;
+    backdrop_top_g = g;
+    backdrop_top_b = b;
+    backdrop_bot_r = r * 0.6f;
+    backdrop_bot_g = g * 0.6f;
+    backdrop_bot_b = b * 0.6f;
+}
+
+void BackDrop_Draw(float alpha, i32 flags) {
+    if (s_backdrop_scene == nullptr)
+        return;
+    float a = alpha;
+    if (flags == 0 && BackDrop_AlphaFn != nullptr) {
+        BackDrop_AlphaFn(&a);
+        alpha = a;
+    }
+    if (alpha <= 0.001f)
+        return;
+    NuRndrGradClear(0xf00, 0x80000000, 0x80000000, 1.0f);
+    for (int i = 0; i < 4; i++) {
+        nuhspecial_s *hs = s_backdrop_hspecial[i].hs;
+        if (hs == nullptr)
+            continue;
+        float layerAlpha = alpha * (0.7f + 0.075f * (float)i);
+        if (layerAlpha > 1.0f)
+            layerAlpha = 1.0f;
+        NUMTX mtx = numtx_identity;
+        float jitterX = (float)(qrand() & 0x7fff) * (1.0f / 32767.0f) * 2.0f - 1.0f;
+        float jitterY = (float)(qrand() & 0x7fff) * (1.0f / 32767.0f) * 2.0f - 1.0f;
+        mtx.m30 += jitterX * 0.02f;
+        mtx.m31 += jitterY * 0.02f;
+        NuSpecialDrawAtAlpha(hs, &mtx, layerAlpha);
+    }
 }

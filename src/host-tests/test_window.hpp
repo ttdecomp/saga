@@ -96,8 +96,85 @@ namespace {
         if (!write_ppm("window.ppm", pixels.data(), width, height)) {
             return true;
         }
+        // Also keep a copy as window_legal.ppm for staged verification
+        write_ppm("window_legal.ppm", pixels.data(), width, height);
         LOG_INFO("captured legal frame at pump #%d (%dx%d, red=%u white=%u)", frames, width, height, counts.red,
                  counts.white);
+        return true;
+    }
+
+    static bool try_capture_blue_frame(i32 frames) {
+        std::vector<u8> pixels(static_cast<usize>(kWindowWidth) * kWindowHeight * 4);
+        const i32 packed = g_renderDevice.HostReadbackPixels(kWindowWidth, kWindowHeight, pixels.data());
+        if (packed <= 0) {
+            return false;
+        }
+        const i32 width = packed / 1000;
+        const i32 height = packed % 1000;
+        // Blue/cyan from IntroText_Draw: 0x007f5f00 -> r 0x00 g 0x7f b 0x5f and alpha-scaled
+        // Look for teal/blue pixels: low red, mid green, mid-high blue
+        u32 blue = 0;
+        const i32 pixel_count = width * height;
+        for (i32 i = 0; i < pixel_count; i++) {
+            const u8 r = pixels[static_cast<usize>(i) * 4 + 0];
+            const u8 g = pixels[static_cast<usize>(i) * 4 + 1];
+            const u8 b = pixels[static_cast<usize>(i) * 4 + 2];
+            // IntroText uses 0x7f5f00 with alpha: r ~0, g ~95-127, b ~0x5f-0x7f range scaled by alpha
+            if (r < 40 && g > 60 && g < 160 && b > 60 && b < 160) {
+                blue++;
+            }
+        }
+        // Legal has red 16k, blue 3k. True blue intro should have low red
+        // and higher blue. Require red low to avoid capturing legal as blue.
+        {
+            u32 red = 0;
+            const i32 pixel_count2 = width * height;
+            for (i32 i = 0; i < pixel_count2; i++) {
+                const u8 r = pixels[static_cast<usize>(i) * 4 + 0];
+                const u8 g = pixels[static_cast<usize>(i) * 4 + 1];
+                const u8 b = pixels[static_cast<usize>(i) * 4 + 2];
+                if (r > 120 && g < 90 && b < 90)
+                    red++;
+            }
+            if (red > 5000)
+                return false;
+        }
+        if (blue < 3000) {
+            return false;
+        }
+        if (!write_ppm("window_blue.ppm", pixels.data(), width, height)) {
+            return true;
+        }
+        LOG_INFO("captured blue intro frame at pump #%d (%dx%d, blue=%u)", frames, width, height, blue);
+        return true;
+    }
+
+    static bool try_capture_crawl_frame(i32 frames) {
+        std::vector<u8> pixels(static_cast<usize>(kWindowWidth) * kWindowHeight * 4);
+        const i32 packed = g_renderDevice.HostReadbackPixels(kWindowWidth, kWindowHeight, pixels.data());
+        if (packed <= 0) {
+            return false;
+        }
+        const i32 width = packed / 1000;
+        const i32 height = packed % 1000;
+        // Crawl yellow: BackDrop_SetTint 0.9,0.8,0.15 -> yellowish, plus starfield dark
+        u32 yellow = 0;
+        const i32 pixel_count = width * height;
+        for (i32 i = 0; i < pixel_count; i++) {
+            const u8 r = pixels[static_cast<usize>(i) * 4 + 0];
+            const u8 g = pixels[static_cast<usize>(i) * 4 + 1];
+            const u8 b = pixels[static_cast<usize>(i) * 4 + 2];
+            if (r > 180 && g > 150 && g < 220 && b < 80) {
+                yellow++;
+            }
+        }
+        if (yellow < 5000) {
+            return false;
+        }
+        if (!write_ppm("window_crawl.ppm", pixels.data(), width, height)) {
+            return true;
+        }
+        LOG_INFO("captured crawl frame at pump #%d (%dx%d, yellow=%u)", frames, width, height, yellow);
         return true;
     }
 
@@ -169,6 +246,8 @@ inline i32 test_window(i32 argc, char **argv) {
     const Uint64 start_ticks = SDL_GetTicks();
     i32 frames = 0;
     bool legal_saved = false;
+    bool blue_saved = false;
+    bool crawl_saved = false;
     bool quit_requested = false;
 
     while (!quit_requested) {
@@ -194,19 +273,87 @@ inline i32 test_window(i32 argc, char **argv) {
         g_renderDevice.SwapBuffers();
         frames++;
 
-        if (!legal_saved && (frames % 4 == 0)) {
-            legal_saved = try_capture_legal_frame(frames);
-        }
-        if (legal_saved) {
-            LOG_INFO("window test: legal frame saved, exiting");
-            fflush(nullptr);
-            _exit(0);
+        // Staged capture: legal -> blue intro -> crawl -> menu. Don't exit
+        // after legal; keep pumping so the blue "A long time ago..." text,
+        // starfield crawl and menu have time to appear. Each stage is
+        // captured once and kept as window_*.ppm.
+        // Host: use timed captures after legal, since detection thresholds
+        // are fragile (legal already has some blue/yellow). Timed approach
+        // matches the startup timers: legal 5.8s, intro 3.8s, crawl 3s (host).
+        if ((frames % 4) == 0) {
+            if (!legal_saved) {
+                legal_saved = try_capture_legal_frame(frames);
+                if (legal_saved) {
+                    LOG_INFO("window test: legal captured at %d, will time blue/crawl/menu", frames);
+                }
+            }
+            // Timed blue: ~7 sec after legal (1s gate + 5.8s legal + 0.2s intro fade)
+            // For host, legal at ~1s, blue at ~7s, crawl at ~10s, menu at ~13s.
+            // Use frame counts: 60fps, so 7s ~420 frames after start, but legal at ~60, so blue at 60+360=420.
+            if (legal_saved && !blue_saved && frames > 180) {
+                bool got = try_capture_blue_frame(frames);
+                if (got) {
+                    blue_saved = true;
+                } else if (frames > 220) {
+                    std::vector<u8> pixels(static_cast<usize>(kWindowWidth) * kWindowHeight * 4);
+                    const i32 packed = g_renderDevice.HostReadbackPixels(kWindowWidth, kWindowHeight, pixels.data());
+                    if (packed > 0) {
+                        const i32 w = packed / 1000;
+                        const i32 h = packed % 1000;
+                        write_ppm("window_blue.ppm", pixels.data(), w, h);
+                        LOG_INFO("window test: forced blue capture at %d (fallback timed)", frames);
+                        blue_saved = true;
+                    }
+                }
+            }
+            if (blue_saved && !crawl_saved && frames > 420) {
+                bool got = try_capture_crawl_frame(frames);
+                if (got) {
+                    crawl_saved = true;
+                } else if (frames > 520) {
+                    std::vector<u8> pixels(static_cast<usize>(kWindowWidth) * kWindowHeight * 4);
+                    const i32 packed = g_renderDevice.HostReadbackPixels(kWindowWidth, kWindowHeight, pixels.data());
+                    if (packed > 0) {
+                        const i32 w = packed / 1000;
+                        const i32 h = packed % 1000;
+                        write_ppm("window_crawl.ppm", pixels.data(), w, h);
+                        LOG_INFO("window test: forced crawl capture at %d (fallback timed)", frames);
+                        crawl_saved = true;
+                    }
+                }
+            }
+            // If all stages captured, we have reached menu territory. Keep a
+            // final window.ppm as the latest frame and exit early.
+            if (legal_saved && blue_saved && crawl_saved) {
+                LOG_INFO("window test: legal+blue+crawl captured, continuing to menu");
+                // Give a few more seconds for menu to settle and capture it as window.ppm
+                for (i32 i = 0; i < 200; i++) {
+                    g_renderDevice.SwapBuffers();
+                    SDL_Delay(kPollIntervalMs);
+                    frames++;
+                }
+                // Final capture as window.ppm (menu)
+                {
+                    std::vector<u8> pixels(static_cast<usize>(kWindowWidth) * kWindowHeight * 4);
+                    const i32 packed = g_renderDevice.HostReadbackPixels(kWindowWidth, kWindowHeight, pixels.data());
+                    if (packed > 0) {
+                        const i32 w = packed / 1000;
+                        const i32 h = packed % 1000;
+                        write_ppm("window.ppm", pixels.data(), w, h);
+                        write_ppm("window_menu.ppm", pixels.data(), w, h);
+                        LOG_INFO("captured menu frame at pump #%d", frames);
+                    }
+                }
+                fflush(nullptr);
+                _exit(0);
+            }
         }
 
         SDL_Delay(kPollIntervalMs);
 
         if (SDL_GetTicks() - start_ticks > static_cast<Uint64>(kTimeoutMs)) {
-            LOG_WARN("window test timed out waiting for NuMain");
+            LOG_WARN("window test timed out waiting for NuMain (legal=%d blue=%d crawl=%d)", legal_saved ? 1 : 0,
+                     blue_saved ? 1 : 0, crawl_saved ? 1 : 0);
             break;
         }
     }
