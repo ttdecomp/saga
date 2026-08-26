@@ -282,7 +282,9 @@ extern "C" {
     void RootFnY(void) {
     }
 
-    void SetActionInfo(void) {
+    void SetActionInfo(void *action_info, void *extra_action_data) {
+        (void)action_info;
+        (void)extra_action_data;
     }
 
     void SetAnimBlendMode(void) {
@@ -291,7 +293,8 @@ extern "C" {
     void SetAnimTimeRandom(void) {
     }
 
-    void SetProceduralAnimationFn(void) {
+    void SetProceduralAnimationFn(void *animbuff) {
+        (void)animbuff;
     }
 
     void StateAnimEvaluate(void) {

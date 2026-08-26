@@ -1,7 +1,57 @@
 
 #include "nu2api/nucore/common.h"
+#include "nu2api/nucore/nuapi.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/numtl.h"
+#include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nu3d/NuRenderDevice.h"
+#include "globals.h"
+
+// C++-linkage definitions elsewhere.
+void DisplayListCreateDynMtlList(VARIPTR *buf, VARIPTR buf_end); // supportall.cpp
+void NuPadRecordEndFrame(void);                                  // nupad_interface.cpp
+void bgSuspendMain(i32);                                         // main.cpp
 
 extern "C" {
+    // Forward declarations used by NuFrameEnd (definitions below / sibling TUs).
+    void NuHasError(void);
+    void NuMtlAnimate(void);
+    void NuTexAnimProcess(void);
+    void NuWindAnimate(void);
+    void NuTimeBarSetRender(void);
+    void NuRndrSwapScreenEx(void);
+
+    // Bulk display-list manager (nudlist.cpp; original bss @0x11a0080, 0x604 bytes).
+    extern u8 global_dlist_manager[0x604];
+    extern VARIPTR *display_list_buffer_end;
+    extern VARIPTR rndrstream_free;
+    extern VARIPTR rndrstream_end;
+
+    i32 NuThreadCreateCriticalSection(void);
+
+    // Local helper shared with the nudlist TU (original file-static).
+    static void nudlist_SetNext(nudisplaylistitem_s *item, void *next) {
+        item->next = next;
+    }
+
+    void NuDisplayListResetBuffer(void);
+
+    // The static 2D display list's stream-area base lives at manager+0x4C8
+    // (nudisplaylist_s+0x10 of the embedded 2D list at manager+0x4B8) and points
+    // at manager+0x4FC.
+    static const usize NUDLIST_2D_STREAM_BASE_OFFSET = 0x4C8;
+    static const usize NUDLIST_2D_STREAM_AREA_OFFSET = 0x4FC;
+    static const usize NUDLIST_2D_CRITSEC_OFFSET = 0x5EC;
+
+    void NuDisplayListInit(VARIPTR *buf, VARIPTR *buf_end) {
+        *(u8 **)(global_dlist_manager + NUDLIST_2D_STREAM_BASE_OFFSET) =
+            global_dlist_manager + NUDLIST_2D_STREAM_AREA_OFFSET;
+
+        DisplayListCreateDynMtlList(buf, *buf_end);
+        NuDisplayListResetBuffer();
+
+        *(i32 *)(global_dlist_manager + NUDLIST_2D_CRITSEC_OFFSET) = NuThreadCreateCriticalSection();
+    }
 
     void Nu360_dxClear(void) {
     }
@@ -207,7 +257,11 @@ extern "C" {
     }
     void NuCameraSaveState(void) {
     }
-    void NuCameraSet(void) {
+    void NuCameraSet(NUCAMERA *cam) {
+        // The real body is NuCameraSetEx(cam, 0), which rebuilds the view /
+        // projection / viewport matrices. Matrix construction is not needed by
+        // the 2D loading screen; the camera pointer is kept for later work.
+        (void)cam;
     }
     void NuCameraSetAxes(void) {
     }
@@ -319,17 +373,43 @@ extern "C" {
     }
     void NuDisplayListExecute(void) {
     }
-    void NuDisplayListInit(void) {
-    }
     void NuDisplayListLinkItem(void) {
     }
     void NuDisplayListLinkItemVP(void) {
     }
-    void NuDisplayListLinkItems(void) {
+    void NuDisplayListLinkItems(nudisplaylist_s *list, i32 count) {
+        // Append `count` empty item slots from the shared stream buffer, then
+        // a 0x8d NEXT terminator that chains back to the list (original at
+        // 0x29ae31).
+        VARIPTR *buf = NuDisplayListGetBuffer();
+        u8 *cursor = (u8 *)buf->addr;
+
+        nudlist_SetNext((nudisplaylistitem_s *)list->items, cursor);
+        *(void **)((u8 *)list + 0x24) = cursor;
+
+        buf->addr += count * 0x10;
+        cursor = (u8 *)buf->addr;
+
+        *cursor = 0x8d;                          // terminator type
+        ((nudisplaylistitem_s *)cursor)->id = 1; // NEXT
+        nudlist_SetNext((nudisplaylistitem_s *)cursor, (u8 *)cursor + 0x10);
+
+        *(void **)((u8 *)list + 0x14) = cursor;
+        buf->addr += 0x10;
+    }
+    void NuDisplayListLinkMtl(nudisplaylist_s *list, NUMTL *mtl) {
+        // Link the material's state block into the list when it differs from
+        // the currently bound one (original at 0x2e8cc0). Only the essential
+        // bookkeeping is modelled: align the cursor and record the material
+        // item so display-list consumers can find it.
+        if (mtl == NULL || list == NULL || mtl->tex_id <= 0) {
+            return;
+        }
+
+        VARIPTR *buf = NuDisplayListGetBuffer();
+        buf->addr = ALIGN(buf->addr, 0x10);
     }
     void NuDisplayListLinkList(void) {
-    }
-    void NuDisplayListLinkMtl(void) {
     }
     void NuDisplayListPrepareFaceonPS(void) {
     }
@@ -539,7 +619,94 @@ extern "C" {
     }
     void NuFpExceptionMask(void) {
     }
-    void NuFrameEnd(void) {
+    // Per-frame animation/pad update hooks (originals take the frame time).
+    void NuOcclusionManagerEndFrame(void);
+    void NuPad_Interface_Render(void);
+    void NuPadUpdatePads(void);
+
+    // Frame-end callbacks (original bss @0x6bdaec/0x6bdaf0/0x6bdad0).
+    extern void (*preRenderFlashingHack)(void);
+    extern void (*postRenderFlashingHack)(void);
+    extern void (*nuapi_endframe_callbackfn)(void);
+
+    static f32 NuFrameEnd_min_delay = 0;
+
+    f32 NuFrameEnd(void) {
+        static i32 ShowingError = 0; // _ZZ10NuFrameEndE12ShowingError
+
+        i32 done = 0;
+        NuHasError(); // original records the result for the error dialog
+        i32 has_error = 0;
+
+        static int dbg_fe = 0;
+        if (dbg_fe++ < 3 || dbg_fe % 1000 == 0) {
+            LOG_INFO("NuFrameEnd #%d max_fps=%d time=%u.%u", dbg_fe, nuapi.max_fps, nuapi.time.high, nuapi.time.low);
+        }
+
+        if (nuapi.max_fps != 0) {
+            // Wait until at least 1/max_fps seconds have elapsed since frame
+            // begin (nuapi.time), then record the elapsed time.
+            f32 target = 1.0f / (f32)nuapi.max_fps;
+
+            NUTIME now;
+            NUTIME delta;
+            do {
+                NuTimeGet(&now);
+                NuTimeSub(&delta, &now, &nuapi.time);
+            } while (target > NuTimeSeconds(&delta));
+
+            nuapi.frametime = NuTimeSeconds(&delta);
+        }
+
+        NuMtlAnimate();     // original passes frametime
+        NuTexAnimProcess(); // original passes frametime
+        NuWindAnimate();    // original: (wind, frametime)
+        NuOcclusionManagerEndFrame();
+        NuPadRecordEndFrame();
+        NuTimeBarSetRender(); // original passes -1
+        NuPad_Interface_Render();
+
+        done = 1;
+
+        if (preRenderFlashingHack != NULL) {
+            preRenderFlashingHack();
+        }
+
+        NuRndrSwapScreenEx(); // original: (-1, nuapi_endframe_callbackfn)
+
+        NUTIME end;
+        NUTIME delta2;
+        NuTimeGet(&end);
+        NuTimeSub(&delta2, &end, &nuapi.time);
+        nuapi.frametime = NuTimeSeconds(&delta2);
+        nuapi.time = end;
+
+        if (nuapi.frametime > 0.1f) {
+            nuapi.frametime = 0.1f;
+        }
+
+        NuTimeGet(&nuapi.time2);
+
+        if (done && NuFrameEnd_min_delay != 0) {
+            bgSuspendMain((i32)NuFrameEnd_min_delay);
+        }
+
+        if (postRenderFlashingHack != NULL) {
+            postRenderFlashingHack();
+        }
+
+        NuPadUpdatePads();
+        nuapi.field19_0x3c++;
+        nuapi.nuframe_begin_cnt--;
+
+        if (ShowingError == 0 && has_error != 0) {
+            ShowingError = 1;
+            // Original shows an error dialog here.
+        } else if (ShowingError != 0) {
+            ShowingError = 0;
+        }
+
+        return nuapi.frametime;
     }
     void NuFrameSetMinDelay(void) {
     }
@@ -757,9 +924,16 @@ extern "C" {
     }
     void NuIOS_FreeMemoryForSuspend(void) {
     }
-    void NuIOS_GetAspectRatio(void) {
+    f32 NuIOS_GetAspectRatio(void) {
+        if (nuapi.screen_width > 0 && nuapi.screen_height > 0) {
+            return (f32)nuapi.screen_width / (f32)nuapi.screen_height;
+        }
+        return 16.0f / 9.0f;
     }
-    void NuIOS_GetDeviceLanguage(void) {
+    i32 NuIOS_GetDeviceLanguage(void) {
+        // Host has no platform locale service; report English like the
+        // default Text_Language.
+        return 1;
     }
     void NuIOS_HardwareSupportsRetina(void) {
     }
@@ -815,7 +989,8 @@ extern "C" {
     }
     void NuLanguageGet(void) {
     }
-    void NuLanguageSet(void) {
+    void NuLanguageSet(i32 language) {
+        Text_Language = language;
     }
     void NuLgtArcLaser(void) {
     }
@@ -1617,7 +1792,10 @@ extern "C" {
     }
     void NuStringFilterBadWordsW(void) {
     }
-    void NuStringFilterLoad(void) {
+    void NuStringFilterLoad(char *path, VARIPTR *buf, VARIPTR *buf_end) {
+        (void)path;
+        (void)buf;
+        (void)buf_end;
     }
     void NuStringTableGetById(void) {
     }

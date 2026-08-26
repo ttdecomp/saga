@@ -114,6 +114,7 @@ extern "C" {
 void NuTexInitExPS(VARIPTR *buf);
 
 void NuTexCreatePS(NUNATIVETEX *tex, bool is_pvrtc);
+
 void NuTexDestroyPS(NUNATIVETEX *tex);
 
 void NuChecksumAsHex(u8 *checksum, char *out);

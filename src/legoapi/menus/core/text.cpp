@@ -1,6 +1,12 @@
 #include "legoapi/legoapi_types.h"
 
-void Text_LoadFont(char *, variptr_u *, variptr_u *) {
+static i32 text_font_loaded = 0;
+
+void Text_LoadFont(char *path, variptr_u *buf, variptr_u *buf_end) {
+    (void)path;
+    (void)buf;
+    (void)buf_end;
+    text_font_loaded = 1;
 }
 
 void Text_MakeTime(float, i32, i32, i32, char *) {
@@ -27,7 +33,8 @@ void Text_LoadStrings(variptr_u *, variptr_u *) {
 void Text_SetLanguage(i32) {
 }
 
-void Text_IsFontLoaded() {
+bool Text_IsFontLoaded() {
+    return text_font_loaded != 0;
 }
 
 void TextDecodeCodeword(char *, char *) {

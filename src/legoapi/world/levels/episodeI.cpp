@@ -680,7 +680,7 @@ void PodRacePanel(WORLDINFO_s *world) {
 }
 
 void UpdatePodRaceLapDisplay(float arg) {
-    if (FadeSys->fade == 0.0f && MiniCutCam == 0 && CUTSTOPGAME == 0) {
+    if (FadeSys.fade == 0.0f && MiniCutCam == 0 && CUTSTOPGAME == 0) {
         if (Paused != 0) {
             podlapalpha = SeekLinearF(podlapalpha, 1.0f, arg + arg);
             return;
@@ -729,7 +729,7 @@ i32 PodRace_InStartCountdown(WORLDINFO_s *world) {
 
 void PodRaceAUpdate(WORLDINFO_s *world) {
     if (pod_pacemaker != 0) {
-        if (FadeSys->fade == 0.0f || pause_rndr_on != 0)
+        if (FadeSys.fade == 0.0f || pause_rndr_on != 0)
             pod_pacemaker_alpha = 0.0f;
     }
     PodRaceUpdate(world, FRAMETIME);
@@ -848,7 +848,7 @@ void PodRaceBUpdate(WORLDINFO_s *world) {
         }
     }
     if (pod_pacemaker != 0) {
-        if (FadeSys->fade != 0.0f && pause_rndr_on == 0) {
+        if (FadeSys.fade != 0.0f && pause_rndr_on == 0) {
             float t = GameTimer[2];
             pod_pacemaker_alpha =
                 pod_pacemaker_alpha + FRAMETIME * 2.0f < 1.0f ? pod_pacemaker_alpha + FRAMETIME * 2.0f : 1.0f;
@@ -872,7 +872,7 @@ void PodRaceBUpdate(WORLDINFO_s *world) {
 
 void PodRaceCUpdate(WORLDINFO_s *world) {
     if (pod_pacemaker != 0) {
-        if (FadeSys->fade != 0.0f && pause_rndr_on == 0) {
+        if (FadeSys.fade != 0.0f && pause_rndr_on == 0) {
             float t = pod_pacemaker_alpha + FRAMETIME * 2.0f;
             pod_pacemaker_alpha = t < 1.0f ? t : 1.0f;
             if (NuFmod(GameTimer[2], 0.2f) > 0.1f)
@@ -1297,7 +1297,7 @@ void PodSprintA_Update(WORLDINFO_s *world) {
 speed_section:
     if (ps->speed > 0.0f) {
         float v = ps->speed;
-        if (FadeSys->fade == 0.0f)
+        if (FadeSys.fade == 0.0f)
             ps->speed -= FRAMETIME;
         if (Player[0] != NULL) {
             Player[0]->field_0xdc8 = 0.0f;
@@ -1319,7 +1319,7 @@ speed_section:
             ps->field_0x78 = GetNamedGameObject(world->ai_sys, "SebulbasPod");
         if (ps->field_0x78 != NULL && (*(u16 *)((u8 *)ps->field_0x78 + 0x1f9) & 0x10) &&
             *(u8 *)((u8 *)ps->field_0x78 + 0x287) == 0) {
-            if (FadeSys->fade == 0.0f && pause_rndr_on == 0) {
+            if (FadeSys.fade == 0.0f && pause_rndr_on == 0) {
                 float t = ps->field_0x80 + FRAMETIME * 2.0f;
                 ps->field_0x80 = t < 1.0f ? t : 1.0f;
                 if (NuFmod(GameTimer[2], 0.2f) < 0.1f) {
@@ -1442,7 +1442,7 @@ speed_section:
 
 void PodSprintA_Panel(WORLDINFO_s *world) {
     PODSPRINT_s *ps = &podsprint;
-    if (FadeSys->fade == 0.0f && MiniCutCam == 0 && CUTSTOPGAME == 0) {
+    if (FadeSys.fade == 0.0f && MiniCutCam == 0 && CUTSTOPGAME == 0) {
         if (ps->speed > 0.0f) {
             if (Paused == 0 && podstartracealpha < 1.0f)
                 podstartracealpha =
@@ -1481,7 +1481,7 @@ void PodSprintA_Panel(WORLDINFO_s *world) {
         nuhspecial_s *entry = &((nuhspecial_s *)world->lev_objs)[idx];
         if (entry->enabled != 0) {
             float c = podlapalpha;
-            float f = FadeSys->fade;
+            float f = FadeSys.fade;
             DrawPanel3DObject(0.0f, f, 1.0f, 0.16f, 0.16f, 0.16f, (u16)0, (u16)0, (u16)0, (nuhspecial_s *)entry, 0, c);
         }
     }

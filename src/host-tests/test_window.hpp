@@ -15,6 +15,48 @@
 
 extern "C" i32 NuMain(i32 argc, char **argv); // the real game boot (batman.cpp)
 
+// HOST-ONLY: read the current frame back and report whether it shows the
+// legal-screen texture (the LEGAL_ENGLISH logo: red/white LEGO lettering on a
+// dark gradient). The gradient alone is drawn from the very first frame, so
+// plain "non-black" is not enough; require a meaningful amount of the logo's
+// saturated red or white pixels before writing window.ppm.
+static bool TryCaptureLegalFrame(int frames) {
+    std::vector<u8> px(1280 * 720 * 4);
+    int packed = g_renderDevice.HostReadbackPixels(1280, 720, px.data());
+    if (packed <= 0) {
+        return false;
+    }
+    int rbw = packed / 1000, rbh = packed % 1000;
+    u64 redpx = 0, whitepx = 0;
+    for (int i = 0; i < rbw * rbh; i++) {
+        u8 r = px[((usize)i) * 4 + 0], g = px[((usize)i) * 4 + 1], b = px[((usize)i) * 4 + 2];
+        if (r > 120 && g < 90 && b < 90) {
+            redpx++;
+        } else if (r > 200 && g > 200 && b > 200) {
+            whitepx++;
+        }
+    }
+    if (redpx < 3000 && whitepx < 30000) {
+        return false;
+    }
+    FILE *f = fopen("window.ppm", "wb");
+    if (!f) {
+        return true;
+    }
+    fprintf(f, "P6\n%d %d\n255\n", rbw, rbh);
+    std::vector<u8> row((usize)rbw * 4);
+    for (int y = 0; y < rbh; y++) {
+        memcpy(row.data(), &px[((usize)(rbh - 1 - y)) * rbw * 4], (usize)rbw * 4);
+        for (int x = 0; x < rbw; x++) {
+            fwrite(&row[(usize)x * 4], 1, 3, f);
+        }
+    }
+    fclose(f);
+    LOG_INFO("captured legal frame at pump #%d (%dx%d, red=%llu white=%llu)", frames, rbw, rbh,
+             (unsigned long long)redpx, (unsigned long long)whitepx);
+    return true;
+}
+
 const char VIDEO_DRIVER[] =
 #ifdef _WIN32
     "windows"
@@ -73,6 +115,17 @@ void nufile_open_wad() {
     NuDatSet(NuDatOpen("res/main.1060.com.wb.lego.tcs.obb", &p, 0));
 }
 
+static SDL_Thread *g_numain_thread = NULL;
+static int g_numain_result = 0;
+static volatile bool g_numain_done = false;
+
+static int SDLCALL numain_thread_main(void *arg) {
+    char *argv[] = {(char *)"saga", NULL};
+    g_numain_result = NuMain(1, argv);
+    g_numain_done = true;
+    return g_numain_result;
+}
+
 int test_window(int argc, char **argv) {
     host_init();       // PS: SDL window + EGL context
     nufile_open_wad(); // PS/entry: make the wad readable, then NuMain
@@ -82,27 +135,61 @@ int test_window(int argc, char **argv) {
     NuPlatform::Create();
     NuPlatform::Get()->SetCurrentPlatform(ANDROID_PVRTC_PLATFORM);
 
-    NuMain(argc, argv); // the actual game boot: InitOnce + LoadPerm (reads
-                        // the legal texture) + post-config init
+    // Run the game boot on a worker thread (like the Android game thread) and
+    // pump the engine's present path from this thread concurrently, mirroring
+    // the real render-thread split.
+    g_numain_thread = SDL_CreateThread(numain_thread_main, "numain", NULL);
 
-    // Present the engine's frame output. The per-frame scene/legal draw is
-    // still being reconstructed, so this drives the engine's present path.
     Uint64 start = SDL_GetTicks();
     int frames = 0;
-    while (SDL_GetTicks() - start < 3000) {
+    bool legal_saved = false;
+
+    while (true) {
         SDL_Event ev;
         while (SDL_PollEvent(&ev)) {
             if (ev.type == SDL_EVENT_QUIT)
                 goto done;
         }
+
+        if (g_numain_done) {
+            // NuMain returned: give the present loop a short tail so the last
+            // committed frame reaches the window surface, then stop.
+            for (int i = 0; i < 30; i++) {
+                g_renderDevice.SwapBuffers();
+                SDL_Delay(16);
+                frames++;
+            }
+            break;
+        }
+
         g_renderDevice.SwapBuffers();
-        SDL_Delay(16);
         frames++;
+
+        // HOST-ONLY capture policy: the loading-screen loop only composites
+        // the legal texture while its fade timer is inside (0, 5.8) s, which
+        // on a slow host build is long before NuMain() returns. Grab a frame
+        // every pump and keep the first one that actually shows content.
+        if (!legal_saved && frames % 4 == 0) {
+            legal_saved = TryCaptureLegalFrame(frames);
+        }
+
+        SDL_Delay(16);
+
+        if (SDL_GetTicks() - start > 90000) {
+            LOG_WARN("window test timed out waiting for NuMain");
+            break;
+        }
     }
 done:
+    if (g_numain_thread != NULL) {
+        SDL_WaitThread(g_numain_thread, NULL);
+        g_numain_thread = NULL;
+    }
     // PS present-loop readback: grab whatever the engine drew and write it to a
-    // PPM so a human/check can confirm non-blank content (e.g. the legal screen).
-    if (!g_headless) {
+    // PPM so a human/check can confirm non-blank content. If a legal-screen
+    // frame was already captured mid-run, keep it (the loading loop blanks to
+    // a plain gradient once its fade timer expires).
+    if (!g_headless && !legal_saved) {
         std::vector<u8> px(1280 * 720 * 4);
         int packed = g_renderDevice.HostReadbackPixels(1280, 720, px.data());
         if (packed > 0) {

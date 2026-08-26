@@ -405,7 +405,8 @@ extern "C" {
     void CreateTestMenu(void) {
     }
 
-    void DrawMenu(void) {
+    void DrawMenu(i32 menu_id) {
+        (void)menu_id;
     }
 
     void DrawMenuBottomMessage(void) {

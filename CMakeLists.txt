@@ -127,6 +127,7 @@ if (BUILD_FOR_HOST)
     list(APPEND SAGA_SOURCE_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/main.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/ios_graphics.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/host_scene_render.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/nutex_host.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/nutex_ios_ex.cpp
     )
@@ -160,7 +161,7 @@ endif()
 function(set_filename_macro f)
     get_filename_component(FILENAME_ABS ${f} ABSOLUTE)
     file(RELATIVE_PATH FILENAME_REL ${CMAKE_CURRENT_SOURCE_DIR} ${FILENAME_ABS})
-    set_source_files_properties(${f} PROPERTIES COMPILE_DEFINITIONS "__FILENAME__=\"src/${FILENAME_REL}\"")
+    set_source_files_properties(${f} PROPERTIES COMPILE_DEFINITIONS "__FILENAME__=\"${FILENAME_REL}\"")
 endfunction()
 
 foreach(source_file IN LISTS SAGA_SOURCE_FILES)

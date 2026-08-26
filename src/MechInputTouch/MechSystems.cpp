@@ -1,5 +1,7 @@
 #include "MechInputTouch_types.h"
 
+#include <stddef.h>
+
 void MechSystems::Display(ThingRenderData *) {
 }
 
@@ -12,7 +14,12 @@ void MechSystems::ExitLevel(WORLDINFO_s *) {
 void MechSystems::FindMoveToMarkerAtPos(VuVec const &, bool) {
 }
 
-void MechSystems::Get() {
+MechSystems *MechSystems::Get() {
+    static MechSystems *instance = NULL;
+    if (instance == NULL) {
+        instance = new MechSystems();
+    }
+    return instance;
 }
 
 void MechSystems::HookUpClickToPressStart() {

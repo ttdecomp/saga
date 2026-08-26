@@ -1,5 +1,10 @@
 #include "legoapi/legoapi_types.h"
 
+// Original bss @0x127a500: 64 pads x 0x60 bytes.
+GAMEPAD_s GamePad[64];
+// Original bss @0x127a4e0.
+i32 readpads_always = 0;
+
 void GamePads_Init() {
 }
 

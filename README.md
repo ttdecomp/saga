@@ -1,4 +1,4 @@
-![Progress](https://img.shields.io/badge/matching-8.76%25-red)
+![Progress](https://img.shields.io/badge/matching-8.84%25-red)
 [![Discord](https://img.shields.io/discord/1467775700894224555?color=%235865F2&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/2HJuMtzA7q)
 
 |                 | Target (Android x86)                                                                                                                                                                                  | Host                                                                                                                                                                                  |
@@ -79,29 +79,29 @@ See the [docs/](docs/) directory.
 
 | Directory | Fuzzy % | Funcs % | Data % |
 |---|---|---|---|
-| `(root)` | 0.6% | 0.0% | 67.2% |
-| `MechInputTouch` | 4.8% | 0.0% | 0.0% |
-| `editor` | 2.5% | 0.0% | - |
-| `gameapi` | 6.5% | 1.4% | 94.8% |
-| `gameframework` | 65.4% | 12.5% | 100.0% |
-| `gamelib` | 5.5% | 0.9% | 5.0% |
-| `java` | 10.5% | 0.0% | 0.0% |
-| `legoapi` | 5.6% | 4.7% | 5.1% |
+| `(root)` | 0.5% | 0.0% | 63.3% |
+| `MechInputTouch` | 4.9% | 0.0% | 0.0% |
+| `editor` | 2.6% | 0.0% | - |
+| `gameapi` | 6.6% | 1.4% | 94.8% |
+| `gameframework` | 65.3% | 12.5% | 100.0% |
+| `gamelib` | 5.6% | 0.9% | 5.0% |
+| `java` | 10.7% | 0.0% | 0.0% |
+| `legoapi` | 5.6% | 4.7% | 9.2% |
 | `legoapi/actions` | 1.7% | 0.5% | - |
 | `legoapi/ai` | 2.0% | 0.0% | - |
 | `legoapi/audio` | 2.9% | 0.0% | - |
-| `legoapi/characters` | 3.4% | 0.6% | 39.5% |
-| `legoapi/core` | 9.4% | 4.5% | 2.8% |
-| `legoapi/cutscenes` | 2.9% | 0.0% | 100.0% |
+| `legoapi/characters` | 3.5% | 0.6% | 39.1% |
+| `legoapi/core` | 9.6% | 4.5% | 97.8% |
+| `legoapi/cutscenes` | 3.0% | 0.0% | 100.0% |
 | `legoapi/gizmo` | 4.9% | 4.7% | 0.4% |
 | `legoapi/gizmos` | 12.2% | 4.2% | 100.0% |
-| `legoapi/items` | 2.3% | 0.2% | 4.9% |
+| `legoapi/items` | 2.4% | 0.2% | 4.9% |
 | `legoapi/menus` | 2.4% | 0.0% | 0.0% |
 | `legoapi/misc` | 2.2% | 0.5% | - |
 | `legoapi/props` | 7.3% | 2.4% | 13.0% |
-| `legoapi/render` | 2.3% | 1.5% | 0.5% |
+| `legoapi/render` | 2.4% | 1.5% | 0.4% |
 | `legoapi/world` | 19.2% | 27.4% | 0.1% |
-| `legogame` | 4.2% | 0.0% | 100.0% |
-| `nu2api` | 27.2% | 19.3% | 81.5% |
+| `legogame` | 5.5% | 5.3% | 78.6% |
+| `nu2api` | 27.4% | 19.3% | 81.7% |
 
 <!-- matching-table-end -->

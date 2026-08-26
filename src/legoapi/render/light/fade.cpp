@@ -1,5 +1,12 @@
 #include "legoapi/legoapi_types.h"
 
+// The four global fade effect objects handed to FadeSystem::AddFade() during
+// LoadPermData (original bss @0x127bf08 / 0x127bf00 / 0x127bef8 / 0x127bef0).
+Fade fade;
+FadeWipe fadeWipe;
+FadeStillWipe fadeStillWipe;
+FadeStill fadeStill;
+
 void FadeSystem::AddFade(FadeBase *) {
 }
 

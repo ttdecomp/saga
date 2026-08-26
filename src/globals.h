@@ -6,6 +6,17 @@
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nucore/common.h"
 
+// Forward declarations for the function-pointer table below (full types in
+// legoapi/legoapi_types.h).
+struct CUTINFO;
+struct NUGCUTCHAR_s;
+struct BOLT_s;
+struct GameObject_s;
+struct nuvec_s;
+struct GIZMOBLOWUP_s;
+struct GIZOBSTACLE_s;
+class FadeSystem;
+
 // ----------------------------------------------------------------------
 // Placeholder save-game / model-list structures.
 // ----------------------------------------------------------------------
@@ -673,3 +684,51 @@ extern i32 LevSafePlatID[2];
 extern u32 EXBLOWUPFLAGS;
 extern i32 BeenAttacked;
 extern u32 ResetBits;
+
+// ------------------------------------------------------------------------
+// Loading screen (LoadPerm) globals
+// ------------------------------------------------------------------------
+extern u8 ObjTab[0x1770];
+extern u8 SplTab[0x1a0];
+extern u8 LSW_CharCategory[0x78];
+extern u8 Cheat[0x5a0];
+extern u8 CharVariants_Game[0x5c];
+extern u8 theMemoryManager[0x248];
+extern u8 LSW_Text[0x1648];
+
+extern void *ActionInfo;
+extern char *ExtraActionData;
+extern void *theGameThings;
+
+extern NUGSCN *saveicon_scene;
+extern NUGSCN *button_scene;
+
+extern FadeSystem *pFadeInfo;
+
+// Cut-scene / gameplay hook wiring (original .data function pointers).
+extern void (*CutScene_StartFn)(CUTINFO *);
+extern void (*CutScene_PreUpdateFn)(CUTINFO *);
+extern void (*CutScene_PostUpdateFn)(void);
+extern void (*CutScene_StoppedFn)(CUTINFO *);
+extern void (*CutScene_ReplaceCharacterModelFn)(CUTINFO *, NUGCUTCHAR_s *);
+extern void (*InitBolt_AddMomentumType)(BOLT_s *, GameObject_s *, nuvec_s *);
+extern void (*Bolt_HitPlatFn)(BOLT_s *);
+extern void (*Bolt_HitCustomFn)(BOLT_s *, nuvec_s *);
+extern void (*GameBlowUpBlownUpFn)(GIZMOBLOWUP_s *);
+extern void (*GizObstacle_SetDefaultSFXFn)(void *, GIZOBSTACLE_s *);
+
+extern i32 PermDataLoaded;          // original .data init 1
+extern i32 LoadPerm_LanguageSelect; // bss
+extern i32 LoadPerm_StringsLoaded;  // bss
+extern i32 menu_flash;              // bss
+extern i32 IntroText_TextID;        // .data init -1
+extern i32 LANGUAGECOUNT;           // .data init 6
+typedef struct langlistentry_s {
+    i32 language;
+    i32 unknown_4;
+} LANGLISTENTRY;
+extern u32 Text_Language;
+extern LANGLISTENTRY Text_LanguageList_Default[6];
+extern LANGLISTENTRY *Text_LanguageList;
+extern f32 INTROTEXT_Y;
+extern f32 INTROTEXT_SCALE;

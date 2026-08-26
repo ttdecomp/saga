@@ -10,9 +10,14 @@
 #include "nu2api/nuplatform/nuplatform.h"
 
 #include <EGL/egl.h>
+#include <pthread.h>
 #include <GLES2/gl2.h>
 #include <math.h>
 #include <string.h>
+
+#ifdef HOST_BUILD
+#include "host-tests/nuios/host_scene_render.h"
+#endif
 
 NuRenderDevice g_renderDevice{};
 
@@ -223,9 +228,33 @@ void NuRenderDevice::EndCriticalSection(const char *file, i32 line) {
 #endif
 }
 
+#ifdef HOST_BUILD
+// See note in InitialiseOpenGLContext().
+static EGLContext g_hostPresentCtx = EGL_NO_CONTEXT;
+#endif
+
 void NuRenderDevice::SwapBuffers() {
 #ifdef HOST_BUILD
-    glFlush();
+    // HOST-ONLY: on Android SwapBuffers() runs on the render thread, which
+    // already owns a current context from BeginCriticalSection(). The host
+    // test pumps presents from its own thread, so bind the window context
+    // here first. If the worker currently holds this exact context/surface
+    // pair the call fails and the frame is simply skipped.
+    bool have_ctx = false;
+    if (this->egl_display != EGL_NO_DISPLAY && this->pbuffers[3] != EGL_NO_SURFACE &&
+        this->contexts[3] != EGL_NO_CONTEXT) {
+        have_ctx = eglMakeCurrent(this->egl_display, this->pbuffers[3], this->pbuffers[3], this->contexts[3]);
+        if (!have_ctx) {
+            eglGetError(); // clear so the next attempt starts clean
+        }
+    }
+
+    // Host-only interim present path (see host-tests/nuios/host_scene_render.h
+    // for why this exists).
+    if (have_ctx) {
+        host_present::Present();
+        glFlush();
+    }
     if (this->egl_display != EGL_NO_DISPLAY && this->pbuffers[3] != EGL_NO_SURFACE) {
         eglSwapBuffers(this->egl_display, this->pbuffers[3]);
     }
@@ -241,19 +270,28 @@ void NuRenderDevice::OnWindowCreated(ANativeWindow *window) {
 
 #ifdef HOST_BUILD
 i32 NuRenderDevice::HostReadbackPixels(u32 max_w, u32 max_h, u8 *rgba) {
-    if (egl_display == EGL_NO_DISPLAY || pbuffers[3] == EGL_NO_SURFACE || contexts[3] == EGL_NO_CONTEXT) {
+    if (egl_display == EGL_NO_DISPLAY || pbuffer_readback == EGL_NO_SURFACE || context_readback == EGL_NO_CONTEXT) {
         return 0;
     }
-    eglMakeCurrent(egl_display, pbuffers[3], pbuffers[3], contexts[3]);
+    if (eglMakeCurrent(egl_display, pbuffer_readback, pbuffer_readback, context_readback) == EGL_FALSE) {
+        eglGetError(); // clear; another MakeCurrent is in flight, skip this read
+        return 0;
+    }
 
     EGLint w = 0, h = 0;
-    eglQuerySurface(egl_display, pbuffers[3], EGL_WIDTH, &w);
-    eglQuerySurface(egl_display, pbuffers[3], EGL_HEIGHT, &h);
+    eglQuerySurface(egl_display, pbuffer_readback, EGL_WIDTH, &w);
+    eglQuerySurface(egl_display, pbuffer_readback, EGL_HEIGHT, &h);
     if (w <= 0 || h <= 0 || max_w == 0 || max_h == 0) {
         return 0;
     }
     u32 cw = (u32)w < max_w ? (u32)w : max_w;
     u32 ch = (u32)h < max_h ? (u32)h : max_h;
+
+    // HOST-ONLY: the last SwapBuffers() left the freshly drawn frame in the
+    // front buffer after the swap, so re-draw the latest snapshot into the
+    // read buffer before reading it back.
+    host_present::Present();
+    glFinish();
 
     glViewport(0, 0, (GLsizei)cw, (GLsizei)ch);
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
@@ -366,6 +404,24 @@ void NuRenderDevice::InitialiseOpenGLContext(ANativeWindow *window_) {
         }
 
         this->contexts[2] = eglCreateContext(this->egl_display, this->egl_config, context3, attrib_list);
+
+#ifdef HOST_BUILD
+        // HOST-ONLY: dedicated present-side context in the same share group.
+        // On Android the render threads own contexts[0..3]; the host pumps
+        // presents from a separate thread and needs a context that the engine
+        // never binds, otherwise eglMakeCurrent below collides with whatever
+        // the worker left current.
+        g_hostPresentCtx = eglCreateContext(this->egl_display, this->egl_config, this->contexts[3], attrib_list);
+
+        // HOST-ONLY: separate 1x1 pbuffer + share-group context used only by
+        // HostReadbackPixels. EGL forbids two contexts on one surface, so
+        // reading frames back through pbuffers[3] raced with the game
+        // thread's SwapBuffers and silently produced stale/black reads.
+        EGLint rb_attribs[] = {EGL_WIDTH,          1280,           EGL_HEIGHT, 720, EGL_TEXTURE_TARGET, EGL_NO_TEXTURE,
+                               EGL_TEXTURE_FORMAT, EGL_NO_TEXTURE, EGL_NONE};
+        this->pbuffer_readback = eglCreatePbufferSurface(this->egl_display, this->egl_config, rb_attribs);
+        this->context_readback = eglCreateContext(this->egl_display, this->egl_config, this->contexts[3], attrib_list);
+#endif
 
         eglMakeCurrent(this->egl_display, this->pbuffers[0], this->pbuffers[0], this->contexts[0]);
         i32 width = 0;

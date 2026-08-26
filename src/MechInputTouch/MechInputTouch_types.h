@@ -309,11 +309,11 @@ struct MechObjectInterface {
     void GetFloorTargetPos(VuVec &, i32) const;
 };
 struct MechSystems {
+    static MechSystems *Get();
     void Display(ThingRenderData *);
     void EnterLevel(WORLDINFO_s *);
     void ExitLevel(WORLDINFO_s *);
     void FindMoveToMarkerAtPos(VuVec const &, bool);
-    void Get();
     void HookUpClickToPressStart();
     void Init();
     void LoadPerm();

@@ -28,6 +28,12 @@ class NuRenderDevice : NuRenderDeviceGen {
 
     EGLSurface pbuffers[4];
     EGLContext contexts[4];
+#ifdef HOST_BUILD
+    // HOST-ONLY: dedicated surface+context for test-thread frame readbacks so
+    // they never contend with the game thread's SwapBuffers on pbuffers[3].
+    EGLSurface pbuffer_readback = EGL_NO_SURFACE;
+    EGLContext context_readback = EGL_NO_CONTEXT;
+#endif
 
     u32 backing_width, backing_height;
 

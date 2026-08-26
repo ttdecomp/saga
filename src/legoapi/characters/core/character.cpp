@@ -711,7 +711,15 @@ extern "C" {
     void APICharacterModelReset(void) {
     }
 
-    void APICharacterSysInit(void) {
+    void APICharacterSysInit(VARIPTR *buf, VARIPTR buf_end, i32 char_count, i32 a4, i32 a5, CHARACTERDATA *cdata_list,
+                             i32 a7) {
+        (void)buf;
+        (void)buf_end;
+        (void)char_count;
+        (void)a4;
+        (void)a5;
+        (void)cdata_list;
+        (void)a7;
     }
 
     void APIDrawCharacterModel(void) {

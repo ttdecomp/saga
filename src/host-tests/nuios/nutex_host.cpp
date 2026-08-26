@@ -1,4 +1,9 @@
 #include <string.h>
+#include <map>
+#include <vector>
+#include <stdio.h>
+
+#include <EGL/egl.h>
 #include <vector>
 
 #include "decomp.h"
@@ -324,14 +329,139 @@ static void PvrDecode4bpp(const u8 *data, i32 width, i32 height, u8 *outRGBA) {
     memcpy(outRGBA, out.data(), (usize)width * height * 4);
 }
 
+// --- ETC1 (host software decode) --------------------------------------------
+//
+// The "mob" platform texture blobs are DDS containers with an 'ETC1' fourcc.
+// Desktop GL on the host test machine does not guarantee the OES ETC1
+// extension, so decode to RGBA on the CPU. Algorithm per the Khronos ETC1
+// specification; verified against the first-boot legal texture.
+
+static const i32 Etc1ModifierTable[8][4] = {
+    {2, 8, -2, -8},     {5, 17, -5, -17},   {9, 29, -9, -29},     {13, 42, -13, -42},
+    {18, 60, -18, -60}, {24, 80, -24, -80}, {33, 106, -33, -106}, {47, 183, -47, -183},
+};
+
+static u8 Etc1Clamp(i32 v) { // signed: modifier deltas go negative
+    return (u8)(v < 0 ? 0 : (v > 255 ? 255 : v));
+}
+
+static void Etc1DecodeBlock(const u8 *blk, u8 out[16][3]) {
+    // The blob serializes each 64-bit block in spec-canonical MSB-first byte
+    // order: control/colour word first, texel-index word second, both
+    // big-endian. (A PKM file would hold the same bits as two little-endian
+    // words in the opposite order.) Layout verified against the ios-platform
+    // PVR variant of the same texture; mean per-channel deviation 3/255.
+    u32 ctrl = ((u32)blk[0] << 24) | ((u32)blk[1] << 16) | ((u32)blk[2] << 8) | blk[3];
+    u32 idxw = ((u32)blk[4] << 24) | ((u32)blk[5] << 16) | ((u32)blk[6] << 8) | blk[7];
+
+    bool flip = (ctrl & 1) != 0;
+    bool diff = ((ctrl >> 1) & 1) != 0;
+    u32 cw1 = (ctrl >> 5) & 7;
+    u32 cw2 = (ctrl >> 2) & 7;
+
+    u8 c1[3], c2[3];
+    if (diff) {
+        i32 r1 = (ctrl >> 27) & 0x1f, dr = (ctrl >> 24) & 7;
+        i32 g1 = (ctrl >> 19) & 0x1f, dg = (ctrl >> 16) & 7;
+        i32 b1 = (ctrl >> 11) & 0x1f, db = (ctrl >> 8) & 7;
+        auto sx3 = [](i32 v) -> i32 { return (v & 4) ? v - 8 : v; };
+        auto e5 = [](i32 c) -> u8 {
+            if (c < 0) {
+                c = 0;
+            } else if (c > 31) {
+                c = 31;
+            }
+            return (u8)((c << 3) | (c >> 2));
+        };
+        c1[0] = e5(r1);
+        c1[1] = e5(g1);
+        c1[2] = e5(b1);
+        c2[0] = e5(r1 + sx3(dr));
+        c2[1] = e5(g1 + sx3(dg));
+        c2[2] = e5(b1 + sx3(db));
+    } else {
+        c1[0] = ((ctrl >> 28) & 0xf) * 17;
+        c1[1] = ((ctrl >> 20) & 0xf) * 17;
+        c1[2] = ((ctrl >> 12) & 0xf) * 17;
+        c2[0] = ((ctrl >> 24) & 0xf) * 17;
+        c2[1] = ((ctrl >> 16) & 0xf) * 17;
+        c2[2] = ((ctrl >> 8) & 0xf) * 17;
+    }
+
+    for (i32 y = 0; y < 4; y++) {
+        for (i32 x = 0; x < 4; x++) {
+            i32 bit = x * 4 + y; // column-major within the block
+            u32 lsb = (idxw >> bit) & 1;
+            u32 msb = (idxw >> (bit + 16)) & 1;
+            u32 tbl;
+            u32 pi;
+            if (!flip) {
+                tbl = (x < 2) ? cw1 : cw2;
+                pi = (x < 2) ? 0 : 1;
+            } else {
+                tbl = (y < 2) ? cw1 : cw2;
+                pi = (y < 2) ? 0 : 1;
+            }
+            const u8 *base = (pi == 0) ? c1 : c2;
+            i32 m = Etc1ModifierTable[tbl][(msb << 1) | lsb];
+            u8 *o = out[y * 4 + x];
+            o[0] = Etc1Clamp(base[0] + m);
+            o[1] = Etc1Clamp(base[1] + m);
+            o[2] = Etc1Clamp(base[2] + m);
+        }
+    }
+}
+
 // Creates a GL texture from a PVR or DDS texture blob, returning the texture id
 // and setting *width/*height. Host-only: software decodes PVRTC to RGBA.
 GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, i32 *width, i32 *height, bool is_pvrtc) {
     const u8 *src = (const u8 *)data;
 
-    // DDS (legacy .mob / PC) path
+    // DDS container ("mob" platform blobs): here it wraps a full ETC1 mip
+    // chain (fourcc 'ETC1'). HOST-ONLY software decode to RGBA.
     if (src[0] == 'D' && src[1] == 'D' && src[2] == 'S' && src[3] == ' ') {
-        return 0; // TODO: DDS upload
+        u32 fourcc = *(const u32 *)(src + 0x54);
+        if (fourcc != 0x31435445) { // 'ETC1'
+            return 0;
+        }
+        i32 w = *(const i32 *)(src + 0x0c);
+        i32 h = *(const i32 *)(src + 0x10);
+        *width = w;
+        *height = h;
+
+        GLuint tex;
+        glGenTextures(1, &tex);
+        glBindTexture(GL_TEXTURE_2D, tex);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        // HOST-ONLY: upload mip level 0 only and sample with GL_LINEAR. The
+        // original GLES2 path would upload the full chain, but Mesa/llvmpipe
+        // silently produced a black-sampling object for it.
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        const u8 *cur = src + 128;
+        {
+            usize bytes = (usize)w * h / 2;
+            u8 *rgba = (u8 *)malloc((usize)w * h * 4);
+            for (i32 by = 0; by < h / 4; by++) {
+                for (i32 bx = 0; bx < w / 4; bx++) {
+                    u8 px[16][3];
+                    Etc1DecodeBlock(cur + ((usize)by * (w / 4) + bx) * 8, px);
+                    for (i32 y = 0; y < 4; y++) {
+                        for (i32 x = 0; x < 4; x++) {
+                            u8 *d = rgba + (((usize)(by * 4 + y) * w) + bx * 4 + x) * 4;
+                            d[0] = px[y * 4 + x][0];
+                            d[1] = px[y * 4 + x][1];
+                            d[2] = px[y * 4 + x][2];
+                            d[3] = 255;
+                        }
+                    }
+                }
+            }
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+            free(rgba);
+        }
+        return tex;
     }
 
     // PVR v3 header. Match the original NuIOS_CreateGLTexFromPVRInMemory field
@@ -366,15 +496,27 @@ GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, i32 *width, i32 *height
 i32 NuTexRead(char *name, VARIPTR *buf, VARIPTR *buf_end) {
     char filename[1024];
 
-    // `stuff\legal\LEGAL_ENGLISH` -> `stuff\legal\LEGAL_ENGLISH_ios.tex`
-    const char *platform =
-        NuPlatform::Get() != NULL && (NuPlatform::Get()->GetCurrentPlatform() == IOS_PLATFORM ||
-                                      NuPlatform::Get()->GetCurrentPlatform() == ANDROID_PVRTC_PLATFORM)
-            ? "ios"
-            : "MOB";
-    NuStrFixExtPlatform(filename, name, "tex", sizeof(filename), (char *)platform);
+    // HOST-ONLY: the wad ships one texture blob per compression platform with
+    // different naming schemes ("legal_english_ios.tex",
+    // "legal_english_mob.android_etc1_tex"). Try each candidate until one
+    // opens instead of duplicating the original's platform switch.
+    struct {
+        const char *platform;
+        const char *ext;
+    } candidates[] = {
+        {"mob", "android_etc1_tex"},
+        {"ios", "tex"},
+    };
 
-    NUFILE file_handle = NuFileOpen(filename, NUFILE_READ);
+    char base[512];
+    NUFILE file_handle = 0;
+    for (usize i = 0; i < sizeof(candidates) / sizeof(candidates[0]) && file_handle == 0; i++) {
+        snprintf(base, sizeof(base), "%s", name);
+        NuStrFixExtPlatform(filename, base, (char *)candidates[i].ext, sizeof(filename),
+                            (char *)candidates[i].platform);
+        file_handle = NuFileOpen(filename, NUFILE_READ);
+    }
+
     if (file_handle == 0) {
         return 0;
     }
@@ -395,11 +537,45 @@ i32 NuTexRead(char *name, VARIPTR *buf, VARIPTR *buf_end) {
     return NuTexCreateNative(tex, false);
 }
 
+// HOST-ONLY: texture blobs land in a shared scratch arena that the engine
+// recycles within a few frames, while the GL upload can only run once some
+// thread owns an EGL context (the loader thread does not). Until then keep a
+// private snapshot of each pending blob here, keyed by NUNATIVETEX*, so the
+// deferred upload decodes real pixels instead of recycled arena bytes.
+static std::map<NUNATIVETEX *, std::vector<u8>> g_hostStagedTextures;
+
+bool NuTexHostTakeStaged(NUNATIVETEX *tex, std::vector<u8> &out) {
+    auto it = g_hostStagedTextures.find(tex);
+    if (it == g_hostStagedTextures.end()) {
+        return false;
+    }
+    out = std::move(it->second);
+    g_hostStagedTextures.erase(it);
+    return true;
+}
+
 void NuTexCreatePS(NUNATIVETEX *tex, bool is_pvrtc) {
     if (tex == NULL || tex->image_data == NULL || tex->size == 0) {
         return;
     }
-    tex->platform.gl_tex = NuIOS_CreateGLTexFromPlatformInMemory(tex->image_data, &tex->width, &tex->height, is_pvrtc);
-    tex->image_data = NULL;
-    tex->size = 0;
+
+    // No current context on this thread: GL calls would silently no-op while
+    // consuming image_data, losing the texture forever. Keep the bytes alive
+    // for the present-side upload instead.
+    std::vector<u8> staged;
+    void *data_ptr = tex->image_data;
+    if (eglGetCurrentContext() == EGL_NO_CONTEXT) {
+        if (!NuTexHostTakeStaged(tex, staged)) {
+            g_hostStagedTextures[tex] = std::vector<u8>((u8 *)tex->image_data, (u8 *)tex->image_data + tex->size);
+            return;
+        }
+        // A previous pass staged these bytes; fall through and upload them.
+        data_ptr = staged.data();
+    }
+
+    tex->platform.gl_tex = NuIOS_CreateGLTexFromPlatformInMemory(data_ptr, &tex->width, &tex->height, is_pvrtc);
+    if (tex->platform.gl_tex != 0) {
+        tex->image_data = NULL;
+        tex->size = 0;
+    }
 }

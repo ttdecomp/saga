@@ -3,6 +3,9 @@
 #include "globals.h"
 #include "nu2api/numath/nufloat.h"
 
+// Original bss @0x127a164.
+TIMER GlobalTimer;
+
 void ResetTimer(TIMER *timer, f32 reset_time) {
     timer->last_time_elapsed = reset_time;
     timer->time_elapsed = reset_time;

@@ -427,7 +427,8 @@ i32 WaitingForLevelTime = 0;
 i32 LevelLoadCount = 0;
 void *LevelLoad = NULL;
 i32 new_level_from_menu = 0;
-i32 BGLOAD = 0;
+// The original .data initialises BGLOAD to 1 (background loading enabled).
+i32 BGLOAD = 1;
 i32 reset_restart = 0;
 i32 newlevelfrommenu_newmenuid = -1;
 i32 newlevelfrommenu_newmenuy = -1;
@@ -515,13 +516,65 @@ GIZAIMESSAGESYS_s *gizaimessagesys = NULL;
 i32 loadareadata_loadlevel = 0;
 
 // ------------------------------------------------------------------------
+// Loading screen (LoadPerm) globals
+// ------------------------------------------------------------------------
+// Original .data @0x622ef0: PermDataLoaded starts at 1.
+i32 PermDataLoaded = 1;
+
+// --- LoadPermData working set ---
+// Original bss objects carved out of the startup TU; sizes from nm -S.
+u8 ObjTab[0x1770];          // level-object table backing storage
+u8 SplTab[0x1a0];           // spline table backing storage
+u8 LSW_CharCategory[0x78];  // LSW character-category table
+u8 Cheat[0x5a0];            // cheat table
+u8 CharVariants_Game[0x5c]; // in-game character-variant table
+u8 theMemoryManager[0x248]; // inline memory-manager block
+u8 LSW_Text[0x1648];        // LSW string table (original .data)
+
+void *ActionInfo = NULL;      // bound to &self+0x38 table at runtime
+char *ExtraActionData = NULL; // "run1" pool pointer at runtime
+void *theGameThings = NULL;
+
+NUGSCN *saveicon_scene = NULL;
+NUGSCN *button_scene = NULL;
+
+FadeSystem *pFadeInfo = NULL;
+
+// Cut-scene / gameplay hook wiring (original .data function pointers).
+void (*CutScene_StartFn)(CUTINFO *) = NULL;
+void (*CutScene_PreUpdateFn)(CUTINFO *) = NULL;
+void (*CutScene_PostUpdateFn)(void) = NULL;
+void (*CutScene_StoppedFn)(CUTINFO *) = NULL;
+void (*CutScene_ReplaceCharacterModelFn)(CUTINFO *, NUGCUTCHAR_s *) = NULL;
+void (*InitBolt_AddMomentumType)(BOLT_s *, GameObject_s *, nuvec_s *) = NULL;
+void (*Bolt_HitPlatFn)(BOLT_s *) = NULL;
+void (*Bolt_HitCustomFn)(BOLT_s *, nuvec_s *) = NULL;
+void (*GameBlowUpBlownUpFn)(GIZMOBLOWUP_s *) = NULL;
+void (*GizObstacle_SetDefaultSFXFn)(void *, GIZOBSTACLE_s *) = NULL;
+// Original bss @0x6a3f54 / @0x6a3f50.
+i32 LoadPerm_LanguageSelect = 0;
+i32 LoadPerm_StringsLoaded = 0;
+// Original bss @0x124f9c0.
+i32 menu_flash = 0;
+// Original .data @0x667cb0 / @0x667cc0.
+i32 IntroText_TextID = -1;
+i32 LANGUAGECOUNT = 6;
+// Original .data @0x667ce0: default language list, entries of {language, 0}
+// (8 bytes per entry); Text_LanguageList points at it (@0x667d30).
+LANGLISTENTRY Text_LanguageList_Default[6] = {{1, 0}, {2, 0}, {4, 0}, {5, 0}, {3, 0}, {8, 0}};
+LANGLISTENTRY *Text_LanguageList = Text_LanguageList_Default;
+// Original .data @0x667ca0/@0x667ca4.
+f32 INTROTEXT_Y = 0.175f;
+f32 INTROTEXT_SCALE = 0.79f;
+
+// ------------------------------------------------------------------------
 // Cutscene & system misc
 // ------------------------------------------------------------------------
 void *PlayerItemType = 0;
 i32 PLAYERITEMTYPECOUNT = 0;
 u32 EXBLOWUPFLAGS = 0;
 i32 BeenAttacked = 0;
-FadeSystem *FadeSys = NULL;
+FadeSystem FadeSys;
 i32 Paused = 0;
 i32 MiniCutCam = 0;
 i32 LEGOSPL_SPLIT = 0;

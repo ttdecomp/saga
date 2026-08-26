@@ -694,7 +694,17 @@ i32 Player_HasPurpleForce(GameObject_s *obj) {
     return 0;
 }
 
-unsigned GAMEPAD_ACTION = 0;
+// Directional/button mask constants (original .data @0x667c00-0x667c40).
+unsigned GAMEPAD_DLEFT = 0x8000;
+unsigned GAMEPAD_DDOWN = 0x4000;
+unsigned GAMEPAD_DUP = 0x1000;
+unsigned GAMEPAD_TOGGLERIGHT = 10;
+unsigned GAMEPAD_TOGGLELEFT = 5;
+unsigned GAMEPAD_TAG = 16;
+unsigned GAMEPAD_SPECIAL = 32;
+unsigned GAMEPAD_ACTION = 128;
+unsigned GAMEPAD_JUMP = 64;
+unsigned GAMEPAD_START = 2048;
 void PlayerTakeHit(GameObject_s *, GameObject_s *) {
 }
 

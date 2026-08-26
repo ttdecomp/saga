@@ -453,7 +453,14 @@ struct GAMEMESSAGE_s {
     char pad_0xf4[0xf7 - 0xf4];
     u8 alpha; // 0xf7
 };
-struct GAMEPAD_s {};
+struct GAMEPAD_s {
+    u32 unknown_00;
+    u32 unknown_04;
+    u32 buttons_down_08; // bitmask of pressed buttons (GAMEPAD_* masks)
+    char pad_0c[0x5a - 0x0c];
+    u8 allocated_5a; // set by GamePad_Allocate()
+    char pad_5b[0x60 - 0x5b];
+};
 struct GIZACTIONDEFN_s {};
 struct GIZAIMESSAGESYS_s {};
 struct GIZAIMESSAGE_s {
@@ -727,19 +734,19 @@ struct CursorTool {
     void Process(EdInputContext &);
     void Render();
 };
-struct Fade {
+struct Fade : FadeBase {
     void DrawFade();
     void Init(FADEINFO_s *);
     void InitFade();
     void UpdateFade();
 };
-struct FadeStill {
+struct FadeStill : FadeBase {
     void DrawFade();
     void Init(FADEINFO_s *);
     void InitFade();
     void UpdateFade();
 };
-struct FadeStillWipe {
+struct FadeStillWipe : FadeBase {
     void DrawFade();
     void Init(FADEINFO_s *);
     void InitFade();
@@ -755,7 +762,7 @@ struct FadeSystem {
     void SetStage(char);
     void Update();
 };
-struct FadeWipe {
+struct FadeWipe : FadeBase {
     void DrawFade();
     void Init(FADEINFO_s *);
     void InitFade();

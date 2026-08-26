@@ -5,14 +5,16 @@ extern VARIPTR rndrstream_free;
 
 extern "C" VARIPTR *display_list_buffer = 0;
 
-// Bulk display-list manager (bss, 0x604 bytes in the original). The 2D list is
-// an embedded nudisplaylist_s at offset 0x4B8 (see NuDisplayListGet2dList).
-// Declared extern in the split units that read it as an opaque object.
-// Bulk display-list manager (bss, 0x604 bytes in the original, banked here).
-// The 2D list is an embedded nudisplaylist_s at offset 0x4B8
-// (see NuDisplayListGet2dList). Opaque; other TUs read disjoint fields.
-extern "C" struct nudisplaylist_s global_dlist_manager[0x604 / sizeof(struct nudisplaylist_s)] = {};
+// Bulk display-list manager (original bss @0x11a0080, 0x604 bytes). Opaque:
+// only byte offsets within it are meaningful (see NuDisplayListInit and
+// NuDisplayListGet2dList).
+extern "C" u8 global_dlist_manager[0x604] = {0};
 extern "C" VARIPTR *display_list_buffer_end = 0;
+
+// Scratch space backing the static 2D list's item cursor. The original
+// initialises the matching area of the manager bss elsewhere; a dedicated
+// buffer keeps NuDisplayListAddItem safe regardless.
+static u8 nudlist_2d_item_scratch[0x100] = {0};
 
 static void NuDisplayListSetID_CALL(nudisplaylistitem_s *item) {
     item->id = 3;
@@ -26,7 +28,14 @@ extern "C" void NuDisplayListCheckBuffer(void) {
 }
 
 extern "C" nudisplaylist_s *NuDisplayListGet2dList(void) {
-    return (nudisplaylist_s *)((u8 *)&global_dlist_manager + 0x4B8);
+    // The 2D list is embedded in the manager at offset 0x4B8; its item cursor
+    // (nudisplaylist_s+0x24, manager+0x4DC) is pointed at scratch space here
+    // so AddItem is always safe.
+    nudisplaylist_s *list = (nudisplaylist_s *)(global_dlist_manager + 0x4B8);
+    if (list->items == NULL) {
+        list->items = (nudisplaylistitem_s *)nudlist_2d_item_scratch;
+    }
+    return list;
 }
 
 extern "C" void NuDisplayListResetBuffer(void) {

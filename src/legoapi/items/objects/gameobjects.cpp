@@ -41,7 +41,12 @@ void GameFog_Update(WORLDINFO_s *) {
 void GameAudio_Reset() {
 }
 
-void GameBufferAlloc(variptr_u *, variptr_u *, i32) {
+void *GameBufferAlloc(variptr_u *buf, variptr_u *buf_end, i32 size) {
+    // Carves `size` bytes out of the permanent buffer (original at
+    // 0x4890a0); returns the previous cursor.
+    void *ptr = (void *)(usize)buf->addr;
+    buf->addr += size;
+    return ptr;
 }
 
 void GameObj_GetName(i32, GameObject_s *, char *) {
