@@ -315,7 +315,7 @@ struct MechSystems {
     void ExitLevel(WORLDINFO_s *);
     void FindMoveToMarkerAtPos(VuVec const &, bool);
     void HookUpClickToPressStart();
-    void Init();
+    void Init(int dummy = 0);
     void LoadPerm();
     MechSystems();
     void NewMoveToMarker(MechObjectInterface &);

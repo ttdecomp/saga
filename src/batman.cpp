@@ -5,6 +5,7 @@
 #include "legoapi/world/areas.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
+#include "legoapi/menus/screens/movies.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/core/input/gamepads.h"
@@ -43,6 +44,14 @@ extern GAMEPAD_s GamePad[4];
 extern LEVELDATA *TITLES_LDATA;
 extern float FRAMETIME;
 extern float DEFAULTFRAMETIME;
+char *Trailer[3];
+extern VARIPTR characterbuffer_ptr;
+extern VARIPTR characterbuffer_end;
+extern "C" __attribute__((weak)) void LSW_SetIndy(i32);
+extern "C" __attribute__((weak)) void GameAISysSetGame();
+extern "C" __attribute__((weak)) void GizmoSysSetGame();
+extern "C" __attribute__((weak)) void Mission_Clear(void *);
+extern "C" __attribute__((weak)) void ResetCharacterBuffer(i32);
 
 __attribute__((weak)) i32 main(i32 argc, char **argv) {
     UNIMPLEMENTED();
@@ -64,7 +73,7 @@ extern "C" i32 NuMain(i32 argc, char **argv) {
     NuSound3SetLoopHoldTime(0.5f);
     InitShadowLights();
     GamePads_Init();
-    MechSystems::Get()->Init();
+    MechSystems::Get()->Init(0);
     bgProcInit();
     FinishLoop(2);
     Text_InitLanguageList(reinterpret_cast<LANGUAGEDATA *>(Text_LanguageList));
@@ -75,30 +84,38 @@ extern "C" i32 NuMain(i32 argc, char **argv) {
 
     WORLDINFO *saved_world = WORLD;
     if (GAMEDEMO != 0) {
-        WORLD = nullptr;
+        WORLD = NULL;
         PLAYERCOUNT = 0;
-        // Demo playback was Trailer[0] via Movie_Play in the original.
-        // Keep host-safe: just tick the frame loop once.
+        Movie_Play(Trailer[0], &characterbuffer_ptr, &characterbuffer_end, DEFAULTFRAMETIME, NULL,
+                   (float)Game.options_save.field4_0x4 / 10.0f);
         FinishLoop(2);
     }
+
     WORLD = saved_world;
     if (openlevels != 0) {
         Areas_OpenAll(0);
     }
 
-    // Post-perm faithful transition: titles music -> DrawMenu -> main loop.
-    // Mirrors original libTTapp.so:0xf7fd5 onward. This loop drives the
-    // "a long time ago" blue -> starfield crawl -> menu sequence that the
-    // host window test now captures. No host fallback; faithful only.
-    {
-        if (TITLES_LDATA != nullptr) {
-            GamePlayMusic(TITLES_LDATA, 0, reinterpret_cast<OPTIONSSAVE *>(&Game.options_save));
-        } else {
-            SetBackgroundMusic(1);
-        }
-        DrawMenu(0);
-        UpdateGameMenu(&GamePad[0], 0);
+    if (LSW_SetIndy)
+        LSW_SetIndy(openlevels);
+    if (GameAISysSetGame)
+        GameAISysSetGame();
+    if (GizmoSysSetGame)
+        GizmoSysSetGame();
+
+    // Original also does Mission_Clear / ResetCharacterBuffer
+    if (Mission_Clear)
+        Mission_Clear(nullptr);
+    if (ResetCharacterBuffer)
+        ResetCharacterBuffer(0);
+
+    if (TITLES_LDATA != nullptr) {
+        GamePlayMusic(TITLES_LDATA, 0, reinterpret_cast<OPTIONSSAVE *>(&Game.options_save));
+    } else {
+        SetBackgroundMusic(1);
     }
+    DrawMenu(0);
+    UpdateGameMenu(&GamePad[0], 0);
 
     while (true) {
         NuFrameBegin();
@@ -109,7 +126,7 @@ extern "C" i32 NuMain(i32 argc, char **argv) {
         DrawMenu(0);
         NuRndrEndScene();
         edGraEnableTerrainSwap();
-        f32 dt = NuFrameEnd();
+        float dt = NuFrameEnd();
         edGraDisableTerrainSwap();
         if (dt < DEFAULTFRAMETIME || dt > DEFAULTFRAMETIME * 3.0f) {
             dt = DEFAULTFRAMETIME;

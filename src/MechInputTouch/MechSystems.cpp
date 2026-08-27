@@ -25,7 +25,7 @@ MechSystems *MechSystems::Get() {
 void MechSystems::HookUpClickToPressStart() {
 }
 
-void MechSystems::Init() {
+void MechSystems::Init(int) {
 }
 
 void MechSystems::LoadPerm() {
