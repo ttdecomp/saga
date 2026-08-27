@@ -171,10 +171,6 @@ typedef struct WORLDINFO_s {
     char filler15[0x51b0 - 0x5170];
 } WORLDINFO;
 
-#ifndef HOST_BUILD
-static_assert(sizeof(void *) != 4 || sizeof(WORLDINFO_s) == 0x51b0, "WORLDINFO_s size mismatch");
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif

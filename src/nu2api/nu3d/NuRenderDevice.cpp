@@ -18,15 +18,12 @@
 #include <string.h>
 
 // ---------------------------------------------------------------------------
-// NuRenderDevice — Android GLES2 render device + host EGL shim
+// NuRenderDevice — Android GLES2 render device
 //
 // Original TU: nu2api.saga/nu3d/android/NuRenderDevice_gles2.cpp
 //  (see doc/source-structure.md). This file merges the device lifetime,
 //  EGL config/context management, extension probing, and the re-entrant
-//  GL critical section that serialises all GL calls on Android. Host
-//  additions (HOST_BUILD) provide a desktop EGL window + readback path
-//  so the host test harness can present and capture frames without
-//  diverging from the shared render path.
+//  GL critical section that serialises all GL calls on Android.
 // ---------------------------------------------------------------------------
 
 NuRenderDevice g_renderDevice{};
@@ -37,22 +34,10 @@ NuRenderDevice g_renderDevice{};
 // calling thread was assigned.
 thread_local i32 gt_glContextIndex = 0;
 
-// Host-only present context: a dedicated context in the same share group
-// that the host present thread uses so it never collides with whatever
-// the engine left current on contexts[3].
-#ifdef HOST_BUILD
-static EGLContext g_hostPresentCtx = EGL_NO_CONTEXT;
-#endif
+// Host present context (weak, overridden by host build)
+__attribute__((weak)) EGLContext g_hostPresentCtx = EGL_NO_CONTEXT;
 
-// Re-entrant GL critical section.
-//
-// The original Android code uses a counting critical section — nested
-// Begin/End pairs are common (e.g. NuIOSInitOpenGLES →
-// NuIOS_AllocateSystemFramebuffers). The host port models that with a
-// thread-local recursion depth: only the outermost Begin locks mutex2
-// and binds the thread's assigned context; the outermost End releases
-// both.
-static thread_local i32 s_criticalDepth = 0;
+thread_local i32 s_criticalDepth = 0;
 static i32 g_nextGLContextIndex = 0;
 
 // ---------------------------------------------------------------------------
@@ -298,191 +283,11 @@ void NuRenderDevice::BeginCriticalSection(const char * /*file*/, i32 /*line*/) {
     s_criticalDepth++;
 }
 
-void NuRenderDevice::EndCriticalSection(const char * /*file*/, i32 /*line*/) {
-#ifdef HOST_BUILD
-    if (s_criticalDepth > 0) {
-        s_criticalDepth--;
-    }
-    if (s_criticalDepth == 0) {
-        pthread_mutex_unlock(&this->mutex2);
-    }
-#else
+__attribute__((weak)) void NuRenderDevice::EndCriticalSection(const char * /*file*/, i32 /*line*/) {
     UNIMPLEMENTED();
-#endif
 }
 
-// ---------------------------------------------------------------------------
-// Host presentation + readback (HOST_BUILD only)
-// ---------------------------------------------------------------------------
-
-#ifdef HOST_BUILD
-
-namespace {
-
-    struct PresentResources {
-        GLuint program = 0;
-        GLint pos_loc = -1;
-        GLint uv_loc = -1;
-        GLint tex_loc = -1;
-        GLuint vbo = 0;
-    };
-
-    void EnsurePresentResources(PresentResources &res) {
-        if (res.program != 0) {
-            return;
-        }
-
-        const char *vertex_src = "attribute vec2 a_position; attribute vec2 a_texcoord; varying vec2 v_uv; "
-                                 "void main(){ gl_Position=vec4(a_position,0,1); v_uv=a_texcoord; }";
-        const char *fragment_src = "precision mediump float; varying vec2 v_uv; uniform sampler2D u_tex; "
-                                   "void main(){ gl_FragColor=texture2D(u_tex, v_uv); }";
-
-        GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertex_shader, 1, &vertex_src, nullptr);
-        glCompileShader(vertex_shader);
-
-        GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragment_shader, 1, &fragment_src, nullptr);
-        glCompileShader(fragment_shader);
-
-        res.program = glCreateProgram();
-        glAttachShader(res.program, vertex_shader);
-        glAttachShader(res.program, fragment_shader);
-        glBindAttribLocation(res.program, 0, "a_position");
-        glBindAttribLocation(res.program, 1, "a_texcoord");
-        glLinkProgram(res.program);
-        glDeleteShader(vertex_shader);
-        glDeleteShader(fragment_shader);
-
-        res.pos_loc = glGetAttribLocation(res.program, "a_position");
-        res.uv_loc = glGetAttribLocation(res.program, "a_texcoord");
-        res.tex_loc = glGetUniformLocation(res.program, "u_tex");
-
-        glGenBuffers(1, &res.vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, res.vbo);
-        // Full-screen quad as two triangles (positions + UVs interleaved).
-        // V flipped to present FBO correctly to the window.
-        const float verts[] = {
-            -1, -1, 0, 1, //
-            1,  -1, 1, 1, //
-            -1, 1,  0, 0, //
-            1,  -1, 1, 1, //
-            1,  1,  1, 0, //
-            -1, 1,  0, 0, //
-        };
-        glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
-    }
-
-    void DrawFullscreenTexturedQuad(const PresentResources &res, GLuint texture) {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glDisable(GL_BLEND);
-        glDisable(GL_DEPTH_TEST);
-        glDisable(GL_SCISSOR_TEST);
-        glUseProgram(res.program);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
-        glUniform1i(res.tex_loc, 0);
-        glBindBuffer(GL_ARRAY_BUFFER, res.vbo);
-        glEnableVertexAttribArray(res.pos_loc);
-        glVertexAttribPointer(res.pos_loc, 2, GL_FLOAT, GL_FALSE, 16, reinterpret_cast<void *>(0));
-        glEnableVertexAttribArray(res.uv_loc);
-        glVertexAttribPointer(res.uv_loc, 2, GL_FLOAT, GL_FALSE, 16, reinterpret_cast<void *>(8));
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        glDisableVertexAttribArray(res.pos_loc);
-        glDisableVertexAttribArray(res.uv_loc);
-        glUseProgram(0);
-    }
-
-} // namespace
-
-void NuRenderDevice::SwapBuffers() {
-    // Present the shared FBO texture (g_earlyColorTexture) to the host
-    // window via the dedicated present context. The render thread draws
-    // into a per-context FBO wrapping that texture; the window's own
-    // default framebuffer is only written here, otherwise it would stay
-    // black because pbuffers[0..2] are 1x1.
-    extern GLuint g_earlyColorTexture;
-
-    EGLContext present_ctx = (g_hostPresentCtx != EGL_NO_CONTEXT) ? g_hostPresentCtx : this->contexts[3];
-    bool have_context = false;
-    if (this->egl_display != EGL_NO_DISPLAY && this->pbuffers[3] != EGL_NO_SURFACE && present_ctx != EGL_NO_CONTEXT) {
-        have_context = eglMakeCurrent(this->egl_display, this->pbuffers[3], this->pbuffers[3], present_ctx);
-        if (!have_context) {
-            eglGetError();
-        }
-    }
-
-    if (have_context && g_earlyColorTexture != 0 && glIsTexture(g_earlyColorTexture)) {
-        static PresentResources s_present{};
-        EnsurePresentResources(s_present);
-
-        EGLint surf_w = 0;
-        EGLint surf_h = 0;
-        eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_WIDTH, &surf_w);
-        eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_HEIGHT, &surf_h);
-        if (surf_w > 0 && surf_h > 0) {
-            glViewport(0, 0, surf_w, surf_h);
-        }
-        DrawFullscreenTexturedQuad(s_present, g_earlyColorTexture);
-    }
-
-    if (this->egl_display != EGL_NO_DISPLAY && this->pbuffers[3] != EGL_NO_SURFACE) {
-        if (!have_context) {
-            eglMakeCurrent(this->egl_display, this->pbuffers[3], this->pbuffers[3], present_ctx);
-        }
-        eglSwapBuffers(this->egl_display, this->pbuffers[3]);
-    }
-}
-
-void NuRenderDevice::OnWindowCreated(ANativeWindow *window) {
-    InitialiseOpenGLContext(window);
-    CheckForRenderWindowInitialisation();
-}
-
-i32 NuRenderDevice::HostReadbackPixels(u32 max_w, u32 max_h, u8 *rgba) {
-    // Direct FBO screenshot: attach the shared color texture to a transient
-    // read FBO and pull pixels via glReadPixels. This avoids the intermediate
-    // CPU mirror (g_hostReadbackRGBA) and its per-frame memcpy.
-    extern GLuint g_earlyColorTexture;
-    extern i32 g_backingWidth, g_backingHeight;
-
-    if (g_earlyColorTexture == 0 || g_backingWidth <= 0 || g_backingHeight <= 0 || max_w == 0 || max_h == 0) {
-        return 0;
-    }
-    if (egl_display == EGL_NO_DISPLAY || pbuffer_readback == EGL_NO_SURFACE || context_readback == EGL_NO_CONTEXT) {
-        return 0;
-    }
-    if (eglMakeCurrent(egl_display, pbuffer_readback, pbuffer_readback, context_readback) == EGL_FALSE) {
-        eglGetError();
-        return 0;
-    }
-
-    const u32 copy_w = static_cast<u32>(g_backingWidth) < max_w ? static_cast<u32>(g_backingWidth) : max_w;
-    const u32 copy_h = static_cast<u32>(g_backingHeight) < max_h ? static_cast<u32>(g_backingHeight) : max_h;
-
-    GLuint read_fbo = 0;
-    glGenFramebuffers(1, &read_fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, read_fbo);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_earlyColorTexture, 0);
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glDeleteFramebuffers(1, &read_fbo);
-        return 0;
-    }
-
-    glViewport(0, 0, static_cast<GLsizei>(copy_w), static_cast<GLsizei>(copy_h));
-    glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    // Ensure any pending render-thread work on the shared texture is visible.
-    glFinish();
-    glReadPixels(0, 0, static_cast<GLsizei>(copy_w), static_cast<GLsizei>(copy_h), GL_RGBA, GL_UNSIGNED_BYTE, rgba);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glDeleteFramebuffers(1, &read_fbo);
-    return static_cast<i32>(copy_w * 1000 + copy_h);
-}
-
-#else // !HOST_BUILD
-
-void NuRenderDevice::SwapBuffers() {
+__attribute__((weak)) void NuRenderDevice::SwapBuffers() {
     UNIMPLEMENTED();
 }
 
@@ -491,7 +296,9 @@ void NuRenderDevice::OnWindowCreated(ANativeWindow *window) {
     CheckForRenderWindowInitialisation();
 }
 
-#endif // HOST_BUILD
+__attribute__((weak)) i32 NuRenderDevice::HostReadbackPixels(u32 /*max_w*/, u32 /*max_h*/, u8 * /*rgba*/) {
+    return 0;
+}
 
 // ---------------------------------------------------------------------------
 // EGL config selection + backbuffer sizing
@@ -557,7 +364,7 @@ void NuRenderDevice::DetermineBackBufferResolution(i32 width, i32 height) {
     }
 }
 
-void NuRenderDevice::InitialiseOpenGLContext(ANativeWindow *window_) {
+__attribute__((weak)) void NuRenderDevice::InitialiseOpenGLContext(ANativeWindow *window_) {
     EGLNativeWindowType window = reinterpret_cast<EGLNativeWindowType>(window_);
 
     pthread_mutex_lock(&this->mutex);
@@ -621,23 +428,6 @@ void NuRenderDevice::InitialiseOpenGLContext(ANativeWindow *window_) {
         }
 
         this->contexts[2] = eglCreateContext(this->egl_display, this->egl_config, main_ctx, this->attrib_list);
-
-#ifdef HOST_BUILD
-        // Host extras: a present-only context and a dedicated readback
-        // pbuffer/context so HostReadbackPixels never contends with
-        // SwapBuffers on pbuffers[3]. Both share with the main context.
-        g_hostPresentCtx = eglCreateContext(this->egl_display, this->egl_config, main_ctx, this->attrib_list);
-
-        const EGLint readback_attribs[] = {
-            EGL_WIDTH,          1280, //
-            EGL_HEIGHT,         720,  //
-            EGL_TEXTURE_TARGET, EGL_NO_TEXTURE,
-            EGL_TEXTURE_FORMAT, EGL_NO_TEXTURE,
-            EGL_NONE,
-        };
-        this->pbuffer_readback = eglCreatePbufferSurface(this->egl_display, this->egl_config, readback_attribs);
-        this->context_readback = eglCreateContext(this->egl_display, this->egl_config, main_ctx, this->attrib_list);
-#endif
 
         // Make worker 0 current briefly to query the actual window size
         // and set up the nominal backbuffer dimensions.

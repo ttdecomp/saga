@@ -170,17 +170,6 @@ namespace {
     constexpr usize kSmallHeapSize = 0x200;
     constexpr usize kLegalTextureReserve = 0x400000; // carved from top of super buffer
     constexpr f32 kLegalFadeInDuration = 0.3f;
-#ifdef HOST_BUILD
-    constexpr f32 kLegalHoldEnd = 2.0f;
-    constexpr f32 kLegalFadeOutDuration = 0.3f;
-    constexpr f32 kLegalVisibleEnd = 2.3f;
-    constexpr f32 kLegalTimerMax = 2.5f;
-    constexpr f32 kIntroFadeInStart = 0.3f;
-    constexpr f32 kIntroFadeInDuration = 0.3f;
-    constexpr f32 kIntroHoldEnd = 5.5f;
-    constexpr f32 kIntroFadeOutDuration = 0.3f;
-    constexpr f32 kIntroDuration = 6.0f;
-#else
     constexpr f32 kLegalHoldEnd = 5.3f;
     constexpr f32 kLegalFadeOutDuration = 0.30000019f;
     constexpr f32 kLegalVisibleEnd = 5.6f;
@@ -190,7 +179,6 @@ namespace {
     constexpr f32 kIntroHoldEnd = 3.3f;
     constexpr f32 kIntroFadeOutDuration = 0.29999995f;
     constexpr f32 kIntroDuration = 3.8f;
-#endif
     constexpr f32 kMenuFlashPeriod = 0.2f;
     constexpr f32 kMenuFlashThreshold = 0.1f;
 
@@ -423,9 +411,6 @@ void LoadPerm(void) {
     WORLDINFO_s *saved_world = WORLD;
     WORLD = nullptr;
 
-#ifdef HOST_BUILD
-    BGLOAD = 1;
-#endif
     // With background loading enabled and not forced off, run the
     // loading-screen path: `LoadPermData` executes on the bg thread while
     // this thread drives the legal-screen / intro-text frame loop.  Otherwise
@@ -496,20 +481,9 @@ void LoadPerm(void) {
 
             // Legal fade timer: only advances once fonts & strings are ready
             // and the language is settled, after a 1 s gate.
-            // Host: allow intro even if strings not yet loaded (fallback).
-#ifdef HOST_BUILD
-            const bool intro_ready = Text_IsFontLoaded() && IntroText_TextID != -1;
-#else
             const bool intro_ready = Text_IsFontLoaded() && LoadPerm_StringsLoaded != 0 && IntroText_TextID != -1;
-#endif
 
-            if (intro_ready
-#ifdef HOST_BUILD
-                && (LoadPerm_LanguageSelect == 3 || true)
-#else
-                && LoadPerm_LanguageSelect == 3
-#endif
-            ) {
+            if (intro_ready && LoadPerm_LanguageSelect == 3) {
                 intro_gate_timer += FRAMETIME;
                 if (intro_gate_timer >= 1.0f) {
                     legal_timer += FRAMETIME;
@@ -523,11 +497,7 @@ void LoadPerm(void) {
             // Compute alpha outside scene, draw inside scene for proper host prim batching.
             f32 intro_alpha = 0.0f;
             bool intro_will_draw = false;
-#ifdef HOST_BUILD
-            if (intro_ready) {
-#else
             if (PermDataLoaded != 0 && intro_ready) {
-#endif
                 if (intro_text_timer > kIntroFadeInStart) {
                     if (intro_text_timer < 0.6f) {
                         intro_alpha = (intro_text_timer - kIntroFadeInStart) / kIntroFadeInDuration;
@@ -563,11 +533,7 @@ void LoadPerm(void) {
                 BackDrop_UpdateColours(0);
                 TextCrawl_Draw(FRAMETIME, 2, 1.0f, nullptr);
                 BackDrop_Draw(1.0f, 0);
-#ifdef HOST_BUILD
-                const f32 crawl_end = 3.0f;
-#else
                 const f32 crawl_end = 25.0f;
-#endif
                 if (crawl_timer >= crawl_end) {
                     SetBackgroundMusic(-1);
                     NuRndrGradClear(0xf00, 0x80000000, 0x80000000, 1.0f);

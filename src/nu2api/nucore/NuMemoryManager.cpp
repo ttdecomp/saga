@@ -9,9 +9,7 @@
 #include "nu2api/nucore/common.h"
 #include "nu2api/nucore/nustring.h"
 
-#ifdef HOST_BUILD
 #include "decomp.h"
-#endif
 
 #define HEADER_MGR_HI_MASK 0xf8000000
 #define ALLOC_MASK 0x78000000
@@ -184,12 +182,14 @@ void *NuMemoryManager::_BlockAlloc(u32 size, u32 alignment, u32 flags, const cha
     return ptr;
 }
 
-void *NuMemoryManager::_TryBlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, u16 category) {
-#ifdef HOST_BUILD
-    LOG_WARN("_TryBlockAlloc(size=%u, alignment=%u, flags=%u, name=%s, category=%u) - replacing with malloc", size,
-             alignment, flags, name, category);
-    return malloc(size);
-#endif
+__attribute__((weak)) void *NuMemoryManager::_TryBlockAlloc(u32 size, u32 alignment, u32 flags, const char *name,
+                                                            u16 category) {
+    (void)size;
+    (void)alignment;
+    (void)flags;
+    (void)name;
+    (void)category;
+    return nullptr;
 }
 
 void NuMemoryManager::ConvertToUsedBlock(FreeHeader *header, u32 alignment, u32 flags, const char *name, u16 category) {
@@ -307,12 +307,7 @@ void NuMemoryManager::SetZombie() {
     this->is_zombie = true;
 }
 
-void NuMemoryManager::BlockFree(void *ptr, u32 flags) {
-#ifdef HOST_BUILD
-    LOG_WARN("replacing BlockFree with free");
-    free(ptr);
-    return;
-#endif
+__attribute__((weak)) void NuMemoryManager::BlockFree(void *ptr, u32 flags) {
 
     NuMemoryManager *manager;
 
@@ -404,11 +399,15 @@ void NuMemoryManager::BlockFree(void *ptr, u32 flags) {
     }
 }
 
-void *NuMemoryManager::_BlockReAlloc(void *ptr, u32 size, u32 alignment, u32 flags, const char *name, u16 category) {
-#ifdef HOST_BUILD
-    LOG_WARN("replacing _BlockReAlloc with realloc");
-    return realloc(ptr, size);
-#endif
+__attribute__((weak)) void *NuMemoryManager::_BlockReAlloc(void *ptr, u32 size, u32 alignment, u32 flags,
+                                                           const char *name, u16 category) {
+    (void)ptr;
+    (void)size;
+    (void)alignment;
+    (void)flags;
+    (void)name;
+    (void)category;
+    return nullptr;
 }
 
 inline void NuMemoryManager::MergeBlocks(Header *left, Header *right, const char *caller) {

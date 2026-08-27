@@ -1,3 +1,4 @@
+#include "legoapi/menus/core/text.h"
 #include "legoapi/legoapi_types.h"
 #include "globals.h"
 #include "nu2api/nu3d/nuqfnt.h"
@@ -291,14 +292,5 @@ void IntroText_Draw(float alpha) {
     float scale = INTROTEXT_SCALE;
     float y = INTROTEXT_Y;
     void *font = QFont2D;
-#ifdef HOST_BUILD
-    extern float backdrop_top_r, backdrop_top_g, backdrop_top_b;
-    backdrop_top_r = 0.0f * alpha;
-    backdrop_top_g = 0.37f * alpha;
-    backdrop_top_b = 0.50f * alpha;
-    if (alpha > 0.01f) {
-        NuRndrClear(0xf00, 0x007f5f00, alpha);
-    }
-#endif
     NuQFntPrintJustifiedW(font, enc, -0.85f, y, 1.0f, scale, scale, 0.425f, 1.0f, 0.0f, colour, 0);
 }

@@ -1,3 +1,4 @@
+#include "legoapi/render/core/render.h"
 #include "legoapi/world/world_shared.h"
 struct starfighter_s;
 struct rtl_s;

@@ -35,6 +35,7 @@ extern "C" {
 
     void NuSound3Init(i32 zero);
     void NuSound3SetSampleTable(NUSOUND_FILENAME_INFO *info, VARIPTR *buffer_start, VARIPTR buffer_end);
+    void NuSound3SetLoopHoldTime(float t);
 #ifdef __cplusplus
 }
 #endif

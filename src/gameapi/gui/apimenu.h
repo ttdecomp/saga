@@ -21,6 +21,8 @@ typedef struct MENUFNINFO_s {
     char wrap;
 } MENUFNINFO;
 
+extern MENUFNINFO GameMenuInfo[33];
+
 #ifdef __cplusplus
 
 void APIMenuDrawMemCardSlots(MENU *menu, f32 y);

@@ -10,8 +10,13 @@
 // only need a declaration.
 
 struct GameObject_s;
+struct AISYS_s;
+struct WORLDINFO_s;
 
 GameObject_s *FindGameObject(i32 id, u32 type, i32 a3, i32 a4, i32 a5);
 GameObject_s *GetNamedGameObject(AISYS_s *aisys, char *name);
+
+void GameAISysInit();
+void GameAISysReset(struct AISYS_s *aisys);
 
 #endif

@@ -319,6 +319,14 @@ extern CHARACTERDATA *CDataList;
 extern GAMECHARACTERDATA *GCDataList;
 
 #ifdef __cplusplus
+extern "C" {
+#endif
+    void APITransparentInit();
+#ifdef __cplusplus
+}
+#endif
+
+#ifdef __cplusplus
 
 i32 CharIDFromName(char *name);
 

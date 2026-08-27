@@ -33,6 +33,7 @@
 #include "decomp.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nucore/nuapi.h"
+#include "nu2api/nucore/nuhgobj.h"
 #include "nu2api/nu3d/nudlist.h"
 #include "nu2api/nu3d/numtl.h"
 #include "nu2api/nu3d/nucamera.h"
@@ -1472,7 +1473,8 @@ extern "C" {
     }
     void NuHGobjEvalDwaBlend2(void) {
     }
-    void NuHGobjForceShadowsOnCharacters(void) {
+    void NuHGobjForceShadowsOnCharacters(i32 v) {
+        (void)v;
     }
     void NuHGobjFromVideoMem(void) {
     }
@@ -1492,7 +1494,8 @@ extern "C" {
     }
     void NuHGobjRestrictEvaluation(void) {
     }
-    void NuHGobjReversibleCharacters(void) {
+    void NuHGobjReversibleCharacters(i32 v) {
+        (void)v;
     }
     void NuHGobjRndr(void) {
     }

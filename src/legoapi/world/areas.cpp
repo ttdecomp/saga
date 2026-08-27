@@ -3,8 +3,11 @@
 #include "globals.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/area.h"
+#include "legoapi/world/areas.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nucore/nustring.h"
+
+i32 openlevels = 0;
 
 // Cross-module entry points used by this file (declared locally since they have
 // no single shared header in the reconstructed source).  The NuFPar* helpers are

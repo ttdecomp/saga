@@ -11,6 +11,7 @@ void DrawTimer(i32 mins, i32 secs, i32 unknown);
 void DrawBossHitPoints(GameObject_s *obj);
 void DrawMiniSnowTroopers(WORLDINFO_s *world);
 void DrawForceBackEffect(nuhspecial_s *special);
+void DrawSaveSlots(MENU_s *menu, float y);
 #ifdef __cplusplus
 extern "C" {
 #endif

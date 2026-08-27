@@ -1,12 +1,12 @@
-// Host post-effect state and framebuffer clear — Android GLES2 path.
+// Post-effect state and framebuffer clear — Android GLES2 path.
 //
-// This TU is the host-faithful subset of the original Android post-effect
+// This TU is the faithful subset of the original Android post-effect
 // system. The full effect graph (deferred shading, bloom, DOF, motion blur
 // etc.) is not required to boot to the legal screen, so the filter objects
-// stay null on HOST_BUILD and the dispatch becomes a no-op.  What *is*
+// stay null and the dispatch becomes a no-op.  What *is*
 // required is the per-frame bookkeeping that the render thread relies on
 // (reset / dynamic-light feed / end) and the framebuffer clear that wraps
-// glClear — both are faithfully transcribed so HOST_BUILD matches the
+// glClear — both are faithfully transcribed so the control flow matches the
 // original control flow and GL state.
 //
 // Transcribed originals:

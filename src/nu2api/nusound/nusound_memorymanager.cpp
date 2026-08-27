@@ -82,11 +82,9 @@ void NuSoundMemoryManager::EnableDefragOnAlloc(bool value) {
     this->flags = this->flags & 0xfd | value << 1;
 }
 
-NuSoundMemoryBuffer *NuSoundMemoryManager::Alloc(u32 size) {
-#ifdef HOST_BUILD
-    LOG_WARN("NuSoundMemoryManager::Alloc is not implemented");
-    return (NuSoundMemoryBuffer *)malloc(size);
-#endif
+__attribute__((weak)) NuSoundMemoryBuffer *NuSoundMemoryManager::Alloc(u32 size) {
+    (void)size;
+    return nullptr;
 }
 
 void *NuSoundMemoryBuffer::Lock(const char *name) {

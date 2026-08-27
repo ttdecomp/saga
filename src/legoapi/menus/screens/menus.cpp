@@ -13,8 +13,7 @@ struct SHOPINPUT;
 // Decompiled UpdateGameMenu — libTTapp.so:0x118f50
 // Faithful transition to main menu after intro. Original polls GamePad,
 // handles menu_flash timing, and calls NewMenu when the intro timer has
-// elapsed or a pad button is pressed. On HOST_BUILD audio is not required
-// but the menu call chain is preserved.
+// elapsed or a pad button is pressed.
 
 extern "C" void NewMenu(i32 menu_id, i32 menu_y, i32 param3);
 i32 GetMenuID(void);
@@ -25,10 +24,6 @@ void UpdateGameMenu(GAMEPAD_s *pad, i32 a2) {
     LOG_DEBUG("UpdateGameMenu pad=%p a2=%d GetMenuID=%d", (void *)pad, a2, GetMenuID());
     if (pad == nullptr)
         return;
-#ifdef HOST_BUILD
-    if (NOSOUND) {
-    }
-#endif
     i32 menu_id = GetMenuID();
     if (menu_id == -1) {
         u32 buttons = 0;

@@ -781,20 +781,6 @@ i32 GamePlayMusic(LEVELDATA *level, i32 zero, OPTIONSSAVE *options) {
     (void)options;
     LOG_INFO("GamePlayMusic level=%p track0=%d (Star Wars theme after intro)", (void *)level,
              level ? level->music_tracks[0][0] : -1);
-#ifdef HOST_BUILD
-    if (NOSOUND) {
-        LOG_INFO("HOST_BUILD NOSOUND — faithful GamePlayMusic skipped, window test not blocked");
-        return 0;
-    }
-    if (MusicInfo == nullptr) {
-        LOG_WARN("GamePlayMusic: MusicInfo null — audio not required for host window test");
-        return 0;
-    }
-    if (level == nullptr) {
-        LOG_WARN("GamePlayMusic: level null");
-        return -1;
-    }
-#endif
     if (level == nullptr) {
         return -1;
     }

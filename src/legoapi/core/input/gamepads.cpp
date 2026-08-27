@@ -1,3 +1,4 @@
+#include "legoapi/core/input/gamepads.h"
 #include "legoapi/legoapi_types.h"
 
 // Original bss @0x127a500: 64 pads x 0x60 bytes.

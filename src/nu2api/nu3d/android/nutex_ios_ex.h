@@ -17,9 +17,7 @@ extern "C" {
 }
 #endif
 
-#ifdef HOST_BUILD
 extern GLuint g_earlyColorTexture;
-#endif
 
 #ifndef GL_COMPRESSED_RGB_S3TC_DXT1_EXT
 #define GL_COMPRESSED_RGB_S3TC_DXT1_EXT 0x83F0

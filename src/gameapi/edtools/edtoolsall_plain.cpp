@@ -1,3 +1,4 @@
+#include "gameapi/edtools/edgra.h"
 
 extern "C" {
 

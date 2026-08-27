@@ -1,3 +1,4 @@
+#include "legoapi/core/startup/main.h"
 #include "decomp.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nu3d/nutex.h"

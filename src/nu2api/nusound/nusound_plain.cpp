@@ -1,3 +1,4 @@
+#include "nu2api/nusound/nusound.h"
 
 extern "C" {
 
@@ -119,7 +120,8 @@ extern "C" {
     }
     void NuSound3SetLoadCallback(void) {
     }
-    void NuSound3SetLoopHoldTime(void) {
+    void NuSound3SetLoopHoldTime(float t) {
+        (void)t;
     }
     void NuSound3SetMonoIopBufferSize(void) {
     }

@@ -77,6 +77,7 @@ message(STATUS "Building for ${CMAKE_HOST_SYSTEM_NAME} on ${CMAKE_HOST_SYSTEM_PR
 
 # source files for both host and target builds
 file(GLOB_RECURSE SAGA_SOURCE_FILES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/decomp.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/batman.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/globals.cpp"
     
@@ -122,6 +123,10 @@ if (BUILD_FOR_HOST)
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/main.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/nutex_host.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/nutex_ios_ex.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/ios_graphics_host.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nucore/NuMemoryManager_host.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nusound/nusound_memorymanager_host.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nu3d/NuRenderDevice_host.cpp
     )
 
     add_executable(saga ${SAGA_SOURCE_FILES})

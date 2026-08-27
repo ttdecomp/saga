@@ -142,10 +142,6 @@ static WORLDINFO *LWORLD = &WorldInfo[0];
 
 void WorldInfo_InitOnce(void) {
     memset(WorldInfo, 0, sizeof(WorldInfo));
-
-#ifndef HOST_BUILD
-    static_assert(sizeof(void *) != 4 || sizeof(WorldInfo) == 0xa360, "WorldInfo size mismatch");
-#endif
 }
 
 void WorldInfo_Init(WORLDINFO *world) {

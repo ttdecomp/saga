@@ -18,6 +18,7 @@ GLuint g_earlyColorFramebuffer;
 GLuint g_defaultFramebuffer;
 GLuint g_currentFramebuffer;
 GLuint g_earlyColorMSAAFramebuffer;
+__attribute__((weak)) GLuint g_earlyColorTexture = 0;
 
 GLuint NuIOS_CreateGLTexFromFile(const char *filename) {
     UNIMPLEMENTED();

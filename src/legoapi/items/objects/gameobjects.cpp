@@ -1,3 +1,4 @@
+#include "legoapi/items/objects/gameobjects.h"
 #include "decomp.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/level.h"

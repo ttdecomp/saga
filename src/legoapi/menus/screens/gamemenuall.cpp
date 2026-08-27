@@ -411,21 +411,9 @@ extern "C" {
     // Decompiled DrawMenu — libTTapp.so:0x4278a0
     // Faithful menu draw with transition to main menu (id 0) after intro.
     // Original checks menu_flash, handles fader, and dispatches to
-    // per-menu draw fns via the MENU_s vtable at 0x2678 stride. On
-    // HOST_BUILD audio is not required — we log the music hook but still
-    // draw. Missing MENU data just returns after the early-out so the
-    // window test (which captures the legal quad before menu) is not blocked.
+    // per-menu draw fns via the MENU_s vtable at 0x2678 stride.
     void DrawMenu(i32 menu_id) {
         LOG_INFO("DrawMenu menu_id=%d (transition to main menu after intro)", menu_id);
-#ifdef HOST_BUILD
-        if (NOSOUND) {
-            LOG_DEBUG("DrawMenu: HOST_BUILD NOSOUND — still drawing menu");
-        }
-        // Faithful: ensure Star Wars theme hook would have been called.
-        // The actual music call is in SetBackgroundMusic/GamePlayMusic, but
-        // DrawMenu on device checks the music fader before drawing; we
-        // preserve the log so the faithful path is visible.
-#endif
         // Original early-out at 0x4278c8: if MENU_s pointer null and
         // global timer < threshold, skip. Host mirrors: if no menu
         // tables loaded (LEVELCOUNT==0), just return — legal/intro path

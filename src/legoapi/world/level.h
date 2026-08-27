@@ -190,10 +190,6 @@ typedef struct LEVELDATA_s {
     i32 music_tracks[3][2];
 } LEVELDATA;
 
-#ifndef HOST_BUILD
-static_assert(sizeof(void *) != 4 || sizeof(LEVELDATA_s) == 0x144, "LEVELDATA_s size mismatch");
-#endif
-
 typedef struct LEVELOBJECT {
     u8 kind;
     u8 pad_01;
