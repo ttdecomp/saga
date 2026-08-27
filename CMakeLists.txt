@@ -127,6 +127,7 @@ if (BUILD_FOR_HOST)
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nucore/NuMemoryManager_host.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nusound/nusound_memorymanager_host.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nu3d/NuRenderDevice_host.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nu3d/nudlist_host.cpp
     )
 
     add_executable(saga ${SAGA_SOURCE_FILES})

@@ -19,16 +19,16 @@ extern "C" i32 NuMain(i32 argc, char **argv);
 
 namespace {
 #ifdef _WIN32
-    constexpr const char *kVideoDriver = "windows";
+    constexpr const char *host_video_driver = "windows";
 #else
-    constexpr const char *kVideoDriver = "x11";
+    constexpr const char *host_video_driver = "x11";
 #endif
 
-    constexpr i32 kWindowWidth = 1280;
-    constexpr i32 kWindowHeight = 720;
-    constexpr i32 kPollIntervalMs = 16;
-    constexpr i32 kTimeoutMs = 90000;
-    constexpr i32 kTailFrames = 30;
+    constexpr i32 host_window_width = 1280;
+    constexpr i32 host_window_height = 720;
+    constexpr i32 host_poll_interval_ms = 16;
+    constexpr i32 host_timeout_ms = 90000;
+    constexpr i32 host_tail_frames = 30;
 
     struct PixelCounts {
         u32 red = 0;
@@ -56,8 +56,8 @@ namespace {
     }
 
     static bool capture_frame(i32 frame) {
-        std::vector<u8> pixels(static_cast<usize>(kWindowWidth) * kWindowHeight * 4);
-        const i32 packed = g_renderDevice.HostReadbackPixels(kWindowWidth, kWindowHeight, pixels.data());
+        std::vector<u8> pixels(static_cast<usize>(host_window_width) * host_window_height * 4);
+        const i32 packed = g_renderDevice.HostReadbackPixels(host_window_width, host_window_height, pixels.data());
         if (packed <= 0) {
             return false;
         }
@@ -72,7 +72,7 @@ namespace {
     }
 
     static void sdl_init() {
-        SDL_SetHint(SDL_HINT_VIDEO_DRIVER, kVideoDriver);
+        SDL_SetHint(SDL_HINT_VIDEO_DRIVER, host_video_driver);
 
         if (!SDL_Init(SDL_INIT_VIDEO)) {
             LOG_ERR("SDL_Init(VIDEO) failed: %s", SDL_GetError());
@@ -80,13 +80,13 @@ namespace {
         }
         SDL_InitSubSystem(SDL_INIT_AUDIO);
 
-        SDL_Window *window = SDL_CreateWindow("saga", kWindowWidth, kWindowHeight, 0);
+        SDL_Window *window = SDL_CreateWindow("saga", host_window_width, host_window_height, 0);
         if (window == nullptr) {
             LOG_ERR("SDL_CreateWindow failed: %s", SDL_GetError());
             return;
         }
 
-        if (strcmp(SDL_GetCurrentVideoDriver(), kVideoDriver) != 0) {
+        if (strcmp(SDL_GetCurrentVideoDriver(), host_video_driver) != 0) {
             LOG_ERR("unexpected video driver: %s", SDL_GetCurrentVideoDriver());
             return;
         }
@@ -148,9 +148,9 @@ inline i32 test_window(i32 argc, char **argv) {
         }
 
         if (host_numain_done) {
-            for (i32 i = 0; i < kTailFrames; i++) {
+            for (i32 i = 0; i < host_tail_frames; i++) {
                 g_renderDevice.SwapBuffers();
-                SDL_Delay(kPollIntervalMs);
+                SDL_Delay(host_poll_interval_ms);
                 frame_count++;
             }
             capture_frame(frame_count);
@@ -160,10 +160,10 @@ inline i32 test_window(i32 argc, char **argv) {
         g_renderDevice.SwapBuffers();
         frame_count++;
 
-        SDL_Delay(kPollIntervalMs);
+        SDL_Delay(host_poll_interval_ms);
 
-        if (SDL_GetTicks() - start_ticks > static_cast<Uint64>(kTimeoutMs)) {
-            LOG_ERR("test_window: timeout after %d ms", kTimeoutMs);
+        if (SDL_GetTicks() - start_ticks > static_cast<Uint64>(host_timeout_ms)) {
+            LOG_ERR("test_window: timeout after %d ms", host_timeout_ms);
             break;
         }
 
