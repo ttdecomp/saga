@@ -187,7 +187,8 @@ void GameMsg_DrawAdjustNewPos_CoinToTotal(GAMEMESSAGE_s *) {
 void GameAnimSys_AllocateLevelProgressData(variptr_u *, variptr_u *, i32, i32) {
 }
 
-void Game_Exit(i32) {
+i32 Game_Exit(i32) {
+    return 0;
 }
 
 void GameObject_s::ClearAddons() {
@@ -245,6 +246,9 @@ void ThingManager::ResetThings(ThingResetData *) {
 }
 
 ThingManager::ThingManager(i32) {
+}
+
+ThingManager::~ThingManager() {
 }
 
 void ThingManager::cbEdTimingSelect(eduimenu_s *, eduiitem_s *, u32) {

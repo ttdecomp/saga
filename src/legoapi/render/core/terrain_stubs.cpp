@@ -75,7 +75,7 @@ extern "C" {
     void DebFreeAllPanelEffects(void) {
     }
 
-    void Debris(void) {
+    void Debris(i32) {
     }
 
     void DebrisAllCollisionCheckScaleYFlag(void) {

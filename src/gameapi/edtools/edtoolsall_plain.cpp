@@ -168,7 +168,7 @@ extern "C" {
     }
     void edgraSetup(void) {
     }
-    void edgraStopPage(void) {
+    void edgraStopPage(i32) {
     }
     void edmainActivate(void) {
     }

@@ -62,7 +62,7 @@ void NuAPIInit(void) {
     NuWindInitialise(nuapi.wind);
 }
 
-void NuCommandLine(i32 argc, char **argv) {
+void NuCommandLine(i32 *argc, char ***argv) {
 }
 
 void NuDisableOSMenuFreeze(void) {

@@ -9,6 +9,7 @@
 CUTINFO *CutScene_Find(CUTSYS *cutsys, char *name);
 void CutScene_SnapToEnd(CUTINFO *cut);
 void CutScene_StoppedFn_LSW(CUTINFO *cut);
-bool CutScene_PlayingOrRequested(CUTINFO *cut);
+i32 CutScene_PlayingOrRequested(CUTINFO *cut);
+bool CutScene_IsSkippable(CUTINFO *cut);
 
 #endif

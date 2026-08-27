@@ -1,4 +1,4 @@
-![Progress](https://img.shields.io/badge/matching-8.91%25-red)
+![Progress](https://img.shields.io/badge/matching-9.04%25-red)
 [![Discord](https://img.shields.io/discord/1467775700894224555?color=%235865F2&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/2HJuMtzA7q)
 
 |                 | Target (Android x86)                                                                                                                                                                                  | Host                                                                                                                                                                                  |
@@ -79,7 +79,7 @@ See the [docs/](docs/) directory.
 
 | Directory | Fuzzy % | Funcs % | Data % |
 |---|---|---|---|
-| `(root)` | 4.3% | 0.0% | 0.0% |
+| `(root)` | 49.9% | 16.7% | 0.0% |
 | `MechInputTouch` | 4.9% | 0.0% | 0.0% |
 | `editor` | 2.6% | 0.0% | - |
 | `gameapi` | 6.6% | 1.4% | 94.8% |
@@ -95,7 +95,7 @@ See the [docs/](docs/) directory.
 | `legoapi/cutscenes` | 3.0% | 0.0% | 100.0% |
 | `legoapi/gizmo` | 4.9% | 4.7% | 0.4% |
 | `legoapi/gizmos` | 12.2% | 4.2% | 100.0% |
-| `legoapi/items` | 2.4% | 0.2% | 4.9% |
+| `legoapi/items` | 2.4% | 0.2% | 3.5% |
 | `legoapi/menus` | 2.7% | 0.2% | 0.7% |
 | `legoapi/misc` | 2.3% | 0.5% | - |
 | `legoapi/props` | 7.3% | 2.4% | 13.0% |

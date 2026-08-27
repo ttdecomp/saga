@@ -113,6 +113,9 @@ class NuMusic {
     bool SelectTrackByHandle(TRACK_CLASS clazz, i32 trackIndex);
     i32 PlayTrack(TRACK_CLASS track);
     i32 GetTrackHandle(TRACK_CLASS clazz, const char *name);
+    i32 StopAll(i32 toggle);
+    void ResumeTrack(u32);
+    void SetFader(float, float);
 
   private:
     void InitData(const char *file, VARIPTR *buffer_start, VARIPTR buffer_end);
@@ -123,7 +126,6 @@ class NuMusic {
     Voice *FindVoiceByClassAndStatus(TRACK_CLASS class_, VOICE_STATUS status);
     Voice *FindVoiceByTrack(Track *track);
     Voice *FindVoiceByClass(TRACK_CLASS class_);
-    i32 StopAll(i32 toggle);
     Voice *FindIdleVoice();
     i32 PlayTrackI(TRACK_CLASS track, u32 unused);
 
@@ -221,12 +223,10 @@ class NuMusic {
     void PauseTrack(u32);
     void PlayTrack(u32, u32);
     void Process(float);
-    void ResumeTrack(u32);
     void SelectTrack(u32, char const *);
     void SetAlbum(char const *);
     void SetAlbum(i32);
     void SetClassVolume(u32, float);
-    void SetFader(float, float);
     void SetMasterVolume(float);
     void SetTrackEntryTimeByClass(u32, float);
     void StopTrack(u32, i32);

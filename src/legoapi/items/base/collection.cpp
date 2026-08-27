@@ -9,7 +9,6 @@
 struct GIZMOPICKUP_s;
 struct PART_s;
 struct starfighter_s;
-struct COINPACKET_s;
 
 struct APICHARACTERMODELLIST_s;
 

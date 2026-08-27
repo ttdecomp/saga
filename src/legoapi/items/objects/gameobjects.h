@@ -19,4 +19,7 @@ GameObject_s *GetNamedGameObject(AISYS_s *aisys, char *name);
 void GameAISysInit();
 void GameAISysReset(struct AISYS_s *aisys);
 
+// Original returns exit status; code in NuMain checks it.
+i32 Game_Exit(i32 last_area);
+
 #endif

@@ -86,7 +86,13 @@ struct NuInputTouch;
 struct NuInputTouchData;
 struct NuVec2 {};
 struct NuVirtualTouchDevice;
-struct ThingProcessData {};
+struct nupad_s;
+struct ThingProcessData {
+    float t; // frame time for this pass
+    u32 Paused;
+    nupad_s **pads; // -> the caller's nupad_s* pair on its stack
+    i32 flags;      // 2 = process pass
+};
 struct ThingRenderData {};
 struct ThingResetData {};
 struct TouchHolder {};
@@ -213,6 +219,8 @@ struct MechInputTouchMainDummyStick {
     MechInputTouchMainDummyStick(MechInputTouchMainController &, NuTouchInputElement::TYPE);
 };
 struct MechInputTouchMenuController {
+    static i32 PackButtonPressed; // original bss (read/cleared by NuMain)
+    static i32 PackButtonID;      // original bss (menu id for in-app purchase pack)
     void Activate();
     void Deactivate();
     MechInputTouchMenuController(i32);
@@ -315,7 +323,7 @@ struct MechSystems {
     void ExitLevel(WORLDINFO_s *);
     void FindMoveToMarkerAtPos(VuVec const &, bool);
     void HookUpClickToPressStart();
-    void Init(int dummy = 0);
+    void Init();
     void LoadPerm();
     MechSystems();
     void NewMoveToMarker(MechObjectInterface &);

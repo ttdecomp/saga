@@ -87,7 +87,7 @@ extern "C" {
 #endif
     i32 NuInitHardware(VARIPTR *buf, VARIPTR *buf_end, i32 heap_size, ...);
 
-    void NuCommandLine(i32 argc, char **argv);
+    void NuCommandLine(i32 *argc, char ***argv);
     void NuDisableOSMenuFreeze(void);
 
     void NudxFw_D3DBeginCriticalSection(void);

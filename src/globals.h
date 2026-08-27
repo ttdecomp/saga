@@ -644,11 +644,16 @@ extern i32 other_level;
 extern i32 other_level_override;
 extern i32 CUTSTOPGAME;
 extern void *CutStopInfo;
-extern i32 WaitingForLevelTime;
+extern f32 WaitingForLevelTime;
+extern f32 WaitingForCharacterTime;
 extern f32 g_BgLoadDelayHackTimer;
 extern i32 Door_UseCutCam;
 extern void *LevelLoad;
 extern i32 LevelLoadCount;
+
+// Main game loop state (read/written by NuMain; see batman.h for the rest).
+extern i32 Level;
+extern struct GIZAIMESSAGESYS_s *gizaimessagesys;
 
 // ------------------------------------------------------------------------
 // Level script arrays (Lev*)

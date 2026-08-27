@@ -63,7 +63,6 @@ struct CHARPLATFORMSYS_s;
 struct CHARVARIANT;
 struct CHEAT;
 struct CLIMBOBJECTSYS_s;
-struct COINPACKET_s;
 struct COLLECTION_s;
 struct CUSTOMISER;
 struct CUSTOMISESAVE_s;
@@ -190,7 +189,6 @@ struct NuVec2;
 struct OPTIONSSAVE_s;
 struct OccluderSet;
 struct OcclusionManager;
-struct OggVorbis_File;
 struct PARTDEBSYS_s;
 struct PART_s;
 struct PLATSKININFO;
@@ -304,9 +302,6 @@ struct nusound_filename_info_s;
 struct nutex_s;
 struct nutexmanager_s;
 struct nuvec_s;
-struct ogg_packet;
-struct oggpack_buffer;
-struct ov_callbacks;
 struct particlechunkrendertype_s;
 struct pushblock_s;
 struct ripple_node_s;
@@ -317,21 +312,10 @@ struct shopitem_s;
 struct specialsfx_s;
 struct speedup_s;
 struct starfighter_s;
-struct static_codebook;
 struct terrsitu_s;
 struct tertype;
 struct uv1deb;
 struct uv1debdata;
-struct vorbis_block;
-struct vorbis_comment;
-struct vorbis_dsp_state;
-struct vorbis_info;
-struct vorbis_info_mapping0;
-struct vorbis_info_psy;
-struct vorbis_info_psy_global;
-struct vorbis_look_floor1;
-struct vorbis_look_psy;
-struct vorbis_look_psy_global;
 struct vucharidx_s;
 
 struct ADDGAMEMSG {};
@@ -380,7 +364,6 @@ struct CHARPLATFORMSYS_s {};
 struct CHARVARIANT {};
 struct CHEAT;
 struct CLIMBOBJECTSYS_s {};
-struct COINPACKET_s {};
 struct CUSTOMISER {};
 struct CUSTOMISESAVE_s {};
 struct CUSTOMPIECE {};
@@ -453,11 +436,30 @@ struct GAMEMESSAGE_s {
     char pad_0xf4[0xf7 - 0xf4];
     u8 alpha; // 0xf7
 };
+// Rumble state packet embedded in GAMEPAD_s (20 bytes; floats driven by
+// NuSound3UpdateRumble / UpdateRumble).
+struct RUMBLEPACKET {
+    undefined field_0x00[4];
+    f32 rumble_amount; // 0x04
+    undefined field_0x08[4];
+    f32 rumble_time; // 0x0c
+    undefined field_0x10[4];
+};
 struct GAMEPAD_s {
-    u32 unknown_00;
+    nupad_s *pad; // 0x00  the bound input pad (fields 0x00..0x1f)
     u32 unknown_04;
     u32 buttons_down_08; // bitmask of pressed buttons (GAMEPAD_* masks)
-    char pad_0c[0x5a - 0x0c];
+    u32 unknown_0c;
+    u32 unknown_10;
+    u32 unknown_14;
+    u32 unknown_18;
+    u32 unknown_1c;
+    u32 unknown_20;
+    u32 unknown_24;
+    f32 unknown_28;
+    char pad_2c[0x40 - 0x2c];
+    RUMBLEPACKET rumble_packet; // 0x40
+    char pad_54[0x5a - 0x54];
     u8 allocated_5a; // set by GamePad_Allocate()
     char pad_5b[0x60 - 0x5b];
 };
@@ -465,7 +467,12 @@ struct GIZACTIONDEFN_s {};
 struct GIZAIMESSAGESYS_s {};
 struct GIZAIMESSAGE_s {
     char pad_0x00[0x28];
-    float value; // 0x28
+    float value;    // 0x28
+    byte mode;      // 0x2c
+    byte mode_args; // 0x2d
+    undefined field_0x2e[0x34 - 0x2e];
+    i32 flag;  // 0x34
+    u16 flags; // 0x36
 };
 struct GIZBOMBGENSYS_s {};
 struct GIZFLOWPROGRESS_s {};
@@ -486,7 +493,10 @@ struct HINT_s {};
 struct HOTHBATTLE_MELEE_s {};
 struct HashRedirect;
 struct HashedKey {};
-struct LANGUAGEDATA {};
+struct LANGUAGEDATA {
+    i32 language;   // 0x00
+    i32 unknown_04; // 0x04 (Game_LanguageList entries: {1,0},{2,0},{4,0},{5,0},{3,0},{8,0},{-1,0})
+};
 struct LEVELDATADISPLAY;
 struct LEVELDATA_s;
 struct LEVELOBJECT;
@@ -506,7 +516,6 @@ struct NuBloomParameters {};
 struct NuShaderObject {};
 struct NuShaderUsageMask_s {};
 struct OPTIONSSAVE_s;
-struct OggVorbis_File {};
 struct PARTDEBSYS_s {};
 struct PLATSKININFO {};
 struct PLAYERITEMTYPE_s {};
@@ -519,14 +528,26 @@ struct PartHeader;
 struct PropertyMenuList {};
 struct REGISTERSTATUSPACKET_s {};
 struct RGBA {};
-struct RUMBLEPACKET {};
 struct SCENEPROGRESS_s {};
 struct SHADERSEMANTIC_enum {};
 struct SHARD_s;
 struct SOCKPOSITION_s {};
 struct SOCKSYS {};
 struct SPLINEPOS_s {};
-struct STATUSPACKET_s {};
+// Status / achievements screen packet (332 bytes; fields used by NuMain:
+// model ids at 0x9c/0x9e, per-player bytes at 0xa4/0xa5, flags at 0xb1/0xb2).
+struct STATUSPACKET_s {
+    undefined field_0x00[0x9c];
+    u16 player0_model; // 0x9c
+    u16 player1_model; // 0x9e
+    undefined field_0xa0[0xa4 - 0xa0];
+    u8 player0_active; // 0xa4
+    u8 player1_active; // 0xa5
+    undefined field_0xa6[0xb1 - 0xa6];
+    u8 mode_flags;   // 0xb1
+    u8 status_flags; // 0xb2
+    undefined field_0xb3[0x14c - 0xb3];
+};
 struct STATUS_STAGE_s {};
 struct SUIT_s {};
 struct SUPERCOUNTER {};
@@ -595,9 +616,6 @@ struct nushadermtldesc_s;
 struct nusound_filename_info_s;
 struct nutex_s;
 struct nutexmanager_s {};
-struct ogg_packet {};
-struct oggpack_buffer {};
-struct ov_callbacks {};
 struct particlechunkrendertype_s {};
 struct pushblock_s {};
 struct ripple_node_s {};
@@ -608,21 +626,10 @@ struct shopitem_s {};
 struct specialsfx_s {};
 struct speedup_s {};
 struct starfighter_s {};
-struct static_codebook {};
 struct terrsitu_s {};
 struct tertype {};
 struct uv1deb {};
 struct uv1debdata;
-struct vorbis_block {};
-struct vorbis_comment {};
-struct vorbis_dsp_state {};
-struct vorbis_info {};
-struct vorbis_info_mapping0 {};
-struct vorbis_info_psy {};
-struct vorbis_info_psy_global {};
-struct vorbis_look_floor1 {};
-struct vorbis_look_psy {};
-struct vorbis_look_psy_global {};
 struct vucharidx_s {};
 
 struct BaseEditor {
@@ -757,6 +764,10 @@ struct FadeStillWipe : FadeBase {
 struct FadeSystem {
     char pad_0x00[0x4];
     float fade; // 0x04  current fade amount
+    char pad_0x08[0xc - 0x08];
+    i32 busy; // 0x0c  non-zero while a fade transition runs
+    char pad_0x10[0x24 - 0x10];
+    i32 pending_type; // 0x24  fade type queued by SetFade / stage marker
     void AddFade(FadeBase *);
     void Draw();
     void Init();
@@ -1250,19 +1261,26 @@ struct TTNetwork {
     void Update();
     virtual ~TTNetwork();
 };
+// All ThingManager methods are virtual in the original: its vtable order is
+// D2, D0, AddThing, AddThingAfterThis, RemoveTemporaryThings,
+// RemoveDependanciesThings, ResetThings, EnterLevelThings, ExitLevelThings,
+// ProcessThings (vptr+0x24), RenderThings (vptr+0x28), DisplayThings,
+// EffectsThings. NuMain dispatches ProcessThings/RenderThings through the
+// vtable, so the declarations must carry the same slots.
 struct ThingManager {
-    void AddThing(BaseThing *);
-    void AddThingAfterThis(BaseThing *);
-    void DisplayThings(ThingRenderData *);
-    void EffectsThings(ThingRenderData *);
+    virtual ~ThingManager();
+    virtual void AddThing(BaseThing *);
+    virtual void AddThingAfterThis(BaseThing *);
+    virtual void RemoveTemporaryThings();
+    virtual void RemoveDependanciesThings(ThingRemoveData *);
+    virtual void ResetThings(ThingResetData *);
+    virtual void EnterLevelThings(ThingLevelData *);
+    virtual void ExitLevelThings(ThingLevelData *);
+    virtual void ProcessThings(ThingProcessData *);
+    virtual void RenderThings(ThingRenderData *);
+    virtual void DisplayThings(ThingRenderData *);
+    virtual void EffectsThings(ThingRenderData *);
     void EnableActions(i32, i32, i32);
-    void EnterLevelThings(ThingLevelData *);
-    void ExitLevelThings(ThingLevelData *);
-    void ProcessThings(ThingProcessData *);
-    void RemoveDependanciesThings(ThingRemoveData *);
-    void RemoveTemporaryThings();
-    void RenderThings(ThingRenderData *);
-    void ResetThings(ThingResetData *);
     ThingManager(i32);
     void cbEdTimingSelect(eduimenu_s *, eduiitem_s *, u32);
     void cbEdTrackCancel(eduimenu_s *, eduimenu_s *);
