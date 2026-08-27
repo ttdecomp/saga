@@ -101,13 +101,32 @@ void NuRenderDevice::SwapBuffers() {
 i32 NuRenderDevice::HostReadbackPixels(u32 max_w, u32 max_h, u8 *rgba) {
     extern GLuint g_earlyColorTexture;
     extern i32 g_backingWidth, g_backingHeight;
-    if (g_earlyColorTexture == 0 || g_backingWidth <= 0 || g_backingHeight <= 0 || max_w == 0 || max_h == 0)
+    if (g_earlyColorTexture == 0 || g_backingWidth <= 0 || g_backingHeight <= 0 || max_w == 0 || max_h == 0) {
+        LOG_WARN("HostReadback: early tex %u backing %d x %d", g_earlyColorTexture, g_backingWidth, g_backingHeight);
         return 0;
-    if (egl_display == EGL_NO_DISPLAY || g_hostPbufferReadback == EGL_NO_SURFACE ||
-        g_hostContextReadback == EGL_NO_CONTEXT)
-        return 0;
-    if (eglMakeCurrent(egl_display, g_hostPbufferReadback, g_hostPbufferReadback, g_hostContextReadback) == EGL_FALSE) {
-        eglGetError();
+    }
+    // Try dedicated readback pbuffer/context; fall back to any valid context/pbuffer if unavailable.
+    EGLSurface read_surf = g_hostPbufferReadback;
+    EGLContext read_ctx = g_hostContextReadback;
+    if (egl_display == EGL_NO_DISPLAY || read_surf == EGL_NO_SURFACE || read_ctx == EGL_NO_CONTEXT) {
+        LOG_WARN("HostReadback: no readback pbuffer (display %p surf %p ctx %p), trying fallback", egl_display,
+                 read_surf, read_ctx);
+        if (egl_display == EGL_NO_DISPLAY)
+            return 0;
+        // fallback: use the window surface/context (pbuffers[3]/contexts[3]) or worker 0
+        if (pbuffers[3] != EGL_NO_SURFACE && contexts[3] != EGL_NO_CONTEXT) {
+            read_surf = pbuffers[3];
+            read_ctx = contexts[3];
+        } else if (pbuffers[0] != EGL_NO_SURFACE && contexts[0] != EGL_NO_CONTEXT) {
+            read_surf = pbuffers[0];
+            read_ctx = contexts[0];
+        } else {
+            LOG_WARN("HostReadback: no fallback surface");
+            return 0;
+        }
+    }
+    if (eglMakeCurrent(egl_display, read_surf, read_surf, read_ctx) == EGL_FALSE) {
+        LOG_WARN("HostReadback: eglMakeCurrent failed %d", eglGetError());
         return 0;
     }
     const u32 copy_w = static_cast<u32>(g_backingWidth) < max_w ? static_cast<u32>(g_backingWidth) : max_w;

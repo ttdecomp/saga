@@ -15,7 +15,7 @@ MENU GameMenu[10];
 i32 MenuSFX = -1;
 i32 GameMenuLevel = -1;
 
-MENUFNINFO GameMenuInfo[33] = {1};            // TODO: initialize with proper values
+MENUFNINFO GameMenuInfo[34] = {1};            // TODO: initialize with proper values
 MENUFNINFO MenuInfo[TOTAL_MENUS_COUNT] = {1}; // TODO: initialize with proper values
 
 i32 MenusUsed = RESERVED_MENUS_COUNT;

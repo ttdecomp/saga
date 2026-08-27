@@ -197,6 +197,16 @@ extern "C" void NuPrim2DBegin(u32 prim_type, u32 /*vtx_fmt*/, NUMTL *mtl) {
     VARIPTR *buf = NuDisplayListGetBuffer();
 
     nudisplaylist_s *list;
+#ifdef HOST_BUILD
+    // Host: force 2D through the shared dlist_2d path so the display-list
+    // executor (DrawRenderScene) carries the quad.  The original
+    // shader-variant path (mtl->display_list) needs the sort-priority
+    // machinery (nused_sort_pris) which the host 2D boot path never
+    // populates, so AddRenderScene would return -1 and the quad would never
+    // reach the render thread.
+    list = NuDisplayListGet2dList();
+    NuDisplayListLinkMtl(list, mtl);
+#else
     if (mtl->display_list != nullptr) {
         list = mtl->display_list;
         u8 *base = *(u8 **)list;
@@ -211,6 +221,7 @@ extern "C" void NuPrim2DBegin(u32 prim_type, u32 /*vtx_fmt*/, NUMTL *mtl) {
         list = NuDisplayListGet2dList();
         NuDisplayListLinkMtl(list, mtl);
     }
+#endif
 
     RndrStateSetConstAlphaTint(0, 0, kDefault2DState, 0, 0);
     DisplayListUpdateRenderState(list, render_state);
@@ -356,6 +367,12 @@ extern "C" i32 NuRndrSwapScreen(void) {
     }
     g_isBlockedInSwapScreen = 0;
 
+#ifdef HOST_BUILD
+    // Host has no activity lifecycle to release the spin above, so wait
+    // via the engine's own frame-pacing fence (original 0xe34b0) to keep
+    // the game thread from lapping the ring.
+    NuIOS_WaitForRenderThreadCompletion();
+#endif
     return 1;
 }
 

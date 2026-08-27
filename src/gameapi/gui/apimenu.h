@@ -21,7 +21,7 @@ typedef struct MENUFNINFO_s {
     char wrap;
 } MENUFNINFO;
 
-extern MENUFNINFO GameMenuInfo[33];
+extern MENUFNINFO GameMenuInfo[34];
 
 #ifdef __cplusplus
 
