@@ -1,4 +1,4 @@
-![Progress](https://img.shields.io/badge/matching-8.90%25-red)
+![Progress](https://img.shields.io/badge/matching-8.91%25-red)
 [![Discord](https://img.shields.io/discord/1467775700894224555?color=%235865F2&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/2HJuMtzA7q)
 
 |                 | Target (Android x86)                                                                                                                                                                                  | Host                                                                                                                                                                                  |
@@ -79,7 +79,7 @@ See the [docs/](docs/) directory.
 
 | Directory | Fuzzy % | Funcs % | Data % |
 |---|---|---|---|
-| `(root)` | 2.1% | 0.0% | 63.3% |
+| `(root)` | 3.7% | 0.0% | 63.3% |
 | `MechInputTouch` | 4.9% | 0.0% | 0.0% |
 | `editor` | 2.6% | 0.0% | - |
 | `gameapi` | 6.6% | 1.4% | 94.8% |

@@ -25,6 +25,25 @@
 #include "gameapi/gui/apimenu.h"
 #include "legoapi/legoapi_types.h"
 
+extern "C" {
+    void NuRndrBeginScene();
+    void NuRndrEndScene();
+    void edGraEnableTerrainSwap();
+    void edGraDisableTerrainSwap();
+    void NuFrameBegin();
+    float NuFrameEnd();
+    void DrawMenu(int);
+}
+void BackDrop_Update(float);
+void BackDrop_Draw(float, int);
+void UpdateGameMenu(GAMEPAD_s *, int);
+void SetBackgroundMusic(int);
+int GamePlayMusic(LEVELDATA *, int, OPTIONSSAVE *);
+extern GAMEPAD_s GamePad[4];
+extern LEVELDATA *TITLES_LDATA;
+extern float FRAMETIME;
+extern float DEFAULTFRAMETIME;
+
 __attribute__((weak)) i32 main(i32 argc, char **argv) {
     UNIMPLEMENTED();
     return {};
@@ -65,6 +84,37 @@ extern "C" i32 NuMain(i32 argc, char **argv) {
     WORLD = saved_world;
     if (openlevels != 0) {
         Areas_OpenAll(0);
+    }
+
+    // Post-perm faithful transition: titles music -> DrawMenu -> main loop.
+    // Mirrors original libTTapp.so:0xf7fd5 onward. This loop drives the
+    // "a long time ago" blue -> starfield crawl -> menu sequence that the
+    // host window test now captures. No host fallback; faithful only.
+    {
+        if (TITLES_LDATA != nullptr) {
+            GamePlayMusic(TITLES_LDATA, 0, reinterpret_cast<OPTIONSSAVE *>(&Game.options_save));
+        } else {
+            SetBackgroundMusic(1);
+        }
+        DrawMenu(0);
+        UpdateGameMenu(&GamePad[0], 0);
+    }
+
+    while (true) {
+        NuFrameBegin();
+        UpdateGameMenu(&GamePad[0], 0);
+        BackDrop_Update(FRAMETIME);
+        NuRndrBeginScene();
+        BackDrop_Draw(1.0f, 0);
+        DrawMenu(0);
+        NuRndrEndScene();
+        edGraEnableTerrainSwap();
+        f32 dt = NuFrameEnd();
+        edGraDisableTerrainSwap();
+        if (dt < DEFAULTFRAMETIME || dt > DEFAULTFRAMETIME * 3.0f) {
+            dt = DEFAULTFRAMETIME;
+        }
+        (void)dt;
     }
 
     return 0;
