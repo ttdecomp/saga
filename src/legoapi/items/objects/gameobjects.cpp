@@ -1,7 +1,11 @@
 #include "legoapi/items/objects/gameobjects.h"
 #include "decomp.h"
+#include "globals.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/level.h"
+#include "legoapi/world/world.h"
+
+void legoSetMusicVolume(float);
 
 void GameShadow(GameObject_s *, nuvec_s *, float, i32) {
 }
@@ -83,16 +87,29 @@ void GameAnimSys_Update(GAMEANIMSYS_s *) {
 void GameAudio_GetSfxId(i32) {
 }
 
-void GameGetMusicVolume(OPTIONSSAVE_s *) {
-}
-
 void GameObjIsCableTied(GameObject_s *) {
 }
 
 void GameObjectRotation(GameObject_s *, i32) {
 }
 
-void GameSetMusicVolume(OPTIONSSAVE_s *) {
+// Original: reads the user's music volume from the options save as the product
+// of two 0..10 sliders scaled to 0..1 (option bytes at 0x4 and 0x5).
+f32 GameGetMusicVolume(OPTIONSSAVE_s *options) {
+    return ((f32)(u8)options->field5_0x5 / 10.0f) * ((f32)(u8)options->field4_0x4 / 10.0f);
+}
+
+// Original: applies GameGetMusicVolume, zeroing it while the title logos are
+// up (SuperOptions[20] == 0 on the titles level); the title menu code restores
+// the user's volume via GameGetMusicVolume once the menu phase starts.
+f32 GameSetMusicVolume(OPTIONSSAVE_s *options) {
+    extern char SuperOptions[24];
+    f32 volume = GameGetMusicVolume(options);
+    if (SuperOptions[20] == 0 && WORLD->current_level == TITLES_LDATA) {
+        volume = 0.0f;
+    }
+    legoSetMusicVolume(volume);
+    return volume;
 }
 
 void GameAISysStartFrame(AISYS_s *) {

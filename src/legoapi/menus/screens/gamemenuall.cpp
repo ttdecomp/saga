@@ -413,7 +413,7 @@ extern "C" {
     // Original checks menu_flash, handles fader, and dispatches to
     // per-menu draw fns via the MENU_s vtable at 0x2678 stride.
     void DrawMenu(i32 menu_id) {
-        LOG_INFO("DrawMenu menu_id=%d (transition to main menu after intro)", menu_id);
+        LOG_DEBUG("DrawMenu menu_id=%d (transition to main menu after intro)", menu_id);
         // Original early-out at 0x4278c8: if MENU_s pointer null and
         // global timer < threshold, skip. Host mirrors: if no menu
         // tables loaded (LEVELCOUNT==0), just return — legal/intro path

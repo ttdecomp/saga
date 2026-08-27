@@ -89,7 +89,7 @@ static const char *__ansi_reset = "\x1b[0m";
 
 #include <stdarg.h>
 
-static const enum log_level LOG_LEVEL = LOG_LEVEL_DEBUG;
+static const enum log_level LOG_LEVEL = LOG_LEVEL_INFO;
 
 static void _saga_log(enum log_level level, const char *file, i32 line, const char *func, const char *fmt, ...) {
     if (level > LOG_LEVEL) {

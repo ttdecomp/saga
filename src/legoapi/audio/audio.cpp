@@ -58,8 +58,9 @@ void SetBackgroundMusic(i32 track) {
     (void)res;
 }
 void legoSetMusicVolume(float v) {
-    (void)v;
-    LOG_DEBUG("legoSetMusicVolume %f", v);
+    // Original: NuMusic::SetClassVolume(0x23, v) — the mask covers QUIET (1),
+    // ACTION (2) and the 0x20 theme class.
+    music_man.SetClassVolume(0x23, v);
 }
 void ProcessMusicChanges(LEVELDATA_s *level, OPTIONSSAVE_s *opts) {
     (void)opts;

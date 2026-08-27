@@ -9,6 +9,10 @@
 
 struct NuMusic;
 
+// C-linkage free function (original symbol `numusicGetDuckVolume`), befriended
+// by NuMusic below so it can read the duck gain.
+extern "C" f32 numusicGetDuckVolume(void);
+
 enum : u32 {
     TRACK_CLASS_QUIET = 0x1,
     TRACK_CLASS_ACTION = 0x2,
@@ -23,49 +27,59 @@ typedef u32 TRACK_FLAGS;
 #ifdef __cplusplus
 class NuMusic {
   public:
+    // Voice state machine (original NuMusic::Voice, 0x34 bytes at NuMusic+0x130):
+    // status 1 = ready/idle, 2/3 = stopping/stopped, 4 = cued, 5 = stream ended,
+    // 6 = playing, 7 = playing (stream loaded, eligible for ducking).
     enum VOICE_STATUS : u32 {
-        VOICE_STATUS_1 = 1,
-        VOICE_STATUS_6 = 6,
-        VOICE_STATUS_7 = 7,
+        VOICE_STATUS_NONE = 0,
+        VOICE_STATUS_READY = 1,
+        VOICE_STATUS_STOPPING = 2,
+        VOICE_STATUS_STOPPED = 3,
+        VOICE_STATUS_CUED = 4,
+        VOICE_STATUS_ENDED = 5,
+        VOICE_STATUS_PLAYING = 6,
+        VOICE_STATUS_PLAYING_LOADED = 7,
     };
 
     struct Track {
-        char *path;
-        char *name;
-        char *ident;
-        i32 file_indexes[2];
-        TRACK_CLASS clazz;
-        void *field12_0x18;
-        i32 index_count;
-        u8 field17_0x20;
-        u8 field18_0x21;
-        u8 field19_0x22;
-        u8 field20_0x23;
-        f32 field21_0x24;
-        i32 pitch;
-        f32 field23_0x2c;
-        f32 field24_0x30;
-        f32 field25_0x34;
-        TRACK_FLAGS flags;
+        char *path;          // 0x00 full path with $lang substitution applied
+        char *name;          // 0x04 alternate "NOMUSIC" file inside the track block
+        char *ident;         // 0x08 bare filename, used for handle lookup by name
+        i32 file_indexes[2]; // 0x0c sound-table indexes: [0] = path file, [1] = name file
+        TRACK_CLASS clazz;   // 0x14
+        f32 *entry_times;    // 0x18 slice of the player's shared entry-time pool
+        i32 entry_count;     // 0x1c number of INDEX entries for this track
+        i32 entry_index;     // 0x20 round-robin cursor into entry_times
+        f32 start_offset;    // 0x24 entry time applied on next Play
+        i32 pitch;           // 0x28 raw fixed-point pitch (0x1000 = unity), pushed as dword
+        f32 duck_volume;     // 0x2c DUCK <dB|amp> — max gain while this track ducks others
+        f32 duck_fade;       // 0x30 DUCK's second value — 1/duck_fade is the duck ramp rate
+        f32 attenuation;     // 0x34 ATTENUATION <dB|amp>
+        TRACK_FLAGS flags;   // 0x38 bit0 = NODUCK, bit1 = LOOPING (class default set in ParseTrack)
 
         void ManageEntryTime();
         void SetEntryTime(float);
     };
 
     struct Voice {
-        i32 stream_index;
-        Track *tracks[2];
-        i32 track_index;
-        VOICE_STATUS status;
-        u32 flags;
-        void *field16_0x2c;
+        i32 stream_index;    // 0x00 stereo-stream slot 0/1
+        Track *tracks[2];    // 0x04 loaded track per sub-stream
+        i32 track_sub[2];    // 0x0c file_indexes sub-slot per sub-stream (0 = path file, 1 = name file)
+        i32 track_index;     // 0x14 active sub-stream (class-8 tracks use sub 1)
+        VOICE_STATUS status; // 0x18
+        f32 gain;            // 0x1c fade gain, 1.0 = unity (Process ramps by fade_rate)
+        f32 volume;          // 0x20 final volume computed by Process
+        f32 last_volume;     // 0x24 last volume pushed to the stream (-1.0 = force update)
+        f32 fade_rate;       // 0x28 gain change per second; negative = fading out
+        f32 play_time;       // 0x2c playback seconds accumulated by Process
+        u32 flags;           // 0x30 bit0 = fade-out requested, bit1 = paused
 
         bool Load(Track *track, i32 trackIndex);
-        void SetStatusFn(i32 status, i32 unused);
+        void SetStatusFn(i32 status, i32 tag);
         i32 Play();
 
         void Cue();
-        void Unload();
+        i32 Unload();
     };
 
     class Album {
@@ -77,12 +91,12 @@ class NuMusic {
 
         void Initialise();
         Track *GetTrack(TRACK_CLASS class_);
-        void GetTracks(u32, NuMusic::Track **);
+        i32 GetTracks(u32, NuMusic::Track **);
     };
 
   private:
     nusound_filename_info_s *fileinfo;
-    i32 field346_0x1e0;
+    i32 file_count; // original field at +0x1e0, handed out by GetSoundFiles
 
     f32 *indexes;
     i32 index_count;
@@ -103,6 +117,20 @@ class NuMusic {
     Album *album;
     i32 track_index;
 
+    friend f32 numusicGetDuckVolume(void);
+
+    // Playback state (original offsets noted; our layout is self-consistent).
+    i32 pitch_default;      // orig +0x18: default track pitch, 0x1000 = unity
+    f32 master_volume;      // orig +0x198
+    f32 fader_current;      // orig +0x19c: ramps toward fader_target at fader_rate/second
+    f32 fader_target;       // orig +0x1a0
+    f32 fader_rate;         // orig +0x1a4: 1/fade-seconds, 0 = no fade running
+    f32 duck_gain;          // orig +0x1a8: min(1, duck_volume) of the playing tracks
+    f32 duck_current;       // orig +0x1ac: ramps toward duck_gain at duck_rate/second
+    f32 duck_rate;          // orig +0x1b0: max(1, 1/duck_fade) of the playing tracks
+    f32 class_volumes[6];   // orig +0x1b4: per-TRACK_CLASS volume, indexed by ClassToIX
+    f32 global_attenuation; // orig +0x1cc: GLOBALATTENUATION from music.cfg
+
   public:
     NuMusic();
     ~NuMusic();
@@ -114,7 +142,7 @@ class NuMusic {
     i32 PlayTrack(TRACK_CLASS track);
     i32 GetTrackHandle(TRACK_CLASS clazz, const char *name);
     i32 StopAll(i32 toggle);
-    void ResumeTrack(u32);
+    i32 ResumeTrack(u32);
     void SetFader(float, float);
 
   private:
@@ -212,24 +240,27 @@ class NuMusic {
         {NULL, NULL},
     };
 
+    // Gameplay control API — the game TU drives these directly (legoSetMusicVolume,
+    // NuMain's per-frame update, level flow).
+  public:
     void ClassToName(u32);
-    void CueTrack(u32);
+    i32 CueTrack(u32);
     void Debug(i32, i32);
     void GetAlbumHandle(char const *);
     void GetPlaybackTime(u32);
     void GetPlayer();
     void GetStatus(u32, i32 *);
     void NoMusic(i32);
-    void PauseTrack(u32);
+    i32 PauseTrack(u32);
     void PlayTrack(u32, u32);
     void Process(float);
-    void SelectTrack(u32, char const *);
+    bool SelectTrack(u32, char const *);
     void SetAlbum(char const *);
     void SetAlbum(i32);
     void SetClassVolume(u32, float);
     void SetMasterVolume(float);
-    void SetTrackEntryTimeByClass(u32, float);
-    void StopTrack(u32, i32);
+    i32 SetTrackEntryTimeByClass(u32, float);
+    i32 StopTrack(u32, i32);
 };
 
 extern "C" {
@@ -242,5 +273,7 @@ extern "C" {
 #endif
 
 i32 GamePlayMusic(LEVELDATA *level, i32 zero, OPTIONSSAVE *options);
+
+extern i32 NOMUSIC;
 
 #endif

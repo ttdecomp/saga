@@ -89,7 +89,7 @@ struct NuVirtualTouchDevice;
 struct nupad_s;
 struct ThingProcessData {
     float t; // frame time for this pass
-    u32 Paused;
+    u32 paused;
     nupad_s **pads; // -> the caller's nupad_s* pair on its stack
     i32 flags;      // 2 = process pass
 };

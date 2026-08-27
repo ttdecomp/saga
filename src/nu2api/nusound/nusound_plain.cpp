@@ -82,8 +82,6 @@ extern "C" {
     }
     void NuSound3LoadingSfx(void) {
     }
-    void NuSound3PauseStereoStream(void) {
-    }
     void NuSound3Play(void) {
     }
     void NuSound3Play3d(void) {
@@ -107,8 +105,6 @@ extern "C" {
     void NuSound3ReserveStream(void) {
     }
     void NuSound3RestoreStreamPitch(void) {
-    }
-    void NuSound3ResumeStereoStream(void) {
     }
     void NuSound3SetDPL(void) {
     }
@@ -139,8 +135,6 @@ extern "C" {
     }
     void NuSound3SetStereoIopBufferSize(void) {
     }
-    void NuSound3SetStereoStreamVolume(void) {
-    }
     void NuSound3SetStreamPitch(void) {
     }
     void NuSound3SetStreamVolume(void) {
@@ -155,8 +149,6 @@ extern "C" {
     }
     void NuSound3StreamClose(void) {
     }
-    void NuSound3StreamKeyStatus(void) {
-    }
     void NuSound3StreamOpen(void) {
     }
     void NuSound3Update(void) {
@@ -168,7 +160,5 @@ extern "C" {
     void NuSound3UpdateRumble(void) {
     }
     void NuSound3UpdateV(void) {
-    }
-    void NuSound3dBToAmplitude(void) {
     }
 }

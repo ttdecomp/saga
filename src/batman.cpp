@@ -425,7 +425,7 @@ giz_freeplay:
                 pads0 = GamePad[0].pad;
                 pads1 = GamePad[1].pad;
                 framePacket.t = FRAMETIME;
-                framePacket.Paused = Paused;
+                framePacket.paused = Paused;
                 framePacket.pads = &pads0;
                 framePacket.flags = 2;
                 ((ThingManager *)theGameThings)->ProcessThings(&framePacket);
