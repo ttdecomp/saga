@@ -59,12 +59,7 @@ enum {
 
 #ifdef HOST_BUILD
 #include <stdio.h>
-
-#define UNIMPLEMENTED(...)                                                                                             \
-    ({                                                                                                                 \
-        fprintf(stderr, "%s%s:%d: %s: UNIMPLEMENTED: %s%s\n", log_level_colors[LOG_LEVEL_ERROR], __FILENAME__,         \
-                __LINE__, __func__, #__VA_ARGS__, __ansi_reset);                                                       \
-    })
+#include <time.h>
 
 enum log_level {
     LOG_LEVEL_ERROR,
@@ -96,9 +91,16 @@ static void _saga_log(enum log_level level, const char *file, i32 line, const ch
         return;
     }
 
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    struct tm tm;
+    localtime_r(&ts.tv_sec, &tm);
+    char time[32];
+    snprintf(time, sizeof(time), "%02d:%02d:%02d.%06.0f", tm.tm_hour, tm.tm_min, tm.tm_sec, (float)ts.tv_nsec / 1e3);
+
     va_list args;
     va_start(args, fmt);
-    fprintf(stderr, "%s[%s] %s:%d: %s: ", log_level_colors[level], log_level_names[level], file, line, func);
+    fprintf(stderr, "%s %s[%s] %s:%d: %s: ", time, log_level_colors[level], log_level_names[level], file, line, func);
     vfprintf(stderr, fmt, args);
     fprintf(stderr, "%s\n", __ansi_reset);
     va_end(args);
@@ -109,6 +111,8 @@ static void _saga_log(enum log_level level, const char *file, i32 line, const ch
 #define LOG_WARN(...) LOG(LOG_LEVEL_WARN, __VA_ARGS__)
 #define LOG_INFO(...) LOG(LOG_LEVEL_INFO, __VA_ARGS__)
 #define LOG_DEBUG(...) LOG(LOG_LEVEL_DEBUG, __VA_ARGS__)
+
+#define UNIMPLEMENTED(...) LOG_ERR("UNIMPLEMENTED: %s", #__VA_ARGS__)
 
 #else
 
