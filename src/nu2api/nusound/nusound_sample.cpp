@@ -1,4 +1,5 @@
 #include "nu2api/nusound/nusound_sample.hpp"
+#include "nu2api/nusound/nusound_voice.hpp"
 
 #include "nu2api/nusound/nusound_loader.hpp"
 
@@ -126,5 +127,17 @@ void NuSoundSample::Unlock() {
 void NuSoundSample::Unload() {
 }
 
-void NuSoundSample::RequestBuffer(bool, NuSoundWeakPtr<NuSoundBufferCallback>) {
+void NuSoundSample::RequestBuffer(bool loop, NuSoundWeakPtr<NuSoundBufferCallback> callback) {
+    // In-memory samples hand their whole buffer to the requesting voice
+    // immediately; the streaming sample overrides this with the double-buffer
+    // pump.
+    pthread_mutex_lock(&NuSoundWeakPtrListNode::sPtrAccessLock.mutex);
+    if (callback.obj != NULL) {
+        ((NuSoundBufferCallback *)callback.obj)->SubmitBuffer(&this->buffer);
+    }
+    pthread_mutex_unlock(&NuSoundWeakPtrListNode::sPtrAccessLock.mutex);
+}
+
+bool NuSoundSample::IsStreamOpen() const {
+    return false;
 }

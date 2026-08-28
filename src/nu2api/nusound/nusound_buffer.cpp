@@ -135,7 +135,8 @@ void NuSoundBuffer::Unlock() {
 NuSoundBuffer::~NuSoundBuffer() {
 }
 
-void NuSoundBuffer::GetCurrentContext() {
+NuSoundBuffer::Context &NuSoundBuffer::GetCurrentContext() {
+    return this->context;
 }
 
 void NuSoundBuffer::GetSegmentAddress(u32, u32, u32) const {

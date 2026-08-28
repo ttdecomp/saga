@@ -37,10 +37,54 @@ bool NuSoundLoaderOGG::SeekPCMSample(u64 index) {
     return ret == 0;
 }
 
-bool NuSoundLoaderOGG::SeekTime(double seconds) {
+bool NuSoundLoaderOGG::SeekTime(f64 seconds) {
     NuIOS_IsLowEndDevice();
     i32 iVar2 = ov_time_seek(&desc->ogg_file, seconds);
     return iVar2 == 0;
+}
+
+void NuSoundLoaderOGG::OGGFileCallbacks::Seek(i32 origin, u32 offset) {
+    NuFileSeek(file, offset, (NUFILESEEK)origin);
+}
+
+void NuSoundLoaderOGG::OGGFileCallbacks::Close() {
+    NuFileClose(file);
+}
+
+NUFILE NuSoundLoaderOGG::OGGFileCallbacks::GetFile() const {
+    return file;
+}
+
+i32 NuSoundLoaderOGG::OGGFileCallbacks::GetPosition() const {
+    return NuFilePos(file);
+}
+
+i32 NuSoundLoaderOGG::OggCallbackClose(void *callbacks) {
+    ((OGGFileCallbacks *)callbacks)->Close();
+    return 0;
+}
+
+i32 NuSoundLoaderOGG::OggCallbackSeek(void *callbacks, i64 offset, i32 origin) {
+    ((OGGFileCallbacks *)callbacks)->Seek(origin, (u32)offset);
+    return 0;
+}
+
+i32 NuSoundLoaderOGG::OggCallbackTell(void *callbacks) {
+    return ((OGGFileCallbacks *)callbacks)->GetPosition();
+}
+
+bool NuSoundLoaderOGG::SeekRawData(u64 position) {
+    return NuFileSeek(file, (i64)position, NUFILE_SEEK_START) != 0;
+}
+
+i32 NuSoundLoaderOGG::OpenFileForStreaming(const char *path, bool flag) {
+    (void)flag;
+    this->file = NuFileOpen((char *)path, NUFILE_READ);
+    return this->file != 0;
+}
+
+void NuSoundLoaderOGG::Close() {
+    NuSoundLoader::CloseStream();
 }
 
 usize NuSoundLoaderOGG::OggCallbackRead(void *dest, usize count, usize size, void *callbacks_) {

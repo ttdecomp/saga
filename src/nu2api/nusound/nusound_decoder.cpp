@@ -13,6 +13,7 @@ NuSoundDecodeThread::NuSoundDecodeThread() : semaphore(128), loaders() {
 
 void NuSoundDecodeThread::ThreadFunc(void *self_) {
     NuSoundDecodeThread *self = (NuSoundDecodeThread *)self_;
+    LOG_DEBUG("NuSoundDecodeThread::ThreadFunc started");
 }
 
 NuSoundDecodeThread::~NuSoundDecodeThread() {
@@ -25,7 +26,9 @@ void NuSoundDecodeThread::RequestDecode(NuSoundDecoder &, NuSoundBuffer &, NuSou
                                         bool) {
 }
 
-NuSoundDecoder::NuSoundDecoder(char const *, NuSoundSource *) {
+NuSoundDecoder::NuSoundDecoder(char const *name, NuSoundSource *source)
+    : NuSoundSource(name, SourceType::ZERO, NuSoundSource::FeedType::ZERO) {
+    (void)source;
 }
 
 NuSoundDecoder::~NuSoundDecoder() {

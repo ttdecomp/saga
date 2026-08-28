@@ -200,63 +200,6 @@ void NuRenderDevice::PreInitialize() {
 void NuRenderDevice::ResizeDevice(i32, i32, i32, bool, bool, bool, bool) {
 }
 
-void NuVoiceAndroid::ApplyHardwareVoiceMix() {
-}
-
-void NuVoiceAndroid::CreateHardwareVoice() {
-}
-
-void NuVoiceAndroid::DestroyHardwareVoice() {
-}
-
-void NuVoiceAndroid::GetInterfaces() {
-}
-
-void NuVoiceAndroid::GetPlaybackPositionSamples() {
-}
-
-NuVoiceAndroid::NuVoiceAndroid(NuSoundSource *, bool) {
-}
-
-void NuVoiceAndroid::OnPlayerEvent(u32) {
-}
-
-void NuVoiceAndroid::PauseHardwareVoice() {
-}
-
-void NuVoiceAndroid::PlayerCallback(SLPlayItf_ const *const *, void *, u32) {
-}
-
-void NuVoiceAndroid::RealiseObject() {
-}
-
-void NuVoiceAndroid::ResumeHardwareVoice() {
-}
-
-void NuVoiceAndroid::StartHardwareVoice() {
-}
-
-void NuVoiceAndroid::StopHardwareVoice() {
-}
-
-void NuVoiceAndroid::SubmitBuffer(NuSoundBuffer *) {
-}
-
-void NuVoiceAndroid::UpdateHardwareVoice(float) {
-}
-
-void NuVoiceAndroid::UpdateQueue() {
-}
-
-void NuVoiceAndroid::UpdateSamplePlaybackCount() {
-}
-
-void NuVoiceAndroid::UpdateState() {
-}
-
-NuVoiceAndroid::~NuVoiceAndroid() {
-}
-
 NuMainFilterGen::NuMainFilterGen() {
 }
 

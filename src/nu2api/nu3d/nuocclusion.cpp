@@ -3,5 +3,4 @@
 #include "decomp.h"
 
 void NuOcclusionManagerBeginFrame(void) {
-    UNIMPLEMENTED();
 }

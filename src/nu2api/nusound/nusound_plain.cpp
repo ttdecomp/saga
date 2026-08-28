@@ -54,8 +54,6 @@ extern "C" {
     }
     void NuSound3GetSize(void) {
     }
-    void NuSound3GetStereoStreamStatus(void) {
-    }
     void NuSound3GetStreamInfo(void) {
     }
     void NuSound3GetStreamPlaybackTime(void) {
@@ -150,8 +148,6 @@ extern "C" {
     void NuSound3StreamClose(void) {
     }
     void NuSound3StreamOpen(void) {
-    }
-    void NuSound3Update(void) {
     }
     void NuSound3UpdateEx(void) {
     }

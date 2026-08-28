@@ -56,11 +56,18 @@ class NuSoundSample : public NuSoundSource {
     void SetLastErrorState(ErrorState state);
 
     void *GetSourceBuffer();
-    bool IsLocked() const;
+    virtual bool IsLocked() const;
     void Lock();
     void Unlock();
     void Unload();
-    void RequestBuffer(bool, NuSoundWeakPtr<NuSoundBufferCallback>);
+
+    // NuSoundSource overrides (the original dispatched through the source
+    // vtable; Play() calls RequestBuffer to obtain its initial buffers).
+    bool IsStreamOpen() const override;
+    u32 GetMaxBufferSize() const override {
+        return 0;
+    }
+    void RequestBuffer(bool loop, NuSoundWeakPtr<NuSoundBufferCallback> callback) override;
 
     ~NuSoundSample();
 

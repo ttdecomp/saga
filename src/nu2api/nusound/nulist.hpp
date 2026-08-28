@@ -19,6 +19,10 @@ class NuListNodeBase {
         this->next = next;
     }
 
+    NuListNodeBase *GetNext() const {
+        return this->next;
+    }
+
     void Remove() {
         if (prev != NULL) {
             prev->next = next;
@@ -30,6 +34,7 @@ class NuListNodeBase {
 };
 
 template <typename T> class NuListNode : public NuListNodeBase {
+  public:
     T value;
 
   public:
@@ -66,6 +71,14 @@ template <typename T> class NuList {
         head->SetNext(node);
 
         length++;
+    }
+
+    NuListNodeBase *Head() const {
+        return this->head;
+    }
+
+    NuListNodeBase *Tail() const {
+        return this->tail;
     }
 
     void Remove(NuListNodeBase *node) {

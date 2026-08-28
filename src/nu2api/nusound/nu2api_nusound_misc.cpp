@@ -20,33 +20,3 @@ NuSoundListener *NuSoundSystem::GetNearestFocusListener(NuEList<NuSoundListener,
                                                         float &) {
     return NULL;
 }
-
-void NuSoundLoaderOGG::OGGFileCallbacks::Close() {
-}
-
-void NuSoundLoaderOGG::OGGFileCallbacks::GetFile() const {
-}
-
-void NuSoundLoaderOGG::OGGFileCallbacks::GetPosition() const {
-}
-
-void NuSoundLoaderOGG::OGGFileCallbacks::Seek(i32, u32) {
-}
-
-void NuSoundDecoderOGG::OGGReadCallbacksDecoder::Close() {
-}
-
-void NuSoundDecoderOGG::OGGReadCallbacksDecoder::GetPosition() const {
-}
-
-NuSoundDecoderOGG::OGGReadCallbacksDecoder::OGGReadCallbacksDecoder() {
-}
-
-void NuSoundDecoderOGG::OGGReadCallbacksDecoder::Read(void *, u32) {
-}
-
-void NuSoundDecoderOGG::OGGReadCallbacksDecoder::Seek(i32, u32) {
-}
-
-void NuSoundDecoderOGG::OGGReadCallbacksDecoder::SetDecoder(NuSoundDecoderOGG *) {
-}

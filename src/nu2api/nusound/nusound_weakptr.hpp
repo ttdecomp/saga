@@ -147,7 +147,8 @@ template <typename T> class NuSoundWeakPtr : public NuSoundWeakPtrListNode {
             }
 
             if (ptr != NULL) {
-                this->obj->Link(this);
+                // Register this weak pointer in the target's list.
+                ((NuSoundWeakPtrObj<T> *)ptr)->Link(this);
             }
 
             this->obj = (NuSoundWeakPtrObj<T> *)ptr;

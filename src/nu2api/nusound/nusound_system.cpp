@@ -4,7 +4,9 @@
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/numath/nuvec.h"
 #include "nu2api/nusound/nusound_bus.hpp"
+#include "nu2api/nusound/nusound_decoder.hpp"
 #include "nu2api/nusound/nusound_streamer.hpp"
+#include "nu2api/nusound/nusound_voice.hpp"
 
 #include "decomp.h"
 
@@ -24,6 +26,9 @@ typeof(NuSoundSystem::g_handler) NuSoundSystem::g_handler = {};
 const char *NuSoundSystem::sFileExtensions[12] = {"wav", "adp", "ima", "caf", "xma", "ogg",
                                                   "dsp", "msf", "vag", "gcm", "wua", "cbx"};
 NuSoundSystem *NuSoundSystem::s_staticInstance = NULL;
+NuSoundRoutingTable *NuSoundSystem::sDefaultRoutingTable = NULL;
+i32 NuSoundSystem::sNumAvailableOutputDevices = 0;
+i32 NuSoundSystem::sOutputConfig = 0;
 
 NuMemoryManager *NuSoundSystem::sScratchMemMgr = NULL;
 
@@ -108,6 +113,12 @@ NuSoundSystem::NuSoundSystem() {
     this->samples = NULL;
     // this->field50_0xf8 = 0;
     this->sample_count = 0x100;
+    this->voice_list_start = NULL;
+    this->voice_list_end = NULL;
+    this->voice_count = 0;
+    this->initialised = false;
+    this->audio_engine = NULL;
+    this->output_mix = NULL;
     // this->field63_0x108 = 1;
     s_staticInstance = this;
 }
@@ -358,13 +369,15 @@ void NuSoundSystem::CalculateCrossfadeHeight(NuSoundSystem::CurveData const &, f
 void NuSoundSystem::CreateCrossfadeCurve(u32) {
 }
 
-void NuSoundSystem::CreateDecoder(NuSoundSource *) {
+NuSoundDecoder *NuSoundSystem::CreateDecoder(NuSoundSource *source) {
+    // Decoder construction lives in nusound_decoder.cpp once the decode
+    // thread lands; the music path never reaches here.
+    (void)source;
+    UNIMPLEMENTED("NuSoundSystem::CreateDecoder");
+    return NULL;
 }
 
 void NuSoundSystem::CreateEffect(NuSoundEffect::EffectType) {
-}
-
-void NuSoundSystem::CreateVoice(NuSoundSource *, bool) {
 }
 
 void NuSoundSystem::DefragmentSampleMemory() {
@@ -397,7 +410,8 @@ void NuSoundSystem::GetCrossfadeCurve(u32) const {
 void NuSoundSystem::GetDefaultFileType(NuSoundSource::FeedType) {
 }
 
-void NuSoundSystem::GetDefaultRoutingTable() {
+NuSoundRoutingTable *NuSoundSystem::GetDefaultRoutingTable() {
+    return sDefaultRoutingTable;
 }
 
 void NuSoundSystem::GetGfxMemorySize() {
@@ -412,7 +426,8 @@ void NuSoundSystem::GetLargestMemoryFragment(NuSoundSystem::MemoryDiscipline) {
 void NuSoundSystem::GetListeners() {
 }
 
-void NuSoundSystem::GetNumAvailableOutputDevices() {
+i32 NuSoundSystem::GetNumAvailableOutputDevices() {
+    return sNumAvailableOutputDevices;
 }
 
 void NuSoundSystem::GetOldestVoice(NuSoundSample *, float &) {
@@ -454,16 +469,15 @@ void NuSoundSystem::ReleaseBus(NuSoundBus *) {
 void NuSoundSystem::ReleaseCrossfadeCurve(u32) {
 }
 
-void NuSoundSystem::ReleaseDecoder(NuSoundDecoder *) {
+void NuSoundSystem::ReleaseDecoder(NuSoundDecoder *decoder) {
+    (void)decoder;
+    UNIMPLEMENTED("NuSoundSystem::ReleaseDecoder");
 }
 
 void NuSoundSystem::ReleaseEffect(NuSoundEffect *) {
 }
 
 void NuSoundSystem::ReleaseSample(NuSoundSample *) {
-}
-
-void NuSoundSystem::ReleaseVoice(NuSoundVoice *) {
 }
 
 void NuSoundSystem::RemoveListener(NuSoundListener *) {
@@ -487,7 +501,23 @@ void NuSoundSystem::SetMainThreadID(NuThread *) {
 void NuSoundSystem::Shutdown() {
 }
 
-void NuSoundSystem::SourceRequiresDecoder(NuSoundSource *) {
+bool NuSoundSystem::SourceRequiresDecoder(NuSoundSource *source) {
+    NuSoundStreamDesc *desc = source->GetStreamDesc();
+    if (desc == NULL) {
+        return false;
+    }
+
+    if (desc->GetEncodedDataFormat() != desc->GetDecodedDataFormat() && desc->DecodeStreamOnOpen() == 0) {
+        // A handful of short effect sounds get their own special case (they
+        // are pre-decoded elsewhere).
+        const char *name = source->GetName();
+        if (strstr(name, "coin") != NULL || strstr(name, "counter") != NULL || strstr(name, "fs_") != NULL ||
+            strstr(name, "saber") != NULL) {
+            return false;
+        }
+        return true;
+    }
+    return false;
 }
 
 void NuSoundSystem::StopAllVoices() {
@@ -505,13 +535,138 @@ void NuSoundSystem::UnloadAllSamples() {
 void NuSoundSystem::UnloadSample(NuSoundSample *) {
 }
 
-void NuSoundSystem::Update(float) {
+void NuSoundSystem::Update(f32 frametime) {
+    if (this->initialised == false) {
+        return;
+    }
+
+    // Platform hook (on Android this only polls the application state).
+    this->UpdateAudioDevice();
+
+    pthread_mutex_lock(&this->mutex);
+
+    // Pass 1: drive every platform voice's device state.
+    for (NuSoundVoice *voice = this->voice_list_end; voice != NULL; voice = voice->field_0x24) {
+        voice->UpdateHardwareVoice(frametime);
+    }
+
+    // Pass 2: update the engine-side mix of every playing voice; stopped
+    // auto-delete voices are released.
+    NuSoundVoice *voice = this->voice_list_start;
+    while (voice != NULL) {
+        NuSoundVoice *next = voice->field_0x28;
+
+        NuSoundVoice::PlayState state = voice->GetState();
+        if (state == NuSoundVoice::PLAYSTATE_PLAYING) {
+            pthread_mutex_lock(&NuSoundWeakPtrListNode::sPtrAccessLock.mutex);
+            voice->Update(frametime);
+            pthread_mutex_unlock(&NuSoundWeakPtrListNode::sPtrAccessLock.mutex);
+        } else if (state == NuSoundVoice::PLAYSTATE_STOPPED && voice->GetAutoDelete()) {
+            this->ReleaseVoice(voice);
+        }
+
+        voice = next;
+    }
+
+    pthread_mutex_unlock(&this->mutex);
 }
 
 void NuSoundSystem::dBToAmplitude(float) {
 }
 
-void NuSound3CreateVoice(nuvec_s *, i32, float, float, i32, i32, float, bool) {
+NuSoundVoice *NuSoundSystem::CreateVoice(NuSoundSource *source, bool loop) {
+    NuSoundVoice *voice;
+
+    if (this->SourceRequiresDecoder(source)) {
+        // Encoded sources (OGG) play through a decoder that owns a decode
+        // thread; the decoder becomes the voice's source.
+        NuSoundDecoder *decoder = this->CreateDecoder(source);
+        decoder->OpenStream(loop);
+        if (decoder->IsStreamOpen() == false) {
+            this->ReleaseDecoder(decoder);
+            return NULL;
+        }
+        NuSoundStreamDesc *desc = decoder->GetStreamDesc();
+        NuSoundVoiceFactory *factory = this->factory_list.GetFactory(desc->GetDecodedDataFormat());
+        voice = factory->CreateVoice(decoder, loop);
+        if (voice == NULL) {
+            decoder->CloseStream();
+            this->ReleaseDecoder(decoder);
+            return NULL;
+        }
+    } else {
+        if (source->IsStreamOpen() == false) {
+            return NULL;
+        }
+        NuSoundStreamDesc *desc = source->GetStreamDesc();
+        NuSoundVoiceFactory *factory = this->factory_list.GetFactory(desc->GetDecodedDataFormat());
+        voice = factory->CreateVoice(source, loop);
+        if (voice == NULL) {
+            return NULL;
+        }
+    }
+
+    // Append the voice to the system's voice list.
+    pthread_mutex_lock(&this->mutex);
+    voice->field_0x24 = this->voice_list_end;
+    voice->field_0x28 = NULL;
+    if (this->voice_list_end != NULL) {
+        this->voice_list_end->field_0x28 = voice;
+    } else {
+        this->voice_list_start = voice;
+    }
+    this->voice_list_end = voice;
+    this->voice_count++;
+    pthread_mutex_unlock(&this->mutex);
+
+    return voice;
+}
+
+void NuSoundSystem::ReleaseVoice(NuSoundVoice *voice) {
+    pthread_mutex_lock(&this->mutex);
+
+    // Detach effects (releasing the ones the system owns).
+    for (NuEListNode<NuSoundEffect> *node = voice->effects_start; node != NULL;) {
+        NuSoundEffect *effect = node->data;
+        NuEListNode<NuSoundEffect> *next = node->next;
+        voice->RemoveEffect(effect);
+        // effect->field_0x24 marks system-owned effects; release them.
+        this->ReleaseEffect(effect);
+        node = next;
+    }
+
+    // Streaming sources opened through a decoder close their stream here.
+    NuSoundDecoder *decoder = NULL;
+    if (this->SourceRequiresDecoder(voice->sound_source)) {
+        decoder = (NuSoundDecoder *)voice->sound_source;
+    }
+
+    // Unlink from the voice list.
+    if (voice->field_0x24 != NULL) {
+        voice->field_0x24->field_0x28 = voice->field_0x28;
+    } else {
+        this->voice_list_start = voice->field_0x28;
+    }
+    if (voice->field_0x28 != NULL) {
+        voice->field_0x28->field_0x24 = voice->field_0x24;
+    } else {
+        this->voice_list_end = voice->field_0x24;
+    }
+    voice->field_0x24 = NULL;
+    voice->field_0x28 = NULL;
+    if (this->voice_count > 0) {
+        this->voice_count--;
+    }
+
+    delete voice;
+    NuSoundSystem::FreeMemory(NuSoundSystem::MemoryDiscipline::SCRATCH, (usize)voice, 0);
+
+    if (decoder != NULL) {
+        decoder->CloseStream();
+        this->ReleaseDecoder(decoder);
+    }
+
+    pthread_mutex_unlock(&this->mutex);
 }
 
 void NuSound3ExitThreads() {

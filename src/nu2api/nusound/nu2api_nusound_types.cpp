@@ -1,25 +1,12 @@
-// Method bodies for the Ghidra-reconstructed NuSound class model declared in
-// nu2api_nusound_types.h. The NuSoundLoaderOGG and NuSoundDecoderOGG classes
-// defined there differ from the hand-written real headers (their virtual
-// signatures do not line up), so their empty placeholder bodies live here.
+// Method bodies for the NuSound classes declared in nu2api_nusound_types.h.
+// The NuSoundDecoderOGG decode path is off the title-music pipeline; its
+// bodies are faithful stubs pending the decode-thread work.
 #include "nu2api_nusound_types.h"
 
-void NuSoundLoaderOGG::Close() {
+NuSoundDecoderOGG::NuSoundDecoderOGG(char const *, NuSoundSource *) {
 }
 
-void NuSoundLoaderOGG::OggCallbackClose(void *) {
-}
-
-void NuSoundLoaderOGG::OggCallbackSeek(void *, i64, i32) {
-}
-
-void NuSoundLoaderOGG::OggCallbackTell(void *) {
-}
-
-void NuSoundLoaderOGG::OpenFileForStreaming(char const *, bool) {
-}
-
-void NuSoundLoaderOGG::SeekRawData(u64) {
+NuSoundDecoderOGG::~NuSoundDecoderOGG() {
 }
 
 void NuSoundDecoderOGG::Decode(NuSoundSource &, NuSoundBuffer &, bool) {
@@ -28,14 +15,27 @@ void NuSoundDecoderOGG::Decode(NuSoundSource &, NuSoundBuffer &, bool) {
 void NuSoundDecoderOGG::DecodeOggChunk(char *, u32) {
 }
 
-NuSoundDecoderOGG::NuSoundDecoderOGG(char const *, NuSoundSource *) {
-}
-
 void NuSoundDecoderOGG::Reset() {
 }
 
 void NuSoundDecoderOGG::SubmitBuffer(NuSoundBuffer *) {
 }
 
-NuSoundDecoderOGG::~NuSoundDecoderOGG() {
+NuSoundDecoderOGG::OGGReadCallbacksDecoder::OGGReadCallbacksDecoder() {
+}
+
+void NuSoundDecoderOGG::OGGReadCallbacksDecoder::Read(void *, u32) {
+}
+
+void NuSoundDecoderOGG::OGGReadCallbacksDecoder::Seek(i32, u32) {
+}
+
+void NuSoundDecoderOGG::OGGReadCallbacksDecoder::Close() {
+}
+
+i32 NuSoundDecoderOGG::OGGReadCallbacksDecoder::GetPosition() const {
+    return 0;
+}
+
+void NuSoundDecoderOGG::OGGReadCallbacksDecoder::SetDecoder(NuSoundDecoderOGG *) {
 }

@@ -1,4 +1,4 @@
-![Progress](https://img.shields.io/badge/matching-9.13%25-red)
+![Progress](https://img.shields.io/badge/matching-9.25%25-red)
 [![Discord](https://img.shields.io/discord/1467775700894224555?color=%235865F2&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/2HJuMtzA7q)
 
 |                 | Target (Android x86)                                                                                                                                                                                  | Host                                                                                                                                                                                  |
@@ -102,6 +102,6 @@ See the [docs/](docs/) directory.
 | `legoapi/render` | 2.4% | 1.3% | 2.0% |
 | `legoapi/world` | 19.2% | 27.4% | 0.1% |
 | `legogame` | 5.5% | 5.3% | 78.6% |
-| `nu2api` | 28.1% | 19.4% | 81.5% |
+| `nu2api` | 28.8% | 19.6% | 81.4% |
 
 <!-- matching-table-end -->

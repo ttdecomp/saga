@@ -41,9 +41,6 @@ void legoSetCutVolume(float v) {
 }
 void GetAudioFadeLevel() {
 }
-void PS2VolumeToScalar(i32 v) {
-    (void)v;
-}
 void SetBackgroundMusic(i32 track) {
     LOG_INFO("SetBackgroundMusic track=%d (Star Wars theme after intro when track==1)", track);
     if (track == -1) {

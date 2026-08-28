@@ -6,6 +6,9 @@
 
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nusound/nusound_buffer.hpp"
+#include "nu2api/nusound/nusound_streamdesc.hpp"
+
+class NuSoundLoaderWAV;
 
 class NuSoundLoadTrigger {
   public:
@@ -65,48 +68,106 @@ class NuSoundLoader {
     virtual u64 ReadData(void *buffer, u64 size);
 };
 
-class NuSoundStreamDesc {
-  public:
-    enum class DataFormat {
-        ZERO = 0,
-        THREE = 3,
-    };
-
-  public:
-    u16 format_id;
+// 18-byte canonical WAV fmt header; overlays the head of the stream desc
+// (ReadRIFFHeaderChunk reads it straight into the desc fields).
+struct FileHeaderWAV {
+    u16 format;
     u16 num_channels;
     u32 sample_rate;
-    u32 samples_per_second;
-    u16 bits_per_channel;
+    u32 byte_rate;
     u16 block_size;
-    u64 decoded_length_bytes;
-    u16 extended_data_size;
-    void *extended_data;
+    u16 bits_per_channel;
+    u16 extended_size;
+};
 
-    OggVorbis_File ogg_file;
-
-    u64 file_size;
-    u64 encoded_length_bytes;
-    u64 length_samples;
-    double length_seconds;
-
+// Stream desc for WAV / MIB files: raw PCM, encoded and decoded format are
+// identical, so these sources never need a decoder.
+class NuSoundHeaderWAV : public NuSoundStreamDesc {
   public:
-    virtual DataFormat GetDecodedDataFormat() const = 0;
-    virtual u64 GetEncodedLengthBytes() const = 0;
-    virtual u64 GetLengthSamples() const = 0;
-    virtual double GetLengthSeconds() const = 0;
-    virtual u64 GetDataOffset() const = 0;
-    virtual u16 GetNumChannels() const = 0;
-    virtual u32 GetSampleRate() const = 0;
-    virtual u16 GetBitsPerChannel() const = 0;
-    virtual u16 GetBlockSize() const = 0;
-    virtual DataFormat GetEncodedDataFormat() const = 0;
-    virtual u64 GetDecodedLengthBytes() const = 0;
-    virtual i32 DecodeStreamOnOpen() const;
-    virtual i32 GetLoopStart() const;
-    virtual i32 GetLoopEnd() const;
-    virtual u16 GetInterleaveSize() const = 0;
-    virtual u16 GetFormatID() const = 0;
-    virtual u16 GetExtendedDataSize() const = 0;
-    virtual void *GetExtendedData() const = 0;
+    u64 data_position; // absolute file offset of the data chunk
+
+    NuSoundHeaderWAV() : data_position(0) {
+    }
+
+    DataFormat GetDecodedDataFormat() const override {
+        return DataFormat::ZERO;
+    }
+    DataFormat GetEncodedDataFormat() const override {
+        return DataFormat::ZERO;
+    }
+    u64 GetEncodedLengthBytes() const override {
+        return this->encoded_length_bytes;
+    }
+    u64 GetDecodedLengthBytes() const override {
+        return this->decoded_length_bytes;
+    }
+    u64 GetLengthSamples() const override {
+        return GetEncodedLengthBytes() / ((GetBitsPerChannel() + 7) / 8);
+    }
+    double GetLengthSeconds() const override {
+        return (double)GetLengthSamples() / (double)GetSampleRate();
+    }
+    u64 GetDataOffset() const override {
+        return this->data_position;
+    }
+    u16 GetNumChannels() const override {
+        return this->num_channels;
+    }
+    u32 GetSampleRate() const override {
+        return this->sample_rate;
+    }
+    u16 GetBitsPerChannel() const override {
+        return this->bits_per_channel;
+    }
+    u16 GetBlockSize() const override {
+        return this->block_size;
+    }
+    u16 GetInterleaveSize() const override {
+        return 0;
+    }
+    u16 GetFormatID() const override {
+        return this->format_id;
+    }
+    u16 GetExtendedDataSize() const override {
+        return this->extended_data_size;
+    }
+    void *GetExtendedData() const override {
+        return this->extended_data;
+    }
+};
+
+class NuSoundLoaderWAV : public NuSoundLoader {
+  public:
+    // One RIFF chunk header as read from the file.
+    struct ChunkInfo {
+        u32 id;
+        u32 size;
+    };
+
+    // Per-request entry for the RIFF chunk walker: the expected chunk ids
+    // (fmt / data), the reader callbacks and the found chunk infos + state.
+    struct ChunkReadRequest {
+        u32 format_id;
+        u32 data_id;
+        u32 pad_0x8;
+        ChunkInfo chunk_info[2];
+        u32 state;
+        void (*chunk_reader)(i32 file, NuSoundStreamDesc *desc, const ChunkInfo &info, NuSoundLoaderWAV *loader);
+        void (*data_reader)(i32 file, NuSoundStreamDesc *desc, const ChunkInfo &info, NuSoundLoaderWAV *loader);
+    };
+
+    NuSoundLoaderWAV();
+    ~NuSoundLoaderWAV();
+
+    NuSoundStreamDesc *CreateHeader() override;
+    i32 ReadHeader(NuSoundStreamDesc *desc) override;
+    bool SeekPCMSample(u64 index) override;
+    bool SeekTime(f64 seconds) override;
+
+    static void ReadDataChunk(i32 file, NuSoundStreamDesc *desc, const ChunkInfo &info, NuSoundLoaderWAV *loader);
+    static void ReadRIFFHeaderChunk(i32 file, NuSoundStreamDesc *desc, const ChunkInfo &info, NuSoundLoaderWAV *loader);
+    u32 FindChunk(i32 file, u32 id, ChunkInfo &info);
+    u32 FindChunks(i32 file, NuSoundStreamDesc *desc, ChunkReadRequest *requests, u32 count);
+    static u32 MakeFourCC(char *cc);
+    static void EndianFlipWAVHeader(FileHeaderWAV *header);
 };

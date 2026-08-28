@@ -1,5 +1,12 @@
 #include "nu2api/nusound/nusound_source.hpp"
 
+u32 NuSoundSource::sNumInitialBuffers = 1;
+
+u32 NuSoundSource::GetNumInitialBuffers() const {
+    return NuSoundSource::sNumInitialBuffers;
+}
+#include "nu2api/nusound/nusound_weakptr.hpp"
+
 #include "nu2api/nucore/numemory.h"
 #include "nu2api/nusound/nusound_loader.hpp"
 
