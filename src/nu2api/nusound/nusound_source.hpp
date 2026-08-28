@@ -16,7 +16,7 @@ class NuSoundSource {
 
     enum class SourceType : u32 {
         ZERO = 0,
-
+        STREAMING = 1,
     };
 
   public:

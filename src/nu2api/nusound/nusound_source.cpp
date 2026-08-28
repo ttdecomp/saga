@@ -34,8 +34,10 @@ NuSoundSource::NuSoundSource(const char *name, SourceType source_type, FeedType 
     }
 
     // this->sound_stream_desc = NULL;
-    this->feed_type = feed_type;
-    this->source_type = source_type;
+    // libTTapp.so 0x32486a: both type fields are written as the literal 1
+    // (STREAMING); the constructor's type arguments are ignored.
+    this->feed_type = FeedType::STREAMING;
+    this->source_type = SourceType::STREAMING;
     // this->field8_0x18 = NULL;
     // this->field9_0x1c = -1;
 }

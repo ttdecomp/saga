@@ -18,7 +18,6 @@
 #include "nu2api/nusound/nusound_streamer.hpp"
 
 #include <math.h>
-#include <stdio.h>
 
 namespace {
 

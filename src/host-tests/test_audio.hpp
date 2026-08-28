@@ -13,6 +13,8 @@
 #include <cstdio>
 #include <cstring>
 
+#include <unistd.h>
+
 #include "decomp.h"
 #include "globals.h"
 #include "host-tests/nusound/opensl_host.hpp"
@@ -132,6 +134,10 @@ inline i32 test_audio(i32 argc, char **argv) {
         }
     }
 
-    // NuMain runs until told to quit; the check is done either way.
-    return result;
+    // NuMain runs until told to quit; the check is done either way. Exit
+    // without the static-destructor pass: the NuMain/streamer threads are
+    // deliberately still alive here, and their list globals race this
+    // thread's destructors (observed as a bad-free of NuSoundStreamer::
+    // sStreamers inside ~NuList at exit).
+    _exit(result);
 }

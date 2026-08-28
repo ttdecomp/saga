@@ -7,7 +7,6 @@
 #include "nu2api/nusound/nusound_system.hpp"
 
 #include <new>
-#include <stdio.h>
 
 // libTTapp.so NuSoundDecoder::sDecodeThread @0x11e90d0.
 NuSoundDecodeThread *NuSoundDecoder::sDecodeThread = NULL;
@@ -175,9 +174,15 @@ void NuSoundDecoder::VoiceRelease() {
     }
 }
 
-// libTTapp.so 0x31ea10.
+// libTTapp.so 0x31ea10: min(ring buffers, sNumInitialBuffersByType[type]).
+// Every source's type field is 1 (the original's NuSoundSource ctor hardcodes
+// it), so the table's second entry, 2, is the cap.
 u32 NuSoundDecoder::GetNumInitialBuffers() const {
-    return 1;
+    static const u32 sNumInitialBuffersByType[] = {1, 2};
+
+    const u32 type = (u32)this->source_type;
+    const u32 cap = sNumInitialBuffersByType[type];
+    return this->ring_count < cap ? this->ring_count : cap;
 }
 
 // libTTapp.so 0x31f000.
@@ -220,15 +225,14 @@ void NuSoundDecoder::RequestBuffer(bool loop, NuSoundWeakPtr<NuSoundBufferCallba
 
     // libTTapp.so 0x31fb08: queue buffers[decode_pos % ring_count] on the
     // decode thread and return; the thread performs the decode and the
-    // SubmitBuffer hand-off. The consume cursor advances on the caller side.
-    if (NuSoundDecoder::sDecodeThread != NULL) {
+    // SubmitBuffer hand-off. The ring slot was already allocated by the
+    // OpenStream prefill, and the consume cursor advances on the caller side.
+    if (NuSoundDecoder::sDecodeThread != NULL && this->ring_count > 0) {
         NuSoundBuffer &buffer = *this->buffers[this->decode_pos % this->ring_count];
-        if (buffer.Allocate(this->buffer_size, NuSoundSystem::MemoryDiscipline::DECODER) == 1) {
-            NuSoundWeakPtr<NuSoundBufferCallback> request;
-            request.Set((NuSoundBufferCallback *)callback.obj);
-            NuSoundDecoder::sDecodeThread->RequestDecode(*this, buffer, request, (loop & 1) != 0);
-            this->decode_pos++;
-        }
+        NuSoundWeakPtr<NuSoundBufferCallback> request;
+        request.Set((NuSoundBufferCallback *)callback.obj);
+        NuSoundDecoder::sDecodeThread->RequestDecode(*this, buffer, request, (loop & 1) != 0);
+        this->decode_pos++;
     }
 
     this->consumed_pos++;

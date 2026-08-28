@@ -25,6 +25,7 @@
 #include <stddef.h>
 
 #include "nu2api/nucore/fixed_width.h"
+#include "decomp.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -141,6 +142,16 @@ namespace hostsl {
 
         enum { PLAYER_MAX_QUEUE = 16 };
 
+        // One SL buffer-queue entry. The game owns the buffer memory it passes
+        // to Enqueue (the decoder ring reuses it for the next chunk), so the
+        // device keeps its own copy until the entry is consumed.
+        struct QueueEntry {
+            u8 *data;        // the device copy (stream source format)
+            u32 stream_size; // the copy size in the stream source format
+            u32 fed;         // bytes already handed to the device-side buffer
+            u32 sl_size;     // the size the game enqueued (SL accounting)
+        };
+
         struct Player {
             ObjectVTable *object_vt;
             u32 kind;
@@ -175,12 +186,17 @@ namespace hostsl {
             // SDL conversion stream (src = the game's PCM format, dst = device spec)
             SDL_AudioStream *stream;
 
-            // device-side consumption bookkeeping
+            // device-side consumption bookkeeping (the playhead: frames pulled
+            // out of the device-side buffer)
             u64 consumed_device_frames;
-            // FIFO of outstanding buffer sizes (source bytes), consumed in order
-            u32 queue_sizes[PLAYER_MAX_QUEUE];
+            // the SL buffer queue, consumed in order
+            QueueEntry queue[PLAYER_MAX_QUEUE];
             u32 queue_head;
             u32 queue_count;
+
+            // underrun tracking (the HEADATEND condition: playing, queue empty)
+            bool underrunning;
+            u64 underrun_start_ms;
         };
 
         // ---------------------------------------------------------------------------
@@ -251,6 +267,24 @@ namespace hostsl {
         // shared registry (device callback thread vs NuMain thread)
         // ---------------------------------------------------------------------------
 
+        // The device-side buffer (the AudioTrack analog): real SL copies the
+        // SL queue's front buffer into the AudioTrack as its buffer drains and
+        // reports buffers consumed on that hand-off, so the playhead lags the
+        // queue by the AudioTrack buffer size. The cap bounds how much the
+        // device holds; 16384 device bytes ≈ 4 × 21 ms periods at 48 kHz.
+        const u32 TRACK_CAP_BYTES = 16384;
+
+        // Frees and drops every queued entry.
+        void QueueReleaseAll(Player *player) {
+            while (player->queue_count > 0) {
+                QueueEntry *entry = &player->queue[player->queue_head];
+                free(entry->data);
+                entry->data = NULL;
+                player->queue_head = (player->queue_head + 1) % PLAYER_MAX_QUEUE;
+                player->queue_count--;
+            }
+        }
+
         pthread_mutex_t g_lock = PTHREAD_MUTEX_INITIALIZER;
         Player *g_players[32];
         u32 g_player_count = 0;
@@ -273,17 +307,11 @@ namespace hostsl {
                 }
             }
             pthread_mutex_unlock(&g_lock);
+            QueueReleaseAll(player);
             if (player->stream != NULL) {
                 SDL_DestroyAudioStream(player->stream);
                 player->stream = NULL;
             }
-        }
-
-        u32 GetConsumedSourceBytes(Player *player) {
-            // Device frames pulled out of the SDL stream converted to the player's
-            // source rate; derived from the total each time (no accumulation drift).
-            const u64 consumed_src_frames = player->consumed_device_frames * (u64)player->rate / (u64)device_spec.freq;
-            return (u32)(consumed_src_frames * (u64)(player->channels * (player->bits / 8)));
         }
 
         // ---------------------------------------------------------------------------
@@ -458,8 +486,13 @@ namespace hostsl {
             (void)interface_ids;
             (void)required;
 
-            // The output mix IS the SDL device: open it on first use.
+            // The output mix IS the SDL device: open it on first use. Real SL
+            // mixes in ~21 ms callbacks; SDL's default initial device buffer is
+            // far larger, which lets one mix pass consume the whole queued
+            // buffer and breaks the real-time consumption cadence the game's
+            // streaming refill depends on.
             if (device_stream == NULL) {
+                SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES, "1024");
                 device_stream =
                     SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &device_spec, DeviceMixCallback, NULL);
                 if (device_stream == NULL) {
@@ -508,7 +541,8 @@ namespace hostsl {
         // ---------------------------------------------------------------------------
 
         u32 PlaySetPlayState(void *self, u32 state) {
-            ((Player *)HOSTSL_CONTAINER_OF(self, Player, play_itf))->play_state = state;
+            Player *player = (Player *)HOSTSL_CONTAINER_OF(self, Player, play_itf);
+            player->play_state = state;
             return SL_RESULT_SUCCESS;
         }
 
@@ -552,25 +586,38 @@ namespace hostsl {
                 return SL_RESULT_BUFFER_INSUFFICIENT;
             }
 
+            QueueEntry *entry = &player->queue[(player->queue_head + player->queue_count) % PLAYER_MAX_QUEUE];
+            memset(entry, 0, sizeof(*entry));
+            entry->sl_size = size;
             if (player->bits == 24) {
                 // 24-bit LE samples expand into 32-bit words for SDL.
                 const u32 samples = size / 3;
-                static u32 expanded[0x20000];
                 if (samples > 0x20000) {
                     pthread_mutex_unlock(&g_lock);
                     return SL_RESULT_BUFFER_INSUFFICIENT;
                 }
+                entry->data = (u8 *)malloc(samples * 4);
+                if (entry->data == NULL) {
+                    pthread_mutex_unlock(&g_lock);
+                    return SL_RESULT_BUFFER_INSUFFICIENT;
+                }
                 const u8 *in = (const u8 *)data;
+                u32 *out = (u32 *)entry->data;
                 for (u32 i = 0; i < samples; i++) {
                     const u32 value = (u32)in[i * 3 + 0] | ((u32)in[i * 3 + 1] << 8) | ((u32)in[i * 3 + 2] << 16);
-                    expanded[i] = value << 8;
+                    out[i] = value << 8;
                 }
-                SDL_PutAudioStreamData(player->stream, expanded, (int)(samples * 4));
+                entry->stream_size = samples * 4;
             } else {
-                SDL_PutAudioStreamData(player->stream, data, (int)size);
+                entry->data = (u8 *)malloc(size);
+                if (entry->data == NULL) {
+                    pthread_mutex_unlock(&g_lock);
+                    return SL_RESULT_BUFFER_INSUFFICIENT;
+                }
+                memcpy(entry->data, data, size);
+                entry->stream_size = size;
             }
 
-            player->queue_sizes[(player->queue_head + player->queue_count) % PLAYER_MAX_QUEUE] = size;
             player->queue_count++;
             s_stats.bytes_enqueued += size;
             pthread_mutex_unlock(&g_lock);
@@ -580,38 +627,42 @@ namespace hostsl {
         u32 QueueClear(void *self) {
             Player *player = (Player *)HOSTSL_CONTAINER_OF(self, Player, queue_itf);
             pthread_mutex_lock(&g_lock);
-            if (player->stream != NULL) {
+            // Real SL keeps queued audio across Clear while the player is not
+            // playing: the decompiled voice startup enqueues the prefill and
+            // then issues SetPlayState(STOPPED) + Clear before the first
+            // SetPlayState(PLAYING) (StopHardwareVoice), and the shipping game's
+            // streams start from the beginning, so the never-played prefill
+            // survives the Clear there. A Clear on a playing player discards.
+            if (player->play_state == 3) {
                 SDL_ClearAudioStream(player->stream);
+                QueueReleaseAll(player);
             }
-            player->queue_head = 0;
-            player->queue_count = 0;
             pthread_mutex_unlock(&g_lock);
             return SL_RESULT_SUCCESS;
         }
 
-        // Drops queue entries the device fully consumed; returns the outstanding count.
-        u32 QueueCountOutstanding(Player *player) {
-            const u32 consumed = GetConsumedSourceBytes(player);
-            u32 done_bytes = 0;
+        // Drops queue entries the device-side buffer has fully consumed; returns
+        // the hand-off count (one buffer-consumed callback per entry).
+        u32 QueueCountHandedOff(Player *player) {
             u32 done = 0;
-            for (u32 e = 0; e < player->queue_count; e++) {
-                const u32 size = player->queue_sizes[(player->queue_head + e) % PLAYER_MAX_QUEUE];
-                if ((u64)done_bytes + size <= consumed) {
-                    done_bytes += size;
-                    done++;
-                } else {
+            while (player->queue_count > 0) {
+                QueueEntry *entry = &player->queue[player->queue_head];
+                if (entry->fed != entry->stream_size) {
                     break;
                 }
+                free(entry->data);
+                entry->data = NULL;
+                player->queue_head = (player->queue_head + 1) % PLAYER_MAX_QUEUE;
+                player->queue_count--;
+                done++;
             }
-            player->queue_head = (player->queue_head + done) % PLAYER_MAX_QUEUE;
-            player->queue_count -= done;
             return done;
         }
 
         u32 QueueGetState(void *self, u32 *count) {
             Player *player = (Player *)HOSTSL_CONTAINER_OF(self, Player, queue_itf);
             pthread_mutex_lock(&g_lock);
-            QueueCountOutstanding(player);
+            QueueCountHandedOff(player);
             *count = player->queue_count;
             pthread_mutex_unlock(&g_lock);
             return SL_RESULT_SUCCESS;
@@ -647,6 +698,28 @@ namespace hostsl {
         const u32 MIX_CHUNK_BYTES = 4096; // one pull per player per pass
         enum { FIRED_MAX = 64 };
 
+        // Hands queue data to the device-side buffer while it has room (the
+        // AudioTrack analog), then returns how many entries were fully consumed.
+        u32 TopUpPlayerStream(Player *player) {
+            u32 done = QueueCountHandedOff(player);
+
+            const u32 available = (u32)SDL_GetAudioStreamAvailable(player->stream);
+            u32 space = TRACK_CAP_BYTES > available ? TRACK_CAP_BYTES - available : 0;
+            space &= ~3u; // whole s16 stereo frames in the device format
+            while (space > 0 && player->queue_count > 0) {
+                QueueEntry *entry = &player->queue[player->queue_head];
+                const u32 remaining = entry->stream_size - entry->fed;
+                const u32 take = remaining < space ? remaining : space;
+                if (SDL_PutAudioStreamData(player->stream, entry->data + entry->fed, (int)take) == 0) {
+                    break;
+                }
+                entry->fed += take;
+                space -= take;
+                done += QueueCountHandedOff(player);
+            }
+            return done;
+        }
+
         void DeviceMixCallback(void *userdata, SDL_AudioStream *stream, int additional, int total) {
             (void)userdata;
             (void)total;
@@ -678,12 +751,26 @@ namespace hostsl {
                         continue; // stopped/paused players keep their data queued
                     }
 
+                    // The device-side buffer drains into the mix; the SL queue
+                    // keeps feeding it while there is room. The buffer-consumed
+                    // callbacks fire on that hand-off, ahead of the playhead,
+                    // which is what drives the game's streaming refill.
+                    const u32 done = TopUpPlayerStream(player);
+                    for (u32 e = 0; e < done && fired_count < FIRED_MAX; e++) {
+                        fired[fired_count++] = player;
+                    }
+
                     const u32 available = (u32)SDL_GetAudioStreamAvailable(player->stream);
                     const u32 take = (available < chunk ? available : chunk) & ~3u;
                     if (take == 0) {
                         // Underrun: nothing queued means the play head sits at the end
                         // of the last buffer, which is when real SL raises
                         // SL_PLAYEVENT_HEADATEND. The streaming refill starts here.
+                        if (!player->underrunning) {
+                            player->underrunning = true;
+                            player->underrun_start_ms = SDL_GetTicks();
+                            LOG_WARN("audio: buffer underrun on player %p (playing, queue empty)", (void *)player);
+                        }
                         if (fired_count < FIRED_MAX) {
                             fired[fired_count++] = player;
                         }
@@ -692,6 +779,11 @@ namespace hostsl {
                     const int got = SDL_GetAudioStreamData(player->stream, pull_buffer, (int)take);
                     if (got < 4) {
                         continue;
+                    }
+                    if (player->underrunning) {
+                        player->underrunning = false;
+                        LOG_WARN("audio: player %p underrun recovered after %.1f ms", (void *)player,
+                                 (double)(SDL_GetTicks() - player->underrun_start_ms));
                     }
 
                     const f32 gain = powf(10.0f, (f32)player->volume_millibels / 2000.0f);
@@ -712,13 +804,6 @@ namespace hostsl {
 
                     player->consumed_device_frames += (u32)got / 4;
                     s_stats.bytes_consumed += (u32)got;
-
-                    // Fire one event per fully consumed buffer (the buffer-queue
-                    // callback in real SL drives the streaming refill off this).
-                    const u32 done = QueueCountOutstanding(player);
-                    for (u32 e = 0; e < done && fired_count < FIRED_MAX; e++) {
-                        fired[fired_count++] = player;
-                    }
                 }
 
                 i16 *out16 = (i16 *)pull_buffer;
