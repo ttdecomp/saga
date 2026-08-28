@@ -586,15 +586,6 @@ void BackDrop_UpdateColours(i32 instant) {
     seek(backdrop_bot_b, backdrop_bot_tb);
 }
 
-void BackDrop_SetTint(f32 r, f32 g, f32 b) {
-    backdrop_top_r = r;
-    backdrop_top_g = g;
-    backdrop_top_b = b;
-    backdrop_bot_r = r * 0.6f;
-    backdrop_bot_g = g * 0.6f;
-    backdrop_bot_b = b * 0.6f;
-}
-
 void BackDrop_Draw(float alpha, i32 flags) {
     if (s_backdrop_scene == nullptr)
         return;

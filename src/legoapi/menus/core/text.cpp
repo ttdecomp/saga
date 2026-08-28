@@ -33,7 +33,6 @@ extern "C" {
 }
 extern "C" void NuRndrClear(u32 flags, u32 colour, f32 alpha);
 extern "C" void Text3DStringEncode(char *src, u16 *dst);
-void BackDrop_SetTint(f32 r, f32 g, f32 b);
 void Text_MakeTime(float, i32, i32, i32, char *) {
 }
 
@@ -82,7 +81,6 @@ void TextCrawl_Draw(float dt, i32 paragraphs, float alpha, char *text) {
     if (crawlText == nullptr)
         crawlText = kCrawlFallback;
     NuQFntSetJustifiedTolerances(0.75f, 0.75f);
-    BackDrop_SetTint(0.9f * alpha, 0.8f * alpha, 0.15f * alpha);
     // Host: actually draw the fallback crawl text so the PPM shows yellow
     // on starfield and the test can detect it. Use the same QFont path as
     // IntroText_Draw, but scrolling vertically.

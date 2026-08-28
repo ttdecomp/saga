@@ -11,8 +11,8 @@
 // deferred-subsystem stub handle; the slot functions are no-op stubs.
 extern "C" {
     void *NuTimeBarCreateSet(i32);
-    void NuTimeBarSlotBegin(void *, i32, char const *);
-    void NuTimeBarSlotEnd(void *, i32);
+    void _NuTimeBarSlotBegin(void *, i32, char const *);
+    void _NuTimeBarSlotEnd(void *, i32);
 }
 
 // Written by ThingManager's ctor (original global @0x124f2e0, .bss).
@@ -322,12 +322,12 @@ void ThingManager::ProcessThings(ThingProcessData *data) {
             continue;
         }
         if (thing->profiling_0xc != NULL) {
-            NuTimeBarSlotBegin(this->timebar, 0, name);
+            _NuTimeBarSlotBegin(this->timebar, 0, name);
         }
         thing->ProcessEvenWhenPaused(data);
         thing = this->things[i];
         if (thing->profiling_0xc != NULL) {
-            NuTimeBarSlotEnd(this->timebar, 0);
+            _NuTimeBarSlotEnd(this->timebar, 0);
         }
     }
     if (data->paused != 0) {
@@ -340,12 +340,12 @@ void ThingManager::ProcessThings(ThingProcessData *data) {
                 continue;
             }
             if (thing->profiling_0xc != NULL) {
-                NuTimeBarSlotBegin(this->timebar, 0, name);
+                _NuTimeBarSlotBegin(this->timebar, 0, name);
             }
             thing->ProcessOnlyWhenPaused(data);
             thing = this->things[i];
             if (thing->profiling_0xc != NULL) {
-                NuTimeBarSlotEnd(this->timebar, 0);
+                _NuTimeBarSlotEnd(this->timebar, 0);
             }
         }
     } else {
@@ -358,12 +358,12 @@ void ThingManager::ProcessThings(ThingProcessData *data) {
                 continue;
             }
             if (thing->profiling_0xc != NULL) {
-                NuTimeBarSlotBegin(this->timebar, 0, name);
+                _NuTimeBarSlotBegin(this->timebar, 0, name);
             }
             thing->Process(data);
             thing = this->things[i];
             if (thing->profiling_0xc != NULL) {
-                NuTimeBarSlotEnd(this->timebar, 0);
+                _NuTimeBarSlotEnd(this->timebar, 0);
             }
         }
     }
@@ -389,12 +389,12 @@ void ThingManager::RenderThings(ThingRenderData *data) {
             continue;
         }
         if (thing->profiling_0xc != NULL) {
-            NuTimeBarSlotBegin(this->timebar, 1, name);
+            _NuTimeBarSlotBegin(this->timebar, 1, name);
         }
         thing->Render(data);
         thing = this->things[i];
         if (thing->profiling_0xc != NULL) {
-            NuTimeBarSlotEnd(this->timebar, 1);
+            _NuTimeBarSlotEnd(this->timebar, 1);
         }
     }
 }

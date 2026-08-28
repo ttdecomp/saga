@@ -1943,10 +1943,6 @@ extern "C" {
     }
     void NuTimeBarCreateSetEx2(void) {
     }
-    void NuTimeBarSlotBegin(void *, i32, char const *) {
-    }
-    void NuTimeBarSlotEnd(void *, i32) {
-    }
     void NuTimeBarDestroySet(void) {
     }
     void NuTimeBarEnable(void) {
