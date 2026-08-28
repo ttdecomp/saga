@@ -257,6 +257,15 @@ extern i32 SUPERBUFFERSIZE;
 extern VARIPTR permbuffer_base;
 extern VARIPTR original_permbuffer_base;
 extern VARIPTR superbuffer_end;
+
+extern "C" {
+    extern VARIPTR superbuffer_base;
+    extern VARIPTR superbuffer_ptr;
+    extern i32 permbuffer_size;
+    extern i32 CHARACTERBUFFERSIZE;
+    extern i32 EDITBUFFERENDSIZE;
+    extern VARIPTR editbuffer_end;
+}
 extern VARIPTR permbuffer_ptr;
 extern VARIPTR permbuffer_end;
 
@@ -369,7 +378,7 @@ extern NUGSCN *area_scene;
 // ------------------------------------------------------------------------
 extern f32 DoubleScoreTime;
 extern f32 GameTimer[2];
-extern void *AreaGlobals;
+extern u8 AreaGlobals[0x34]; // area-progress save block (inline .bss struct @0x1276de0)
 extern i32 HIGHGAMEOBJECT;
 extern void *Obj;
 extern f32 AreaPickupGravity;
@@ -660,7 +669,7 @@ extern struct GIZAIMESSAGESYS_s *gizaimessagesys;
 // ------------------------------------------------------------------------
 extern i32 LevHSpecial[264];
 extern i32 LevSfxFlag[4];
-extern void *dynamic_antinodes;
+extern u8 dynamic_antinodes[0x1500]; // AI anti-node spawn data (cleared per level)
 extern i32 LevInstAnim[12];
 extern i32 LevArea[4];
 extern i32 LevPathNodes[8];
@@ -693,7 +702,7 @@ extern u32 ResetBits;
 // ------------------------------------------------------------------------
 // Loading screen (LoadPerm) globals
 // ------------------------------------------------------------------------
-extern u8 ObjTab[0x1770];
+extern LEVELOBJECT ObjTab[0x2ee]; // level-object type table (.data @0x618240, 0xff-terminated)
 extern u8 SplTab[0x1a0];
 extern u8 LSW_CharCategory[0x78];
 extern u8 Cheat[0x5a0];
@@ -704,6 +713,7 @@ extern u8 LSW_Text[0x1648];
 extern void *ActionInfo;
 extern char *ExtraActionData;
 extern void *theGameThings;
+extern void *theThingManager;
 
 extern NUGSCN *saveicon_scene;
 extern NUGSCN *button_scene;

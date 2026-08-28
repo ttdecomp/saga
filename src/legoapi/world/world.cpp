@@ -405,7 +405,7 @@ void WorldInfo_Load(WORLDINFO *world) {
     world->game_anim_sys = (GAMEANIMSYS_s *)GameAnimSys_Create(&world->giz_buffer, &world->unknown_0108);
 
     // Load particles
-    Particles_Load(world, &debris_name, 400, 0x93);
+    Particles_Load(world, debris_name, 400, 0x93);
     if (abort_load != 0)
         goto abort;
     LoadPartFile(world);

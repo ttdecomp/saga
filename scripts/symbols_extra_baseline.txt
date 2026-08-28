@@ -7,4 +7,10 @@
 #
 # To update after a deliberate, documented change, bump the number below to
 # the new expected "extra (in build only)" count.
-145
+#
+# 145 -> 147: the NuSound OGG decode path (nusound_decoder_ogg.cpp) now calls
+# ov_read()/ov_raw_seek(), so the bundled libvorbis decoder objects link into
+# the build. The original embeds the same library compiled as C++ (its
+# symbols are C++-mangled and match ours), so the C-linkage duplicates of two
+# more library functions show up as extras.
+147

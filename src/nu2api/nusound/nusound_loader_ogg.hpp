@@ -51,9 +51,9 @@ class NuSoundLoaderOGG : public NuSoundLoader {
     bool SeekRawData(u64 position);
     void Close();
 
-    static i32 OggCallbackClose(void *callbacks);
-    static i32 OggCallbackSeek(void *callbacks, i64 offset, i32 origin);
-    static i32 OggCallbackTell(void *callbacks);
+    static int OggCallbackClose(void *callbacks);
+    static int OggCallbackSeek(void *callbacks, i64 offset, i32 origin); // NOLINT(google-runtime-int)
+    static long OggCallbackTell(void *callbacks);                        // NOLINT(google-runtime-int)
 
   private:
     OGGFileCallbacks file_callbacks;

@@ -1932,11 +1932,20 @@ extern "C" {
     }
     void NuHtmlVBarGraph(void) {
     }
-    void NuTimeBarCreateSet(void) {
+    // Profiling timebar sets are a deferred subsystem (the real one is
+    // NuTimeBarCreateSet @0x2d7450 -> CreateSetEx @0x2d73f0 -> CreateTimeBar
+    // @0x2a9860). Consumers only ever hand the returned handle to the
+    // NuTimeBarSlot* stubs, so NULL behaves like profiling disabled.
+    void *NuTimeBarCreateSet(i32) {
+        return NULL;
     }
     void NuTimeBarCreateSetEx(void) {
     }
     void NuTimeBarCreateSetEx2(void) {
+    }
+    void NuTimeBarSlotBegin(void *, i32, char const *) {
+    }
+    void NuTimeBarSlotEnd(void *, i32) {
     }
     void NuTimeBarDestroySet(void) {
     }

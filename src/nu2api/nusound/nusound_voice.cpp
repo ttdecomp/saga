@@ -88,7 +88,7 @@ NuSoundVoice::NuSoundVoice(NuSoundSource *sound_source, bool loop) {
     this->flags2 &= 0xf9;
     this->flags = (u8)(this->flags & 0xf0 | 0x10); // mix update on the first Update
 
-    this->SetState(PLAYSTATE_STOPPED);
+    this->SetState(PLAYSTATE_STOPPED); // libTTapp.so ctor tail (0x3275b9)
 }
 
 NuSoundVoice::~NuSoundVoice() {

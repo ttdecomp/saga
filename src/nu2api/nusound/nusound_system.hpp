@@ -200,8 +200,9 @@ class NuSoundSystem {
 
     // OpenSL ES handles (set by InitAudioDevice; a host override only has to
     // provide what these point at).
-    void *audio_engine; // engine object / engine interface
-    void *output_mix;   // output mix object
+    void *engine_object; // SL engine object (realize / GetInterface / destroy)
+    void *audio_engine;  // SLEngineItf (CreateAudioPlayer / CreateOutputMix)
+    void *output_mix;    // output mix object
 
   public:
     static NuSoundBus *sMasterBus;
@@ -309,7 +310,7 @@ class NuSoundSystem {
     void Get();
     void GetAllocdMemory(NuSoundSystem::MemoryDiscipline);
     void GetBufferAlignment();
-    void GetClosestSupportedConfig(int);
+    i32 GetClosestSupportedConfig(i32 config);
     void GetCrossfadeCurve(unsigned int) const;
     void GetDefaultFileType(NuSoundSource::FeedType);
     void GetGfxMemorySize();

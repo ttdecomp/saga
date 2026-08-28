@@ -110,7 +110,9 @@ i32 NuSoundBuffer::Provide(char *address, u64 size) {
 void NuSoundBuffer::Lock() {
     sCriticalSection.Lock();
 
-    if (this->lock_count && this->allocated == 0) {
+    // libTTapp.so 0x31e46d: only the first lock of a pool-backed buffer
+    // fetches the address (a provided buffer keeps its address always).
+    if (this->lock_count == 0 && this->allocated == 0) {
         this->address = this->memory_buffer->Lock("NuSoundBuffer::Lock()");
     }
 

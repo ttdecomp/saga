@@ -25,33 +25,7 @@ struct OPTIONSSAVE_s;
 struct WORLDINFO_s;
 struct nuvec_s;
 
-// The OGG decoder (nu2api.2013/nusound/nusound_decoder_ogg.cpp): wraps a
-// NuSoundSource, decodes OGG data into ring buffers and feeds the voice's
-// buffer callback. Off the title-music path; the bodies are faithful stubs.
-class NuSoundDecoderOGG : public NuSoundBufferCallback {
-  public:
-    class OGGReadCallbacksDecoder {
-      public:
-        NuSoundDecoderOGG *decoder;
-
-      public:
-        OGGReadCallbacksDecoder();
-        void Read(void *dest, u32 size);
-        void Seek(i32 origin, u32 offset);
-        void Close();
-        i32 GetPosition() const;
-        void SetDecoder(NuSoundDecoderOGG *decoder);
-    };
-
-    NuSoundDecoderOGG(char const *name, NuSoundSource *source);
-    virtual ~NuSoundDecoderOGG();
-
-    void Decode(NuSoundSource &source, NuSoundBuffer &buffer, bool flag);
-    void DecodeOggChunk(char *data, u32 size);
-    void Reset();
-    void SubmitBuffer(NuSoundBuffer *buffer) override;
-};
-
+// The OGG decoder lives in nusound_decoder_ogg.hpp / nusound_decoder_ogg.cpp.
 struct NuSoundAndroid;
 struct NuSoundClock;
 struct NuSoundDecodeThread;

@@ -5,6 +5,19 @@
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
 
+#include <string.h>
+
+// NuCore profiling timebars (nucore_plain.cpp): NuTimeBarCreateSet returns a
+// deferred-subsystem stub handle; the slot functions are no-op stubs.
+extern "C" {
+    void *NuTimeBarCreateSet(i32);
+    void NuTimeBarSlotBegin(void *, i32, char const *);
+    void NuTimeBarSlotEnd(void *, i32);
+}
+
+// Written by ThingManager's ctor (original global @0x124f2e0, .bss).
+extern void *theThingManager;
+
 void legoSetMusicVolume(float);
 
 void GameShadow(GameObject_s *, nuvec_s *, float, i32) {
@@ -226,10 +239,34 @@ void GameObject_s::IsRunningTaskType(HashedKey const &) {
 void GameObject_s::KillTasks() {
 }
 
-void ThingManager::AddThing(BaseThing *) {
+// ThingManager::AddThing @0x424c10. Appends at count; the pending
+// AddThingAfterThis reservation (field_0x14) is folded into the index and
+// cleared here.
+void ThingManager::AddThing(BaseThing *thing) {
+    i32 index = this->count;
+    if (thing != NULL) {
+        if (index < this->max_things) {
+            this->things[index] = thing;
+            index = index + 1;
+        }
+    }
+    index = index + this->field_0x14;
+    this->field_0x14 = 0;
+    this->count = index;
 }
 
-void ThingManager::AddThingAfterThis(BaseThing *) {
+// ThingManager::AddThingAfterThis @0x424c40. Reserves the slot after the
+// current tail: bumps field_0x14 and stores the thing at count+field_0x14;
+// the next AddThing folds the reservation into count.
+void ThingManager::AddThingAfterThis(BaseThing *thing) {
+    if (thing != NULL) {
+        i32 index = this->field_0x14 + 1;
+        this->field_0x14 = index;
+        index = index + this->count;
+        if (index < this->max_things) {
+            this->things[index] = thing;
+        }
+    }
 }
 
 void ThingManager::DisplayThings(ThingRenderData *) {
@@ -238,7 +275,27 @@ void ThingManager::DisplayThings(ThingRenderData *) {
 void ThingManager::EffectsThings(ThingRenderData *) {
 }
 
-void ThingManager::EnableActions(i32, i32, i32) {
+// ThingManager::EnableActions @0x425930. Finds the first thing whose 0x4 id
+// matches and sets (invert==0) or clears (invert!=0) the given flags bits.
+void ThingManager::EnableActions(i32 id, i32 flags, i32 invert) {
+    i32 count = this->count;
+    if (count <= 0) {
+        return;
+    }
+    for (i32 i = 0; i < count; i++) {
+        BaseThing *thing = this->things[i];
+        if (thing == NULL) {
+            continue;
+        }
+        if (thing->field_0x4 == (u32)id) {
+            if (invert == 0) {
+                thing->flags |= (u32)flags;
+            } else {
+                thing->flags &= ~(u32)flags;
+            }
+            return;
+        }
+    }
 }
 
 void ThingManager::EnterLevelThings(ThingLevelData *) {
@@ -247,7 +304,69 @@ void ThingManager::EnterLevelThings(ThingLevelData *) {
 void ThingManager::ExitLevelThings(ThingLevelData *) {
 }
 
-void ThingManager::ProcessThings(ThingProcessData *) {
+// ThingManager::ProcessThings @0x425460. Pass 1 always runs
+// ProcessEvenWhenPaused (skip flag 0x20); then, per ThingProcessData.paused,
+// either Process (skip 0x10) or ProcessOnlyWhenPaused (skip 0x40). The count
+// is re-read every iteration because thing Process calls may add things.
+// Profiling: things with a non-NULL profiling handle are bracketed with
+// NuTimeBarSlotBegin/End (stubbed no-ops on this build).
+void ThingManager::ProcessThings(ThingProcessData *data) {
+    static const char *name = "PROC"; // timebar slot name @0x5734e3
+
+    if (this->count <= 0) {
+        return;
+    }
+    for (i32 i = 0; i < this->count; i++) {
+        BaseThing *thing = this->things[i];
+        if (thing == NULL || (thing->flags & 0x20)) {
+            continue;
+        }
+        if (thing->profiling_0xc != NULL) {
+            NuTimeBarSlotBegin(this->timebar, 0, name);
+        }
+        thing->ProcessEvenWhenPaused(data);
+        thing = this->things[i];
+        if (thing->profiling_0xc != NULL) {
+            NuTimeBarSlotEnd(this->timebar, 0);
+        }
+    }
+    if (data->paused != 0) {
+        if (this->count <= 0) {
+            return;
+        }
+        for (i32 i = 0; i < this->count; i++) {
+            BaseThing *thing = this->things[i];
+            if (thing == NULL || (thing->flags & 0x40)) {
+                continue;
+            }
+            if (thing->profiling_0xc != NULL) {
+                NuTimeBarSlotBegin(this->timebar, 0, name);
+            }
+            thing->ProcessOnlyWhenPaused(data);
+            thing = this->things[i];
+            if (thing->profiling_0xc != NULL) {
+                NuTimeBarSlotEnd(this->timebar, 0);
+            }
+        }
+    } else {
+        if (this->count <= 0) {
+            return;
+        }
+        for (i32 i = 0; i < this->count; i++) {
+            BaseThing *thing = this->things[i];
+            if (thing == NULL || (thing->flags & 0x10)) {
+                continue;
+            }
+            if (thing->profiling_0xc != NULL) {
+                NuTimeBarSlotBegin(this->timebar, 0, name);
+            }
+            thing->Process(data);
+            thing = this->things[i];
+            if (thing->profiling_0xc != NULL) {
+                NuTimeBarSlotEnd(this->timebar, 0);
+            }
+        }
+    }
 }
 
 void ThingManager::RemoveDependanciesThings(ThingRemoveData *) {
@@ -256,13 +375,59 @@ void ThingManager::RemoveDependanciesThings(ThingRemoveData *) {
 void ThingManager::RemoveTemporaryThings() {
 }
 
-void ThingManager::RenderThings(ThingRenderData *) {
+// ThingManager::RenderThings @0x425390. Single pass over Render (skip 0x80),
+// bracketed with timebar slot 1 ("Rnd").
+void ThingManager::RenderThings(ThingRenderData *data) {
+    static const char *name = "Rnd"; // timebar slot name @0x5734df
+
+    if (this->count <= 0) {
+        return;
+    }
+    for (i32 i = 0; i < this->count; i++) {
+        BaseThing *thing = this->things[i];
+        if (thing == NULL || (thing->flags & 0x80)) {
+            continue;
+        }
+        if (thing->profiling_0xc != NULL) {
+            NuTimeBarSlotBegin(this->timebar, 1, name);
+        }
+        thing->Render(data);
+        thing = this->things[i];
+        if (thing->profiling_0xc != NULL) {
+            NuTimeBarSlotEnd(this->timebar, 1);
+        }
+    }
 }
 
 void ThingManager::ResetThings(ThingResetData *) {
 }
 
-ThingManager::ThingManager(i32) {
+// ThingManager::ThingManager @0x425870. Stores the manager in theThingManager
+// and carves the thing-pointer array (max_things * 4 bytes) from the
+// theMemoryManager linear pool. On allocation failure the array is NULL — the
+// manager then simply never accepts things (AddThing's count < max check).
+ThingManager::ThingManager(i32 max_things) {
+    u8 *mm = theMemoryManager;
+    u32 *cursor = *reinterpret_cast<u32 **>(mm + 0x8);
+    u32 *endp = *reinterpret_cast<u32 **>(mm + 0xc);
+    u32 need = (u32)max_things * 4;
+
+    u32 array = 0;
+    if ((u32)(*endp - *cursor) > need) {
+        array = (*cursor + 0xf) & ~0xfu;
+        *cursor = array + need;
+        memset(reinterpret_cast<void *>(array), 0, need);
+        *reinterpret_cast<u32 *>(mm + 0x14) += need;
+        *reinterpret_cast<u32 *>(mm + 0x18) -= need;
+        *reinterpret_cast<u32 *>(mm + 0x10) = *cursor;
+    }
+    this->things = reinterpret_cast<BaseThing **>(array);
+    this->max_things = max_things;
+    // Profiling sets are a deferred subsystem; the handle is only ever passed
+    // to the NuTimeBarSlotBegin/End stubs, so NULL behaves like the original
+    // with profiling disabled.
+    this->timebar = NuTimeBarCreateSet(0);
+    theThingManager = this;
 }
 
 ThingManager::~ThingManager() {
@@ -346,13 +511,21 @@ SpecialObject::SpecialObject() {
 void GameThingManager::AddLevelOnlyThings() {
 }
 
+// GameThingManager::AddOnceOnlyThings @0x4e8bb0: registers the MechSystems
+// singleton as the manager's once-only thing (via the virtual AddThing slot).
 void GameThingManager::AddOnceOnlyThings() {
+    this->AddThing(MechSystems::Get());
 }
 
-GameThingManager::GameThingManager(i32) {
+// GameThingManager::GameThingManager @0x4e8b00: stores the object in
+// theGameThings (the vptr switch to the derived vtable is compiler-generated).
+GameThingManager::GameThingManager(i32 max_things) : ThingManager(max_things) {
+    theGameThings = this;
 }
 
+// GameThingManager D1 dtor @0x4e8a80 clears the global before destruction.
 GameThingManager::~GameThingManager() {
+    theGameThings = NULL;
 }
 
 CantPickupBombTimerAddon::CantPickupBombTimerAddon(MechObjectInterface &, float) {
@@ -364,10 +537,52 @@ void CantPickupBombTimerAddon::OnProcess(MechAddon::ProcessStage, float) {
 CantPickupBombTimerAddon::~CantPickupBombTimerAddon() {
 }
 
+// BaseThing::BaseThing @0x425840 zeroes the data fields after the vptr.
 BaseThing::BaseThing() {
+    this->field_0x4 = 0;
+    this->flags = 0;
+    this->profiling_0xc = NULL;
 }
 
+// BaseThing defaults @0x424bf0 (dtor) and 0x425990..0x425a20 (interface
+// defaults); RemoveDependancies returns 1, the rest are no-ops. GetName holds
+// a 0 slot in the original base vtable (pure) — see basething.h.
 BaseThing::~BaseThing() {
+}
+
+char const *BaseThing::GetName() {
+    return NULL;
+}
+
+i32 BaseThing::RemoveDependancies(ThingRemoveData *) {
+    return 1;
+}
+
+void BaseThing::EnterLevel(ThingLevelData *) {
+}
+
+void BaseThing::ExitLevel(ThingLevelData *) {
+}
+
+void BaseThing::Reset(ThingResetData *) {
+}
+
+void BaseThing::Process(ThingProcessData *) {
+}
+
+void BaseThing::ProcessEvenWhenPaused(ThingProcessData *) {
+}
+
+void BaseThing::ProcessOnlyWhenPaused(ThingProcessData *) {
+}
+
+void BaseThing::Render(ThingRenderData *) {
+}
+
+void BaseThing::Display(ThingRenderData *) {
+}
+
+void BaseThing::Effects(ThingRenderData *) {
 }
 
 static __used__ void LEGO_100PercentFn() {

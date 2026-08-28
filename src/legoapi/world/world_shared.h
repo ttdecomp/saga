@@ -29,7 +29,7 @@ struct SCENEPROGRESS_s;
 extern LEVELDATA *PLATFORM_LDATA;
 
 // Terrain subsystem (defined in terrain.cpp, used by world.cpp)
-extern char *debris_name;
+extern char *debris_name[147];
 
 // Gizmo subsystem (defined in gizmo_sys.cpp, used by world.cpp)
 extern void *MiniKitCollection;

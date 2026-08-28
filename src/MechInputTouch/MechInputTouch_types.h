@@ -3,6 +3,7 @@
 #pragma once
 
 #include "nu2api/nucore/fixed_width.h"
+#include "legoapi/items/objects/basething.h"
 #include "legoapi/render/core/SwipeDecalRenderer.h"
 #include "nu2api/nucore/NuTouchInputElement.h"
 
@@ -316,11 +317,26 @@ struct MechJumpAutoPilotAddon {
 struct MechObjectInterface {
     void GetFloorTargetPos(VuVec &, i32) const;
 };
-struct MechSystems {
+// MechSystems is a BaseThing: AddOnceOnlyThings registers it on the
+// GameThingManager and ProcessThings dispatches into it every frame.
+// Virtual order = vtable for MechSystems @0x66b320 (rel slots):
+//   0x08 GetName, 0x18 Reset, 0x1c Process, 0x20 ProcessEvenWhenPaused,
+//   0x24 ProcessOnlyWhenPaused, 0x28 Render, 0x2c Display,
+//   0x34 EnterLevel(WORLDINFO), 0x38 ExitLevel(WORLDINFO)
+// (RemoveDependancies/EnterLevel(ThingLevelData)/ExitLevel(ThingLevelData)/
+//  Effects keep the BaseThing slots).
+struct MechSystems : BaseThing {
     static MechSystems *Get();
-    void Display(ThingRenderData *);
-    void EnterLevel(WORLDINFO_s *);
-    void ExitLevel(WORLDINFO_s *);
+    virtual ~MechSystems();
+    char const *GetName() override;
+    void Reset(ThingResetData *) override;
+    void Process(ThingProcessData *) override;
+    void ProcessEvenWhenPaused(ThingProcessData *) override;
+    void ProcessOnlyWhenPaused(ThingProcessData *) override;
+    void Render(ThingRenderData *) override;
+    void Display(ThingRenderData *) override;
+    virtual void EnterLevel(WORLDINFO_s *);
+    virtual void ExitLevel(WORLDINFO_s *);
     void FindMoveToMarkerAtPos(VuVec const &, bool);
     void HookUpClickToPressStart();
     void Init();
@@ -330,14 +346,8 @@ struct MechSystems {
     void NewRadarPulse(VuVec const &, bool);
     void NewSwipeMarker(TouchHolder &, i32, SwipeDecalRenderer::Style);
     void NewTagButton(GameObject_s &, TouchHolder &);
-    void Process(ThingProcessData *);
-    void ProcessEvenWhenPaused(ThingProcessData *);
-    void ProcessOnlyWhenPaused(ThingProcessData *);
-    void Render(ThingRenderData *);
     void RenderCurrentPlayerHighlight();
-    void Reset(ThingResetData *);
     void UnhookClickToPressStart();
-    virtual ~MechSystems();
 };
 struct MechTempPosInterface {
     void GetFloorTargetPos(VuVec &, i32) const;

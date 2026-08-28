@@ -59,17 +59,17 @@ i32 NuSoundLoaderOGG::OGGFileCallbacks::GetPosition() const {
     return NuFilePos(file);
 }
 
-i32 NuSoundLoaderOGG::OggCallbackClose(void *callbacks) {
+int NuSoundLoaderOGG::OggCallbackClose(void *callbacks) {
     ((OGGFileCallbacks *)callbacks)->Close();
     return 0;
 }
 
-i32 NuSoundLoaderOGG::OggCallbackSeek(void *callbacks, i64 offset, i32 origin) {
+int NuSoundLoaderOGG::OggCallbackSeek(void *callbacks, i64 offset, i32 origin) { // NOLINT(google-runtime-int)
     ((OGGFileCallbacks *)callbacks)->Seek(origin, (u32)offset);
     return 0;
 }
 
-i32 NuSoundLoaderOGG::OggCallbackTell(void *callbacks) {
+long NuSoundLoaderOGG::OggCallbackTell(void *callbacks) { // NOLINT(google-runtime-int)
     return ((OGGFileCallbacks *)callbacks)->GetPosition();
 }
 
@@ -106,6 +106,9 @@ i32 NuSoundLoaderOGG::ReadHeader(NuSoundStreamDesc *desc) {
         0,                            //
         (ov_callbacks){
             .read_func = OggCallbackRead,
+            .seek_func = OggCallbackSeek,
+            .close_func = OggCallbackClose,
+            .tell_func = OggCallbackTell,
         } //
     );
 

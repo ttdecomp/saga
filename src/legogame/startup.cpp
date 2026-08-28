@@ -115,6 +115,13 @@ EPISODEDATA *Episodes_ConfigureList(char *path, VARIPTR *buf, VARIPTR *buf_end, 
 void NewGame(void);
 void InitGameAfterConfig(void);
 GIZAIMESSAGESYS_s *CreateGizAIMessageSys(VARIPTR *buf, VARIPTR *buf_end, i32 size);
+
+// buffer globals owned by the batman TU (batman.h declares them extern "C")
+extern "C" {
+    extern VARIPTR characterbuffer_ptr;
+    extern VARIPTR characterbuffer_base;
+    extern VARIPTR characterbuffer_end;
+}
 void BackDrop_Init(char *path, VARIPTR *buf, VARIPTR *buf_end);
 void BackDrop_Draw(float alpha, i32 flags);
 void BackDrop_Update(float dt);
@@ -690,6 +697,28 @@ void LoadPerm(void) {
     WORLD = saved_world;
 }
 
+// libTTapp.so 0x470de0: close the permbuffer, carve out the character
+// buffer, and split the remaining superbuffer in half between the two world
+// bump buffers. This is what gives each WORLDINFO its buffer_start /
+// giz_buffer / buffer_end cursors that WorldInfo_Reset restores.
 void EndPerm(void) {
-    // Original is an empty tail — kept so the TU's symbol table matches.
+    u32 aligned = (u32)((permbuffer_ptr.addr + 3) & ~3);
+    permbuffer_end.addr = aligned;
+    permbuffer_size = (i32)(aligned - permbuffer_base.addr);
+
+    characterbuffer_ptr.addr = aligned;
+    characterbuffer_base.addr = aligned;
+    u32 world_start = aligned + (u32)CHARACTERBUFFERSIZE;
+    characterbuffer_end.addr = world_start;
+    superbuffer_ptr.addr = world_start;
+    superbuffer_base.addr = world_start;
+
+    u32 half = (u32)(superbuffer_end.addr - world_start) >> 1;
+    WorldInfo[0].giz_buffer.addr = world_start;
+    WorldInfo[0].buffer_start = (void *)world_start;
+    WorldInfo[0].unknown_0108.addr = world_start + half;
+    WorldInfo[1].giz_buffer.addr = world_start + half;
+    WorldInfo[1].buffer_start = (void *)(world_start + half);
+    WorldInfo[1].unknown_0108.addr = superbuffer_end.addr;
+    editbuffer_end.addr = superbuffer_end.addr - (u32)EDITBUFFERENDSIZE;
 }

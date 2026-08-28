@@ -3,15 +3,16 @@
 #include "nu2api/nusound/nusound_system.hpp"
 
 // The Android NuSoundSystem: OpenSL ES device plumbing. InitAudioDevice /
-// ShutdownAudioDevice / UpdateAudioDevice are the device boundary — they stay
-// stubbed until the host device override lands; every other function here is
-// decompiled faithfully.
+// ShutdownAudioDevice / UpdateAudioDevice are the hardware boundary — on the
+// Android target they stay as recorded; the HOST build replaces Init/Shutdown
+// with the same call flow over the fake OpenSL object model in
+// host-tests/nusound/opensl_host.cpp, which writes the mixed PCM to the real
+// host device through SDL3. Every other function here is decompiled
+// faithfully.
 struct NuSoundAndroid : public NuSoundSystem {
 
-    bool InitAudioDevice() override {
-        LOG_WARN("NuSoundAndroid::InitAudioDevice is not implemented");
-        return true;
-    }
+    NuSoundAndroid();
+    bool InitAudioDevice() override;
 
     static i32 m_workerThreadCount;
 

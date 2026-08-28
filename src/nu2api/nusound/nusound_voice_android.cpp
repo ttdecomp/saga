@@ -34,6 +34,8 @@ namespace {
 
     // OpenSL interface vtable slots as used by libTTapp.so.
     typedef u32 (*ObjectRealizeFn)(void *, u32);
+    typedef u32 (*ObjectResumeFn)(void *);
+    typedef u32 (*ObjectGetStateFn)(void *, u32 *);
     typedef u32 (*ObjectGetInterfaceFn)(void *, const void *, void **);
     typedef u32 (*ObjectDestroyFn)(void *);
     typedef u32 (*EngineCreateAudioPlayerFn)(void *, void **, void *, void *, u32, const void **, const u32 *);
@@ -75,6 +77,10 @@ NuVoiceAndroid::NuVoiceAndroid(NuSoundSource *sound_source, bool loop) : NuSound
 
     this->last_volume_level = -0x8000; // muted until the first mix arrives
     this->hardware_flags = 0;
+
+    // libTTapp.so ctor tail (0x32c1ae): the platform voice builds its OpenSL
+    // player immediately, before any Play.
+    this->CreateHardwareVoice();
 }
 
 NuVoiceAndroid::~NuVoiceAndroid() {
@@ -93,7 +99,9 @@ void NuVoiceAndroid::SubmitBuffer(NuSoundBuffer *buffer) {
 
     u32 max_buffer_size = this->sound_source->GetMaxBufferSize();
     NuSoundBuffer::Context &context = buffer->GetCurrentContext();
-    u32 size = (u32)context.size2;
+    // libTTapp.so 0x32bbbe: the enqueue length is the buffer context's
+    // read_size (the decoded/loaded byte count).
+    u32 size = (u32)context.read_size;
 
     // The original formatted a debug line (source name + block count) that was
     // never printed; it has no observable effect and is omitted here.
@@ -108,9 +116,9 @@ void NuVoiceAndroid::SubmitBuffer(NuSoundBuffer *buffer) {
     }
 
     if (size < max_buffer_size) {
-        this->flags2 |= 2;
+        this->flags2 |= 2; // 0x32bd0e
         if (size == 0) {
-            this->flags |= 2;
+            this->hardware_flags |= 2; // 0x32bd16
         }
     }
 
@@ -271,13 +279,16 @@ void NuVoiceAndroid::DestroyHardwareVoice() {
 // ---------------------------------------------------------------------------
 
 bool NuVoiceAndroid::UpdateState() {
+    // libTTapp.so 0x32c1ea: the poll reads the PLAYER OBJECT's state (object
+    // vtable slot 0x8, SLObjectItf::GetState) — voice+0x14c is the object,
+    // the interfaces hang off it (see GetInterfaces).
     if (this->player_object == NULL || *(void **)this->player_object == NULL) {
         return false;
     }
 
-    u32 state = 2;
-    u32 error = SL_SLOT(this->player_object, PlayGetPlayStateFn, 8)(this->player_object, &state);
-    if (NuSoundAndroid::ReportErrorCode(error, "Get state") != 0) {
+    u32 state = 2; // SL_OBJECT_STATE_SUSPENDED default
+    u32 error = SL_SLOT(this->player_object, ObjectGetStateFn, 8)(this->player_object, &state);
+    if (NuSoundAndroid::ReportErrorCode(error, "Get the object state") != 0) {
         return false;
     }
 
@@ -285,13 +296,13 @@ bool NuVoiceAndroid::UpdateState() {
         if (state != 3) {
             return true;
         }
-        // The device suspended us; resume.
-        error = SL_SLOT(this->play_interface, PlaySetPlayStateFn, 4)(this->play_interface, 0);
-        return NuSoundAndroid::ReportErrorCode(error, "resume on suspended") == 0;
+        // 0x32c260: object vtable slot 0x4 (SLObjectItf::Resume).
+        error = SL_SLOT(this->player_object, ObjectResumeFn, 4)(this->player_object);
+        return NuSoundAndroid::ReportErrorCode(error, "resume the player object") == 0;
     }
 
-    // The player stopped on its own (queue drained). A looping voice rebuilds
-    // its player and restarts it according to the voice state.
+    // Realized: a looping voice re-realizes and restarts per the voice state;
+    // a non-looping voice is finished.
     if ((this->flags2 & 8) != 0) {
         if (this->RealiseObject() == false) {
             return false;
@@ -378,7 +389,7 @@ void NuVoiceAndroid::UpdateHardwareVoice(f32 frametime) {
         // callback).
         NuSoundWeakPtr<NuSoundBufferCallback> callback;
         callback.Set(this);
-        this->sound_source->RequestBuffer((this->flags >> 3) & 1, callback);
+        this->sound_source->RequestBuffer((this->flags2 >> 3) & 1, callback);
         this->hardware_flags &= 0xfb;
     }
 
@@ -446,9 +457,9 @@ void NuVoiceAndroid::OnPlayerEvent(u32 event) {
     }
 
     if (finished) {
-        this->flags |= 2;
+        this->hardware_flags |= 2; // 0x32c8c3
     } else {
-        this->flags |= 4;
+        this->hardware_flags |= 4; // 0x32c900
     }
 
     pthread_mutex_unlock(&this->mutex);

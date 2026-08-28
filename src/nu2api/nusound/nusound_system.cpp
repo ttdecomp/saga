@@ -5,6 +5,7 @@
 #include "nu2api/numath/nuvec.h"
 #include "nu2api/nusound/nusound_bus.hpp"
 #include "nu2api/nusound/nusound_decoder.hpp"
+#include "nu2api/nusound/nusound_decoder_ogg.hpp"
 #include "nu2api/nusound/nusound_streamer.hpp"
 #include "nu2api/nusound/nusound_voice.hpp"
 
@@ -116,7 +117,9 @@ NuSoundSystem::NuSoundSystem() {
     this->voice_list_start = NULL;
     this->voice_list_end = NULL;
     this->voice_count = 0;
-    this->initialised = false;
+    // libTTapp.so ctor (0x319552): the update gate field63_0x108 starts at 1.
+    this->initialised = true;
+    this->engine_object = NULL;
     this->audio_engine = NULL;
     this->output_mix = NULL;
     // this->field63_0x108 = 1;
@@ -176,9 +179,35 @@ bool NuSoundSystem::Initialise(i32 size) {
     return false;
 }
 
+// libTTapp.so 0x319640: SAMPLE/DECODER hand the block header back to the
+// pool manager; SCRATCH goes through NuMemoryManager::BlockFree and accounts
+// the queried block size.
 u32 NuSoundSystem::FreeMemory(MemoryDiscipline disc, usize address, u32 size) {
-    UNIMPLEMENTED("NuSoundSystem::FreeMemory");
-    return {};
+    u32 freed = size;
+
+    switch (disc) {
+        case MemoryDiscipline::SAMPLE:
+            if (s_mmSample != NULL) {
+                s_mmSample->Free((NuSoundMemoryBuffer *)address);
+            }
+            break;
+        case MemoryDiscipline::DECODER:
+            if (s_mmDecoder != NULL) {
+                s_mmDecoder->Free((NuSoundMemoryBuffer *)address);
+            }
+            break;
+        case MemoryDiscipline::SCRATCH:
+            // The original accounts NuMemoryManager::GetBlockSize(ptr); the
+            // host _TryBlockAlloc has no block header, so the accounting uses
+            // the size the alloc was charged.
+            sScratchMemMgr->BlockFree((void *)address, 0);
+            break;
+        default:
+            return 0;
+    }
+
+    sAllocdMemory[(i32)disc] = sAllocdMemory[(i32)disc] - freed;
+    return freed;
 }
 
 u32 NuSoundSystem::GetFreeMemory(MemoryDiscipline disc) {
@@ -369,11 +398,35 @@ void NuSoundSystem::CalculateCrossfadeHeight(NuSoundSystem::CurveData const &, f
 void NuSoundSystem::CreateCrossfadeCurve(u32) {
 }
 
+// libTTapp.so 0x31a810: builds the "<name>_decoder" name from the source's
+// name, then constructs the format-specific decoder. Only OGG streams
+// (encoded format 3) get a decoder; anything else returns NULL and plays
+// through the plain sample path.
 NuSoundDecoder *NuSoundSystem::CreateDecoder(NuSoundSource *source) {
-    // Decoder construction lives in nusound_decoder.cpp once the decode
-    // thread lands; the music path never reaches here.
-    (void)source;
-    UNIMPLEMENTED("NuSoundSystem::CreateDecoder");
+    const char *name = source->GetName();
+
+    char decoded_name[256];
+    u32 name_len = (u32)strlen(name);
+    if (name_len >= sizeof(decoded_name) - 9) {
+        name_len = sizeof(decoded_name) - 9;
+    }
+    memcpy(decoded_name, name, name_len);
+    memcpy(decoded_name + name_len, "_decoder", 9);
+
+    NuSoundStreamDesc *desc = source->GetStreamDesc();
+    if (desc != NULL && desc->GetEncodedDataFormat() == NuSoundStreamDesc::DataFormat::THREE) {
+        NuSoundDecoderOGG *decoder = (NuSoundDecoderOGG *)this->_AllocMemory(
+            NuSoundSystem::MemoryDiscipline::SCRATCH, 0x13c, 4,
+            "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound_system.cpp:436");
+
+        if (decoder != NULL) {
+            new (decoder) NuSoundDecoderOGG(decoded_name, source);
+            decoder->ogg_file = &desc->ogg_file;
+        }
+
+        return decoder;
+    }
+
     return NULL;
 }
 
@@ -401,7 +454,12 @@ void NuSoundSystem::GetAllocdMemory(NuSoundSystem::MemoryDiscipline) {
 void NuSoundSystem::GetBufferAlignment() {
 }
 
-void NuSoundSystem::GetClosestSupportedConfig(i32) {
+i32 NuSoundSystem::GetClosestSupportedConfig(i32 config) {
+    // libTTapp.so 0x31bcb0: config > 7 -> 8, config >= 6 -> 6, else 2.
+    if (config > 7) {
+        return 8;
+    }
+    return (config >= 6) ? 6 : 2;
 }
 
 void NuSoundSystem::GetCrossfadeCurve(u32) const {
@@ -658,7 +716,9 @@ void NuSoundSystem::ReleaseVoice(NuSoundVoice *voice) {
         this->voice_count--;
     }
 
-    delete voice;
+    // libTTapp.so 0x31b394: run the voice's complete destructor (vtable slot
+    // 0, no free), then hand the block back through FreeMemory(SCRATCH).
+    voice->~NuSoundVoice();
     NuSoundSystem::FreeMemory(NuSoundSystem::MemoryDiscipline::SCRATCH, (usize)voice, 0);
 
     if (decoder != NULL) {

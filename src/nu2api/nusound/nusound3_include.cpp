@@ -152,9 +152,19 @@ nusound_filename_info_s *ConfigureMusic(char *file, VARIPTR *bufferStart, VARIPT
 }
 
 NuSoundLoader *NuSoundSystem::CreateFileLoader(FileType type) {
+    NuSoundLoaderWAV *wav_loader;
+
     switch (type) {
         case FileType::WAV:
-            UNIMPLEMENTED("WAV loader");
+            // libTTapp.so allocates the WAV loader from SCRATCH (0x1c bytes,
+            // nusound.cpp:1233) and placement-news it in place.
+            wav_loader =
+                (NuSoundLoaderWAV *)_AllocMemory(NuSoundSystem::MemoryDiscipline::SCRATCH, 0x1c, 4,
+                                                 "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound.cpp:1233");
+            if (wav_loader != NULL) {
+                new (wav_loader) NuSoundLoaderWAV();
+                return wav_loader;
+            }
             break;
         case FileType::OGG:
 
@@ -178,7 +188,9 @@ void NuSound3Init(i32 zero) {
     NuCore::Initialize();
 
     NuSound.Initialise(0x633333 + (is_crappy ? 0 : 0x1ccccd));
-    // NuSoundDecodeThread::Initialise();
+    // libTTapp.so 0x3109af: NuSound3Init brings up the decoder singleton
+    // thread right after the sound system.
+    NuSoundDecoder::Initialise();
 
     // NuMemoryGet()->GetThreadMem()->_BlockAlloc(0xa48, 4, 1, "", 7);
     NuSoundStreamer *streamer = NU_ALLOC_T(NuSoundStreamer, 1, "", NUMEMORY_CATEGORY_NUSOUND);

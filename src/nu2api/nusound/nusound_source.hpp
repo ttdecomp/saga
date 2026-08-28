@@ -39,8 +39,14 @@ class NuSoundSource {
     // Source virtuals the voice layer dispatches through (the original went
     // through the source vtable; NuSoundSample / NuSoundStreamingSample and
     // NuSoundDecoder override them).
+    virtual bool OpenStream(bool loop) {
+        (void)loop;
+        return true;
+    }
+    virtual void CloseStream() {
+    }
     virtual bool IsStreamOpen() const = 0;
-    virtual u32 GetMaxBufferSize() const = 0;
+    virtual u32 GetMaxBufferSize() = 0;
     virtual u32 GetNumInitialBuffers() const;
     virtual void RequestBuffer(bool loop, NuSoundWeakPtr<NuSoundBufferCallback> callback) = 0;
     virtual void Lock() {

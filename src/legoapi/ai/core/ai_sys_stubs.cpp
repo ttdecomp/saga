@@ -1,6 +1,8 @@
 #include "legoapi/world/world_shared.h"
 #include "decomp.h"
 
+#include <string.h>
+
 extern "C" {
 
     void AIAntinodeCreate(void) {
@@ -75,7 +77,20 @@ extern "C" {
     void AISetPathHeightTol(void) {
     }
 
-    void AISysBufferAlloc(void) {
+    // libTTapp.so 0x3e5fd0: carve a zeroed, 16-byte-aligned block from the
+    // permbuffer cursor. Returns NULL when the cursor or the end pointer is
+    // missing or the buffer has less room than requested.
+    void *AISysBufferAlloc(VARIPTR *cursor, VARIPTR *buf_end, u32 size) {
+        void *block = NULL;
+        if (cursor != NULL && buf_end != NULL) {
+            const u32 offset = (u32)cursor->addr;
+            if (buf_end->addr > (usize)(offset + size)) {
+                block = (void *)(usize)((offset + 0xf) & ~0xfu);
+                cursor->addr = (usize)block + size;
+                memset(block, 0, size);
+            }
+        }
+        return block;
     }
 
     void AISysCharacterMovement(void) {

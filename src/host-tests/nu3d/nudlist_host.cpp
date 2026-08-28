@@ -60,7 +60,7 @@ extern "C" void NuDisplayListDrawRenderScene(i32 render_scene_id) {
             return;
         struct LegalProg {
             GLuint prog = 0;
-            GLint posLoc = -1, uvLoc = -1, texLoc = -1;
+            GLint pos_loc = -1, uv_loc = -1, tex_loc = -1;
             GLuint vbo = 0;
             void ensure() {
                 if (prog)
@@ -83,9 +83,9 @@ extern "C" void NuDisplayListDrawRenderScene(i32 render_scene_id) {
                 glLinkProgram(prog);
                 glDeleteShader(vsh);
                 glDeleteShader(fsh);
-                posLoc = glGetAttribLocation(prog, "a_pos");
-                uvLoc = glGetAttribLocation(prog, "a_uv");
-                texLoc = glGetUniformLocation(prog, "u_tex");
+                pos_loc = glGetAttribLocation(prog, "a_pos");
+                uv_loc = glGetAttribLocation(prog, "a_uv");
+                tex_loc = glGetUniformLocation(prog, "u_tex");
                 glGenBuffers(1, &vbo);
                 glBindBuffer(GL_ARRAY_BUFFER, vbo);
                 float verts[] = {-1, -1, 0, 0, 1, -1, 1, 0, -1, 1, 0, 1, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1};
@@ -97,17 +97,17 @@ extern "C" void NuDisplayListDrawRenderScene(i32 render_scene_id) {
         glUseProgram(lp.prog);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, legal->platform.gl_tex);
-        glUniform1i(lp.texLoc, 0);
+        glUniform1i(lp.tex_loc, 0);
         glBindBuffer(GL_ARRAY_BUFFER, lp.vbo);
-        glEnableVertexAttribArray(lp.posLoc);
-        glVertexAttribPointer(lp.posLoc, 2, GL_FLOAT, GL_FALSE, 16, (void *)0);
-        glEnableVertexAttribArray(lp.uvLoc);
-        glVertexAttribPointer(lp.uvLoc, 2, GL_FLOAT, GL_FALSE, 16, (void *)8);
+        glEnableVertexAttribArray(lp.pos_loc);
+        glVertexAttribPointer(lp.pos_loc, 2, GL_FLOAT, GL_FALSE, 16, (void *)0);
+        glEnableVertexAttribArray(lp.uv_loc);
+        glVertexAttribPointer(lp.uv_loc, 2, GL_FLOAT, GL_FALSE, 16, (void *)8);
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_BLEND);
         glDrawArrays(GL_TRIANGLES, 0, 6);
-        glDisableVertexAttribArray(lp.posLoc);
-        glDisableVertexAttribArray(lp.uvLoc);
+        glDisableVertexAttribArray(lp.pos_loc);
+        glDisableVertexAttribArray(lp.uv_loc);
         glUseProgram(0);
     };
 

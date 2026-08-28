@@ -230,7 +230,15 @@ extern "C" {
     }
     void edppFindAllSounds(void) {
     }
-    void edppLoadPage(void) {
+    // Parts-page loader (edppLoadPage @0x36c630) — a deferred subsystem. It
+    // parses the .ptl particle/debris effect files into the registry consumed
+    // by LookupDebrisEffectPage*. Until transcribed it loads nothing and
+    // reports failure (-1), so every debris lookup misses as before a load.
+    i32 edppLoadPage(char *path, i32 flag, i32 flags) {
+        (void)path;
+        (void)flag;
+        (void)flags;
+        return -1;
     }
     void edppRegisterPointerToGameCharLocation(void) {
     }

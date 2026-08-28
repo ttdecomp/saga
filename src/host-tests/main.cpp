@@ -1,3 +1,4 @@
+#include "test_audio.hpp"
 #include "test_load.hpp"
 #include "test_window.hpp"
 
@@ -21,6 +22,7 @@ struct Test {
 const Test tests[] = {
     {"load", test_load},
     {"window", test_window},
+    {"audio", test_audio},
 };
 
 i32 main(i32 argc, char **argv) {

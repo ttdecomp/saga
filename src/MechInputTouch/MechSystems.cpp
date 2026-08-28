@@ -2,6 +2,12 @@
 
 #include <stddef.h>
 
+// vtable for MechSystems @0x66b320 slot 0x08: returns the static name string
+// @0x573c42 (from MechSystems::GetName @0x45def0).
+char const *MechSystems::GetName() {
+    return "MechSystems";
+}
+
 void MechSystems::Display(ThingRenderData *) {
 }
 

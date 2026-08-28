@@ -3,6 +3,7 @@
 #pragma once
 
 #include "nu2api/nucore/fixed_width.h"
+#include "nu2api/nucore/nulist.h"
 #include "nu2api/numath/nuvec.h"
 
 #include "legoapi/items/base/apiobject.h"
@@ -464,12 +465,22 @@ struct GAMEPAD_s {
     char pad_5b[0x60 - 0x5b];
 };
 struct GIZACTIONDEFN_s {};
-struct GIZAIMESSAGESYS_s {};
+
+// The AI message system: a fixed pool of 0x38-byte messages; the free list
+// and the active list live in the header (ResetGizAIMessageSys fills the
+// free list from the pool, CheckGizAIMessage moves nodes free -> active).
+struct GIZAIMESSAGESYS_s {
+    i32 count;                // 0x00 number of pooled messages
+    GIZAIMESSAGE_s *messages; // 0x04 pool base (each 0x38 bytes)
+    NULISTHDR free_list;      // 0x08
+    NULISTHDR active_list;    // 0x10
+};
 struct GIZAIMESSAGE_s {
-    char pad_0x00[0x28];
-    float value;    // 0x28
-    byte mode;      // 0x2c
-    byte mode_args; // 0x2d
+    NULISTLNK links; // 0x00
+    char name[0x20]; // 0x08
+    float value;     // 0x28
+    byte mode;       // 0x2c
+    byte mode_args;  // 0x2d
     undefined field_0x2e[0x34 - 0x2e];
     i32 flag;  // 0x34
     u16 flags; // 0x36
@@ -639,10 +650,7 @@ struct BaseEditor {
     void WriteEndBlock(i32);
     void WriteMetaData(i32, i32, i32, i32);
 };
-struct BaseThing {
-    BaseThing();
-    virtual ~BaseThing();
-};
+#include "legoapi/items/objects/basething.h"
 struct CantPickupBombTimerAddon {
     CantPickupBombTimerAddon(MechObjectInterface &, float);
     void OnProcess(MechAddon::ProcessStage, float);
@@ -887,12 +895,7 @@ struct GIZTURRET_s {
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };
-struct GameThingManager {
-    void AddLevelOnlyThings();
-    void AddOnceOnlyThings();
-    GameThingManager(i32);
-    virtual ~GameThingManager();
-};
+struct GameThingManager; // defined after ThingManager (derives from it)
 struct HATMACHINE_s {
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
@@ -945,7 +948,7 @@ struct LevelEditor {
     void WriteStream(EdFileOutputStream &);
 };
 struct MemoryManager {
-    void AllocPool(u32, i32);
+    void *AllocPool(u32, i32);
     void FreePool(void *, u32);
 };
 // One mine entry (0x1c bytes, MINESYS_s::mines[64] starting at 0x0c).
@@ -1288,6 +1291,22 @@ struct ThingManager {
     void edTimingInit();
     void edTimingProc(float, nupad_s *);
     void edTimingRender();
+
+    // data (object is 0x24 bytes; the ctor carves `things` from theMemoryManager)
+    BaseThing **things; // 0x04
+    i32 max_things;     // 0x08
+    i32 count;          // 0x0c
+    u32 field_0x10;     // 0x10 high-water cursor (written by the ctor / AllocPool)
+    i32 field_0x14;     // 0x14 AddThingAfterThis reservation, folded in by the next AddThing
+    void *timebar;      // 0x18 NuTimeBarCreateSet handle (profiling, stubbed)
+};
+// GameThingManager shares the base vtable entries (only the dtors differ) and
+// registers itself in theGameThings (ctor @0x4e8b00 / D1 dtor @0x4e8a80).
+struct GameThingManager : ThingManager {
+    void AddLevelOnlyThings();
+    void AddOnceOnlyThings();
+    GameThingManager(i32);
+    virtual ~GameThingManager();
 };
 struct VirtualControlButton {
     void Process(float);
