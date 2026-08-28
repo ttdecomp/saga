@@ -21,6 +21,28 @@
 #include "nu2api/nuplatform/nuplatform.h"
 #include "legoapi/world/area.h"
 
+#ifdef _WIN32
+static const char *strcasestr(const char *haystack, const char *needle) {
+    if (!*needle)
+        return haystack;
+
+    for (; *haystack; ++haystack) {
+        const char *h = haystack;
+        const char *n = needle;
+
+        while (*h && *n && tolower((unsigned char)*h) == tolower((unsigned char)*n)) {
+            ++h;
+            ++n;
+        }
+
+        if (!*n)
+            return haystack;
+    }
+
+    return NULL;
+}
+#endif
+
 char buf[0x1000000];
 
 // HOST-ONLY: walk the dat's hash-name section and print "index name" pairs
