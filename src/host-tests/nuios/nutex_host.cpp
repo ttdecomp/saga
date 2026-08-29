@@ -13,6 +13,7 @@
 
 #include "nu2api/nu3d/android/nutex_android.h"
 #include "nu2api/nu3d/android/nutex_ios_ex.h"
+#include "nu2api/nu3d/nugscn.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nucore/nustring.h"
@@ -293,13 +294,13 @@ static void PvrMapData(u8 *out, i32 width, u8 word[16][4], u32 py, u32 px, u32 q
 }
 
 // Software-decode a PVRTC 4bpp image (width*height/2 bytes) to RGBA.
-static void PvrDecode4bpp(const u8 *data, i32 width, i32 height, u8 *outRGBA) {
+static void PvrDecode4bpp(const u8 *data, usize data_size, i32 width, i32 height, u8 *outRGBA) {
     i32 bpp = 4;
     i32 W = 4;
     i32 H = 4;
     u32 word_count = (u32)((usize)width * height / 2 / 4);
-    std::vector<u32> words(width * height / 2 / 4);
-    memcpy(words.data(), data, (usize)width * height / 2);
+    std::vector<u32> words(width * height / 2 / 4, 0);
+    memcpy(words.data(), data, std::min(data_size, (usize)width * height / 2));
     std::vector<u8> out((usize)width * height * 4, 0);
     u32 nxw = width / W;
     u32 nyw = height / H;
@@ -414,9 +415,55 @@ static void Etc1DecodeBlock(const u8 *blk, u8 out[16][3]) {
     }
 }
 
+// The original device can create the font atlas texture on the loading
+// thread.  The host EGL context belongs to the render thread, so retain that
+// inline texture blob until NuTexCreateNative associates it with a native
+// texture object and the render thread can perform the upload.
+static std::vector<std::vector<u8>> g_hostUnownedTextureBlobs;
+
+static u32 PvrBitsPerPixel(const u8 *src) {
+    const u32 channel_bits = *reinterpret_cast<const u32 *>(src + 0x0c);
+    if (channel_bits == 0) {
+        const u32 compressed_format = *reinterpret_cast<const u32 *>(src + 0x08);
+        return compressed_format < 2 ? 2 : 4;
+    }
+    return (src[0x0c] + src[0x0d] + src[0x0e] + src[0x0f]);
+}
+
+static usize PlatformTextureBlobSize(const void *data) {
+    const u8 *src = static_cast<const u8 *>(data);
+    if (src[0] == 'D' && src[1] == 'D' && src[2] == 'S' && src[3] == ' ') {
+        const usize width = *reinterpret_cast<const u32 *>(src + 0x0c);
+        const usize height = *reinterpret_cast<const u32 *>(src + 0x10);
+        return 128 + width * height / 2;
+    }
+    if (src[0] == 'P' && src[1] == 'V' && src[2] == 'R') {
+        u32 width = *reinterpret_cast<const u32 *>(src + 0x1c);
+        u32 height = *reinterpret_cast<const u32 *>(src + 0x18);
+        const usize headerSize = 0x34 + *reinterpret_cast<const u32 *>(src + 0x30);
+        const u32 depth = *reinterpret_cast<const u32 *>(src + 0x20);
+        const u32 surfaces = *reinterpret_cast<const u32 *>(src + 0x24);
+        const u32 faces = *reinterpret_cast<const u32 *>(src + 0x28);
+        const u32 mip_count = *reinterpret_cast<const u32 *>(src + 0x2c);
+        const u32 bits_per_pixel = PvrBitsPerPixel(src);
+        usize payload_size = 0;
+        for (u32 level = 0; level < mip_count; ++level) {
+            usize level_size = static_cast<usize>(width) * height * bits_per_pixel / 8;
+            if (level_size < 0x20) {
+                level_size = 0x20;
+            }
+            payload_size += level_size * depth * surfaces * faces;
+            width = width > 1 ? width >> 1 : 1;
+            height = height > 1 ? height >> 1 : 1;
+        }
+        return headerSize + payload_size;
+    }
+    return 0;
+}
+
 // Creates a GL texture from a PVR or DDS texture blob, returning the texture id
 // and setting *width/*height. Host-only: software decodes PVRTC to RGBA.
-GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, i32 *width, i32 *height, bool is_pvrtc) {
+static GLuint CreateGLTexFromPlatformInMemory(void *data, usize data_size, i32 *width, i32 *height, bool is_pvrtc) {
     const u8 *src = (const u8 *)data;
 
     // DDS container ("mob" platform blobs): here it wraps a full ETC1 mip
@@ -479,8 +526,8 @@ GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, i32 *width, i32 *height
 
     const u8 *data_ptr = src + 0x34 + *(const i32 *)(src + 0x30);
 
-    u8 *rgba = (u8 *)malloc((usize)w * h * 4);
-    PvrDecode4bpp(data_ptr, w, h, rgba); // host software PVRTC 4bpp -> RGBA
+    const usize header_size = (usize)(data_ptr - src);
+    const usize payload_size = data_size > header_size ? data_size - header_size : 0;
 
     GLuint tex;
     glGenTextures(1, &tex);
@@ -488,9 +535,43 @@ GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, i32 *width, i32 *height
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
-    free(rgba);
+
+    const u32 channel_order = *reinterpret_cast<const u32 *>(src + 0x08);
+    const u32 channel_bits = *reinterpret_cast<const u32 *>(src + 0x0c);
+    if (channel_order == 0x61626772 && channel_bits == 0x04040404) { // "rgba", 4 bits each
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_SHORT_4_4_4_4, data_ptr);
+    } else if (channel_order == 0x61626772 && channel_bits == 0x08080808) { // "rgba", 8 bits each
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data_ptr);
+    } else if (channel_bits == 0) {
+        u8 *rgba = (u8 *)malloc((usize)w * h * 4);
+        PvrDecode4bpp(data_ptr, payload_size, w, h, rgba); // host software PVRTC 4bpp -> RGBA
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
+        free(rgba);
+    } else {
+        glDeleteTextures(1, &tex);
+        return 0;
+    }
     return tex;
+}
+
+GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, i32 *width, i32 *height, bool is_pvrtc) {
+    if (eglGetCurrentContext() == EGL_NO_CONTEXT) {
+        const u8 *src = static_cast<const u8 *>(data);
+        const usize size = PlatformTextureBlobSize(data);
+        if (size == 0) {
+            return 0;
+        }
+        if (src[0] == 'D') {
+            *width = *reinterpret_cast<const i32 *>(src + 0x0c);
+            *height = *reinterpret_cast<const i32 *>(src + 0x10);
+        } else {
+            *width = *reinterpret_cast<const i32 *>(src + 0x1c);
+            *height = *reinterpret_cast<const i32 *>(src + 0x18);
+        }
+        g_hostUnownedTextureBlobs.emplace_back(src, src + size);
+        return 0;
+    }
+    return CreateGLTexFromPlatformInMemory(data, PlatformTextureBlobSize(data), width, height, is_pvrtc);
 }
 
 // --- Shared NuTex layer entry points (host) ----------------------------------
@@ -546,6 +627,47 @@ i32 NuTexRead(char *name, VARIPTR *buf, VARIPTR *buf_end) {
 // deferred upload decodes real pixels instead of recycled arena bytes.
 static std::map<NUNATIVETEX *, std::vector<u8>> g_hostStagedTextures;
 
+// NuGScnReadTexturesPS uploads through a stack-local NUNATIVETEX in the
+// original.  That is safe there because the Android loading thread owns a GL
+// context and NuTexCreatePS completes synchronously.  Keep the embedded blobs
+// by scene-texture slot until NuGScnCreatePS supplies their persistent native
+// texture objects on the host.
+static std::vector<std::vector<u8>> g_hostSceneTextureBlobs;
+
+static bool HostStageHashedTexture(NUNATIVETEX *texture, u32 hash) {
+    char path[0x10c];
+    // The host test ships only the engine's universal fallback texture set.
+    snprintf(path, sizeof(path), "SHAREDTEXTURES/0X%08X.PVRNC", hash);
+    NUFILE file = NuFileOpen(path, NUFILE_READ);
+    if (file == 0) {
+        LOG_WARN("[tex-scene] missing hash 0x%08x", hash);
+        return false;
+    }
+
+    const i32 size = NuFileOpenSize(file);
+    std::vector<u8> data(size);
+    NuFileRead(file, data.data(), size);
+    NuFileClose(file);
+    g_hostStagedTextures[texture] = std::move(data);
+    return true;
+}
+
+GLuint NuIOS_CreateGLTexFromHash(u32 hash) {
+    char path[0x10c];
+    snprintf(path, sizeof(path), "SHAREDTEXTURES/0X%08X.PVRNC", hash);
+    NUFILE file = NuFileOpen(path, NUFILE_READ);
+    if (file == 0) {
+        return 0;
+    }
+    const i32 size = NuFileOpenSize(file);
+    std::vector<u8> data(size);
+    NuFileRead(file, data.data(), size);
+    NuFileClose(file);
+    i32 width = 0;
+    i32 height = 0;
+    return CreateGLTexFromPlatformInMemory(data.data(), data.size(), &width, &height, false);
+}
+
 bool NuTexHostTakeStaged(NUNATIVETEX *tex, std::vector<u8> &out) {
     auto it = g_hostStagedTextures.find(tex);
     if (it == g_hostStagedTextures.end()) {
@@ -556,6 +678,78 @@ bool NuTexHostTakeStaged(NUNATIVETEX *tex, std::vector<u8> &out) {
     return true;
 }
 
+i32 NuGScnReadTexturesPS(i32 file, VARIPTR *buf, VARIPTR) {
+    i32 bytes_read = NuFileRead(file, &g_VideoResHeader.ntextures, sizeof(g_VideoResHeader.ntextures));
+
+    g_VideoResHeader.texture_hashes = g_VideoResHeader.ntextures & 0x8000;
+    g_VideoResHeader.ntextures &= 0x7fff;
+    g_VideoResHeader.textures = buf->u32_ptr;
+    buf->u32_ptr += g_VideoResHeader.ntextures;
+    memset(g_VideoResHeader.textures, 0, (usize)g_VideoResHeader.ntextures * sizeof(u32));
+
+    g_hostSceneTextureBlobs.clear();
+    g_hostSceneTextureBlobs.resize(g_VideoResHeader.ntextures);
+    LOG_INFO("[tex-scene] read count=%u hashes=%d", (u32)g_VideoResHeader.ntextures,
+             g_VideoResHeader.texture_hashes != 0);
+    if (g_VideoResHeader.texture_hashes != 0) {
+        bytes_read += NuFileRead(file, g_VideoResHeader.textures, (i32)g_VideoResHeader.ntextures * (i32)sizeof(u32));
+        return bytes_read;
+    }
+
+    for (u32 i = 0; i < g_VideoResHeader.ntextures; ++i) {
+        i32 texture_header[6];
+        bytes_read += NuFileRead(file, texture_header, sizeof(texture_header));
+        const u32 size = (u32)texture_header[5];
+        if (size == 0) {
+            if (texture_header[0] < 0) {
+                i += 5;
+            }
+            continue;
+        }
+        if (texture_header[0] == 0) {
+            continue;
+        }
+
+        void *scratch = buf->void_ptr;
+        buf->addr += size;
+        bytes_read += NuFileRead(file, scratch, size);
+        const u8 *bytes = static_cast<const u8 *>(scratch);
+        g_hostSceneTextureBlobs[i].assign(bytes, bytes + size);
+        LOG_INFO("[tex-scene] slot=%u size=%u pvrtc=%d", i, size, texture_header[0] < 0);
+        buf->addr -= size;
+
+        if (texture_header[0] < 0) {
+            i += 5;
+        }
+    }
+    return bytes_read;
+}
+
+void NuGScnCreatePS(NUGSCN *scene, VARIPTR *, VARIPTR *) {
+    NUNATIVETEX **textures = reinterpret_cast<NUNATIVETEX **>(scene->field5_0x8);
+    i32 staged_count = 0;
+    for (i32 i = 0; i < scene->field4_0x4; ++i) {
+        NUNATIVETEX *texture = textures[i];
+        texture->image_data = nullptr;
+        texture->size = 0;
+        texture->platform.gl_tex = 0;
+
+        if (g_VideoResHeader.texture_hashes != 0) {
+            const u32 hash = g_VideoResHeader.textures[i];
+            texture->size = hash;
+            if (hash != 0 && HostStageHashedTexture(texture, hash)) {
+                staged_count++;
+            }
+        } else if ((usize)i < g_hostSceneTextureBlobs.size() && !g_hostSceneTextureBlobs[i].empty()) {
+            g_hostStagedTextures[texture] = std::move(g_hostSceneTextureBlobs[i]);
+            staged_count++;
+        }
+    }
+    LOG_INFO("[tex-scene] create scene=%p textures=%d blobs=%u staged=%d", scene, scene->field4_0x4,
+             (u32)g_hostSceneTextureBlobs.size(), staged_count);
+    g_hostSceneTextureBlobs.clear();
+}
+
 // original 0x29d701 — bind a native texture on a texture unit. The Android
 // original lives in nutex_android.cpp which the host build excludes; this is
 // its exact body against the host GL context.
@@ -564,7 +758,6 @@ void NuTexSetTextureWithStagePS(NUNATIVETEX *tex, u32 stage) {
     glActiveTexture(GL_TEXTURE0 + stage);
     g_currentTexUnit = (i32)stage;
     if (tex != NULL && tex->platform.gl_tex == 0) {
-        LOG_WARN("[tex] flush tid gl_tex==0 size=%d staged=%d", tex->size, (int)g_hostStagedTextures.count(tex));
         std::vector<u8> staged;
         if (NuTexHostTakeStaged(tex, staged)) {
             LOG_WARN("[tex] staged size=%d wh=%dx%d", (int)staged.size(), tex->width, tex->height);
@@ -572,10 +765,10 @@ void NuTexSetTextureWithStagePS(NUNATIVETEX *tex, u32 stage) {
             GLuint created = 0;
             {
                 i32 w = tex->width, h = tex->height;
-                created = NuIOS_CreateGLTexFromPlatformInMemory(data_ptr, &w, &h, true);
-                LOG_WARN("[tex] PVRTC try created=%u", created);
+                created = CreateGLTexFromPlatformInMemory(data_ptr, staged.size(), &w, &h, true);
+                LOG_WARN("[tex] PVR upload created=%u", created);
                 if (created == 0) {
-                    created = NuIOS_CreateGLTexFromPlatformInMemory(data_ptr, &w, &h, false);
+                    created = CreateGLTexFromPlatformInMemory(data_ptr, staged.size(), &w, &h, false);
                     LOG_WARN("[tex] ETC1 try created=%u", created);
                 }
                 tex->width = w;
@@ -591,13 +784,9 @@ void NuTexSetTextureWithStagePS(NUNATIVETEX *tex, u32 stage) {
                 g_hostStagedTextures[tex] = std::move(staged);
             }
         } else if (tex->image_data != NULL && tex->size != 0) {
-            LOG_WARN("[tex] direct upload size=%d", tex->size);
             NuTexCreatePS(tex, true);
             if (tex->platform.gl_tex == 0)
                 NuTexCreatePS(tex, false);
-            LOG_WARN("[tex] direct result gl_tex=%u", tex->platform.gl_tex);
-        } else {
-            LOG_WARN("[tex] no data to upload");
         }
     }
     glBindTexture(GL_TEXTURE_2D, tex != NULL ? tex->platform.gl_tex : 0);
@@ -614,7 +803,15 @@ i32 NuTexGenTexture(NUNATIVETEX *tex) {
 }
 
 void NuTexCreatePS(NUNATIVETEX *tex, bool is_pvrtc) {
-    if (tex == NULL || tex->image_data == NULL || tex->size == 0) {
+    if (tex == NULL) {
+        return;
+    }
+
+    if (tex->image_data == NULL || tex->size == 0) {
+        if (tex->platform.gl_tex == 0 && !g_hostUnownedTextureBlobs.empty()) {
+            g_hostStagedTextures[tex] = std::move(g_hostUnownedTextureBlobs.front());
+            g_hostUnownedTextureBlobs.erase(g_hostUnownedTextureBlobs.begin());
+        }
         return;
     }
 
@@ -626,13 +823,19 @@ void NuTexCreatePS(NUNATIVETEX *tex, bool is_pvrtc) {
     if (eglGetCurrentContext() == EGL_NO_CONTEXT) {
         if (!NuTexHostTakeStaged(tex, staged)) {
             g_hostStagedTextures[tex] = std::vector<u8>((u8 *)tex->image_data, (u8 *)tex->image_data + tex->size);
+            // NuTexCreatePS on the original always replaces this arena field
+            // with glGenTextures' result before returning.  The host defers
+            // that operation to the render thread, so establish the value the
+            // pending operation must have instead of retaining arena garbage.
+            tex->platform.gl_tex = 0;
             return;
         }
         // A previous pass staged these bytes; fall through and upload them.
         data_ptr = staged.data();
     }
 
-    tex->platform.gl_tex = NuIOS_CreateGLTexFromPlatformInMemory(data_ptr, &tex->width, &tex->height, is_pvrtc);
+    const usize data_size = staged.empty() ? tex->size : staged.size();
+    tex->platform.gl_tex = CreateGLTexFromPlatformInMemory(data_ptr, data_size, &tex->width, &tex->height, is_pvrtc);
     if (tex->platform.gl_tex != 0) {
         tex->image_data = NULL;
         tex->size = 0;

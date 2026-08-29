@@ -29,4 +29,5 @@ extern "C" void NuMtlSetRenderStatesPS(numtl_s *mtl);
 extern "C" void NuRenderContextSetZFunc(i32 zfunc);
 extern "C" void NuIOS_SetVertexFormat(u32 fmt);
 void NuIOSDLMtlCallback(void *arg);
+void NuIOSDLPreWarmGeomCallback(void *arg);
 void NuIOSDLGeom2DCallback(void *arg);

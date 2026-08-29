@@ -1452,27 +1452,50 @@ i32 NuPPLoadBuffer(NUFILE file, void *buf, i32 buf_size) {
 static FILEEXTINFO extensions[64];
 static i32 num_extensions;
 
-i32 NuFileExtConvert(char *dest, char *path, i32 path_len) {
-    i32 length = path_len != 0x400 ? path_len : NuStrLen(path);
-    NuStrCpy(dest, path);
-
-    FILEEXTINFO *source = NULL;
-    for (i32 i = 0; i < num_extensions; ++i) {
-        i32 ext_len = extensions[i].len;
-        if (length >= ext_len && NuStrICmp(dest + length - ext_len, extensions[i].extension) == 0) {
-            source = &extensions[i];
-            break;
+static i32 MatchExtension(char *extension, char *path_end, i32 path_len) {
+    while (*extension != '\0') {
+        --path_end;
+        if (path_len == 0 || *extension != NuToLower(*path_end)) {
+            return 0;
         }
+        ++extension;
+        --path_len;
     }
-    if (source == NULL || source->platform == PC_PLATFORM) {
-        return source != NULL;
+    return 1;
+}
+
+static FILEEXTINFO *NuFileExtGetInfo(char *path, i32 path_len) {
+    if (path_len == 0) {
+        path_len = NuStrLen(path);
     }
 
-    for (i32 i = 0; i < num_extensions; ++i) {
-        FILEEXTINFO *target = &extensions[i];
+    FILEEXTINFO *info = extensions;
+    while (info->extension[0] != '\0') {
+        if (MatchExtension(info->extension, path + path_len, path_len) != 0) {
+            return info;
+        }
+        ++info;
+    }
+    return NULL;
+}
+
+i32 NuFileExtConvert(char *dest, char *path) {
+    i32 path_len = NuStrCpy(dest, path);
+    FILEEXTINFO *source = NuFileExtGetInfo(path, path_len);
+    if (source == NULL) {
+        return 0;
+    }
+    if (source->platform == PC_PLATFORM) {
+        return 1;
+    }
+
+    for (FILEEXTINFO *target = extensions; target->extension[0] != '\0'; ++target) {
         if (target->platform == PC_PLATFORM && target->type == source->type) {
-            i32 base_len = length - source->len;
-            NuStrCpy(dest + base_len, target->extension);
+            char *out = dest + path_len - source->len + target->len;
+            *out = '\0';
+            for (char *extension = target->extension; *extension != '\0'; ++extension) {
+                *--out = *extension;
+            }
             return 1;
         }
     }
@@ -1611,10 +1634,6 @@ i32 NuFileInitEx(i32 device_id, i32 reboot_iop, i32 eject) {
 
 void NuFileInit(i32 device_id) {
     NuFileInitEx(device_id, 1, 0);
-}
-
-static FILEEXTINFO *NuFileExtGetInfo(char *, i32) {
-    return 0;
 }
 
 static void NuFileEndianSwap16(void *) {

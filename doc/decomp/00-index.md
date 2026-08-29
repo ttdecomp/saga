@@ -2,7 +2,9 @@
 
 Agent-oriented knowledge base for the matching-decompilation of **LEGO Star Wars: The Complete Saga (Android x86)** — reimplementing `res/libTTapp.so` in C/C++ such that the recompiled binary byte-matches the original, instruction for instruction, per translation unit.
 
-All claims below were verified by live experiments with the actual toolchain (Aug 2026). Numbers cite HEAD `755ab13`.
+Compiler-behavior claims were verified with the actual toolchain. Repository
+counts and paths below were refreshed on 2026-08-29; generated
+`compile_commands.json`, `objdiff.json`, and `report.json` remain authoritative.
 
 ## 1. What this is matching
 
@@ -10,10 +12,10 @@ All claims below were verified by live experiments with the actual toolchain (Au
 |---|---|
 | Target | `res/libTTapp.so` — ELF32 DYN, i386, unstripped (full `.symtab`), 7,883,289 B |
 | Compiler | GCC 4.7 (NDK r8e `x86-4.7`), `i686-linux-android-g++`; linker gold 1.11 (matches original `.comment`/gold note) |
-| Optimization | **per-file**, default **-O0**; 25× -O2, 74× -O3, 1× (-O3 -fPIE `cheat.cpp`) among 291 TUs |
+| Optimization | **per-file**, default **-O0**; current target: 342× -O0, 25× -O2, 97× -O3; one -O3 TU also uses -fPIE |
 | ABI | cdecl-only (i686), PIC on by default, SSE2 math for float **and** double, x87 only for return values and i64↔double conversions |
 | STL | **none** (`cxx-stl/system` = bionic minimal runtime; no `std::string`/`vector`) |
-| Matching | gonk carves original symbols into `build/split/*.o`; objdiff compares recompiled vs carved **by symbol name** |
+| Matching | gonk carves original symbols into a directory-preserving tree under `build/split/`; objdiff compares recompiled vs carved **by symbol name** |
 
 ## 2. The files
 
@@ -49,7 +51,9 @@ All claims below were verified by live experiments with the actual toolchain (Au
 Things about this compiler that differ from mainstream GCC expectations — all verified:
 
 - **Doubles use SSE2** (`movsd/mulsd/addsd`), not x87; x87 appears only for the `st(0)` return round-trip and i64↔double conversions (`fildll`/`fisttpll`). `__SSE2_MATH__` is defined by default. (02 §5)
-- **No tail-call optimization** under PIC: `return f(x);` compiles to `call`+`ret`. (02 §9, 07 cat. 12)
+- **External/default-visibility calls are not tail-called** in the tested PIC
+  shape: `return f(x);` compiles to `call`+`ret`. Local and hidden callees can
+  still become `jmp` sibling calls. (02 §9, 07 cat. 12)
 - **No `cltd`**: signed division preamble is `mov %eax,%edx; sar $0x1f,%edx`. (02 §4)
 - **Division-by-constant magic at -O0** as well: `x/7` → `imul $0x92492493` even unoptimized. (02 §4)
 - **All struct returns use a hidden sret pointer** (`-fpcc-struct-return`): even 4-byte PODs return via `ret $4`. (04 §3, 02 §9)
@@ -79,13 +83,15 @@ Things about this compiler that differ from mainstream GCC expectations — all 
 ```bash
 # build + match + report (pre-commit does this automatically)
 cmake -B build && cmake --build build -j
-gonk split                                  # carve original → build/split/*.o (by name)
+./gonk/target/release/gonk split            # carve original → build/split/<source path>.o
 objdiff-cli report generate -o report.json  # compare recompiled vs split
 python3 scripts/objdiffdiff.py report.json report_old.json   # human diff vs last CI report
 python3 scripts/check_symbols.py            # symbol-surface gate (exit 1/2)
 ```
 
-Verification of a single function: `nm res/libTTapp.so | grep <sym>` → find TU via `nm -A build/split/*.o | grep <sym>` → objdump both `.o`s, diff (08 §6 block A; the old condensed loop is 07 §A).
+Verification of a single function: run
+`python3 scripts/objdiff-cli.py <sym>`. For raw paths, query the matching unit
+in `objdiff.json`; do not use the non-recursive `build/split/*.o` glob.
 
 ## 7. Key repo paths
 
@@ -95,18 +101,19 @@ Verification of a single function: `nm res/libTTapp.so | grep <sym>` → find TU
 | `build/compile_commands.json` | exact per-file compile commands (source of truth; regenerate via cmake) |
 | `gonk.toml` | ignore list (`__udivdi3`, `__umoddi3`, `ogg_stream_flush_fill`) + `extra_units` (ogg_vorbis) |
 | `gonk/` | gonk source (split.rs: split/pairing logic) |
-| `objdiff.json` | objdiff config: 293 units, scratch = `ndk-r8e-gcc-4.7` |
+| `objdiff.json` | generated objdiff config: currently 466 units, scratch = `ndk-r8e-gcc-4.7` |
 | `scripts/check_symbols.py`, `scripts/objdiffdiff.py` | gates + report diff (docstrings = semantics) |
 | `scripts/symbols_extra_baseline.txt` | extra-symbol baseline (144) |
 | `.githooks/pre-commit` | the full pipeline |
 | `src/decomp.h` | LOG/UNIMPLEMENTED (host-only), `SAGA_NOMATCH`, undefined/byte/dword |
-| `src/common.h`, `src/fixed_width.h` | type system (i32/u32…, `abi_long`, no `variptr_u`) |
+| `src/nu2api/nucore/common.h`, `src/nu2api/nucore/fixed_width.h` | type system (i32/u32…, `abi_long`, `variptr_u`) |
 | `res/libTTapp.so` | the original target |
 
 ## 8. Authoring checklist (per new function)
 
 1. Find the symbol in the binary (`nm res/libTTapp.so`), note exact spelling/mangling.
-2. Find its TU: `nm -A build/split/*.o | grep <sym>`; map TU basename → src/ file (06 §7, 05 §heuristics).
+2. Find its TU with `scripts/objdiff-cli.py`, `objdiff.json`, or recursive
+   `find build/split ... | xargs nm -A`; current split paths mirror `src/`.
 3. Check the file's -O level in `src/target.cmake` (absent = -O0).
 4. Write the signature so the mangled name matches (04 §1); keep the `extern "C"` correct.
 5. Write the body per 02-codegen patterns for that -O level; if incomplete, use the stub idiom (05 §stubs).

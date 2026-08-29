@@ -4,19 +4,39 @@
 #include <string.h>
 
 #include "decomp.h"
+#include "globals.h"
 #include "nu2api/nu3d/numtl.h"
+#include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nucore/nustring.h"
 
 #define TOTAL_MENUS_COUNT 100
 #define RESERVED_MENUS_COUNT 25
 
+static void MenuDrawTitles(MENU *);
+static void MenuUpdateTitles(MENU *);
+static void MenuEnterTitles(MENU *);
+
 MENU GameMenu[10];
 
 i32 MenuSFX = -1;
 i32 GameMenuLevel = -1;
+i32 MenuValidated;
+f32 MenuAlpha;
+i32 MenuA;
+f32 MENUTEXTSCALE = 0.5f;
 
-MENUFNINFO GameMenuInfo[34] = {1};            // TODO: initialize with proper values
-MENUFNINFO MenuInfo[TOTAL_MENUS_COUNT] = {1}; // TODO: initialize with proper values
+extern i16 tTOUCHTOSTART;
+extern "C" void SmartTextEx(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u32 alignment,
+                            u8 red, u8 green, u8 blue, f32 max_width, i32 max_lines, void *message_box,
+                            i32 suppress_draw, u32 alpha);
+
+MENUFNINFO GameMenuInfo[34] = {
+    {0, MenuEnterTitles, MenuDrawTitles, MenuUpdateTitles, NULL, -1, -1, 0},
+};
+MENUFNINFO MenuInfo[TOTAL_MENUS_COUNT] = {
+    {1000}, {1001}, {1002}, {1003}, {1004}, {1005}, {1006}, {1007}, {1008}, {1009}, {1010}, {1011}, {1012},
+    {1013}, {1014}, {1015}, {1016}, {1017}, {1018}, {1019}, {1020}, {1021}, {1022}, {1023}, {1024},
+};
 
 i32 MenusUsed = RESERVED_MENUS_COUNT;
 i32 MenuLanguages = 1;
@@ -235,6 +255,12 @@ void MenuLoadTechnicalStrings(char *filepath, char *language, VARIPTR *buf, VARI
 static __used__ void MenuDrawShop(MENU *) {
 }
 static __used__ void MenuDrawTitles(MENU *) {
+    if (GameTimer.time_elapsed >= 3.0f && GameTimer.time_elapsed_mod_seconds < 0.666f && TTab != NULL &&
+        TTab[tTOUCHTOSTART] != NULL) {
+        SmartTextEx(TTab[tTOUCHTOSTART], 0.0f, (pNuCam->fov / pNuCam->aspect) * -0.5f, 1.0f, MENUTEXTSCALE,
+                    MENUTEXTSCALE, MENUTEXTSCALE, 0, 255, 255, 255, 1.7f, 1, NULL, 0,
+                    static_cast<i32>(static_cast<f32>(MenuA) * newgamealpha));
+    }
 }
 static __used__ void MenuUpdateShop(MENU *) {
 }

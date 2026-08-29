@@ -19,6 +19,7 @@ extern "C" {
     void NuPrim2DBegin(u32 prim_type, u32 vtx_fmt, NUMTL *mtl);
     void NuPrim2DAddXYZ(f32 x, f32 y, f32 z);
     void NuPrim2DEnd(void);
+    void NuPrim3DEnd(void);
 
     void NuPrimSetCoordinateSystem(NUPRIMSCALEMODE scale_mode);
 

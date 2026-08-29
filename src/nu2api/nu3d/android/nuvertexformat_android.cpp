@@ -223,8 +223,8 @@ NuVertexFormatPS *NuGetVertexDeclaration(NUVERTEXDESCRIPTOR vtx_desc) {
         edx_c = 0xc; // 0x2fcc56-0x2fcc5b
     }
 
-    // 0x2fcc60: location 4 (tangent). 1 -> float x3 (0x2fd440), 0 -> packed
-    // UBYTE x4 normalized inline, 2 -> absent.
+    // 0x2fcc60: location 4 (tangent). 1 -> float x3 (0x2fd440), 2 -> packed
+    // UBYTE x4 normalized inline, 0 -> absent.
     if (sel_tangent == 1) { // 0x2fd440
         edx_c = c30;
         fmt->attribs[4].offset = (u32)ecx_c; // 0x2fd444 (+0x74)
@@ -256,7 +256,7 @@ NuVertexFormatPS *NuGetVertexDeclaration(NUVERTEXDESCRIPTOR vtx_desc) {
         c5c = edx_c;                         // 0x2fd4b1
         c58 = esi_c;                         // 0x2fd4c3
         edx_c = c3c & 0xffff;                // 0x2fd4c7
-    } else if (sel_tangent != 2) {           // 0x2fcc76 packed tangent
+    } else if (sel_tangent == 2) {           // 0x2fcc76 packed tangent
         c48 = (u32)(esi_c & 0xffff);         // 0x2fcc76
         esi_c = c40;                         // 0x2fcc7b
         fmt->attribs[4].offset = (u32)ecx_c; // 0x2fcc7f
@@ -289,7 +289,7 @@ NuVertexFormatPS *NuGetVertexDeclaration(NUVERTEXDESCRIPTOR vtx_desc) {
         mask |= 0x10;                        // 0x2fccfd
         c4a = esi_c;                         // 0x2fcd00
     }
-    // else sel_tangent == 2: absent (0x2fcc70 jumps past).
+    // else sel_tangent == 0: absent (0x2fcc70 jumps past).
 
     // 0x2fcd05: location 5 (binormal).
     if (sel_binormal == 1) {                 // 0x2fd3d8 float x3
@@ -310,7 +310,7 @@ NuVertexFormatPS *NuGetVertexDeclaration(NUVERTEXDESCRIPTOR vtx_desc) {
         edx_c += 0xc;                        // 0x2fd429
         c18 = esi_c;                         // 0x2fd42c
         ecx_c = c5c;                         // 0x2fd430
-    } else if (sel_binormal != 2) {          // 0x2fcd17 packed UBYTE x4
+    } else if (sel_binormal == 2) {          // 0x2fcd17 packed UBYTE x4
         esi_c = c44;                         // 0x2fcd17
         fmt->attribs[5].offset = (u32)ecx_c; // 0x2fcd1b
         ecx_c = c40;                         // 0x2fcd21
@@ -328,7 +328,7 @@ NuVertexFormatPS *NuGetVertexDeclaration(NUVERTEXDESCRIPTOR vtx_desc) {
         mask |= 0x20;                        // 0x2fcd68
         c84 = esi_c;                         // 0x2fcd6b
     }
-    // else sel_binormal == 2: absent (0x2fcd15 jumps past).
+    // else sel_binormal == 0: absent (0x2fcd15 jumps past).
 
     // 0x2fcd73: location 1 (diffuse colour), desc bit 8.
     if (has_diffuse != 0) {
@@ -485,8 +485,8 @@ NuVertexFormatPS *NuGetVertexDeclaration(NUVERTEXDESCRIPTOR vtx_desc) {
     }
     // half_units == 0: no texcoords.
 
-    // 0x2fce80: location 10. 1 -> float x2 (0x2fd398), 0 -> UBYTE x4 normalized,
-    // 2 -> absent (default while desc bit 15 set).
+    // 0x2fce80: location 10. 1 -> float x2 (0x2fd398), 2 -> UBYTE x4 normalized,
+    // 0 -> absent.
     if (sel_loc10 == 1) {
         edx_c = (i32)(i16)(edx_c & 0xffff);   // 0x2fd398
         fmt->attribs[10].unknown_0c = 0;      // 0x2fd39b (+0x100)
@@ -496,7 +496,7 @@ NuVertexFormatPS *NuGetVertexDeclaration(NUVERTEXDESCRIPTOR vtx_desc) {
         fmt->attribs[10].normalized = 0;      // 0x2fd3bf (+0xfc)
         mask |= 0x400;                        // 0x2fd3c6
         edx_c += 8;                           // 0x2fd3cc
-    } else if (sel_loc10 != 2) {              // 0x2fce92
+    } else if (sel_loc10 == 2) {              // 0x2fce92
         edx_c = (i32)(i16)(edx_c & 0xffff);
         fmt->attribs[10].unknown_0c = 0;      // 0x2fce95
         fmt->attribs[10].offset = (u32)edx_c; // 0x2fce9f
@@ -507,8 +507,8 @@ NuVertexFormatPS *NuGetVertexDeclaration(NUVERTEXDESCRIPTOR vtx_desc) {
         edx_c += 4;                           // 0x2fcec6
     }
 
-    // 0x2fcec9: location 11. 1 -> float x3 (0x2fd358), 0 -> UBYTE x4 NOT
-    // normalized, 2 -> absent (default while desc bit 17 set).
+    // 0x2fcec9: location 11. 1 -> float x3 (0x2fd358), 2 -> UBYTE x4 NOT
+    // normalized, 0 -> absent.
     if (sel_loc11 == 1) {
         edx_c = (i32)(i16)(edx_c & 0xffff);   // 0x2fd358
         fmt->attribs[11].unknown_0c = 0;      // 0x2fd35b (+0x118)
@@ -518,7 +518,7 @@ NuVertexFormatPS *NuGetVertexDeclaration(NUVERTEXDESCRIPTOR vtx_desc) {
         fmt->attribs[11].normalized = 0;      // 0x2fd37f (+0x114)
         mask |= 0x800;                        // 0x2fd386
         edx_c += 0xc;                         // 0x2fd38c
-    } else if (sel_loc11 != 2) {              // 0x2fcedb
+    } else if (sel_loc11 == 2) {              // 0x2fcedb
         edx_c = (i32)(i16)(edx_c & 0xffff);
         fmt->attribs[11].unknown_0c = 0;      // 0x2fcede
         fmt->attribs[11].offset = (u32)edx_c; // 0x2fcee8
@@ -649,6 +649,7 @@ NuVertexFormatPS *NuGetVertexDeclaration(NUVERTEXDESCRIPTOR vtx_desc) {
     }
 
     // 0x2fd0af-0x2fd0e1: commit the new record and return record + 4.
+    fmt->attrib_mask = mask;
     rec->key = desc_norm;                   // 0x2fd0c7
     g_allocatedDescriptorCount = count + 1; // 0x2fd0ca-0x2fd0d4
     return fmt;

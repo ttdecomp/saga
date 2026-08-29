@@ -43,16 +43,25 @@ project following the instructions in [README.md](README.md), you will need to
 build and run the `gonk` tool, included in the source tree. This requires an
 installation of the Rust toolchain.
 
-1. `pushd gonk/ && cargo install --path . && popd`
-2. `gonk split`
+1. `cargo build --release --manifest-path gonk/Cargo.toml`
+2. `./gonk/target/release/gonk split`
 
 This generates ELF objects from the original shared object corresponding to the
 structure of our source tree, as well as a configuration for the `objdiff` tool.
 
-The `objdiff` tool may be installed by running
-`cargo install --git https://github.com/encounter/objdiff.git objdiff-gui` (or,
-if you prefer a command-line tool,
-`cargo install --git https://github.com/encounter/objdiff.git objdiff-cli`).
+The pre-commit hook expects `objdiff-cli` and installs the project-tested fork
+when it is missing:
+
+```bash
+cargo install objdiff-cli --git https://github.com/ttdecomp/objdiff
+```
+
+The upstream `objdiff` GUI remains useful for interactive inspection, but the
+command-line workflows documented in `doc/decomp/` assume `objdiff-cli 3.6.x`.
+
+Split objects mirror the source-tree hierarchy under `build/split/`; they are
+not a flat directory. Prefer `scripts/objdiff-cli.py SYMBOL` for one function,
+or query `objdiff.json` for the exact target/base object paths.
 
 ## Development Scripts
 
@@ -84,13 +93,13 @@ part of the `lint` build target.
 
 ## Style Guidelines
 
-## Clang-Format
+### Clang-Format
 
 The project uses `clang-format` to enforce a consistent coding style.
 Please make sure to either run `clang-format` on any code you contribute, or configure
 your editor to do this automatically.
 
-## Naming Conventions
+### Naming Conventions
 
 The original code is divided into essentially two parts as far as we can tell:
 code which is essentially C and broadly-speaking survives from earlier versions
@@ -129,6 +138,16 @@ personal tastes in readability, the following guidelines apply:
 - In C++-style code:
   - Classes and their constituent types are named in `PascalCase`.
 
-## git hooks
+## Git hooks
 
-run `git config core.hooksPath .githooks` to enable the pre-commit hook in that folder.
+Run `git config core.hooksPath .githooks` to enable the repository hook.
+
+The hook is intentionally stateful: it formats and stages tracked C/C++ source
+files, builds the target, regenerates `objdiff.json`/`report.json`, updates the
+README matching table and badge, and stages the generated documentation. Review
+the staged diff before committing.
+
+For repository-specific agent guidance, see
+`skills/saga-decomp/SKILL.md`. The package uses the Codex `SKILL.md` format and
+can be copied to a standard skill-discovery directory if automatic invocation
+is desired.

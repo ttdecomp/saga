@@ -1,5 +1,6 @@
 #include "decomp.h"
 #include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nu3d/nuvport.h"
 #include "nu2api/nu3d/numtl.h"
 
 #include <string.h>
@@ -94,6 +95,7 @@ void NuRndrSetScissor(i32, i32, i32, i32) {
 }
 
 void NuRndrInitGeneric() {
+    NuVpResetRegions();
 }
 
 void NuRndrSetXYOffset(i32, i32) {

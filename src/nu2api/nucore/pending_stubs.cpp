@@ -12,16 +12,10 @@ extern "C" void NuShaderManagerDestroyShaders(void) {
 extern "C" void NuShaderManagerForceShader(void) {
 }
 
-extern "C" void NuShaderManagerGetCurrentShader(void) {
-}
-
 extern "C" void NuShaderManagerGetInstance(void) {
 }
 
 extern "C" void NuShaderManagerGetShininessFactor(void) {
-}
-
-extern "C" void NuShaderManagerInit(void) {
 }
 
 extern "C" void NuShaderManagerLoadCompiledShaders(void) {

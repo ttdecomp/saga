@@ -10,12 +10,14 @@
 
 #include "decomp.h"
 #include "globals.h"
+#include "MechInputTouch/MechInputTouch_types.h"
 #include "nu2api/nu3d/NuRenderDevice.h"
 #include "nu2api/nu3d/nuscreen.hpp"
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nuplatform/nuplatform.h"
 
 extern "C" i32 NuMain(i32 argc, char **argv);
+extern i32 HostReadbackPixels(u32 max_w, u32 max_h, u8 *rgba);
 
 namespace {
 #ifdef _WIN32
@@ -44,7 +46,7 @@ namespace {
         }
         fprintf(file, "P6\n%d %d\n255\n", width, height);
 
-        for (i32 y = 0; y < height; y++) {
+        for (i32 y = height - 1; y >= 0; y--) {
             for (i32 x = 0; x < width; x++) {
                 const usize src = (static_cast<usize>(y) * static_cast<usize>(width) + static_cast<usize>(x)) * 4;
                 fwrite(&rgba[src], 1, 3, file);
@@ -55,16 +57,34 @@ namespace {
         return true;
     }
 
-    static bool capture_frame(i32 frame) {
-        std::vector<u8> pixels(static_cast<usize>(host_window_width) * host_window_height * 4);
-        const i32 packed = g_renderDevice.HostReadbackPixels(host_window_width, host_window_height, pixels.data());
+    static u64 pixel_hash(const u8 *pixels, usize pixel_count) {
+        u64 hash = 1469598103934665603ULL;
+        // The capture files contain RGB. Ignore framebuffer alpha as well:
+        // blend-state changes can alter it without changing the visible image.
+        for (usize i = 0; i < pixel_count; i++) {
+            const u8 *pixel = pixels + i * 4;
+            for (usize channel = 0; channel < 3; channel++) {
+                hash ^= pixel[channel];
+                hash *= 1099511628211ULL;
+            }
+        }
+        return hash;
+    }
+
+    static bool read_frame(std::vector<u8> &pixels, i32 &width, i32 &height, u64 &hash) {
+        pixels.resize(static_cast<usize>(host_window_width) * host_window_height * 4);
+        const i32 packed = HostReadbackPixels(host_window_width, host_window_height, pixels.data());
         if (packed <= 0) {
             return false;
         }
 
-        const i32 width = packed / 1000;
-        const i32 height = packed % 1000;
+        width = packed / 1000;
+        height = packed % 1000;
+        hash = pixel_hash(pixels.data(), static_cast<usize>(width) * height);
+        return true;
+    }
 
+    static bool capture_frame(i32 frame, const std::vector<u8> &pixels, i32 width, i32 height) {
         char filename[64];
         snprintf(filename, sizeof(filename), ".work/capture/window_%04d.ppm", frame);
 
@@ -134,6 +154,15 @@ inline i32 test_window(i32 argc, char **argv) {
 
     const Uint64 start_ticks = SDL_GetTicks();
     i32 frame_count = 0;
+    u64 previous_hash = 0;
+    u64 captured_hash = 0;
+    Uint64 last_capture_ticks = 0;
+    Uint64 last_change_ticks = 0;
+    bool have_hash = false;
+    bool image_changing = false;
+    std::vector<u8> pixels;
+    i32 capture_width = 0;
+    i32 capture_height = 0;
 
     bool quit_requested = false;
     while (!quit_requested) {
@@ -141,6 +170,13 @@ inline i32 test_window(i32 argc, char **argv) {
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT) {
                 quit_requested = true;
+            } else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN || event.type == SDL_EVENT_FINGER_DOWN ||
+                       (event.type == SDL_EVENT_KEY_DOWN &&
+                        (event.key.key == SDLK_RETURN || event.key.key == SDLK_SPACE))) {
+                // Android reports a newly pressed title/menu touch through
+                // this per-frame latch. Let a host click, tap, Enter, or Space
+                // exercise the same original menu-update path.
+                MechInputTouchMenuController::AnyTouchesThisFrame = 1;
             }
         }
         if (quit_requested) {
@@ -149,15 +185,12 @@ inline i32 test_window(i32 argc, char **argv) {
 
         if (host_numain_done) {
             for (i32 i = 0; i < host_tail_frames; i++) {
-                g_renderDevice.SwapBuffers();
                 SDL_Delay(host_poll_interval_ms);
                 frame_count++;
             }
-            capture_frame(frame_count);
             break;
         }
 
-        g_renderDevice.SwapBuffers();
         frame_count++;
 
         SDL_Delay(host_poll_interval_ms);
@@ -167,9 +200,39 @@ inline i32 test_window(i32 argc, char **argv) {
             break;
         }
 
-        if (frame_count % 10 == 0) {
-            capture_frame(frame_count);
+        u64 current_hash = 0;
+        if (!read_frame(pixels, capture_width, capture_height, current_hash)) {
+            continue;
         }
+        const Uint64 now = SDL_GetTicks();
+        if (!have_hash) {
+            capture_frame(frame_count, pixels, capture_width, capture_height);
+            captured_hash = current_hash;
+            last_capture_ticks = now;
+            previous_hash = current_hash;
+            have_hash = true;
+        } else if (current_hash != previous_hash) {
+            last_change_ticks = now;
+            if (!image_changing || now - last_capture_ticks >= 500) {
+                capture_frame(frame_count, pixels, capture_width, capture_height);
+                captured_hash = current_hash;
+                last_capture_ticks = now;
+            }
+            previous_hash = current_hash;
+            image_changing = true;
+        } else if (image_changing && now - last_change_ticks >= 500) {
+            if (current_hash != captured_hash) {
+                capture_frame(frame_count, pixels, capture_width, capture_height);
+                captured_hash = current_hash;
+                last_capture_ticks = now;
+            }
+            image_changing = false;
+        }
+    }
+
+    u64 final_hash = 0;
+    if (read_frame(pixels, capture_width, capture_height, final_hash) && (!have_hash || final_hash != captured_hash)) {
+        capture_frame(frame_count, pixels, capture_width, capture_height);
     }
 
     if (host_numain_thread != nullptr) {

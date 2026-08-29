@@ -1,10 +1,13 @@
 # 02 — GCC 4.7 (Android NDK r8e) x86-32 codegen encyclopedia
 
 Toolchain: `ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/linux-x86_64/bin/i686-linux-android-g++`
-All results from LIVE experiments in `/tmp/opencode/saga-experiments/a2/<topic>/`
-(compile+disasm script: `run.sh`; canonical flags everywhere:
-`-fno-exceptions -fno-rtti -Wno-write-strings -std=gnu++11 -g -fno-function-sections -fno-data-sections`).
-Cross-checked against `build/split/*.o` (original -O0 carve) and `build/CMakeFiles/saga.dir/**/*.o` (rebuilt).
+Results were measured with temporary compile/disassembly experiments using
+canonical flags:
+`-fno-exceptions -fno-rtti -Wno-write-strings -std=gnu++11 -g -fno-function-sections -fno-data-sections`,
+and cross-checked against carved and rebuilt objects. The original `/tmp`
+experiment files were ephemeral and are not part of the repository; reproduce
+a claim from the inline source/assembly description before relying on it for a
+new edge case.
 
 Toolchain personality (verified): `__PIC__ 2` (PIC ON by default — no -fPIC needed), `__SSE__/__SSE2__/__SSE3__ 1`,
 `__SSE_MATH__/__SSE2_MATH__ 1` (SSE2 math applies to float **and** double), `__tune_atom__ 1` (Atom tuning).
@@ -37,7 +40,7 @@ This is Google's forked 4.7: it differs from upstream in several places flagged 
 | switch dense | jump table (PIC-relative) if bodies simple; else cmp chain | value table, jump table, or cmp chain (see §8) |
 | switch sparse | cmp chain | cmp chain |
 | calls | args right-to-left `movl $imm,(%esp)+N` | same; args from reg |
-| tail calls | — | still `call`+`ret` (no sibcall) **[ANDROID]** |
+| tail calls | — | external/default-visibility PIC calls use `call`+`ret`; local or hidden callees may use `jmp` |
 | struct ret (any size) | hidden sret ptr at `8(%ebp)`, callee `ret $4` (`c2 04 00`) | same (ptr at `4(%esp)`) |
 | virtual call | `mov (%eax),%eax; mov (%eax),%eax; call *%eax` | `mov (%eax),%edx; call *(%edx)` (fused load) |
 
@@ -55,7 +58,7 @@ or
   0: 55           push   %ebp
   1: 89 e5        mov    %esp,%ebp      ; canonical
 ```
-`int add(int a,int b){return a+b;}`, -O0. Both forms are real: `lea (%esp),%ebp` (bytes `8d 2c 24`, the Android x86 patch) and canonical `mov %esp,%ebp` (bytes `89 e5`). IMPORTANT (re-measured 2026-08): **the `mov` form dominates** — in `build/split/*.o` the mov form appears 3167× vs 444× for lea (7:1), and 273 of 337 objects contain zero lea forms. `build/split/level.cpp.o` contains exactly one of each. Empirically lea shows up in pure-arithmetic leaves with no GOT/PIC usage (plain arith on args/locals, sret fillers, indirect-call vfuncs), while mov appears in GOT-touching PIC functions and trivial no-local functions — but this is NOT a reliable per-function rule (counterexamples at both ends: `sw()` uses lea despite thunk+GOTOFF; `use_globals()` uses mov; `al()` with alloca uses lea; `while_sum` loop uses mov). Never use it as a discriminator.
+`int add(int a,int b){return a+b;}`, -O0. Both forms are real: `lea (%esp),%ebp` (bytes `8d 2c 24`, the Android x86 patch) and canonical `mov %esp,%ebp` (bytes `89 e5`). A historical census found the `mov` form substantially more common, but the split tree has since been reorganized. Treat either encoding as plausible and compare the specific target function; there are counterexamples to simple GOT/leaf heuristics.
 
 ### -O0 stack allocation — `lea`, NEVER `sub`
 ```asm
@@ -102,7 +105,9 @@ Every function that touches a global/static/string/call gets a prologue thunk:
 ```
 `const char* greet(){return "hello";}`, -O3. Rule: `@GOT(%ebx)`+deref for external (default-visibility) symbols; `@GOTOFF(%ebx)` for file-local/static data, guard vars, strings.
 
-**Calls** — `call helper@PLT` (reloc R_386_PC32 against the PLT; in .o disassembly it shows as `call <func+N>` with `e8 fc ff ff ff` placeholder).
+**Calls** — an external call normally carries an `R_386_PLT32` relocation
+against the callee; local/hidden direct calls use `R_386_PC32`. In `.o`
+disassembly the unresolved displacement commonly appears as `e8 fc ff ff ff`.
 verified: `g++ -O0/-O3 -c pic.cpp; objdump -dr pic_O3.o`
 
 ## 3. Comparisons (critical)
@@ -219,7 +224,7 @@ verified: `g++ -O0/-O3 -c int.cpp; objdump -d; nm -a`
 ```
 doubles: `movsd/addsd/mulsd/ucomisd`. Return convention: result stored to a stack temp and reloaded with `flds`/`fldl` → **returned in x87 st(0)** (i386 SysV ABI), both -O0 and -O3. The compiler keeps a 4/8/12-byte frame (`lea -4/-0xc(%esp),%esp`) for the roundtrip.
 
-Re-verified 2026-08: the SSE2 default is the fork's `-mfpmath=sse` default (`__SSE_MATH__`/`__SSE2_MATH__` = 1, from `-dM -E`), NOT upstream's documented `-mfpmath=387`. With explicit `-mfpmath=387` the same source compiles to pure x87: `fldl a; fldl b; fmul %st(1),%st; faddp; ret`, loop acc = `fldz; faddl (%eax)` (no 12-byte frame, no fldl-return roundtrip), compare = `fldl; fldl; fxch; fucomip %st(1),%st; fstp %st(0); seta %al` (ucomisd → fucomip). Cross-check on the REAL original: `build/split/*.o` is overwhelmingly SSE2 — `movss/addss` ~113k, `movsd/addsd` ~1.1k, vs only ~30 `fldl` (all the return-roundtrip `movsd %xmm0,(%esp); fldl (%esp)` or `fisttpll`/`fildll` conversions, e.g. in `ov_time_seek`: `mulsd`, `addsd 0x28(%esp),%xmm0`, `movsd %xmm0,0x18(%esp); fldl 0x18(%esp); fisttpll`). **Agents must write SSE2 (`movsd`/`addsd`/`ucomisd`) for double arithmetic; x87 appears only in int64↔double conversions (`fildll`/`fisttpll`) and st(0) return roundtrips.**
+Re-verified 2026-08: the SSE2 default is the fork's `-mfpmath=sse` default (`__SSE_MATH__`/`__SSE2_MATH__` = 1, from `-dM -E`), NOT upstream's documented `-mfpmath=387`. With explicit `-mfpmath=387` the same source compiles to pure x87: `fldl a; fldl b; fmul %st(1),%st; faddp; ret`, loop acc = `fldz; faddl (%eax)` (no 12-byte frame, no fldl-return roundtrip), compare = `fldl; fldl; fxch; fucomip %st(1),%st; fstp %st(0); seta %al` (ucomisd → fucomip). The real original is overwhelmingly SSE2. **Agents should expect SSE2 (`movsd`/`addsd`/`ucomisd`) for double arithmetic; x87 primarily appears in int64↔double conversions (`fildll`/`fisttpll`) and st(0) return roundtrips.** Search recursively under `build/split/` when recensing instructions.
 
 **Comparisons:** `movss arg,%xmm0; ucomiss arg2,%xmm0; setcc %al` (ucomiss/ucomisd; `a<b` → `seta` since operand order puts b in xmm0). Compare-against-float-constant (`a>0.0f`) loads the constant from `.rodata` via the PIC base (`movss .LC@GOTOFF(%ecx),%xmm1` — no imm-broadcast), then `ucomiss`.
 
@@ -298,7 +303,13 @@ verified: `g++ -O0/-O3 -c loop.cpp sw2.cpp; objdump -dr`
 ```
 -O3: `movl $imm,disp(%esp)` for constants, `mov %reg,disp(%esp)` otherwise.
 
-**Tail calls: NOT optimized under PIC** — even `int tail(int a){return extf(a,2,3);}` at -O3 is `call` + `lea 0x18(%esp),%esp` + `ret`, never `jmp` (PIC + stack-arg ABI; no sibcall emission). **[ANDROID]** The contrast is sharp: with `-fno-pic` the same `int g(int x){return f(x);}` becomes a plain `e9 jmp` tail call. So in PIC objects a `jmp` epilogue is NEVER a tail call.
+**Tail calls under PIC depend on callee binding.** A tested external,
+default-visibility call such as `return extf(a,2,3);` is `call` + epilogue +
+`ret` at -O3. That does **not** imply that PIC disables sibling calls: the
+same compiler emits a short `jmp` to a local `static` noinline function and an
+`R_386_PC32` `jmp` to a hidden-visibility function. A trailing jump can
+therefore be a tail call when the callee is locally bindable. Inspect its
+relocation and symbol visibility before classifying it.
 
 **Member calls** — no `__thiscall` on i686: `this` is a plain first stack arg:
 ```asm
@@ -327,7 +338,8 @@ verified: `g++ -O0/-O3 -c misc.cpp; objdump -d`
 
 ## Cross-checks against real project artifacts
 
-- `build/split/nufile.cpp.o` (-O0 carve): `push %ebp; mov %esp,%ebp; push %ebx; lea -0x34(%esp),%esp; call __x86.get_pc_thunk.bx; addl;` globals as `mov 0x740(%ebx),%eax` (GOTOFF), `lea 0x744(%ebx),%edx` array base, `jmp`-to-condition loop — matches §1/§2/§8.
-- `build/split/level.cpp.o`: contains the `lea (%esp),%ebp` frame idiom — confirms the Android patch in real output.
-- `build/split/area.cpp.o`: `__x86.get_pc_thunk.{bx,cx}` relocs present; same -O0 idiom set.
+- Carved examples now live at directory-preserving paths such as
+  `build/split/nu2api/nufile/nufile.cpp.o` and
+  `build/split/legoapi/world/level.cpp.o`. Resolve the exact current path
+  through `objdiff.json` before repeating a cross-check.
 - `build/CMakeFiles/saga.dir/src/batman.cpp.o` (-O0 rebuild): `NuMain` = `push ebp; mov esp,ebp; push ebx; lea -0x14(%esp),%esp; thunk; addl; mov args to (%esp); call @PLT; lea 0x14(%esp),%esp; pop ebx; pop ebp; ret` — matches §1/§9 exactly.

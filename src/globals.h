@@ -13,6 +13,7 @@ struct NUGCUTCHAR_s;
 struct BOLT_s;
 struct GameObject_s;
 struct nuvec_s;
+struct nuhspecial_s;
 struct GIZMOBLOWUP_s;
 struct GIZOBSTACLE_s;
 class FadeSystem;
@@ -377,7 +378,7 @@ extern NUGSCN *area_scene;
 // Gameplay timers & area state
 // ------------------------------------------------------------------------
 extern f32 DoubleScoreTime;
-extern f32 GameTimer[2];
+extern TIMER GameTimer;
 extern u8 AreaGlobals[0x34]; // area-progress save block (inline .bss struct @0x1276de0)
 extern i32 HIGHGAMEOBJECT;
 extern void *Obj;
@@ -386,7 +387,7 @@ extern f32 HIGHJUMPHEIGHT;
 extern TIMER AreaTimer;
 extern f32 VehicleAreaRememberSpeed;
 extern i32 Lap;
-extern f32 LevTime;
+extern f32 LevTime[5];
 
 // ------------------------------------------------------------------------
 // Bonus / arcade / challenge mode
@@ -667,7 +668,16 @@ extern struct GIZAIMESSAGESYS_s *gizaimessagesys;
 // ------------------------------------------------------------------------
 // Level script arrays (Lev*)
 // ------------------------------------------------------------------------
-extern i32 LevHSpecial[264];
+extern nuhspecial_s LevHSpecial[88];
+extern NUMTX LevMtx;
+extern f32 LevAlpha;
+extern f32 TitlesAlpha;
+extern f32 newgamealpha;
+extern i32 newgamefade;
+extern f32 newgamewait;
+extern i32 newgame_menudrawoff;
+extern i32 MenuLoadOccurred;
+extern i32 MenuSaveOccurred;
 extern i32 LevSfxFlag[4];
 extern u8 dynamic_antinodes[0x1500]; // AI anti-node spawn data (cleared per level)
 extern i32 LevInstAnim[12];
@@ -703,12 +713,12 @@ extern u32 ResetBits;
 // Loading screen (LoadPerm) globals
 // ------------------------------------------------------------------------
 extern LEVELOBJECT ObjTab[0x2ee]; // level-object type table (.data @0x618240, 0xff-terminated)
-extern u8 SplTab[0x1a0];
+extern struct LEVELSPLINE SplTab[26];
 extern u8 LSW_CharCategory[0x78];
 extern u8 Cheat[0x5a0];
 extern u8 CharVariants_Game[0x5c];
 extern u8 theMemoryManager[0x248];
-extern u8 LSW_Text[0x1648];
+extern struct TEXTENTRY LSW_Text[713];
 
 extern void *ActionInfo;
 extern char *ExtraActionData;
@@ -736,8 +746,10 @@ extern i32 PermDataLoaded;          // original .data init 1
 extern i32 LoadPerm_LanguageSelect; // bss
 extern i32 LoadPerm_StringsLoaded;  // bss
 extern i32 menu_flash;              // bss
-extern i32 IntroText_TextID;        // .data init -1
-extern i32 LANGUAGECOUNT;           // .data init 6
+extern f32 game_pulse;
+extern f32 global_pulse;
+extern i32 IntroText_TextID; // .data init -1
+extern i32 LANGUAGECOUNT;    // .data init 6
 typedef struct langlistentry_s {
     i32 language;
     i32 unknown_4;
@@ -750,9 +762,16 @@ extern f32 INTROTEXT_SCALE;
 
 // IntroText / QFont globals (TTapp BSS @0x127c200 / 0x124f6f0)
 extern char **TTab;
-extern char **TTab_Original;
-extern void *QFont2D;
-extern void *QFont2DButtons;
-extern void *QFont3D;
-extern void *QFont3DZ;
-extern void *QFont3DTime;
+struct vufnt_s;
+extern vufnt_s *QFont2D;
+extern vufnt_s *QFont2DButtons;
+extern vufnt_s *QFont3D;
+extern vufnt_s *QFont2DZ;
+extern vufnt_s *QFont2DLower;
+extern vufnt_s *QFont3DZ;
+extern vufnt_s *QFont3DTime;
+extern vufnt_s *SmartTextFont;
+extern i32 create_qfont3d;
+extern i32 create_qfont2dz;
+extern i32 create_qfont2dlower;
+extern i32 create_qfont3dz;

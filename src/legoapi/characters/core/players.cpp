@@ -187,13 +187,6 @@ void Players_Init(void) {
 
 // --- Helpers moved from world.cpp ---
 
-typedef struct portalpos_s {
-    i16 count; // 0x00
-    i16 pad_2;
-    f32 *field_0x04;
-    f32 *positions; // 0x08
-} PORTALPOS;
-
 typedef struct spawnsys_s {
     char pad[0xa0];
     PORTALPOS *portal; // 0xa0

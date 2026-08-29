@@ -21,7 +21,14 @@ i32 numtl_renderplane;
 NUMTL *numtl_defaultmtl2d;
 NUMTL *numtl_defaultmtl3d;
 
+extern "C" i32 NuMtlSetCurrentRenderPlane(i32 render_plane) {
+    i32 previous_render_plane = numtl_renderplane;
+    numtl_renderplane = render_plane;
+    return previous_render_plane;
+}
+
 void NuMtlInitEx(VARIPTR *buf, i32 mtl_count) {
+    NuMtlInitExPS(buf);
     max_materials = mtl_count;
     material_list = (NUMTL *)ALIGN(buf->addr, 0x10);
     buf->addr = (usize)material_list + mtl_count * sizeof(NUMTL);

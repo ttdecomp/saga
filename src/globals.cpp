@@ -107,7 +107,8 @@ i32 LevMusicOtherAmbient = 0;
 // Camera
 // ------------------------------------------------------------------------
 NUCAMERA *pNuCam = NULL;
-GAMECAMERA_s *GameCam = NULL;
+static GAMECAMERA_s GameCamera;
+GAMECAMERA_s *GameCam = &GameCamera;
 
 // ------------------------------------------------------------------------
 // Platform & device info
@@ -140,7 +141,7 @@ NUGSCN *vehicle_scene = NULL;
 // Gameplay timers & area state
 // ------------------------------------------------------------------------
 f32 DoubleScoreTime = 0.0f;
-f32 GameTimer[2] = {0.0f, 0.0f};
+TIMER GameTimer;
 u8 AreaGlobals[0x34] = {0};
 i32 HIGHGAMEOBJECT = 0;
 void *Obj = NULL;
@@ -148,7 +149,7 @@ f32 AreaPickupGravity = 0.0f;
 f32 HIGHJUMPHEIGHT = 0.0f;
 TIMER AreaTimer;
 f32 VehicleAreaRememberSpeed = 0;
-f32 LevTime = 0.0f;
+f32 LevTime[5] = {0.0f};
 i32 Lap = 0;
 
 // ------------------------------------------------------------------------
@@ -445,7 +446,16 @@ i32 NextArea_FreePlay = 0;
 // Level script arrays (Lev*)
 // ------------------------------------------------------------------------
 i32 LevFlag[4] = {0};
-i32 LevHSpecial[264] = {0};
+nuhspecial_s LevHSpecial[88] = {};
+NUMTX LevMtx = {};
+f32 LevAlpha = 0.0f;
+f32 TitlesAlpha = 0.0f;
+f32 newgamealpha = 0.0f;
+i32 newgamefade = 0;
+f32 newgamewait = 0.0f;
+i32 newgame_menudrawoff = 0;
+i32 MenuLoadOccurred = 0;
+i32 MenuSaveOccurred = 0;
 i32 LevSfxFlag[4] = {0};
 u8 dynamic_antinodes[0x1500] = {0};
 i32 LevInstAnim[12] = {0};
@@ -858,12 +868,39 @@ LEVELOBJECT ObjTab[0x2ee] = {
     {6, 0, 0, 0, "pc_button4"},
     {0xff, 0, 0, 0, NULL}, // terminator
 };
-u8 SplTab[0x1a0];           // spline table backing storage
+LEVELSPLINE SplTab[26] = {
+    {NULL, "start", 2, 0, -1, -1},
+    {NULL, "start_cam", 2, 0, -1, -1},
+    {NULL, "point_cam", 2, 2, -1, -1},
+    {NULL, "finish_line", 2, 2, -1, -1},
+    {NULL, "cam_start", 2, 2, -1, -1},
+    {NULL, "split", 2, 2, -1, -1},
+    {NULL, "map_cam", 2, 0, -1, -1},
+    {NULL, "map_look", 2, 0, -1, -1},
+    {NULL, "e1_entrance", 2, 2, -1, -1},
+    {NULL, "e2_entrance", 2, 2, -1, -1},
+    {NULL, "e3_entrance", 2, 2, -1, -1},
+    {NULL, "e4_entrance", 2, 2, -1, -1},
+    {NULL, "e5_entrance", 2, 2, -1, -1},
+    {NULL, "e6_entrance", 2, 2, -1, -1},
+    {NULL, "jabba_entrance1", 2, 2, -1, -1},
+    {NULL, "char_cam", 2, 2, -1, -1},
+    {NULL, "Turn_Around_1", 2, 0x400, -1, -1},
+    {NULL, "Turn_Around_2", 2, 0x400, -1, -1},
+    {NULL, "custard", 4, 4, -1, -1},
+    {NULL, "bonus_zone_1", 3, 0, -1, -1},
+    {NULL, "bonus_zone_2", 3, 0, -1, -1},
+    {NULL, "bonus_zone_3", 3, 0, -1, -1},
+    {NULL, "bonus_zone_4", 3, 0, -1, -1},
+    {NULL, "bonus_zone_5", 3, 0, -1, -1},
+    {NULL, "mission_cam", 2, 2, -1, -1},
+    {NULL, NULL, 0, 0, 0, 0},
+};
 u8 LSW_CharCategory[0x78];  // LSW character-category table
 u8 Cheat[0x5a0];            // cheat table
 u8 CharVariants_Game[0x5c]; // in-game character-variant table
 u8 theMemoryManager[0x248]; // inline memory-manager block
-u8 LSW_Text[0x1648];        // LSW string table (original .data)
+#include "legoapi/menus/core/lsw_text_data.inc"
 
 void *ActionInfo = NULL;      // bound to &self+0x38 table at runtime
 char *ExtraActionData = NULL; // "run1" pool pointer at runtime
@@ -891,6 +928,8 @@ i32 LoadPerm_LanguageSelect = 0;
 i32 LoadPerm_StringsLoaded = 0;
 // Original bss @0x124f9c0.
 i32 menu_flash = 0;
+f32 game_pulse = 0.0f;
+f32 global_pulse = 0.0f;
 // Original .data @0x667cb0 / @0x667cc0.
 i32 IntroText_TextID = -1;
 i32 LANGUAGECOUNT = 6;
@@ -904,12 +943,18 @@ f32 INTROTEXT_SCALE = 0.79f;
 
 // BSS 0x127c200 / 0x124f6f0 — QFont & string table pointers
 char **TTab = nullptr;
-char **TTab_Original = nullptr;
-void *QFont2D = nullptr;
-void *QFont2DButtons = nullptr;
-void *QFont3D = nullptr;
-void *QFont3DZ = nullptr;
-void *QFont3DTime = nullptr;
+vufnt_s *QFont2D = nullptr;
+vufnt_s *QFont2DButtons = nullptr;
+vufnt_s *QFont3D = nullptr;
+vufnt_s *QFont2DZ = nullptr;
+vufnt_s *QFont2DLower = nullptr;
+vufnt_s *QFont3DZ = nullptr;
+vufnt_s *QFont3DTime = nullptr;
+vufnt_s *SmartTextFont = nullptr;
+i32 create_qfont3d = 0;
+i32 create_qfont2dz = 0;
+i32 create_qfont2dlower = 0;
+i32 create_qfont3dz = 0;
 
 // ------------------------------------------------------------------------
 // Cutscene & system misc

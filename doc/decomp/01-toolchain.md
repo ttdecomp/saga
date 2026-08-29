@@ -1,5 +1,7 @@
 # 01 — Toolchain reference (target: res/libTTapp.so)
-All commands below were run against this repo state (Aug 2026, HEAD `755ab13`).
+Compiler facts below were measured with the checked-in NDK r8e toolchain.
+Repository counts and paths were refreshed on 2026-08-29. Treat
+`build/compile_commands.json` as authoritative when the tree changes.
 Toolchain root: `ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/linux-x86_64/bin/`.
 
 ## Compiler identification
@@ -17,20 +19,19 @@ Toolchain root: `ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/linux-x86_64/bi
   `.note.gnu.gold-version` = `gold 1.11`. NDK ld: `i686-linux-android-ld --version` →
   `GNU gold (GNU Binutils 2.22.90.20120727) 1.11`. Original was linked with gold 1.11 —
   the NDK r8e default is byte-for-byte the same linker generation.
-- `build/split/*.o` (gonk-carved originals): **no `.comment` section** (readelf warning), so
+- gonk-carved originals under `build/split/`: **no `.comment` section** (readelf warning), so
   per-object compiler provenance is not available from them.
 
 ## Canonical target compile command
 
-Per-file commands are in `build/compile_commands.json` (291 entries, one per TU). The
-canonical C++ command is below — every flag shown appears in **291/291** commands except
-the compiler driver and the `-std` flag (280/291, see note under the block). Verified
-programmatically against the JSON:
+Per-file commands are in `build/compile_commands.json` (currently 464 entries,
+one per target TU). The canonical C++ command is below. C files use the C
+driver and `gnu11`; inspect the JSON rather than relying on copied totals.
 
 ```
 i686-linux-android-g++ \
   --sysroot=/home/fabian/git/saga/ndk/android-ndk-r8e/platforms/android-9/arch-x86 \
-  -D__FILENAME__="src/src/<file>" \
+  -D__FILENAME__="src/<file>" \
   -I/home/fabian/git/saga/src \
   -isystem .../sources/cxx-stl/system/include \
   -isystem .../libs/ogg-vorbis/include \
@@ -41,10 +42,11 @@ i686-linux-android-g++ \
   -o <obj> -c <src>
 ```
 
-Note: 11 of the 291 TUs are C sources (`*.c`: `nucamvu0.c`, `nudlist.c`, `nuspline.c`,
-`nutexanm.c`, `nurndr_android.c`, `nuapi.c`, `numem.c`, `nufile.c`, `nufloat.c`,
-`nutrig.c`, `nuvec4.c`) compiled with `i686-linux-android-gcc -std=gnu11` instead of
-`g++ -std=gnu++11`; all other flags are identical to the command above.
+Thirteen current TUs are C sources: `edui.c`, `legoapi_misc_c.c`,
+`nurndr_android.c`, `nucamvu0.c`, `nuspline.c`, `nutexanm.c`, `nuapi.c`,
+`numem.c`, `nufile.c`, `nufloat.c`, `nutrig.c`, `nuvec4.c`, and `vumath.c`.
+They compile with `i686-linux-android-gcc -std=gnu11`; the other 451 use
+`g++ -std=gnu++11`.
 
 Flag-by-flag "why it matters" for matching:
 
@@ -58,8 +60,8 @@ Flag-by-flag "why it matters" for matching:
   (no `.text.<fn>` splitting, no section-GC reordering). Matches a fixed function layout;
   `build/saga` has no `.text.nomatch`-style section games in the target path.
 - `-g` — debug info in the recompiled objects (does not affect codegen; harmless for objdiff).
-- `-std=gnu++11` — GNU extensions enabled (C11/C++11 set globally in CMakeLists.txt:55-59).
-  Applies to the 280 C++ TUs; the 11 `.c` TUs get `-std=gnu11` via the `gcc` driver.
+- `-std=gnu++11` — GNU extensions enabled (C11/C++11 are set globally in `CMakeLists.txt`).
+  Applies to the 451 C++ TUs; the 13 `.c` TUs get `-std=gnu11` via the `gcc` driver.
 - `-fno-exceptions` — no `__cxa_throw`/landing pads; `try/throw` unusable, matches original.
 - `-fno-rtti` — no `typeinfo`/vtable RTTI emission; `dynamic_cast/typeid` unusable.
   (`libstdc++.a` still ships `type_info` ctor/name/eq machinery — pulled in only by
@@ -68,14 +70,15 @@ Flag-by-flag "why it matters" for matching:
   of it; otherwise a wall of warnings).
 - `-DANDROID` — API-guard macro consumed all over `src/` (android-specific branches).
 - `-D__FILENAME__` — see dedicated section below.
-- `-fPIC` is **never** passed (0/291 entries) — PIC is on by default in this toolchain
+- `-fPIC` is not passed — PIC is on by default in this toolchain
   (see defaults). `-fPIE` appears in exactly 1 file (`cheat.cpp`).
-- Base flags: `CMakeLists.txt:45-46` (`-fno-function-sections -fno-data-sections`) and
-  `CMakeLists.txt:424` (`-fno-exceptions -fno-rtti -Wno-write-strings -DANDROID`).
+- Base flags come from `CMakeLists.txt`: target-only
+  `-fno-function-sections -fno-data-sections`, plus common
+  `-fno-exceptions -fno-rtti -Wno-write-strings -DANDROID`.
 
 ## Optimization levels
 
-- Default is `-O0` (no `-O` flag at all in the command) — 191 of 291 files.
+- Default is `-O0` (no `-O` flag at all in the command) — currently 342 of 464 files.
 - Per-file overrides live in `src/target.cmake` via
   `set_source_files_properties(<file> PROPERTIES COMPILE_OPTIONS "<opts>")`.
 - Derivation method for any file:
@@ -85,19 +88,20 @@ Flag-by-flag "why it matters" for matching:
 
   | level | count |
   |-------|-------|
-  | `-O0` (no flag) | 191 |
+  | `-O0` (no flag) | 342 |
   | `-O2` | 25 |
-  | `-O3` | 74 |
-  | `-O3 -fPIE` | 1 (`src/legoapi/cheat.cpp`) |
-  | total | 291 |
+  | `-O3` | 97 (including the `-fPIE` file) |
+  | `-O3 -fPIE` | 1 (`src/legoapi/core/config/cheat.cpp`; subset of `-O3`) |
+  | total | 464 |
 
-  `src/target.cmake` grep agrees exactly: 74×`"-O3"`, 25×`"-O2"`, 1×`"-O3;-fPIE"`
-  (cheat.cpp, `src/target.cmake:58`). No other `-O` values exist in either source.
+  `src/target.cmake` and the generated JSON agree. No other `-O` values are
+  currently present.
 - `-O3` representative (10): `gameapi/ai/aisys/aiscript.cpp`, `gameapi/ai/aisys/aistate.cpp`,
   `gameapi/edtools/edfile.cpp`, `gameapi/gui/apimenu.cpp`, `gamelib/crc/crc.cpp`,
-  `gamelib/nuwind/nuwind.cpp`, `legoapi/area.cpp`, `legoapi/cheat.cpp` (the `-fPIE` one),
-  `legoapi/gizmo.cpp`, `legoapi/level.cpp`.
-- `-O2` representative (10): `gamelib/NewTerrain.cpp`, `legoapi/players.cpp`,
+  `gamelib/nuwind/nuwind.cpp`, `legoapi/world/area.cpp`,
+  `legoapi/core/config/cheat.cpp` (the `-fPIE` one),
+  `legoapi/gizmo/base/gizmo.cpp`, `legoapi/world/level.cpp`.
+- `-O2` representative (10): `gamelib/NewTerrain.cpp`, `legoapi/characters/core/players.cpp`,
   `nu2api/nu3d/NuRenderDevice.cpp`, `nu2api/nu3d/nuqfnt.cpp`, `nu2api/nu3d/nuscreen.cpp`,
   `nu2api/nu3d/android/numtl_android.cpp`, `nu2api/nu3d/android/nuqfnt_android.cpp`,
   `nu2api/nu3d/generic/nucamera_gen.cpp`, `nu2api/nucore/NuInputDevice.cpp`,
@@ -128,17 +132,12 @@ position-independent codegen for shared-toolchain output.
 
 ## `__FILENAME__` macro
 
-- Mechanism: `CMakeLists.txt:433-440` — `set_filename_macro(f)` computes
+- Mechanism: `set_filename_macro(f)` in `CMakeLists.txt` computes
   `file(RELATIVE_PATH FILENAME_REL ${CMAKE_CURRENT_SOURCE_DIR} ${FILENAME_ABS})` and sets
-  `COMPILE_DEFINITIONS __FILENAME__="src/${FILENAME_REL}"` per source file.
-- Current build passes `-D__FILENAME__="src/src/batman.cpp"` (double `src/`) for
-  `src/batman.cpp` — `grep -m1 FILENAME build/compile_commands.json` confirms, and the
-  **host** build passes the identical value (`build-host/compile_commands.json`).
-- Regression: `git show 46c228e` ("refactor build to separate host build utilities", 2026-04-19)
-  changed the base from `${CMAKE_CURRENT_SOURCE_DIR}/src` (correct → `src/batman.cpp`)
-  to `${CMAKE_CURRENT_SOURCE_DIR}` (broken → `src/src/batman.cpp`). Present at HEAD.
-- Staleness: **not stale** — `compile_commands.json` mtime (18:27) is after `CMakeLists.txt`
-  (17:06) and the value matches current logic.
+  `COMPILE_DEFINITIONS __FILENAME__="${FILENAME_REL}"` per source file.
+- Current target and host commands pass the correct repository-relative value,
+  for example `-D__FILENAME__="src/batman.cpp"`. The former `src/src/`
+  regression has been fixed.
 - Consumption: `src/decomp.h` — `UNIMPLEMENTED` (line 39) and `LOG` (line 81) embed
   `__FILENAME__`. Both macros sit under `#ifdef HOST_BUILD` (decomp.h:34), so `__FILENAME__`
   only affects **host** diagnostics, not the target matching binary.
@@ -168,8 +167,8 @@ cstring ctime cwchar cwctype_is_not_supported new stl_pair.h typeinfo utility`.
 `i686-linux-android-gcc -print-libgcc-file-name` →
 `.../lib/gcc/i686-linux-android/4.7/libgcc.a` (compiled with GCC 4.7).
 
-Experiment (`/tmp/opencode/saga-experiments/a1/helpers.cpp`, compiled `-O0`/`-O2`/`-O3` with
-the NDK g++, undefined-symbol scan + relocation dump):
+Temporary `helpers.cpp` experiment compiled at `-O0`/`-O2`/`-O3` with the
+NDK g++, followed by an undefined-symbol scan and relocation dump:
 
 | source construct | helper at -O0 | helper at -O2/-O3 |
 |---|---|---|
@@ -197,11 +196,12 @@ the NDK g++, undefined-symbol scan + relocation dump):
 
 ## Linking & build system
 
-- Generator: CMake `Debug` + Ninja (`build/build.ninja`). `CMAKE_BUILD_TYPE Debug` at
-  CMakeLists.txt:71; `CMAKE_LINK_DEPENDS_NO_SHARED ON` (the old ld can't take
+- Generator: CMake `Debug` + Ninja (`build/build.ninja`). `CMAKE_BUILD_TYPE` is
+  `Debug`; `CMAKE_LINK_DEPENDS_NO_SHARED ON` (the old ld can't take
   `--dependency-file`).
-- Link rule: `build.ninja:3250` — `build saga: CXX_EXECUTABLE_LINKER__saga_Debug <291 .o> ||
-  build_ogg_vorbis build_squish`, with:
+- The generated Ninja link rule links all current target objects plus the
+  configured external libraries. Query `build/build.ninja` for the exact rule;
+  line numbers and object counts are generated and unstable. Its library set includes:
   `LINK_LIBRARIES = -Wl,-rpath,.../libs/ogg-vorbis/lib:.../libs/squishlib/lib -lGLESv2 -lEGL
   -lvorbisfile -lvorbis -logg -lstdc++ -lsquish`
 - `-lGLESv2 -lEGL` come from `src/target.cmake` tail
@@ -234,25 +234,25 @@ the NDK g++, undefined-symbol scan + relocation dump):
 
 ## Host build differences (BUILD_FOR_HOST)
 
-- `build-host/` was configured with the **host compiler, not the NDK one**:
-  `build-host/CMakeCache.txt` → `CMAKE_CXX_COMPILER:STRING=/usr/bin/c++` (GCC 16.1.1 20260728).
-- Command diff (from `build-host/compile_commands.json`, 292 entries):
+- `build-host/` is configured with the **host compiler, not the NDK one**.
+  The current cache uses `/usr/bin/c++` and `/usr/bin/cc`.
+- Representative command from `build-host/compile_commands.json` (470 entries):
   ```
-  /usr/bin/c++ -DHOST_BUILD -D__FILENAME__="src/src/<file>" -I.../src
+  /usr/bin/c++ -DHOST_BUILD -D__FILENAME__="src/<file>" -I.../src
     -fno-stack-protector -msse2 -m32 -march=i686 -fsanitize=address
     -g -std=gnu++11 -fno-exceptions -fno-rtti -Wno-write-strings -DANDROID
   ```
-- vs target: **no** `--sysroot`, **no** `-isystem cxx-stl`, **no**
+- The current host JSON contains 470 commands (457 C++, 13 C). Versus target:
+  **no** `--sysroot`, **no** `-isystem cxx-stl`, **no**
   `-fno-function-sections/-fno-data-sections`; adds `-DHOST_BUILD`,
   `-fno-stack-protector`, `-msse2`, `-m32 -march=i686`, `-fsanitize=address`
-  (CMakeLists.txt:34-41 + `src/host.cmake`); still `-O0` everywhere (0/292 have `-O`) and
-  still passes `-DANDROID` (quirk, harmless).
+  (from `CMakeLists.txt` + `src/host.cmake`); still `-O0` everywhere (0/470 have `-O`) and
+  still passes `-DANDROID`.
 - deps via pkg-config (`src/host.cmake`): `vorbis vorbisfile sdl3` (+ `glesv2 egl` on Linux,
   `angleproject` on Windows; `libsquish` is **commented out** in the list).
-- TU set differs: host adds `src/host-tests/main.cpp`, `host-tests/nuios/ios_graphics.cpp`,
-  `host-tests/nuios/nutex_host.cpp`, `host-tests/nuios/nutex_ios_ex.cpp`; target has
-  `nu2api/nu3d/android/nutex_android.cpp`, `nu2api/nu3d/android/nutex_ios_ex.cpp`,
-  `nuandroid/ios_graphics.cpp` which host lacks (verified by set-diff of both
-  compile_commands.json).
+- TU set differs: host adds eight files under `src/host-tests/` and removes the
+  two Android texture TUs. The target instead adds those two Android TUs plus
+  `src/nu2api/nuandroid/ios_graphics.cpp`. Compare the two generated JSON files
+  for the current exact set.
 - `HOST_BUILD` gates all of `src/decomp.h` (LOG/UNIMPLEMENTED) — the only user of
   `__FILENAME__`.

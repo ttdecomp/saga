@@ -70,8 +70,6 @@ class NuRenderDevice : NuRenderDeviceGen {
 
     void OnWindowCreated(ANativeWindow *window);
 
-    i32 HostReadbackPixels(u32 max_w, u32 max_h, u8 *rgba);
-
     void InitialiseOpenGLContext(ANativeWindow *window);
     void CheckForRenderWindowInitialisation();
     u8 enabled_extensions[26]; // NEEDS TO BE AT 0x28

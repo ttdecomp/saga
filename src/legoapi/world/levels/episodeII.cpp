@@ -532,7 +532,7 @@ void BonusGunshipB_Update(WORLDINFO_s *world) {
     if (LevFlag.progress == 0) {
         if (LevDeaths > 0) {
             float x = (float)LevDeaths * LevDeaths + 1.0f;
-            if (GameTimer[0] >= x)
+            if (GameTimer.time_elapsed >= x)
                 LevFlag.progress = GUNSHIP_ACTIVE;
         }
     } else if (LevFlag.progress == GUNSHIP_ACTIVE) {

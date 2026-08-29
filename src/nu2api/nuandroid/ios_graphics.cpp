@@ -14,10 +14,8 @@
 //
 // Original iOS path managed its own EGL / framebuffer and a dedicated render
 // thread.  On Android the same code is reused: the "iOS" name is historical.
-// The host (desktop) build repurposes the path to render into a window-sized
-// FBO+texture so the pbuffer-backed GL context can present via SwapBuffers
-// and dump window.ppm readbacks.  Otherwise this file is purely platform
-// plumbing — thread handoff, frame pacing, and a few path shims.
+// This file contains platform plumbing, thread handoff, frame pacing, and
+// path helpers.
 // ---------------------------------------------------------------------------
 
 // Backing drawable size driven by NuRenderDevice::InitialiseOpenGLContext.
@@ -74,8 +72,7 @@ i32 NuIOS_ShouldUseMSAA(void) {
 }
 
 // ---------------------------------------------------------------------------
-// Filesystem shims — original iOS used NSBundle / Documents; on Android and
-// host everything is relative to the APK / working directory.
+// Filesystem shims — original iOS used NSBundle / Documents.
 // ---------------------------------------------------------------------------
 
 SAGA_NOMATCH char *NuIOS_GetDocumentsPath(void) {

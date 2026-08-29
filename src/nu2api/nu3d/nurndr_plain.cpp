@@ -33,6 +33,9 @@
 #include "nu2api/nu3d/numtl.h"
 #include "nu2api/nu3d/nuprim.h"
 #include "nu2api/nu3d/nuvport.h"
+#include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nucore/nuapi.h"
 #include "nu2api/nuandroid/ios_graphics.h"
 
 // ---------------------------------------------------------------------------
@@ -53,7 +56,7 @@ extern "C" {
     struct nudisplayscene_s sceneParameters[kSceneRingCapacity] = {0};
 
     // Shared renderer state block (original BSS @0x119b900, 0x1b0 bytes).
-    u8 render_state[0x1b0] = {0};
+    NUGLOBALRNDRSTATE render_state = {};
 } // extern "C"
 
 // Swap/present pacing flags (original BSS).
@@ -122,15 +125,13 @@ static_assert(sizeof(PrimStreamHeader) == 0x10, "PrimStreamHeader must be 0x10")
 // ---------------------------------------------------------------------------
 
 extern "C" {
-    void NuVpGetPosition2(i32 *, i32 *);
-    void NuVpGetSize2(i32 *, i32 *);
     i32 NuDisplayListAddRenderScene(void);
     i32 NuDynamicLightIsEnabled(i32);
     void NuDynamicLightAddRenderScene(i32, i32, i32);
     void RndrStateSetConstAlphaTint(i32, i32, const void *, i32, i32);
     void DisplayListUpdateRenderState(void *list, void *state);
     void NuDisplayListLinkMtl(nudisplaylist_s *list, NUMTL *mtl);
-    void NuDisplayListLinkItems(nudisplaylist_s *list, i32 count);
+    VARIPTR *NuDisplayListLinkItems(nudisplaylist_s *list, i32 count);
     nudisplaylist_s *NuDisplayListGet2dList(void);
 }
 
@@ -213,7 +214,7 @@ extern "C" __attribute__((weak)) void NuPrim2DBegin(u32 prim_type, u32 /*vtx_fmt
     }
 
     RndrStateSetConstAlphaTint(0, 0, kDefault2DState, 0, 0);
-    DisplayListUpdateRenderState(list, render_state);
+    DisplayListUpdateRenderState(list, &render_state);
     NuDisplayListLinkItems(list, 1);
 
     g_NuPrim_StreamBufferPtr = &display_list_buffer;
@@ -389,8 +390,6 @@ extern "C" void NuTexAnimProcessList(void) {
 // subsystem so it is obvious what is still missing.
 
 // Scene / GScn
-extern "C" void NuGScnFixupPS(void) {
-}
 extern "C" void NuGScnFixupTIDsPS(void) {
 }
 extern "C" void NuGScnFromVideoMem(void) {
@@ -443,8 +442,6 @@ extern "C" void NuMtlInitOverride(void) {
 extern "C" void NuMtlReadEventSetHandler(void) {
 }
 extern "C" void NuMtlRegisterForOverride(void) {
-}
-extern "C" void NuMtlSetCurrentRenderPlane(void) {
 }
 extern "C" void NuMtlSetRenderPlane(void) {
 }
@@ -605,6 +602,73 @@ extern "C" void NuRndrStateSetSpecularLight(void) {
 extern "C" void NuRndrStateSetSpecularLightEx(void) {
 }
 extern "C" void NuRndrStateUpdateCameraState(void) {
+    NUMTX *projection = NuCameraGetProjectionMtx();
+    NUMTX *view = NuCameraGetViewMtx();
+
+    render_state.view = *view;
+    render_state.proj_00 = projection->m00;
+    render_state.proj_11 = projection->m11;
+    render_state.proj_22 = projection->m22;
+    render_state.proj_23 = projection->m23;
+    render_state.proj_32 = projection->m32;
+    render_state.proj_20 = projection->m20;
+    render_state.proj_21 = projection->m21;
+
+    NuVpGetPosition2(&render_state.vpx, &render_state.vpy);
+    NuVpGetSize2(&render_state.vpw, &render_state.vph);
+    render_state.vpx *= (f32)nurndr_pixel_width / 640.0f;
+    render_state.vpw *= (f32)nurndr_pixel_width / 640.0f;
+    render_state.vpy *= (f32)nurndr_pixel_height / 224.0f;
+    render_state.vph *= (f32)nurndr_pixel_height / 224.0f;
+
+    render_state.camera_state = nullptr;
+    render_state.state.global_id++;
+    render_state.state.camera_id++;
+}
+
+// Camera-state portion of original DisplayListUpdateRenderState @0x2fd5d0.
+// The remaining light/fog/konst branches are independent state builders and
+// are left for their respective subsystem transcriptions.
+extern "C" void DisplayListUpdateRenderState(void *display_list, void *state) {
+    auto *dl = static_cast<NUDISPLAYLIST *>(display_list);
+    auto *global = static_cast<NUGLOBALRNDRSTATE *>(state);
+    if (global == nullptr || dl->state->global_id == global->state.global_id) {
+        return;
+    }
+
+    if (dl->state->camera_id != global->state.camera_id) {
+        if (global->camera_state == nullptr) {
+            struct CameraPacket {
+                i32 id;
+                NUMTX view;
+                NUMTX projection;
+                f32 viewport[4];
+            };
+
+            VARIPTR *buffer = NuDisplayListGetBuffer();
+            auto *packet = static_cast<CameraPacket *>(buffer->void_ptr);
+            global->camera_state = packet;
+            packet->id = *reinterpret_cast<i32 *>(&nuapi.field19_0x3c) +
+                         (global->state.camera_id + 5) * (global->state.global_id + 13);
+            packet->view = global->view;
+            memset(&packet->projection, 0, sizeof(packet->projection));
+            packet->projection.m00 = global->proj_00;
+            packet->projection.m11 = global->proj_11;
+            packet->projection.m22 = global->proj_22;
+            packet->projection.m23 = global->proj_23;
+            packet->projection.m32 = global->proj_32;
+            packet->projection.m20 = global->proj_20;
+            packet->projection.m21 = global->proj_21;
+            packet->viewport[0] = global->vpx;
+            packet->viewport[1] = global->vpy;
+            packet->viewport[2] = global->vpw;
+            packet->viewport[3] = global->vph;
+            buffer->addr += sizeof(CameraPacket);
+        }
+        NuDisplayListLinkItem(dl, 0x9a, global->camera_state);
+        dl->state->camera_id = global->state.camera_id;
+    }
+    dl->state->global_id = global->state.global_id;
 }
 extern "C" void NuRndrStrip3d(void) {
 }

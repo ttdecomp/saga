@@ -57,6 +57,8 @@ extern "C" {
     void NuAsciiToUnicode(NUWCHAR16 *dst, char *src);
     void NuUnicodeToAscii(char *dst, NUWCHAR16 *src);
     void NuUnicodeToUTF8(NUWCHAR8 *dst, NUWCHAR16 *src);
+    NUWCHAR8 *NuUnicodeCharFromUTF8(NUWCHAR16 *dst, NUWCHAR8 *src);
+    NUWCHAR8 *NuUTF8CharFromUnicode(NUWCHAR8 *dst, NUWCHAR16 character);
 
     i32 NuIsAlNum(char c);
 

@@ -4,6 +4,7 @@
 
 #include "nu2api/nucore/fixed_width.h"
 #include "nu2api/nucore/nulist.h"
+#include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nuvec.h"
 
 #include "legoapi/items/base/apiobject.h"
@@ -401,23 +402,32 @@ struct GAMEANTINODEDATA_s {};
 struct GAMEANTINODESYS_s {};
 struct GAMEANTINODE_s {};
 struct GAMEAUDIO {};
-// Camera state (GameCam). Field meanings derived from the pod-race code in
-// the original binary: zoom is compared against spawn distances, the 0x110
-// vector is the camera forward direction (dot product against mine offsets),
-// the 0x11c vector is the camera position (NuVecSub source), and yrot feeds
-// NuVecRotateY. Note the global points 0x80 bytes into its enclosing block:
-// the original computes a position vector at GameCam - 0x80.
+// Camera state (GameCam). The original global points directly at a static
+// 0x230-byte block; matrix and mode offsets are verified against
+// MoveGameCamera and InitGameBeforeConfig.
 struct GAMECAMERA_s {
-    char pad_0x00[1];
-    u8 field_0x01; // 0x01  camera mode / state byte
-    char pad_0x02[0x2c - 0x02];
-    float zoom; // 0x2c
-    char pad_0x30[0x110 - 0x30];
-    NUVEC dir; // 0x110 forward direction
-    NUVEC pos; // 0x11c camera position
-    char pad_0x128[0x686 - 0x128];
-    u16 yrot; // 0x686
+    u8 pad_00;
+    u8 field_0x01;
+    u8 pad_02[0x2a];
+    f32 zoom; // 0x02c
+    u8 pad_030[0x08];
+    NUMTX mtx;          // 0x038
+    NUMTX target_mtx;   // 0x078
+    NUMTX render_mtx;   // 0x0b8
+    NUVEC shaken_right; // 0x0f8
+    NUVEC shaken_up;    // 0x104
+    NUVEC dir;          // 0x110
+    NUVEC pos;          // 0x11c
+    NUVEC target;       // 0x128
+    u8 pad_134[0x22a - 0x134];
+    u8 reset_blend;          // 0x22a
+    u8 blend_mode;           // 0x22b
+    i8 mode;                 // 0x22c
+    i8 previous_mode;        // 0x22d
+    i8 previous_camera_mode; // 0x22e
+    u8 pad_22f;
 };
+static_assert(sizeof(GAMECAMERA_s) == 0x230, "GAMECAMERA_s ABI");
 struct GAMECHARACTERDATA_s {};
 
 // game_cutscenes wrapper (pointer at 0x1c).
@@ -512,7 +522,17 @@ struct LEVELDATADISPLAY;
 struct LEVELDATA_s;
 struct LEVELOBJECT;
 struct LEVELSCRIPTPROCESS_s;
-struct LEVELSPLINE {};
+struct LEVELSPLINE {
+    struct nugscn_s **scene;
+    const char *name;
+    u16 min_points;
+    u16 max_points;
+    i16 level;
+    i16 area;
+};
+#if !defined(HOST_BUILD) && !defined(__x86_64__)
+static_assert(sizeof(LEVELSPLINE) == 0x10, "LEVELSPLINE ABI");
+#endif
 struct LoadedUniqueShaderRecord;
 struct MENU_s;
 struct MISSIONSAVE_s;
@@ -571,7 +591,11 @@ struct TERRSET {};
 struct TEXTCRAWL_s {
     u8 pad[32]; // NOLINT(readability-identifier-naming)
 };
-struct TEXTENTRY {};
+struct TEXTENTRY {
+    i16 *text_id;
+    i16 value;
+    i16 pad;
+};
 struct TORPEDOPACKET_s {};
 struct TRAFFICANIMSYS_s {};
 struct TUBE_s;
@@ -607,16 +631,18 @@ struct nudisplayscene_s;
 struct nufile_device_s;
 struct nufpar_s;
 struct nufpcomjmp_s;
-struct nuglobalrndrstate_s {};
+struct nuglobalrndrstate_s;
 struct nugraph_s {};
 struct nugscn_s;
 struct nugspline_s;
 struct nuhspecial_s {
-    void *special; // 0x00
-    char pad_0x04[0xe - 0x04];
-    u8 enabled; // 0x0e
-    char pad_0x0f[0x10 - 0x0f];
+    nugscn_s *scene;       // 0x00
+    void *special;         // 0x04
+    void *display_special; // 0x08
 };
+#if !defined(HOST_BUILD) && !defined(__x86_64__)
+static_assert(sizeof(nuhspecial_s) == 0xc, "nuhspecial_s size");
+#endif
 struct nuinstanim_s {};
 struct numtl_s;
 struct numtx_s;
@@ -641,8 +667,6 @@ struct terrsitu_s {};
 struct tertype {};
 struct uv1deb {};
 struct uv1debdata;
-struct vucharidx_s {};
-
 struct BaseEditor {
     void Initialise(variptr_u &, variptr_u &, i32);
     void ReadBuffer(void **, void *, i32);

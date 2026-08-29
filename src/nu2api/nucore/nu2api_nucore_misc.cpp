@@ -140,9 +140,6 @@ void NuDisplayListCreate(nudisplayscene_s *, variptr_u *, variptr_u, i32, i32, i
 void NuFadeSetFxCodeMtls(nugeom_s *, unsigned char *) {
 }
 
-void NuIOSDLGeomCallback(void *) {
-}
-
 void NuInitHardwareFirst(i32, variptr_u *, i32 *, i32) {
 }
 
@@ -180,9 +177,6 @@ void NuFadeObjAngleTerrain(numtx_s *) {
 }
 
 void NuGCutSceneSysInitVfx(i32 (*)(char const *), i32 (*)(i32, VuMtx *), void (*)(i32), void (*)(i32, VuMtx *)) {
-}
-
-void NuIOSDLCameraCallback(void *) {
 }
 
 void NuIOSDLDebrisCallback(void *) {
@@ -235,17 +229,10 @@ void NuLightMotionBlurEffect(i32, float) {
 void NuPortalEnableDebugDraw(i32) {
 }
 
-void NuQFntPrintJustifiedRSW(rndrstream_s *, void *, u16 *, float, float, float, float, float, float, float, u32,
-                             numtx_s *) {
-}
-
 void NuTimeGetMicrosecondsPS(u32 *, u32 *) {
 }
 
 void NuIOSDLLightmapOffsetOld(void *) {
-}
-
-void NuIOSDLTransformCallback(void *) {
 }
 
 void NuIOS_DisplaySystemAlert(char const *) {
@@ -261,9 +248,6 @@ void NuGCutRigidForceInstanced(NUGCUTSCENE_s *) {
 }
 
 void NuIOSDLReflectionCallback(void *) {
-}
-
-void NuIOS_CreateGLTexFromHash(u32) {
 }
 
 void NuIOS_GetInAppProductByID(char *, NuIOS_InAppProduct *) {
@@ -287,9 +271,6 @@ void NuDebrisRendererNextBuffer() {
 }
 
 void NuIOSDLDeferredMtlCallback(void *) {
-}
-
-void NuIOSDLPreWarmGeomCallback(void *) {
 }
 
 void NuIOS_GetNumInAppPurchases() {
@@ -344,9 +325,6 @@ void NuFadeObjGetAngleTerrainValues(nuvec_s *) {
 void NuIOSDLFaceOnTransformCallback(void *) {
 }
 
-void NuIOSDLTransformParamsCallback(void *) {
-}
-
 void NuIOS_CateInAppPurchaseManager() {
 }
 
@@ -390,12 +368,6 @@ void NuIOSDLDeferredTransformParamsCallback(void *) {
 }
 
 void NuOnlineSetDefaultPresenceModeProfilePS(i32, i32) {
-}
-
-void NuIOS_CreateGLTexFromPlatfomSpecificFile(char const *) {
-}
-
-void NuIOS_CreateGLTexFromPlatfomSpecificForecPVR(char const *) {
 }
 
 void NuATanf(float) {

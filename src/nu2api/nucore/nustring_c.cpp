@@ -4,6 +4,35 @@
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nufile/nufpar.h"
 
+NUWCHAR8 *NuUnicodeCharFromUTF8(NUWCHAR16 *dst, NUWCHAR8 *src) {
+    NUWCHAR16 c0 = *src++;
+    if (c0 <= 0x7f) {
+        *dst = c0;
+    } else if ((c0 & 0xe0) == 0xc0) {
+        NUWCHAR16 c1 = *src++;
+        *dst = ((c0 & 0x1f) << 6) | (c1 & 0x3f);
+    } else if ((c0 & 0xf0) == 0xe0) {
+        NUWCHAR16 c1 = *src++;
+        NUWCHAR16 c2 = *src++;
+        *dst = (c0 << 12) | ((c1 & 0x3f) << 6) | (c2 & 0x3f);
+    }
+    return src;
+}
+
+NUWCHAR8 *NuUTF8CharFromUnicode(NUWCHAR8 *dst, NUWCHAR16 character) {
+    if (character <= 0x7f) {
+        *dst++ = character;
+    } else if (character <= 0x7ff) {
+        *dst++ = (character >> 6) | 0xc0;
+        *dst++ = (character & 0x3f) | 0x80;
+    } else {
+        *dst++ = (character >> 12) | 0xe0;
+        *dst++ = ((character >> 6) & 0x3f) | 0x80;
+        *dst++ = (character & 0x3f) | 0x80;
+    }
+    return dst;
+}
+
 void NuStrCat(char *str, const char *ext) {
     while (*str != '\0') {
         str++;

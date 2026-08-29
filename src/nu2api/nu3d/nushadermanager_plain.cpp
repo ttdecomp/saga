@@ -1,5 +1,5 @@
 /*
- * Shader manager — plain host implementation.
+ * Shader manager.
  *
  * Faithful, readable reimplementation of the original iOS shader manager.
  * The original built shader keys from a 104-byte material block hashed with
@@ -14,9 +14,9 @@
 #include "nushader_plain.h"
 #include "nu2api/nu3d/nu2api_nu3d_types.h"
 #include "nushader.h"
+#include "nu2api/nu3d/nutex.h"
 
-// NuShaderObjectInit overload used by the manager. The shader-version tag is
-// unused on the host but kept for ABI compatibility.
+// NuShaderObjectInit overload used by the manager.
 void NuShaderObjectInit(nushaderobject_s *, const nushaderobjectkey_s *, i32, u32, u32, eSHADERVERSION);
 
 using nu2api::HashRedirect;
@@ -29,8 +29,11 @@ using nu2api::ShaderObjectKey;
 #include <cstring>
 
 #include "nu2api/nufile/nufile.h"
+#include "nu2api/nuandroid/ios_graphics.h"
 
 extern i32 file_criticalsection;
+extern i32 RemoveNormalMaps;
+extern i32 RemoveDirectionalMaps;
 #include "nu2api/nucore/nuthread.h"
 
 namespace nu2api {
@@ -167,23 +170,6 @@ namespace nu2api {
             NuFileRead(fh, s_shaderSourceBuffer, size);
             NuFileClose(fh);
 
-            // Shipped iOS sources use a fixed precision qualifier that does not
-            // validate on every host driver. Patch it in place.
-            char *hit = nullptr;
-            if (pixelStage) {
-                hit = std::strstr(s_shaderSourceBuffer, "precision lowp float;");
-                if (hit != nullptr && std::strstr(s_shaderSourceBuffer, "_envmap_samplerCube") != nullptr) {
-                    constexpr const char *kReplacement = "precision mediump float;";
-                    std::memcpy(hit, kReplacement, std::strlen(kReplacement));
-                }
-            } else {
-                hit = std::strstr(s_shaderSourceBuffer, "precision mediump float;");
-                if (hit != nullptr) {
-                    constexpr const char *kReplacement = "precision highp float;  ";
-                    std::memcpy(hit, kReplacement, std::strlen(kReplacement));
-                }
-            }
-
             s_shaderSourceBuffer[size] = '\0';
             *outSource = s_shaderSourceBuffer;
             return true;
@@ -215,15 +201,15 @@ namespace nu2api {
     // ---------------------------------------------------------------------------
 
     static constexpr u32 kSlotStride = 0x308;
-    static constexpr u32 kSlotCount = 0x191; // 401
+    static constexpr u32 kSlotCount = 0x190; // 400 shader objects; ID 400 addresses the trailing sentinel
     static constexpr u32 kOffsetLastSlot = 0x4bc84;
     static constexpr u32 kOffsetBoundSlot = 0x4bc88;
-    static constexpr u32 kManagerBlockSize = 0x4bc90;
+    static constexpr u32 kManagerBlockSize = 0x4bc8c;
 
     static u8 s_managerBlock[kManagerBlockSize];
 
     inline u8 *SlotPtr(i32 id) {
-        return s_managerBlock + 4 + static_cast<u32>(id) * kSlotStride;
+        return static_cast<u8 *>(g_shaderManager) + 4 + static_cast<u32>(id) * kSlotStride;
     }
     inline i32 &SlotRefCount(u8 *slot) {
         return *reinterpret_cast<i32 *>(slot + 4);
@@ -235,10 +221,10 @@ namespace nu2api {
         return *reinterpret_cast<GLuint *>(slot + 0x10);
     }
     inline i32 &ManagerLastAllocated() {
-        return *reinterpret_cast<i32 *>(s_managerBlock + kOffsetLastSlot);
+        return *reinterpret_cast<i32 *>(static_cast<u8 *>(g_shaderManager) + kOffsetLastSlot);
     }
     inline i32 &ManagerBoundSlotAddr() {
-        return *reinterpret_cast<i32 *>(s_managerBlock + kOffsetBoundSlot);
+        return *reinterpret_cast<i32 *>(static_cast<u8 *>(g_shaderManager) + kOffsetBoundSlot);
     }
 
     void *g_shaderManager = s_managerBlock;
@@ -270,8 +256,32 @@ namespace nu2api {
 // Public C API
 // ---------------------------------------------------------------------------
 
+// original 0x318be0. The original uses a VirtualStackAllocator over this
+// arena; the allocation is contiguous, so advancing the arena cursor is the
+// equivalent operation here.
+extern "C" void NuShaderManagerInit(VARIPTR *arena, VARIPTR arena_end) {
+    using namespace nu2api;
+
+    if (arena->addr + kManagerBlockSize > arena_end.addr) {
+        return;
+    }
+
+    u8 *manager = static_cast<u8 *>(arena->void_ptr);
+    std::memset(manager, 0, kManagerBlockSize);
+    g_shaderManager = manager;
+    arena->addr += kManagerBlockSize;
+
+    for (u32 id = 0; id < kSlotCount; ++id) {
+        NuShaderObjectCreate(reinterpret_cast<nushaderobject_s *>(manager + 4 + id * kSlotStride));
+    }
+
+    SlotRefCount(manager + 4)++;
+    ManagerBoundSlotAddr() = 0;
+    ManagerLastAllocated() = -1;
+}
+
 extern "C" i32 NuShaderManagerGetShaderById(i32 id) {
-    if (static_cast<u32>(id) >= nu2api::kSlotCount) {
+    if (static_cast<u32>(id) >= 0x191) {
         return 0;
     }
     u8 *slot = nu2api::SlotPtr(id);
@@ -280,6 +290,12 @@ extern "C" i32 NuShaderManagerGetShaderById(i32 id) {
         i32 id;
     } conv{slot};
     return conv.id;
+}
+
+// original 0x318d10 — the manager stores the address of the bound object,
+// rather than its numeric shader id.
+extern "C" i32 NuShaderManagerGetCurrentShader(void) {
+    return nu2api::ManagerBoundSlotAddr();
 }
 
 extern "C" void NuShaderManagerReleaseShader(i32 slotAddr) {
@@ -293,7 +309,7 @@ extern "C" void NuShaderManagerReleaseShader(i32 slotAddr) {
     nu2api::SlotRefCount(conv.ptr)--;
 }
 
-static GLuint s_currentGlProgram = 0;
+extern u32 g_boundShader;
 
 extern "C" void NuShaderManagerBindShader(i32 slotAddr) {
     (void)nu2api::g_shaderManager;
@@ -306,9 +322,9 @@ extern "C" void NuShaderManagerBindShader(i32 slotAddr) {
         u8 *ptr;
     } conv{slotAddr};
     const GLuint program = nu2api::SlotGlProgram(conv.ptr);
-    if (program != s_currentGlProgram) {
+    if (program != g_boundShader) {
         glUseProgram(program);
-        s_currentGlProgram = program;
+        g_boundShader = program;
     }
 }
 
@@ -426,7 +442,6 @@ namespace nu2api {
 
     static void FilterInternalInit(ShaderMtlDescFilterPlain *filter, const NUSHADERMTLDESC *desc, const void *mtl,
                                    i32 flagsIn, i32 param4) {
-        const u8 *descBytes = reinterpret_cast<const u8 *>(desc);
         const u8 *mtlBytes = reinterpret_cast<const u8 *>(mtl);
 
         filter->mtl = mtl;
@@ -437,57 +452,27 @@ namespace nu2api {
 
         const bool hasVtxFlag4 = (reinterpret_cast<const u8 *>(&desc->vtx_desc)[2] & 4) != 0;
         const bool hasMtlFlag40 = (mtlBytes[0x41] & 0x40) != 0;
-        const bool anyVtxMtlFlag = hasVtxFlag4 || hasMtlFlag40;
+        const bool specialVertexPath = hasVtxFlag4 || hasMtlFlag40;
+        const bool baseVariant = filter->variant == 0;
+        const bool flag10Path = baseVariant && (flagsIn & 0x10) != 0 && !specialVertexPath;
 
-        // field4 / field6 describe whether the high-precision / compressed paths
-        // are required. The original had a shared "zeroed" early-out for the
-        // variant != 0 case.
-        if (filter->variant != 0) {
-            filter->field4_0x10 = 0;
-            filter->field6_0x18 = anyVtxMtlFlag ? 1 : 0;
-        } else {
-            const bool flag10Set = (flagsIn & 0x10) != 0;
-            if (flag10Set && anyVtxMtlFlag) {
-                filter->field4_0x10 = 0;
-                filter->field6_0x18 = anyVtxMtlFlag ? 1 : 0;
-            } else if (flag10Set) {
-                filter->field4_0x10 = 1;
-                filter->field6_0x18 = anyVtxMtlFlag ? 1 : 0;
-            } else {
-                filter->field4_0x10 = 0;
-                if (!hasVtxFlag4 && !hasMtlFlag40) {
-                    filter->field6_0x18 = 0;
-                } else {
-                    filter->field6_0x18 = 1;
-                }
-                // When the straightforward path was taken, field6 already encodes
-                // the flag; otherwise it mirrors the combined test above.
-                if (flag10Set || anyVtxMtlFlag) {
-                    filter->field6_0x18 = anyVtxMtlFlag ? 1 : 0;
-                }
-            }
+        filter->field4_0x10 = flag10Path;
+        filter->field6_0x18 = ((filter->variant != 0) || ((flagsIn & 0x10) != 0)) && !specialVertexPath;
+
+        const bool deferredPath = baseVariant && (flagsIn & 0x20) != 0 && !specialVertexPath;
+        filter->field5_0x14 = deferredPath;
+
+        i32 layerCount = 0;
+        if (baseVariant) {
+            layerCount = (!flag10Path && (desc->flagsbits_1ba & 1) == 0) ? 1 : 2;
         }
-
-        // field5 / field7 track deferred blending and extra stage counts.
-        if (filter->variant == 0) {
-            const bool canDefer = (flagsIn & 0x20) != 0 && !hasVtxFlag4 && !hasMtlFlag40;
-            filter->field5_0x14 = canDefer ? 1 : 0;
-
-            const bool needsHighPrecision = (filter->field4_0x10 != 0) || hasVtxFlag4;
-            if (needsHighPrecision) {
-                filter->field7_0x1c = 2;
-            } else if (descBytes[0x1ba] & 1) {
-                filter->field7_0x1c = 2;
-            } else {
-                filter->field7_0x1c = 1;
-            }
-            if (canDefer) {
-                filter->field7_0x1c++;
-            }
-        } else {
-            filter->field5_0x14 = 0;
-            filter->field7_0x1c = (filter->field4_0x10 != 0) ? 1 : 0;
+        if (filter->field6_0x18 != 0) {
+            ++layerCount;
         }
+        if (deferredPath) {
+            ++layerCount;
+        }
+        filter->field7_0x1c = layerCount;
     }
 
 } // namespace nu2api
@@ -568,7 +553,7 @@ namespace nu2api {
         if (filter->variant == 0) {
             const u8 baseFlag = descBytes[0x1b8];
             block[0x15] = ((baseFlag & 1) || (baseFlag & 2)) ? descBytes[0xa9] : 0;
-            block[0x16] = filter->param4 < desc->specular_map_tid ? descBytes[0xaa] : 0;
+            block[0x16] = filter->param4 < *reinterpret_cast<const i32 *>(descBytes + 0x34) ? descBytes[0xaa] : 0;
         }
 
         // Diffuse-map presence + ids
@@ -702,10 +687,95 @@ namespace nu2api {
         return true;
     }
 
+    // ShaderManagerOpenGL::adaptShaderMaterialForShaderVersion.  Android uses
+    // shader version 5, whose generated programs deliberately discard material
+    // features unsupported by the mobile uber-shader before the key is built.
+    static void AdaptShaderMaterialForShaderVersion(NUSHADERMTLDESC *desc) {
+        u8 *vtx_desc = reinterpret_cast<u8 *>(&desc->vtx_desc);
+        const u8 original_vtx_flags3 = vtx_desc[3];
+        u8 mobile_flags3 = desc->flagsbits_1bb;
+
+        if ((original_vtx_flags3 & 4) != 0) {
+            mobile_flags3 |= 0x80;
+            desc->flags |= 0x200000;
+            desc->flagsbits_1bb = mobile_flags3;
+        }
+
+        const u8 original_flags0 = desc->flagsbits_1b8;
+        const u8 original_flags1 = desc->byte4;
+        const u8 original_flags2 = desc->flagsbits_1ba;
+        u8 mobile_flags1 = original_flags1 & 0xf7;
+        desc->byte4 = mobile_flags1;
+        desc->flagsbits_1ba = original_flags2 & 0x7f;
+
+        const u32 packed_mobile_flags = *reinterpret_cast<u32 *>(&desc->flagsbits_1b8);
+        u8 mobile_flags0 = original_flags0;
+        if ((packed_mobile_flags & 0x04001011) == 0x04001001 && desc->unknown_a8 > 2) {
+            mobile_flags0 &= 0x3f;
+            desc->flagsbits_1b8 = mobile_flags0;
+            desc->byte4 = original_flags1 & 0xf6;
+            if ((original_flags0 & 8) == 0) {
+                mobile_flags0 |= 0x10;
+                desc->flagsbits_1b8 = mobile_flags0;
+            }
+            mobile_flags1 = desc->byte4;
+            desc->normal_map_tid = 0;
+        }
+
+        const u32 original_shader_flags = desc->flags;
+        mobile_flags0 &= 0xfc;
+        desc->flagsbits_1b8 = mobile_flags0;
+        desc->flags = original_shader_flags & 0xffff9ffc;
+        desc->byte4 = mobile_flags1 & 0x9f;
+
+        if ((original_shader_flags & 0x10000) != 0) {
+            mobile_flags0 &= 0xdc;
+            desc->flags = original_shader_flags & 0xffff9fdc;
+            desc->flagsbits_1b8 = mobile_flags0;
+        } else if ((original_shader_flags & 0x20) != 0) {
+            mobile_flags0 &= 0xf4;
+            desc->flags = original_shader_flags & 0xffff9ff4;
+            desc->flagsbits_1b8 = mobile_flags0;
+        }
+
+        if ((desc->flags & 0x40200) == 0) {
+            desc->flags &= 0xfffffbff;
+        }
+        desc->byte4 = mobile_flags1 & 0x9b;
+
+        const u32 filtered_shader_flags = desc->flags;
+        desc->flagsbits_1b8 = mobile_flags0 & 0xfb;
+        const u8 mobile_flags2 = original_flags2 & 0x48;
+        desc->flagsbits_1ba = mobile_flags2;
+        desc->flags = filtered_shader_flags & 0xf916fffb;
+        desc->flagsbits_1bb = mobile_flags3 & 0x27;
+
+        if (::RemoveNormalMaps != 0 && ::RemoveDirectionalMaps != 0) {
+            vtx_desc[3] = original_vtx_flags3 & 0xfc;
+            desc->normal_map_tid = 0;
+            vtx_desc[0] &= 0x0f;
+            *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(desc) + 0x38) = 0;
+            desc->flags = filtered_shader_flags & 0xf916fffa;
+            if ((mobile_flags3 & 4) != 0) {
+                reinterpret_cast<u8 *>(&desc->field_1bc)[0] |= 8;
+                desc->flagsbits_1ba = mobile_flags2 | 4;
+                desc->flagsbits_1bb = (mobile_flags3 & 0x27) | 4;
+            }
+        }
+
+        u8 &mobile_capabilities = reinterpret_cast<u8 *>(&desc->field_1bc)[0];
+        mobile_capabilities = (mobile_capabilities & 0xfb) | ((NuIOS_IsLowEndDevice() == 0) << 2);
+    }
+
     static void *RetrieveShader(void *manager, NUSHADERMTLDESC *desc, void *mtl, i32 variant, i32 flagsIn,
                                 bool pixelStage) {
+        AdaptShaderMaterialForShaderVersion(desc);
         ShaderMtlDescFilterPlain filter{};
         FilterInternalInit(&filter, desc, mtl, variant, flagsIn);
+        filter.variant = 0;
+        filter.field4_0x10 = 0;
+        filter.field5_0x14 = 0;
+        filter.field7_0x1c = 1;
 
         u32 rawKey[4] = {};
         BuildShaderKey(rawKey, &filter, pixelStage ? 1 : 0);
@@ -738,7 +808,7 @@ namespace nu2api {
                 continue;
             }
             ManagerLastAllocated() = id;
-            if (!CreateGlProgramForKey(programKey, slot, 0)) {
+            if (!CreateGlProgramForKey(programKey, slot, id)) {
                 return nullptr;
             }
             SlotRefCount(slot)++;
@@ -758,15 +828,56 @@ extern "C" void *NuShaderManagerRetrieveShader(NUSHADERMTLDESC *desc, void *mtl)
 }
 
 extern "C" void *NuShaderManagerRetrieveShaderVariant(NUSHADERMTLDESC *desc, void *mtl, i32 variant) {
-    return nu2api::RetrieveShader(nu2api::g_shaderManager, desc, mtl, variant, 0x10, false);
+    return nu2api::RetrieveShader(nu2api::g_shaderManager, desc, mtl, variant, 0, false);
 }
 
-// Material setup is not yet ported. The original walked the program's uniform
-// list and pushed values through the constant setters. Until that is
-// transcribed the pipeline runs with engine defaults.
 extern "C" void NuShaderObjectGLSLSetupMaterial(i32 program, struct numtl_s *mtl) {
-    (void)program;
-    (void)mtl;
+    extern f32 g_renderContext_viewProj[16];
+    extern f32 g_renderContext_view[16];
+    extern f32 g_renderContext_world[16];
+    extern f32 g_renderContext_kTint[4];
+    struct ShaderObjectView {
+        u32 base[4];
+        GLuint gl_program;
+    };
+
+    const GLuint gl_program = reinterpret_cast<ShaderObjectView *>(static_cast<uintptr_t>(program))->gl_program;
+    static const f32 fog_params[4] = {0.0f, 0.0f, 1.0f, 0.0f};
+    static const f32 zero[4] = {};
+
+    auto set4fv = [gl_program](const char *name, i32 count, const f32 *value) {
+        const GLint location = glGetUniformLocation(gl_program, name);
+        if (location >= 0) {
+            glUniform4fv(location, count, value);
+        }
+    };
+
+    // These are the generated GLSL names for the original material semantics
+    // consumed by the legal/intro 2D shaders.
+    set4fv("_world", 4, g_renderContext_world);
+    set4fv("_viewProj", 4, g_renderContext_viewProj);
+    set4fv("_vs_view", 4, g_renderContext_view);
+    set4fv("_kTint", 1, g_renderContext_kTint);
+    const u32 diffuse = *reinterpret_cast<const u32 *>(&mtl->shader_desc.diffuse_color[0]);
+    const f32 layer0Diffuse[4] = {
+        static_cast<f32>(diffuse & 0xff) / 255.0f,
+        static_cast<f32>((diffuse >> 8) & 0xff) / 255.0f,
+        static_cast<f32>((diffuse >> 16) & 0xff) / 255.0f,
+        static_cast<f32>(diffuse >> 24) / 255.0f,
+    };
+    const f32 layerOpacities[4] = {mtl->opacity, 1.0f, 1.0f, 1.0f};
+    set4fv("_layer0_diffuse", 1, layer0Diffuse);
+    set4fv("_layer_kOpacities", 1, layerOpacities);
+    set4fv("_fog_params", 1, fog_params);
+    set4fv("_fog_color", 1, zero);
+
+    // Diffuse-map semantic (case 0 in the original texture-semantic walk at
+    // 0x31cba0). Samplers default to texture unit zero, matching the unit
+    // encoded for this semantic by the generated 2D shader.
+    const i32 texture_id = mtl->shader_desc.diffuse_map_tex_id[0];
+    if (texture_id != 0) {
+        NuTexSetTextureWithStagePS(NuTexGetNative(texture_id), 0);
+    }
 }
 
 // GL uniform dispatch table — matches the original .data at 0x65e0b8.

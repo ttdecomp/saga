@@ -37,8 +37,60 @@
 #include "nu2api/nu3d/nudlist.h"
 #include "nu2api/nu3d/numtl.h"
 #include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nu3d/nuvport.h"
+#include "nu2api/nu3d/nurndr.h"
+#include "nu2api/numath/nutrig.h"
+#include "nu2api/numath/nufloat.h"
 #include "nu2api/nu3d/NuRenderDevice.h"
+#include "nu2api/numath/numtx.h"
 #include "globals.h"
+
+struct nuhspecial_s;
+
+namespace {
+    struct NuSpecialHandleLayout {
+        NUGSCN *scene;
+        void *special;
+        void *display_special;
+    };
+
+    struct NuLegacySpecialLayout {
+        u8 pad_00[0x40];
+        u8 *instance;
+        u32 flags;
+    };
+
+    struct NuDisplaySpecialLayout {
+        NUMTX mtx;
+        NUMTX draw_mtx;
+        NUVEC min;
+        f32 min_w;
+        NUVEC max;
+        f32 max_w;
+        u8 pad_a0[0x10];
+        NUCLIPOBJECT *clip_objects;
+        char *name;
+        u32 flags;
+        f32 *clip_range;
+        i32 instance_ix;
+        NUMTX *draw_mtx_ptr;
+        i16 wind_speed;
+        i16 wind_scale;
+        u32 pad_cc;
+    };
+
+    static i32 nuspecial_clip_state = -1;
+} // namespace
+
+extern "C" {
+    i32 nuspecial_const_tint_enabled;
+    NUCOLOUR3 nuspecial_const_tint = {1.0f, 1.0f, 1.0f};
+    i32 nuspecial_const_alpha_enabled;
+    f32 nuspecial_const_alpha = 1.0f;
+    extern NUGLOBALRNDRSTATE render_state;
+    void RndrStateSetConstAlphaTint(i32 alpha_enabled, i32 tint_enabled, f32 alpha, const NUCOLOUR3 *tint, NUMTL *mtl);
+}
 
 // C++-linkage helpers defined in sibling TUs.
 void DisplayListCreateDynMtlList(VARIPTR *buf, VARIPTR buf_end); // supportall.cpp
@@ -57,6 +109,7 @@ extern "C" {
     void NuWindAnimate(void);
     void NuTimeBarSetRender(void);
     void NuRndrSwapScreenEx(i32 mode, void (*callback)(void));
+    void NuShaderManagerSetfv(i32 semantic, const f32 *values);
 
     extern VARIPTR *display_list_buffer_end;
     extern VARIPTR rndrstream_free;
@@ -81,11 +134,9 @@ extern "C" {
     // original 0x29ad60
     void NuDisplayListInit(VARIPTR *buf, VARIPTR *buf_end) {
         u8 *mgr = (u8 *)&global_dlist_manager;
-        // The static 2D list starts anchored on the stream-head sentinel:
-        // both `first` (+0x4c8) and `mtl_last` (+0x4cc) point at it so
-        // AddRenderScene treats the chain as empty.
+        // The static 2D list starts anchored on the stream-head sentinel.
+        // DisplayListCreateDynMtlList initialises the sentinel and mtl_last.
         *(u8 **)(mgr + NUDLIST_2D_STREAM_BASE_OFFSET) = mgr + NUDLIST_2D_STREAM_AREA_OFFSET;
-        *(u8 **)(mgr + NUDLIST_2D_STREAM_BASE_OFFSET + 4) = mgr + NUDLIST_2D_STREAM_AREA_OFFSET;
 
         DisplayListCreateDynMtlList(buf, *buf_end);
         NuDisplayListResetBuffer();
@@ -160,17 +211,79 @@ extern "C" {
     }
     void NuCameraSaveState(void) {
     }
-    // The real body is NuCameraSetEx(cam, 0), which rebuilds the view /
-    // projection / viewport matrices. Matrix construction is not needed by
-    // the 2D loading screen; the camera pointer is kept for later work.
     void NuCameraSet(NUCAMERA *cam) {
-        (void)cam;
+        NuCameraSetEx(cam, 0);
     }
     void NuCameraSetAxes(void) {
     }
-    void NuCameraSetEx(void) {
+    void NuCameraSetEx(NUCAMERA *cam, i32 fast) {
+        global_camera = *cam;
+
+        if (fast == 0) {
+            NuVpUpdate();
+        }
+
+        NuMtxInv(&vmtx, &global_camera.mtx);
+        NuMtxScale(&vmtx, &global_camera.scale);
+
+        if (fast == 0) {
+            NuCameraSetProjectionMtx(&pmtx, global_camera.fov, global_camera.aspect, global_camera.near_clip,
+                                     global_camera.far_clip);
+            pmtx.m00 *= global_camera.unknown_58;
+            pmtx.m11 *= global_camera.unknown_5c;
+            pmtx.m20 += global_camera.unknown_50;
+            pmtx.m21 += global_camera.unknown_54;
+        }
+
+        NuMtxMulH(&vpmtx, &vmtx, &pmtx);
+
+        if (fast == 0) {
+            i32 angle = static_cast<i32>(global_camera.fov * 0.5f * 10430.378f);
+            clip_planes.m22 = NuTrigTable[angle >> 1 & 0x7fff];
+            clip_planes.m12 = NuTrigTable[(angle + 0x4000) >> 1 & 0x7fff];
+            zy = clip_planes.m22 / clip_planes.m12;
+            zx = zy / global_camera.aspect;
+
+            // PS2_SREZ_W/H are 4096; PS2_REZ_W/H track the current render
+            // dimensions. These ratios define the scissor frustum.
+            zxs = nurndr_pixel_width != 0 ? 4096.0f * zx / static_cast<f32>(nurndr_pixel_width) : zx;
+            zys = nurndr_pixel_height != 0 ? 4096.0f * zy / static_cast<f32>(nurndr_pixel_height) : zy;
+
+            clip_planes.m13 = -clip_planes.m12;
+            clip_planes.m02 = 0.0f;
+            clip_planes.m03 = 0.0f;
+            clip_planes.m32 = 0.0f;
+            clip_planes.m33 = 0.0f;
+            clip_planes.m23 = clip_planes.m22;
+
+            f32 side = zy / cam->aspect;
+            clip_planes.m01 = 1.0f / NuFsqrt(side * side + 1.0f);
+            clip_planes.m00 = -clip_planes.m01;
+            clip_planes.m10 = 0.0f;
+            clip_planes.m11 = 0.0f;
+            clip_planes.m20 = side * clip_planes.m01;
+            clip_planes.m21 = clip_planes.m20;
+            clip_planes.m30 = 0.0f;
+            clip_planes.m31 = 0.0f;
+            NuCameraBuildClipPlanes();
+        }
+
+        NuRndrSetViewMtx(&vpmtx, &vpc_vport_mtx, &vpc_sci_mtx);
+        NuRndrStateUpdateCameraState();
     }
-    void NuCameraSetProjectionMtx(void) {
+    void NuCameraSetProjectionMtx(NUMTX *mtx, f32 fov, f32 aspect, f32 near_clip, f32 far_clip) {
+        if (near_clip < 0.1f) {
+            near_clip = 0.1f;
+        }
+        i32 angle = (i32)(fov * 0.5f * 10430.378f);
+        f32 cotangent = NuTrigTable[(angle + 0x4000) >> 1 & 0x7fff] / NuTrigTable[angle >> 1 & 0x7fff];
+        f32 depth = far_clip / (far_clip - near_clip);
+        memset(mtx, 0, sizeof(*mtx));
+        mtx->m00 = aspect * cotangent;
+        mtx->m11 = cotangent;
+        mtx->m22 = depth;
+        mtx->m23 = 1.0f;
+        mtx->m32 = -depth * near_clip;
     }
     void NuCameraSetReflect(void) {
     }
@@ -223,28 +336,39 @@ extern "C" {
     }
     void NuDisplayListEndScene(void) {
     }
-    void NuDisplayListLinkItem(void) {
+    VARIPTR *NuDisplayListLinkItemVP(nudisplaylist_s *list, u8 type, void *call_addr, VARIPTR *buf) {
+        auto *call = reinterpret_cast<nudisplaylistitem_s *>(buf->void_ptr);
+        list->mtl_last->next = call;
+        call->type = type;
+        call->id = 3;
+        call->next = call_addr != nullptr ? call_addr : call + 2;
+
+        auto *next = call + 1;
+        next->type = 0x8d;
+        next->id = 1;
+        next->next = list->dyn_geom + 1;
+        list->mtl_last = next;
+        buf->addr += sizeof(nudisplaylistitem_s) * 2;
+        return call_addr != nullptr ? nullptr : buf;
     }
-    void NuDisplayListLinkItemVP(void) {
+    void NuDisplayListLinkItem(nudisplaylist_s *list, u8 type, void *call_addr) {
+        NuDisplayListLinkItemVP(list, type, call_addr, NuDisplayListGetBuffer());
     }
-    // Append `count` empty item slots from the shared stream buffer, then
-    // a 0x8d NEXT terminator that chains back to the list (original 0x29ae31).
-    void NuDisplayListLinkItems(nudisplaylist_s *list, i32 count) {
+    // Append `count` item slots from the shared stream buffer, then a NEXT
+    // terminator. Original 0x29ae31.
+    VARIPTR *NuDisplayListLinkItems(nudisplaylist_s *list, i32 count) {
         VARIPTR *buf = NuDisplayListGetBuffer();
-        u8 *cursor = (u8 *)buf->addr;
+        nudlist_SetNext(list->mtl_last, buf->void_ptr);
+        list->items = reinterpret_cast<nudisplaylistitem_s *>(buf->void_ptr);
+        buf->addr += count * sizeof(nudisplaylistitem_s);
 
-        nudlist_SetNext(list->items, (nudisplaylistitem_s *)cursor);
-        list->items = (nudisplaylistitem_s *)cursor;
-
-        buf->addr += count * 0x10;
-        cursor = (u8 *)buf->addr;
-
-        *cursor = 0x8d;                          // terminator type
-        ((nudisplaylistitem_s *)cursor)->id = 1; // NEXT
-        nudlist_SetNext((nudisplaylistitem_s *)cursor, (nudisplaylistitem_s *)(cursor + 0x10));
-
-        list->mtl_last = (nudisplaylistitem_s *)cursor;
+        auto *terminator = reinterpret_cast<nudisplaylistitem_s *>(buf->void_ptr);
+        terminator->type = 0x8d;
+        terminator->id = 1;
+        nudlist_SetNext(terminator, list->dyn_geom + 1);
+        list->mtl_last = terminator;
         buf->addr += 0x10;
+        return buf;
     }
 } // extern "C"
 
@@ -282,22 +406,139 @@ static __attribute__((used)) void NuDisplayListSetID_NEXT(nudisplaylistitem_s *i
 }
 
 extern "C" {
-    // Link the material's state block into the list when it differs from
-    // the currently bound one (original 0x2e8cc0). Only the essential
-    // bookkeeping is modelled: align the cursor and record the material
-    // item so display-list consumers can find it.
+    // original 0x2e8cc0
     void NuDisplayListLinkMtl(nudisplaylist_s *list, NUMTL *mtl) {
-        if (mtl == NULL || list == NULL || mtl->tex_id <= 0) {
+        if (list->state->mtl == mtl) {
             return;
         }
+
         VARIPTR *buf = NuDisplayListGetBuffer();
         buf->addr = ALIGN(buf->addr, 0x10);
+        list->mtl_last->next = buf->void_ptr;
+
+        nudisplaylistitem_s *item;
+        if (mtl->tex_id < 1 || mtl->tex_id == list->state->tex_id) {
+            item = reinterpret_cast<nudisplaylistitem_s *>(buf->void_ptr);
+            buf->addr += 0x40;
+        } else {
+            auto *bytes = reinterpret_cast<u8 *>(buf->void_ptr);
+            buf->addr += 0x60;
+
+            auto *nop = reinterpret_cast<nudisplaylistitem_s *>(bytes);
+            nop[0].type = 0x87;
+            nop[0].id = 0;
+            nop[0].next = nullptr;
+            nop[1].type = 0x87;
+            nop[1].id = 0;
+            nop[1].next = nullptr;
+            item = nop + 2;
+            list->state->tex_id = mtl->tex_id;
+        }
+
+        item[0].type = 0x80;
+        item[0].id = 3;
+        item[0].next = mtl;
+        item[1].type = 0x87;
+        item[1].id = 0;
+        item[1].next = nullptr;
+        item[2].type = 0x87;
+        item[2].id = 0;
+        item[2].next = nullptr;
+        item[3].type = 0x8d;
+        item[3].id = 1;
+        item[3].next = nullptr;
+
+        list->mtl_last = item + 3;
+        list->state->mtl = mtl;
     }
     void NuDisplayListLinkList(void) {
     }
     void NuDisplayListPrepareFaceonPS(void) {
     }
-    void NuDisplayListRndrSpecial(void) {
+    void *DisplayListCreateGeomTransformPS(VARIPTR *buffer, NUMTX *transform, NUMTL *mtl, void *next, void *tx);
+
+    i32 NuDisplayListRndrSpecial(nuhspecial_s *special_handle, NUMTX *mtx, i32 skinned, void *skin_mtx,
+                                 void *blend_values) {
+        (void)skinned;
+        (void)skin_mtx;
+        (void)blend_values;
+
+        if (special_handle == NULL || mtx == NULL) {
+            return 0;
+        }
+
+        NuSpecialHandleLayout *handle = reinterpret_cast<NuSpecialHandleLayout *>(special_handle);
+        NuDisplaySpecialLayout *special = static_cast<NuDisplaySpecialLayout *>(handle->display_special);
+        if (handle->scene == NULL || special == NULL) {
+            return 0;
+        }
+
+        NUDLDLISTSCENE *scene = reinterpret_cast<NUDLDLISTSCENE *>(handle->scene->display_list);
+        i32 clip_state = nuspecial_clip_state;
+        if (clip_state == -1) {
+            clip_state = NuCameraClipTestExtents(&special->min, &special->max, mtx, 0.0f, 0);
+        }
+        if (clip_state == 0) {
+            return 0;
+        }
+
+        NUCLIPOBJECT *clip_object = special->clip_objects;
+        if (special->clip_range != NULL && special->clip_range[0] != 0.0f) {
+            NUVEC center;
+            center.x = (special->min.x + special->max.x) * 0.5f;
+            center.y = (special->min.y + special->max.y) * 0.5f;
+            center.z = (special->min.z + special->max.z) * 0.5f;
+            NuVecMtxTransform(&center, &center, mtx);
+            f32 distance = NuCameraDistSqr(&center);
+            if (distance < 0.0f) {
+                distance = 0.0f;
+            }
+            i32 lod = 0;
+            while (distance < special->clip_range[lod]) {
+                ++lod;
+            }
+            clip_object += lod;
+        }
+
+        f32 alpha = nuspecial_const_alpha_enabled != 0 ? nuspecial_const_alpha : 1.0f;
+        for (u32 i = 0; i < *reinterpret_cast<u32 *>(clip_object); ++i) {
+            u32 *material_indices = *reinterpret_cast<u32 **>(reinterpret_cast<u8 *>(clip_object) + 4);
+            i32 *item_indices = *reinterpret_cast<i32 **>(reinterpret_cast<u8 *>(clip_object) + 8);
+            u32 material_index = material_indices[i];
+            NUDISPLAYLISTITEM *geometry = scene->items + item_indices[i];
+
+            // A clip entry names the head of a material-variant chain. The
+            // original submits every material linked through NUMTL::next.
+            for (NUMTL *material = scene->mtls[material_index]; material != NULL; material = material->next) {
+                NUDISPLAYLIST *list = material->display_list;
+                if (list == NULL) {
+                    continue;
+                }
+
+                scene->flags |= NUDL_SCENE_FLAG_CLIP_MATERIALS;
+                const i32 used_material = list->mtl_id;
+                u8 *used = scene->mtl_used[scene->render_buffer >> 7];
+                used[used_material >> 3] |= static_cast<u8>(1U << (used_material & 7));
+
+                RndrStateSetConstAlphaTint(nuspecial_const_alpha_enabled, nuspecial_const_tint_enabled,
+                                           nuspecial_const_alpha, &nuspecial_const_tint, material);
+                DisplayListUpdateRenderState(list, &render_state);
+
+                VARIPTR *buffer = NuDisplayListLinkItems(list, 2);
+                NUDISPLAYLISTITEM *items = list->items;
+                void *transform = DisplayListCreateGeomTransformPS(buffer, mtx, material, geometry->next, NULL);
+                items[0].type = 0x8c;
+                items[0].id = 3;
+                items[0].next = transform;
+                items[1].type = 0x82;
+                items[1].id = 3;
+                items[1].next = geometry->next;
+                list->items = items + 2;
+                DisplayListSetAlphaPS(items, items + 1, alpha);
+            }
+        }
+        RndrStateSetConstAlphaTint(0, 0, 0.0f, NULL, NULL);
+        return clip_state;
     }
     void NuDisplayListSetFxParam(void) {
     }
@@ -308,10 +549,6 @@ extern "C" {
     // Scene / render-scene
     // ---------------------------------------------------------------------------
 
-    void NuDisplaySceneAdd(void) {
-    }
-    void NuDisplaySceneAddPS(void) {
-    }
     void NuDisplaySceneClone(void) {
     }
     void NuDisplaySceneClonePS(void) {
@@ -890,33 +1127,19 @@ extern "C" {
     }
     void NuQFntDestroy(void) {
     }
-    void NuQFntDuplicate(void) {
-    }
-    void NuQFntEncodeUnicodeChar(void) {
-    }
     void NuQFntEncodeUnicodeString(void) {
     }
     void NuQFntGetCoordinateSystem(void) {
     }
     void NuQFntGetPrintMode(void) {
     }
-    void NuQFntHeight(void) {
-    }
     void NuQFntHeightScale(void) {
     }
     void NuQFntLenScale(void) {
     }
-    void NuQFntLoadPtr(void) {
-    }
-    void NuQFntMove(void) {
-    }
     void NuQFntMove2d(void) {
     }
-    void NuQFntMoveRS(void) {
-    }
     void NuQFntPopCoordinateSystem(void) {
-    }
-    void NuQFntPopPrintMode(void) {
     }
     void NuQFntPrint2dU(void) {
     }
@@ -926,53 +1149,27 @@ extern "C" {
     }
     void NuQFntPrint3DW(void) {
     }
-    void NuQFntPrintCharW(void) {
-    }
     void NuQFntPrintEx(void) {
-    }
-    void NuQFntPrintJustifiedW(void) {
     }
     void NuQFntPrintLenU(void) {
     }
     void NuQFntPrintLenV(void) {
     }
-    void NuQFntPrintLenW(void) {
-    }
-    void NuQFntPrintRSW(void) {
-    }
     void NuQFntPrintU(void) {
     }
     void NuQFntPrintV(void) {
     }
-    void NuQFntPrintW(void) {
-    }
     void NuQFntPushCoordinateSystem(void) {
-    }
-    void NuQFntPushPrintMode(void) {
-    }
-    void NuQFntSet(void) {
     }
     void NuQFntSet2d(void) {
     }
-    void NuQFntSetColour(void) {
-    }
     void NuQFntSetColour2d(void) {
-    }
-    void NuQFntSetColourRS(void) {
     }
     void NuQFntSetPointSize(void) {
     }
     void NuQFntSetPrintMode(void) {
     }
-    void NuQFntSetRS(void) {
-    }
-    void NuQFntSetScale(void) {
-    }
     void NuQFntSetScale2d(void) {
-    }
-    void NuQFntSetScaleRS(void) {
-    }
-    void NuQFntSetSpaceWidth(void) {
     }
     void NuQFntUTF8toQCode(void) {
     }
@@ -1183,6 +1380,14 @@ extern "C" {
     void NuRainSetFall(void) {
     }
     void NuRenderContextInit(void) {
+        extern f32 g_renderContext_viewProj[16];
+        extern f32 g_renderContext_view[16];
+        extern f32 g_renderContext_projection[16];
+        extern f32 g_renderContext_world[16];
+        memcpy(g_renderContext_viewProj, &numtx_identity, sizeof(numtx_identity));
+        memcpy(g_renderContext_view, &numtx_identity, sizeof(numtx_identity));
+        memcpy(g_renderContext_projection, &numtx_identity, sizeof(numtx_identity));
+        memcpy(g_renderContext_world, &numtx_identity, sizeof(numtx_identity));
     }
     void NuRenderContext360BeginGameTime(void) {
     }
@@ -1190,7 +1395,74 @@ extern "C" {
     }
     void NuRenderContextSetAlphaBlend(void) {
     }
-    void NuRenderContextSetViewProj(void) {
+    __attribute__((weak)) void NuRenderContextSetViewProj(NUMTX *view, NUMTX *projection) {
+        extern f32 g_renderContext_viewProj[16];
+        extern f32 g_renderContext_viewProjInverse[16];
+        extern f32 g_renderContext_view[16];
+        extern f32 g_renderContext_projection[16];
+        extern f32 g_renderContext_position[4];
+
+        NUVEC scale = {
+            g_NuVpRegion.projection_x_scale,
+            g_NuVpRegion.projection_y_scale,
+            1.0f,
+        };
+        NUVEC translation = {
+            g_NuVpRegion.projection_x_offset,
+            g_NuVpRegion.projection_y_offset,
+            0.0f,
+        };
+        NUMTX scale_mtx;
+        NUMTX translation_mtx;
+        NUMTX adjusted_projection;
+        NuMtxSetScale(&scale_mtx, &scale);
+        NuMtxSetTranslation(&translation_mtx, &translation);
+        NuMtxMulH(&adjusted_projection, projection, &scale_mtx);
+        NuMtxMulH(&adjusted_projection, &adjusted_projection, &translation_mtx);
+
+        memcpy(g_renderContext_view, view, sizeof(NUMTX));
+        memcpy(g_renderContext_projection, &adjusted_projection, sizeof(NUMTX));
+
+        NUMTX inverse_view;
+        NuMtxInv(&inverse_view, view);
+        g_renderContext_position[0] = inverse_view.m30 / inverse_view.m33;
+        g_renderContext_position[1] = inverse_view.m31 / inverse_view.m33;
+        g_renderContext_position[2] = inverse_view.m32 / inverse_view.m33;
+        g_renderContext_position[3] = 1.0f;
+
+        NuMtxMulH(reinterpret_cast<NUMTX *>(g_renderContext_viewProj), view, &adjusted_projection);
+        NuMtxInvH(reinterpret_cast<NUMTX *>(g_renderContext_viewProjInverse),
+                  reinterpret_cast<NUMTX *>(g_renderContext_viewProj));
+
+        // OpenGL's clip-space depth is [-w,+w], while the engine camera
+        // packet contains the original D3D-style [0,+w] projection.
+        NUMTX depth_remap = numtx_identity;
+        depth_remap.m22 = 2.0f;
+        depth_remap.m32 = -1.0f;
+        NuMtxMulH(reinterpret_cast<NUMTX *>(g_renderContext_viewProj),
+                  reinterpret_cast<NUMTX *>(g_renderContext_viewProj), &depth_remap);
+
+        NuShaderManagerSetfv(0x3d, g_renderContext_view);
+        NuShaderManagerSetfv(0x3e, g_renderContext_viewProj);
+        NuShaderManagerSetfv(0x56, g_renderContext_position);
+
+        f32 fov;
+        f32 aspect;
+        f32 near_clip;
+        f32 far_clip;
+        f32 perspective[4];
+        NuMtxGetPerspectiveD3D(projection, &fov, &aspect, &near_clip, &far_clip);
+        perspective[0] = near_clip;
+        perspective[1] = far_clip;
+        perspective[2] = far_clip - near_clip;
+        perspective[3] = perspective[2] / far_clip;
+        NuShaderManagerSetfv(0x49, perspective);
+
+        f32 frustum[4];
+        NuMtxGetFrustumD3D(projection, &frustum[0], &frustum[1], &frustum[2], &frustum[3], &near_clip, &far_clip);
+        frustum[1] -= frustum[0];
+        frustum[3] -= frustum[2];
+        NuShaderManagerSetfv(0x4a, frustum);
     }
     void NuRenderContextSetViewport(void) {
     }
@@ -1212,13 +1484,26 @@ extern "C" {
     }
     void NuSpecialCompare(void) {
     }
-    void NuSpecialConstAlpha(void) {
+    void NuSpecialConstAlpha(i32 enabled, f32 alpha) {
+        nuspecial_const_alpha_enabled = enabled;
+        nuspecial_const_alpha = alpha;
     }
     void NuSpecialConstTint(void) {
     }
     void NuSpecialDrawAt(void) {
     }
-    void NuSpecialDrawAtAlpha(void) {
+    i32 NuSpecialDrawAtAlpha(void *special, NUMTX *mtx, f32 alpha) {
+        NuSpecialHandleLayout *handle = reinterpret_cast<NuSpecialHandleLayout *>(special);
+        if (handle->scene == NULL || alpha <= 0.0f) {
+            return 0;
+        }
+        if (alpha < 1.0f) {
+            NuSpecialConstAlpha(1, alpha);
+            i32 result = NuDisplayListRndrSpecial(reinterpret_cast<nuhspecial_s *>(special), mtx, 0, NULL, NULL);
+            NuSpecialConstAlpha(0, 0.0f);
+            return result;
+        }
+        return NuDisplayListRndrSpecial(reinterpret_cast<nuhspecial_s *>(special), mtx, 0, NULL, NULL);
     }
     void NuSpecialDrawSmoothSkin(void) {
     }
@@ -1226,7 +1511,12 @@ extern "C" {
     }
     void NuSpecialDrawWith(void) {
     }
-    void NuSpecialExistsFn(void) {
+    i32 NuSpecialExistsFn(void *special) {
+        if (special == NULL) {
+            return 0;
+        }
+        NuSpecialHandleLayout *handle = reinterpret_cast<NuSpecialHandleLayout *>(special);
+        return handle->special != NULL || handle->display_special != NULL;
     }
     void NuSpecialFindMulti(void) {
     }
@@ -1244,7 +1534,23 @@ extern "C" {
     }
     void NuSpecialGetCollision(void) {
     }
-    void NuSpecialGetDrawMtx(void) {
+    NUMTX *NuSpecialGetDrawMtx(void *special) {
+        NuSpecialHandleLayout *handle = reinterpret_cast<NuSpecialHandleLayout *>(special);
+        NuLegacySpecialLayout *legacy = static_cast<NuLegacySpecialLayout *>(handle->special);
+        if (legacy != NULL) {
+            NUMTX *instance = reinterpret_cast<NUMTX *>(legacy->instance);
+            NUMTX *draw_mtx = *reinterpret_cast<NUMTX **>(legacy->instance + 0x48);
+            return draw_mtx != NULL ? draw_mtx : instance;
+        }
+        NuDisplaySpecialLayout *display = static_cast<NuDisplaySpecialLayout *>(handle->display_special);
+        if (display != NULL) {
+            usize draw_mtx = reinterpret_cast<usize>(display->draw_mtx_ptr);
+            if (draw_mtx != 0 && draw_mtx != static_cast<usize>(-1)) {
+                return display->draw_mtx_ptr;
+            }
+            return &display->draw_mtx;
+        }
+        return NULL;
     }
     void NuSpecialGetDrawPos(void) {
     }
@@ -1298,7 +1604,10 @@ extern "C" {
     }
     void NuSpecialSetBounds(void) {
     }
-    void NuSpecialSetClipping(void) {
+    i32 NuSpecialSetClipping(i32 enabled, i32 state) {
+        i32 previous = nuspecial_clip_state;
+        nuspecial_clip_state = enabled != 0 ? state : -1;
+        return previous;
     }
     void NuSpecialSetCollision(void) {
     }
@@ -1318,7 +1627,46 @@ extern "C" {
     }
     void NuSpecialSetRenderPlane(void) {
     }
-    void NuSpecialSetVisibility(void) {
+    void NuSpecialSetVisibility(void *special, i32 visible) {
+        if (special == NULL) {
+            return;
+        }
+        NuSpecialHandleLayout *handle = reinterpret_cast<NuSpecialHandleLayout *>(special);
+        if (handle->scene == NULL) {
+            return;
+        }
+
+        NuLegacySpecialLayout *legacy = static_cast<NuLegacySpecialLayout *>(handle->special);
+        if (legacy != NULL) {
+            if (legacy->instance != NULL) {
+                legacy->instance[0x44] = static_cast<u8>((legacy->instance[0x44] & ~1U) | (visible & 1));
+            }
+            if (visible != 0) {
+                legacy->flags |= 0x200;
+            } else {
+                legacy->flags &= ~0x200U;
+            }
+            return;
+        }
+
+        NuDisplaySpecialLayout *display = static_cast<NuDisplaySpecialLayout *>(handle->display_special);
+        if (display == NULL) {
+            return;
+        }
+        if (visible != 0) {
+            display->flags |= 0x202;
+        } else {
+            display->flags &= ~0x202U;
+        }
+
+        NUDLDLISTSCENE *scene = reinterpret_cast<NUDLDLISTSCENE *>(handle->scene->display_list);
+        if ((reinterpret_cast<u8 *>(scene)[0x76] & 1) != 0) {
+            if (visible != 0) {
+                scene->visibility_flags[display->instance_ix] |= 1;
+            } else {
+                scene->visibility_flags[display->instance_ix] &= ~1;
+            }
+        }
     }
     void NuSpecialTestAnim(void) {
     }
@@ -1710,19 +2058,11 @@ extern "C" {
     }
     void NuVpGetCurrent2(void) {
     }
-    void NuVpGetCurrentViewport(void) {
-    }
-    void NuVpGetPosition2(void) {
-    }
     void NuVpGetRegions(void) {
-    }
-    void NuVpGetSize2(void) {
     }
     void NuVpPixelHeight(void) {
     }
     void NuVpPixelWidth(void) {
-    }
-    void NuVpResetRegions(void) {
     }
     void NuVpSetCentre(void) {
     }
@@ -1735,8 +2075,6 @@ extern "C" {
     void NuVpSetPosition(void) {
     }
     void NuVpSetPosition2(void) {
-    }
-    void NuVpSetRegions(void) {
     }
     void NuVpSetSize(void) {
     }
@@ -1823,11 +2161,7 @@ extern "C" {
     }
     void NuStringTok(void) {
     }
-    void NuUTF8CharFromUnicode(void) {
-    }
     void NuUTF8ToUnicode(void) {
-    }
-    void NuUnicodeCharFromUTF8(void) {
     }
     void NuFParCreateGivenFH(void) {
     }

@@ -26,6 +26,9 @@
 
 // Globals shared across world loading — defined here until moved to globals.cpp
 TIMER LevelTimer;
+
+void (*WorldInfo_InitMenuFn)(WORLDINFO *, i32 *, i32 *) = NULL;
+void (*WorldInfo_InitLastFn)(WORLDINFO *) = NULL;
 i32 abort_load = 0;
 char ConfigBuffer[0x10000];
 i32 numtl_force_mipmode = 0;
@@ -284,9 +287,11 @@ void WorldInfo_Init(WORLDINFO *world) {
         world->current_level->init_fn(world);
     }
 
-    // The game hook may provide a menu and Y position for the newly loaded
-    // level.  The hook is not linked in this target, but the state transition
-    // is part of WorldInfo_Init itself.
+    if (NOSOUND == 0 && WorldInfo_InitMenuFn != NULL) {
+        WorldInfo_InitMenuFn(world, &local_menu_id, &local_menu_y);
+    }
+
+    // A level transition may override the menu selected by the game hook.
     if (newlevelfrommenu_newmenuid != -1) {
         local_menu_id = newlevelfrommenu_newmenuid;
         local_menu_y = newlevelfrommenu_newmenuy;
@@ -327,7 +332,9 @@ void WorldInfo_Init(WORLDINFO *world) {
     *(i32 *)((char *)world + 0x5174) = 1;
 
     // Init last function
-    Game_WorldInfo_InitLast(world);
+    if (WorldInfo_InitLastFn != NULL) {
+        WorldInfo_InitLastFn(world);
+    }
 }
 
 void WorldInfo_Load(WORLDINFO *world) {
@@ -356,20 +363,35 @@ void WorldInfo_Load(WORLDINFO *world) {
         goto abort;
     }
 
-    if ((level->flags & LEVEL_STATUS) != 0) {
+    if ((level->flags & LEVEL_UNKNOWN_FLAG_4) != 0) {
         // Align giz_buffer
         world->giz_buffer.addr = ALIGN(world->giz_buffer.addr, 4);
 
         if (level == TITLES_LDATA) {
             NuStrCpy(buf, "levels\\titles\\");
-            if (Text_Language < 9) {
-                // Language-specific titles loading (switch table)
-                goto abort;
-            }
-            if (Text_Language == 0x12) {
-                NuStrCpy(titles, "titles_us");
-            } else {
-                NuStrCpy(titles, "titles_uk");
+            switch (Text_Language) {
+                case 2:
+                    NuStrCpy(titles, "titles_french");
+                    break;
+                case 3:
+                    NuStrCpy(titles, "titles_spanish");
+                    break;
+                case 4:
+                    NuStrCpy(titles, "titles_german");
+                    break;
+                case 5:
+                    NuStrCpy(titles, "titles_italian");
+                    break;
+                case 8:
+                    NuStrCpy(titles, "titles_danish");
+                    break;
+                default:
+                    if (Text_Language == 0x12) {
+                        NuStrCpy(titles, "titles_us");
+                    } else {
+                        NuStrCpy(titles, "titles_uk");
+                    }
+                    break;
             }
             NuStrCat(buf, titles);
         } else if (level == (LEVELDATA *)PLATFORM_LDATA) {
@@ -396,7 +418,7 @@ void WorldInfo_Load(WORLDINFO *world) {
     // Load pictures for titles/credits
     if (level == TITLES_LDATA || level == CREDITS_LDATA) {
         numtl_force_mipmode = (i32)(u8)level->mipmap_mode + 1;
-        world->icons_gscn = NuGScnRead(&world->giz_buffer, world->unknown_0108, "levels\\titles\\pictures.gsc");
+        world->scene = NuGScnRead(&world->giz_buffer, world->unknown_0108, "levels\\titles\\pictures.gsc");
         if (abort_load != 0)
             goto abort;
     }
@@ -826,9 +848,9 @@ void WorldInfo_UpdateRoomVisibility(WORLDINFO *world, i32 param) {
     world->rooms_visible_ptr = visBuf;
     memset(visBuf, 0, 0x100);
 
-    if (param == 0 && world->current_gscn != NULL && world->current_gscn->field5_0x8 > 0) {
+    if (param == 0 && world->current_gscn != NULL && world->current_gscn->max_portals > 0) {
         u8 *portalData = (u8 *)world->current_gscn->portals;
-        u8 *end = visBuf + world->current_gscn->field5_0x8;
+        u8 *end = visBuf + world->current_gscn->max_portals;
         while (visBuf != end) {
             *visBuf++ = (u8)((portalData[0x10] >> 2) & 1);
             portalData += 0x18;

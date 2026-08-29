@@ -100,7 +100,9 @@ typedef struct GameObject_s {
     PAI ai;                        // 0x02c0 .. 0x04b0
     u8 pad_4b0[0x661 - 0x4b0];     // 0x04b0 .. 0x0661
     u8 field_0x661;                // 0x0661
-    u8 pad_662[0x68c - 0x662];     // 0x0662 .. 0x068c
+    u8 pad_662[0x686 - 0x662];     // 0x0662 .. 0x0686
+    u16 yrot;                      // 0x0686
+    u8 pad_688[0x68c - 0x688];     // 0x0688 .. 0x068c
     f32 field_0x68c;               // 0x068c
     u8 pad_690[0x7ec - 0x690];     // 0x0690 .. 0x07ec
     COINPACKET *coinpacket;        // 0x07ec

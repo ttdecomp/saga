@@ -4,11 +4,16 @@
 #include <GLES2/gl2ext.h>
 #include <squish.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "decomp.h"
 #include "nu2api/nu3d/NuRenderDevice.h"
 #include "nu2api/nuandroid/ios_graphics.h"
+#include "nu2api/nucore/bgproc.h"
 #include "nu2api/nucore/numemory.h"
+#include "nu2api/nucore/nuthread.h"
+#include "nu2api/nufile/nufile.h"
+#include "nu2api/nuplatform/nuplatform.h"
 
 i32 g_currentTexUnit = -1;
 i32 g_loadDefaultTexture;
@@ -19,6 +24,128 @@ GLuint g_defaultFramebuffer;
 GLuint g_currentFramebuffer;
 GLuint g_earlyColorMSAAFramebuffer;
 __attribute__((weak)) GLuint g_earlyColorTexture = 0;
+
+u32 g_textureHash;
+i32 comeFromHash;
+i32 g_logoTexture;
+const char *g_textureName;
+i32 g_fileSize;
+
+extern i32 g_loadingCharacterInHub;
+
+GLuint NuIOS_CreateGLTexFromPlatfomSpecificFile(const char *filename) {
+    static u8 buffer[0x600081];
+    NUFILE file = NuFileOpen((char *)filename, NUFILE_READ);
+    g_textureName = filename;
+    if (file == 0) {
+        return 0;
+    }
+
+    i32 remaining = NuFileOpenSize(file);
+    g_fileSize = remaining;
+    NuThreadCriticalSectionBegin(g_textureLoadBufferCriticalSection);
+    u8 *dst = buffer;
+    while (remaining != 0) {
+        i32 chunk = remaining;
+        if (bgProcIsBgThread() != 0 && chunk > (g_loadingCharacterInHub != 0 ? 0x4000 : (i32)sizeof(buffer))) {
+            chunk = g_loadingCharacterInHub != 0 ? 0x4000 : sizeof(buffer);
+        }
+        NuFileRead(file, dst, chunk);
+        dst += chunk;
+        remaining -= chunk;
+        if (g_loadingCharacterInHub != 0 && bgProcIsBgThread() != 0) {
+            NuIOS_YieldThread();
+        }
+    }
+    NuFileOpenSize(file);
+    NuFileClose(file);
+
+    i32 width = 0;
+    i32 height = 0;
+    GLuint texture = NuIOS_CreateGLTexFromPlatformInMemory(buffer, &width, &height, false);
+    NuThreadCriticalSectionEnd(g_textureLoadBufferCriticalSection);
+    return texture;
+}
+
+GLuint NuIOS_CreateGLTexFromPlatfomSpecificForecPVR(const char *filename) {
+    static u8 buffer[0x20004c];
+    NUFILE file = NuFileOpen((char *)filename, NUFILE_READ);
+    if (file == 0) {
+        return 0;
+    }
+
+    i32 remaining = NuFileOpenSize(file);
+    NuThreadCriticalSectionBegin(g_textureLoadBufferCriticalSection);
+    u8 *dst = buffer;
+    while (remaining != 0) {
+        i32 chunk = remaining;
+        if (bgProcIsBgThread() != 0 && chunk > (g_loadingCharacterInHub != 0 ? 0x4000 : (i32)sizeof(buffer))) {
+            chunk = g_loadingCharacterInHub != 0 ? 0x4000 : sizeof(buffer);
+        }
+        NuFileRead(file, dst, chunk);
+        dst += chunk;
+        remaining -= chunk;
+        if (g_loadingCharacterInHub != 0 && bgProcIsBgThread() != 0) {
+            NuIOS_YieldThread();
+        }
+    }
+    NuFileOpenSize(file);
+    NuFileClose(file);
+
+    GLuint texture = NuIOS_CreateGLTexFromPlatformInMemory(buffer, nullptr, nullptr, true);
+    NuThreadCriticalSectionEnd(g_textureLoadBufferCriticalSection);
+    return texture;
+}
+
+GLuint NuIOS_CreateGLTexFromHash(u32 hash) {
+    char filename[0x10c];
+    GLuint texture = 0;
+
+    g_textureHash = hash;
+    comeFromHash = 1;
+    if (hash == 0x280145f0) {
+        g_logoTexture = 1;
+    }
+
+    switch (NuPlatform::Get()->GetCurrentPlatform()) {
+        case IOS_PLATFORM:
+        case ANDROID_PVRTC_PLATFORM:
+            snprintf(filename, sizeof(filename), "SHAREDTEXTURES/0X%08X.PVR", hash);
+            texture = NuIOS_CreateGLTexFromPlatfomSpecificFile(filename);
+            break;
+        case ANDROID_ATITC_PLATFORM:
+            snprintf(filename, sizeof(filename), "SHAREDTEXTURES/0x%08x.atitc", hash);
+            texture = NuIOS_CreateGLTexFromPlatfomSpecificFile(filename);
+            if (texture == 0) {
+                snprintf(filename, sizeof(filename), "SHAREDTEXTURES/0X%08X.PVRNC", hash);
+                texture = NuIOS_CreateGLTexFromPlatfomSpecificForecPVR(filename);
+            }
+            break;
+        case ANDROID_S3TC_PLATFORM:
+        case ANDROID_ETC1_PLATFORM: {
+            const char *extension = NuPlatform::Get()->GetCurrentPlatform() == ANDROID_S3TC_PLATFORM ? "S3TC" : "ETC1";
+            snprintf(filename, sizeof(filename), "SHAREDTEXTURES/0X%08X.%s", hash, extension);
+            texture = NuIOS_CreateGLTexFromPlatfomSpecificFile(filename);
+            if (texture == 0) {
+                snprintf(filename, sizeof(filename), "SHAREDTEXTURES/0X%08X.PVRNC", hash);
+                texture = NuIOS_CreateGLTexFromPlatfomSpecificForecPVR(filename);
+            }
+            break;
+        }
+        default:
+            snprintf(filename, sizeof(filename), "SHAREDTEXTURES/0X%08X.PVR", hash);
+            texture = NuIOS_CreateGLTexFromPlatfomSpecificFile(filename);
+            if (texture == 0) {
+                snprintf(filename, sizeof(filename), "SHAREDTEXTURES/0X%08X.PVRNC", hash);
+                texture = NuIOS_CreateGLTexFromPlatfomSpecificForecPVR(filename);
+            }
+            break;
+    }
+
+    g_textureHash = 0;
+    g_logoTexture = 0;
+    return texture;
+}
 
 GLuint NuIOS_CreateGLTexFromFile(const char *filename) {
     UNIMPLEMENTED();

@@ -22,6 +22,8 @@
 #include "nu2api/nu3d/nurndrstat.h"
 #include "nu2api/nu3d/numtl.h"
 
+extern i32 numtl_renderplane;
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Constants
 // ──────────────────────────────────────────────────────────────────────────────
@@ -383,6 +385,58 @@ static void ResetSceneBeforeFrame(nudldlistscene_s *scene, bool gated) {
         ResetRenderStateCache(dl->state);
     }
     scene->flags &= 0xf1;
+}
+
+// NuDisplaySceneAdd @ 0x2f9e30
+extern "C" void NuDisplaySceneAdd(NUDLDLISTSCENE *scene) {
+    NuThreadCriticalSectionBegin(global_dlist_manager.loading_critical_section);
+
+    global_dlist_manager.dlists[global_dlist_manager.ndisplay_lists++] = scene;
+    ResetSceneBeforeFrame(scene, /*gated=*/false);
+
+    NUSORTPRI *sort_list = global_dlist_manager.sort_list;
+    for (i32 i = 0; i < scene->nsort_pris; ++i) {
+        NUSORTPRI *sort_pri = &scene->sort_pris[i];
+        if (numtl_renderplane != 0) {
+            sort_pri->sort_pri += numtl_renderplane * 0x20000;
+        }
+
+        NUSORTPRI *previous = nullptr;
+        NUSORTPRI *current = sort_list;
+        while (current != nullptr && current->sort_pri < sort_pri->sort_pri) {
+            previous = current;
+            current = current->sys_next;
+        }
+        sort_pri->sys_next = current;
+        if (previous == nullptr) {
+            sort_list = sort_pri;
+        } else {
+            previous->sys_next = sort_pri;
+        }
+        ++global_dlist_manager.nused_sort_pris;
+    }
+    global_dlist_manager.sort_list = sort_list;
+
+    if (scene->field_8c != nullptr) {
+        *reinterpret_cast<void **>(scene->field_8c) = global_dlist_manager.mtlanim_list;
+        global_dlist_manager.mtlanim_list = scene->field_8c;
+    }
+    scene->flags &= 0xef;
+    scene->render_buffer &= 0xdf;
+    scene->alpha_values = nullptr;
+    NuDisplaySceneAddPS(scene);
+
+    NuThreadCriticalSectionEnd(global_dlist_manager.loading_critical_section);
+}
+
+// NuDisplaySceneAddPS @ 0x2ab7aa.  The apparently redundant assignment is
+// present in the Android original.
+extern "C" void NuDisplaySceneAddPS(NUDLDLISTSCENE *scene) {
+    for (i32 i = 0; i < scene->nitems; ++i) {
+        if (scene->items[i].type == 0x82) {
+            scene->items[i].type = 0x82;
+        }
+    }
 }
 
 extern "C" void NuDisplayListSwapBuffersBeginFrame(void) {

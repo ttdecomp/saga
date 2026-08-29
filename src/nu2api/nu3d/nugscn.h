@@ -4,16 +4,31 @@
 
 #include "nu2api/nu3d/nuportal.h"
 
+typedef struct nuvideoresheader_s {
+    u16 nvertex_buffers;
+    u16 pad_02;
+    u32 *vertex_buffers;
+    u16 nindex_buffers;
+    u16 pad_0a;
+    u32 *index_buffers;
+    u16 ntextures;
+    u16 pad_12;
+    u32 *textures;
+    i32 texture_hashes;
+} NUVIDEORESHEADER;
+
+extern NUVIDEORESHEADER g_VideoResHeader;
+
 struct nudisplayscene_s {
     u32 render_scene_id; // 0x00
     void *state_ptr;     // 0x04
     u32 clear_flags;     // 0x08
     u32 bg_colour;       // 0x0c
     f32 clear_alpha;     // 0x10
-    i32 vp_x;            // 0x14
-    i32 vp_y;            // 0x18
-    i32 vp_w;            // 0x1c
-    i32 vp_h;            // 0x20
+    f32 vp_x;            // 0x14
+    f32 vp_y;            // 0x18
+    f32 vp_w;            // 0x1c
+    f32 vp_h;            // 0x20
     void *unknown_24;    // 0x24
     u32 unknown_28;      // 0x28
     u8 pad2c[0x0c];      // 0x2c-0x37
@@ -133,17 +148,10 @@ typedef struct nugscn_s { /* PlaceHolder Structure */
     undefined field81_0x69;
     undefined field82_0x6a;
     undefined field83_0x6b;
+    undefined4 field84_0x6c;
+    undefined4 field88_0x70;
     i32 max_portals;
     NUPORTAL *portals;
-    i32 portal_depth;
-    undefined field92_0x74;
-    undefined field93_0x75;
-    undefined field94_0x76;
-    undefined field95_0x77;
-    undefined field96_0x78;
-    undefined field97_0x79;
-    undefined field98_0x7a;
-    undefined field99_0x7b;
     undefined field100_0x7c;
     undefined field101_0x7d;
     undefined field102_0x7e;
@@ -248,10 +256,7 @@ typedef struct nugscn_s { /* PlaceHolder Structure */
     undefined field201_0xe1;
     undefined field202_0xe2;
     undefined field203_0xe3;
-    undefined field204_0xe4;
-    undefined field205_0xe5;
-    undefined field206_0xe6;
-    undefined field207_0xe7;
+    i32 portal_depth;
     undefined field208_0xe8;
     undefined field209_0xe9;
     undefined field210_0xea;
@@ -521,11 +526,17 @@ typedef struct nugscn_s { /* PlaceHolder Structure */
 } NUGSCN;
 
 #ifdef __cplusplus
+i32 NuGScnReadTexturesPS(i32 file, VARIPTR *buf, VARIPTR buf_end);
+void NuGScnCreatePS(NUGSCN *scene, VARIPTR *buf, VARIPTR *buf_end);
+i32 NuGScnFixupTID(NUGSCN *scene, i32 tid);
+void NuGScnFixupTIDs(NUGSCN *scene);
+
 extern "C" {
 #endif
 
     void NuGScnRndr3(NUGSCN *scene);
     NUGSCN *NuGScnRead(VARIPTR *buf, VARIPTR buf_end, char *path);
+    void NuGScnFixupPS(NUGSCN *scene);
     // The trailing flags argument is passed as 1 by every caller in the
     // original binary; the original implementation never reads it.
     i32 NuSpecialFind(NUGSCN *scene, void **dest, char *name, i32 flags);

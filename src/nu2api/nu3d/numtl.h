@@ -94,7 +94,7 @@ typedef struct nushadermtldesc_s {
     NUCOLOUR32 diffuse_color[4]; // 0x014
 
     f32 unknown_24;      // 0x024
-    u8 unknown_28[0x20]; // 0x028..0x047
+    u8 unknown_28[0x1c]; // 0x028..0x043
 
     u8 blend_op2;  // 0x044 (0xff = no shader retrieval)
     u8 blend_op3;  // 0x045
@@ -121,6 +121,7 @@ typedef struct nushadermtldesc_s {
     i16 shader_variant_id; // 0x142 (-1 when unvarianted)
 
     u8 tex_anim_desc[0x50]; // 0x144 nutexanimdata_s[4]
+    u8 unknown_194[4];      // 0x194..0x197
     i32 unknown_198;        // 0x198
 
     u8 unknown_19c[0x18]; // 0x19C..0x1B3
@@ -210,6 +211,7 @@ extern "C" {
 
     void NuShaderMtlDescInit(NUSHADERMTLDESC *desc);
     void NuMtlSetShaderDescPS(NUMTL *mtl, NUSHADERMTLDESC *desc);
+    i32 NuMtlSetCurrentRenderPlane(i32 render_plane);
     NUMTL *NuMtlCreate(i32 count);
     void NuMtlUpdate(NUMTL *mtl);
 #ifdef __cplusplus
@@ -220,3 +222,5 @@ void NuMtlInitExPS(VARIPTR *buf);
 #endif
 
 static_assert(sizeof(NUSHADERMTLDESC) == 0x208, "nushadermtldesc_s size");
+static_assert(offsetof(NUSHADERMTLDESC, vtx_desc) == 0x13c, "nushadermtldesc_s vtx_desc offset");
+static_assert(offsetof(NUSHADERMTLDESC, byte4) == 0x1b9, "nushadermtldesc_s byte4 offset");

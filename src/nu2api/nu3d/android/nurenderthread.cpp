@@ -56,7 +56,11 @@ extern "C" {
 }
 const f32 nuvec4_one[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 f32 g_renderContext_viewProj[16];
+f32 g_renderContext_viewProjInverse[16];
 f32 g_renderContext_view[16];
+f32 g_renderContext_projection[16];
+f32 g_renderContext_world[16];
+f32 g_renderContext_position[4];
 
 // original 0x2b3620 — dynamic light slot enabled flag lives at light+0x7bc.
 extern "C" i32 NuDynamicLightIsEnabled(i32 light) {

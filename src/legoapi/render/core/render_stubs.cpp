@@ -1,5 +1,9 @@
 #include "legoapi/world/world_shared.h"
 #include "decomp.h"
+#include "nu2api/numath/numtx.h"
+
+struct numtl_s;
+typedef struct numtl_s NUMTL;
 
 extern "C" {
 
@@ -27,7 +31,16 @@ extern "C" {
     void DisplayListCreateFxList(void) {
     }
 
-    void DisplayListCreateGeomTransformPS(void) {
+    void *DisplayListCreateGeomTransformPS(VARIPTR *buffer, NUMTX *transform, NUMTL *mtl, void *next, void *tx) {
+        (void)mtl;
+        (void)next;
+        (void)tx;
+
+        buffer->addr = ALIGN(buffer->addr, 4);
+        NUMTX *result = static_cast<NUMTX *>(buffer->void_ptr);
+        NuMtxTranspose(result, transform);
+        buffer->addr += sizeof(NUMTX);
+        return result;
     }
 
     void DisplayListCreatePS(void) {
@@ -59,9 +72,6 @@ extern "C" {
     }
 
     // DisplayListSwapBuffersPS is fully transcribed in nu3d/nudlist.cpp (original 0x29b8c0 / 0x29b77e).
-    void DisplayListUpdateRenderState(void) {
-    }
-
     void DisplayListUpdateRenderStateShadow(void) {
     }
 

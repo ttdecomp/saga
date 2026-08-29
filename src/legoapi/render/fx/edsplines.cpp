@@ -1,6 +1,12 @@
 #include "decomp.h"
+#include "globals.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/world/world.h"
+#include "nu2api/nu3d/nuspline.h"
 #include "nu2api/nu3d/nutex.h"
+#include "nu2api/nucore/nustring.h"
+
+#include <string.h>
 
 struct AIROW_s;
 struct nuqthdr_s;
@@ -73,7 +79,30 @@ void nugraph_compute_point(i32 *, i32, i32, float, nuvec_s *, nuvec_s *) {
 void CalcSplinePointFromDist(flightspline_s *, _vuv_s *, float) {
 }
 
-void LevelSplines_InitForGame(LEVELSPLINE *) {
+static LEVELSPLINE *LevSplList;
+static i32 LEVELSPLINECOUNT;
+static i32 levspl_i_start = -1;
+static i32 levspl_i_startcam = -1;
+
+void LevelSplines_InitForGame(LEVELSPLINE *splines) {
+    LevSplList = splines;
+    LEVELSPLINECOUNT = 0;
+    levspl_i_start = -1;
+    levspl_i_startcam = -1;
+
+    if (splines == NULL) {
+        return;
+    }
+
+    for (LEVELSPLINE *spline = splines; spline->name != NULL; ++spline) {
+        if (levspl_i_start == -1 && NuStrICmp(spline->name, "start") == 0) {
+            levspl_i_start = LEVELSPLINECOUNT;
+        }
+        if (levspl_i_startcam == -1 && NuStrICmp(spline->name, "start_cam") == 0) {
+            levspl_i_startcam = LEVELSPLINECOUNT;
+        }
+        ++LEVELSPLINECOUNT;
+    }
 }
 
 void nugraph_compute_intervals(i32 *, i32, i32) {
@@ -96,5 +125,37 @@ static __used__ f32 SplineLength(nugspline_s *, i32) {
 }
 
 void LevelSplines_InitForLevel(WORLDINFO_s *world) {
-    (void)world;
+    world->giz_buffer.addr = ALIGN(world->giz_buffer.addr, 4);
+    world->portal_places = reinterpret_cast<PORTALPOS **>(world->giz_buffer.void_ptr);
+    world->giz_buffer.addr += LEVELSPLINECOUNT * sizeof(*world->portal_places);
+    memset(world->portal_places, 0, LEVELSPLINECOUNT * sizeof(*world->portal_places));
+
+    if (LevSplList == NULL) {
+        return;
+    }
+
+    for (i32 i = 0; i < LEVELSPLINECOUNT; ++i) {
+        LEVELSPLINE *entry = &LevSplList[i];
+        if ((entry->area != -1 && world->level_sub_id != entry->area) ||
+            (entry->level != -1 && world->level_idx != entry->level)) {
+            continue;
+        }
+
+        NUGSCN *scene = entry->scene != NULL ? *entry->scene : world->current_gscn;
+        if (scene == NULL) {
+            continue;
+        }
+
+        NUGSPLINE *spline = NuSplineFind(scene, const_cast<char *>(entry->name));
+        world->portal_places[i] = reinterpret_cast<PORTALPOS *>(spline);
+        if (spline == NULL) {
+            continue;
+        }
+
+        const i32 point_count = spline->length;
+        if ((entry->min_points != 0 && point_count < entry->min_points) ||
+            (entry->max_points != 0 && entry->min_points <= entry->max_points && point_count > entry->max_points)) {
+            world->portal_places[i] = NULL;
+        }
+    }
 }

@@ -103,10 +103,15 @@ extern "C" {
         char *name;                              // 0x00 debug name (CaptureSortPriority)
         i32 nitems;                              // 0x04
         nudisplaylistitem_s *items;              // 0x08
-        u16 *clip_counts;                        // 0x0c per-clip-object u16 item count table
+        f32 *fade_ranges;                        // 0x0c per-instance near/far fade pairs
         i32 nclip_objects;                       // 0x10
         NUCLIPOBJECT *clip_objects;              // 0x14
-        u8 pad_18[0x18];                         // 0x18..0x2f unnamed in original DB
+        u16 *clip_counts;                        // 0x18 per-clip-object item counts
+        void *field_1c;                          // 0x1c
+        void *field_20;                          // 0x20
+        void *field_24;                          // 0x24
+        f32 *lod_ranges;                         // 0x28 zero-terminated ranges per instance
+        u32 *lod_clip_masks;                     // 0x2c clip mask selected for each LOD
         u8 *clip_used[2];                        // 0x30 double-buffered clip word bitmaps
         u8 pad_38[0x10];                         // 0x38..0x47 unnamed in original DB
         char *visibility_flags;                  // 0x48
@@ -142,6 +147,7 @@ extern "C" {
 #if !defined(__x86_64__) // the tidy pre-pass parses as 64-bit host; real build is i686
     static_assert(sizeof(NUDLDLISTSCENE) == 0x90, "dlist scene size");
     static_assert(offsetof(NUDLDLISTSCENE, clip_used) == 0x30, "scene.clip_used");
+    static_assert(offsetof(NUDLDLISTSCENE, clip_counts) == 0x18, "scene.clip_counts");
     static_assert(offsetof(NUDLDLISTSCENE, visibility_flags) == 0x48, "scene.visibility_flags");
     static_assert(offsetof(NUDLDLISTSCENE, nmtls) == 0x4c, "scene.nmtls");
     static_assert(offsetof(NUDLDLISTSCENE, mtls) == 0x50, "scene.mtls");
@@ -248,6 +254,8 @@ extern "C" {
     void NuDisplayListReset(nudisplaylist_s *dl);
     void NuDisplayListCaptureSortPriority(nusortpri_s *sort_pri);
     void NuDisplayListSetItemTable(i32 which);
+    void NuDisplaySceneAdd(NUDLDLISTSCENE *scene);
+    void NuDisplaySceneAddPS(NUDLDLISTSCENE *scene);
     static void DisplayListLinkDynamicMtls(void);
     void DisplayListSwapBuffersPS(void);
     void DisplayListSetAlphaPS(nudisplaylistitem_s *prev_item, nudisplaylistitem_s *item, f32 alpha);
@@ -264,6 +272,9 @@ extern "C" {
     void RndrStateUpdateFx(void *state, nudisplaylistitem_s *item);
     void RndrStateUpdate(void *state, NUMTL *mtl, nudisplaylistitem_s *item);
     void DisplayListUpdateRenderState(void *dl, void *local_state);
+    void NuDisplayListLinkItem(nudisplaylist_s *dl, u8 type, void *call_addr);
+    VARIPTR *NuDisplayListLinkItems(nudisplaylist_s *dl, i32 count);
+    VARIPTR *NuDisplayListLinkItemVP(nudisplaylist_s *dl, u8 type, void *call_addr, VARIPTR *buf);
 
     // Debug helpers consumed by NuDisplayListCaptureSortPriority (defined as
     // stubs in supportall.cpp / nucore_plain.cpp).

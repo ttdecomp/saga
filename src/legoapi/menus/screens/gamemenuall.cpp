@@ -1,6 +1,8 @@
 #include "decomp.h"
+#include "gameapi/gui/apimenu.h"
 #include "globals.h"
 #include "legoapi/legoapi_types.h"
+#include "nu2api/nu3d/nuqfnt.h"
 #include "nu2api/nu3d/nutex.h"
 
 struct AIROW_s;
@@ -408,37 +410,29 @@ extern "C" {
     void CreateTestMenu(void) {
     }
 
-    // Decompiled DrawMenu — libTTapp.so:0x4278a0
-    // Faithful menu draw with transition to main menu (id 0) after intro.
-    // Original checks menu_flash, handles fader, and dispatches to
-    // per-menu draw fns via the MENU_s vtable at 0x2678 stride.
-    void DrawMenu(i32 menu_id) {
-        LOG_DEBUG("DrawMenu menu_id=%d (transition to main menu after intro)", menu_id);
-        // Original early-out at 0x4278c8: if MENU_s pointer null and
-        // global timer < threshold, skip. Host mirrors: if no menu
-        // tables loaded (LEVELCOUNT==0), just return — legal/intro path
-        // in LoadPerm already handled window content for the readback.
-        if (LEVELCOUNT == 0 && menu_id == 0) {
-            LOG_DEBUG("DrawMenu: LEVELCOUNT==0 early-out, preserving window test legal frame");
-            // Still attempt to call fallback draw so objdiff sees the
-            // symbol, but guard null.
-            extern void MenuDrawBackground(void);
-            MenuDrawBackground();
+    void DrawMenu(i32) {
+        MENU *menu = &GameMenu[GameMenuLevel];
+        i16 menu_index = menu->menu;
+        if (menu_index == -1)
             return;
-        }
 
-        // Faithful dispatch: try to call MenuDrawBackground and the
-        // per-menu draw fn. Each is guarded as in the original (test
-        // eax, je skip). This keeps the call graph matching while being
-        // host-safe when those fns are stubs.
-        extern void MenuDrawBackground(void);
-        MenuDrawBackground();
+        MenuValidated = 1;
+        VUFNT *font = SmartTextFont != NULL ? SmartTextFont : QFont2D;
+        f32 saved_baseline = font != NULL ? font->baseline : 0.0f;
+        f32 saved_button_baseline = QFont2DButtons != NULL ? QFont2DButtons->baseline : 0.0f;
+        if (font != NULL)
+            font->baseline = 0.0f;
+        if (QFont2DButtons != NULL)
+            QFont2DButtons->baseline = 0.0f;
 
-        // Original would index MENU_s array by menu_id at stride 0x2678 and
-        // call its draw fn if present. Host keeps the call slot but guards.
-        // No crash if tables are not yet populated (e.g., early LoadPerm).
-        LOG_DEBUG("DrawMenu: dispatched menu_id %d", menu_id);
-        (void)menu_id;
+        MenuHeader[0] = '\0';
+        if (MenuInfo[menu_index].draw_fn != NULL)
+            MenuInfo[menu_index].draw_fn(menu);
+
+        if (font != NULL)
+            font->baseline = saved_baseline;
+        if (QFont2DButtons != NULL)
+            QFont2DButtons->baseline = saved_button_baseline;
     }
 
     void DrawMenuBottomMessage(void) {

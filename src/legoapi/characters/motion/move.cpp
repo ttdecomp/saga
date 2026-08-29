@@ -1,5 +1,11 @@
 #include "decomp.h"
+#include "globals.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/world/world.h"
+#include "nu2api/nu3d/nucamera.h"
+#include "nu2api/numath/nufloat.h"
+#include "nu2api/numath/numtx.h"
+#include "nu2api/numath/nutrig.h"
 
 void MoveBlocks(WORLDINFO_s *, pushblock_s *, i32, nuvec_s *) {
 }
@@ -34,7 +40,36 @@ void Move_DRAGBOMB(GameObject_s *) {
 void Move_DROIDEKA(GameObject_s *) {
 }
 
-void MoveGameCamera(GAMECAMERA_s *) {
+void MoveGameCamera(GAMECAMERA_s *camera) {
+    // Original title-camera mode (3): portal_places[2] contains one camera
+    // position followed by its look target.  The complete function selects
+    // many gameplay camera modes; only this currently reachable mode is
+    // transcribed here.
+    if (camera == NULL || pNuCam == NULL || WORLD == NULL || WORLD->current_level != TITLES_LDATA ||
+        WORLD->portal_places == NULL || WORLD->portal_places[2] == NULL || WORLD->portal_places[2]->positions == NULL) {
+        return;
+    }
+
+    f32 *points = WORLD->portal_places[2]->positions;
+    NUVEC position = {points[0], points[1], points[2]};
+    NUVEC target = {points[3], points[4], points[5]};
+    NUVEC delta;
+    NuVecSub(&delta, &target, &position);
+
+    NUANG pitch = static_cast<NUANG>(-NuAtan2D(delta.y, NuFsqrt(delta.x * delta.x + delta.z * delta.z)));
+    NUANG yaw = static_cast<NUANG>(NuAtan2D(delta.x, delta.z));
+
+    NuMtxSetRotationZ(&camera->mtx, 0);
+    NuMtxRotateX(&camera->mtx, pitch);
+    NuMtxRotateY(&camera->mtx, yaw);
+    NuMtxTranslate(&camera->mtx, &position);
+    camera->render_mtx = camera->mtx;
+    camera->pos = position;
+    camera->target = target;
+    camera->mode = 3;
+
+    pNuCam->mtx = camera->render_mtx;
+    NuCameraSet(pNuCam);
 }
 
 void MovePlayer_POD(GameObject_s *) {
@@ -204,7 +239,19 @@ void Glide_Start(GameObject_s *) {
 void JetPackCode(GameObject_s *, i32, i32, i32) {
 }
 
-void SeekLinearF(float, float, float) {
+float SeekLinearF(float current, float target, float step) {
+    if (current < target) {
+        current += step;
+        if (current > target) {
+            current = target;
+        }
+    } else if (current > target) {
+        current -= step;
+        if (current < target) {
+            current = target;
+        }
+    }
+    return current;
 }
 
 void StartLaunch(GameObject_s *) {

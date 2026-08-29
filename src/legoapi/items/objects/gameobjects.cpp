@@ -4,6 +4,11 @@
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
+#include "legoapi/characters/motion.h"
+#include "legoapi/core/input/qrand.h"
+#include "legoapi/core/input/timer.h"
+#include "nu2api/numath/nufloat.h"
+#include "nu2api/numath/nutrig.h"
 
 #include <string.h>
 
@@ -23,7 +28,30 @@ void legoSetMusicVolume(float);
 void GameShadow(GameObject_s *, nuvec_s *, float, i32) {
 }
 
-void GameTiming(WORLDINFO_s *, float *) {
+extern f32 MainRenderTime;
+extern f32 MainRenderTargetTime;
+extern i32 Paused;
+
+void GameTiming(WORLDINFO_s *, float *game_time) {
+    if (Paused == 0) {
+        if (game_time != NULL) {
+            *game_time += FRAMETIME;
+        }
+        UpdateTimer(&GameTimer);
+        UpdateTimer(&LevelTimer);
+        UpdateTimer(&AreaTimer);
+    }
+
+    UpdateTimer(&GlobalTimer);
+    menu_flash = NuFmod(GlobalTimer.time_elapsed_mod_seconds, 0.2f) < 0.1f;
+
+    f32 pulse_time = NuFmod(GameTimer.time_elapsed_mod_seconds, 0.5f);
+    game_pulse = NuTrigTable[(i32)(pulse_time * 2.0f * 65536.0f) >> 1 & 0x7fff];
+    pulse_time = NuFmod(GlobalTimer.time_elapsed_mod_seconds, 0.5f);
+    global_pulse = NuTrigTable[(i32)(pulse_time * 2.0f * 65536.0f) >> 1 & 0x7fff];
+
+    MainRenderTime = SeekLinearF(MainRenderTime, MainRenderTargetTime, FRAMETIME);
+    qrand();
 }
 
 void GameFog_Set() {
@@ -180,7 +208,12 @@ void GameLoadCharacterModels(APICHARACTERMODELLIST_s *, i32, variptr_u *, vaript
 void Game_100PercentComplete() {
 }
 
-void Game_WorldInfo_InitMenu(WORLDINFO_s *, i32 *, i32 *) {
+void Game_WorldInfo_InitMenu(WORLDINFO_s *world, i32 *menu_id, i32 *) {
+    if (world->current_level == TITLES_LDATA) {
+        *menu_id = 0;
+    } else if (world->current_level == CREDITS_LDATA) {
+        *menu_id = 30;
+    }
 }
 
 void GameAnimSys_StoreProgress(GAMEANIMSYS_s *, i32) {

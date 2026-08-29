@@ -293,8 +293,8 @@ void InitGameAfterConfig(void) {
     //  Lighting_HighlightFlash = 1;
     //  Lighting_BlueFlickerFn = ObjZappedBlue;
     //  AddGameMsg_Default._56_4_ = GameMsg_EndDelay_Game;
-    //  WorldInfo_InitMenuFn = Game_WorldInfo_InitMenu;
-    //  WorldInfo_InitLastFn = Game_WorldInfo_InitLast;
+    WorldInfo_InitMenuFn = Game_WorldInfo_InitMenu;
+    WorldInfo_InitLastFn = Game_WorldInfo_InitLast;
     //  TerSurface._152_2_ = 0x15;
     //  TerSurface._164_2_ = 0x16;
     //  LEGOACT_IDLE = 1;

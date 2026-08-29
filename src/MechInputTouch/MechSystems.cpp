@@ -20,8 +20,9 @@ void MechSystems::ExitLevel(WORLDINFO_s *) {
 void MechSystems::FindMoveToMarkerAtPos(VuVec const &, bool) {
 }
 
-int MechInputTouchMenuController::PackButtonPressed = 0;
-int MechInputTouchMenuController::PackButtonID = 0;
+i32 MechInputTouchMenuController::AnyTouchesThisFrame = 0;
+i32 MechInputTouchMenuController::PackButtonPressed = 0;
+i32 MechInputTouchMenuController::PackButtonID = 0;
 
 MechSystems *MechSystems::Get() {
     static MechSystems *instance = NULL;

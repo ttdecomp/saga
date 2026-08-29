@@ -92,6 +92,9 @@ static const u8 FormatMinBlocksYTable[128] = {
 // clang-format on
 
 GLuint NuIOS_CreateGLTexFromFile(const char *filename);
+GLuint NuIOS_CreateGLTexFromHash(u32 hash);
+GLuint NuIOS_CreateGLTexFromPlatfomSpecificFile(const char *filename);
+GLuint NuIOS_CreateGLTexFromPlatfomSpecificForecPVR(const char *filename);
 GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, i32 *width, i32 *height, bool is_pvrtc);
 GLuint loadDefaultTexture(GLuint texture, GLint level, GLsizei size, GLenum texture_type, GLenum target);
 GLuint CreateTexturePS(void);

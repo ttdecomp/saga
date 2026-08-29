@@ -10,7 +10,7 @@ user-invocable: true
 | What                                 | Where                            |
 | ------------------------------------ | -------------------------------- |
 | Source                               | `src/`                           |
-| Split original objects               | `build/split/*.o`                |
+| Split original objects               | `build/split/<source path>.o`    |
 | Our objects                          | `build/CMakeFiles/saga.dir/src/` |
 | Ghidra                               | MCP-connected program            |
 | CMakeLists.txt                       | `CMakeLists.txt`                 |
@@ -18,22 +18,26 @@ user-invocable: true
 
 # Workflow
 
-First of all, get the decompiled code from ghidra and copy it into the specified function.
+Read `skills/saga-decomp/SKILL.md` and `doc/decomp/00-index.md` first. Treat
+Ghidra output as evidence, not source code to copy literally: recover types,
+control flow, and intent, then use the original disassembly and objdiff result
+to test the reconstruction.
 
 DO NOT USE GHIDRA FOR TOO LONG AT THE START. YOU HAVE TO START WITH A STUB IMPLEMENTATION THAT BUILDS AND DIFFS. DO NOT START ASSEMBLY ANALYSIS OR GO TOO DEEP INTO GHIDRA ANALYSIS WITHOUT A STUB IMPLEMENTATION THAT BUILDS AND DIFFS.
 
 ## Build & Diff
 
 ```bash
-+-->
-| cmake --build build                             # build all objects
-| gonk split                                      # split original objects into build/split/*.o by symbol names in build object files
-| diff -u \
-|  <(objdump -d --disassemble=MyFunc ./build/split/MyFuncObject.cpp.o) \
-|  <(objdump -d --disassemble=MyFunc ./build/saga)
-| # compare diff, compare with ghidra decompiler output and ghidra original assembly
-+- loop
+cmake --build build -j
+./gonk/target/release/gonk split
+python3 scripts/objdiff-cli.py MANGLED_SYMBOL --no-color
+python3 scripts/check_symbols.py --list
 ```
+
+Repeat the build/split/diff cycle. Split objects preserve the source directory
+tree, and objdiff unit names include `.o`; query `objdiff.json` instead of
+guessing a path. If a task forbids CMake or repository builds, respect that
+boundary and use a direct compiler experiment under `/tmp` when useful.
 
 Once that is done, you can start to change the code to match the original binary and to resemble real C/C++ code.
 
@@ -44,19 +48,27 @@ The following rules should be implemented before you stop:
 - **Never add or remove symbols** vs the original.
 - **Stub uncertain logic** with `UNIMPLEMENTED()`. Do not invent behavior.
 - **Match ABI exactly** — signatures, struct layouts, global sizes and alignment.
-- **Prefer manual edits** over scripts. Run `clang-format` before committing.
+- **Prefer focused edits** over broad mechanical rewrites. Run only the
+  formatting and build checks authorized for the task.
 - **C in `.c`, C++ in `.cpp`.** Avoid mixing or many `extern "C"` blocks.
-- **Linkage:** prefer header inclusion over `extern`/`static`. Private items must NOT be `static` (the original didn't use it), but also don't declare them in the header.
+- **Linkage:** prefer existing declarations and preserve the target symbol's
+  actual linkage. File-local target symbols may require `static`; do not infer
+  linkage from a decompiler spelling.
 - **Name symbols exactly as in the original.** Only rename to fix a known mismatch.
 
-Before adding any symbols check the source tree for existing files and the most appropriate location. If none exists, create a new file in the appropriate directory. 
+Before adding any symbol, search the source tree and identify its owning target
+translation unit. Do not create or move a file merely to make a symbol easy to
+place: file ownership and optimization mode are part of the matching contract.
 
 # Additional verification before committing
 
-```
+```bash
 cmake --build build-host
 cmake --build build --target lint
 ```
+
+Run these only when the task authorizes builds and the shared checkout is safe
+to rebuild.
 
 # Forbidden Ghidra Artifacts
 
@@ -82,7 +94,8 @@ Never leave transcribed decompiler output in the code. Recover struct fields, ar
 
 Do NOT invent `#define OFFSET_8000` or fake enums. If truly unknown, use `ptr->unk_<hex>` with a `// TODO` comment.
 
-If you find common patterns (e.g. bump allocator -> `BUFFER_ALLOC_...`), have a look around the codebase for existing helpers or macros, especially in `common.h` for fixed buffer allocator macros.
+If you find common patterns, look for existing helpers or macros in the relevant
+subsystem and in `src/types.h`, `src/fixed_width.h`, and `src/decomp.h`.
 
 Document any assumptions, guesses or hints.
 
@@ -90,6 +103,7 @@ Document any assumptions, guesses or hints.
 
 DO NOT change names from the original binary, do not introduce new symbols. ALL SYMBOLS MUST BE PRESENT IN THE ORIGINAL BINARY UNDER THE EXACT SAME NAMES OTHERWISE MATCHING WILL NOT WORK.
 
-DO NOT START MAKING UP COMPARISONS YOURSELF, ONLY WRITE CODE AND USE THE PROVIDED TOOLS.
+Base comparisons and branches on binary/decompiler evidence. Record uncertainty
+instead of inventing behavior.
 
 START WITH A STUB, BUILD, DIFF, THEN IMPROVE. DO THIS AS EARLY AS POSSIBLE. DO NOT START ASSEMBLY ANALYSIS OR GO TOO DEEP INTO GHIDRA ANALYSIS WITHOUT A STUB IMPLEMENTATION THAT BUILDS AND DIFFS.

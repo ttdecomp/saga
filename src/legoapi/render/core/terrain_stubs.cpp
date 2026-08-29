@@ -36,19 +36,14 @@ void *InitPartDebris(VARIPTR *buf, VARIPTR *buf_end, i32 param1, i32 param2, cha
     return NULL;
 }
 
-// Particles_Load @0x4a2a50. Resolves the debris page ("stuff\\...ptl") if it
-// exists, then builds the world's game-debris system from the static
-// debris_name table and stores it at world+0x134 (debris_sys). The page
-// contents belong to the parts-page loader (edppLoadPage, not transcribed);
-// with page == -1 every InitGameDebris lookup misses, as in the original
-// before any page load.
+// Particles_Load @0x4a2a50.
 void Particles_Load(WORLDINFO *world, char **debris_name, i32 count, i32 flags) {
     char path[0x100];
 
     world->page_pp = -1;
-    sprintf(path, "stuff\\%s.ptl", world->config_file);
+    sprintf(path, "%s.ptl", world->config_file);
     if (NuFileExists(path) != 0) {
-        world->page_pp = edppLoadPage(path, 1, flags);
+        world->page_pp = edppLoadPage(path, 1, (i32)(usize)world->current_gscn);
     }
 
     world->debris_sys = (APIDEBRISSYS_s *)InitGameDebris(&world->giz_buffer, &world->unknown_0108, count, flags,

@@ -22,6 +22,7 @@
 
 #include "globals.h"
 #include "MechInputTouch/MechInputTouch_types.h"
+#include "gameframework/saveload.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/core/input/timer.h"
@@ -31,6 +32,7 @@
 #include "legoapi/legoapi_types.h"
 #include "legogame/game.h"
 #include "nu2api/nu3d/nugscn.h"
+#include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/nuprim.h"
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nu3d/nuqfnt.h"
@@ -68,6 +70,7 @@ extern "C" {
     void NuMtlDestroy(NUMTL *mtl);
     NUMTL *NuMtlCreate(i32 count);
     void NuMtlUpdate(NUMTL *mtl);
+    void NewMenu(i32 menu_id, i32 menu_y, i32 param3);
     void edGraEnableTerrainSwap(void);
     void edGraDisableTerrainSwap(void);
     void APICharacterSysInit(VARIPTR *buf, VARIPTR buf_end, i32 char_count, i32 a4, i32 a5, CHARACTERDATA *cdata_list,
@@ -76,12 +79,13 @@ extern "C" {
     void SetProceduralAnimationFn(void *fn);
     void NuAnimBuffProceduralAnimation(void);
     void DrawMenu(i32 menu_id);
+    extern i32 GameMenuLevel;
 }
 
 // C++ linkage — defined in their own TUs.
 void InitMemCard(void);                                         // saveload.cpp
 void Text_LoadFont(char *path, VARIPTR *buf, VARIPTR *buf_end); // text.cpp
-bool Text_IsFontLoaded(void);                                   // text.cpp
+void *Text_IsFontLoaded(void);                                  // text.cpp
 void Text_InitStringTable(i32, VARIPTR *, VARIPTR *);
 void Text_InitTable(TEXTENTRY *, i32, i32);
 void Text_LoadStrings(VARIPTR *, VARIPTR *);
@@ -244,17 +248,6 @@ static void LoadPermData(BGPROCINFO *proc) {
     Text_InitDefaultStrings();
     LoadPerm_StringsLoaded = 1;
 
-    // Original fills IntroText_TextID from tALONGTIMEAGO (1) via Text_LoadStrings.
-    // Host fetches it through the faithful IntroText_SetTextID path.
-    if (IntroText_TextID == -1) {
-        extern void IntroText_SetTextID(i32);
-        // tALONGTIMEAGO == 1 (006a1ec8 B). Use faithful setter so TTab validation runs.
-        IntroText_SetTextID(1);
-        // If TTab not yet resident (host no OBB), fallback to 1 directly for timer to run
-        if (IntroText_TextID == -1)
-            IntroText_TextID = 1;
-    }
-
     LOG_INFO("LoadPermData: proc=%p langsel=%d", static_cast<void *>(proc), LoadPerm_LanguageSelect);
 
     // Legal-screen texture — carved from the top of the super buffer so it
@@ -294,7 +287,7 @@ static void LoadPermData(BGPROCINFO *proc) {
     pFadeInfo = &FadeSys;
 
     LevelObjects_InitForGame(reinterpret_cast<LEVELOBJECT *>(ObjTab), &permbuffer_ptr, &permbuffer_end, 0x2ee, 0x1f40);
-    LevelSplines_InitForGame(reinterpret_cast<LEVELSPLINE *>(SplTab));
+    LevelSplines_InitForGame(SplTab);
 
     saveicon_scene = NuGScnRead(&permbuffer_ptr, permbuffer_end, (char *)"stuff\\ps2_bits.gsc");
     button_scene = NuGScnRead(&permbuffer_ptr, permbuffer_end, (char *)"stuff\\pc_bits.gsc");
@@ -413,262 +406,271 @@ void StartPerm(void) {
 
 void LoadPerm(void) {
     SetBackgroundMusic(1);
-    PermDataLoaded = 0;
-
     WORLDINFO_s *saved_world = WORLD;
+    PermDataLoaded = 0;
     WORLD = nullptr;
 
-    // With background loading enabled and not forced off, run the
-    // loading-screen path: `LoadPermData` executes on the bg thread while
-    // this thread drives the legal-screen / intro-text frame loop.  Otherwise
-    // everything is done synchronously.
-    // Original branch at 0x1bf351.
-    if (BGLOAD != 0 && LOADEROFF == 0) {
-        // ---- Loading-screen path ----
-
-        pNuCam->mtx = numtx_identity;
-        pNuCam->fov = 20.0f;
-        pNuCam->aspect = 0.609375f;
-        NuCameraSet(pNuCam);
-
-        // Panel setup driven by the options byte at `Game + 0xf`.
-        InitPanel(*reinterpret_cast<u8 *>(&Game + 0xf));
-
-        NuQFntSetCoordinateSystem(static_cast<NUQFNT_CSMODE>(3));
-
-        NUMTX scale;
-        NUVEC scl = {0.125f, 0.125f, 0.125f};
-        NuMtxSetScale(&scale, &scl);
-
-        if (!PAL) {
-            LoadPerm_LanguageSelect = 3; // NTSC: skip the language menu
-        } else {
-            for (i32 i = 0; i < LANGUAGECOUNT; i++) {
-                Text_LanguageList[i].language = Text_LanguageList_Default[i].language;
-                Text_LanguageList[i].unknown_4 = Text_LanguageList_Default[i].unknown_4;
-            }
-        }
-
-        // Amazon devices skip the locale probe — their locale service returns
-        // garbage in the original release.
-        if (NuStrICmp(g_deviceManufacturer, (char *)"Amazon") != 0) {
-            const i32 device_lang = NuIOS_GetDeviceLanguage();
-            for (i32 i = 0; i < LANGUAGECOUNT; i++) {
-                if (Text_LanguageList[i].language == device_lang) {
-                    NuLanguageSet(device_lang);
-                    Text_Language = static_cast<u32>(device_lang);
-                    break;
-                }
-            }
-        }
-
-        bgPostRequest(LoadPermData, nullptr, nullptr, 0);
-
-        // Timers driving the loading-screen presentation.  Names match the
-        // original stack layout for objdiff readability.
-        f32 menu_flash_timer = 0.2f; // DrawMenu trigger — deliberately 0.2 so t84 == 0.2 fires once
-        f32 intro_gate_timer = 0.0f; // t84 — 1 s lead before legal fade starts
-        f32 intro_text_timer = 0.0f; // t88 — intro text alpha & exit
-        f32 legal_timer = 0.0f;      // t8c — legal fade in / hold / fade out
-
-        while (true) {
-            NuFrameBegin();
-            NuCameraSet(pNuCam);
-
-            readpads_always = 1;
-            ReadPads();
-            UpdateGameMenu(&GamePad[0], 0);
-            UpdateTimer(&GlobalTimer);
-
-            menu_flash = (kMenuFlashThreshold > NuFmod(GlobalTimer.time_elapsed_mod_seconds, kMenuFlashPeriod));
-
-            // Legal fade timer: only advances once fonts & strings are ready
-            // and the language is settled, after a 1 s gate.
-            const bool intro_ready = Text_IsFontLoaded() && LoadPerm_StringsLoaded != 0 && IntroText_TextID != -1;
-
-            if (intro_ready && LoadPerm_LanguageSelect == 3) {
-                intro_gate_timer += FRAMETIME;
-                if (intro_gate_timer >= 1.0f) {
-                    legal_timer += FRAMETIME;
-                    if (legal_timer > kLegalTimerMax) {
-                        legal_timer = kLegalTimerMax;
-                    }
-                }
-            }
-
-            // Intro text — alpha ramps in over 0.3 s, holds, then fades out.
-            // Compute alpha outside scene, draw inside scene for proper host prim batching.
-            f32 intro_alpha = 0.0f;
-            bool intro_will_draw = false;
-            if (PermDataLoaded != 0 && intro_ready) {
-                if (intro_text_timer > kIntroFadeInStart) {
-                    if (intro_text_timer < 0.6f) {
-                        intro_alpha = (intro_text_timer - kIntroFadeInStart) / kIntroFadeInDuration;
-                    } else if (kIntroHoldEnd > intro_text_timer) {
-                        intro_alpha = 1.0f;
-                    } else {
-                        intro_alpha = 1.0f - (intro_text_timer - kIntroHoldEnd) / kIntroFadeOutDuration;
-                    }
-                    if (intro_alpha > 0.0f)
-                        intro_will_draw = true;
-                    // Clamp like original (no explicit clamp but color calc clamps)
-                    if (intro_alpha < 0.0f)
-                        intro_alpha = 0.0f;
-                    if (intro_alpha > 1.0f)
-                        intro_alpha = 1.0f;
-                }
-                intro_text_timer += FRAMETIME;
-                if (intro_text_timer >= kIntroDuration && legal_timer >= kLegalTimerMax) {
-                    SetBackgroundMusic(-1);
-                    NuRndrGradClear(0xf00, 0x80000000, 0x80000000, 1.0f);
-                    break;
-                }
-            }
-
-            // One-shot legal material creation from the bg-loaded texture.
-            if (legal_tid != 0 && legal_mtl == nullptr) {
-                NUMTL *mtl = NuMtlCreate3D(1);
-                if (mtl != nullptr) {
-                    mtl->diffuse_color = {1.0f, 1.0f, 1.0f};
-                    mtl->opacity = 1.0f;
-                    mtl->shader_desc.flags = 0x1000;
-                    mtl->tex_id = static_cast<i16>(legal_tid);
-
-                    // Material attribute flag bytes at mtl+0x40..0x42
-                    // (original 0x127c0a..).  Kept as byte pokes until the
-                    // attrib struct is fully typed; each preserves the
-                    // original mask/or pair.
-                    u8 *flags = reinterpret_cast<u8 *>(mtl) + 0x40;
-                    flags[1] = (flags[1] & 0x0F) | 0x60;
-                    flags[0] = (flags[0] & 0xF0) | 0x01;
-                    flags[2] = (flags[2] & 0x8C) | 0x12;
-
-                    NuMtlUpdate(mtl);
-                    legal_mtl = mtl;
-                }
-            }
-
-            if (menu_flash_timer == 0.2f) {
-                DrawMenu(0);
-            }
-
-            NuRndrBeginScene();
-            NuRndrGradClear(0xf00, 0x80000000, 0x80000000, 1.0f);
-
-            // ---- Intro text (blue screen) — faithful: inside scene, after grad clear ----
-            if (intro_will_draw) {
-                IntroText_Draw(intro_alpha);
-            }
-
-            // ---- Legal screen quad ----
-            do {
-                if (legal_timer <= 0.0f || legal_timer >= 5.8f || legal_mtl == nullptr) {
-                    break;
-                }
-
-                f32 alpha;
-                if (kLegalFadeInDuration > legal_timer) {
-                    alpha = legal_timer / kLegalFadeInDuration;
-                } else if (kLegalHoldEnd > legal_timer) {
-                    alpha = 1.0f;
-                } else if (kLegalVisibleEnd <= legal_timer) {
-                    break;
-                } else {
-                    alpha = 1.0f - (legal_timer - kLegalHoldEnd) / kLegalFadeOutDuration;
-                }
-
-                if (alpha <= 0.0f) {
-                    break;
-                }
-
-                if (legal_timer < kLegalFadeInDuration) {
-                    // Original quirk: alpha is multiplied by a *negative* ramp
-                    // here, producing an inverted fade-in.  Replicated
-                    // literally for matching.
-                    alpha *= (legal_timer - kLegalFadeInDuration) / kLegalFadeInDuration;
-                }
-
-                const u32 colour = (static_cast<u32>(alpha * 255.0f) << 24) | 0x808080u;
-
-                const f32 aspect = NuIOS_GetAspectRatio();
-                f32 half_w;
-                f32 half_h;
-                if (aspect > (16.0f / 9.0f)) {
-                    half_h = 0.5f;
-                    half_w = aspect * 0.5f / (16.0f / 9.0f);
-                } else {
-                    half_w = 0.5f;
-                    half_h = aspect * 0.5f / (16.0f / 9.0f);
-                }
-
-                NuRndrClear(0xb00, 0, 1.0f);
-
-                NuPrimCSPos++;
-                NuPrimSetCoordinateSystem(NUPRIM_SCALEMODE_ABSOLUTE);
-                NuPrim2DBegin(4, 7, legal_mtl);
-
-                struct LegalVertex {
-                    f32 x, y, z;
-                    u32 color;
-                    union {
-                        struct {
-                            f32 u, v;
-                        } full;
-                        struct {
-                            u16 u, v;
-                            u32 pad; // NOLINT(readability-identifier-naming)
-                        } half;
-                    };
-                };
-                static_assert(sizeof(LegalVertex) == 0x18, "LegalVertex is 24 bytes (pos+colour+uv)");
-
-                for (i32 vtx = 0; vtx < 2; vtx++) {
-                    const f32 u = (vtx == 0) ? 0.0f : 1.0f;
-                    const f32 v = (vtx == 0) ? 0.0f : 1.0f;
-
-                    auto *vert = reinterpret_cast<LegalVertex *>((*g_NuPrim_StreamBufferPtr)->addr);
-                    vert->color = g_NuPrim_NeedsOverbrightening ? colour : (colour & 0xff000000u) | 0x404040u;
-
-                    if (g_NuPrim_NeedsHalfUVs) {
-                        vert->half.u = F32ToF16(u);
-                        vert->half.v = F32ToF16(v);
-                    } else {
-                        vert->full.u = u;
-                        vert->full.v = v;
-                    }
-
-                    if (vtx == 0) {
-                        NuPrim2DAddXYZ(0.5f - half_w, 0.5f - half_h, 0.0f);
-                    } else {
-                        NuPrim2DAddXYZ(0.5f + half_w, 0.5f + half_h, 0.0f);
-                    }
-                }
-
-                NuPrim2DEnd();
-
-                NuPrimCSPos--;
-                NuPrimSetCoordinateSystem(NuPrimCoordSystemStack[NuPrimCSPos]);
-            } while (false);
-
-            NuRndrEndScene();
-            edGraEnableTerrainSwap();
-            FRAMETIME = NuFrameEnd();
-            edGraDisableTerrainSwap();
-
-            if (FRAMETIME < DEFAULTFRAMETIME || FRAMETIME > DEFAULTFRAMETIME * 3.0f) {
-                FRAMETIME = DEFAULTFRAMETIME;
-            }
-        }
-
-    } else {
-        // Synchronous path — no loading screen.
+    if (BGLOAD == 0 || LOADEROFF != 0) {
         LoadPerm_LanguageSelect = 3;
         LoadPermData(nullptr);
-
         if (legal_mtl != nullptr) {
             NuMtlDestroy(legal_mtl);
             legal_mtl = nullptr;
         }
+        WORLD = saved_world;
+        return;
+    }
+
+    FRAMETIME = DEFAULTFRAMETIME;
+
+    pNuCam->mtx = numtx_identity;
+    pNuCam->fov = 20.0f;
+    pNuCam->aspect = 1.77f;
+    NuCameraSet(pNuCam);
+    InitPanel(Game.options_save.field11_0xb);
+    NuQFntSetCoordinateSystem(static_cast<NUQFNT_CSMODE>(3));
+
+    NUMTX scale;
+    NUVEC scale_vec = {0.125f, 0.125f, 0.125f};
+    NuMtxSetScale(&scale, &scale_vec);
+    scale.m32 = 1.0f;
+
+    if (PAL == 0) {
+        LoadPerm_LanguageSelect = 3;
+    }
+
+    i32 device_language = 0;
+    if (NuStrICmp(g_deviceManufacturer, (char *)"Amazon") == 0 ||
+        (device_language = NuIOS_GetDeviceLanguage(), LANGUAGECOUNT < 1)) {
+        LoadPerm_LanguageSelect = 0;
+    } else {
+        i32 language_index = 0;
+        while (language_index < LANGUAGECOUNT && Text_LanguageList[language_index].language != device_language) {
+            language_index++;
+        }
+        if (language_index < LANGUAGECOUNT) {
+            NuLanguageSet(device_language);
+            Text_Language = static_cast<u32>(device_language);
+        } else {
+            LoadPerm_LanguageSelect = 0;
+        }
+    }
+
+    bgPostRequest(LoadPermData, nullptr, nullptr, 0);
+
+    f32 intro_timer = 0.0f;
+    f32 legal_timer = 0.0f;
+    f32 ready_timer = 0.0f;
+    f32 language_timer = 0.0f;
+    f32 tail_timer = 0.2f;
+
+    while (PermDataLoaded == 0 || tail_timer > 0.0f) {
+        NuFrameBegin();
+        NuCameraSet(&global_camera);
+        readpads_always = 1;
+        ReadPads();
+        UpdateGameMenu(GamePad, 0);
+        UpdateTimer(&GlobalTimer);
+        menu_flash = NuFmod(GlobalTimer.time_elapsed_mod_seconds, 0.2f) < 0.1f;
+
+        if (language_timer < 0.5f && Text_IsFontLoaded() != nullptr) {
+            if (LoadPerm_LanguageSelect == 0) {
+                NewMenu(7, 0, -1);
+                LoadPerm_LanguageSelect = 1;
+                FadeSys.fade = -1.0f;
+            }
+            if (LoadPerm_LanguageSelect == 1 && GameMenuLevel == 0) {
+                LoadPerm_LanguageSelect = 2;
+            }
+            if (LoadPerm_LanguageSelect == 2) {
+                language_timer += FRAMETIME;
+                if (language_timer >= 0.5f) {
+                    LoadPerm_LanguageSelect = 3;
+                }
+            }
+        }
+
+        if (ready_timer < 1.0f && LoadPerm_LanguageSelect == 3 && LoadPerm_StringsLoaded != 0 && saveload_status == 1 &&
+            GameMenuLevel == 0) {
+            ready_timer += FRAMETIME;
+            if (ready_timer > 1.0f) {
+                ready_timer = 1.0f;
+            }
+        }
+
+        if (legal_timer < 5.8f && LoadPerm_LanguageSelect == 3 && ready_timer >= 1.0f && loadlegal_done) {
+            if (legal_timer == 0.0f && legal_mtl == nullptr) {
+                if (legal_tid == 0) {
+                    legal_timer = 5.8f;
+                } else {
+                    NUMTL *mtl = NuMtlCreate(1);
+                    if (mtl == nullptr) {
+                        legal_timer = 5.8f;
+                    } else {
+                        mtl->diffuse_color = {1.0f, 1.0f, 1.0f};
+                        mtl->opacity = 1.0f;
+                        mtl->shader_desc.flags = 0x1000;
+                        mtl->tex_id = static_cast<i16>(legal_tid);
+                        u8 *attrib = reinterpret_cast<u8 *>(&mtl->attribs);
+                        attrib[1] = (attrib[1] & 0xcf) | 0xe0;
+                        attrib[0] = (attrib[0] & 0xc0) | 0x22;
+                        NuMtlUpdate(mtl);
+                        legal_mtl = mtl;
+                    }
+                }
+            } else {
+                if (PermDataLoaded != 0 &&
+                    ((GamePad[0].buttons_down_08 &
+                      (GAMEPAD_JUMP | GAMEPAD_START | GAMEPAD_SPECIAL | GAMEPAD_ACTION | GAMEPAD_TAG)) != 0 ||
+                     MechInputTouchMenuController::AnyTouchesThisFrame > 0)) {
+                    MechInputTouchMenuController::AnyTouchesThisFrame = 0;
+                    if (legal_timer >= 0.3f && legal_timer < 5.3f) {
+                        legal_timer = 5.3f;
+                    }
+                }
+                legal_timer += FRAMETIME;
+                if (legal_timer > 5.8f) {
+                    legal_timer = 5.8f;
+                }
+            }
+        }
+
+        if (intro_timer < 3.8f && LoadPerm_LanguageSelect == 3 && ready_timer >= 1.0f && legal_timer >= 5.8f &&
+            Text_IsFontLoaded() != nullptr && LoadPerm_StringsLoaded != 0 && IntroText_TextID != -1) {
+            if (PermDataLoaded != 0 && ((GamePad[0].buttons_down_08 & (GAMEPAD_JUMP | GAMEPAD_START | GAMEPAD_SPECIAL |
+                                                                       GAMEPAD_ACTION | GAMEPAD_TAG)) != 0 ||
+                                        MechInputTouchMenuController::AnyTouchesThisFrame > 0)) {
+                MechInputTouchMenuController::AnyTouchesThisFrame = 0;
+                if (intro_timer >= 0.3f && intro_timer < 3.3f) {
+                    intro_timer = 3.3f;
+                }
+            }
+            intro_timer += FRAMETIME;
+            if (intro_timer > 3.8f) {
+                intro_timer = 3.8f;
+            }
+        }
+
+        const bool sequence_done = PermDataLoaded != 0 && LoadPerm_LanguageSelect == 3 && ready_timer >= 1.0f &&
+                                   legal_timer >= 5.8f && intro_timer >= 3.8f;
+        if (sequence_done) {
+            tail_timer -= FRAMETIME;
+        }
+
+        NuRndrBeginScene();
+        NuRndrGradClear(0xf00, 0x80000000, 0x80000000, 1.0f);
+
+        if (!sequence_done || tail_timer >= 0.0f) {
+            if (tail_timer == 0.2f) {
+                DrawMenu(0);
+
+                if (legal_timer > 0.0f && legal_timer < 5.8f && legal_mtl != nullptr) {
+                    f32 alpha;
+                    if (legal_timer < 0.3f) {
+                        alpha = legal_timer / 0.3f;
+                    } else if (legal_timer < 5.3f) {
+                        alpha = 1.0f;
+                    } else if (legal_timer >= 5.6f) {
+                        alpha = 0.0f;
+                    } else {
+                        alpha = 1.0f - (legal_timer - 5.3f) / 0.30000019f;
+                    }
+
+                    if (alpha > 0.0f) {
+                        if (legal_timer < 0.3f) {
+                            alpha *= (legal_timer - 0.3f) / 0.3f;
+                        }
+
+                        const f32 aspect = NuIOS_GetAspectRatio();
+                        f32 half_w;
+                        f32 half_h;
+                        if (aspect > 1.7777778f) {
+                            half_h = 0.5f;
+                            half_w = aspect * 0.5f / 1.7777778f;
+                        } else {
+                            half_w = 0.5f;
+                            half_h = aspect * 0.5f / 1.7777778f;
+                        }
+
+                        NuRndrClear(0xb00, 0, 1.0f);
+                        const u32 colour = static_cast<u32>(alpha * 255.0f) << 24;
+                        NuPrimCSPos++;
+                        NuPrimSetCoordinateSystem(NUPRIM_SCALEMODE_ABSOLUTE);
+                        NuPrim2DBegin(4, 7, legal_mtl);
+
+                        struct LegalVertex {
+                            f32 x, y, z;
+                            u32 colour;
+                            union {
+                                struct {
+                                    f32 u, v;
+                                } full;
+                                struct {
+                                    u16 u, v;
+                                    u32 pad;
+                                } half;
+                            };
+                        };
+
+                        LegalVertex *vert = reinterpret_cast<LegalVertex *>((*g_NuPrim_StreamBufferPtr)->addr);
+                        vert->colour = colour | (g_NuPrim_NeedsOverbrightening ? 0x808080u : 0x404040u);
+                        if (g_NuPrim_NeedsHalfUVs) {
+                            vert->half.u = F32ToF16(0.0f);
+                            vert->half.v = F32ToF16(0.0f);
+                        } else {
+                            vert->full.u = 0.0f;
+                            vert->full.v = 0.0f;
+                        }
+                        NuPrim2DAddXYZ(0.5f - half_w, 0.5f - half_h, 0.0f);
+
+                        vert = reinterpret_cast<LegalVertex *>((*g_NuPrim_StreamBufferPtr)->addr);
+                        vert->colour = colour | (g_NuPrim_NeedsOverbrightening ? 0x808080u : 0x404040u);
+                        if (g_NuPrim_NeedsHalfUVs) {
+                            vert->half.u = F32ToF16(1.0f);
+                            vert->half.v = F32ToF16(1.0f);
+                        } else {
+                            vert->full.u = 1.0f;
+                            vert->full.v = 1.0f;
+                        }
+                        NuPrim2DAddXYZ(0.5f + half_w, 0.5f + half_h, 0.0f);
+                        NuPrim2DEnd();
+                        NuPrimCSPos--;
+                        NuPrimSetCoordinateSystem(NuPrimCoordSystemStack[NuPrimCSPos]);
+                    }
+                }
+
+                if (intro_timer > 0.0f && intro_timer < 3.8f) {
+                    f32 alpha;
+                    if (intro_timer < 0.3f) {
+                        alpha = intro_timer / 0.3f;
+                    } else if (intro_timer < 3.3f) {
+                        alpha = 1.0f;
+                    } else if (intro_timer >= 3.6f) {
+                        alpha = 0.0f;
+                    } else {
+                        alpha = 1.0f - (intro_timer - 3.3f) / 0.29999995f;
+                    }
+                    if (alpha > 0.0f) {
+                        IntroText_Draw(alpha);
+                    }
+                }
+            }
+        } else {
+            tail_timer = 0.0f;
+        }
+
+        NuRndrEndScene();
+        edGraEnableTerrainSwap();
+        FRAMETIME = NuFrameEnd();
+        edGraDisableTerrainSwap();
+        if (FRAMETIME < DEFAULTFRAMETIME || FRAMETIME > DEFAULTFRAMETIME * 3.0f) {
+            FRAMETIME = DEFAULTFRAMETIME;
+        }
+    }
+
+    if (legal_mtl != nullptr) {
+        NuMtlDestroy(legal_mtl);
+        legal_mtl = nullptr;
     }
 
     WORLD = saved_world;

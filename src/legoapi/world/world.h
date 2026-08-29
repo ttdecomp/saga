@@ -37,8 +37,18 @@ struct GAMEANTINODESYS_s;
 struct GIZBOMBGENSYS_s;
 struct TRAFFICANIMSYS_s;
 struct GIZTIMER_s;
-struct portalpos_s;
 struct spawnsys_s;
+struct TIMER_s;
+
+// A portal-position spline stores camera/player points as position/target
+// pairs (six floats per point).  MoveGameCamera uses portal_places[2] for
+// the title-screen camera.
+typedef struct portalpos_s {
+    i16 count;
+    i16 pad_02;
+    f32 *weights;
+    f32 *positions;
+} PORTALPOS;
 
 typedef struct MINIKIT {
     void *gscn;
@@ -170,6 +180,10 @@ typedef struct WORLDINFO_s {
 
     char filler15[0x51b0 - 0x5170];
 } WORLDINFO;
+
+extern void (*WorldInfo_InitMenuFn)(WORLDINFO *, i32 *, i32 *);
+extern void (*WorldInfo_InitLastFn)(WORLDINFO *);
+extern TIMER_s LevelTimer;
 
 #ifdef __cplusplus
 extern "C" {

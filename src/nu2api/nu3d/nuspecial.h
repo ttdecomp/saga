@@ -4,6 +4,9 @@
 #include "decomp.h"
 #include "nu2api/nu3d/nugscn.h"
 #include "nu2api/numath/nuvec.h"
+#include "nu2api/numath/numtx.h"
+
+struct nuhspecial_s;
 
 // Named-scene-object ("special") query / manipulation API. Declarations live
 // here (module nu2api/nu3d) so level and gameplay code includes one header
@@ -14,12 +17,14 @@ extern "C" {
     i32 NuSpecialExistsFn(void *special);
     void NuSpecialSetVisibility(void *special, i32 visible);
     void NuSpecialSetDrawMtx(void *special, void *mtx);
-    void *NuSpecialGetDrawMtx(void *special);
+    NUMTX *NuSpecialGetDrawMtx(void *special);
     struct nuvec_s *NuSpecialGetPos(void *special);
     void NuSpecialDrawAt(void *special, void *mtx);
     void NuSpecialSetDrawPos(void *special, void *pos);
     i32 NuSpecialClipTestExtents(void *special, void *mtx);
+    i32 NuSpecialSetClipping(i32 enabled, i32 state);
     float NuSpecialGetOriginRadius(void *special);
+    i32 NuSpecialDrawAtAlpha(void *special, NUMTX *mtx, f32 alpha);
 }
 
 #endif

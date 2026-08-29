@@ -32,10 +32,7 @@ NuRenderDevice g_renderDevice{};
 // contexts (indices 0..3). Index 3 is the "main" / window context; the
 // others are worker contexts. gt_glContextIndex tracks which slot the
 // calling thread was assigned.
-thread_local i32 gt_glContextIndex = 0;
-
-// Host present context (weak, overridden by host build)
-__attribute__((weak)) EGLContext g_hostPresentCtx = EGL_NO_CONTEXT;
+thread_local i32 gt_glContextIndex = -1;
 
 thread_local i32 s_criticalDepth = 0;
 static i32 g_nextGLContextIndex = 0;
@@ -264,21 +261,19 @@ void NuRenderDevice::SetThisTreadAsRender() {
 // ---------------------------------------------------------------------------
 
 void NuRenderDevice::BeginCriticalSection(const char * /*file*/, i32 /*line*/) {
-    static thread_local i32 s_assignedContextIndex = -1;
-
     if (s_criticalDepth == 0) {
         pthread_mutex_lock(&this->mutex2);
 
-        i32 slot = s_assignedContextIndex;
-        if (slot == -1) {
-            slot = g_nextGLContextIndex;
+        if (gt_glContextIndex == -1) {
+            gt_glContextIndex = g_nextGLContextIndex;
             g_nextGLContextIndex = (g_nextGLContextIndex + 1) % 4;
-            s_assignedContextIndex = slot;
         }
 
-        LOG_DEBUG("this->egl_display: %p, this->pbuffers[%d]: %p, this->contexts[%d]: %p", this->egl_display, slot,
-                  this->pbuffers[slot], slot, this->contexts[slot]);
-        eglMakeCurrent(this->egl_display, this->pbuffers[slot], this->pbuffers[slot], this->contexts[slot]);
+        LOG_DEBUG("this->egl_display: %p, this->pbuffers[%d]: %p, this->contexts[%d]: %p", this->egl_display,
+                  gt_glContextIndex, this->pbuffers[gt_glContextIndex], gt_glContextIndex,
+                  this->contexts[gt_glContextIndex]);
+        eglMakeCurrent(this->egl_display, this->pbuffers[gt_glContextIndex], this->pbuffers[gt_glContextIndex],
+                       this->contexts[gt_glContextIndex]);
     }
     s_criticalDepth++;
 }
@@ -294,10 +289,6 @@ __attribute__((weak)) void NuRenderDevice::SwapBuffers() {
 void NuRenderDevice::OnWindowCreated(ANativeWindow *window) {
     InitialiseOpenGLContext(window);
     CheckForRenderWindowInitialisation();
-}
-
-__attribute__((weak)) i32 NuRenderDevice::HostReadbackPixels(u32 /*max_w*/, u32 /*max_h*/, u8 * /*rgba*/) {
-    return 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -419,7 +410,7 @@ __attribute__((weak)) void NuRenderDevice::InitialiseOpenGLContext(ANativeWindow
             this->contexts[1] = eglCreateContext(this->egl_display, this->egl_config, main_ctx, this->attrib_list);
             this->pbuffers[2] = eglCreatePbufferSurface(this->egl_display, this->egl_config, pbuffer_attribs);
         } else {
-            // Alias the window surface — legacy path, not used on host.
+            // Alias the window surface.
             this->pbuffers[0] = this->pbuffers[3];
             this->contexts[0] = eglCreateContext(this->egl_display, this->egl_config, main_ctx, this->attrib_list);
             this->pbuffers[1] = this->pbuffers[3];
@@ -443,10 +434,6 @@ __attribute__((weak)) void NuRenderDevice::InitialiseOpenGLContext(ANativeWindow
         EGLint visual_id = 0;
         eglGetConfigAttrib(this->egl_display, this->egl_config, EGL_NATIVE_VISUAL_ID, &visual_id);
         (void)visual_id;
-        // Original called ANativeWindow_setBuffersGeometry here; not needed
-        // on host where the SDL-provided window already has the desired
-        // visual.
-
         eglMakeCurrent(this->egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 
         g_backingWidth = static_cast<i32>(this->backing_width);

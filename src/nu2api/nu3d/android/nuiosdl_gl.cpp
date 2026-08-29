@@ -78,6 +78,7 @@ static i32 NuIOSDLMtlCallback_lastFrameCount = 0;
 extern "C" void NuShaderManagerBindShader(i32 shader);
 extern "C" void NuShaderObjectGLSLSetupMaterial(i32 shader_obj, numtl_s *mtl);
 extern "C" i32 NuShaderManagerGetShaderById(i32 id);
+extern "C" i32 NuShaderManagerGetCurrentShader(void);
 
 extern i32 g_currentTexUnit; // nutex_ios_ex.cpp
 extern NUAPI nuapi;
@@ -123,7 +124,11 @@ extern NuVertexFormatPS *g_nuDebrisVertexFormat; // debris format
 // @0x119bd00, g_renderContext_view @0x119bdc0).  Debris shaders need both.
 extern "C" f32 g_renderContext_viewProj[16];
 extern "C" f32 g_renderContext_view[16];
+extern "C" f32 g_renderContext_world[16];
+extern "C" f32 g_renderContext_kTint[4];
 extern void (*g_glConstantSetterTable[4])(u32 loc, i32 count, const void *vals);
+extern "C" void NuShaderManagerSetfv(i32 semantic, const f32 *values);
+extern "C" void NuRenderContextSetViewProj(NUMTX *view, NUMTX *projection);
 
 // ---------------------------------------------------------------------------
 // Material-variant helpers — raw offsets from the original binary.
@@ -372,6 +377,11 @@ static void NuIOS_BindVertexAttributesImmediate(isize dataAddr, usize baseVertex
     NuIOS_BindVertexAttributesInternal(dataAddr, baseVertex, fmt, fmt[0]);
 }
 
+static void NuIOS_BindVertexAttributes(isize dataAddr, usize baseVertex) {
+    const u32 *fmt = (const u32 *)u32ToPtr(g_boundVertexFormat); // NOLINT
+    NuIOS_BindVertexAttributesInternal(dataAddr, baseVertex, fmt, fmt[0]);
+}
+
 // original 0x293a65 — bind with an explicit format override (2D path).
 static void NuIOS_BindVertexAttributesImmediateOverrideDataLayout(isize dataAddr, usize baseVertex, const u32 *fmt) {
     NuIOSBindVAO(0);
@@ -601,5 +611,184 @@ void NuIOSDLGeom2DCallback(void *arg) {
         NuIOS_BindVertexAttributesImmediateOverrideDataLayout(PtrToArgInt(geom->vertices), 0,
                                                               (const u32 *)g_nuPrimVertexFormat);
         glDrawArrays((GLenum)kPrimModes[pt], 0, (GLsizei)geom->vertex_count);
+    }
+}
+
+// original 0x2a430d — 3D geometry callback
+void NuIOSDLGeomCallback(void *arg) {
+    struct GeomItem {
+        i32 prim_type;       // 0x00
+        i32 index_count;     // 0x04
+        u16 vertex_stride;   // 0x08
+        u8 pad_0a[0x0a];     // 0x0a
+        i32 base_vertex;     // 0x14
+        i32 vertex_count;    // 0x18
+        i32 first_index;     // 0x1c
+        GLuint index_buffer; // 0x20
+        u32 vertex_buffer;   // 0x24 GL buffer or immediate-data pointer
+        i32 immediate;       // 0x28
+        u32 pad_2c;          // 0x2c
+        u32 vertex_format;   // 0x30
+        void *dynamic_data;  // 0x34
+        u8 vertices[0];      // 0x38 immediate primitive data
+    };
+
+    auto *geom = static_cast<GeomItem *>(arg);
+    i32 shader = NuShaderManagerGetCurrentShader();
+    if (shader == 0 || *reinterpret_cast<GLuint *>((u8 *)(uintptr_t)shader + 0x10) == 0) { // NOLINT
+        return;
+    }
+
+    NuShaderObjectGLSLSetupMaterial(shader, g_LastMtl);
+    switch (geom->prim_type) {
+        case 0:
+            NuIOS_BindVertexAttributesImmediateOverrideDataLayout(PtrToArgInt(geom->vertices), 0,
+                                                                  (const u32 *)g_nuPrimVertexFormat);
+            glDrawArrays(GL_TRIANGLES, 0, geom->vertex_count);
+            break;
+        case 1:
+            NuIOS_BindVertexAttributesImmediateOverrideDataLayout(PtrToArgInt(geom->vertices), 0,
+                                                                  (const u32 *)g_nuPrimVertexFormat);
+            glDrawArrays(GL_TRIANGLE_STRIP, 0, geom->vertex_count);
+            break;
+        case 2:
+            NuIOS_BindVertexAttributesImmediateOverrideDataLayout(PtrToArgInt(geom->vertices), 0,
+                                                                  (const u32 *)g_nuPrimVertexFormat);
+            glDrawArrays(GL_LINES, 0, geom->vertex_count);
+            break;
+        case 3:
+            NuIOS_BindVertexAttributesImmediateOverrideDataLayout(PtrToArgInt(geom->vertices), 0,
+                                                                  (const u32 *)g_nuPrimVertexFormat);
+            glDrawArrays(GL_LINE_STRIP, 0, geom->vertex_count);
+            break;
+        case 5:
+            NuIOS_BindVertexAttributesImmediateOverrideDataLayout(PtrToArgInt(geom->vertices), 0,
+                                                                  (const u32 *)g_nuPrimVertexFormat);
+            glDrawArrays(GL_TRIANGLE_FAN, 0, geom->vertex_count);
+            break;
+        case 6: {
+            i32 index_count = geom->index_count + 2;
+            if (geom->immediate == 0) {
+                NuIOS_SetVertexFormat(geom->vertex_format);
+                NuIOSBindVAO(0);
+                glBindBuffer(GL_ARRAY_BUFFER, geom->vertex_buffer);
+                NuIOS_BindVertexAttributes(0, geom->base_vertex);
+            } else if (geom->dynamic_data == nullptr) {
+                NuIOSBindVAO(0);
+                NuIOS_BindVertexAttributesImmediate(geom->vertex_buffer, geom->vertex_stride * geom->base_vertex);
+            } else {
+                NuIOSBindVAO(0);
+                glBindBuffer(GL_ARRAY_BUFFER, geom->vertex_format);
+                glBufferData(GL_ARRAY_BUFFER, geom->vertex_stride * geom->vertex_count, nullptr, GL_DYNAMIC_DRAW);
+                glBufferData(GL_ARRAY_BUFFER, geom->vertex_stride * geom->vertex_count, geom->dynamic_data,
+                             GL_DYNAMIC_DRAW);
+                NuIOS_BindVertexAttributes(0, 0);
+            }
+            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geom->index_buffer);
+            glDrawElements(GL_TRIANGLE_STRIP, index_count, GL_UNSIGNED_SHORT,
+                           (const void *)(usize)(geom->first_index * 2));
+            break;
+        }
+        case 0x32:
+            NuIOS_BindVertexAttributesImmediateOverrideDataLayout(PtrToArgInt(geom->vertices), 0,
+                                                                  (const u32 *)g_nuPrimVertexFormat);
+            glDrawArrays(GL_POINTS, 0, geom->vertex_count);
+            break;
+    }
+    NuIOSBindVAO(0);
+}
+
+// original 0x2a3c20 — installs a display-list world transform and applies
+// the per-instance opacity to the current tint.
+void NuIOSDLTransformCallback(void *arg) {
+    auto *world = static_cast<NUMTX *>(arg);
+    const f32 opacity = world->m33;
+    const f32 shadow_factor = world->m23;
+    f32 tint[4] = {
+        g_renderContext_kTint[0],
+        g_renderContext_kTint[1],
+        g_renderContext_kTint[2],
+        g_renderContext_kTint[3],
+    };
+
+    if (opacity < 1.0f) {
+        tint[3] *= opacity;
+        NuRenderContextSetZFunc(1);
+    } else if (g_renderContext_materialInUse != nullptr) {
+        NuRenderContextSetZFunc(g_renderContext_materialInUse->attribs.z_mode);
+    }
+    NuShaderManagerSetfv(0x44, tint);
+
+    world->m33 = 1.0f;
+    world->m23 = 0.0f;
+    memcpy(g_renderContext_world, world, sizeof(NUMTX));
+    NuShaderManagerSetfv(0x3c, reinterpret_cast<const f32 *>(world));
+    world->m33 = opacity;
+    world->m23 = shadow_factor;
+}
+
+// original 0x2a3e20 — dynamic special transforms are stored transposed in
+// the render stream. Restore the ordinary world matrix before publishing it
+// to the shader state.
+void NuIOSDLTransformParamsCallback(void *arg) {
+    auto *stream_matrix = static_cast<NUMTX *>(arg);
+    const f32 opacity = stream_matrix->m33;
+    const f32 shadow_factor = stream_matrix->m32;
+    f32 tint[4] = {
+        g_renderContext_kTint[0],
+        g_renderContext_kTint[1],
+        g_renderContext_kTint[2],
+        g_renderContext_kTint[3],
+    };
+
+    if (opacity < 1.0f) {
+        tint[3] *= opacity;
+        NuRenderContextSetZFunc(1);
+    } else if (g_renderContext_materialInUse != nullptr) {
+        NuRenderContextSetZFunc(g_renderContext_materialInUse->attribs.z_mode);
+    }
+    NuShaderManagerSetfv(0x44, tint);
+
+    stream_matrix->m33 = 1.0f;
+    stream_matrix->m32 = 0.0f;
+    NuMtxTranspose(reinterpret_cast<NUMTX *>(g_renderContext_world), stream_matrix);
+    NuShaderManagerSetfv(0x3c, g_renderContext_world);
+    stream_matrix->m33 = opacity;
+    stream_matrix->m32 = shadow_factor;
+}
+
+// original 0x2a4030 — camera packets carry view/projection matrices at +4
+// and +0x44 respectively. The viewport tail is deliberately a no-op on this
+// platform, matching NuRenderContextSetViewport in the original.
+void NuIOSDLCameraCallback(void *arg) {
+    struct CameraPacket {
+        i32 id;
+        NUMTX view;
+        NUMTX projection;
+        f32 viewport[4];
+    };
+    static i32 last_id = -1;
+    auto *packet = static_cast<CameraPacket *>(arg);
+    if (packet->id != last_id) {
+        last_id = packet->id;
+        NuRenderContextSetViewProj(&packet->view, &packet->projection);
+    }
+}
+
+// original 0x2a45d0 — records the material's vertex format on static geometry
+// while a scene is being fixed up.
+void NuIOSDLPreWarmGeomCallback(void *arg) {
+    if (g_LastMtl == nullptr || g_LastMtl->shader_desc.blend_op2 == 0xff) {
+        return;
+    }
+    i32 shader = NuShaderManagerGetShaderById(g_LastMtl->shader_desc.shader_id);
+    if (shader == 0 || *reinterpret_cast<GLuint *>((u8 *)(uintptr_t)shader + 0x10) == 0) { // NOLINT
+        return;
+    }
+
+    auto *words = static_cast<u32 *>(arg);
+    NuIOSBindVAO(0);
+    if (words[0] == 6 && words[10] == 0) {
+        words[12] = g_boundVertexFormat;
     }
 }

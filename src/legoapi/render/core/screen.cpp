@@ -1,5 +1,8 @@
 #include "decomp.h"
+#include "globals.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/menus/core/text.h"
+#include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/nutex.h"
 
 struct AIROW_s;
@@ -22,7 +25,16 @@ void GetAspectRatio() {
 void NeedScreenGrab(i32) {
 }
 
+extern f32 CameraZoom;
+extern "C" f32 NuIOS_GetAspectRatio(void);
+
 void WidescreenCode(i32) {
+    f32 aspect = NuIOS_GetAspectRatio();
+    pNuCam->aspect = 1.0f / aspect;
+    aspect = NuIOS_GetAspectRatio();
+    pNuCam->fov = (1.0f / aspect + 0.75f) * 0.5f * (1.0f / CameraZoom);
+    aspect = NuIOS_GetAspectRatio();
+    SmartTextSetWidescreen(1.3333334f / aspect, 1.0f);
 }
 
 void GrabStillScreen() {

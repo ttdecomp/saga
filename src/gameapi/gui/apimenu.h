@@ -7,7 +7,9 @@ typedef struct MENU_s {
     f32 unk;
     u8 filler1[0xc];
     i16 menu;
-    u8 filler2[0x2662];
+    u8 filler2[0x66];
+    u32 start_pressed;
+    u8 filler3[0x25f8];
 } MENU;
 
 typedef struct MENUFNINFO_s {
@@ -21,7 +23,23 @@ typedef struct MENUFNINFO_s {
     char wrap;
 } MENUFNINFO;
 
-extern MENUFNINFO GameMenuInfo[34];
+#ifdef __cplusplus
+extern "C" {
+#endif
+    extern MENUFNINFO GameMenuInfo[34];
+    extern MENUFNINFO MenuInfo[100];
+    extern MENU GameMenu[10];
+    extern i32 GameMenuLevel;
+    extern i32 MenusUsed;
+    extern i32 MenuValidated;
+    extern f32 MenuAlpha;
+    extern i32 MenuA;
+    extern f32 MENUTEXTSCALE;
+    extern i32 MenuFadeEnabled;
+    extern char MenuHeader[64];
+#ifdef __cplusplus
+}
+#endif
 
 #ifdef __cplusplus
 

@@ -112,19 +112,20 @@ extern "C" {
     // table and looked up in the loaded pages; the rest stay -1.
     void *InitGameDebris(VARIPTR *cursor, VARIPTR *end, i32 count, i32 flags, char **names, char page) {
         (void)end;
-        u32 aligned = (*cursor->u32_ptr + 0xf) & ~0xfu;
-        *cursor->u32_ptr = aligned;
+        u32 aligned = (cursor->addr + 0xf) & ~0xfu;
+        cursor->addr = aligned;
+        cursor->addr += 0xc;
         if (aligned == 0) {
             return NULL;
         }
-        *cursor->u32_ptr = aligned + 0xc;
 
         u32 *sys = (u32 *)aligned;
         memset(sys, 0, 0xc);
         sys[0] = (u32)flags;
         sys[1] = (u32)count;
-        sys[2] = aligned + 0xc;
-        *cursor->u32_ptr = aligned + 0xc + (u32)count * 0x14;
+        sys[2] = (cursor->addr + 0xf) & ~0xfu;
+        cursor->addr = sys[2];
+        cursor->addr += (u32)count * 0x14;
 
         memset((void *)sys[2], 0xff, (usize)count * 0x14);
         u32 entries = sys[2];

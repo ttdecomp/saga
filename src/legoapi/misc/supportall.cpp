@@ -3,6 +3,8 @@
 #include <stdarg.h>
 #include "decomp.h"
 #include "legoapi/legoapi_types.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/nurndrstat.h"
 #include "nu2api/nu3d/nutex.h"
 
 struct AIROW_s;
@@ -167,7 +169,20 @@ void DebrisGetControlStackLock() {
 void DebrisProcessControlChunks(i32) {
 }
 
-void DisplayListCreateDynMtlList(variptr_u *, variptr_u) {
+void DisplayListCreateDynMtlList(variptr_u *buf, variptr_u) {
+    // Tail of original 0x2ff660. The dynamic-material scene allocation above
+    // this point is not needed until NuDisplayListCreate is transcribed, but
+    // the static 2D list is always initialised here.
+    NUDISPLAYLIST *list = &global_dlist_manager.dlist_2d;
+    list->first->type = 0x8d;
+    list->first->id = 1;
+    list->first->next = nullptr;
+    list->mtl_last = list->first;
+
+    buf->addr = ALIGN(buf->addr, 4);
+    list->state = reinterpret_cast<nurndrstate_s *>(buf->void_ptr);
+    buf->addr += sizeof(nurndrstate_s);
+    NuDisplayListReset(list);
 }
 
 void DisplayListCreateGeomItemPS(variptr_u *, void *, numtl_s *) {

@@ -3,6 +3,7 @@
 #include "globals.h"
 #include "nu2api/nu3d/android/nutex_ios_ex.h"
 #include "nu2api/nu3d/nurndr.h"
+#include "nu2api/numath/numtx.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nuandroid/ios_graphics.h"
 #include <EGL/egl.h>
@@ -10,7 +11,7 @@
 #include <pthread.h>
 #include <string.h>
 
-extern EGLContext g_hostPresentCtx;
+static EGLContext g_hostPresentCtx = EGL_NO_CONTEXT;
 EGLSurface g_hostPbufferReadback = EGL_NO_SURFACE;
 EGLContext g_hostContextReadback = EGL_NO_CONTEXT;
 
@@ -48,7 +49,9 @@ namespace {
         res.tex_loc = glGetUniformLocation(res.program, "u_tex");
         glGenBuffers(1, &res.vbo);
         glBindBuffer(GL_ARRAY_BUFFER, res.vbo);
-        const float verts[] = {-1, -1, 0, 1, 1, -1, 1, 1, -1, 1, 0, 0, 1, -1, 1, 1, 1, 1, 1, 0, -1, 1, 0, 0};
+        // An FBO texture uses the same bottom-left origin as the default GL
+        // framebuffer.  Present it without the image-file/readback flip.
+        const float verts[] = {-1, -1, 0, 0, 1, -1, 1, 0, -1, 1, 0, 1, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1};
         glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
     }
     void DrawFullscreenTexturedQuad(const PresentResources &res, GLuint texture) {
@@ -98,7 +101,7 @@ void NuRenderDevice::SwapBuffers() {
     }
 }
 
-i32 NuRenderDevice::HostReadbackPixels(u32 max_w, u32 max_h, u8 *rgba) {
+i32 HostReadbackPixels(u32 max_w, u32 max_h, u8 *rgba) {
     extern GLuint g_earlyColorTexture;
     extern i32 g_backingWidth, g_backingHeight;
     if (g_earlyColorTexture == 0 || g_backingWidth <= 0 || g_backingHeight <= 0 || max_w == 0 || max_h == 0) {
@@ -106,26 +109,16 @@ i32 NuRenderDevice::HostReadbackPixels(u32 max_w, u32 max_h, u8 *rgba) {
         return 0;
     }
     // Try dedicated readback pbuffer/context; fall back to any valid context/pbuffer if unavailable.
+    EGLDisplay display = eglGetCurrentDisplay();
     EGLSurface read_surf = g_hostPbufferReadback;
     EGLContext read_ctx = g_hostContextReadback;
-    if (egl_display == EGL_NO_DISPLAY || read_surf == EGL_NO_SURFACE || read_ctx == EGL_NO_CONTEXT) {
-        LOG_WARN("HostReadback: no readback pbuffer (display %p surf %p ctx %p), trying fallback", egl_display,
-                 read_surf, read_ctx);
-        if (egl_display == EGL_NO_DISPLAY)
-            return 0;
-        // fallback: use the window surface/context (pbuffers[3]/contexts[3]) or worker 0
-        if (pbuffers[3] != EGL_NO_SURFACE && contexts[3] != EGL_NO_CONTEXT) {
-            read_surf = pbuffers[3];
-            read_ctx = contexts[3];
-        } else if (pbuffers[0] != EGL_NO_SURFACE && contexts[0] != EGL_NO_CONTEXT) {
-            read_surf = pbuffers[0];
-            read_ctx = contexts[0];
-        } else {
-            LOG_WARN("HostReadback: no fallback surface");
-            return 0;
-        }
+    if (display == EGL_NO_DISPLAY)
+        display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+    if (display == EGL_NO_DISPLAY || read_surf == EGL_NO_SURFACE || read_ctx == EGL_NO_CONTEXT) {
+        LOG_WARN("HostReadback: no readback pbuffer (display %p surf %p ctx %p)", display, read_surf, read_ctx);
+        return 0;
     }
-    if (eglMakeCurrent(egl_display, read_surf, read_surf, read_ctx) == EGL_FALSE) {
+    if (eglMakeCurrent(display, read_surf, read_surf, read_ctx) == EGL_FALSE) {
         LOG_WARN("HostReadback: eglMakeCurrent failed %d", eglGetError());
         return 0;
     }

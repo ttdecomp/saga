@@ -7,18 +7,6 @@
 #include "nu2api/nucore/common.h"
 #include "nu2api/numath/numtx.h"
 
-typedef struct vufnt_android_s {
-    u32 color_abgr;
-
-    // Fields uncertain.
-    u8 unknown_04[0xc];
-
-    NUMTX mtx;
-
-    f32 x_scale;
-    f32 y_scale;
-} VUFNT_ANDROID;
-
 i32 NuQFntReadPS(VUFNT *font, i32 tex_id, i32 flags, i32 render_plane, VARIPTR *buf, VARIPTR buf_end) {
     NUMTL *mtl;
     NUSHADERMTLDESC shader_desc;
@@ -58,13 +46,13 @@ i32 NuQFntReadPS(VUFNT *font, i32 tex_id, i32 flags, i32 render_plane, VARIPTR *
     NuMtlSetShaderDescPS(mtl, &shader_desc);
     NuMtlUpdate(font->mtl);
 
-    font->platform_data = (void *)ALIGN(buf->addr, 0x10);
+    font->platform_data = (VUFNT_ANDROID *)ALIGN(buf->addr, 0x10);
     buf->addr = ALIGN(buf->addr, 0x10) + sizeof(VUFNT_ANDROID);
 
     platform_font = (VUFNT_ANDROID *)font->platform_data;
     font->x_scale = &platform_font->x_scale;
     font->y_scale = &platform_font->y_scale;
-    font->color_abgr = &platform_font->color_abgr;
+    font->color_abgr = &platform_font->colour;
 
     font->hdr = NULL;
 

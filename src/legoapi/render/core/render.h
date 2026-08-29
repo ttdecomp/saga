@@ -15,10 +15,12 @@ void DrawSaveSlots(MENU_s *menu, float y);
 #ifdef __cplusplus
 extern "C" {
 #endif
-    void Text3DEx(char *, i32, float, float, float, float, float, i32, i32, i32, i32, i32); // C-linkage symbol
+    void Text3DEx(char *, f32, f32, f32, f32, f32, f32, u8, u8, u8, u8, i32);
 #ifdef __cplusplus
 }
 #endif
 void DrawPanel3DObject(float, float, float, float, float, float, u16, u16, u16, nuhspecial_s *, i32, float);
+void DrawPauseFade(void);
+void DrawPanel(void);
 
 #endif

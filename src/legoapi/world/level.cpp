@@ -5,13 +5,18 @@
 
 #include "globals.h"
 #include "legoapi/core/config/cheat.h"
+#include "legoapi/characters/motion.h"
 #include "legoapi/gizmo/base/gizmo.h"
+#include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nufile/nufpar.h"
 #include "nu2api/numath/nuvec.h"
+#include "nu2api/numath/nufloat.h"
+#include "nu2api/numath/numtx.h"
+#include "nu2api/numath/nutrig.h"
 #include "nu2api/numusic/numusic.h"
 #include "legoapi/world/levels/levels.h"
 
@@ -37,11 +42,258 @@ static void Credits_Update_Game(WORLDINFO *) {
 static void Credits_Draw_Game(WORLDINFO *) {
 }
 
-static void Titles_Init(WORLDINFO *) {
+extern void NewGame(void);
+extern void Door_Reset(void);
+extern void BackDrop_ResetColours(void);
+extern i16 id_DEFAULTCHARACTER[2];
+extern i32 GetMenuID(void);
+
+static NUVEC titlesstartpos;
+static i32 Pictures_NumLevels;
+
+static void Pictures_FixUp(NUGSCN **scene) {
+    if (*scene != NULL) {
+        Pictures_NumLevels = 0;
+        for (i32 episode = 0; episode < EPISODECOUNT; episode++) {
+            char name[72];
+            sprintf(name, "EP_%i", episode + 1);
+            NuSpecialFind(*scene, reinterpret_cast<void **>(&LevHSpecial[10 + episode]), name, 1);
+
+            for (i32 chapter = 0; chapter < 8; chapter++) {
+                sprintf(name, "EP_%i_CH_%i", episode + 1, chapter + 1);
+                NuSpecialFind(*scene, reinterpret_cast<void **>(&LevHSpecial[20 + Pictures_NumLevels]), name, 1);
+                Pictures_NumLevels++;
+            }
+        }
+
+        static const char *bonus_names[] = {
+            "pod_race", "anakin_flight", "gunship", "new_hope", "lego_city", "new_town",
+        };
+        for (i32 i = 0; i < 6; i++) {
+            NuSpecialFind(*scene, reinterpret_cast<void **>(&LevHSpecial[20 + Pictures_NumLevels]),
+                          const_cast<char *>(bonus_names[i]), 1);
+            Pictures_NumLevels++;
+        }
+    }
+    LevTime[0] = 0.0f;
+    LevTime[1] = 0.0f;
 }
+
+static void Titles_Init(WORLDINFO *world) {
+    char title_name[72];
+
+    NewGame();
+    switch (Text_Language) {
+        case 2:
+            NuStrCpy(title_name, "titles_french");
+            break;
+        case 3:
+            NuStrCpy(title_name, "titles_spanish");
+            break;
+        case 4:
+            NuStrCpy(title_name, "titles_german");
+            break;
+        case 5:
+            NuStrCpy(title_name, "titles_italian");
+            break;
+        case 8:
+            NuStrCpy(title_name, "titles_danish");
+            break;
+        default:
+            NuStrCpy(title_name, Text_Language == 0x12 ? "titles_us" : "titles_uk");
+            break;
+    }
+
+    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&LevHSpecial[0]), title_name, 1);
+    LevAlpha = 1.0f;
+    nuhspecial_s *title_special = &LevHSpecial[0];
+    if (NuSpecialExistsFn(title_special) != 0) {
+        NUMTX *draw_mtx = NuSpecialGetDrawMtx(title_special);
+        LevMtx = *draw_mtx;
+        NuSpecialSetVisibility(title_special, 0);
+        titlesstartpos.x = LevMtx.m30;
+        titlesstartpos.y = 0.0f;
+        titlesstartpos.z = LevMtx.m32 - 0.5f;
+    }
+
+    TitlesAlpha = 1.0f;
+    if (GAMEDEMO == 0) {
+        PlayerID[0] = id_DEFAULTCHARACTER[0];
+        PlayerID[1] = id_DEFAULTCHARACTER[1];
+    } else {
+        GAMEDEMO = 1;
+    }
+
+    Door_Reset();
+    newgamealpha = 1.0f;
+    if (GAMEDEMO == 0) {
+        PlayerProgress[0].field_0x6 = 0;
+        PlayerProgress[1].field_0x6 = 0;
+        newgamefade = 0;
+        newgame_menudrawoff = 0;
+    }
+    BackDrop_ResetColours();
+    Pictures_FixUp(&world->scene);
+}
+
 static void Titles_Update(WORLDINFO *) {
+    if (NuSpecialExistsFn(&LevHSpecial[0]) != 0) {
+        i32 menu_id = GetMenuID();
+        f32 target =
+            (MenuLoadOccurred == 0 && MenuSaveOccurred == 0 && (static_cast<u32>(menu_id + 1) < 2 || menu_id == 1))
+                ? 1.0f
+                : 0.0f;
+        LevAlpha = SeekLinearF(LevAlpha, target, FRAMETIME + FRAMETIME);
+    }
+
+    TitlesAlpha = SeekLinearF(TitlesAlpha, 1.0f, FRAMETIME + FRAMETIME);
+    LevTime[1] = 0.0f;
+    if (GetMenuID() == 0 && GameTimer.time_elapsed >= 4.0f) {
+        LevTime[1] = 1.0f;
+    }
+    LevTime[0] = SeekLinearF(LevTime[0], LevTime[1], FRAMETIME + FRAMETIME);
 }
+
 static void Titles_Draw(WORLDINFO *) {
+    NUMTX draw_mtx;
+    if (NuSpecialExistsFn(&LevHSpecial[0]) != 0 && LevAlpha > 0.0f) {
+        draw_mtx = LevMtx;
+        if (GameTimer.time_elapsed < 4.0f) {
+            f32 t = NuTrigTable[(i32)(GameTimer.time_elapsed * 0.25f * 16384.0f) >> 1 & 0x7fff];
+            draw_mtx.m30 = titlesstartpos.x + (LevMtx.m30 - titlesstartpos.x) * t;
+            draw_mtx.m31 = titlesstartpos.y + (LevMtx.m31 - titlesstartpos.y) * t;
+            draw_mtx.m32 = titlesstartpos.z + (LevMtx.m32 - titlesstartpos.z) * t;
+        }
+
+        NUVEC scale = {0.825f, 0.825f, 0.825f};
+        NuMtxPreScale(&draw_mtx, &scale);
+        f32 alpha = 1.0f - NuTrigTable[(i32)(LevAlpha * 16384.0f + 16384.0f) >> 1 & 0x7fff];
+        NuSpecialDrawAtAlpha(&LevHSpecial[0], &draw_mtx, newgamealpha * TitlesAlpha * alpha);
+    }
+
+    if (LevTime[0] <= 0.0f || newgamealpha <= 0.0f) {
+        return;
+    }
+
+    f32 time = GameTimer.time_elapsed;
+    if (time > 30.0f) {
+        time = NuFmod(time - 4.0f, 26.0f) + 4.0f;
+    }
+    draw_mtx = LevMtx;
+
+    f32 alpha;
+    if (time > 4.0f) {
+        if (time < 5.0f)
+            alpha = time - 4.0f;
+        else if (time < 8.166666f)
+            alpha = 1.0f;
+        else if (time < 9.166666f)
+            alpha = 1.0f - (time - 8.166666f);
+        else
+            alpha = 0.0f;
+        if (alpha > 0.0f && NuSpecialExistsFn(&LevHSpecial[10]) != 0) {
+            draw_mtx.m31 = -0.15f;
+            NuSpecialDrawAtAlpha(&LevHSpecial[10], &draw_mtx, newgamealpha * 0.5f * alpha * LevTime[0]);
+        }
+    }
+    if (time > 8.166666f) {
+        if (time < 9.166666f)
+            alpha = time - 8.166666f;
+        else if (time < 12.333332f)
+            alpha = 1.0f;
+        else if (time < 13.333332f)
+            alpha = 1.0f - (time - 12.333332f);
+        else
+            alpha = 0.0f;
+        if (alpha > 0.0f && NuSpecialExistsFn(&LevHSpecial[11]) != 0) {
+            draw_mtx.m31 = -0.15f;
+            NuSpecialDrawAtAlpha(&LevHSpecial[11], &draw_mtx, newgamealpha * 0.5f * alpha * LevTime[0]);
+        }
+    }
+    if (time > 12.333333f) {
+        if (time < 13.333333f)
+            alpha = time - 12.333333f;
+        else if (time < 16.5f)
+            alpha = 1.0f;
+        else if (time < 17.5f)
+            alpha = 1.0f - (time - 16.5f);
+        else
+            alpha = 0.0f;
+        if (alpha > 0.0f && NuSpecialExistsFn(&LevHSpecial[12]) != 0) {
+            draw_mtx.m31 = -0.15f;
+            NuSpecialDrawAtAlpha(&LevHSpecial[12], &draw_mtx, newgamealpha * 0.5f * alpha * LevTime[0]);
+        }
+    }
+    if (time > 16.5f) {
+        if (time < 17.5f)
+            alpha = time - 16.5f;
+        else if (time < 20.666666f)
+            alpha = 1.0f;
+        else if (time < 21.666666f)
+            alpha = 1.0f - (time - 20.666666f);
+        else
+            alpha = 0.0f;
+        if (alpha > 0.0f && NuSpecialExistsFn(&LevHSpecial[13]) != 0) {
+            draw_mtx.m31 = -0.15f;
+            NuSpecialDrawAtAlpha(&LevHSpecial[13], &draw_mtx, newgamealpha * 0.5f * alpha * LevTime[0]);
+        }
+    }
+    if (time > 20.666666f) {
+        if (time < 21.666666f)
+            alpha = time - 20.666666f;
+        else if (time < 24.833332f)
+            alpha = 1.0f;
+        else if (time < 25.833332f)
+            alpha = 1.0f - (time - 24.833332f);
+        else
+            alpha = 0.0f;
+        if (alpha > 0.0f && NuSpecialExistsFn(&LevHSpecial[14]) != 0) {
+            draw_mtx.m31 = -0.15f;
+            NuSpecialDrawAtAlpha(&LevHSpecial[14], &draw_mtx, newgamealpha * 0.5f * alpha * LevTime[0]);
+        }
+    }
+    if (time > 24.833332f) {
+        if (time < 25.833332f)
+            alpha = time - 24.833332f;
+        else if (time < 28.999998f)
+            alpha = 1.0f;
+        else if (time < 29.999998f)
+            alpha = 1.0f - (time - 28.999998f);
+        else
+            alpha = 0.0f;
+        if (alpha > 0.0f && NuSpecialExistsFn(&LevHSpecial[15]) != 0) {
+            draw_mtx.m31 = -0.15f;
+            NuSpecialDrawAtAlpha(&LevHSpecial[15], &draw_mtx, newgamealpha * 0.5f * alpha * LevTime[0]);
+        }
+    }
+    if (time > 29.0f) {
+        if (time < 30.0f)
+            alpha = time - 29.0f;
+        else if (time < 33.166668f)
+            alpha = 1.0f;
+        else if (time < 34.166668f)
+            alpha = 1.0f - (time - 33.166668f);
+        else
+            alpha = 0.0f;
+        if (alpha > 0.0f && NuSpecialExistsFn(&LevHSpecial[16]) != 0) {
+            draw_mtx.m31 = -0.15f;
+            NuSpecialDrawAtAlpha(&LevHSpecial[16], &draw_mtx, newgamealpha * 0.5f * alpha * LevTime[0]);
+        }
+    }
+    if (time > 33.166664f) {
+        if (time < 34.166664f)
+            alpha = time - 33.166664f;
+        else if (time < 37.333332f)
+            alpha = 1.0f;
+        else if (time < 38.333332f)
+            alpha = 1.0f - (time - 37.333332f);
+        else
+            alpha = 0.0f;
+        if (alpha > 0.0f && NuSpecialExistsFn(&LevHSpecial[17]) != 0) {
+            draw_mtx.m31 = -0.15f;
+            NuSpecialDrawAtAlpha(&LevHSpecial[17], &draw_mtx, newgamealpha * 0.5f * alpha * LevTime[0]);
+        }
+    }
 }
 
 // Keyword tables for generic level configuration keywords.
@@ -1923,7 +2175,8 @@ void Level_Update(WORLDINFO *world) {
     }
 
     if (DoubleScoreTime > 0.0f) {
-        if ((i32)(GameTimer[0] + GameTimer[0]) != (i32)(GameTimer[1] + GameTimer[1])) {
+        if ((i32)(GameTimer.time_elapsed + GameTimer.time_elapsed) !=
+            (i32)(GameTimer.last_time_elapsed + GameTimer.last_time_elapsed)) {
             GameAudio_PlaySfxAndSetVolume(0x35, NULL, DoubleScoreTime);
         }
     }
