@@ -7,6 +7,15 @@
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nucore/numemory.h"
 
+namespace {
+    struct OGGCallbacksVTable {
+        i32 (*read)(void *, void *, u32);
+        void (*seek)(void *, i32, u32);
+        void (*close)(void *);
+        i32 (*get_position)(const void *);
+    };
+} // namespace
+
 i32 NuSoundLoaderOGG::OGGFileCallbacks::Read(void *dest, u32 size) {
     return NuFileRead(file, dest, size);
 }
@@ -60,17 +69,17 @@ i32 NuSoundLoaderOGG::OGGFileCallbacks::GetPosition() const {
 }
 
 int NuSoundLoaderOGG::OggCallbackClose(void *callbacks) {
-    ((OGGFileCallbacks *)callbacks)->Close();
+    (*(OGGCallbacksVTable **)callbacks)->close(callbacks);
     return 0;
 }
 
 int NuSoundLoaderOGG::OggCallbackSeek(void *callbacks, i64 offset, i32 origin) { // NOLINT(google-runtime-int)
-    ((OGGFileCallbacks *)callbacks)->Seek(origin, (u32)offset);
+    (*(OGGCallbacksVTable **)callbacks)->seek(callbacks, origin, (u32)offset);
     return 0;
 }
 
 long NuSoundLoaderOGG::OggCallbackTell(void *callbacks) { // NOLINT(google-runtime-int)
-    return ((OGGFileCallbacks *)callbacks)->GetPosition();
+    return (*(OGGCallbacksVTable **)callbacks)->get_position(callbacks);
 }
 
 bool NuSoundLoaderOGG::SeekRawData(u64 position) {
@@ -88,8 +97,7 @@ void NuSoundLoaderOGG::Close() {
 }
 
 usize NuSoundLoaderOGG::OggCallbackRead(void *dest, usize count, usize size, void *callbacks_) {
-    OGGFileCallbacks *callbacks = (OGGFileCallbacks *)callbacks_;
-    return callbacks->Read(dest, count * size);
+    return (*(OGGCallbacksVTable **)callbacks_)->read(callbacks_, dest, count * size);
 }
 
 i32 NuSoundLoaderOGG::ReadHeader(NuSoundStreamDesc *desc) {

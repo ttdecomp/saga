@@ -9,11 +9,6 @@ struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
 
-// Faithful Star Wars theme wiring — opening music triggered after intro.
-// Original SetBackgroundMusic(1) at LoadPerm entry starts the legal/intro
-// bed; SetBackgroundMusic(-1) stops it at 0x1bfe52; TITLES_LDATA's quiet
-// track (Star Wars main theme) is then started via GamePlayMusic.
-
 void PlayAMusic(i32 a, i32 b, i32 c, i32 d) {
     (void)a;
     (void)b;
@@ -42,17 +37,9 @@ void legoSetCutVolume(float v) {
 void GetAudioFadeLevel() {
 }
 void SetBackgroundMusic(i32 track) {
-    LOG_INFO("SetBackgroundMusic track=%d (Star Wars theme after intro when track==1)", track);
-    if (track == -1) {
-        LOG_INFO("SetBackgroundMusic: stop");
-        music_man.PlayTrack(TRACK_CLASS_NOMUSIC);
-        return;
-    }
-    i32 res = music_man.PlayTrack(TRACK_CLASS_QUIET);
-    if (res < 0)
-        res = music_man.PlayTrack(TRACK_CLASS_ACTION);
-    LOG_INFO("SetBackgroundMusic: PlayTrack result %d", res);
-    (void)res;
+    // libTTapp.so 0x4df8b0: platform stub (eight NOPs and ret).
+    // Title music is selected and started later by GamePlayMusic.
+    (void)track;
 }
 void legoSetMusicVolume(float v) {
     // Original: NuMusic::SetClassVolume(0x23, v) — the mask covers QUIET (1),

@@ -16,7 +16,8 @@ NuSoundDecodeThread *NuSoundDecoder::sDecodeThread = NULL;
 // loaded NuSoundHeaderOGG) is shared with the decoder so the decode path can
 // ov_read() through the handle the loader opened.
 NuSoundDecoder::NuSoundDecoder(char const *name, NuSoundSource *wrapped)
-    : NuSoundSource(name, SourceType::ZERO, NuSoundSource::FeedType::STREAMING) {
+    : NuSoundSource(NULL, SourceType::STREAMING, NuSoundSource::FeedType::STREAMING) {
+    (void)name;
     this->source = wrapped;
     this->buffers[0] = new NuSoundBuffer();
     this->buffers[1] = new NuSoundBuffer();

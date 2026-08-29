@@ -1,9 +1,9 @@
 #include "nu2api/nusound/nusound_source.hpp"
 
-u32 NuSoundSource::sNumInitialBuffers = 1;
+const u32 NuSoundSource::sNumInitialBuffers[2] = {1, 2};
 
 u32 NuSoundSource::GetNumInitialBuffers() const {
-    return NuSoundSource::sNumInitialBuffers;
+    return NuSoundSource::sNumInitialBuffers[(u32)this->source_type];
 }
 #include "nu2api/nusound/nusound_weakptr.hpp"
 
@@ -33,11 +33,9 @@ NuSoundSource::NuSoundSource(const char *name, SourceType source_type, FeedType 
         // this->field5_0xe = (short)(sVar1 + 1);
     }
 
-    // this->sound_stream_desc = NULL;
-    // libTTapp.so 0x32486a: both type fields are written as the literal 1
-    // (STREAMING); the constructor's type arguments are ignored.
-    this->feed_type = FeedType::STREAMING;
-    this->source_type = SourceType::STREAMING;
+    // libTTapp.so 0x3248f2..0x324904.
+    this->source_type = source_type;
+    this->feed_type = feed_type;
     // this->field8_0x18 = NULL;
     // this->field9_0x1c = -1;
 }

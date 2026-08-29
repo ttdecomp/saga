@@ -223,7 +223,19 @@ bool NuVoiceAndroid::GetInterfaces() {
 }
 
 void NuVoiceAndroid::StartHardwareVoice() {
-    // Applied on the next UpdateHardwareVoice.
+    if (this->play_interface == NULL || *(void **)this->play_interface == NULL) {
+        return;
+    }
+
+    // libTTapp.so 0x32b6d4: starting a hardware voice resets all of the
+    // platform play-position tracking before arming the deferred start.
+    this->last_volume_level = -1;
+    this->field7_0x164 = 0;
+    this->field8_0x168 = 0;
+    this->field9_0x16c = 0;
+    this->field10_0x170 = 0;
+    this->field11_0x174 = 0;
+    this->field12_0x178 = 0;
     this->hardware_flags |= 1;
 }
 
@@ -306,7 +318,12 @@ bool NuVoiceAndroid::UpdateState() {
         if (this->RealiseObject() == false) {
             return false;
         }
-        if (this->GetInterfaces() == false) {
+        // This apparently inverted test is what the original executes
+        // (libTTapp.so 0x32c2a4: test al; jne 0x32c250). GetInterfaces returns
+        // true on success, so the priming Update performed by Play returns
+        // false here. Since the logical voice is still STOPPED, the caller's
+        // Stop(true) is a no-op and the initial queued buffers remain intact.
+        if (this->GetInterfaces()) {
             return false;
         }
 
@@ -341,13 +358,17 @@ void NuVoiceAndroid::UpdateQueue() {
     if (this->sound_source->feed_type == NuSoundSource::FeedType::STREAMING && (this->flags2 & 2) == 0) {
         // Starvation watchdog: remember whether the queue ever ran ahead, and
         // request a refill as soon as it runs low.
-        if ((this->flags & 8) == 0) {
+        // libTTapp.so 0x32c37e..0x32c3ad reads and writes voice+0x17e,
+        // NuVoiceAndroid::hardware_flags. Using NuSoundVoice::flags (+0x31)
+        // left bit 4 invisible to UpdateHardwareVoice and delayed every refill
+        // until HEADATEND.
+        if ((this->hardware_flags & 8) == 0) {
             if (count > 1) {
-                this->flags |= 8;
+                this->hardware_flags |= 8;
             }
         } else if (count < 2) {
-            this->flags &= 0xf7;
-            this->flags |= 4;
+            this->hardware_flags &= 0xf7;
+            this->hardware_flags |= 4;
         }
     }
 }

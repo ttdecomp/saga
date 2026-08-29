@@ -31,12 +31,12 @@ class NuSoundLoaderOGG : public NuSoundLoader {
         NUFILE file;
 
       public:
-        i32 Read(void *dest, u32 size);
-        void Seek(i32 origin, u32 offset);
-        void Close();
+        virtual i32 Read(void *dest, u32 size);
+        virtual void Seek(i32 origin, u32 offset);
+        virtual void Close();
         void SetFile(NUFILE file);
         NUFILE GetFile() const;
-        i32 GetPosition() const;
+        virtual i32 GetPosition() const;
     };
 
     NuSoundLoaderOGG();

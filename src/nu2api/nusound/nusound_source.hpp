@@ -58,5 +58,5 @@ class NuSoundSource {
 
     // Number of buffers Play() requests before starting the hardware voice
     // (the original read this global through an inline accessor).
-    static u32 sNumInitialBuffers;
+    static const u32 sNumInitialBuffers[2];
 };

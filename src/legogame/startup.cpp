@@ -470,10 +470,6 @@ void LoadPerm(void) {
         f32 intro_gate_timer = 0.0f; // t84 — 1 s lead before legal fade starts
         f32 intro_text_timer = 0.0f; // t88 — intro text alpha & exit
         f32 legal_timer = 0.0f;      // t8c — legal fade in / hold / fade out
-        bool crawl_started = false;
-        f32 crawl_timer = 0.0f;
-        static TEXTCRAWL_s crawlObj{};
-        bool crawl_init_done = false;
 
         while (true) {
             NuFrameBegin();
@@ -522,26 +518,7 @@ void LoadPerm(void) {
                         intro_alpha = 1.0f;
                 }
                 intro_text_timer += FRAMETIME;
-                if (intro_text_timer >= kIntroDuration && legal_timer >= kLegalTimerMax && !crawl_started) {
-                    crawl_started = true;
-                    crawl_timer = 0.0f;
-                    BackDrop_ResetColours();
-                    if (!crawl_init_done) {
-                        i32 crawlId = 0x1f0;
-                        TextCrawl_Init(&crawlObj, crawlId, 1);
-                        crawl_init_done = true;
-                    }
-                }
-            }
-
-            if (crawl_started) {
-                crawl_timer += FRAMETIME;
-                BackDrop_Update(FRAMETIME);
-                BackDrop_UpdateColours(0);
-                TextCrawl_Draw(FRAMETIME, 2, 1.0f, nullptr);
-                BackDrop_Draw(1.0f, 0);
-                const f32 crawl_end = 25.0f;
-                if (crawl_timer >= crawl_end) {
+                if (intro_text_timer >= kIntroDuration && legal_timer >= kLegalTimerMax) {
                     SetBackgroundMusic(-1);
                     NuRndrGradClear(0xf00, 0x80000000, 0x80000000, 1.0f);
                     break;

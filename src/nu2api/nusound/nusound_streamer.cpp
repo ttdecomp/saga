@@ -485,7 +485,6 @@ void NuSoundStreamingSample::RequestBuffer(bool loop, NuSoundWeakPtr<NuSoundBuff
     if (this->field8_0x90 < this->some_count) {
         // A buffer already holds decoded data: hand it to the voice directly.
         NuSoundBuffer *buffer = (&this->sound_buffer1)[this->field8_0x90 % 2];
-
         NuSoundWeakPtrListNode::sPtrAccessLock.Lock();
         if (callback.obj != NULL) {
             ((NuSoundBufferCallback *)callback.obj)->SubmitBuffer(buffer);

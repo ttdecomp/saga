@@ -269,8 +269,8 @@ namespace hostsl {
 
         // The device-side buffer (the AudioTrack analog): real SL copies the
         // SL queue's front buffer into the AudioTrack as its buffer drains and
-        // reports buffers consumed on that hand-off, so the playhead lags the
-        // queue by the AudioTrack buffer size. The cap bounds how much the
+        // removes buffers from the SL queue on that hand-off, so the playhead
+        // lags the queue by the AudioTrack buffer size. The cap bounds how much the
         // device holds; 16384 device bytes ≈ 4 × 21 ms periods at 48 kHz.
         const u32 TRACK_CAP_BYTES = 16384;
 
@@ -345,8 +345,21 @@ namespace hostsl {
         // SLObjectItf::GetState (object vtable slot 0x8): the realized state of the
         // object, not the play state.
         u32 ObjectGetState(void *self, u32 *out) {
-            (void)self;
-            *out = 1; // SL_OBJECT_STATE_REALIZED
+            const u32 kind = ((u32 *)self)[1];
+            bool realized = false;
+            if (kind == KIND_ENGINE) {
+                realized = ((EngineObject *)self)->realized;
+            } else if (kind == KIND_MIX) {
+                realized = ((MixObject *)self)->realized;
+            } else if (kind == KIND_PLAYER) {
+                realized = ((Player *)self)->realized;
+            }
+
+            // OpenSL ES 1.0.1: UNREALIZED=1, REALIZED=2, SUSPENDED=3.
+            // Returning 1 for an already-realized player sent the decompiled
+            // UpdateState down its re-realization recovery path during the
+            // priming Update in Play(). The real object reports 2 here.
+            *out = realized ? 2 : 1;
             return SL_RESULT_SUCCESS;
         }
 
@@ -627,22 +640,16 @@ namespace hostsl {
         u32 QueueClear(void *self) {
             Player *player = (Player *)HOSTSL_CONTAINER_OF(self, Player, queue_itf);
             pthread_mutex_lock(&g_lock);
-            // Real SL keeps queued audio across Clear while the player is not
-            // playing: the decompiled voice startup enqueues the prefill and
-            // then issues SetPlayState(STOPPED) + Clear before the first
-            // SetPlayState(PLAYING) (StopHardwareVoice), and the shipping game's
-            // streams start from the beginning, so the never-played prefill
-            // survives the Clear there. A Clear on a playing player discards.
-            if (player->play_state == 3) {
+            if (player->stream != NULL) {
                 SDL_ClearAudioStream(player->stream);
-                QueueReleaseAll(player);
             }
+            QueueReleaseAll(player);
             pthread_mutex_unlock(&g_lock);
             return SL_RESULT_SUCCESS;
         }
 
-        // Drops queue entries the device-side buffer has fully consumed; returns
-        // the hand-off count (one buffer-consumed callback per entry).
+        // Drops queue entries that have been handed completely to the
+        // device-side buffer; returns the hand-off count for queue accounting.
         u32 QueueCountHandedOff(Player *player) {
             u32 done = 0;
             while (player->queue_count > 0) {
@@ -699,9 +706,11 @@ namespace hostsl {
         enum { FIRED_MAX = 64 };
 
         // Hands queue data to the device-side buffer while it has room (the
-        // AudioTrack analog), then returns how many entries were fully consumed.
-        u32 TopUpPlayerStream(Player *player) {
-            u32 done = QueueCountHandedOff(player);
+        // AudioTrack analog). Finishing an SL queue entry is not a play-interface
+        // event: SL_PLAYEVENT_HEADATEND fires only when the play head itself
+        // reaches the end of all queued audio.
+        void TopUpPlayerStream(Player *player) {
+            QueueCountHandedOff(player);
 
             const u32 available = (u32)SDL_GetAudioStreamAvailable(player->stream);
             u32 space = TRACK_CAP_BYTES > available ? TRACK_CAP_BYTES - available : 0;
@@ -710,14 +719,13 @@ namespace hostsl {
                 QueueEntry *entry = &player->queue[player->queue_head];
                 const u32 remaining = entry->stream_size - entry->fed;
                 const u32 take = remaining < space ? remaining : space;
-                if (SDL_PutAudioStreamData(player->stream, entry->data + entry->fed, (int)take) == 0) {
+                if (!SDL_PutAudioStreamData(player->stream, entry->data + entry->fed, (int)take)) {
                     break;
                 }
                 entry->fed += take;
                 space -= take;
-                done += QueueCountHandedOff(player);
+                QueueCountHandedOff(player);
             }
-            return done;
         }
 
         void DeviceMixCallback(void *userdata, SDL_AudioStream *stream, int additional, int total) {
@@ -752,13 +760,9 @@ namespace hostsl {
                     }
 
                     // The device-side buffer drains into the mix; the SL queue
-                    // keeps feeding it while there is room. The buffer-consumed
-                    // callbacks fire on that hand-off, ahead of the playhead,
-                    // which is what drives the game's streaming refill.
-                    const u32 done = TopUpPlayerStream(player);
-                    for (u32 e = 0; e < done && fired_count < FIRED_MAX; e++) {
-                        fired[fired_count++] = player;
-                    }
+                    // keeps feeding it while there is room. Play-interface events
+                    // are based on the play head below, not this queue hand-off.
+                    TopUpPlayerStream(player);
 
                     const u32 available = (u32)SDL_GetAudioStreamAvailable(player->stream);
                     const u32 take = (available < chunk ? available : chunk) & ~3u;
@@ -770,9 +774,9 @@ namespace hostsl {
                             player->underrunning = true;
                             player->underrun_start_ms = SDL_GetTicks();
                             LOG_WARN("audio: buffer underrun on player %p (playing, queue empty)", (void *)player);
-                        }
-                        if (fired_count < FIRED_MAX) {
-                            fired[fired_count++] = player;
+                            if (fired_count < FIRED_MAX) {
+                                fired[fired_count++] = player;
+                            }
                         }
                         continue;
                     }

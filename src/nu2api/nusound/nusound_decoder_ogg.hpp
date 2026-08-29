@@ -1,6 +1,8 @@
 #pragma once
 
 #include "nusound_decoder.hpp"
+#include "nusound_loader_ogg.hpp"
+#include "nusound_voice.hpp"
 
 #include <vorbis/vorbisfile.h>
 
@@ -9,7 +11,7 @@
 // through the still-open OggVorbis_File of the loaded NuSoundHeaderOGG and
 // fills the requested buffer with decoded PCM, swapping channel pairs for
 // 3- and 6-channel material exactly like the original.
-class NuSoundDecoderOGG : public NuSoundDecoder {
+class NuSoundDecoderOGG : public NuSoundDecoder, public NuSoundBufferCallback {
   public:
     // Streaming datasource the decoder reads the encoded stream through.
     class OGGReadCallbacksDecoder {
@@ -17,10 +19,10 @@ class NuSoundDecoderOGG : public NuSoundDecoder {
         OGGReadCallbacksDecoder();
 
         void SetDecoder(NuSoundDecoderOGG *decoder);
+        virtual int Read(void *dest, unsigned int size);
         virtual void Seek(int origin, unsigned int offset);
         virtual void Close();
         virtual int GetPosition() const;
-        virtual int Read(void *dest, unsigned int size);
 
       private:
         NuSoundDecoderOGG *decoder;
@@ -31,24 +33,24 @@ class NuSoundDecoderOGG : public NuSoundDecoder {
     ~NuSoundDecoderOGG();
 
     void Reset();
-    void SubmitBuffer(NuSoundBuffer *buffer);
+    void SubmitBuffer(NuSoundBuffer *buffer) override;
     u64 Decode(NuSoundSource &source, NuSoundBuffer &buffer, bool loop) override;
 
     u32 DecodeOggChunk(char *dest, unsigned int size);
 
-    OGGReadCallbacksDecoder read_callbacks;
-    NuSoundBuffer *locked_buffer; // ring buffer the streaming reader is serving
-
-  public:
-    OggVorbis_File *ogg_file; // the header's still-open vorbis handle
-
-  private:
-  public:
-    // Original decoder fields kept under their .so offsets for reference.
-    void *decoder_self_list_0xe8;
+    u32 field_0xec;
+    void *field_0xf0;
+    void *field_0xf4;
     u32 field_0xf8;
+    void *field_0xfc;
+    void *field_0x100;
     u32 field_0x104;
     u32 field_0x108;
-    u32 ring_read_pos;  // 0x12c
-    u32 ring_write_pos; // 0x130
+    OGGReadCallbacksDecoder read_callbacks;
+    u32 field_0x118;
+    NuSoundBuffer *encoded_buffers[4];
+    u32 ring_read_pos;            // 0x12c
+    u32 ring_write_pos;           // 0x130
+    NuSoundBuffer *locked_buffer; // 0x134
+    bool ogg_loop;                // 0x138
 };
