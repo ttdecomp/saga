@@ -13,12 +13,40 @@ typedef enum {
     NUQFNT_CSMODE_CNT = 5,
 } NUQFNT_CSMODE;
 
+typedef struct vufnt_android_s {
+    u32 colour;
+    f32 x;
+    f32 y;
+    f32 z;
+    NUMTX mtx;
+    f32 x_scale;
+    f32 y_scale;
+} VUFNT_ANDROID;
+
+typedef struct vucharidx_s {
+    u16 unicode;
+    u16 index;
+} VUCHARIDX;
+
+typedef struct vufntchar_s {
+    f32 x;
+    f32 y;
+    f32 width;
+} VUFNTCHAR;
+
 typedef struct vufnt_s {
-    char filler1[0x18];
+    u8 filler0[6];
+    u16 flags;
+    i32 size;
+    i32 glyph_count;
+    i32 unicode_count;
+    f32 height;
 
     f32 baseline;
 
-    char unknown_1c[0x8];
+    f32 space_width;
+
+    i32 mode;
 
     f32 ic_gap; // 0x24
 
@@ -27,7 +55,9 @@ typedef struct vufnt_s {
     f32 *x_scale;
     f32 *y_scale;
 
-    char filler3[0x8]; // 0x34-0x3B
+    VUFNTCHAR *glyphs; // 0x34
+
+    VUCHARIDX *unicode_map; // 0x38
 
     VARIPTR *hdr; // 0x3c
 
@@ -35,7 +65,7 @@ typedef struct vufnt_s {
 
     u32 *color_abgr; // 0x44
 
-    void *platform_data; // 0x48
+    VUFNT_ANDROID *platform_data; // 0x48
 } VUFNT;
 
 typedef void NUQFNT;
@@ -56,19 +86,42 @@ extern "C" {
 
     extern f32 qfnt_len_scale;
     extern f32 qfnt_height_scale;
+    extern f32 nuqfnt_space_width;
+    extern u32 NuQFntMode;
 
     void NuQFntInit(VARIPTR *buf, VARIPTR buf_end);
 
     NUQFNT *NuQFntRead(char *filename, VARIPTR *buf, VARIPTR buf_end);
     NUQFNT *NuQFntReadBuffer(VARIPTR *font, VARIPTR *buf, VARIPTR buf_end);
+    VUFNT *NuQFntDuplicate(VUFNT *font, i32 flags, i32 render_plane, VARIPTR *buf, VARIPTR *buf_end);
 
     NUQFNT_CSMODE NuQFntSetCoordinateSystem(NUQFNT_CSMODE mode);
     void NuQFntSetICGap(NUQFNT *font, float ic_gap);
     void NuQFntSetJustifiedTolerances(f32 squash, f32 stretch);
     void NuQFntSetMtx(NUQFNT *font, NUMTX *mtx);
     void NuQFntSetMtxRS(RNDRSTREAM *stream, NUQFNT *font, NUMTX *mtx);
+    void NuQFntSetRS(RNDRSTREAM *stream, NUQFNT *font);
+    void NuQFntSetColourRS(RNDRSTREAM *stream, NUQFNT *font, u32 colour);
+    void NuQFntSetScaleRS(RNDRSTREAM *stream, NUQFNT *font, f32 x_scale, f32 y_scale);
+    void NuQFntMoveRS(RNDRSTREAM *stream, NUQFNT *font, f32 x, f32 y, f32 z);
+    f32 NuQFntHeight(NUQFNT *font);
+    f32 NuQFntPrintLenW(NUQFNT *font, u16 *text);
+    void NuQFntPrintCharW(NUQFNT *font, u16 *text, u32 flags);
+    void NuQFntPrintRSW(RNDRSTREAM *stream, NUQFNT *font, u16 *text, u32 flags);
 
     f32 NuQFntBaseline(NUQFNT *font);
+    void NuQFntSet(NUQFNT *font);
+    void NuQFntSetColour(NUQFNT *font, u32 colour);
+    void NuQFntSetScale(NUQFNT *font, f32 x_scale, f32 y_scale);
+    void NuQFntMove(NUQFNT *font, f32 x, f32 y, f32 z);
+    void NuQFntPrintW(NUQFNT *font, u16 *text);
+    void NuQFntPushPrintMode(u32 mode);
+    void NuQFntPopPrintMode(void);
+    void NuQFntSetSpaceWidth(NUQFNT *font, f32 width);
+    u16 NuQFntEncodeUnicodeChar(NUQFNT *font, u16 character);
+    NUQFNT *NuQFntLoadPtr(char *path, char *name, i32 flags, i32 render_plane, VARIPTR *buf, VARIPTR *buf_end);
+    f32 NuQFntPrintJustifiedW(NUQFNT *font, u16 *text, f32 x, f32 y, f32 z, f32 sx, f32 sy, f32 width, f32 line_spacing,
+                              u32 colour, NUMTX *mtx);
 #ifdef __cplusplus
 }
 #endif

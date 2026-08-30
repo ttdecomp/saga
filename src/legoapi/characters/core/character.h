@@ -10,11 +10,38 @@ struct CHARFIXUP {
 
 typedef struct CHARFIXUP CHARFIXUP;
 
-struct gamecharacterdata_s { /* PlaceHolder Structure */
-    undefined field0_0x0;
-    undefined field1_0x1;
-    undefined field2_0x2;
-    undefined field3_0x3;
+struct GameObject_s;
+struct nugscn_s;
+struct CHARACTERMODEL_s;
+struct ANIMPACKET_s;
+struct NUJOINTANIM_s;
+struct numtx_s;
+struct WORLDINFO_s;
+using CHARACTERUPDATEFN = void (*)(GameObject_s *);
+using MAKELAYERLISTFN = i32 (*)(CHARACTERMODEL_s *, i16 *, u32);
+
+struct CHARACTERANIM_s {
+    char *name;
+    u32 flags;
+    i16 animation_id;
+    u8 data_0xa[0x42];
+};
+
+DECOMP_ASSERT(sizeof(CHARACTERANIM_s) == 0x4c, "CHARACTERANIM_s size");
+
+struct CHARSCENE_s {
+    nugscn_s *scene;
+    void *special_scene;
+    void *special;
+    void *display_special;
+};
+
+DECOMP_ASSERT(sizeof(CHARSCENE_s) == 0x10, "CHARSCENE_s size");
+
+extern CHARSCENE_s *CharScene_Area;
+
+struct gamecharacterdata_s {         /* PlaceHolder Structure */
+    MAKELAYERLISTFN make_layer_list; // 0x00
     undefined field4_0x4;
     undefined field5_0x5;
     undefined field6_0x6;
@@ -289,16 +316,16 @@ typedef struct gamecharacterdata_s GAMECHARACTERDATA;
 
 struct characterdata_s { /* PlaceHolder Structure */
     i32 field0_0x0;
-    undefined4 field1_0x4;
+    u32 model_flags;
     char *dir;
     char *file;
-    undefined4 field4_0x10;
+    CHARACTERANIM_s *animations;
     undefined2 field5_0x14;
     undefined field6_0x16;
     undefined field7_0x17;
-    undefined4 field8_0x18;
-    undefined4 field9_0x1c;
-    undefined4 field10_0x20;
+    CHARACTERUPDATEFN move_fn;
+    CHARACTERUPDATEFN animate_fn;
+    CHARACTERUPDATEFN draw_fn; // 0x20
     void *field11_0x24;
     undefined4 field12_0x28;
     f32 field13_0x2c;
@@ -314,9 +341,25 @@ struct characterdata_s { /* PlaceHolder Structure */
 };
 typedef struct characterdata_s CHARACTERDATA;
 
+extern "C" i32 MakeLayerList_Index(CHARACTERMODEL_s *model, i16 *layers, u32 mask);
+extern "C" i32 APIDrawCharacterModel(CHARACTERMODEL_s *model, CHARACTERDATA *character_data, ANIMPACKET_s *animation,
+                                     numtx_s *matrix, numtx_s *secondary_matrix, numtx_s *reflection_matrix,
+                                     i32 unused_zero, numtx_s *auxiliary_matrix, GameObject_s *object, u32 flags,
+                                     NUJOINTANIM_s *joint_overrides, i32 joint_override_count, WORLDINFO_s *world,
+                                     f32 far_clip, numtx_s *output_matrices, i32 value_15, void *level_model);
+
 extern i32 CHARCOUNT;
 extern CHARACTERDATA *CDataList;
 extern GAMECHARACTERDATA *GCDataList;
+extern GAMECHARACTERDATA GCDATA_DEFAULT;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+    void APITransparentInit();
+#ifdef __cplusplus
+}
+#endif
 
 #ifdef __cplusplus
 
@@ -353,4 +396,9 @@ extern "C" {
     extern i16 id_OBIWANKENOBIJEDIMASTER;
     extern i16 id_GRIEVOUS;
     extern i16 id_JANGOFETT;
+    extern i16 id_MOSEISLEYCITIZEN;
+    extern i16 id_CANTINAALIEN;
+    extern i16 id_CLOUDCITYCITIZEN;
+    extern i16 id_GEONOSIAN;
+    extern i16 id_BOB;
 }

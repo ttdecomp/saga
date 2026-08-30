@@ -3,8 +3,12 @@
 #include "globals.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/area.h"
+#include "legoapi/world/areas.h"
+#include "legoapi/world/mission.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nucore/nustring.h"
+
+i32 openlevels = 0;
 
 // Cross-module entry points used by this file (declared locally since they have
 // no single shared header in the reconstructed source).  The NuFPar* helpers are
@@ -20,13 +24,11 @@ extern void Particles_DumpAreaPage(void);
 extern void Customiser_RestoreModelTextureIDs(struct CUSTOMISER *);
 extern void Customiser_DumpAccessories(struct CUSTOMISER *);
 extern "C" void APIDumpCharacterModels(i32);
-extern "C" void NuGScnRemove(void *);
 extern void SuperCounters_Reset(i32);
 extern void NewAreaMusicChanges(void);
 extern void ClearTakeOverObjectSys(void);
 extern void Door_Reset(void);
 extern void ResetMinikitCounter(void);
-extern i32 Mission_Active(struct MISSIONSYS_s *);
 extern "C" void *NuFParCreate(const char *);
 extern "C" i32 NuFParDestroy(void *);
 extern "C" i32 NuFParGetLine(void *);
@@ -94,7 +96,7 @@ void Area_Configure(i32 area, i32 param, EXTRAMODEL *models, i16 *s) {
     Area_FreePlayModelList[0] = -1;
     Area_MissionModelCount = 0;
     Area_MissionModelList[0].model_id = -1;
-    ((i16 *)LevelLoad)[0] = -1;
+    LevelLoad[0] = -1;
     LevelLoadCount = 0;
     if (area != -1) {
         u8 *ad = *(u8 **)&ADataList + area * 0x9c;

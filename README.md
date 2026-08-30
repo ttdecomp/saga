@@ -1,4 +1,4 @@
-![Progress](https://img.shields.io/badge/matching-8.73%25-red)
+![Progress](https://img.shields.io/badge/matching-10.27%25-red)
 [![Discord](https://img.shields.io/discord/1467775700894224555?color=%235865F2&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/2HJuMtzA7q)
 
 |                 | Target (Android x86)                                                                                                                                                                                  | Host                                                                                                                                                                                  |
@@ -25,11 +25,15 @@ any game assets, media, original source code, or any other copyrighted material.
 
 ## Build Instructions
 
-The project uses CMake as its build system. There are two main build targets:
+The project uses CMake as its build system. There are two build modes:
 
-The Android x86 build, which uses the NDK toolchain and targets the original Android platform. This build is used for matching the code, its output can not be run.
+The Android x86 build uses the NDK r8e toolchain and targets the original
+Android platform. It is the matching build; its output is not a host-runnable
+game executable.
 
-A host build, which uses the hosts native gcc and targets i686 Linux. This build is used for testing and development, its output can be run on the host.
+A host build uses the configured host C/C++ compiler. On non-Windows systems it
+builds 32-bit i686 code with AddressSanitizer and is used for testing and
+development.
 
 
 ### Android x86 build
@@ -66,12 +70,12 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
 Documentation and explanations for various systems and components will be added
 over time. Contributions to the documentation are highly appreciated.
 
-See the [docs/](docs/) directory.
+See the [documentation index](doc/main.md).
 
 ## References
 
-- The Android app can be run with the Waydroid emulator: https://waydro.id/
-- The Android NDK can be found here: https://dl.google.com/android/ndk/android-ndk-r8e-linux-x86_64.tar.bz2
+- The Android app can be run with the [Waydroid emulator](https://waydro.id/).
+- The matching toolchain is [Android NDK r8e](https://dl.google.com/android/ndk/android-ndk-r8e-linux-x86_64.tar.bz2).
 
 <!-- matching-table-start -->
 
@@ -79,29 +83,29 @@ See the [docs/](docs/) directory.
 
 | Directory | Fuzzy % | Funcs % | Data % |
 |---|---|---|---|
-| `(root)` | 0.6% | 0.0% | 67.2% |
-| `MechInputTouch` | 4.8% | 0.0% | 0.0% |
-| `editor` | 2.5% | 0.0% | - |
-| `gameapi` | 6.5% | 1.4% | 94.8% |
-| `gameframework` | 65.4% | 12.5% | 100.0% |
-| `gamelib` | 5.5% | 0.9% | 5.0% |
-| `java` | 10.5% | 0.0% | 0.0% |
-| `legoapi` | 5.6% | 4.7% | 5.1% |
+| `(root)` | 57.3% | 16.7% | 0.0% |
+| `MechInputTouch` | 5.0% | 0.0% | 0.9% |
+| `editor` | 2.6% | 0.0% | - |
+| `gameapi` | 6.9% | 1.4% | 94.8% |
+| `gameframework` | 68.5% | 11.8% | 100.0% |
+| `gamelib` | 5.6% | 0.9% | 5.0% |
+| `java` | 10.7% | 0.0% | 0.0% |
+| `legoapi` | 7.0% | 5.1% | 31.1% |
 | `legoapi/actions` | 1.7% | 0.5% | - |
-| `legoapi/ai` | 2.0% | 0.0% | - |
-| `legoapi/audio` | 2.9% | 0.0% | - |
-| `legoapi/characters` | 3.4% | 0.6% | 39.5% |
-| `legoapi/core` | 9.4% | 4.5% | 2.8% |
-| `legoapi/cutscenes` | 2.9% | 0.0% | 100.0% |
+| `legoapi/ai` | 2.2% | 0.0% | - |
+| `legoapi/audio` | 3.0% | 0.0% | 100.0% |
+| `legoapi/characters` | 5.8% | 1.0% | 36.1% |
+| `legoapi/core` | 10.1% | 4.5% | 97.8% |
+| `legoapi/cutscenes` | 4.5% | 0.0% | 93.8% |
 | `legoapi/gizmo` | 4.9% | 4.7% | 0.4% |
-| `legoapi/gizmos` | 12.2% | 4.2% | 100.0% |
-| `legoapi/items` | 2.3% | 0.2% | 4.9% |
-| `legoapi/menus` | 2.4% | 0.0% | 0.0% |
-| `legoapi/misc` | 2.2% | 0.5% | - |
-| `legoapi/props` | 7.3% | 2.4% | 13.0% |
-| `legoapi/render` | 2.3% | 1.5% | 0.5% |
-| `legoapi/world` | 19.2% | 27.6% | 0.1% |
-| `legogame` | 4.2% | 0.0% | 100.0% |
-| `nu2api` | 27.1% | 19.4% | 81.5% |
+| `legoapi/gizmos` | 12.2% | 3.7% | 100.0% |
+| `legoapi/items` | 2.7% | 0.2% | 6.8% |
+| `legoapi/menus` | 3.5% | 0.4% | 16.5% |
+| `legoapi/misc` | 4.5% | 1.0% | - |
+| `legoapi/props` | 17.8% | 5.5% | 59.7% |
+| `legoapi/render` | 4.3% | 3.0% | 95.6% |
+| `legoapi/world` | 20.1% | 28.2% | 0.1% |
+| `legogame` | 6.1% | 5.3% | 81.2% |
+| `nu2api` | 30.3% | 20.7% | 9.3% |
 
 <!-- matching-table-end -->

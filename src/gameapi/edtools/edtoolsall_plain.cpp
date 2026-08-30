@@ -1,3 +1,23 @@
+#include "gameapi/edtools/edgra.h"
+#include "gameapi/edtools/edfile.h"
+#include "gameapi/edtools/edstubs.h"
+#include "legoapi/legoapi_types.h"
+
+extern "C" {
+    extern debinftype *effecttypes;
+    extern debinftype **debtab;
+    extern i32 EDPP_MAX_TYPES;
+    extern i32 edpp_types_used;
+    extern i32 edpp_page_scene[8];
+    extern i32 edpp_page_used[8];
+    extern i32 DEBPAGE_GENERAL;
+    extern i32 DEBPAGE_CHARACTER;
+    extern i32 DEBPAGE_AREA;
+}
+
+void FileLoadSingleEffectType(debinftype *, i32, char);
+
+void edppDetermineNearest(float);
 
 extern "C" {
 
@@ -97,7 +117,7 @@ extern "C" {
     }
     void edbitsRegisterSoundEffect(void) {
     }
-    void edbitsRegisterThingsScene(void) {
+    void edbitsRegisterThingsScene(NUGSCN *) {
     }
     void edbitsSetSoundFxVolume(void) {
     }
@@ -167,7 +187,7 @@ extern "C" {
     }
     void edgraSetup(void) {
     }
-    void edgraStopPage(void) {
+    void edgraStopPage(i32) {
     }
     void edmainActivate(void) {
     }
@@ -229,7 +249,78 @@ extern "C" {
     }
     void edppFindAllSounds(void) {
     }
-    void edppLoadPage(void) {
+    // Parts-page loader (edppLoadPage @0x36c630).  The normal general (0) and
+    // character (5) pages only contain effect-type records; instance records
+    // are read by the page-1/0 branches in the original and are deliberately
+    // not entered here.
+    i32 edppLoadPage(char *path, i32 flag, i32 flags) {
+        u8 category;
+        i32 page_index;
+        if (flag == 0) {
+            category = 0;
+            page_index = 0;
+        } else if (flag == 5) {
+            category = 5;
+            page_index = 1;
+        } else {
+            // The remaining page kinds have their own instance-record paths;
+            // they are outside the general/character pages recovered here.
+            return -1;
+        }
+
+        EdFileSetMedia(1);
+        if (EdFileOpen(path, NUFILE_READ) == 0) {
+            return -1;
+        }
+        EdFileSetReadWrongEndianess(1);
+
+        i32 version = EdFileReadInt();
+        if (version < 5 || version > 41) {
+            EdFileSetReadWrongEndianess(0);
+            EdFileClose();
+            return -1;
+        }
+
+        edpp_page_used[page_index] = 1;
+        edpp_page_scene[page_index] = flags;
+
+        i32 requested = EdFileReadInt();
+        i32 available = EDPP_MAX_TYPES - edpp_types_used;
+        if (requested > available) {
+            requested = available;
+        }
+        if (requested < 0) {
+            requested = 0;
+        }
+
+        for (i32 n = 0; n < requested; n++) {
+            i32 index = 1;
+            while (index < EDPP_MAX_TYPES && debtab[index] != NULL) {
+                index++;
+            }
+            if (index >= EDPP_MAX_TYPES) {
+                break;
+            }
+
+            debinftype *effect = &effecttypes[index];
+            FileLoadSingleEffectType(effect, version, static_cast<char>(category));
+            effect->native_data = NULL;
+            effect->last_render_time = 0.0f;
+            effect->page = static_cast<u8>(page_index);
+            debtab[index] = effect;
+            edpp_types_used++;
+        }
+
+        EdFileSetReadWrongEndianess(0);
+        EdFileClose();
+        edppDetermineNearest(1.0f);
+
+        if (flag == 0) {
+            DEBPAGE_GENERAL = page_index;
+        } else if (flag == 5) {
+            DEBPAGE_CHARACTER = page_index;
+        }
+        return page_index;
     }
     void edppRegisterPointerToGameCharLocation(void) {
     }

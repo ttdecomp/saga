@@ -1,4 +1,12 @@
+#include "legoapi/core/input/gamepads.h"
 #include "legoapi/legoapi_types.h"
+#include "nu2api/nucore/NuInputDevice.h"
+#include "nu2api/nucore/nupad.h"
+
+// Original bss @0x127a500: 64 pads x 0x60 bytes.
+GAMEPAD_s GamePad[64];
+// Original bss @0x127a4e0.
+i32 readpads_always = 0;
 
 void GamePads_Init() {
 }
@@ -9,7 +17,14 @@ void GamePad_Rotate(GameObject_s *) {
 void GamePad_Waggle(GAMEPAD_s *) {
 }
 
-void GamePad_Allocate() {
+GAMEPAD_s *GamePad_Allocate() {
+    for (i32 i = 0; i < 64; i++) {
+        if ((GamePad[i].allocated_5a & 1) == 0) {
+            GamePad[i].allocated_5a |= 1;
+            return &GamePad[i];
+        }
+    }
+    return NULL;
 }
 
 void GamePads_NetHost() {
@@ -38,7 +53,8 @@ extern "C" {
     void Controller_Init(void) {
     }
 
-    void Controller_IsConnected(void) {
+    i32 Controller_IsConnected(void) {
+        return NuInputDevicePS::IsConnectedPS(1);
     }
 
     void Controller_Read(void) {
@@ -59,7 +75,8 @@ extern "C" {
     void SetPadRecPtr(void) {
     }
 
-    void TestForController(void) {
+    i32 TestForController(void) {
+        return Controller_IsConnected() != 0 || enable_touch_controls == 0;
     }
 
 } // extern "C"
@@ -112,10 +129,14 @@ void NoPad(i32, i32) {
 void NewBuzz(nupad_s *, float, i32) {
 }
 
-void ReadPad(i32) {
+__attribute__((weak)) i32 ReadPad(i32) {
+    return 0;
 }
 
-void ReadPads() {
+__attribute__((weak)) void ReadPads() {
+    ReadPad(0);
+    ReadPad(1);
+    readpads_always = 0;
 }
 
 void NewRumble(nupad_s *, float, i32) {

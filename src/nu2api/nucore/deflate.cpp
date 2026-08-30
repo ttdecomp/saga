@@ -269,11 +269,6 @@ i32 DecodeDeflated(DEFLATECONTEXT *ctx) {
                 if (!DecompressHuffmanTrees(ctx)) {
                     return 0;
                 }
-
-                if (!DecodeDeflatedBlock(ctx)) {
-                    LOG_WARN("failed to decode deflated block");
-                    return 0;
-                }
                 break;
             case BLOCK_FIXED_HUFFMAN:
                 if (DefaultDistances[0x1f] == '\0') {
@@ -288,17 +283,15 @@ i32 DecodeDeflated(DEFLATECONTEXT *ctx) {
                     return 0;
                 }
                 break;
-
-                if (!DecodeDeflatedBlock(ctx)) {
-                    LOG_WARN("failed to decode deflated block");
-                    return 0;
-                }
-                break;
             case BLOCK_UNCOMPRESSED:
                 if (!DecodeUncompressedBlock(ctx)) {
                     return 0;
                 }
-                break;
+                continue;
+        }
+
+        if (!DecodeDeflatedBlock(ctx)) {
+            return 0;
         }
     } while (!is_final_block);
 

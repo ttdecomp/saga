@@ -3,6 +3,8 @@
 #include "decomp.h"
 #include "globals.h"
 #include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nu3d/android/nutex_ios_ex.h"
+#include "nu2api/nu3d/nutex.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nucore/nucore.hpp"
 #include "nu2api/nucore/nustring.h"
@@ -12,47 +14,77 @@
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
 #include <math.h>
+#include <pthread.h>
 #include <string.h>
+
+// ---------------------------------------------------------------------------
+// NuRenderDevice — Android GLES2 render device
+//
+// Original TU: nu2api.saga/nu3d/android/NuRenderDevice_gles2.cpp
+//  (see doc/source-structure.md). This file merges the device lifetime,
+//  EGL config/context management, extension probing, and the re-entrant
+//  GL critical section that serialises all GL calls on Android.
+// ---------------------------------------------------------------------------
 
 NuRenderDevice g_renderDevice{};
 
-thread_local i32 gt_glContextIndex;
+// Android render work is dispatched across a small ring of shared EGL
+// contexts (indices 0..3). Index 3 is the "main" / window context; the
+// others are worker contexts. gt_glContextIndex tracks which slot the
+// calling thread was assigned.
+thread_local i32 gt_glContextIndex = -1;
+
+thread_local i32 s_criticalDepth = 0;
+static i32 g_nextGLContextIndex = 0;
+
+// ---------------------------------------------------------------------------
+// Construction
+// ---------------------------------------------------------------------------
 
 NuRenderDeviceGen::NuRenderDeviceGen() : value(false) {
 }
 
-NuRenderDevice::NuRenderDevice() : NuRenderDeviceGen() {
-    // this->field1_0x4 = 0;
-
+static void InitRecursiveMutex(pthread_mutex_t *mutex) {
     pthread_mutexattr_t attrs;
     pthread_mutexattr_init(&attrs);
-    pthread_mutexattr_settype(&attrs, 1);
-    pthread_mutex_init(&this->mutex, &attrs);
+    pthread_mutexattr_settype(&attrs, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_init(mutex, &attrs);
     pthread_mutexattr_destroy(&attrs);
+}
 
-    // this->field4_0x10 = 0;
-    // this->field5_0x14 = 0;
+NuRenderDevice::NuRenderDevice() : NuRenderDeviceGen() {
+    InitRecursiveMutex(&this->mutex);
+
+    // is_not_amazon_kf — true unless the device is an Amazon Kindle Fire
+    // (manufacturer "Amazon" + model prefix "KF"). Kindle Fire gets a
+    // down-scaled backbuffer path in DetermineBackBufferResolution().
     this->is_not_amazon_kf = true;
-    // this->field45_0x45 = true;
     this->focus = false;
-    // this->field80_0xc0 = 0;
-    // this->field81_0xc4 = 1.3333334;
     this->context_valid = false;
     this->egl_display = EGL_NO_DISPLAY;
-    // this->field61_0x80 = -1;
 
-    this->contexts[0] = EGL_NO_CONTEXT;
-    this->contexts[1] = EGL_NO_CONTEXT;
-    this->contexts[2] = EGL_NO_CONTEXT;
-    this->contexts[3] = EGL_NO_CONTEXT;
+    for (i32 i = 0; i < 4; i++) {
+        this->contexts[i] = EGL_NO_CONTEXT;
+    }
 
+    // field54_0x54 — original bool that selects whether worker contexts
+    // get private 1x1 pbuffers (true) or alias the window surface (false).
+    // Always true on this build.
     this->field54_0x54 = true;
+
     this->backing_width = 1280;
     this->width = 1280;
     this->backing_height = 720;
     this->height = 720;
 }
 
+// ---------------------------------------------------------------------------
+// Optional GLES2 extensions (loaded via eglGetProcAddress)
+// ---------------------------------------------------------------------------
+
+// Untyped proc pointers — kept as in the original; only existence is
+// checked elsewhere. Typed PFN typedefs would be more precise but would
+// diverge from the decompiled signature.
 void (*glGetProgramBinaryOES)();
 void (*glProgramBinaryOES)();
 void (*glDiscardFramebufferEXT)();
@@ -61,113 +93,143 @@ void (*glBindVertexArrayOES)();
 void (*glDeleteVertexArraysOES)();
 
 void NuGLES2ExtensionsInit() {
-    glGetProgramBinaryOES = eglGetProcAddress("glGetProgramBinaryOES");
-    glProgramBinaryOES = eglGetProcAddress("glProgramBinaryOES");
-    glDiscardFramebufferEXT = eglGetProcAddress("glDiscardFramebufferEXT");
-    glGenVertexArraysOES = eglGetProcAddress("glGenVertexArraysOES");
-    glBindVertexArrayOES = eglGetProcAddress("glBindVertexArrayOES");
-    glDeleteVertexArraysOES = eglGetProcAddress("glDeleteVertexArraysOES");
+    glGetProgramBinaryOES = reinterpret_cast<void (*)()>(eglGetProcAddress("glGetProgramBinaryOES"));
+    glProgramBinaryOES = reinterpret_cast<void (*)()>(eglGetProcAddress("glProgramBinaryOES"));
+    glDiscardFramebufferEXT = reinterpret_cast<void (*)()>(eglGetProcAddress("glDiscardFramebufferEXT"));
+    glGenVertexArraysOES = reinterpret_cast<void (*)()>(eglGetProcAddress("glGenVertexArraysOES"));
+    glBindVertexArrayOES = reinterpret_cast<void (*)()>(eglGetProcAddress("glBindVertexArrayOES"));
+    glDeleteVertexArraysOES = reinterpret_cast<void (*)()>(eglGetProcAddress("glDeleteVertexArraysOES"));
 }
 
-bool NuRenderDevice::IsExtensionSupported(const char *exts) {
-    if (strchr(exts, ' ') != NULL || *exts == '\0') {
+// ---------------------------------------------------------------------------
+// Extension string helpers
+// ---------------------------------------------------------------------------
+
+bool NuRenderDevice::IsExtensionSupported(const char *wanted) {
+    // Reject malformed queries: empty string or embedded space would
+    // otherwise match substrings incorrectly.
+    if (wanted[0] == '\0' || strchr(wanted, ' ') != nullptr) {
         return false;
     }
 
-    const char *extensions = this->extensions;
+    const usize wanted_len = strlen(wanted);
+    const char *cursor = this->extensions;
 
-    bool bVar1;
-    const char *name;
-    do {
-        name = strstr(extensions, exts);
-        if (name == NULL) {
+    while (true) {
+        const char *found = strstr(cursor, wanted);
+        if (found == nullptr) {
             return false;
         }
 
-        usize len = strlen(exts);
-        bVar1 = extensions != name;
-        extensions = name + len;
-    } while ((bVar1 && name[-1] != ' ') || (*extensions & 0xdf) != 0);
+        const bool at_start = (found == cursor);
+        const bool preceded_by_space = at_start || found[-1] == ' ';
+        const char terminator = found[wanted_len];
+        // Terminator is either end-of-string ('\0'), space, or other
+        // whitespace — the original uses a case-insensitive space check
+        // via (c & 0xDF) != 0 which effectively treats '\0' as
+        // terminator and space as boundary.
+        const bool followed_by_boundary = (terminator == '\0' || terminator == ' ');
 
-    return true;
+        if (preceded_by_space && followed_by_boundary) {
+            return true;
+        }
+
+        // Whole-word match failed — continue searching past this occurrence.
+        cursor = found + wanted_len;
+    }
 }
 
-i32 _NuCheckGLErrors(const char *file) {
+i32 _NuCheckGLErrors(const char * /*file*/) {
+    // Original is a no-op in release; kept as a hook for debug builds.
     return 0;
 }
 
+// ---------------------------------------------------------------------------
+// Device bring-up
+// ---------------------------------------------------------------------------
+
 void NuRenderDevice::Initialize() {
+    // Wait for the EGL display / window surface to become valid. On
+    // Android this is signalled from the Java activity thread via
+    // OnWindowCreated() → InitialiseOpenGLContext().
     while (!this->context_valid) {
         NuThreadSleep(1);
     }
 
     FrameEnd();
 
-    pthread_mutexattr_t attrs;
-    pthread_mutexattr_init(&attrs);
-    pthread_mutexattr_settype(&attrs, 1);
-    pthread_mutex_init(&this->mutex2, &attrs);
+    InitRecursiveMutex(&this->mutex2);
     NuGLES2ExtensionsInit();
 
     BeginCriticalSection("none", -1);
 
-    EGLint attribs[6] = {0};
-    eglGetConfigAttrib(this->egl_display, this->egl_config, 0x3024, attribs);
-    eglGetConfigAttrib(this->egl_display, this->egl_config, 0x3022, attribs + 1);
-    eglGetConfigAttrib(this->egl_display, this->egl_config, 0x3023, attribs + 2);
-    eglGetConfigAttrib(this->egl_display, this->egl_config, 0x3021, attribs + 3);
-    eglGetConfigAttrib(this->egl_display, this->egl_config, 0x3025, attribs + 4);
-    eglGetConfigAttrib(this->egl_display, this->egl_config, 0x3026, attribs + 5);
+    // Probe the chosen EGL config for logging / diagnostics. The
+    // attribute ids are the standard EGL_*_SIZE values:
+    //  0x3024 EGL_RED_SIZE, 0x3022 EGL_BLUE_SIZE, 0x3023 EGL_GREEN_SIZE,
+    //  0x3021 EGL_ALPHA_SIZE, 0x3025 EGL_DEPTH_SIZE, 0x3026 EGL_STENCIL_SIZE.
+    EGLint config_attribs[6] = {};
+    eglGetConfigAttrib(this->egl_display, this->egl_config, EGL_RED_SIZE, &config_attribs[0]);
+    eglGetConfigAttrib(this->egl_display, this->egl_config, EGL_BLUE_SIZE, &config_attribs[1]);
+    eglGetConfigAttrib(this->egl_display, this->egl_config, EGL_GREEN_SIZE, &config_attribs[2]);
+    eglGetConfigAttrib(this->egl_display, this->egl_config, EGL_ALPHA_SIZE, &config_attribs[3]);
+    eglGetConfigAttrib(this->egl_display, this->egl_config, EGL_DEPTH_SIZE, &config_attribs[4]);
+    eglGetConfigAttrib(this->egl_display, this->egl_config, EGL_STENCIL_SIZE, &config_attribs[5]);
+    (void)config_attribs;
 
     DetermineNominalAspectRatio(this->width, this->height);
-    this->aspect_ratio = (float)this->width / (float)this->height;
+    this->aspect_ratio = static_cast<f32>(this->width) / static_cast<f32>(this->height);
 
     glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &this->max_texture_units);
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, &this->max_texture_size);
 
-    this->extensions = (const char *)glGetString(GL_EXTENSIONS);
+    this->extensions = reinterpret_cast<const char *>(glGetString(GL_EXTENSIONS));
 
-    u8 dxt1, atc, pvrtc, etc1;
-    if (this->extensions == NULL) {
-        dxt1 = 0;
-        atc = 0;
-        pvrtc = 0;
-        etc1 = 0;
-    } else {
-        u8 bVar2 = IsExtensionSupported("EXT_texture_compression_dxt1");
-        u8 bVar3 = IsExtensionSupported("GL_EXT_texture_compression_dxt1");
-        dxt1 = bVar3 || bVar2;
-        atc = IsExtensionSupported("GL_AMD_compressed_ATC_texture");
-        pvrtc = IsExtensionSupported("GL_IMG_texture_compression_pvrtc");
-        etc1 = IsExtensionSupported("GL_OES_compressed_ETC1_RGB8_texture");
+    bool has_dxt1 = false;
+    bool has_atc = false;
+    bool has_pvrtc = false;
+    bool has_etc1 = false;
+
+    if (this->extensions != nullptr) {
+        const bool dxt1_ext = IsExtensionSupported("EXT_texture_compression_dxt1");
+        const bool dxt1_gl = IsExtensionSupported("GL_EXT_texture_compression_dxt1");
+        has_dxt1 = dxt1_ext || dxt1_gl;
+        has_atc = IsExtensionSupported("GL_AMD_compressed_ATC_texture");
+        has_pvrtc = IsExtensionSupported("GL_IMG_texture_compression_pvrtc");
+        has_etc1 = IsExtensionSupported("GL_OES_compressed_ETC1_RGB8_texture");
     }
 
     memset(this->enabled_extensions, 0, sizeof(this->enabled_extensions));
 
-    this->enabled_extensions[7] = 1;
-    this->enabled_extensions[1] = dxt1;
-    this->enabled_extensions[2] = dxt1;
-    this->enabled_extensions[6] = dxt1;
-    this->enabled_extensions[17] = etc1;
-    this->enabled_extensions[20] = pvrtc;
-    this->enabled_extensions[21] = pvrtc;
-    this->enabled_extensions[22] = pvrtc;
-    this->enabled_extensions[23] = pvrtc;
-    this->enabled_extensions[24] = atc;
-    this->enabled_extensions[25] = atc;
+    // Always available (uncompressed RGBA).
+    this->enabled_extensions[NUTEX_RGBA32] = 1;
 
-    if (this->extensions != NULL) {
+    // Compressed families — enabled iff the driver advertises support.
+    this->enabled_extensions[NUTEX_DXT1] = has_dxt1;
+    this->enabled_extensions[NUTEX_DX1A] = has_dxt1;
+    this->enabled_extensions[NUTEX_DXT5] = has_dxt1;
+    this->enabled_extensions[NUTEX_ETC1] = has_etc1;
+    this->enabled_extensions[NUTEX_PVRTC2] = has_pvrtc;
+    this->enabled_extensions[NUTEX_PVRTC2A] = has_pvrtc;
+    this->enabled_extensions[NUTEX_PVRTC4] = has_pvrtc;
+    this->enabled_extensions[NUTEX_PVRTC4A] = has_pvrtc;
+    this->enabled_extensions[NUTEX_ATCA] = has_atc;
+    this->enabled_extensions[NUTEX_ATC] = has_atc;
+
+    if (this->extensions != nullptr) {
         this->oes_packed_depth_stencil = IsExtensionSupported("GL_OES_packed_depth_stencil");
         this->oes_depth24 = IsExtensionSupported("GL_OES_depth24");
         this->oes_depth_texture = IsExtensionSupported("GL_OES_depth_texture");
     }
 
-    if (g_forceETC1 == 0 || !etc1) {
-        if (dxt1 != 0) {
+    // Choose the runtime texture-compression platform. g_forceETC1 forces
+    // ETC1 even when better formats are available; otherwise prefer
+    // S3TC → PVRTC → ATC → ETC1.
+    if (g_forceETC1 == 0 || !has_etc1) {
+        if (has_dxt1) {
             NuPlatform::Get()->SetCurrentPlatform(ANDROID_S3TC_PLATFORM);
-        } else if (pvrtc != 0) {
+        } else if (has_pvrtc) {
             NuPlatform::Get()->SetCurrentPlatform(ANDROID_PVRTC_PLATFORM);
-        } else if (atc != 0) {
+        } else if (has_atc) {
             NuPlatform::Get()->SetCurrentPlatform(ANDROID_ATITC_PLATFORM);
         } else {
             NuPlatform::Get()->SetCurrentPlatform(ANDROID_ETC1_PLATFORM);
@@ -185,41 +247,42 @@ void NuRenderDevice::Initialize() {
 }
 
 void NuRenderDevice::FrameEnd() {
-    return;
+    // No-op in this build — original flushed per-frame bookkeeping.
 }
 
 void NuRenderDevice::SetThisTreadAsRender() {
+    // Historical typo preserved: "Tread" for "Thread". Index 3 is the
+    // main render thread's slot.
     gt_glContextIndex = 3;
 }
 
-i32 g_nextGLContextIndex = 0;
+// ---------------------------------------------------------------------------
+// Re-entrant GL critical section
+// ---------------------------------------------------------------------------
 
-void NuRenderDevice::BeginCriticalSection(const char *file, i32 line) {
-    pthread_mutex_lock(&this->mutex2);
+void NuRenderDevice::BeginCriticalSection(const char * /*file*/, i32 /*line*/) {
+    if (s_criticalDepth == 0) {
+        pthread_mutex_lock(&this->mutex2);
 
-    static thread_local i32 gl_context_index = -1;
-
-    i32 i = this->lock_count++;
-
-    if (i == 0) {
-        i = gl_context_index;
-
-        if (i == -1) {
-            i = g_nextGLContextIndex;
+        if (gt_glContextIndex == -1) {
+            gt_glContextIndex = g_nextGLContextIndex;
             g_nextGLContextIndex = (g_nextGLContextIndex + 1) % 4;
         }
 
-        LOG_DEBUG("this->egl_display: %p, this->pbuffers[%d]: %p, this->contexts[%d]: %p", this->egl_display, i,
-                  this->pbuffers[i], i, this->contexts[i]);
-        eglMakeCurrent(this->egl_display, this->pbuffers[i], this->pbuffers[i], this->contexts[i]);
+        LOG_DEBUG("this->egl_display: %p, this->pbuffers[%d]: %p, this->contexts[%d]: %p", this->egl_display,
+                  gt_glContextIndex, this->pbuffers[gt_glContextIndex], gt_glContextIndex,
+                  this->contexts[gt_glContextIndex]);
+        eglMakeCurrent(this->egl_display, this->pbuffers[gt_glContextIndex], this->pbuffers[gt_glContextIndex],
+                       this->contexts[gt_glContextIndex]);
     }
+    s_criticalDepth++;
 }
 
-void NuRenderDevice::EndCriticalSection(const char *file, i32 line) {
+__attribute__((weak)) void NuRenderDevice::EndCriticalSection(const char * /*file*/, i32 /*line*/) {
     UNIMPLEMENTED();
 }
 
-void NuRenderDevice::SwapBuffers() {
+__attribute__((weak)) void NuRenderDevice::SwapBuffers() {
     UNIMPLEMENTED();
 }
 
@@ -228,31 +291,50 @@ void NuRenderDevice::OnWindowCreated(ANativeWindow *window) {
     CheckForRenderWindowInitialisation();
 }
 
+// ---------------------------------------------------------------------------
+// EGL config selection + backbuffer sizing
+// ---------------------------------------------------------------------------
+
 EGLConfig NuRenderDevice::SelectEGLConfig() {
-    static EGLint egl_attribs[] = {EGL_DEPTH_SIZE,      24, //
-                                   EGL_LEVEL,           0,  //
-                                   EGL_SURFACE_TYPE,    5,  //
-                                   EGL_RENDERABLE_TYPE, 4,  //
-                                   EGL_CONFORMANT,      4,  //
-                                   EGL_BLUE_SIZE,       5,  //
-                                   EGL_GREEN_SIZE,      6,  //
-                                   EGL_RED_SIZE,        5,  //
-                                   EGL_ALPHA_SIZE,      0,  //
-                                   EGL_STENCIL_SIZE,    0,  EGL_NONE};
+    // Preferred EGL config: 565 colour, 24-bit depth, GLES2 conformant,
+    // pbuffer + window capable.
+    static const EGLint kPreferredAttribs[] = {
+        EGL_DEPTH_SIZE,
+        24, //
+        EGL_LEVEL,
+        0, //
+        EGL_SURFACE_TYPE,
+        EGL_WINDOW_BIT | EGL_PBUFFER_BIT,
+        EGL_RENDERABLE_TYPE,
+        EGL_OPENGL_ES2_BIT,
+        EGL_CONFORMANT,
+        EGL_OPENGL_ES2_BIT,
+        EGL_BLUE_SIZE,
+        5, //
+        EGL_GREEN_SIZE,
+        6, //
+        EGL_RED_SIZE,
+        5, //
+        EGL_ALPHA_SIZE,
+        0, //
+        EGL_STENCIL_SIZE,
+        0, //
+        EGL_NONE,
+    };
 
     pthread_mutex_lock(&this->mutex);
 
-    decltype(egl_attribs) attrib_list;
-    memcpy(attrib_list, egl_attribs, sizeof(egl_attribs));
+    EGLint attrib_list[sizeof(kPreferredAttribs) / sizeof(kPreferredAttribs[0])];
+    memcpy(attrib_list, kPreferredAttribs, sizeof(kPreferredAttribs));
 
-    i32 num_config;
     EGLConfig configs[32];
+    i32 num_configs = 0;
+    EGLBoolean ok = eglChooseConfig(this->egl_display, attrib_list, configs, 32, &num_configs);
 
-    EGLBoolean ret = eglChooseConfig(this->egl_display, attrib_list, configs, 32, &num_config);
-
-    if (num_config == 0 || ret == EGL_FALSE) {
-        attrib_list[1] = 16;
-        eglChooseConfig(this->egl_display, attrib_list, configs, 32, &num_config);
+    if (num_configs == 0 || ok == EGL_FALSE) {
+        // Retry with 16-bit depth if 24-bit is unavailable (older devices).
+        attrib_list[1] = 16; // EGL_DEPTH_SIZE value slot
+        eglChooseConfig(this->egl_display, attrib_list, configs, 32, &num_configs);
     }
 
     pthread_mutex_unlock(&this->mutex);
@@ -261,24 +343,28 @@ EGLConfig NuRenderDevice::SelectEGLConfig() {
 }
 
 void NuRenderDevice::DetermineBackBufferResolution(i32 width, i32 height) {
-    this->backing_width = width;
-    this->backing_height = height;
+    this->backing_width = static_cast<u32>(width);
+    this->backing_height = static_cast<u32>(height);
 
     NuDeviceSpecs::Create();
-    if (this->is_not_amazon_kf != false && NuDeviceSpecs::ms_instance->specs < 3 && this->backing_width > 1280) {
+    // On low-spec non-Kindle devices, clamp width to 1280 to keep fill
+    // rate in check and scale height to preserve aspect.
+    if (this->is_not_amazon_kf && NuDeviceSpecs::ms_instance->specs < 3 && this->backing_width > 1280) {
         this->backing_width = 1280;
-        this->backing_height = (float)height / (float)width * 1280.0f;
+        this->backing_height = static_cast<u32>(static_cast<f32>(height) / static_cast<f32>(width) * 1280.0f);
     }
 }
 
-void NuRenderDevice::InitialiseOpenGLContext(ANativeWindow *window_) {
-    EGLNativeWindowType window = (EGLNativeWindowType)window_;
+__attribute__((weak)) void NuRenderDevice::InitialiseOpenGLContext(ANativeWindow *window_) {
+    EGLNativeWindowType window = reinterpret_cast<EGLNativeWindowType>(window_);
 
     pthread_mutex_lock(&this->mutex);
 
     this->egl_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 
-    this->is_not_amazon_kf = NuStrICmp(g_deviceManufacturer, "Amazon") != 0 || NuStrNICmp(g_deviceModel, "KF", 2) != 0;
+    // Re-evaluate Kindle Fire detection from the live device properties.
+    this->is_not_amazon_kf =
+        (NuStrICmp(g_deviceManufacturer, "Amazon") != 0 || NuStrNICmp(g_deviceModel, "KF", 2) != 0);
 
     LOG_DEBUG("this->context_valid: %d, this->native_window: %p, window: %p", this->context_valid, this->native_window,
               window);
@@ -288,15 +374,15 @@ void NuRenderDevice::InitialiseOpenGLContext(ANativeWindow *window_) {
 
         EGLint major = 0;
         EGLint minor = 0;
-
         eglInitialize(this->egl_display, &major, &minor);
         eglBindAPI(EGL_OPENGL_ES_API);
 
         this->egl_config = SelectEGLConfig();
 
-        this->pbuffers[3] = eglCreateWindowSurface(this->egl_display, this->egl_config, this->native_window, NULL);
+        this->pbuffers[3] = eglCreateWindowSurface(this->egl_display, this->egl_config, this->native_window, nullptr);
         if (this->pbuffers[3] == EGL_NO_SURFACE) {
             LOG_ERR("eglCreateWindowSurface failed: %d", eglGetError());
+            pthread_mutex_unlock(&this->mutex);
             return;
         }
 
@@ -306,60 +392,62 @@ void NuRenderDevice::InitialiseOpenGLContext(ANativeWindow *window_) {
 
         this->contexts[3] = eglCreateContext(this->egl_display, this->egl_config, EGL_NO_CONTEXT, this->attrib_list);
 
-        EGLContext context3;
+        // Worker contexts share resources with the main context. When
+        // field54_0x54 is set they each get a private 1x1 pbuffer so GL
+        // calls don't need the window surface.
+        EGLContext main_ctx = this->contexts[3];
         if (this->field54_0x54) {
-            EGLint stack_attrib_list[] = {
-                EGL_WIDTH,      1,       EGL_HEIGHT, 1, EGL_TEXTURE_TARGET, EGL_NO_TEXTURE, EGL_TEXTURE_FORMAT,
-                EGL_NO_TEXTURE, EGL_NONE};
-
-            this->pbuffers[0] = eglCreatePbufferSurface(this->egl_display, this->egl_config, stack_attrib_list);
-            this->contexts[0] =
-                eglCreateContext(this->egl_display, this->egl_config, this->contexts[3], this->attrib_list);
-            this->pbuffers[1] = eglCreatePbufferSurface(this->egl_display, this->egl_config, stack_attrib_list);
-            this->contexts[1] =
-                eglCreateContext(this->egl_display, this->egl_config, this->contexts[3], this->attrib_list);
-            this->pbuffers[2] = eglCreatePbufferSurface(this->egl_display, this->egl_config, stack_attrib_list);
-            context3 = this->contexts[3];
+            const EGLint pbuffer_attribs[] = {
+                EGL_WIDTH,          1, //
+                EGL_HEIGHT,         1, //
+                EGL_TEXTURE_TARGET, EGL_NO_TEXTURE,
+                EGL_TEXTURE_FORMAT, EGL_NO_TEXTURE,
+                EGL_NONE,
+            };
+            this->pbuffers[0] = eglCreatePbufferSurface(this->egl_display, this->egl_config, pbuffer_attribs);
+            this->contexts[0] = eglCreateContext(this->egl_display, this->egl_config, main_ctx, this->attrib_list);
+            this->pbuffers[1] = eglCreatePbufferSurface(this->egl_display, this->egl_config, pbuffer_attribs);
+            this->contexts[1] = eglCreateContext(this->egl_display, this->egl_config, main_ctx, this->attrib_list);
+            this->pbuffers[2] = eglCreatePbufferSurface(this->egl_display, this->egl_config, pbuffer_attribs);
         } else {
+            // Alias the window surface.
             this->pbuffers[0] = this->pbuffers[3];
-            this->contexts[0] =
-                eglCreateContext(this->egl_display, this->egl_config, this->contexts[3], this->attrib_list);
+            this->contexts[0] = eglCreateContext(this->egl_display, this->egl_config, main_ctx, this->attrib_list);
             this->pbuffers[1] = this->pbuffers[3];
-            this->contexts[1] =
-                eglCreateContext(this->egl_display, this->egl_config, this->contexts[3], this->attrib_list);
+            this->contexts[1] = eglCreateContext(this->egl_display, this->egl_config, main_ctx, this->attrib_list);
             this->pbuffers[2] = this->pbuffers[3];
-            context3 = this->contexts[3];
         }
 
-        this->contexts[2] = eglCreateContext(this->egl_display, this->egl_config, context3, attrib_list);
+        this->contexts[2] = eglCreateContext(this->egl_display, this->egl_config, main_ctx, this->attrib_list);
 
+        // Make worker 0 current briefly to query the actual window size
+        // and set up the nominal backbuffer dimensions.
         eglMakeCurrent(this->egl_display, this->pbuffers[0], this->pbuffers[0], this->contexts[0]);
-        i32 width = 0;
-        i32 height = 0;
+        i32 drawable_w = 0;
+        i32 drawable_h = 0;
+        eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_WIDTH, &drawable_w);
+        eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_HEIGHT, &drawable_h);
+        this->width = static_cast<u32>(drawable_w);
+        this->height = static_cast<u32>(drawable_h);
+        DetermineBackBufferResolution(drawable_w, drawable_h);
 
-        eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_WIDTH, &width);
-        eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_HEIGHT, &height);
-        this->height = height;
-        this->width = width;
-        DetermineBackBufferResolution(width, height);
-
-        EGLint visual_id;
+        EGLint visual_id = 0;
         eglGetConfigAttrib(this->egl_display, this->egl_config, EGL_NATIVE_VISUAL_ID, &visual_id);
-
-        // ANativeWindow_setBuffersGeometry(this->native_window, this->backing_width, this->backing_height, visual_id);
-
+        (void)visual_id;
         eglMakeCurrent(this->egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
 
-        g_backingWidth = this->backing_width;
-        g_backingHeight = this->backing_height;
-
-        nurndr_pixel_width = this->width;
-        nurndr_pixel_height = this->height;
+        g_backingWidth = static_cast<i32>(this->backing_width);
+        g_backingHeight = static_cast<i32>(this->backing_height);
+        nurndr_pixel_width = static_cast<i32>(this->width);
+        nurndr_pixel_height = static_cast<i32>(this->height);
 
         this->context_valid = true;
 
     } else if (this->native_window != window) {
-        eglMakeCurrent(this->egl_display, 0, 0, 0);
+        // Window was recreated (e.g. orientation change) — tear down the
+        // old window surface. A new one will be created on the next valid
+        // call.
+        eglMakeCurrent(this->egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
         eglDestroySurface(this->egl_display, this->pbuffers[3]);
         eglGetError();
     }
@@ -372,10 +460,16 @@ void NuRenderDevice::InitialiseOpenGLContext(ANativeWindow *window_) {
 }
 
 void NuRenderDevice::CheckForRenderWindowInitialisation() {
+    // Once the window is live and focused, transition the application
+    // state machine so the engine starts submitting frames.
     if (g_appWindow != 0 && this->field48_0x45 == '\0' && this->focus) {
         NuCore::GetApplicationState()->SetStatus(NUAPPLICATIONSTATUS{});
     }
 }
+
+// ---------------------------------------------------------------------------
+// C linkage helpers — the engine calls these without needing the C++ type
+// ---------------------------------------------------------------------------
 
 void NuRenderSetThisTreadAsRender() {
     g_renderDevice.SetThisTreadAsRender();
@@ -392,6 +486,10 @@ void EndCriticalSectionGL(const char *file, i32 line) {
 void NuRenderDeviceSwapBuffers() {
     g_renderDevice.SwapBuffers();
 }
+
+// ---------------------------------------------------------------------------
+// Stubs for iOS/legacy vertex paths that are not used on this platform
+// ---------------------------------------------------------------------------
 
 struct numtl_s;
 typedef struct NuVertexFormatPS NuVertexFormatPS;
@@ -416,11 +514,11 @@ extern "C" {
     }
 
     static __used__ u8 *NuRenderContextGetKTint(void) {
-        return 0;
+        return nullptr;
     }
 
     static __used__ struct numtl_s *NuRenderContextGetMaterialInUse(void) {
-        return 0;
+        return nullptr;
     }
 
     static __used__ void NuRenderContextSetKTint(f32 *) {

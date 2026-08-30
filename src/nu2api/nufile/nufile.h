@@ -273,9 +273,10 @@ extern "C" {
     i64 NuFileSeek(NUFILE file, i64 offset, NUFILESEEK seekMode);
     i32 NuFileLoadBuffer(char *filepath, void *buf, i32 buf_size);
     i32 NuFileLoadBufferVP(char *filepath, VARIPTR *buf, VARIPTR *buf_end);
+    i32 NuFileGetLastError(void);
     i32 NuFileExists(char *name);
     i64 NuFileSize(char *filepath);
-    i32 NuFileExtConvert(char *dest, char *path, i32 path_len);
+    i32 NuFileExtConvert(char *dest, char *path);
     i64 NuFilePos(NUFILE file);
     void NuFileUpCase(NUFILE_DEVICE *device, char *filepath);
 

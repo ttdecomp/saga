@@ -5,6 +5,7 @@ if(POLICY CMP0135)
 endif()
 
 option(BUILD_FOR_HOST "Build for host system" OFF)
+option(HOST_ENABLE_ASAN "Enable AddressSanitizer in non-Windows host builds" ON)
 
 include("${CMAKE_SOURCE_DIR}/cmake/ndk.cmake")
 
@@ -35,9 +36,12 @@ if (BUILD_FOR_HOST)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-stack-protector -msse2")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-stack-protector -msse2")
 
-    if (NOT CMAKE_HOST_WIN32)
+    if (NOT CMAKE_HOST_WIN32 AND HOST_ENABLE_ASAN)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -march=i686 -fsanitize=address")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32 -march=i686 -fsanitize=address")
+    elseif(NOT CMAKE_HOST_WIN32)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -march=i686")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32 -march=i686")
     endif()
 else()
     message(STATUS "Using Android NDK toolchain: ${NDK_TOOLCHAIN}")
@@ -77,6 +81,7 @@ message(STATUS "Building for ${CMAKE_HOST_SYSTEM_NAME} on ${CMAKE_HOST_SYSTEM_PR
 
 # source files for both host and target builds
 file(GLOB_RECURSE SAGA_SOURCE_FILES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/decomp.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/batman.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/globals.cpp"
     
@@ -114,16 +119,21 @@ if (BUILD_FOR_HOST)
     # not also compile the Android originals (they would duplicate symbols and
     # pull in Android-only dependencies such as libsquish).
     list(REMOVE_ITEM SAGA_SOURCE_FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nuandroid/ios_graphics.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/android/nutex_android.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/android/nutex_ios_ex.cpp
     )
 
     list(APPEND SAGA_SOURCE_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/main.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/ios_graphics.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/input/host_input.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/nutex_host.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/nutex_ios_ex.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/ios_graphics_host.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/screen_host.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nucore/NuMemoryManager_host.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nusound/opensl_host.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nu3d/NuRenderDevice_host.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nu3d/nudlist_host.cpp
     )
 
     add_executable(saga ${SAGA_SOURCE_FILES})
@@ -155,7 +165,7 @@ endif()
 function(set_filename_macro f)
     get_filename_component(FILENAME_ABS ${f} ABSOLUTE)
     file(RELATIVE_PATH FILENAME_REL ${CMAKE_CURRENT_SOURCE_DIR} ${FILENAME_ABS})
-    set_source_files_properties(${f} PROPERTIES COMPILE_DEFINITIONS "__FILENAME__=\"src/${FILENAME_REL}\"")
+    set_source_files_properties(${f} PROPERTIES COMPILE_DEFINITIONS "__FILENAME__=\"${FILENAME_REL}\"")
 endfunction()
 
 foreach(source_file IN LISTS SAGA_SOURCE_FILES)

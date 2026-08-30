@@ -1,3 +1,4 @@
+#include "legoapi/render/light/shadow.h"
 #include "decomp.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nu3d/nutex.h"

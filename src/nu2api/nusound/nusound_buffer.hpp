@@ -44,6 +44,8 @@ class NuSoundBuffer {
 
     void SetCurrentContext(Context &context);
 
+    Context &GetCurrentContext();
+
     void *GetAddress() const;
 
     bool IsAllocated() const;
@@ -52,7 +54,6 @@ class NuSoundBuffer {
 
     bool IsLocked() const;
 
-    void GetCurrentContext();
     void GetSegmentAddress(unsigned int, unsigned int, unsigned int) const;
     void GetSegmentSize(unsigned int, unsigned int) const;
 };

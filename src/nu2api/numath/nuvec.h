@@ -23,6 +23,7 @@ typedef struct nuvec_s {
 /// @relatesalso nuvec_s
 /// @brief The vector `(0, 0, 0)`.
 extern NUVEC v000;
+extern NUVEC nuvec_zero;
 
 /// @relatesalso nuvec_s
 /// @brief The vector `(1, 0, 0)`.
@@ -256,6 +257,7 @@ extern "C" {
     /// @sa NuVecMtxRotate, NuVecMtxScale, NuVecMtxTranslate,
     //      NuVecMtxTransformBlock
     void NuVecMtxTransform(NUVEC *out, NUVEC *v, struct numtx_s *m);
+    void NuVecMtxTransformVU0(NUVEC *out, NUVEC *v, struct numtx_s *m);
     void NuVecMtxTransformH(NUVEC *out, NUVEC *v, struct numtx_s *m);
     void NuVecInvMtxRotate(NUVEC *out, NUVEC *v, struct numtx_s *m);
     void NuVecInvMtxTransform(NUVEC *out, NUVEC *v, struct numtx_s *m);

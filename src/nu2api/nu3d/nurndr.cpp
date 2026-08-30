@@ -1,5 +1,6 @@
 #include "decomp.h"
 #include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nu3d/nuvport.h"
 #include "nu2api/nu3d/numtl.h"
 
 #include <string.h>
@@ -25,6 +26,30 @@ VARIPTR rndrstream_free;
 static VARIPTR rndrstream[NURNDR_STREAM_MAX_BUFFERS];
 
 static i32 rndrstream_buffid;
+static i32 rndrstream_used;     // _ZL15rndrstream_used @0x11b8380
+static i32 rndrstream_max_used; // _ZL19rndrstream_max_used @0x11b8390
+
+// original 0x2e6e90 — rotate to the next stream buffer, recording the high
+// watermark. The infinite-loop tail is the original's buffer-overflow trap.
+extern "C" void NuRndrSwapStreamBuffers(void) {
+    i32 last_used;
+
+    last_used = (i32)((i64)rndrstream_free.addr - (i64)rndrstream[rndrstream_buffid].addr);
+    if (rndrstream_max_used < last_used) {
+        rndrstream_max_used = last_used;
+    }
+    if (last_used > nurndr_maxstreamsize) {
+        for (;;) {
+        }
+    }
+    rndrstream_buffid++;
+    if (rndrstream_buffid == rndrstream_nbuffers) {
+        rndrstream_buffid = 0;
+    }
+    rndrstream_free.addr = ALIGN(rndrstream[rndrstream_buffid].addr, 16);
+    rndrstream_end.addr = rndrstream[rndrstream_buffid].addr + nurndr_maxstreamsize;
+    rndrstream_used = last_used;
+}
 
 void NuRndrStreamInit(i32 stream_buffer_size, VARIPTR *buffer) {
     i32 i;
@@ -70,6 +95,7 @@ void NuRndrSetScissor(i32, i32, i32, i32) {
 }
 
 void NuRndrInitGeneric() {
+    NuVpResetRegions();
 }
 
 void NuRndrSetXYOffset(i32, i32) {
@@ -103,18 +129,20 @@ void NuRndrCalcRandCylinderPos(nuvec4_s *, numtx_s *, nuvec_s *) {
 void NuRndrCreateBlendShapeDWAPointers(i32) {
 }
 
-struct nuglobalrndrstate_s;
-
 extern "C" {
-    static __used__ void NuRndrSetAmbientLight(f32 *) {
+    i32 NuRndrSetAmbientLightPS(const NUCOLOUR3 *);
+    i32 NuRndrSetDirectionalLightsPS(const NUVEC *, const NUCOLOUR3 *, const NUVEC *, const NUCOLOUR3 *, const NUVEC *,
+                                     const NUCOLOUR3 *);
+
+    static __used__ void NuRndrSetAmbientLight(NUCOLOUR3 *colour) {
+        NuRndrSetAmbientLightPS(colour);
     }
 
-    static __used__ void NuRndrSetDirectionalLights(f32 *, f32 *, f32 *, f32 *, f32 *, f32 *) {
+    static __used__ void NuRndrSetDirectionalLights(NUVEC *dir0, NUCOLOUR3 *colour0, NUVEC *dir1, NUCOLOUR3 *colour1,
+                                                    NUVEC *dir2, NUCOLOUR3 *colour2) {
+        NuRndrSetDirectionalLightsPS(dir0, colour0, dir1, colour1, dir2, colour2);
     }
 
     static __used__ void NuRndrSetSpecularLight(nuvec_s *, nucolour4_s *) {
-    }
-
-    static __used__ void RndrStateClear(struct nuglobalrndrstate_s *) {
     }
 }

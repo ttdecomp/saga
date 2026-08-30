@@ -163,6 +163,7 @@ extern "C" {
     void NuMtxMul(NUMTX *m, NUMTX *m0, NUMTX *m1);
     void NuMtxMulH(NUMTX *m, NUMTX *m0, NUMTX *m1);
     void NuMtxMulR(NUMTX *m, NUMTX *m0, NUMTX *m1);
+    void NuMtxMulVU0(NUMTX *result, NUMTX *left, NUMTX *right);
     void NuMtxInvRSS(NUMTX *inv, NUMTX *T);
     void NuMtxInvRSSH(NUMTX *inv, NUMTX *T);
     void NuMtxInvH(NUMTX *mi, NUMTX *m0);
@@ -176,7 +177,7 @@ extern "C" {
     void NuMtx24BitCorrection(NUMTX *m);
     void NuMtxCalcFaceOn(NUMTX *m, NUVEC *v);
     void NuMtxCalcCheapFaceOn(NUMTX *m, NUVEC *v);
-    void NuMtxCalcDebrisFaceOn(NUMTX *m, NUVEC *v);
+    void NuMtxCalcDebrisFaceOn(NUMTX *m);
     void NuMtxCalcFaceY(NUMTX *m, NUVEC *v);
     void NuMtxGetPerspectivePS3(NUMTX *mtx, f32 *fovy, f32 *aspect, f32 *zNear, f32 *zFar);
     void NuMtxLookAtInverseD3D(NUMTX *mtx, NUVEC *eye, NUVEC *center, NUVEC *up);

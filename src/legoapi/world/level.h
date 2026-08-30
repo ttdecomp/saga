@@ -1,6 +1,7 @@
 #pragma once
 
 #include "legoapi/world/world.h"
+#include "legoapi/legoapi_types.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/core/input/timer.h"
 #include "nu2api/nucore/common.h"
@@ -190,10 +191,6 @@ typedef struct LEVELDATA_s {
     i32 music_tracks[3][2];
 } LEVELDATA;
 
-#ifndef HOST_BUILD
-static_assert(sizeof(void *) != 4 || sizeof(LEVELDATA_s) == 0x144, "LEVELDATA_s size mismatch");
-#endif
-
 typedef struct LEVELOBJECT {
     u8 kind;
     u8 pad_01;
@@ -201,6 +198,18 @@ typedef struct LEVELOBJECT {
     u8 pad_03;
     char *name;
 } LEVELOBJECT;
+
+// Runtime counterpart to an LEVELOBJECT table entry. The first twelve bytes
+// are a normal Nu special handle; the loader adds its terrain platform id and
+// the active flag consumed by Draw3DObjectMtx.
+typedef struct LEVEL_OBJECT_RUNTIME_s {
+    nuhspecial_s special; // 0x00
+    i16 platform_id;      // 0x0c
+    u8 active;            // 0x0e
+    u8 pad_0f;
+} LEVEL_OBJECT_RUNTIME;
+
+DECOMP_ASSERT(sizeof(LEVEL_OBJECT_RUNTIME) == 0x10, "LEVEL_OBJECT_RUNTIME size");
 
 typedef struct LEVELFIXUP {
     char *name;

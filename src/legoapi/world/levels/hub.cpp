@@ -1,4 +1,9 @@
+#include "globals.h"
+#include "legoapi/characters/core/players.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/world/area.h"
+
+extern void Customiser_LoadAll(CUSTOMISER *, WORLDINFO_s *);
 
 void Hub_Draw3D(WORLDINFO_s *) {
 }
@@ -52,6 +57,21 @@ void Hub_DrawStarField() {
 }
 
 void Hub_MakeModelList() {
+    Hub_ModelList[0] = {static_cast<i16>(PlayerID[0]), 1};
+    Hub_ModelList[1] = {static_cast<i16>(PlayerID[1]), 1};
+
+    i32 count = 2;
+    if (HUB_ADATA != NULL && HUB_ADATA->hub_player_ids != NULL) {
+        i16 *model_id = HUB_ADATA->hub_player_ids;
+        while (count < 5 && *model_id != -1) {
+            Hub_ModelList[count++] = {*model_id++, 1};
+        }
+    }
+    Hub_ModelList[count].model_id = -1;
+
+    PlayerList[0] = Hub_ModelList[0].model_id;
+    PlayerList[1] = Hub_ModelList[1].model_id;
+    PlayerList[2] = -1;
 }
 
 void Hub_UpdateMiniKits(WORLDINFO_s *) {
@@ -87,7 +107,11 @@ void Hub_UpdateFreePlaySelect() {
 void Hub_Init(WORLDINFO_s *) {
 }
 
-void Hub_Load(WORLDINFO_s *, variptr_u *, variptr_u *) {
+// The level callback carries the streaming-buffer arguments used by most
+// level loaders, but the original hub loader only forwards the world to the
+// persistent character customiser.
+void Hub_Load(WORLDINFO_s *world, variptr_u *, variptr_u *) {
+    Customiser_LoadAll(CharacterCustomiser, world);
 }
 
 void Hub_Reset(WORLDINFO_s *) {

@@ -6,11 +6,35 @@
 #include "decomp.h"
 
 #include "nu2api/nu3d/numtl.h"
+#include "nu2api/nu3d/nuprim.h"
+#include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nu3d/nuvport.h"
+#include "nu2api/nu3d/nutex.h"
+#include "nu2api/nufile/nufile.h"
+#include "nu2api/numath/nutrig.h"
+
+// nucore_plain.cpp stubs / display-list init.
+extern "C" {
+    void NuFramebufferInitEx(void);
+    void NuPostEffectInit(void);
+    void NuAnimInit(i32 max_joints, VARIPTR *buf, VARIPTR buf_end);
+    void NuDisplayListInit(VARIPTR *buf, VARIPTR *buf_end);
+}
+
+void NuRndrInitGeneric(void); // nurndr.cpp (C++ linkage)
+void NuTimeInitPS(void);      // nutime_android.cpp
+void bgProcInit(void);        // bgproc_android.cpp
 
 NUAPI nuapi;
 
 i32 nuapi_use_target_manager;
 char *nuapi_target_manager_mac_address;
+
+// Frame-end hooks (original bss @0x6bdaec / 0x6bdaf0 / 0x6bdad0).
+void (*preRenderFlashingHack)(void) = NULL;
+void (*postRenderFlashingHack)(void) = NULL;
+void (*nuapi_endframe_callbackfn)(void) = NULL;
 
 float nuapi_forced_frame_time;
 i32 nuapi_max_fps = 60;
@@ -38,7 +62,7 @@ void NuAPIInit(void) {
     NuWindInitialise(nuapi.wind);
 }
 
-void NuCommandLine(i32 argc, char **argv) {
+void NuCommandLine(i32 *argc, char ***argv) {
 }
 
 void NuDisableOSMenuFreeze(void) {
@@ -55,6 +79,8 @@ i32 NuInitHardware(VARIPTR *buf, VARIPTR *buf_end, i32 heap_size, ...) {
     i32 resolution_y = 0;
     NUVIDEO_SWAPMODE swapmode = NUVIDEO_SWAPMODE_FIELDSYNC;
     i32 flags = 0;
+
+    NuAPIInit();
 
     va_list args;
     va_start(args, heap_size);
@@ -123,8 +149,26 @@ i32 NuInitHardware(VARIPTR *buf, VARIPTR *buf_end, i32 heap_size, ...) {
 
     va_end(args);
 
+    // Original tail order (nuapi TU): NuInitHardwarePS, NuVideoGetAspectPS,
+    // NuFileInitEx, NuTrigInit, NuRndrInitEx(streamsize, buf), NuPrimInit,
+    // NuVpInit, NuTexInitEx, NuDisplayListInit, NuFramebufferInitEx,
+    // NuPostEffectInit, NuMtlInitEx, NuRndrInitGeneric, NuAnimInit, ...
     NuInitHardwarePS(buf, buf_end, heap_size);
+    NuVideoGetAspectPS();
+    NuFileInitEx(0, 0, 0);
+    NuTrigInit();
+    NuRndrInitEx(streamsize, buf);
+    NuPrimInit(buf, *buf_end);
+    NuVpInit();
+    NuTexInitEx(buf, 0xbb8);
+    NuDisplayListInit(buf, buf_end);
+    NuFramebufferInitEx();
+    NuPostEffectInit();
     NuMtlInitEx(buf, 512);
+    NuRndrInitGeneric();
+    NuAnimInit(0xa0, buf, *buf_end);
+    NuTimeInitPS();
+    bgProcInit(); // starts the background-loading thread used by bgPostRequest
 
     return 0;
 }

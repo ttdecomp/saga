@@ -1,4 +1,7 @@
 
+#include "nu2api/numath/nuvec.h"
+#include "nu2api/numath/numtx.h"
+
 extern "C" {
 
     void NuFloatToHalf(void) {
@@ -67,7 +70,8 @@ extern "C" {
     }
     void NuVecMtxRotateValZ(void) {
     }
-    void NuVecMtxTransformVU0(void) {
+    void NuVecMtxTransformVU0(NUVEC *out, NUVEC *input, NUMTX *matrix) {
+        NuVecMtxTransform(out, input, matrix);
     }
     void NuVecNormVU0(void) {
     }

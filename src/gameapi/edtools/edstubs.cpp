@@ -78,9 +78,3 @@ i8 BoltType_FindIDByName(char *name, WORLDINFO *world) {
     UNIMPLEMENTED();
     return 0;
 }
-
-i32 Collection_Got(i32 id) {
-    (void)id;
-    UNIMPLEMENTED();
-    return 0;
-}

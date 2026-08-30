@@ -1,5 +1,7 @@
 #include "decomp.h"
 #include "legoapi/legoapi_types.h"
+#include <vorbis/codec.h>
+#include <ogg/ogg.h>
 #include "nu2api/nu3d/nutex.h"
 
 struct AIROW_s;

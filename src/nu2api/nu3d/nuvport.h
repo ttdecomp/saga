@@ -22,18 +22,45 @@ typedef struct nuviewport_s {
     f32 scissor_height;
 } NUVIEWPORT;
 
+typedef struct nuvpregion_s {
+    f32 source_x;
+    f32 source_y;
+    f32 source_width;
+    f32 source_height;
+    f32 dest_x;
+    f32 dest_y;
+    f32 dest_width;
+    f32 dest_height;
+    f32 width_scale;
+    f32 height_scale;
+    f32 x_offset;
+    f32 y_offset;
+    f32 projection_x_scale;
+    f32 projection_y_scale;
+    f32 projection_x_offset;
+    f32 projection_y_offset;
+} NUVPREGION;
+
 #ifdef __cplusplus
 
 void NuPs2GetViewport(NUVIEWPORT *vp);
 void NuVpSetScalingMtx(void);
 
+extern NUVPREGION g_NuVpRegion;
+
 extern "C" {
 #endif
 
     void NuVpRestore(void);
+    NUVIEWPORT *NuVpGetCurrentViewport(void);
+    void NuVpGetPosition2(f32 *x, f32 *y);
+    void NuVpGetSize2(f32 *width, f32 *height);
     void NuVpGetScalingMtx(NUMTX *dest);
     void NuVpUpdate(void);
     void NuVpInit(void);
+    void NuVpResetRegions(void);
+    void NuVpSetRegions(f32 source_x, f32 source_y, f32 source_right, f32 source_bottom, f32 dest_x, f32 dest_y,
+                        f32 dest_right, f32 dest_bottom);
 
 #ifdef __cplusplus
 }

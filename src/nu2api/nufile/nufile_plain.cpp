@@ -73,8 +73,6 @@ extern "C" {
     }
     void NuFileGetInfo(void) {
     }
-    void NuFileGetLastError(void) {
-    }
     void NuFileGetMediaMode(void) {
     }
     void NuFileInitAddress(void) {
@@ -85,15 +83,11 @@ extern "C" {
     }
     void NuFileOpenDir(void) {
     }
-    void NuFilePakCondense(void) {
-    }
     void NuFilePakGetLastError(void) {
     }
     void NuFilePakGetSize(void) {
     }
     void NuFilePakRelocate(void) {
-    }
-    void NuFilePakSetItemRequired(void) {
     }
     void NuFilePatchAddress(void) {
     }

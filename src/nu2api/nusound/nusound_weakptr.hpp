@@ -37,33 +37,19 @@ template <typename T> class NuSoundWeakPtrObj {
     void Link(NuSoundWeakPtrListNode *node) {
         NuSoundWeakPtrListNode::sPtrListLock.Lock();
 
-        NuSoundWeakPtrListNode *list = this->tail;
+        // Append the node at the tail of this object's weak-pointer list
+        // (libTTapp.so 0x315320: the new node chains onto the current tail
+        // and the list bookkeeping moves to it).
+        node->prev = this->tail;
+        node->next = NULL;
 
-        NuSoundWeakPtrListNode *node_prev = node;
-        if (node == NULL) {
-            node = (NuSoundWeakPtrListNode *)-4;
+        if (this->tail != NULL) {
+            this->tail->next = node;
+        } else {
+            this->head = node;
         }
 
-        NuSoundWeakPtrListNode *prev = list;
-        if (list == NULL) {
-            list = (NuSoundWeakPtrListNode *)-4;
-        }
-
-        NuSoundWeakPtrListNode *ppNVar1 = prev->prev == NULL ? NULL : prev->next;
-
-        NuSoundWeakPtrListNode *pNVar1 = node_prev == NULL ? NULL : node;
-
-        prev->prev = pNVar1;
-
-        NuSoundWeakPtrListNode **pNVar2 = NULL;
-        if (ppNVar1 != NULL) {
-            pNVar2 = &ppNVar1->prev;
-        }
-
-        node_prev->prev = (NuSoundWeakPtrListNode *)pNVar2;
-        ppNVar1->prev = node;
-        node_prev->next = list;
-
+        this->tail = node;
         this->weak_count++;
 
         NuSoundWeakPtrListNode::sPtrListLock.Unlock();
@@ -74,16 +60,18 @@ template <typename T> class NuSoundWeakPtrObj {
 
         NuSoundWeakPtrListNode::sPtrListLock.Lock();
 
-        if (node->prev != NULL || node->next != NULL) {
-            this->weak_count--;
-        }
-
         if (node->prev != NULL) {
             node->prev->next = node->next;
+        } else {
+            this->head = node->next;
         }
         if (node->next != NULL) {
             node->next->prev = node->prev;
+        } else {
+            this->tail = node->prev;
         }
+
+        this->weak_count--;
 
         node->prev = NULL;
         node->next = NULL;
@@ -94,23 +82,15 @@ template <typename T> class NuSoundWeakPtrObj {
     ~NuSoundWeakPtrObj() {
         NuSoundWeakPtrListNode::sPtrListLock.Lock();
 
-        if (this->weak_count != 0) {
-            for (NuSoundWeakPtrListNode *node = this->head->next; node != NULL; node = node->next) {
-                node->Clear();
-            }
-        }
-
-        while (this->weak_count != 0) {
-            Unlink(this->head->next);
+        // Drop every weak pointer still registered against this object.
+        NuSoundWeakPtrListNode *node = this->head;
+        while (node != NULL) {
+            NuSoundWeakPtrListNode *next = node->next;
+            node->Clear();
+            node = next;
         }
 
         NuSoundWeakPtrListNode::sPtrListLock.Unlock();
-
-        while (this->weak_count != 0) {
-            NuSoundWeakPtrListNode *node = this->head->next;
-            Unlink(node);
-            node->~NuSoundWeakPtrListNode(); //(*(code *)vtable->destructor2)(node3);
-        }
     }
 };
 
@@ -147,7 +127,8 @@ template <typename T> class NuSoundWeakPtr : public NuSoundWeakPtrListNode {
             }
 
             if (ptr != NULL) {
-                this->obj->Link(this);
+                // Register this weak pointer in the target's list.
+                ((NuSoundWeakPtrObj<T> *)ptr)->Link(this);
             }
 
             this->obj = (NuSoundWeakPtrObj<T> *)ptr;

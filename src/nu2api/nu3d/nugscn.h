@@ -4,22 +4,72 @@
 
 #include "nu2api/nu3d/nuportal.h"
 
+struct nunativetex_s;
+struct nudldlistscene_s;
+
+typedef struct nuvideoresheader_s {
+    u16 nvertex_buffers;
+    u16 pad_02;
+    u32 *vertex_buffers;
+    u16 nindex_buffers;
+    u16 pad_0a;
+    u32 *index_buffers;
+    u16 ntextures;
+    u16 pad_12;
+    u32 *textures;
+    i32 texture_hashes;
+} NUVIDEORESHEADER;
+
+extern NUVIDEORESHEADER g_VideoResHeader;
+
 struct nudisplayscene_s {
-    u8 pad0[0x74];
-    u8 flags;
+    u32 render_scene_id; // 0x00
+    void *state_ptr;     // 0x04
+    u32 clear_flags;     // 0x08
+    u32 bg_colour;       // 0x0c
+    f32 clear_alpha;     // 0x10
+    f32 vp_x;            // 0x14
+    f32 vp_y;            // 0x18
+    f32 vp_w;            // 0x1c
+    f32 vp_h;            // 0x20
+    void *unknown_24;    // 0x24
+    u32 unknown_28;      // 0x28
+    u8 pad2c[0x0c];      // 0x2c-0x37
+    u32 unknown_38;      // 0x38
+    u32 unknown_3c;      // 0x3c
+    i32 unknown_40;      // 0x40
+    u32 unknown_44;      // 0x44
+    u32 unknown_48;      // 0x48
+    u32 unknown_4c;      // 0x4c
+    u32 unknown_50;      // 0x50
+    u32 unknown_54;      // 0x54
+    u32 unknown_58;      // 0x58
+    u8 pad5c[0x18];      // 0x5c-0x73
+    u8 flags;            // 0x74
+    u8 pad75[0x37];      // 0x75-0xab
+    u32 unknown_ac;      // 0xac
+    u8 padb0[0x14];      // 0xb0-0xc3
+    u32 unknown_c4;      // 0xc4
+    u8 padc8[0x18];      // 0xc8-0xdf
+    u32 unknown_e0;      // 0xe0
+    u32 unknown_e4;      // 0xe4
+    u8 pade8[0x8c];      // 0xe8-0x173
+    u32 unknown_174;     // 0x174
+    u32 unknown_178;     // 0x178
+    u8 pad17c[0x0c];     // 0x17c-0x187
+    u32 unknown_188;     // 0x188
+    u8 pad18c[0x88];     // 0x18c-0x213
+    u32 unknown_214;     // 0x214
 };
 
 enum {
     NU_DISPLAYSCENE_FLAG_NEEDS_BUILD = 0x10,
 };
 
-typedef struct nugscn_s { /* PlaceHolder Structure */
-    undefined field0_0x0;
-    undefined field1_0x1;
-    undefined field2_0x2;
-    undefined field3_0x3;
-    undefined4 field4_0x4;
-    undefined4 field5_0x8;
+typedef struct nugscn_s {
+    i32 *texture_ids;
+    i32 ntextures;
+    struct nunativetex_s **textures;
     struct numtl_s **mtls;
     i32 nummtl;
     undefined field8_0x14;
@@ -46,69 +96,15 @@ typedef struct nugscn_s { /* PlaceHolder Structure */
     undefined field29_0x2f;
     i32 numsplines;
     struct nugspline_s *splines;
-    undefined field32_0x38;
-    undefined field33_0x39;
-    undefined field34_0x3a;
-    undefined field35_0x3b;
-    undefined field36_0x3c;
-    undefined field37_0x3d;
-    undefined field38_0x3e;
-    undefined field39_0x3f;
-    undefined field40_0x40;
-    undefined field41_0x41;
-    undefined field42_0x42;
-    undefined field43_0x43;
-    undefined field44_0x44;
-    undefined field45_0x45;
-    undefined field46_0x46;
-    undefined field47_0x47;
-    undefined field48_0x48;
-    undefined field49_0x49;
-    undefined field50_0x4a;
-    undefined field51_0x4b;
-    undefined field52_0x4c;
-    undefined field53_0x4d;
-    undefined field54_0x4e;
-    undefined field55_0x4f;
-    undefined field56_0x50;
-    undefined field57_0x51;
-    undefined field58_0x52;
-    undefined field59_0x53;
-    undefined field60_0x54;
-    undefined field61_0x55;
-    undefined field62_0x56;
-    undefined field63_0x57;
-    undefined field64_0x58;
-    undefined field65_0x59;
-    undefined field66_0x5a;
-    undefined field67_0x5b;
-    undefined field68_0x5c;
-    undefined field69_0x5d;
-    undefined field70_0x5e;
-    undefined field71_0x5f;
-    undefined field72_0x60;
-    undefined field73_0x61;
-    undefined field74_0x62;
-    undefined field75_0x63;
-    undefined field76_0x64;
-    undefined field77_0x65;
-    undefined field78_0x66;
-    undefined field79_0x67;
-    undefined field80_0x68;
-    undefined field81_0x69;
-    undefined field82_0x6a;
-    undefined field83_0x6b;
+    undefined pad_38[8];
+    struct nugscn_s **additional_scenes;
+    undefined pad_44[0x20];
+    void *texture_anims;
+    undefined pad_68[4];
+    undefined4 field84_0x6c;
+    undefined4 field88_0x70;
     i32 max_portals;
     NUPORTAL *portals;
-    i32 portal_depth;
-    undefined field92_0x74;
-    undefined field93_0x75;
-    undefined field94_0x76;
-    undefined field95_0x77;
-    undefined field96_0x78;
-    undefined field97_0x79;
-    undefined field98_0x7a;
-    undefined field99_0x7b;
     undefined field100_0x7c;
     undefined field101_0x7d;
     undefined field102_0x7e;
@@ -213,10 +209,7 @@ typedef struct nugscn_s { /* PlaceHolder Structure */
     undefined field201_0xe1;
     undefined field202_0xe2;
     undefined field203_0xe3;
-    undefined field204_0xe4;
-    undefined field205_0xe5;
-    undefined field206_0xe6;
-    undefined field207_0xe7;
+    i32 portal_depth;
     undefined field208_0xe8;
     undefined field209_0xe9;
     undefined field210_0xea;
@@ -257,7 +250,7 @@ typedef struct nugscn_s { /* PlaceHolder Structure */
     undefined field245_0x10d;
     undefined field246_0x10e;
     undefined field247_0x10f;
-    struct nudisplayscene_s *display_list;
+    struct nudldlistscene_s *display_list;
     undefined field249_0x114;
     undefined field250_0x115;
     undefined field251_0x116;
@@ -486,11 +479,19 @@ typedef struct nugscn_s { /* PlaceHolder Structure */
 } NUGSCN;
 
 #ifdef __cplusplus
+i32 NuGScnReadTexturesPS(i32 file, VARIPTR *buf, VARIPTR buf_end);
+void NuGScnCreatePS(NUGSCN *scene, VARIPTR *buf, VARIPTR *buf_end);
+i32 NuGScnFixupTID(NUGSCN *scene, i32 tid);
+void NuGScnFixupTIDs(NUGSCN *scene);
+void NuGScnRestoreTIDs(NUGSCN *scene);
+
 extern "C" {
 #endif
 
     void NuGScnRndr3(NUGSCN *scene);
     NUGSCN *NuGScnRead(VARIPTR *buf, VARIPTR buf_end, char *path);
+    void NuGScnRemove(NUGSCN *scene);
+    void NuGScnFixupPS(NUGSCN *scene);
     // The trailing flags argument is passed as 1 by every caller in the
     // original binary; the original implementation never reads it.
     i32 NuSpecialFind(NUGSCN *scene, void **dest, char *name, i32 flags);

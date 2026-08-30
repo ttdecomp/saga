@@ -2,6 +2,7 @@
 
 #include "globals.h"
 #include "legoapi/core/input/timer.h"
+#include "legoapi/characters/core/character.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/area.h"
 #include "legoapi/world/levels/levels.h"
@@ -23,6 +24,11 @@ i32 PAL = 0;
 f32 FRAMETIME = 0;
 f32 DEFAULTFPS = 0;
 f32 DEFAULTFRAMETIME = 0;
+void *globalbuffer = NULL;
+i32 MaxAnimJoints = 0;
+u8 ForcePlayEndFrame = 0;
+u8 BitCountTable[256] = {};
+i32 isBitCountTable = 0;
 f32 MAXFRAMETIME = 0;
 
 // ------------------------------------------------------------------------
@@ -94,6 +100,7 @@ i32 BonusCoinTotal = 0;
 NUSOUND_FILENAME_INFO *MusicInfo = NULL;
 NUSOUND_FILENAME_INFO *g_music = NULL;
 u8 g_BackgroundUsedFogColour = 0;
+i32 g_BackgroundColour = 0;
 u32 SFX_MUSIC_COUNT = 0;
 i32 NOSOUND = 0;
 i16 AreaMusic = 0;
@@ -106,7 +113,8 @@ i32 LevMusicOtherAmbient = 0;
 // Camera
 // ------------------------------------------------------------------------
 NUCAMERA *pNuCam = NULL;
-GAMECAMERA_s *GameCam = NULL;
+static GAMECAMERA_s GameCamera;
+GAMECAMERA_s *GameCam = &GameCamera;
 
 // ------------------------------------------------------------------------
 // Platform & device info
@@ -139,15 +147,16 @@ NUGSCN *vehicle_scene = NULL;
 // Gameplay timers & area state
 // ------------------------------------------------------------------------
 f32 DoubleScoreTime = 0.0f;
-f32 GameTimer[2] = {0.0f, 0.0f};
-void *AreaGlobals = NULL;
+TIMER GameTimer;
+u8 AreaGlobals[0x34] = {0};
 i32 HIGHGAMEOBJECT = 0;
-void *Obj = NULL;
+GameObject_s *Obj = NULL;
 f32 AreaPickupGravity = 0.0f;
 f32 HIGHJUMPHEIGHT = 0.0f;
 TIMER AreaTimer;
 f32 VehicleAreaRememberSpeed = 0;
-f32 LevTime = 0.0f;
+nugspline_s *ObstacleCamSpl = NULL;
+f32 LevTime[5] = {0.0f};
 i32 Lap = 0;
 
 // ------------------------------------------------------------------------
@@ -176,6 +185,8 @@ GameObject_s *player = NULL;
 GameObject_s *player2 = NULL;
 i32 avg_currentspeed_mul = 0;
 i32 pause_rndr_on = 0;
+i32 pause_fade = 0;
+i32 wait_till_next_frame = 0;
 u8 object_switches[0x80] = {0};
 GIZFORCE_s *force_array[4] = {0};
 GameObject_s *ObiWan = NULL;
@@ -194,6 +205,12 @@ i32 Area_MissionModelCount = 0;
 APICHARACTERMODELLIST_s Area_MissionModelList[52] = {0};
 VARIPTR characterbuffer_ptr = {0};
 VARIPTR characterbuffer_end = {0};
+i32 CHARACTERBUFFERSIZE = 0x800000;
+i32 permbuffer_size = 0;
+VARIPTR superbuffer_base = {0};
+VARIPTR superbuffer_ptr = {0};
+i32 EDITBUFFERENDSIZE = 0;
+VARIPTR editbuffer_end = {0};
 APICHARACTERMODELLIST_s FreePlayModelList[52] = {0};
 APICHARACTERMODELLIST_s Hub_ModelList[8] = {0};
 i32 FreePlayModelCount = 0;
@@ -201,11 +218,13 @@ i32 FreePlayResidentCount = 0;
 i32 FreePlayBonusCount = 0;
 CHARCAT_s *CharCategory = NULL;
 i32 CHARCATEGORYCOUNT = 0;
-EXTRAMODELLISTENTRY_s ExtraModelList[1] = {{0}};
+EXTRAMODEL ExtraModelList[1] = {{0}};
 VEHICLECOLLECTION_s VehicleCollection = {0};
 ARCADEITEM_s ArcadeItem = {0};
 ARCADE_MODE_s Arcade_Mode[1] = {{0}};
 GAME_CUSTOMISER_s *Game_Customiser = NULL;
+AREASAVE_s *Game_AreaSave = NULL;
+u8 *Game_CharacterSave = NULL;
 void *CurrentCList = NULL;
 void *CurrentStoryCList = NULL;
 i32 CharacterDataLoad = 0;
@@ -227,6 +246,16 @@ i32 EXTRALEVELOBJECTCOUNT = 0;
 char *ExtraLevelObject_NameTable = NULL;
 i32 ExtraLevelObject_NameTableSize = 0;
 i32 ExtraLevelObject_NameTableIndex = 0;
+
+i16 drawcharicon_hspecial_spin = 0;
+f32 drawcharicon_hspecial_dz = 0.0f;
+i32 drawcharicon_find = 0;
+f32 drawcharicon_hspecial_scale = 1.0f;
+i32 drawcharicon_i_panel = -1;
+f32 PANEL3DMULY = 0.0f;
+f32 PANEL3DMULX = 0.0f;
+i32 LEGOOBJ_ICON_WEIRDO = -1;
+i32 LEGOOBJ_ICON_QUESTION = -1;
 
 // ------------------------------------------------------------------------
 // Level / area data pointers (LDATA / ADATA)
@@ -422,11 +451,13 @@ i32 other_level = 0;
 i32 other_level_override = 0;
 i32 CUTSTOPGAME = 0;
 void *CutStopInfo = NULL;
-i32 WaitingForLevelTime = 0;
+f32 WaitingForLevelTime = 0;
+f32 WaitingForCharacterTime = 0;
 i32 LevelLoadCount = 0;
-void *LevelLoad = NULL;
+i16 LevelLoad[48] = {-1};
 i32 new_level_from_menu = 0;
-i32 BGLOAD = 0;
+// The original .data initialises BGLOAD to 1 (background loading enabled).
+i32 BGLOAD = 1;
 i32 reset_restart = 0;
 i32 newlevelfrommenu_newmenuid = -1;
 i32 newlevelfrommenu_newmenuy = -1;
@@ -436,9 +467,19 @@ i32 NextArea_FreePlay = 0;
 // Level script arrays (Lev*)
 // ------------------------------------------------------------------------
 i32 LevFlag[4] = {0};
-i32 LevHSpecial[264] = {0};
+nuhspecial_s LevHSpecial[88] = {};
+NUMTX LevMtx = {};
+f32 LevAlpha = 0.0f;
+f32 TitlesAlpha = 0.0f;
+f32 newgamealpha = 0.0f;
+i32 newgamefade = 0;
+f32 newgamewait = 0.0f;
+i32 newgame_menudrawoff = 0;
+i32 netnewgame = 0;
+i32 MenuLoadOccurred = 0;
+i32 MenuSaveOccurred = 0;
 i32 LevSfxFlag[4] = {0};
-void *dynamic_antinodes = NULL;
+u8 dynamic_antinodes[0x1500] = {0};
 i32 LevInstAnim[12] = {0};
 i32 LevArea[4] = {0};
 i32 LevPathNodes[8] = {0};
@@ -514,14 +555,444 @@ GIZAIMESSAGESYS_s *gizaimessagesys = NULL;
 i32 loadareadata_loadlevel = 0;
 
 // ------------------------------------------------------------------------
+// Loading screen (LoadPerm) globals
+// ------------------------------------------------------------------------
+// Original .data @0x622ef0: PermDataLoaded starts at 1.
+i32 PermDataLoaded = 1;
+
+// --- LoadPermData working set ---
+// Original bss objects carved out of the startup TU; sizes from nm -S.
+LEVELOBJECT ObjTab[0x2ee] = {
+    {4, 0, 0, 0, "save_icon"},
+    {1, 0, 0, 0, "parallax"},
+    {1, 0, 0, 0, "legal"},
+    {1, 0, 0, 0, "status_01"},
+    {1, 0, 0, 0, "status_02"},
+    {1, 0, 0, 0, "status_03"},
+    {1, 0, 0, 0, "status_04"},
+    {1, 0, 0, 0, "status_05"},
+    {1, 0, 0, 0, "status_06"},
+    {1, 0, 0, 0, "rod"},
+    {1, 0, 0, 0, "phone"},
+    {1, 0, 0, 0, "slave1_level"},
+    {0, 0, 0, 0, "machinegun"},
+    {0, 0, 0, 0, "blaster"},
+    {0, 0, 0, 0, "walkie_talkie"},
+    {0, 0, 0, 0, "pistolgrey"},
+    {0, 0, 0, 0, "pistolchrome"},
+    {0, 0, 0, 0, "lightsabrehandle"},
+    {0, 0, 0, 0, "doublelightsabrehandle"},
+    {0, 0, 0, 0, "bentlightsabre"},
+    {0, 0, 0, 0, "gun"},
+    {0, 0, 0, 0, "bowcaster"},
+    {0, 0, 0, 0, "blaster_blue"},
+    {0, 0, 0, 0, "submachinegun"},
+    {0, 0, 0, 0, "poop"},
+    {0, 0, 0, 0, "peri"},
+    {0, 0, 0, 0, "spear"},
+    {0, 0, 0, 0, "spearblack"},
+    {0, 0, 0, 0, "storm_target"},
+    {0, 0, 0, 0, "bounty_target"},
+    {0, 0, 0, 0, "lever"},
+    {0, 0, 0, 0, "lever_base"},
+    {0, 0, 0, 0, "lever_nob1"},
+    {0, 0, 0, 0, "lever_nob2"},
+    {0, 0, 0, 0, "lever_nob3"},
+    {0, 0, 0, 0, "lever_nob4"},
+    {0, 0, 0, 0, "lever_nob5"},
+    {0, 0, 0, 0, "lever_nob6"},
+    {0, 0, 0, 0, "lever_nob7"},
+    {0, 0, 0, 0, "lever_nob8"},
+    {0, 0, 0, 0, "lever_nob9"},
+    {0, 0, 0, 0, "lever_glow"},
+    {0, 0, 0, 0, "lever_on"},
+    {0, 0, 0, 0, "lever_off"},
+    {0, 0, 0, 0, "hack_control"},
+    {0, 0, 0, 0, "hack_door1"},
+    {0, 0, 0, 0, "hack_door2"},
+    {0, 0, 0, 0, "winch_base"},
+    {0, 0, 0, 0, "winch_bracket"},
+    {0, 0, 0, 0, "winch"},
+    {0, 0, 0, 0, "batarang"},
+    {0, 0, 0, 0, "robinarang"},
+    {0, 0, 0, 0, "bullet"},
+    {0, 1, 0, 0, "pistolflash"},
+    {0, 0, 0, 0, "signal_base"},
+    {0, 0, 0, 0, "bat_signal_off"},
+    {0, 0, 0, 0, "bat_signal_on"},
+    {0, 0, 0, 0, "bat_signal_light"},
+    {0, 0, 0, 0, "robin_signal_off"},
+    {0, 0, 0, 0, "robin_signal_on"},
+    {0, 0, 0, 0, "robin_signal_light"},
+    {0, 0, 0, 0, "grapple_point"},
+    {0, 0, 0, 0, "grapple_point1"},
+    {0, 0, 0, 0, "tightrope_base1"},
+    {0, 0, 0, 0, "tightrope_base2"},
+    {0, 0, 0, 0, "metal_bit1"},
+    {0, 0, 0, 0, "metal_bit2"},
+    {0, 0, 0, 0, "metal_bit3"},
+    {0, 0, 0, 0, "metal_bit4"},
+    {0, 0, 0, 0, "metal_bit5"},
+    {0, 0, 0, 0, "metal_bit6"},
+    {0, 0, 0, 0, "metal_bit7"},
+    {0, 0, 0, 0, "attract_o_matic"},
+    {0, 0, 0, 0, "transform1a"},
+    {0, 0, 0, 0, "transform1b"},
+    {0, 0, 0, 0, "ledge_1"},
+    {0, 0, 0, 0, "ledge_2"},
+    {0, 0, 0, 0, "ledge_3"},
+    {0, 0, 0, 0, "ledge_4"},
+    {0, 0, 0, 0, "ledge_5"},
+    {0, 0, 0, 0, "ledge_6"},
+    {0, 0, 0, 0, "door_1_l"},
+    {0, 0, 0, 0, "door_1_r"},
+    {0, 0, 0, 0, "zipup_hook"},
+    {0, 0, 0, 0, "zipup_hook1"},
+    {0, 0, 0, 0, "zipup_target"},
+    {0, 0, 0, 0, "target"},
+    {0, 0, 0, 0, "Spinner_default_Base"},
+    {0, 0, 0, 0, "Spinner_default_Arm"},
+    {0, 0, 0, 0, "carrot"},
+    {1, 0, 0, 0, "basketball"},
+    {0, 0, 1, 0, "blasterbolt"},
+    {0, 0, 1, 0, "blasterboltglow"},
+    {0, 0, 1, 0, "blasterbolt_red"},
+    {0, 0, 1, 0, "blasterboltglow_red"},
+    {0, 0, 1, 0, "blasterbolt_green"},
+    {0, 0, 1, 0, "blasterboltglow_green"},
+    {0, 0, 1, 0, "blasterbolt_blue"},
+    {0, 0, 1, 0, "blasterboltglow_blue"},
+    {0, 0, 1, 0, "double_blasterBolt"},
+    {0, 0, 1, 0, "double_blasterBoltglow"},
+    {0, 0, 1, 0, "lightsabrered"},
+    {0, 0, 1, 0, "lightsabreglowred"},
+    {0, 0, 1, 0, "lightsabregreen"},
+    {0, 0, 1, 0, "lightsabreglowgreen"},
+    {0, 0, 1, 0, "lightsabreblue"},
+    {0, 0, 1, 0, "lightsabreglow"},
+    {0, 0, 1, 0, "lightsabrepurple"},
+    {0, 0, 1, 0, "lightsabreglowpurple"},
+    {0, 0, 1, 0, "doublelightsabrered"},
+    {0, 0, 1, 0, "doublelightsabreglow"},
+    {3, 0, 1, 0, "destroyershield"},
+    {3, 0, 1, 0, "destroyershield_red"},
+    {5, 0, 1, 0, "xwingbolt"},
+    {5, 0, 1, 0, "xwingboltglow"},
+    {5, 0, 1, 0, "laser_green"},
+    {5, 0, 1, 0, "laser_green_glow"},
+    {0, 0, 1, 0, "green_blob"},
+    {0, 0, 1, 0, "green_blob_glow"},
+    {5, 0, 1, 0, "xwing_thruster"},
+    {5, 0, 1, 0, "xwing_thruster_glow"},
+    {5, 0, 1, 0, "photontorpedo"},
+    {5, 0, 1, 0, "photontorpedoglow"},
+    {5, 0, 1, 0, "photontorpedoglow1"},
+    {5, 0, 1, 0, "jedi_starfighter_blasterBolt"},
+    {5, 0, 1, 0, "jedi_starfighter_blasterBoltglow"},
+    {0, 0, 2, 0, "blasterbolt_ref"},
+    {0, 0, 2, 0, "blasterboltglow_ref"},
+    {0, 0, 2, 0, "blasterbolt_red_ref"},
+    {0, 0, 2, 0, "blasterboltglow_red_ref"},
+    {0, 0, 2, 0, "blasterbolt_green_ref"},
+    {0, 0, 2, 0, "blasterboltglow_green_ref"},
+    {0, 0, 2, 0, "blasterbolt_blue_ref"},
+    {0, 0, 2, 0, "blasterboltglow_blue_ref"},
+    {0, 0, 2, 0, "double_blasterbolt_ref"},
+    {0, 0, 2, 0, "double_blasterboltGlow_ref"},
+    {0, 0, 2, 0, "lightsabrered_ref"},
+    {0, 0, 2, 0, "lightsabreglowred_ref"},
+    {0, 0, 2, 0, "lightsabregreen_ref"},
+    {0, 0, 2, 0, "lightsabreglowgreen_ref"},
+    {0, 0, 2, 0, "lightsabreblue_ref"},
+    {0, 0, 2, 0, "lightsabreglow_ref"},
+    {0, 0, 2, 0, "lightsabrepurple_ref"},
+    {0, 0, 2, 0, "lightsabreglowpurple_ref"},
+    {0, 0, 2, 0, "doublelightsabrered_ref"},
+    {0, 0, 2, 0, "doublelightsabreglow_ref"},
+    {3, 0, 2, 0, "destroyershield_ref"},
+    {3, 0, 2, 0, "destroyershield_red_ref"},
+    {0, 0, 2, 0, "xwingbolt_ref"},
+    {0, 0, 2, 0, "xwingboltglow_ref"},
+    {0, 0, 2, 0, "laser_green_ref"},
+    {0, 0, 2, 0, "laserglow_green_ref"},
+    {0, 0, 2, 0, "green_blob_ref"},
+    {0, 0, 2, 0, "green_blob_glow_ref"},
+    {0, 0, 2, 0, "xwing_thruster_ref"},
+    {0, 0, 2, 0, "xwing_thruster_glow_ref"},
+    {0, 0, 2, 0, "photontorpedo_ref"},
+    {0, 0, 2, 0, "photontorpedo_glow_ref"},
+    {0, 0, 2, 0, "photontorpedo_glow1_ref"},
+    {5, 0, 2, 0, "jedi_starfighter_blasterBolt_ref"},
+    {5, 0, 2, 0, "jedi_starfighter_blasterBoltglow_ref"},
+    {3, 0, 0, 0, "question_icon"},
+    {3, 0, 0, 0, "mouse_glow"},
+    {3, 0, 0, 0, "silhouette_icon"},
+    {3, 0, 0, 0, "silhouette_icon1"},
+    {0, 0, 0, 0, "icon_back_green"},
+    {0, 0, 0, 0, "icon_back_blue"},
+    {0, 0, 0, 0, "icon_back_neutral"},
+    {0, 0, 0, 0, "icon_back_gold"},
+    {0, 0, 0, 0, "coin_side1"},
+    {0, 0, 0, 0, "coin_side2"},
+    {0, 0, 0, 0, "coin_side3"},
+    {0, 0, 0, 0, "coin_side4"},
+    {0, 0, 0, 0, "coin_side5"},
+    {0, 0, 0, 0, "coin_side6"},
+    {0, 0, 0, 0, "coin_side7"},
+    {0, 0, 0, 0, "coin_side8"},
+    {0, 0, 0, 0, "coin_side9"},
+    {0, 0, 0, 0, "coin_side10"},
+    {0, 0, 0, 0, "silver_pan_coin1"},
+    {0, 0, 0, 0, "silver_pan_coin2"},
+    {0, 0, 0, 0, "silver_pan_coin3"},
+    {0, 0, 0, 0, "silver_pan_coin4"},
+    {0, 0, 0, 0, "silver_coin1"},
+    {0, 0, 0, 0, "silver_coin2"},
+    {0, 0, 0, 0, "silver_coin3"},
+    {0, 0, 0, 0, "silver_coin4"},
+    {0, 0, 0, 0, "gold_pan_coin1"},
+    {0, 0, 0, 0, "gold_pan_coin2"},
+    {0, 0, 0, 0, "gold_pan_coin3"},
+    {0, 0, 0, 0, "gold_pan_coin4"},
+    {0, 0, 0, 0, "gold_coin1"},
+    {0, 0, 0, 0, "gold_coin2"},
+    {0, 0, 0, 0, "gold_coin3"},
+    {0, 0, 0, 0, "gold_coin4"},
+    {0, 0, 0, 0, "blue_pan_coin1"},
+    {0, 0, 0, 0, "blue_pan_coin2"},
+    {0, 0, 0, 0, "blue_pan_coin3"},
+    {0, 0, 0, 0, "blue_pan_coin4"},
+    {0, 0, 0, 0, "blue_coin1"},
+    {0, 0, 0, 0, "blue_coin2"},
+    {0, 0, 0, 0, "blue_coin3"},
+    {0, 0, 0, 0, "blue_coin4"},
+    {0, 0, 0, 0, "heart"},
+    {0, 0, 0, 0, "flat_heart"},
+    {0, 0, 0, 0, "silver_heart"},
+    {0, 0, 0, 0, "mini_kit_pickup"},
+    {0, 0, 0, 0, "char_pickup"},
+    {0, 0, 0, 0, "plop"},
+    {0, 0, 0, 0, "power_up_glow"},
+    {0, 0, 0, 0, "red_brick"},
+    {0, 0, 0, 0, "gold_brick"},
+    {0, 0, 0, 0, "info"},
+    {0, 0, 0, 0, "purple_coin1"},
+    {0, 0, 0, 0, "purple_coin2"},
+    {0, 0, 0, 0, "purple_coin3"},
+    {0, 0, 0, 0, "purple_coin4"},
+    {0, 0, 0, 0, "purple_pan_coin1"},
+    {0, 0, 0, 0, "purple_pan_coin2"},
+    {0, 0, 0, 0, "purple_pan_coin3"},
+    {0, 0, 0, 0, "purple_pan_coin4"},
+    {0, 0, 0, 0, "ripple_green"},
+    {0, 0, 0, 0, "ripple_green1"},
+    {0, 0, 0, 0, "ripple_red"},
+    {0, 0, 0, 0, "ripple_red1"},
+    {0, 0, 0, 0, "ripple_blue"},
+    {0, 0, 0, 0, "ripple_blue1"},
+    {0, 0, 0, 0, "ripple_purple"},
+    {0, 0, 0, 0, "ripple_purple1"},
+    {0, 0, 0, 0, "zip_ring"},
+    {0, 0, 0, 0, "crate"},
+    {0, 0, 0, 0, "moustache"},
+    {0, 0, 0, 0, "jango_rocket"},
+    {0, 0, 0, 0, "thermal"},
+    {0, 0, 0, 0, "thermal_red_off"},
+    {0, 0, 0, 0, "thermal_red_on"},
+    {0, 0, 0, 0, "bomb_main"},
+    {0, 0, 0, 0, "bomb_off"},
+    {0, 0, 0, 0, "bomb_red_off"},
+    {0, 0, 0, 0, "bomb_red_on"},
+    {3, 0, 0, 0, "part_boulder"},
+    {3, 0, 0, 0, "pebble_ewok"},
+    {3, 0, 0, 0, "photontorpedo_ewok"},
+    {3, 0, 0, 0, "photontorpedoglow_ewok"},
+    {3, 0, 0, 0, "pebble_wicket"},
+    {3, 0, 0, 0, "photontorpedo_wicket"},
+    {3, 0, 0, 0, "photontorpedoglow_wicket"},
+    {3, 0, 0, 0, "umbrella1"},
+    {3, 0, 0, 0, "umbrella2"},
+    {3, 0, 0, 0, "twoface_coin"},
+    {0, 0, 0, 0, "hat_1"},
+    {0, 0, 0, 0, "hat_3"},
+    {0, 0, 0, 0, "hat_4"},
+    {0, 0, 0, 0, "hat_5"},
+    {0, 0, 0, 0, "stormTrooperHelmet"},
+    {0, 0, 0, 0, "bountyHelmet"},
+    {0, 0, 0, 0, "C3PO_base"},
+    {0, 0, 0, 0, "C3PO_pic"},
+    {0, 0, 0, 0, "TC14_pic"},
+    {0, 0, 0, 0, "C3PO_static"},
+    {0, 0, 0, 0, "C3PO_light_on"},
+    {0, 0, 0, 0, "C3PO_light_off"},
+    {0, 0, 0, 0, "R2_base"},
+    {0, 0, 0, 0, "R2_base1"},
+    {0, 0, 0, 0, "R2_pic"},
+    {0, 0, 0, 0, "R4_pic"},
+    {0, 0, 0, 0, "R2_static"},
+    {0, 0, 0, 0, "R2_light_on"},
+    {0, 0, 0, 0, "R2_light_off"},
+    {0, 0, 0, 0, "Bounty_base"},
+    {0, 0, 0, 0, "Bounty_pic"},
+    {0, 0, 0, 0, "Bounty_static"},
+    {0, 0, 0, 0, "Bounty_light_on"},
+    {0, 0, 0, 0, "Bounty_light_off"},
+    {0, 0, 0, 0, "Bounty_cam"},
+    {0, 0, 0, 0, "Bounty_Target"},
+    {0, 0, 0, 0, "Storm_base"},
+    {0, 0, 0, 0, "Storm_pic"},
+    {0, 0, 0, 0, "Storm_static"},
+    {0, 0, 0, 0, "Storm_light_on"},
+    {0, 0, 0, 0, "Storm_light_off"},
+    {0, 0, 0, 0, "Storm_cam"},
+    {0, 0, 0, 0, "Storm_Target"},
+    {0, 0, 0, 0, "Hat_machine_base"},
+    {0, 0, 0, 0, "Hat_machine_down"},
+    {0, 0, 0, 0, "Hat_machine_out"},
+    {0, 0, 0, 0, "Hat_machine_on"},
+    {0, 0, 0, 0, "Hat_machine_off"},
+    {0, 0, 0, 0, "lever_helmet"},
+    {0, 0, 0, 0, "Hat_machine_down1"},
+    {0, 0, 0, 0, "photon2"},
+    {0, 0, 0, 0, "photon1"},
+    {0, 0, 0, 0, "zip_flower1"},
+    {0, 0, 0, 0, "zip_flower2"},
+    {0, 0, 0, 0, "zip_flower3"},
+    {5, 0, 0, 0, "FalconGlow"},
+    {5, 0, 0, 0, "ATAT_PART_1"},
+    {1, 0, 0, 0, "vd"},
+    {1, 0, 0, 0, "bvd"},
+    {1, 0, 0, 0, "dtf"},
+    {1, 0, 0, 0, "ca"},
+    {1, 0, 0, 0, "blasterbolt"},
+    {1, 0, 0, 0, "blasterglow"},
+    {1, 0, 0, 0, "blasterbolt_red"},
+    {1, 0, 0, 0, "blasterglow_red"},
+    {1, 0, 0, 0, "blasterbolt_blue"},
+    {1, 0, 0, 0, "blasterglow_blue"},
+    {1, 0, 0, 0, "missile"},
+    {5, 0, 0, 0, "arrow"},
+    {5, 0, 0, 0, "death_star"},
+    {5, 0, 0, 0, "lap1"},
+    {5, 0, 0, 0, "lap2"},
+    {5, 0, 0, 0, "lap3"},
+    {0, 0, 0, 0, "Network_Icon"},
+    {0, 0, 0, 0, "Network_Icon_Glow"},
+    {1, 0, 0, 0, "fmv_blank"},
+    {1, 0, 0, 0, "code_blank"},
+    {1, 0, 0, 0, "tool_blank"},
+    {1, 0, 0, 0, "fmv"},
+    {1, 0, 0, 0, "shop_film1b"},
+    {1, 0, 0, 0, "shop_film1"},
+    {6, 0, 0, 0, "pc_button1"},
+    {6, 0, 0, 0, "pc_button2"},
+    {6, 0, 0, 0, "pc_button3"},
+    {6, 0, 0, 0, "pc_button4"},
+    {0xff, 0, 0, 0, NULL}, // terminator
+};
+LEVELSPLINE SplTab[26] = {
+    {NULL, "start", 2, 0, -1, -1},
+    {NULL, "start_cam", 2, 0, -1, -1},
+    {NULL, "point_cam", 2, 2, -1, -1},
+    {NULL, "finish_line", 2, 2, -1, -1},
+    {NULL, "cam_start", 2, 2, -1, -1},
+    {NULL, "split", 2, 2, -1, -1},
+    {NULL, "map_cam", 2, 0, -1, -1},
+    {NULL, "map_look", 2, 0, -1, -1},
+    {NULL, "e1_entrance", 2, 2, -1, -1},
+    {NULL, "e2_entrance", 2, 2, -1, -1},
+    {NULL, "e3_entrance", 2, 2, -1, -1},
+    {NULL, "e4_entrance", 2, 2, -1, -1},
+    {NULL, "e5_entrance", 2, 2, -1, -1},
+    {NULL, "e6_entrance", 2, 2, -1, -1},
+    {NULL, "jabba_entrance1", 2, 2, -1, -1},
+    {NULL, "char_cam", 2, 2, -1, -1},
+    {NULL, "Turn_Around_1", 2, 0x400, -1, -1},
+    {NULL, "Turn_Around_2", 2, 0x400, -1, -1},
+    {NULL, "custard", 4, 4, -1, -1},
+    {NULL, "bonus_zone_1", 3, 0, -1, -1},
+    {NULL, "bonus_zone_2", 3, 0, -1, -1},
+    {NULL, "bonus_zone_3", 3, 0, -1, -1},
+    {NULL, "bonus_zone_4", 3, 0, -1, -1},
+    {NULL, "bonus_zone_5", 3, 0, -1, -1},
+    {NULL, "mission_cam", 2, 2, -1, -1},
+    {NULL, NULL, 0, 0, 0, 0},
+};
+u8 LSW_CharCategory[0x78];  // LSW character-category table
+u8 Cheat[0x5a0];            // cheat table
+u8 CharVariants_Game[0x5c]; // in-game character-variant table
+u8 theMemoryManager[0x248]; // inline memory-manager block
+#include "legoapi/menus/core/lsw_text_data.inc"
+
+void *ActionInfo = NULL;      // bound to &self+0x38 table at runtime
+char *ExtraActionData = NULL; // "run1" pool pointer at runtime
+void *theGameThings = NULL;
+void *theThingManager = NULL;
+
+NUGSCN *saveicon_scene = NULL;
+NUGSCN *button_scene = NULL;
+
+FadeSystem *pFadeInfo = NULL;
+
+// Cut-scene / gameplay hook wiring (original .data function pointers).
+void (*CutScene_StartFn)(CUTINFO *) = NULL;
+void (*CutScene_PreUpdateFn)(CUTINFO *) = NULL;
+void (*CutScene_PostUpdateFn)(void) = NULL;
+void (*CutScene_StoppedFn)(CUTINFO *) = NULL;
+void (*CutScene_ReplaceCharacterModelFn)(CUTINFO *, NUGCUTCHAR_s *) = NULL;
+void (*InitBolt_AddMomentumType)(BOLT_s *, GameObject_s *, nuvec_s *) = NULL;
+void (*Bolt_HitPlatFn)(BOLT_s *) = NULL;
+void (*Bolt_HitCustomFn)(BOLT_s *, nuvec_s *) = NULL;
+void (*GameBlowUpBlownUpFn)(GIZMOBLOWUP_s *) = NULL;
+void (*GizObstacle_SetDefaultSFXFn)(void *, GIZOBSTACLE_s *) = NULL;
+// Original bss @0x6a3f54 / @0x6a3f50.
+i32 LoadPerm_LanguageSelect = 0;
+i32 LoadPerm_StringsLoaded = 0;
+// Original bss @0x124f9c0.
+i32 menu_flash = 0;
+f32 game_pulse = 0.0f;
+f32 global_pulse = 0.0f;
+// Original .data @0x667cb0 / @0x667cc0.
+i32 IntroText_TextID = -1;
+i32 LANGUAGECOUNT = 6;
+// Original .data @0x667ce0: default language list, entries of {language, 0}
+// (8 bytes per entry); Text_LanguageList points at it (@0x667d30).
+LANGLISTENTRY Text_LanguageList_Default[6] = {{1, 0}, {2, 0}, {4, 0}, {5, 0}, {3, 0}, {8, 0}};
+LANGLISTENTRY *Text_LanguageList = Text_LanguageList_Default;
+// Original .data @0x667ca0/@0x667ca4.
+f32 INTROTEXT_Y = 0.175f;
+f32 INTROTEXT_SCALE = 0.79f;
+
+// BSS 0x127c200 / 0x124f6f0 — QFont & string table pointers
+char **TTab = nullptr;
+vufnt_s *QFont2D = nullptr;
+vufnt_s *QFont2DButtons = nullptr;
+vufnt_s *QFont3D = nullptr;
+vufnt_s *QFont2DZ = nullptr;
+vufnt_s *QFont2DLower = nullptr;
+vufnt_s *QFont3DZ = nullptr;
+vufnt_s *QFont3DTime = nullptr;
+vufnt_s *SmartTextFont = nullptr;
+i32 create_qfont3d = 0;
+i32 create_qfont2dz = 0;
+i32 create_qfont2dlower = 0;
+i32 create_qfont3dz = 0;
+
+// ------------------------------------------------------------------------
 // Cutscene & system misc
 // ------------------------------------------------------------------------
 void *PlayerItemType = 0;
 i32 PLAYERITEMTYPECOUNT = 0;
 u32 EXBLOWUPFLAGS = 0;
 i32 BeenAttacked = 0;
-FadeSystem *FadeSys = NULL;
+FadeSystem FadeSys;
 i32 Paused = 0;
+f32 PauseMenus_X;
+i32 PauseMenus_Align;
+u8 MENUEXITR = 0xff;
+u8 MENUEXITG = 0xbf;
+u8 MENUEXITB;
+i32 pause_i_pad;
 i32 MiniCutCam = 0;
 i32 LEGOSPL_SPLIT = 0;
 GAMECUTSCENES_s game_cutscenes;
@@ -529,3 +1000,81 @@ float MiscTime = 0.0f;
 u32 ResetBits = 0;
 i32 AreaDataLoaded = 1;
 i32 Level = 0;
+
+// ------------------------------------------------------------------------
+// Main game loop state (shared via batman.h; read/written by NuMain).
+// Sizes/types match the original binary's .data/.bss layout.
+// ------------------------------------------------------------------------
+i32 AddCoinDelay[2] = {0};
+i32 adaptivedifficulty[3] = {0};
+i32 back_rgba[2] = {0};
+TIMER BonusTimer = {0};
+f32 brickimpactwait = 0.0f;
+i32 BURNOUTON = 1;
+VARIPTR characterbuffer_base = {0};
+f32 chattersfxwait = 0.0f;
+i32 clear_screen_onstill = 1;
+f32 coinimpactwait = 0.0f;
+i32 COMPLEXSHADOWS = 1;
+i32 CUTDRAWWORLD = 0;
+i32 CutSceneWaiting = 0;
+i32 dagobah_training = 0;
+i32 DoubleScore = 0;
+i32 drawcharactermodel_nobsa = 0;
+i32 drawcharactermodel_noani = 0;
+i32 drawcharactermodel_restpose = 0;
+i32 drawcharactermodel_keepmergeaction = 0;
+i32 game_keepmergeaction = 0;
+i32 JointRotation_On = 0;
+MAKELAYERLISTFN MakeLayerList = NULL;
+i32 DRAWCMODELCALLS = 0;
+i32 drawcharactermodel_locatorsupdated = 0;
+i32 editor_active = 0;
+i32 enable_zero_frametime = 0;
+i32 FinishLoop_On = 1;
+i32 finishloop_backdroponly = 0;
+i32 noscenespecials = 0;
+LANGUAGEDATA Game_LanguageList[7] = {{1, 0}, {2, 0}, {4, 0}, {5, 0}, {3, 0}, {8, 0}, {-1, 0}};
+OPTIONSSAVE *Game_OptionsSave = NULL;
+i32 (*GamePads_IgnoreInputFn)(void) = NULL;
+i32 g_introState = 1;
+i32 gone_through_door_to_new_level = 0;
+f32 g_val = 0.0f;
+i32 highallocaddr = 0;
+i32 HubMainRenderTimeHack = 0;
+AREADATA *LastAData = NULL;
+i32 loadareacharacters_loadedlevel = 0;
+f32 MainRenderTargetTime = 1.0f;
+f32 MainRenderTime = 1.0f;
+i32 memcard_autosavedisabled = 0;
+i32 memcard_autosaveenabled = 0;
+i32 menu_i_pack = -1;
+i32 newlevel_resumecutaudio = 1;
+i32 NewMode = 0;
+i32 nurndr_tritot_this_frame = 0;
+void (*NuSoundAppTerminateCallback)(void) = NULL;
+i32 nuvideo_global_vbcnt = 0;
+i32 PANELOFF = 0;
+i32 party_cant_be_under_cover = 0;
+i32 peak_poly_count = 0;
+i32 PlayTrailer = -1;
+NUVEC plr_lastpos = {0};
+i32 poly_count = 0;
+i32 RAYCASTCALLS = 0;
+i32 reset_area = 0;
+i32 reset_load = 1;
+i32 ResetOldFStop = 1;
+ripple_set_s *ripples = NULL;
+f32 sabrerubwait = 0.0f;
+i32 save_paused = 0;
+i32 screendump = 0;
+i32 SHADOWCALLS = 0;
+numtl_s *ShadowMat = NULL;
+STATUSPACKET_s StatusPacket = {0};
+u8 status_plr_active[8] = {0};
+i32 SuperStory = 0;
+OPTIONSSAVE TempOptions = {};
+i32 TERRAINCALLS = 0;
+f32 tieoffsfxwait = 0.0f;
+f32 tieonsfxwait = 0.0f;
+i32 waiting_for_character = -1;

@@ -22,6 +22,9 @@ extern "C" {
     i32 edbriLoadPage(char *path, void *gscn);
     void edpartSetParticlePage(i32 page);
     i32 edpartLoadPage(char *path, i32 param, void *gscn);
+    void edbitsRegisterThingsScene(NUGSCN *scene);
+    void edgraClumpsReset(void);
+    void edanimParamReset(void);
 
 #ifdef __cplusplus
 }

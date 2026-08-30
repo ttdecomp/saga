@@ -1,5 +1,8 @@
 #include "legoapi/world/world_shared.h"
 #include "decomp.h"
+#include "legoapi/items/base/apiobject.h"
+
+#include <string.h>
 struct nuhspecial_s;
 struct minitrooperteam_s;
 struct nuvec_s;
@@ -41,11 +44,23 @@ void *CreateClimbObjectSys(VARIPTR *buf, VARIPTR *buf_end, i32 count) {
     (void)count;
     return NULL;
 }
-extern "C" void *APIObjectSysInit(i32 size, void *buf, void *buf_end) {
-    (void)size;
-    (void)buf;
-    (void)buf_end;
-    return NULL;
+extern "C" void *AISysBufferAlloc(VARIPTR *cursor, VARIPTR *buf_end, u32 size);
+
+extern "C" APIOBJECTSYS_s *APIObjectSysInit(i32 size, VARIPTR *buf, VARIPTR *buf_end) {
+    APIOBJECTSYS_s *system = static_cast<APIOBJECTSYS_s *>(AISysBufferAlloc(buf, buf_end, sizeof(APIOBJECTSYS_s)));
+    if (system == NULL) {
+        return NULL;
+    }
+
+    memset(system, 0, sizeof(*system));
+    if (size != 0) {
+        system->objects = static_cast<APIOBJECT *>(AISysBufferAlloc(buf, buf_end, static_cast<u32>(size) * 64));
+        if (system->objects != NULL) {
+            system->object_size = static_cast<u32>(size);
+            memset(system->objects, 0, static_cast<u32>(size) * 64);
+        }
+    }
+    return system;
 }
 
 static __used__ unsigned int AIRespawnOnPath(APIOBJECT_s *) {

@@ -1,5 +1,12 @@
 #include "nu2api/nusound/nusound_source.hpp"
 
+const u32 NuSoundSource::sNumInitialBuffers[2] = {1, 2};
+
+u32 NuSoundSource::GetNumInitialBuffers() const {
+    return NuSoundSource::sNumInitialBuffers[(u32)this->source_type];
+}
+#include "nu2api/nusound/nusound_weakptr.hpp"
+
 #include "nu2api/nucore/numemory.h"
 #include "nu2api/nusound/nusound_loader.hpp"
 
@@ -26,9 +33,9 @@ NuSoundSource::NuSoundSource(const char *name, SourceType source_type, FeedType 
         // this->field5_0xe = (short)(sVar1 + 1);
     }
 
-    // this->sound_stream_desc = NULL;
-    this->feed_type = feed_type;
+    // libTTapp.so 0x3248f2..0x324904.
     this->source_type = source_type;
+    this->feed_type = feed_type;
     // this->field8_0x18 = NULL;
     // this->field9_0x1c = -1;
 }

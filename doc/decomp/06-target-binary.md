@@ -2,7 +2,9 @@
 
 > Agent-oriented reference for the original target: what we are matching against, how to
 > query it with host/NDK binutils, and what state the Ghidra copy is in. Numbers were
-> captured Aug 2026 against the checked-in `res/libTTapp.so` (HEAD `755ab13`).
+> Binary facts were captured against the checked-in `res/libTTapp.so` and
+> rechecked by hash on 2026-08-29. Split/report statistics are more volatile;
+> use `objdiff.json` and `report.json` for their current values.
 > Toolchain prefix used everywhere below:
 > `NDK=ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/linux-x86_64/bin` (bins:
 > `i686-linux-android-{readelf,nm,objdump,c++filt}`; plain host `readelf`/`nm`/`objdump` also
@@ -109,8 +111,8 @@ each basename to a `build/split/<basename>.o`):
 $NDK/i686-linux-android-nm res/libTTapp.so | grep '_GLOBAL__sub_I_' | sed 's/.*_GLOBAL__sub_I_//'
 # → aipathcnxhelper.cpp, aisysall.cpp, aitrigger.cpp, androidbatman.cpp, AndroidOBBUtils.cpp, ...
 # 325 occurrences → 320 unique basenames = 320 TUs (some TUs emit 2 ctors, e.g. camera.cpp;
-# `.c` basenames appear too: apiobject.c, ...). 337 split objects = 320 + remaining.c.o +
-# gonk extra_units (ogg_vorbis ov_*) + multi-part files.
+# `.c` basenames appear too: apiobject.c, ...). This is a basename inventory,
+# not a prediction of the current split-object count.
 ```
 
 ## 4. Function archetypes (PIC prologue)
@@ -143,11 +145,11 @@ edu/editor code coexists with game code in the same `.so` (see §8 unclaimed edi
 
 ```bash
 $NDK/i686-linux-android-g++ --sysroot=ndk/android-ndk-r8e/platforms/android-9/arch-x86 \
-  -D__FILENAME__=\"src/legoapi/qrand.cpp\" -Isrc \
+  -D__FILENAME__=\"src/legoapi/core/input/qrand.cpp\" -Isrc \
   -isystem ndk/android-ndk-r8e/sources/cxx-stl/system/include \
   -isystem libs/ogg-vorbis/include -isystem libs/squishlib/include \
   -fno-function-sections -fno-data-sections -std=gnu++11 -fno-exceptions -fno-rtti \
-  -Wno-write-strings -DANDROID -O3 -c src/legoapi/qrand.cpp -o /tmp/qrand.o
+  -Wno-write-strings -DANDROID -O3 -c src/legoapi/core/input/qrand.cpp -o /tmp/qrand.o
 $NDK/i686-linux-android-objdump -d /tmp/qrand.o
 ```
 
@@ -192,7 +194,7 @@ rel.ro symbols** (474 rows in `readelf -sW` because each is listed in both `.dyn
 | account gap | 13,617 − 13,044 − 1 = 572 = **382 thunks** (`.plt` stubs; `isThunk=true` in list_functions_enhanced, 13,427 records total) + **190 EXTERNAL-space imports** (not listed by list_functions at all) — gap explained, see open questions |
 | tag `LIKELY_UNUSED` | **200 functions** |
 | symbols | 161,921 (vs 161,909 in .keep → 12 names added during RE) |
-| qrand | named `qrand` @ **0x4a0210**; decompiles to `qseed = qseed * 0x24cd + 1 & 0xffff;` — matches src/legoapi/qrand.cpp line-for-line |
+| qrand | named `qrand` @ **0x4a0210**; decompiles to `qseed = qseed * 0x24cd + 1 & 0xffff;` — matches `src/legoapi/core/input/qrand.cpp` |
 
 Read-only MCP recipes: `get_metadata`, `get_program_options(group="Program Information")`,
 `list_segments`, `search_functions_enhanced(has_custom_name=true/false)`,
@@ -201,26 +203,36 @@ Read-only MCP recipes: `get_metadata`, `get_program_options(group="Program Infor
 
 ## 7. Symbol → source-file lookup (matching side)
 
-`build/split/*.o` (337 objects) are **carved from THIS binary by gonk** — each object is the
-address-range slice of one original TU (`_GLOBAL__sub_I_<basename>` → `<basename>.o`), with
-original symbols/sizes preserved. The authoritative owner query (also doc/05 §2):
+gonk-carved target objects are produced from this binary and now preserve the
+source directory hierarchy. `objdiff.json` is the authoritative target/base
+path mapping. The preferred owner query is:
 
 ```bash
 $NDK/i686-linux-android-nm res/libTTapp.so | grep ' T _Z5qrandv'            # 00490210
-$NDK/i686-linux-android-nm build/split/*.o | grep ' T _Z5qrandv'            # → qrand.cpp.o ⇒ src/legoapi/qrand.cpp (match confirmed §4)
-$NDK/i686-linux-android-nm build/split/*.o | grep ' T _Z8getqseedv'         # → legoapi_misc.cpp.o ⇒ src/legoapi/legoapi_misc.cpp:5700
-$NDK/i686-linux-android-nm build/split/*.o | grep ' [BD] qseed'             # → qrand.cpp.o
+python3 scripts/objdiff-cli.py _Z5qrandv
+jq -r '.units[] | select(.name | contains("qrand")) | [.name,.target_path,.base_path] | @tsv' objdiff.json
 ```
 
-Global owner check: `qseed` → `qrand.cpp.o`, `FreePlay`/`NextArea_FreePlay` → `globals.cpp.o`,
-`edqseed` → `remaining.c.o`, `hub_from_superstory` → **no split owner** (defined only in the
-binary; would land in remaining on a fresh gonk run). Verify a src/ edit via objdiff or
-`diff` of `build/CMakeFiles/.../<tu>.o` against the carved original.
+For raw symbol lookup, use recursive `find ... -print0 | xargs -0 nm -A` as
+shown in `05-source-conventions.md`; `build/split/*.o` sees only top-level
+objects. Verify a source edit through objdiff or by diffing the exact paths
+from `objdiff.json`.
 
 ## 8. The "remaining" concept
 
+Current snapshot: `report.json` assigns 391,472 bytes of code in 1,515
+functions and 12,294,420 bytes of data to `remaining`. Its target is
+`build/split/remaining.c.o`; its base is the empty root `remaining.c.o`.
+Because the unit has no scratch/base symbols, it is unscored and cannot add
+matched bytes. These values change whenever symbols become claimed or
+unclaimed.
+
+The detailed set census below is a **historical pre-restructure snapshot**. It
+documents the method and former categories, but its split-object totals and
+unclaimed list are not current. Recompute them before using them for decisions.
+
 gonk assigns every binary symbol to a TU by address range; symbols no TU claims go to the
-"remaining" unit, written to `build/split/remaining.c.o` (gonk `src/split.rs:815-837`).
+"remaining" unit, written to `build/split/remaining.c.o` (`gonk/src/split.rs`).
 
 Current state (name-based set math, `T` definitions only):
 
@@ -243,7 +255,7 @@ The 34 unclaimed, categorized:
 - 10 world/sfx stragglers — **implemented by hand as empty stubs** in the natural TU:
   `ResetSounds`, `SetLevelSfxBits`, `ResetLevSfx`, `InitSpecialSfx`, `LoadSpecialSfxFile`,
   `StartDoorPositions`, `ActionFromQuiet`, `AmbientFromQuiet`, `Door_FindByName`,
-  `Door_FindByIndex` → e.g. `src/legoapi/sfx.cpp:30` `extern "C" void ResetSounds(void) {}`
+  `Door_FindByIndex` → e.g. `src/legoapi/audio/sfx.cpp` defines `ResetSounds`
   (split TUs still reference it as `U`, so a definition must exist at link time).
 
 Estimate method: binary T unique 9,201 − 34 unclaimed = 9,167 claimed by `build/split/*.o`
@@ -272,7 +284,7 @@ _GLOBAL__sub_I_ 325 (320 unique TUs) · _ZThn 39 · vtables 223 · imports 190 (
 qrand 0x490210 (= Ghidra 0x4a0210) · getqseed 0x490240 · edqrand 0x35b0f0 · ResetSeeds 0x490260
 qseed 0x667e00 (file off 0x666e00) · hub_from_superstory 0x667b90 · FreePlay 0x12771c0
 Ghidra (base 0x10000): 13,617 funcs = 13,044 named + 1 FUN_ (FUN_000e8880, .plt) + 382 thunks + 190 EXTERNAL; LIKELY_UNUSED 200
-split: 337 objects + remaining.c.o (143 T: ogg/emutls) · 34 binary T unclaimed by any TU
+split/report layout: see current `objdiff.json` (466 units) and `report.json`
 
 ## Open questions
 
@@ -285,5 +297,5 @@ split: 337 objects + remaining.c.o (143 T: ogg/emutls) · 34 binary T unclaimed 
    definition in any split TU — confirmed: split TUs only *reference* them (`U`), and
    `remaining.c.o` holds `W`-weak stubs for the 3 `EditorSettings` dtors. Still open: are
    they dead editor leftovers (stub/LIKELY_UNUSED candidates) or is a split unit missing?
-3. `build/split/remaining.c.o` (143 T) vs root `remaining.c.o` (confirmed **0 symbols**,
-   stale empty): which generation is recent, and does a fresh gonk run reproduce either?
+3. `remaining` is intentionally unscored because the root base object is empty;
+   use the generated target and report measures for its current contents.

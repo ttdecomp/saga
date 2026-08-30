@@ -7,6 +7,7 @@
 #include "nu2api/numath/nutrig.h"
 
 NUVEC v000 = {0};
+NUVEC nuvec_zero = {0};
 NUVEC v100 = {1.0f, 0.0f, 0.0f};
 NUVEC v010 = {0.0f, 1.0f, 0.0f};
 NUVEC v001 = {0.0f, 0.0f, 1.0f};

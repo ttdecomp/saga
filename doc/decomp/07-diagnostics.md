@@ -2,13 +2,11 @@
 
 Playbook for diagnosing why a recompiled function does not byte-match the original.
 Scope: LEGO Star Wars: TCS (Android x86), matched against `res/libTTapp.so` via gonk
-(`build/split/*.o`) + objdiff. Compiler: `i686-linux-android-g++` 4.7 (NDK r8e),
+(the hierarchy under `build/split/`) + objdiff. Compiler: `i686-linux-android-g++` 4.7 (NDK r8e),
 per-file `-O0/-O2/-O3` from `src/target.cmake`, PIC default, `-fno-function-sections
--fno-data-sections`. Every claim below was verified by experiment; all experiments
-live in `/tmp/opencode/saga-experiments/a7/` (per-file sources `e*.cpp`, outputs
-`e*.o`; compile via `source env.sh && build eN.o -O<level> eN.cpp`).
-Independently re-verified in `/tmp/opencode/saga-experiments/verify7/` (same
-toolchain; sections with re-verified/spot-check results cite `verify7/e*.cpp`).
+-fno-data-sections`. Compiler claims were verified with temporary experiments.
+Those `/tmp` fixtures were ephemeral and are not repository artifacts; use the
+included source/assembly descriptions to reproduce an edge case when needed.
 
 Sibling docs: 01 (toolchain + canonical compile command), 03 (matching workflow),
 05 (source conventions), 06 (target binary + Ghidra address convention).
@@ -20,7 +18,7 @@ Sibling docs: 01 (toolchain + canonical compile command), 03 (matching workflow)
 | stage | artifact | symbol names |
 |---|---|---|
 | original binary | `res/libTTapp.so` | debug-stripped (0 DWARF sections), full `.symtab` kept — nm-able (06 §1) |
-| carved TUs | `build/split/*.o` | original symbol names, relocations intact, **no debug info** |
+| carved TUs | hierarchy under `build/split/` | original symbol names, relocations intact, **no debug info** |
 | recompiled TUs | `build/CMakeFiles/saga.dir/**/*.o` | same names, **has `.debug_line`** (`objdump -S` works) |
 | pairing | `objdiff.json` (`target_path`/`base_path`), `report.json` | per-function `fuzzy_match_percent` |
 
@@ -34,32 +32,35 @@ Sibling docs: 01 (toolchain + canonical compile command), 03 (matching workflow)
 1. **Which TU owns the symbol?**
    ```
    cd /home/fabian/git/saga
-   nm build/split/*.o | grep -w _Z5qrandv        # mangled; use -C or the mangled name from report.json
-   # build/split/qrand.cpp.o: 00000000 T _Z5qrandv
+   python3 scripts/objdiff-cli.py _Z5qrandv
    ```
-   If nothing: symbol is not in this project's TU set (libogg etc. in `gonk.toml` `extra_units`,
-   or `ignore` list — those are library code, not your problem).
+   Query `objdiff.json` for exact target/base paths. If no unit owns the
+   symbol, check `remaining`, `gonk.toml`, and library units; a failed
+   non-recursive glob proves nothing.
 
 2. **Optimization level of that TU** — `grep <file> src/target.cmake`:
    ```
    grep qrand src/target.cmake    # no hit → -O0
    grep players src/target.cmake  # set_source_files_properties(... players.cpp PROPERTIES COMPILE_OPTIONS "-O2")
    ```
-   Absent = `-O0`. 100 files are listed: 74×`-O3`, 25×`-O2`, 1×`-O3;-fPIE`
-   (cheat.cpp), rest `-O0`. For the
+   Absent = `-O0`. Current target counts are 342×`-O0`, 25×`-O2`, and
+   97×`-O3`; `src/legoapi/core/config/cheat.cpp` also uses `-fPIE`. For the
    exact per-TU command line (includes `-O`, `-g`, `-std=gnu++11`, `-DANDROID`):
    `python3 -c 'import json;[print(e["command"]) for e in json.load(open("build/compile_commands.json")) if "qrand" in e["file"]]'`
-   (291 entries; `target.cmake` is where fixes go, `compile_commands.json` is the truth for what was built).
+   (currently 464 entries; `target.cmake` declares overrides and
+   `compile_commands.json` is the truth for what was built).
 
 3. **Per-symbol numbers**: `objdiff-cli -C /home/fabian/git/saga report generate`
-   prints the report JSON to stdout (repo's `report.json`/`report.md` are committed
-   snapshots — treat as read-only). Per-symbol view = grep the JSON:
+   prints report JSON to stdout. The committed `report.json` is a snapshot;
+   root `report.md` is an ignored historical artifact. Per-symbol view:
    ```
    objdiff-cli -C . report generate | python3 -c \
      'import json,sys; r=json.load(sys.stdin); print([(u["name"],f["name"],f.get("fuzzy_match_percent"),f.get("size")) for u in r["units"] for f in u.get("functions",[]) if "qrand" in f["name"]])'
-   # [('src/legoapi/qrand.cpp', '_Z5qrandv', 100.0, '34')]
+   # [('legoapi/core/input/qrand.cpp.o', '_Z5qrandv', 100.0, '34')]
    ```
-    Six source-orphaned units (e.g. `saga/src/globals.cpp`, `nu2api/nu3d/nutexanm.c`)
+    Four current units (`globals.cpp.o`, `nu2api/nu3d/nutexanm.c.o`,
+    `nu2api/nufile/android/NuFileAndroidDeviceAPK.cpp.o`, and
+    `nu2api/nusound/nusound.cpp.o`)
     have no `functions` key — ignore; the `ogg_vorbis` extra_units unit has 36 and is
     queryable like any other. A `fuzzy_match_percent`
     of 100 means the function *bytes* already match; 0–99 means disassemble.
@@ -67,8 +68,8 @@ Sibling docs: 01 (toolchain + canonical compile command), 03 (matching workflow)
 4. **Extract both function bodies and diff**:
    ```
    OJ=ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/linux-x86_64/bin/i686-linux-android-objdump
-   $OJ -S build/CMakeFiles/saga.dir/src/legoapi/qrand.cpp.o > /tmp/recompiled.asm   # -S interleaves source: .o HAS .debug_line
-   $OJ -d build/split/qrand.cpp.o                          > /tmp/original.asm      # -S useless: split .o has NO debug info
+   $OJ -S build/CMakeFiles/saga.dir/src/legoapi/core/input/qrand.cpp.o > /tmp/recompiled.asm
+   $OJ -d build/split/legoapi/core/input/qrand.cpp.o > /tmp/original.asm
    diff /tmp/original.asm /tmp/recompiled.asm
    ```
    Recompiled objects carry `.debug_line` (verified), so `-S` shows your source
@@ -89,7 +90,8 @@ Sibling docs: 01 (toolchain + canonical compile command), 03 (matching workflow)
 
 ## B. Mismatch catalog
 
-For each: **symptom**, **cause**, **verified snippet** (`/tmp/opencode/saga-experiments/a7/e*.cpp`, at the -O level stated), **fix**.
+For each: **symptom**, **cause**, a description of the verified test shape,
+and **fix**. The former `e*.cpp` files were temporary and are not distributed.
 
 ### 1. Wrong optimization level
 - Symptom: shape is completely different — e.g. -O0 emits `push ebp; lea (esp),ebp`, per-use stack reloads, branch + jmp; -O3 emits cmov on both-sides-computed values.
@@ -97,7 +99,7 @@ For each: **symptom**, **cause**, **verified snippet** (`/tmp/opencode/saga-expe
 - Verified: `e1.cpp` `int f(a,b){ if(a>b) return a+b; return a-b; }`
   - -O0: `cmp 0xc(%ebp),%eax / jle / mov 0xc(%ebp),%eax / mov 0x8(%ebp),%edx / add / jmp` (branch, 4 reloads)
   - -O3: `sub %edx,%esi / add %edx,%eax / cmp %edx,%ecx / cmovle %esi,%eax` (both sides, 0 branches)
-- Fix: add `set_source_files_properties(... COMPILE_OPTIONS "-O3")` (or -O2) in `src/target.cmake`; rebuild; recheck. Re-verified (`verify7/e1b.cpp`): for these value-computing if/else shapes **-O2 and -O3 compile byte-identically** (same cmov; `if(a>b) return 1; return 0;` gives `setg %al` + `movzbl %al,%eax` at both levels) — the real cross-level tell is the -O0 stack frame + per-use reloads. A "setcc vs cmov" diff is not a -O2-vs-O3 signal on this compiler.
+- Fix: add `set_source_files_properties(... COMPILE_OPTIONS "-O3")` (or -O2) in `src/target.cmake`; rebuild; recheck. For these value-computing if/else shapes **-O2 and -O3 compile byte-identically** (same cmov; `if(a>b) return 1; return 0;` gives `setg %al` + `movzbl %al,%eax` at both levels) — the real cross-level tell is the -O0 stack frame + per-use reloads. A "setcc vs cmov" diff is not a -O2-vs-O3 signal on this compiler.
 
 ### 2. Signedness of char/int
 - Symptom: `movsbl` vs `movzbl` on a byte load; `cmpb` on a byte vs `cmpl` on a dword; signed condition `setg/setle/jg/jle` vs unsigned `seta/setbe/ja/jbe` for the same-looking comparison.
@@ -141,7 +143,8 @@ For each: **symptom**, **cause**, **verified snippet** (`/tmp/opencode/saga-expe
 ### 8. 64-bit ops
 - Symptom: same `a / b` source shape, but the call target differs — `__udivdi3` vs `__divdi3`; `%` → `__umoddi3`. Plus `fildll` (i64→double) vs `fisttpll` (double→i64) on x87.
 - Verified: `e8.cpp` -O2 (`objdump -r`): `u64/u64` → `R_386_PLT32 __udivdi3`; `i64/i64` → `__divdi3`; `u64%u64` → `__umoddi3`; `(double)i64` → `fildll`; `(i64)double` → `fisttpll`.
-- Fix: match operand signedness in the source. Spot via `nm build/split/*.o | grep di3` to find which TUs do 64-bit division, and the reloc `objdump -r` in both .o files reveals the helper name (split objects retain relocs).
+- Fix: match operand signedness in the source. Search split objects recursively
+  for `di3`; `objdump -r` on the exact target/base paths reveals the helper name.
 
 ### 9. Struct layout
 - Symptom: field offset differs (`movsbl 0x8(%eax)` vs `movsbl 0xc(%eax)`); access width differs (`movl 0x4(%eax)` vs `movb`).
@@ -160,18 +163,25 @@ For each: **symptom**, **cause**, **verified snippet** (`/tmp/opencode/saga-expe
 - Fix: this is a unit-level artifact — match the TU contents (static objects with ctors in the same order), not usually per-function. Don't chase guard-variable mismatches for trivial int/pointer statics: there are none.
 
 ### 12. Tail call vs call+ret
-- Symptom: a trailing `jmp` (tail call) vs `call ...; ret`.
-- Verified surprise: `e12.cpp` -O3 with **PIC** (project default): `return work(a);` compiles to `call + ret` — **no tail-call optimization at all** (also at -O2 PIC). Only with `-fno-pic` does GCC 4.7 emit `jmp` (at -O2 and -O3). The real binary is PIC (10k+ `__x86.get_pc_thunk` refs), so the original never tail-calls either.
-- Fix: nothing to do — plain `return f(x);` already matches. A trailing `jmp` in the original is a jump table or a goto, not a tail call. Jump tables (spot-check, `verify7/e18*.cpp`): GCC 4.7 emits **no table at -O0** (compare chain) and no table for few cases at -O3 (compare tree); with ≥8 dense cases at -O3 it emits a PIC-relative offset table — `mov 0x0(%ebx,%eax,4),%eax / add %ebx,%eax / jmp *%eax` with `R_386_GOTOFF .rodata` entries (one 4-byte GOT-relative offset per case). A switch of *constant returns* at -O3 compiles instead to a **value table**: `cmp $0x3,%edx / ja default / mov 0x0(%ecx,%edx,4),%eax` — the .rodata holds the return constants, no jump at all.
+- Symptom: a trailing `jmp` versus `call ...; ret`.
+- Verified distinction: an external/default-visibility callee under PIC uses
+  `call` + epilogue + `ret` in the tested shape. A local `static` noinline
+  callee and a hidden-visibility callee can still be sibling-called with
+  `jmp` (`R_386_PC32` for the hidden symbol).
+- Fix: inspect the jump relocation and callee binding. Do not classify every
+  trailing jump as a switch/goto, and do not force a tail call to an
+  interposable external symbol. Switch lowering is separate: small switches
+  often use compare trees, while sufficiently dense switches can use
+  PIC-relative jump or value tables even at `-O0`, depending on case shape.
 
 ### 13. Inlining at -O3
 - Symptom: helper body duplicated inline vs an outlined symbol + `call`.
-- Verified: `e13.cpp` -O3: single-use `static` helper → fully inlined (no symbol in `nm`); `e13b.cpp`: same helper **non-static** → outlined `_Z6helperi` + `call` from the caller. Re-verified (`verify7/e15*.cpp`): at **-O2 and -O3** a called-once static is always inlined; at **-O0 it is NOT** — the helper stays outlined as a local symbol (`t _ZL6helperi`) and the caller emits `call`. The `-O0` case is indistinguishable from a non-static helper except for the symbol binding (`t`/`T`).
+- Verified: a single-use `static` helper at -O3 was fully inlined (no symbol in `nm`); the same helper with external linkage stayed outlined with a call. At **-O2 and -O3** the tested called-once static was inlined; at **-O0 it was not**—the helper remained a local `t` symbol and the caller emitted `call`. The -O0 case is indistinguishable from a non-static helper except for binding (`t`/`T`).
 - Fix: check `nm res/libTTapp.so | grep <helper>` (or `nm build/split/<tu>.o`): symbol present ⇒ make the helper non-static/extern in your source; absent ⇒ keep it `static` (or inline the body). At -O0 a static helper *will* appear in `nm` as lowercase `t` — don't be fooled into making it extern; check the TU's -O level first (step A.2).
 
 ### 14. Non-obvious
 - Symptom: argument values stored in swapped slots; extra `mov` reloads of args; `ret $0x4` vs plain `ret`; calls through a hidden pointer arg.
-- Verified: `e14.cpp` -O2, `fx((*p)++, (*p)++)`: the **second** expression is evaluated and stored first (`mov %eax,0x4(%esp)` = arg2, then arg1 at 0(%esp)) — right-to-left, constant on this target. `e14b.cpp` -O0: every arg reloaded from `0x8/0xc/0x10(%ebp)` per use, including the trailing `+ a`. `e14.cpp` `P mkp(int a)`: sret pointer is the hidden **first** arg (read from `0x4(%esp)`, real arg at `0x8(%esp)`), caller passes `lea local,%eax` into slot 0, and the callee ends `ret $0x4` (marker!). Re-verified (`verify7/e10*.cpp`): on this toolchain **every** struct return uses the hidden sret arg + `ret $0x4` — even 1-, 4- and 8-byte POD structs (no register returns); a 1-byte `struct {char c;}` still ends `ret $0x4`. `__builtin_expect(a>b,0)` vs `(,1)` (`bexp/bexp2`): GCC 4.7 x86 emits **no branch-hint prefixes** (there is nothing to emit), but the hint is **not a no-op** — see surprise 2 below; in this particular e14 shape the branch was lowered to arithmetic, so the two bodies differ only in register allocation (`ba 05...01 d0` vs `b9 05...01 c8`) and are **not** byte-identical.
+- Verified at -O2, `fx((*p)++, (*p)++)`: the **second** expression is evaluated and stored first (`mov %eax,0x4(%esp)` = arg2, then arg1 at 0(%esp))—right-to-left for this target/compiler. At -O0, arguments were reloaded from their frame slots per use. For `P mkp(int a)`, the sret pointer is the hidden first arg and the callee ends `ret $0x4`. Tested 1-, 4-, and 8-byte POD structs use the same hidden sret convention. `__builtin_expect(a>b,0)` vs `(,1)` emits no branch-hint prefix but can still change branch layout or register allocation.
 - Fix: match the source-level evaluation order (swap the two `(*p)++` args if the slots are mirrored); match struct-return (sret) shape by keeping the same return type — any struct type produces the hidden pointer + `ret $4`; the `ret $N` markers identify sret functions in both objects. Don't rely on `__builtin_expect` being a no-op: it reorders branches (see surprise 2).
 
 ### 15. Globals in .data vs .bss
@@ -221,7 +231,7 @@ For each: **symptom**, **cause**, **verified snippet** (`/tmp/opencode/saga-expe
 | `movsbl 0x8(%r)` vs `0xc(%r)`; `movl` vs `movb` on same field | 9 struct layout | fix `*_types.h`, check Ghidra struct |
 | String pool order / `lea` offsets differ | 10 rodata order | match literal use order |
 | `.init_array`/`.data.rel.ro` differ unit-wide | 11 static init | TU-level; reorder ctors |
-| trailing `jmp` vs `call;ret` | 12 tail call | PIC ⇒ never; ignore |
+| trailing `jmp` vs `call;ret` | 12 tail call | inspect binding and relocation |
 | helper body duplicated vs `call` + symbol in `nm` | 13 inlining | static vs extern helper |
 | swapped arg slots, `ret $N`, missing reload | 14 eval order / sret | swap arg order; match return type |
 | Global `B` vs `D` in `nm` | 15 .data/.bss | drop non-zero init |
@@ -229,7 +239,9 @@ For each: **symptom**, **cause**, **verified snippet** (`/tmp/opencode/saga-expe
 
 ## D. Verified surprises (things the catalog disproved)
 
-1. **No tail calls under PIC** — `return f(x);` is `call+ret` even at -O3 (e12); only `-fno-pic` gives `jmp`. Do not restructure code to "create" tail calls.
+1. **PIC does not forbid all tail calls.** Interposable external calls use
+   `call+ret` in the tested shape, while local/hidden callees can use `jmp`.
+   Binding and relocation are the discriminator.
 2. **`__builtin_expect` is NOT a no-op on GCC 4.7 x86** — it emits no hint *prefixes* (there is nothing to emit on x86), but when its value feeds a branch GCC uses it to choose branch layout: `__builtin_expect(c,1)` ≡ plain `if(c)` byte-for-byte, while `__builtin_expect(c,0)` mirrors the branch (e.g. `je`↔`jne`, `jg`↔`jle` swapped) and at -O3 turns a cmov into a branch. Only when GCC lowers the condition to arithmetic (e.g. e14's `bexp`, where the branch became setcc+shl+add) does the hint have nothing to influence — and even then the two functions differed in register allocation (`ba 05/01 d0` vs `b9 05/01 c8`), so they were **not** byte-identical. Treat likely/unlikely as layout-affecting, not as free.
 3. **`if(a>b) return X; return Y;` ≡ if-else** byte-for-byte, but `a>b` vs `b<a` is NOT byte-identical (mirrored `cmp`/`jcc` pair, e3b).
 4. **Ternary ≡ if-else** at -O3; only assignment-then-override differs (e4).
@@ -241,20 +253,16 @@ For each: **symptom**, **cause**, **verified snippet** (`/tmp/opencode/saga-expe
 
 ## E. Reproducing a category locally
 
-```
-cd /tmp/opencode/saga-experiments/a7
-source env.sh                      # OJ, NM, GXX, BASE flags, build <out> <level> <src>
-build e3c.o -O2 e3c.cpp
-$OJ -d e3c.o | sed -n '/<.*>:/,/^$/p'
-```
-Flags mirrored from the project: `-fno-stack-protector -msse2 -fno-exceptions
--fno-rtti -fno-function-sections -fno-data-sections`, PIC default. `-O0/-O2/-O3`
-per experiment. Each experiment is standalone (no linking needed — relocations
-print the call targets).
+Create a minimal source in a fresh `/tmp` directory, compile it directly with
+the NDK driver and the canonical flags from `01-toolchain.md`, then inspect it
+with the matching NDK `objdump -dr`. Do not use the host compiler for a codegen
+claim. Vary one source property at a time and compile separate `-O0`, `-O2`,
+and `-O3` objects. No link step is needed; relocations expose call targets.
 
 ## F. Five-minute drill (checklist)
 
-1. `nm build/split/*.o | grep -w <mangled>` → TU. Not found → gonk `extra_units`/`ignore` (library code).
+1. `scripts/objdiff-cli.py <mangled>` or `objdiff.json` → TU. A failed
+   non-recursive glob is not an ownership result.
 2. `grep <tu> src/target.cmake` → -O level; absent = -O0. **Fix this first; it re-shapes everything.**
 3. Per-symbol % via `objdiff-cli report generate` + grep of the JSON; skip when 100.
 4. `$OJ -S` on the recompiled .o (source interleaved) vs `$OJ -d` on the split .o; `diff` the two, mentally discounting the PIC thunk prologue (`call __x86.get_pc_thunk.*`, `add $2,%ebx`, GOT `mov 0x0(%reg)`).

@@ -46,14 +46,8 @@ typedef struct nuapi_s {
     char field66_0x7d;
     char field67_0x7e;
     char field68_0x7f;
-    char field69_0x80;
-    char field70_0x81;
-    char field71_0x82;
-    char field72_0x83;
-    char field73_0x84;
-    char field74_0x85;
-    char field75_0x86;
-    char field76_0x87;
+    i32 loading_hgobj;
+    i32 force_hgobj_visibility;
     i32 disable_os_menu_freeze;
     f32 video_brightness;
 } NUAPI;
@@ -87,7 +81,7 @@ extern "C" {
 #endif
     i32 NuInitHardware(VARIPTR *buf, VARIPTR *buf_end, i32 heap_size, ...);
 
-    void NuCommandLine(i32 argc, char **argv);
+    void NuCommandLine(i32 *argc, char ***argv);
     void NuDisableOSMenuFreeze(void);
 
     void NudxFw_D3DBeginCriticalSection(void);

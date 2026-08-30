@@ -3,6 +3,7 @@
 #pragma once
 
 #include "nu2api/nucore/fixed_width.h"
+#include "legoapi/items/objects/basething.h"
 #include "legoapi/render/core/SwipeDecalRenderer.h"
 #include "nu2api/nucore/NuTouchInputElement.h"
 
@@ -86,7 +87,13 @@ struct NuInputTouch;
 struct NuInputTouchData;
 struct NuVec2 {};
 struct NuVirtualTouchDevice;
-struct ThingProcessData {};
+struct nupad_s;
+struct ThingProcessData {
+    float t; // frame time for this pass
+    u32 paused;
+    nupad_s **pads; // -> the caller's nupad_s* pair on its stack
+    i32 flags;      // 2 = process pass
+};
 struct ThingRenderData {};
 struct ThingResetData {};
 struct TouchHolder {};
@@ -213,6 +220,9 @@ struct MechInputTouchMainDummyStick {
     MechInputTouchMainDummyStick(MechInputTouchMainController &, NuTouchInputElement::TYPE);
 };
 struct MechInputTouchMenuController {
+    static i32 AnyTouchesThisFrame; // original bss, consumed by startup/menu presentation
+    static i32 PackButtonPressed;   // original bss (read/cleared by NuMain)
+    static i32 PackButtonID;        // original bss (menu id for in-app purchase pack)
     void Activate();
     void Deactivate();
     MechInputTouchMenuController(i32);
@@ -253,6 +263,10 @@ struct MechInputTouchSpeederChaseController {
     virtual ~MechInputTouchSpeederChaseController();
 };
 struct MechInputTouchSystem {
+    static i32 s_baseControlMode;
+    static i32 s_actualTouchMode;
+    virtual ~MechInputTouchSystem();
+    virtual char const *GetName();
     void AddChangeLayoutButtons(NuVirtualTouchDevice &, i32);
     void ChooseTouchLayout(bool);
     void ConvertToScreenCoords(float, float, float &, float &);
@@ -271,10 +285,12 @@ struct MechInputTouchSystem {
     void FindTargetObject(GameObject_s &, VuVec const &, i32, MechObjectInterface *, MechTempPosInterface *);
     void Init();
     MechInputTouchSystem();
-    void ProcessEvenWhenPaused(ThingProcessData *);
+    virtual void ProcessEvenWhenPaused(ThingProcessData *);
     void ResetAllOwners();
     void SetTouchLockedBy(u32, MechInputTouchButton *, bool);
     void TouchLockedBy(u32);
+
+    i32 control_mode;
 };
 struct MechInputTouchVirtualConsoleController {
     void Activate();
@@ -308,12 +324,27 @@ struct MechJumpAutoPilotAddon {
 struct MechObjectInterface {
     void GetFloorTargetPos(VuVec &, i32) const;
 };
-struct MechSystems {
-    void Display(ThingRenderData *);
-    void EnterLevel(WORLDINFO_s *);
-    void ExitLevel(WORLDINFO_s *);
+// MechSystems is a BaseThing: AddOnceOnlyThings registers it on the
+// GameThingManager and ProcessThings dispatches into it every frame.
+// Virtual order = vtable for MechSystems @0x66b320 (rel slots):
+//   0x08 GetName, 0x18 Reset, 0x1c Process, 0x20 ProcessEvenWhenPaused,
+//   0x24 ProcessOnlyWhenPaused, 0x28 Render, 0x2c Display,
+//   0x34 EnterLevel(WORLDINFO), 0x38 ExitLevel(WORLDINFO)
+// (RemoveDependancies/EnterLevel(ThingLevelData)/ExitLevel(ThingLevelData)/
+//  Effects keep the BaseThing slots).
+struct MechSystems : BaseThing {
+    static MechSystems *Get();
+    virtual ~MechSystems();
+    char const *GetName() override;
+    void Reset(ThingResetData *) override;
+    void Process(ThingProcessData *) override;
+    void ProcessEvenWhenPaused(ThingProcessData *) override;
+    void ProcessOnlyWhenPaused(ThingProcessData *) override;
+    void Render(ThingRenderData *) override;
+    void Display(ThingRenderData *) override;
+    virtual void EnterLevel(WORLDINFO_s *);
+    virtual void ExitLevel(WORLDINFO_s *);
     void FindMoveToMarkerAtPos(VuVec const &, bool);
-    void Get();
     void HookUpClickToPressStart();
     void Init();
     void LoadPerm();
@@ -322,14 +353,11 @@ struct MechSystems {
     void NewRadarPulse(VuVec const &, bool);
     void NewSwipeMarker(TouchHolder &, i32, SwipeDecalRenderer::Style);
     void NewTagButton(GameObject_s &, TouchHolder &);
-    void Process(ThingProcessData *);
-    void ProcessEvenWhenPaused(ThingProcessData *);
-    void ProcessOnlyWhenPaused(ThingProcessData *);
-    void Render(ThingRenderData *);
     void RenderCurrentPlayerHighlight();
-    void Reset(ThingResetData *);
     void UnhookClickToPressStart();
-    virtual ~MechSystems();
+
+    u32 unknown_0x10[6];
+    MechInputTouchSystem input_touch_system;
 };
 struct MechTempPosInterface {
     void GetFloorTargetPos(VuVec &, i32) const;

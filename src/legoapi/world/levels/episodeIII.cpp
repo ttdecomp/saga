@@ -52,8 +52,8 @@ void ChrisDogFightAPanel(WORLDINFO_s *) {
 
 void CruiserAInit(WORLDINFO_s *world) {
     *((u8 *)LevFlag) = 0;
-    NuSpecialFind(world->current_gscn, (void **)LevHSpecial, "starfighter1", 1);
-    NuSpecialFind(world->current_gscn, (void **)(LevHSpecial + 3), "starfighter2", 1);
+    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&LevHSpecial[0]), "starfighter1", 1);
+    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&LevHSpecial[1]), "starfighter2", 1);
     if (FreePlay)
         *((u8 *)LevFlag) = 2;
 }
@@ -279,7 +279,7 @@ void VaderC_DrawPanel(WORLDINFO_s *) {
 
 void VaderA_GoneThroughDoor(WORLDINFO_s *, DOOR_s *door) {
     if (netclient == 0 && door != NULL)
-        door->field_0xf7 = 1;
+        door->active = 1;
 }
 
 static __used__ void VaderA_StartCollapseStage(WORLDINFO_s *) {

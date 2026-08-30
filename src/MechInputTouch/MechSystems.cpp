@@ -1,5 +1,13 @@
 #include "MechInputTouch_types.h"
 
+#include <stddef.h>
+
+// vtable for MechSystems @0x66b320 slot 0x08: returns the static name string
+// @0x573c42 (from MechSystems::GetName @0x45def0).
+char const *MechSystems::GetName() {
+    return "MechSystems";
+}
+
 void MechSystems::Display(ThingRenderData *) {
 }
 
@@ -12,7 +20,16 @@ void MechSystems::ExitLevel(WORLDINFO_s *) {
 void MechSystems::FindMoveToMarkerAtPos(VuVec const &, bool) {
 }
 
-void MechSystems::Get() {
+i32 MechInputTouchMenuController::AnyTouchesThisFrame = 0;
+i32 MechInputTouchMenuController::PackButtonPressed = 0;
+i32 MechInputTouchMenuController::PackButtonID = 0;
+
+MechSystems *MechSystems::Get() {
+    static MechSystems *instance = NULL;
+    if (instance == NULL) {
+        instance = new MechSystems();
+    }
+    return instance;
 }
 
 void MechSystems::HookUpClickToPressStart() {

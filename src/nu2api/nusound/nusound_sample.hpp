@@ -36,6 +36,9 @@ class NuSoundSample : public NuSoundSource {
     i32 thread_queue_count;
     i32 ref_count;
 
+  public:
+    // The original's global sample lock: the decoder's RequestBuffer hands
+    // ring buffers to voice callbacks under it (libTTapp.so -0x18e4).
     static pthread_mutex_t sCriticalSection;
 
   public:
@@ -56,11 +59,18 @@ class NuSoundSample : public NuSoundSource {
     void SetLastErrorState(ErrorState state);
 
     void *GetSourceBuffer();
-    bool IsLocked() const;
+    virtual bool IsLocked() const;
     void Lock();
     void Unlock();
     void Unload();
-    void RequestBuffer(bool, NuSoundWeakPtr<NuSoundBufferCallback>);
+
+    // NuSoundSource overrides (the original dispatched through the source
+    // vtable; Play() calls RequestBuffer to obtain its initial buffers).
+    bool IsStreamOpen() const override;
+    u32 GetMaxBufferSize() override {
+        return 0;
+    }
+    void RequestBuffer(bool loop, NuSoundWeakPtr<NuSoundBufferCallback> callback) override;
 
     ~NuSoundSample();
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "nu2api/nucore/fixed_width.h"
 #include "nu2api/nusound/nusound_loader.hpp"
 
 class NuSoundHeaderOGG : public NuSoundStreamDesc {
@@ -30,8 +31,12 @@ class NuSoundLoaderOGG : public NuSoundLoader {
         NUFILE file;
 
       public:
-        i32 Read(void *dest, u32 size);
+        virtual i32 Read(void *dest, u32 size);
+        virtual void Seek(i32 origin, u32 offset);
+        virtual void Close();
         void SetFile(NUFILE file);
+        NUFILE GetFile() const;
+        virtual i32 GetPosition() const;
     };
 
     NuSoundLoaderOGG();
@@ -40,8 +45,15 @@ class NuSoundLoaderOGG : public NuSoundLoader {
     NuSoundStreamDesc *CreateHeader();
 
     bool SeekPCMSample(u64 index);
-    bool SeekTime(double seconds);
+    bool SeekTime(f64 seconds);
     virtual i32 ReadHeader(NuSoundStreamDesc *header);
+    i32 OpenFileForStreaming(const char *path, bool flag);
+    bool SeekRawData(u64 position);
+    void Close();
+
+    static int OggCallbackClose(void *callbacks);
+    static int OggCallbackSeek(void *callbacks, i64 offset, i32 origin); // NOLINT(google-runtime-int)
+    static long OggCallbackTell(void *callbacks);                        // NOLINT(google-runtime-int)
 
   private:
     OGGFileCallbacks file_callbacks;

@@ -65,6 +65,10 @@ extern "C" {
 
     void NuCameraGet(NUCAMERA *out);
 
+    void NuCameraSet(NUCAMERA *cam);
+    void NuCameraSetEx(NUCAMERA *cam, i32 fast);
+    void NuCameraSetProjectionMtx(NUMTX *mtx, f32 fov, f32 aspect, f32 near_clip, f32 far_clip);
+
     NUCAMERA *NuCameraGetCam(void);
 
     NUMTX *NuCameraGetMtx(void);
@@ -83,6 +87,7 @@ extern "C" {
     f32 NuCameraDistSqr(NUVEC *v);
 
     i32 NuCameraClipTestExtents(NUVEC *min, NUVEC *max, NUMTX *world_mtx, f32 far_clip, i32 should_clip_to_screen);
+    i32 NuCameraClipTestExtentsAxisAligned(NUVEC *min, NUVEC *max, f32 far_clip);
     i32 NuCameraClipTestSphere(NUVEC *pnt, float radius, NUMTX *world_mtx);
 
     void NuCameraCalcRay(float screen_x, float screen_y, NUVEC *ray_start, NUVEC *ray_end, NUCAMERA *cam);

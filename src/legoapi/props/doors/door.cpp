@@ -10,22 +10,6 @@
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/numath/nutrig.h"
 
-// ---- Local view of DOOR_s / WORLDINFO_s (offsets verified vs. original) ----
-
-// WORLDINFO_s fields used here: door array at +0x469c, count at +0x46a0.
-struct doorview_s {
-    char pad0[0x469c];
-    struct DOOR_s *doors; // 0x469c
-    i32 ndoors;           // 0x46a0
-};
-
-// Pointer stored in DOOR_s at +0xa0: exit-spline descriptor.
-typedef struct doorspline_s {
-    i16 count;   // 0x00
-    char pad[6]; // 0x02
-    NUVEC *arr;  // 0x08
-} DOORSPLINE;
-
 // ---- Exit-camera / cut-door data ----
 NUVEC Door_CutCamPos0;
 NUVEC Door_CutCamPos1;
@@ -51,87 +35,87 @@ void StartDoorPositions(void) {
     if (Door_ExitName[0] == '\0') {
         return;
     }
-    struct DOOR_s *a = ((struct doorview_s *)WORLD)->doors;
-    if (a != NULL && ((struct doorview_s *)WORLD)->ndoors > 0) {
+    DOOR_s *a = WORLD->doors;
+    if (a != NULL && WORLD->door_count > 0) {
         i32 i = 0;
         do {
-            if (a->spl != NULL && NuStrICmp(a->name, Door_ExitName) == 0) {
-                if (a->spl->count < 6) {
-                    PlayerStart[0].pos = (NUVEC *)&OldPlrSPos[7].x;
-                    PlayerStart[0].angle = *(i16 *)&OldPlrSPos[7].heading;
+            if (a->spline != NULL && NuStrICmp(a->name, Door_ExitName) == 0) {
+                if (a->spline->length < 6) {
+                    PlayerStart[0].pos = OldPlrSPos[7].door_fallback.position;
+                    PlayerStart[0].angle = OldPlrSPos[7].door_fallback.angle;
                 } else {
                     NUVEC tmp;
-                    NUVEC *arr = a->spl->arr;
+                    NUVEC *arr = a->spline->pts;
                     NuVecSub(&tmp, &arr[5], &arr[4]);
                     PlayerStart[0].pos = &arr[4];
                     PlayerStart[0].angle = NuAtan2D(tmp.x, tmp.z);
                 }
-                if (a->spl->count < 8) {
+                if (a->spline->length < 8) {
                     PlayerStart[1].pos = PlayerStart[0].pos;
                     PlayerStart[1].angle = PlayerStart[0].angle;
                 } else {
                     NUVEC tmp;
-                    NUVEC *arr = a->spl->arr;
+                    NUVEC *arr = a->spline->pts;
                     NuVecSub(&tmp, &arr[7], &arr[6]);
                     PlayerStart[1].pos = &arr[6];
                     PlayerStart[1].angle = NuAtan2D(tmp.x, tmp.z);
                 }
-                if (a->spl->count < 10) {
+                if (a->spline->length < 10) {
                     PlayerStart[2].pos = PlayerStart[1].pos;
                     PlayerStart[2].angle = PlayerStart[1].angle;
                 } else {
                     NUVEC tmp;
-                    NUVEC *arr = a->spl->arr;
+                    NUVEC *arr = a->spline->pts;
                     NuVecSub(&tmp, &arr[9], &arr[8]);
                     PlayerStart[2].pos = &arr[8];
                     PlayerStart[2].angle = NuAtan2D(tmp.x, tmp.z);
                 }
-                if (a->spl->count < 12) {
+                if (a->spline->length < 12) {
                     PlayerStart[3].pos = PlayerStart[2].pos;
                     PlayerStart[3].angle = PlayerStart[2].angle;
                 } else {
                     NUVEC tmp;
-                    NUVEC *arr = a->spl->arr;
+                    NUVEC *arr = a->spline->pts;
                     NuVecSub(&tmp, &arr[11], &arr[10]);
                     PlayerStart[3].pos = &arr[10];
                     PlayerStart[3].angle = NuAtan2D(tmp.x, tmp.z);
                 }
-                if (a->spl->count < 14) {
+                if (a->spline->length < 14) {
                     PlayerStart[4].pos = PlayerStart[3].pos;
                     PlayerStart[4].angle = PlayerStart[3].angle;
                 } else {
                     NUVEC tmp;
-                    NUVEC *arr = a->spl->arr;
+                    NUVEC *arr = a->spline->pts;
                     NuVecSub(&tmp, &arr[13], &arr[12]);
                     PlayerStart[4].pos = &arr[12];
                     PlayerStart[4].angle = NuAtan2D(tmp.x, tmp.z);
                 }
-                if (a->spl->count < 16) {
+                if (a->spline->length < 16) {
                     PlayerStart[5].pos = PlayerStart[4].pos;
                     PlayerStart[5].angle = PlayerStart[4].angle;
                 } else {
                     NUVEC tmp;
-                    NUVEC *arr = a->spl->arr;
+                    NUVEC *arr = a->spline->pts;
                     NuVecSub(&tmp, &arr[15], &arr[14]);
                     PlayerStart[5].pos = &arr[14];
                     PlayerStart[5].angle = NuAtan2D(tmp.x, tmp.z);
                 }
-                if (a->spl->count < 18) {
+                if (a->spline->length < 18) {
                     PlayerStart[6].pos = PlayerStart[5].pos;
                     PlayerStart[6].angle = PlayerStart[5].angle;
                 } else {
                     NUVEC tmp;
-                    NUVEC *arr = a->spl->arr;
+                    NUVEC *arr = a->spline->pts;
                     NuVecSub(&tmp, &arr[17], &arr[16]);
                     PlayerStart[6].pos = &arr[16];
                     PlayerStart[6].angle = NuAtan2D(tmp.x, tmp.z);
                 }
-                if (a->spl->count < 20) {
+                if (a->spline->length < 20) {
                     PlayerStart[7].pos = PlayerStart[6].pos;
                     PlayerStart[7].angle = PlayerStart[6].angle;
                 } else {
                     NUVEC tmp;
-                    NUVEC *arr = a->spl->arr;
+                    NUVEC *arr = a->spline->pts;
                     NuVecSub(&tmp, &arr[19], &arr[18]);
                     PlayerStart[7].pos = &arr[18];
                     PlayerStart[7].angle = NuAtan2D(tmp.x, tmp.z);
@@ -141,18 +125,17 @@ void StartDoorPositions(void) {
             }
             i++;
             a++;
-        } while (i < ((struct doorview_s *)WORLD)->ndoors);
+        } while (i < WORLD->door_count);
     }
     Door_ExitName[0] = '\0';
 }
 
-void *Door_FindByIndex(struct WORLDINFO_s *world, i32 a, i32 b, struct nuvec_s *c) {
-    struct doorview_s *w = (struct doorview_s *)world;
-    struct DOOR_s *d = w->doors;
-    struct DOOR_s *out;
+DOOR_s *Door_FindByIndex(WORLDINFO_s *world, i32 a, i32 b, NUVEC *c) {
+    DOOR_s *d = world->doors;
+    DOOR_s *out;
     out = NULL;
     if (d != NULL) {
-        i32 count = w->ndoors;
+        i32 count = world->door_count;
         if (count > 0) {
             if (a == -1) {
                 if (b != -1) {
@@ -163,7 +146,7 @@ void *Door_FindByIndex(struct WORLDINFO_s *world, i32 a, i32 b, struct nuvec_s *
                         do {
                             if (((d->flags & 4) == 0) && d->level != -1 && d->level == b) {
                                 f32 dist = NuVecDistSqr((NUVEC *)c, &d->pos, NULL);
-                                count = w->ndoors;
+                                count = world->door_count;
                                 if (dist < best) {
                                     best = dist;
                                     bestDoor = d;
@@ -193,7 +176,7 @@ void *Door_FindByIndex(struct WORLDINFO_s *world, i32 a, i32 b, struct nuvec_s *
                             i16 s = d->level;
                             if (((d->flags & 4) == 0) && s != -1 && (s == b || LDataList[s].area_index == a)) {
                                 f32 dist = NuVecDistSqr((NUVEC *)c, &d->pos, NULL);
-                                count = w->ndoors;
+                                count = world->door_count;
                                 if (dist < best) {
                                     best = dist;
                                     bestDoor = d;
@@ -210,7 +193,7 @@ void *Door_FindByIndex(struct WORLDINFO_s *world, i32 a, i32 b, struct nuvec_s *
                     do {
                         if (((d->flags & 4) == 0) && d->level != -1 && LDataList[d->level].area_index == a) {
                             f32 dist = NuVecDistSqr((NUVEC *)c, &d->pos, NULL);
-                            count = w->ndoors;
+                            count = world->door_count;
                             if (dist < best) {
                                 best = dist;
                                 bestDoor = d;
@@ -252,17 +235,17 @@ void *Door_FindByIndex(struct WORLDINFO_s *world, i32 a, i32 b, struct nuvec_s *
     return out;
 }
 
-void *Door_FindByName(struct WORLDINFO_s *world, char *name) {
-    if (name != NULL && ((struct doorview_s *)world)->doors != NULL && ((struct doorview_s *)world)->ndoors > 0) {
+DOOR_s *Door_FindByName(WORLDINFO_s *world, char *name) {
+    if (name != NULL && world->doors != NULL && world->door_count > 0) {
         i32 i = 0;
-        struct DOOR_s *b = ((struct doorview_s *)world)->doors;
+        DOOR_s *b = world->doors;
         do {
             if (NuStrICmp(name, (char *)b) == 0) {
                 return b;
             }
             i++;
             b++;
-        } while (i < ((struct doorview_s *)world)->ndoors);
+        } while (i < world->door_count);
     }
     return NULL;
 }

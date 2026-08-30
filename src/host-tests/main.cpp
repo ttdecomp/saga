@@ -1,7 +1,18 @@
+#include "test_audio.hpp"
 #include "test_load.hpp"
 #include "test_window.hpp"
 
 #include <string>
+#include <stdlib.h>
+#include <stdio.h>
+
+// HOST-ONLY: the ASAN runtime inside the host toolchain flags the allocator
+// mismatch coming out of Mesa/LLVM's GL driver stack (new/delete vs their
+// internal allocators) and aborts the process before the test can present.
+// The original binary has no ASAN; this only silences that false positive.
+extern "C" const char *__asan_default_options() {
+    return "alloc_dealloc_mismatch=0";
+}
 
 struct Test {
     std::string name;
@@ -11,10 +22,25 @@ struct Test {
 const Test tests[] = {
     {"load", test_load},
     {"window", test_window},
+    {"audio", test_audio},
 };
 
 i32 main(i32 argc, char **argv) {
-    if (argc != 2) {
+    // HOST-ONLY: on device Java fills the engine locale string via
+    // nativeSetLanguage before NuMain runs; emulate that from the environment.
+    {
+        const char *lang = getenv("LANG");
+        if (lang == NULL)
+            lang = "en-us";
+        extern char g_language[16];
+        snprintf(g_language, sizeof(g_language), "%.15s", lang);
+        for (char *c = g_language; *c; c++) {
+            if (*c == '_')
+                *c = '-';
+        }
+    }
+
+    if (argc < 2) {
         printf("Usage: %s <test>\n", argv[0]);
         printf("Available tests:\n");
         for (const auto &test : tests) {

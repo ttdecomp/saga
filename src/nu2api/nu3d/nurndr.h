@@ -39,6 +39,7 @@ extern "C" {
     void NuRndrInitEx(i32 stream_buffer_size, VARIPTR *buffer);
 
     i32 NuRndrSetViewMtx(NUMTX *vpcs_mtx, NUMTX *viewport_vpc_mtx, NUMTX *scissor_vpc_mtx);
+    void NuRndrStateUpdateCameraState(void);
 
     void FaceYDirStream(i32 y_angle);
 #ifdef __cplusplus

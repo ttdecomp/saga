@@ -14,9 +14,23 @@
 
 #include "export.h"
 
+#if defined(HOST_BUILD) && defined(_WIN32)
+#include <io.h>
+#include <sys/stat.h>
+
+#define mkdir(path, mode) mkdir((path))
+#endif
+
 i32 saveload_status;
 i32 saveload_autosave = -1;
 i32 saveload_savepresent;
+i32 saveload_cardtype = 2;
+i32 saveload_cardformatted = 1;
+i32 saveload_freespace = 0x800;
+i32 saveload_filecorrupt;
+i32 SAVESIZE_ADDITIONAL = 3;
+
+i32 PCSaveSlot(i32 slot, void *extradata, i32 extradata_size, u32 hash);
 
 i32 saveload_slotused[6] = {0};
 i32 saveload_slotcode[6] = {0};
@@ -108,8 +122,7 @@ i32 saveloadLoadSlot(i32 slot, void *buffer, usize size) {
 }
 
 i32 saveloadSaveSlot(i32 slot, void *buffer, usize size) {
-    UNIMPLEMENTED();
-    return {};
+    return PCSaveSlot(slot, buffer, static_cast<i32>(size), static_cast<u32>(-1));
 }
 
 typedef i16 (*hashfn_t)(void);
@@ -125,11 +138,11 @@ i32 memcard_extra_savedatasize = 0;
 void *memcard_extra_savedatabuffer = NULL;
 
 hashfn_t memcard_hashfn = NULL;
-void *memcard_drawasiconfn = NULL;
+void (*memcard_drawasiconfn)(void) = NULL;
 i32 memcard_autosave = 0;
 
-void SaveSystemInitialise(i32 slots, void *makeSaveHash, void *save, i32 saveSize, i32 saveCount, void *drawSaveIcon,
-                          void *extradata, i32 extradataSize) {
+void SaveSystemInitialise(i32 slots, void *makeSaveHash, void *save, i32 saveSize, i32 saveCount,
+                          void (*drawSaveIcon)(void), void *extradata, i32 extradataSize) {
     if (extradata == NULL) {
         SAVESLOTS = 6;
         if (slots < 7) {
@@ -192,13 +205,6 @@ i32 TriggerExtraDataLoad(void) {
 
     return 0;
 }
-
-#if defined(HOST_BUILD) && defined(_WIN32)
-#include <io.h>
-#include <sys/stat.h>
-
-#define mkdir(path, mode) mkdir((path))
-#endif
 
 void createslotfolder(i32 slot) {
     char *path = slotfolder(slot);
@@ -287,5 +293,21 @@ void saveloadASDelete(i32 slot) {
     saveload_slotid = slot;
     if (saveload_autosave == slot) {
         saveload_autosave = -1;
+    }
+}
+
+void saveloadASCallEachFrame(void) {
+    if (statuswait == 0) {
+        return;
+    }
+
+    NUTIME now;
+    NUTIME elapsed;
+    NuTimeGet(&now);
+    NuTimeSub(&elapsed, &now, &savetimer);
+    if (NuTimeSeconds(&elapsed) > 1.0f) {
+        statuswait = 0;
+        saveload_getinfo();
+        saveload_status = 1;
     }
 }

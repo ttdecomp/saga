@@ -29,7 +29,7 @@ typedef struct AREADATA_s {
     i16 text_id;
     byte text_id_value;
     byte field41_0x97;
-    i16 *field42_0x98;
+    i16 *hub_player_ids; // 0x98, optional extra hub characters terminated by -1
 } AREADATA;
 
 #ifdef __cplusplus
@@ -44,12 +44,6 @@ extern "C" {
 typedef struct AREAFIXUP {
     char *name;
     AREADATA **area;
-    void *load_fn;
-    void *init_fn;
-    void *reset_fn;
-    void *update_fn;
-    void *draw_fn;
-    void *draw_status_fn;
 } AREAFIXUP;
 
 AREADATA *Area_FindByName(char *name, i32 *indexDest);

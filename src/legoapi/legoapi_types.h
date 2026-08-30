@@ -2,12 +2,18 @@
 #define LEGOAPI_TYPES_H
 #pragma once
 
+#include "decomp_assert.h"
 #include "nu2api/nucore/fixed_width.h"
+#include "decomp_assert.h"
+#include "nu2api/nucore/nulist.h"
+#include "nu2api/nucore/nuanim3.h"
+#include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nuvec.h"
 
 #include "legoapi/items/base/apiobject.h"
 #include "MechInputTouch/MechInputTouch_types.h"
 #include "legoapi/characters/core/CharacterObjectInterface.h"
+#include "legoapi/characters/motion/animlist.h"
 #include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
 #include "legoapi/gizmo/base/GizBuildItObjectInterface.h"
 #include "legoapi/gizmo/base/GizForceObjectInterface.h"
@@ -63,7 +69,6 @@ struct CHARPLATFORMSYS_s;
 struct CHARVARIANT;
 struct CHEAT;
 struct CLIMBOBJECTSYS_s;
-struct COINPACKET_s;
 struct COLLECTION_s;
 struct CUSTOMISER;
 struct CUSTOMISESAVE_s;
@@ -190,7 +195,6 @@ struct NuVec2;
 struct OPTIONSSAVE_s;
 struct OccluderSet;
 struct OcclusionManager;
-struct OggVorbis_File;
 struct PARTDEBSYS_s;
 struct PART_s;
 struct PLATSKININFO;
@@ -262,14 +266,13 @@ struct WORLDINFO_s;
 struct __sFILE;
 struct _vum_s;
 struct _vuv_s;
-struct ani3_animheader_s;
-struct ani3_scalemin_s;
 struct bgprocinfo_s;
 struct bitrate_manager_state;
 struct codebook;
 struct debinftype;
 struct debkeydatatype_s;
 struct debris_chunk_control_s;
+struct nunativedebrisdata_s;
 struct drft_lookup;
 struct edcam_s;
 struct eduiitem_s;
@@ -304,9 +307,6 @@ struct nusound_filename_info_s;
 struct nutex_s;
 struct nutexmanager_s;
 struct nuvec_s;
-struct ogg_packet;
-struct oggpack_buffer;
-struct ov_callbacks;
 struct particlechunkrendertype_s;
 struct pushblock_s;
 struct ripple_node_s;
@@ -317,21 +317,10 @@ struct shopitem_s;
 struct specialsfx_s;
 struct speedup_s;
 struct starfighter_s;
-struct static_codebook;
 struct terrsitu_s;
 struct tertype;
 struct uv1deb;
 struct uv1debdata;
-struct vorbis_block;
-struct vorbis_comment;
-struct vorbis_dsp_state;
-struct vorbis_info;
-struct vorbis_info_mapping0;
-struct vorbis_info_psy;
-struct vorbis_info_psy_global;
-struct vorbis_look_floor1;
-struct vorbis_look_psy;
-struct vorbis_look_psy_global;
 struct vucharidx_s;
 
 struct ADDGAMEMSG {};
@@ -351,20 +340,17 @@ struct AISCRIPTPROCESS_s;
 struct AISCRIPT_s;
 struct AITRIGGERSETSYS_s {};
 struct AITRIGGERSET_s {};
-struct ANIMLIST_s {};
-struct ANIMPACKET_s {
-    char pad_0x00[0x10];
-    float time;  // 0x10
-    float time2; // 0x14
-    char pad_0x18[0x3a - 0x18];
-    u16 field_0x3a; // 0x3a
-    char pad_0x3c[0x42 - 0x3c];
-    u16 frame;      // 0x42
-    f32 field_0x44; // 0x44
-};
 struct ANIMREDIRECT {};
 struct AREADATA_s;
-struct AREASAVE_s {};
+struct AREASAVE_s {
+    u8 complete;
+    u8 area_complete;
+    u8 story_buildup_complete;
+    u8 freeplay_buildup_complete;
+    u8 minikit_count;
+    u8 field_0x5[7];
+};
+DECOMP_ASSERT(sizeof(AREASAVE_s) == 0xc, "AREASAVE_s size");
 struct ATTRACTO_s;
 struct BATARANG_s {};
 struct BOLTSYS {};
@@ -372,7 +358,6 @@ struct BOLT_s;
 struct BUILDIT_FIND_ENUM {};
 struct CABLE_s {};
 struct CHARACTERDATA_s {};
-struct CHARACTERMODEL_s {};
 struct CHARCATEGORY {};
 struct CHARFIXUP;
 struct CHARPIVOT {};
@@ -380,22 +365,44 @@ struct CHARPLATFORMSYS_s {};
 struct CHARVARIANT {};
 struct CHEAT;
 struct CLIMBOBJECTSYS_s {};
-struct COINPACKET_s {};
 struct CUSTOMISER {};
 struct CUSTOMISESAVE_s {};
 struct CUSTOMPIECE {};
 struct CUTINFO {
-    char pad_0x00[0x4];
-    void *scene; // 0x04
+    void *scene;
+    void *instance;
+    char name[0x40];
+    void *state_entries;
+    u8 state_count;
+    u8 pad_4d[3];
+    u32 flags;
+    f32 previous_frame;
+    i32 field_58;
+    f32 frames_per_second;
+    f32 field_60;
+    u8 pad_64[0x198 - 0x64];
 };
-struct CUTSCENESYS {};
-struct CUTSYS {};
+struct CUTSCENESYS {
+    i16 blaster_object_0;
+    i16 blaster_object_1;
+    i16 field_04;
+    i16 field_06;
+};
+struct CUTSYS {
+    CUTINFO **cuts;
+    i32 count;
+    u32 *character_bits;
+};
 struct ClassItem {};
 struct DETONATOR_s {};
 struct EDCREATURE_s {};
 struct EPISODEDATA;
 struct EXPLOSION {};
-struct EXTRAMODEL {};
+struct EXTRAMODEL {
+    i16 *model_list;
+    void *field_04;
+};
+DECOMP_ASSERT(sizeof(EXTRAMODEL) == 8, "EXTRAMODEL size");
 struct EdClass;
 struct EdControl;
 struct EdFileInputStream;
@@ -404,11 +411,33 @@ struct EdInputContext;
 struct EdRef;
 struct EdStream;
 struct EdTool {};
-struct FADEINFO_s {};
-struct FADETYPE {};
+struct FADEINFO_s {
+    // FadeSystem passes its own storage to the individual fade objects as a
+    // FADEINFO_s*.  The original object is 0x2c bytes; keep these fields
+    // named instead of accessing the storage through byte offsets.
+    u32 direction;
+    f32 fade;
+    f32 rate;
+    i32 busy;
+    i32 stage;
+    FadeBase *fades[4];
+    i32 pending_type;
+    i32 field_28;
+};
+struct FADETYPE {
+    i32 type;
+};
 struct FLOWBOX_s {};
 struct FS_FILEENTRYHDR {};
-struct FadeBase {};
+struct FadeBase {
+    virtual ~FadeBase() = default;
+    virtual void Init(FADEINFO_s *) = 0;
+    virtual void InitFade() = 0;
+    virtual void UpdateFade() = 0;
+    virtual void DrawFade() = 0;
+    virtual i32 GetFadeType() const = 0;
+    FADEINFO_s *info;
+};
 struct GAMEANIMOBJPOOL_s {};
 struct GAMEANIMOBJ_s {};
 struct GAMEANIMSET_s {};
@@ -417,23 +446,52 @@ struct GAMEANTINODEDATA_s {};
 struct GAMEANTINODESYS_s {};
 struct GAMEANTINODE_s {};
 struct GAMEAUDIO {};
-// Camera state (GameCam). Field meanings derived from the pod-race code in
-// the original binary: zoom is compared against spawn distances, the 0x110
-// vector is the camera forward direction (dot product against mine offsets),
-// the 0x11c vector is the camera position (NuVecSub source), and yrot feeds
-// NuVecRotateY. Note the global points 0x80 bytes into its enclosing block:
-// the original computes a position vector at GameCam - 0x80.
+// Camera state (GameCam). The original global points directly at a static
+// 0x230-byte block; matrix and mode offsets are verified against
+// MoveGameCamera and InitGameBeforeConfig.
 struct GAMECAMERA_s {
-    char pad_0x00[1];
-    u8 field_0x01; // 0x01  camera mode / state byte
-    char pad_0x02[0x2c - 0x02];
-    float zoom; // 0x2c
-    char pad_0x30[0x110 - 0x30];
-    NUVEC dir; // 0x110 forward direction
-    NUVEC pos; // 0x11c camera position
-    char pad_0x128[0x686 - 0x128];
-    u16 yrot; // 0x686
+    SOCKPOSITION sock_position; // 0x000; camera begins with its rail position state
+    NUMTX mtx;                  // 0x038
+    NUMTX target_mtx;           // 0x078
+    NUMTX render_mtx;           // 0x0b8
+    NUVEC shaken_right;         // 0x0f8
+    NUVEC shaken_up;            // 0x104
+    NUVEC dir;                  // 0x110
+    NUVEC pos;                  // 0x11c
+    NUVEC target;               // 0x128
+    u8 pad_134[0x1b8 - 0x134];
+    f32 field_0x1b8;
+    f32 field_0x1bc;
+    f32 field_0x1c0;
+    u8 pad_1c4[4];
+    f32 field_0x1c8;
+    u8 pad_1cc[4];
+    f32 field_0x1d0;
+    f32 field_0x1d4;
+    f32 field_0x1d8;
+    f32 field_0x1dc;
+    f32 position_seek;
+    f32 angle_seek;
+    f32 field_0x1e8;
+    f32 field_0x1ec;
+    f32 field_0x1f0;
+    f32 field_0x1f4;
+    u8 pad_1f8[0x204 - 0x1f8];
+    f32 field_0x204;
+    f32 field_0x208;
+    f32 field_0x20c;
+    f32 field_0x210;
+    f32 field_0x214;
+    f32 field_0x218;
+    u8 pad_21c[0x22a - 0x21c];
+    u8 reset_blend;          // 0x22a
+    u8 blend_mode;           // 0x22b
+    i8 mode;                 // 0x22c
+    i8 previous_mode;        // 0x22d
+    i8 previous_camera_mode; // 0x22e
+    u8 pad_22f;
 };
+DECOMP_ASSERT(sizeof(GAMECAMERA_s) == 0x230, "GAMECAMERA_s ABI");
 struct GAMECHARACTERDATA_s {};
 
 // game_cutscenes wrapper (pointer at 0x1c).
@@ -453,12 +511,53 @@ struct GAMEMESSAGE_s {
     char pad_0xf4[0xf7 - 0xf4];
     u8 alpha; // 0xf7
 };
-struct GAMEPAD_s {};
+// Rumble state packet embedded in GAMEPAD_s (20 bytes; floats driven by
+// NuSound3UpdateRumble / UpdateRumble).
+struct RUMBLEPACKET {
+    undefined field_0x00[4];
+    f32 rumble_amount; // 0x04
+    undefined field_0x08[4];
+    f32 rumble_time; // 0x0c
+    undefined field_0x10[4];
+};
+struct GAMEPAD_s {
+    nupad_s *pad; // 0x00  the bound input pad (fields 0x00..0x1f)
+    u32 unknown_04;
+    u32 buttons_down_08; // bitmask of pressed buttons (GAMEPAD_* masks)
+    u32 unknown_0c;
+    u32 unknown_10;
+    u32 unknown_14;
+    u32 unknown_18;
+    u32 unknown_1c;
+    u32 unknown_20;
+    u32 unknown_24;
+    f32 unknown_28;
+    char pad_2c[0x40 - 0x2c];
+    RUMBLEPACKET rumble_packet; // 0x40
+    char pad_54[0x5a - 0x54];
+    u8 allocated_5a; // set by GamePad_Allocate()
+    char pad_5b[0x60 - 0x5b];
+};
 struct GIZACTIONDEFN_s {};
-struct GIZAIMESSAGESYS_s {};
+
+// The AI message system: a fixed pool of 0x38-byte messages; the free list
+// and the active list live in the header (ResetGizAIMessageSys fills the
+// free list from the pool, CheckGizAIMessage moves nodes free -> active).
+struct GIZAIMESSAGESYS_s {
+    i32 count;                // 0x00 number of pooled messages
+    GIZAIMESSAGE_s *messages; // 0x04 pool base (each 0x38 bytes)
+    NULISTHDR free_list;      // 0x08
+    NULISTHDR active_list;    // 0x10
+};
 struct GIZAIMESSAGE_s {
-    char pad_0x00[0x28];
-    float value; // 0x28
+    NULISTLNK links; // 0x00
+    char name[0x20]; // 0x08
+    float value;     // 0x28
+    byte mode;       // 0x2c
+    byte mode_args;  // 0x2d
+    undefined field_0x2e[0x34 - 0x2e];
+    i32 flag;  // 0x34
+    u16 flags; // 0x36
 };
 struct GIZBOMBGENSYS_s {};
 struct GIZFLOWPROGRESS_s {};
@@ -477,15 +576,28 @@ struct GRABBER_s {};
 struct GRAPPLE_s;
 struct HINT_s {};
 struct HOTHBATTLE_MELEE_s {};
-struct HashRedirect {};
+struct HashRedirect;
 struct HashedKey {};
-struct LANGUAGEDATA {};
+struct LANGUAGEDATA {
+    i32 language;   // 0x00
+    i32 unknown_04; // 0x04 (Game_LanguageList entries: {1,0},{2,0},{4,0},{5,0},{3,0},{8,0},{-1,0})
+};
 struct LEVELDATADISPLAY;
 struct LEVELDATA_s;
 struct LEVELOBJECT;
 struct LEVELSCRIPTPROCESS_s;
-struct LEVELSPLINE {};
-struct LoadedUniqueShaderRecord {};
+struct LEVELSPLINE {
+    struct nugscn_s **scene;
+    const char *name;
+    u16 min_points;
+    u16 max_points;
+    i16 level;
+    i16 area;
+};
+
+DECOMP_ASSERT(sizeof(LEVELSPLINE) == 0x10, "LEVELSPLINE ABI");
+
+struct LoadedUniqueShaderRecord;
 struct MENU_s;
 struct MISSIONSAVE_s;
 struct MemoryBuffer;
@@ -499,7 +611,6 @@ struct NuBloomParameters {};
 struct NuShaderObject {};
 struct NuShaderUsageMask_s {};
 struct OPTIONSSAVE_s;
-struct OggVorbis_File {};
 struct PARTDEBSYS_s {};
 struct PLATSKININFO {};
 struct PLAYERITEMTYPE_s {};
@@ -512,14 +623,25 @@ struct PartHeader;
 struct PropertyMenuList {};
 struct REGISTERSTATUSPACKET_s {};
 struct RGBA {};
-struct RUMBLEPACKET {};
 struct SCENEPROGRESS_s {};
 struct SHADERSEMANTIC_enum {};
 struct SHARD_s;
-struct SOCKPOSITION_s {};
-struct SOCKSYS {};
+struct SOCKPOSITION_s;
 struct SPLINEPOS_s {};
-struct STATUSPACKET_s {};
+// Status / achievements screen packet (332 bytes; fields used by NuMain:
+// model ids at 0x9c/0x9e, per-player bytes at 0xa4/0xa5, flags at 0xb1/0xb2).
+struct STATUSPACKET_s {
+    undefined field_0x00[0x9c];
+    u16 player0_model; // 0x9c
+    u16 player1_model; // 0x9e
+    undefined field_0xa0[0xa4 - 0xa0];
+    u8 player0_active; // 0xa4
+    u8 player1_active; // 0xa5
+    undefined field_0xa6[0xb1 - 0xa6];
+    u8 mode_flags;   // 0xb1
+    u8 status_flags; // 0xb2
+    undefined field_0xb3[0x14c - 0xb3];
+};
 struct STATUS_STAGE_s {};
 struct SUIT_s {};
 struct SUPERCOUNTER {};
@@ -529,8 +651,14 @@ struct SoundTable {};
 struct TECHNO_s;
 struct TERRPICKUPSET {};
 struct TERRSET {};
-struct TEXTCRAWL_s {};
-struct TEXTENTRY {};
+struct TEXTCRAWL_s {
+    u8 pad[32]; // NOLINT(readability-identifier-naming)
+};
+struct TEXTENTRY {
+    i16 *text_id;
+    i16 value;
+    i16 pad;
+};
 struct TORPEDOPACKET_s {};
 struct TRAFFICANIMSYS_s {};
 struct TUBE_s;
@@ -540,14 +668,247 @@ struct VirtualStackAllocator;
 struct VuMtx;
 struct _vum_s {};
 struct _vuv_s;
-struct ani3_animheader_s;
-struct ani3_scalemin_s {};
 struct bgprocinfo_s;
 struct bitrate_manager_state {};
 struct codebook {};
-struct debinftype {};
-struct debkeydatatype_s {};
-struct debris_chunk_control_s {};
+struct debris_colour_key_s {
+    f32 time;
+    u8 red;
+    u8 green;
+    u8 blue;
+    u8 alpha;
+};
+struct debris_float_key_s {
+    f32 time;
+    f32 value;
+};
+struct debinftype {
+    char name[16];               // 0x000
+    u8 category;                 // 0x010
+    u8 page;                     // 0x011
+    u8 cutscene_only;            // 0x012
+    u8 disabled;                 // 0x013
+    i16 max_particles;           // 0x014
+    i16 frequency;               // 0x016
+    f32 emission_period;         // 0x018
+    f32 emission_period_random;  // 0x01c
+    f32 emission_pause;          // 0x020
+    f32 emission_pause_random;   // 0x024
+    f32 start_offset_random;     // 0x028
+    u8 generator_type;           // 0x02c
+    u8 momentum_adjustment_type; // 0x02d
+    u8 particle_type;            // 0x02e
+    u8 status;                   // 0x02f
+    u8 fields_030[8];            // 0x030
+    f32 clip_extent;             // 0x038
+    u8 fields_03c[8];
+    f32 field_044;
+    f32 field_048;
+    f32 field_04c;
+    f32 field_050;
+    f32 field_054;
+    f32 field_058;
+    f32 field_05c;
+    f32 field_060;
+    NUVEC emitter_velocity; // 0x064
+    u8 fields_070[0x30];
+    f32 field_0a0;
+    f32 particle_lifetime; // 0x0a4
+    i16 field_0a8;
+    u8 field_0aa;
+    u8 field_0ab;
+    f32 field_0ac;
+    f32 field_0b0;
+    f32 field_0b4;
+    f32 field_0b8;
+    f32 field_0bc;
+    debris_colour_key_s colour_keys[8]; // 0x0c0
+    debris_float_key_s alpha_keys[8];   // 0x100
+    f32 field_140;
+    f32 field_144;
+    f32 field_148;
+    f32 field_14c;
+    debris_float_key_s width_keys[8];  // 0x150
+    debris_float_key_s height_keys[8]; // 0x190
+    u8 fields_1d0[8];
+    debris_float_key_s rotation_keys[8]; // 0x1d8
+    u8 fields_218[0x80];
+    f32 texture_u0;          // 0x298
+    f32 texture_v0;          // 0x29c
+    f32 texture_u1;          // 0x2a0
+    f32 texture_v1;          // 0x2a4
+    PartHeader *native_data; // 0x2a8 (target)
+    f32 last_render_time;    // 0x2ac (target)
+    u8 fields_2b0[0x40];     // 0x2b0 (target)
+    u8 process_spheres;      // 0x2f0 (target)
+    u8 time_group;           // 0x2f1
+    u8 field_2f2;
+    u8 use_explicit_clip_box; // 0x2f3
+    f32 thinning;             // 0x2f4
+    u8 fields_2f8[0xd8];      // 0x2f8
+    i16 particle_keys[8];     // 0x3d0
+    i32 sound_data[12];       // 0x3e0
+    u8 trail_count;           // 0x410
+    u8 radial_segments;       // 0x411
+    u8 camera_facing;         // 0x412
+    u8 field_413;
+    f32 trail_time;            // 0x414
+    f32 scale_in_time;         // 0x418
+    f32 radial_floor;          // 0x41c
+    f32 scale;                 // 0x420
+    i32 unscaled_effect_index; // 0x424
+};
+struct debscale_s {
+    i32 unscaled_effect_index;
+    i32 scaled_effect_index;
+    f32 scale;
+};
+DECOMP_ASSERT(sizeof(debinftype) == 0x428, "debinftype size");
+
+typedef uv1deb *(*DEBRISGENERATOR)(debkeydatatype_s *, debinftype *, f32);
+typedef void (*DEBRISMOMENTUMADJUSTER)(debkeydatatype_s *, debinftype *, uv1deb *);
+
+struct debris_process_sphere_s {
+    f32 time;
+    u8 fields_004[0x18];
+};
+
+// One interpolated particle frame in the original debris effect table.
+// The table is embedded in PartHeader at 0x4c and contains 64 entries.
+struct debris_particle_frame_s {
+    NUVEC position;       // 0x00
+    NUVEC texture_offset; // 0x0c
+    NUVEC extent;         // 0x18
+    u32 colour;           // 0x24
+};
+DECOMP_ASSERT(sizeof(debris_particle_frame_s) == 0x28, "debris particle frame size");
+
+struct PartHeader {
+    u8 fields_000[0x10];
+    f32 gravity;          // 0x10
+    f32 last_render_time; // 0x14
+    u8 fields_018[0x10];
+    f32 texture_u0; // 0x28
+    f32 texture_v0; // 0x2c
+    f32 texture_u1; // 0x30
+    f32 texture_v1; // 0x34
+    u8 fields_038[0x14];
+    debris_particle_frame_s frames[64]; // 0x4c
+};
+DECOMP_ASSERT(offsetof(PartHeader, gravity) == 0x10, "PartHeader gravity offset");
+DECOMP_ASSERT(offsetof(PartHeader, last_render_time) == 0x14, "PartHeader render time offset");
+DECOMP_ASSERT(offsetof(PartHeader, texture_u0) == 0x28, "PartHeader texture coordinate offset");
+DECOMP_ASSERT(offsetof(PartHeader, frames) == 0x4c, "PartHeader frame table offset");
+DECOMP_ASSERT(sizeof(PartHeader) == 0xa4c, "PartHeader size");
+
+struct dma_particle_s {
+    NUVEC position;
+    f32 start_time;
+    NUVEC momentum;
+    f32 inverse_lifetime;
+};
+
+struct dma_particle_chunk_s {
+    u8 command;
+    u8 fields_001[3];
+    dma_particle_chunk_s *next;
+    u8 fields_008[0x18]; // particle records start at 0x20
+    dma_particle_s particles[32];
+    u8 end_command;
+};
+DECOMP_ASSERT(sizeof(dma_particle_s) == 0x20, "dma_particle_s size");
+DECOMP_ASSERT(offsetof(dma_particle_s, position) == 0x00, "dma particle position offset");
+DECOMP_ASSERT(offsetof(dma_particle_s, start_time) == 0x0c, "dma particle start time offset");
+DECOMP_ASSERT(offsetof(dma_particle_s, momentum) == 0x10, "dma particle momentum offset");
+DECOMP_ASSERT(offsetof(dma_particle_s, inverse_lifetime) == 0x1c, "dma particle lifetime offset");
+DECOMP_ASSERT(offsetof(dma_particle_chunk_s, next) == 0x04, "dma particle next offset");
+DECOMP_ASSERT(offsetof(dma_particle_chunk_s, particles) == 0x20, "dma particle data offset");
+DECOMP_ASSERT(offsetof(dma_particle_chunk_s, end_command) == 0x420, "dma particle terminator offset");
+DECOMP_ASSERT(sizeof(dma_particle_chunk_s) == 0x424, "dma_particle_chunk_s size");
+
+struct debkeydatatype_s {
+    u8 fields_000[0x40];
+    NUMTX effect_orientation;                  // 0x040
+    NUMTX emitter_orientation;                 // 0x080
+    NUMTX particle_orientation;                // 0x0c0
+    dma_particle_chunk_s *particle_chunks[32]; // 0x100 (target)
+    i16 allocated_chunk_count;                 // 0x180 (target)
+    i16 effect_index;                          // 0x182
+    u8 field_184;
+    u8 allocation_locked;       // 0x185
+    i16 particle_count;         // 0x186
+    i16 controlled_chunk_count; // 0x188
+    i16 field_18a;
+    i16 previous_allocated_chunk_count; // 0x18c
+    i16 previous_particle_count;        // 0x18e
+    NUVEC position;                     // 0x190
+    NUVEC emission_position;            // 0x19c
+    NUVEC momentum;                     // 0x1a8
+    u8 fields_1b4[0x0c];
+    DEBRISGENERATOR generator;                // 0x1c0 (target)
+    DEBRISMOMENTUMADJUSTER momentum_adjuster; // 0x1c4 (target)
+    debkeydatatype_s *previous;               // 0x1c8 (target)
+    debkeydatatype_s *next;                   // 0x1cc (target)
+    i16 emitter_rotation_x;                   // 0x1d0 (target)
+    i16 emitter_rotation_y;                   // 0x1d2
+    i32 field_1d4;
+    i16 field_1d8;
+    u8 field_1da;
+    u8 field_1db;
+    f32 previous_emission_time; // 0x1dc
+    f32 emission_time;          // 0x1e0
+    f32 field_1e4;
+    u8 fields_1e8[0x18];
+    debris_process_sphere_s process_spheres[7]; // 0x200
+    u8 fields_2c4[4];
+    i16 field_2c8;
+    u8 fields_2ca[2];
+    i32 field_2cc;
+    i32 trigger_first;
+    i32 trigger_second;
+    i32 trigger_third;
+    i16 reflection_x;
+    i16 reflection_y;
+    i32 reflection_mode;
+    f32 reflection_scale;
+    i16 collision_timers[4];
+    u8 fields_2f0[2];
+    i16 field_2f2;
+    u8 field_2f4;
+    u8 process_collision_sound;
+    u8 field_2f6;
+    u8 field_2f7;
+    u8 timed_flags;
+    u8 field_2f9;
+    u8 field_2fa;
+    u8 field_2fb;
+    nugscn_s *gscene;      // 0x2fc (target)
+    f32 orientation_dirty; // 0x300 (target)
+    u8 fields_304[0x18];
+    f32 cutoff_distance;
+    f32 last_update_time;
+    f32 emission_epoch;
+    i16 render_priority;
+    i16 allocation_index;
+    i32 field_32c;
+};
+DECOMP_ASSERT(sizeof(debkeydatatype_s) == 0x330, "debkeydatatype_s size");
+struct debris_chunk_control_s {
+    dma_particle_chunk_s *particle_chunk;
+    f32 expiry_time;
+    i32 active;
+    debkeydatatype_s *owner;
+    debris_chunk_control_s *next;
+    i32 particle_index;
+    f32 collision_time;
+    i16 effect_index;
+    i16 field_01e;
+    i16 rotation_y;
+    i16 field_022;
+    f32 collision_plane;
+    f32 restitution;
+};
+DECOMP_ASSERT(sizeof(debris_chunk_control_s) == 0x2c, "debris_chunk_control_s size");
 struct drft_lookup {};
 struct edcam_s {};
 struct eduiitem_s;
@@ -555,7 +916,7 @@ struct eduimenu_s;
 struct envelope_lookup {};
 struct flightspline_s {};
 struct instNUGCUTLOOKAT_s {};
-struct instNUGCUTSCENE_s {};
+struct instNUGCUTSCENE_s;
 struct mdct_lookup {};
 struct minisnowtrooper_s {};
 struct minitrooperteam_s {};
@@ -566,56 +927,72 @@ struct nudisplayscene_s;
 struct nufile_device_s;
 struct nufpar_s;
 struct nufpcomjmp_s;
-struct nuglobalrndrstate_s {};
+struct nuglobalrndrstate_s;
 struct nugraph_s {};
 struct nugscn_s;
 struct nugspline_s;
 struct nuhspecial_s {
-    void *special; // 0x00
-    char pad_0x04[0xe - 0x04];
-    u8 enabled; // 0x0e
-    char pad_0x0f[0x10 - 0x0f];
+    nugscn_s *scene;       // 0x00
+    void *special;         // 0x04
+    void *display_special; // 0x08
 };
+DECOMP_ASSERT(sizeof(nuhspecial_s) == 0xc, "nuhspecial_s size");
 struct nuinstanim_s {};
 struct numtl_s;
 struct numtx_s;
-struct nunativedebrisdata_s {};
+struct nunativedebrisdata_s {
+    u8 vertex_buffer_index; // 0x00
+    u8 fields_001[3];
+    i32 use_system_memory_vb; // 0x04
+    i32 first_vertex;         // 0x08
+    i32 vertex_count;         // 0x0c
+    numtl_s *material;        // 0x10
+};
+struct debris_vertex_s {
+    NUVEC position;
+    u32 colour;
+    f32 u;
+    f32 v;
+};
+DECOMP_ASSERT(sizeof(debris_vertex_s) == 0x18, "debris vertex size");
+DECOMP_ASSERT(offsetof(nunativedebrisdata_s, use_system_memory_vb) == 0x04, "native debris system-memory flag offset");
+DECOMP_ASSERT(offsetof(nunativedebrisdata_s, first_vertex) == 0x08, "native debris first vertex offset");
+DECOMP_ASSERT(offsetof(nunativedebrisdata_s, vertex_count) == 0x0c, "native debris vertex count offset");
+DECOMP_ASSERT(offsetof(nunativedebrisdata_s, material) == 0x10, "native debris material offset");
+DECOMP_ASSERT(sizeof(nunativedebrisdata_s) == 0x14, "native debris packet size");
 struct nuoctreenode_s {};
 struct nupad_s;
 struct nushadermtldesc_s;
 struct nusound_filename_info_s;
 struct nutex_s;
 struct nutexmanager_s {};
-struct ogg_packet {};
-struct oggpack_buffer {};
-struct ov_callbacks {};
-struct particlechunkrendertype_s {};
+struct particlechunkrendertype_s {
+    dma_particle_chunk_s *particle_chunk;
+    debinftype *effect;
+    debkeydatatype_s *key;
+    NUMTX effect_orientation;
+    NUVEC position;
+    particlechunkrendertype_s *previous;
+    particlechunkrendertype_s *next;
+    i16 render_priority;
+    u8 fields_062[2];
+};
+DECOMP_ASSERT(sizeof(particlechunkrendertype_s) == 0x64, "particlechunkrendertype_s size");
 struct pushblock_s {};
 struct ripple_node_s {};
 struct ripple_set_s {};
-struct rtldata_s {};
+struct rtldata_s {
+    u8 data[0x144];
+};
 struct rtlset {};
 struct shopitem_s {};
 struct specialsfx_s {};
 struct speedup_s {};
 struct starfighter_s {};
-struct static_codebook {};
 struct terrsitu_s {};
 struct tertype {};
 struct uv1deb {};
 struct uv1debdata;
-struct vorbis_block {};
-struct vorbis_comment {};
-struct vorbis_dsp_state {};
-struct vorbis_info {};
-struct vorbis_info_mapping0 {};
-struct vorbis_info_psy {};
-struct vorbis_info_psy_global {};
-struct vorbis_look_floor1 {};
-struct vorbis_look_psy {};
-struct vorbis_look_psy_global {};
-struct vucharidx_s {};
-
 struct BaseEditor {
     void Initialise(variptr_u &, variptr_u &, i32);
     void ReadBuffer(void **, void *, i32);
@@ -623,10 +1000,7 @@ struct BaseEditor {
     void WriteEndBlock(i32);
     void WriteMetaData(i32, i32, i32, i32);
 };
-struct BaseThing {
-    BaseThing();
-    virtual ~BaseThing();
-};
+#include "legoapi/items/objects/basething.h"
 struct CantPickupBombTimerAddon {
     CantPickupBombTimerAddon(MechObjectInterface &, float);
     void OnProcess(MechAddon::ProcessStage, float);
@@ -727,35 +1101,37 @@ struct CursorTool {
     void Process(EdInputContext &);
     void Render();
 };
-struct Fade {
+struct Fade : FadeBase {
+    i32 GetFadeType() const override;
     void DrawFade();
     void Init(FADEINFO_s *);
     void InitFade();
     void UpdateFade();
 };
-struct FadeStill {
+struct FadeStill : FadeBase {
+    i32 GetFadeType() const override;
     void DrawFade();
     void Init(FADEINFO_s *);
     void InitFade();
     void UpdateFade();
 };
-struct FadeStillWipe {
+struct FadeStillWipe : FadeBase {
+    i32 GetFadeType() const override;
     void DrawFade();
     void Init(FADEINFO_s *);
     void InitFade();
     void UpdateFade();
 };
-struct FadeSystem {
-    char pad_0x00[0x4];
-    float fade; // 0x04  current fade amount
-    void AddFade(FadeBase *);
+struct FadeSystem : FADEINFO_s {
+    i32 AddFade(FadeBase *);
     void Draw();
     void Init();
-    void SetFade(FADETYPE const &, u32);
+    i32 SetFade(FADETYPE const &, u32);
     void SetStage(char);
     void Update();
 };
-struct FadeWipe {
+struct FadeWipe : FadeBase {
+    i32 GetFadeType() const override;
     void DrawFade();
     void Init(FADEINFO_s *);
     void InitFade();
@@ -867,12 +1243,7 @@ struct GIZTURRET_s {
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };
-struct GameThingManager {
-    void AddLevelOnlyThings();
-    void AddOnceOnlyThings();
-    GameThingManager(i32);
-    virtual ~GameThingManager();
-};
+struct GameThingManager; // defined after ThingManager (derives from it)
 struct HATMACHINE_s {
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
@@ -925,7 +1296,7 @@ struct LevelEditor {
     void WriteStream(EdFileOutputStream &);
 };
 struct MemoryManager {
-    void AllocPool(u32, i32);
+    void *AllocPool(u32, i32);
     void FreePool(void *, u32);
 };
 // One mine entry (0x1c bytes, MINESYS_s::mines[64] starting at 0x0c).
@@ -1241,19 +1612,26 @@ struct TTNetwork {
     void Update();
     virtual ~TTNetwork();
 };
+// All ThingManager methods are virtual in the original: its vtable order is
+// D2, D0, AddThing, AddThingAfterThis, RemoveTemporaryThings,
+// RemoveDependanciesThings, ResetThings, EnterLevelThings, ExitLevelThings,
+// ProcessThings (vptr+0x24), RenderThings (vptr+0x28), DisplayThings,
+// EffectsThings. NuMain dispatches ProcessThings/RenderThings through the
+// vtable, so the declarations must carry the same slots.
 struct ThingManager {
-    void AddThing(BaseThing *);
-    void AddThingAfterThis(BaseThing *);
-    void DisplayThings(ThingRenderData *);
-    void EffectsThings(ThingRenderData *);
+    virtual ~ThingManager();
+    virtual void AddThing(BaseThing *);
+    virtual void AddThingAfterThis(BaseThing *);
+    virtual void RemoveTemporaryThings();
+    virtual void RemoveDependanciesThings(ThingRemoveData *);
+    virtual void ResetThings(ThingResetData *);
+    virtual void EnterLevelThings(ThingLevelData *);
+    virtual void ExitLevelThings(ThingLevelData *);
+    virtual void ProcessThings(ThingProcessData *);
+    virtual void RenderThings(ThingRenderData *);
+    virtual void DisplayThings(ThingRenderData *);
+    virtual void EffectsThings(ThingRenderData *);
     void EnableActions(i32, i32, i32);
-    void EnterLevelThings(ThingLevelData *);
-    void ExitLevelThings(ThingLevelData *);
-    void ProcessThings(ThingProcessData *);
-    void RemoveDependanciesThings(ThingRemoveData *);
-    void RemoveTemporaryThings();
-    void RenderThings(ThingRenderData *);
-    void ResetThings(ThingResetData *);
     ThingManager(i32);
     void cbEdTimingSelect(eduimenu_s *, eduiitem_s *, u32);
     void cbEdTrackCancel(eduimenu_s *, eduimenu_s *);
@@ -1261,6 +1639,22 @@ struct ThingManager {
     void edTimingInit();
     void edTimingProc(float, nupad_s *);
     void edTimingRender();
+
+    // data (object is 0x24 bytes; the ctor carves `things` from theMemoryManager)
+    BaseThing **things; // 0x04
+    i32 max_things;     // 0x08
+    i32 count;          // 0x0c
+    u32 field_0x10;     // 0x10 high-water cursor (written by the ctor / AllocPool)
+    i32 field_0x14;     // 0x14 AddThingAfterThis reservation, folded in by the next AddThing
+    void *timebar;      // 0x18 NuTimeBarCreateSet handle (profiling, stubbed)
+};
+// GameThingManager shares the base vtable entries (only the dtors differ) and
+// registers itself in theGameThings (ctor @0x4e8b00 / D1 dtor @0x4e8a80).
+struct GameThingManager : ThingManager {
+    void AddLevelOnlyThings();
+    void AddOnceOnlyThings();
+    GameThingManager(i32);
+    virtual ~GameThingManager();
 };
 struct VirtualControlButton {
     void Process(float);

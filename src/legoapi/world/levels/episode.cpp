@@ -28,7 +28,7 @@ EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *b
 
     i32 count = 0;
     bool bVar3 = false;
-    EPISODEDATA *episodePtr = (EPISODEDATA *)((usize)bufferStart->void_ptr + 3U & 0xfffffffc);
+    EPISODEDATA *episodePtr = (EPISODEDATA *)ALIGN((usize)bufferStart->void_ptr, 4);
     bufferStart->void_ptr = (void *)episodePtr;
     EPISODEDATA *episode = episodePtr;
 

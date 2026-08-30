@@ -1,12 +1,20 @@
 #include "legoapi/legoapi_types.h"
 
+struct CUTSCENEPLAYER_s {
+    void *clips;
+    i32 active;
+};
+
+CUTSCENEPLAYER_s *CutScenePlayer = NULL;
+
 void CutScenePlayer_Reset() {
 }
 
 void CutScenePlayer_Start(i32, i32) {
 }
 
-void CutScenePlayer_Active() {
+i32 CutScenePlayer_Active() {
+    return CutScenePlayer != NULL ? CutScenePlayer->active : 0;
 }
 
 void CutScenePlayer_GetText(i32, char *, char *, i32) {

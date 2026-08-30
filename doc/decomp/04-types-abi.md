@@ -82,22 +82,23 @@ typedef unsigned long abi_ulong; // NOLINT
   `ssize_t` is `long` → mangled `_l` (wrong). Hence `isize` is redefined as
   `int32_t` on target builds (mangles `_i`) and `usize` = `size_t` (mangles
   `_j`). Both verified by compile (`f_ssize_t(long)` vs `f_size_t(unsigned int)`).
-- `abi_long` is used in the ogg/vorbis ABI stubs, e.g.
-  `src/legoapi/legoapi_misc.cpp:411` `_make_words(abi_long*, abi_long, abi_long)`,
-  `gamelib_ogg.cpp:60` — keep it there.
+- `abi_long` is used in ABI-sensitive reconstructed signatures, for example
+  `_make_words` in `src/legoapi/menus/core/text.cpp` and functions in
+  `src/legoapi/audio/gamelib_ogg.cpp`—keep it where the target mangle requires it.
 - Fixed-width types: `u8/i8/…/u64/i64` are defined in BOTH headers
   (`u8`, `i16`, `u32`, `f32`, `f64`, …). Duplicate typedefs of the same
   underlying type are legal in C++11, so both headers coexist in one TU
   (`fixed_width.h:7`).
 
 **Which header when:**
-- `common.h` (`src/nu2api/nucore/common.h`) — the engine header, included via
-  `decomp.h` by everything (82 files; `decomp.h` itself pulls in `common.h`).
+- `common.h` (`src/nu2api/nucore/common.h`) — the engine header, widely included
+  through `decomp.h` (`decomp.h` itself pulls in `common.h`).
   Defines the engine's `variptr_u` union
   (a real union of `void*`/`char*`/`i16*`/`u8*`/`u32*`/`usize` members, used by
   `VARIPTR`, `src/globals.h:200-205`).
-- `fixed_width.h` — ONLY for the generated `*_types.h` scaffolding headers
-  (6 files: `legoapi_types.h`, `nu2api_*_types.h`, `MechInputTouch_types.h`…).
+- `fixed_width.h` — used by the generated `*_types.h` scaffolding headers
+  (nine current headers, including `legoapi_types.h`, `nu2api_*_types.h`, and
+  `MechInputTouch_types.h`).
   It deliberately does NOT declare `variptr_u`, because the scaffolding
   forward-declares the tag itself: see
   `src/gameapi/edtools/gameapi_edtools_types.h:65,84` (`struct variptr_u;` /
@@ -160,6 +161,16 @@ build with `-malign-double` (the repo does not). A decompiled struct with a
 `double` at a 4-aligned offset stays 4-aligned here — that's correct, don't
 "fix" it to 8.
 
+Original-layout checks must use `DECOMP_ASSERT` from `decomp_assert.h`, not a
+bare `static_assert`. It is a compile-time assertion in the original 32-bit
+matching build and a no-op in host builds, whose pointer width legitimately
+changes pointer-bearing structure sizes and offsets. Runtime code must use
+typed members, typed pointer/array arithmetic, and `sizeof` for the ABI it is
+actually compiled for. Localized byte arithmetic is only appropriate while a
+range is genuinely unknown; original byte offsets and record sizes belong in
+the decompilation/layout description and must not drive host allocation or
+access.
+
 Bitfields (verified with a runtime dump of
 `{ unsigned a:3; b:5; c:12; d:7; }`, little-endian): fields pack LSB-first
 within each 4-byte unit — `a` = bits 0-2, `b` = bits 3-7, `c` = bits 8-19,
@@ -203,8 +214,9 @@ virtual (`D0` calls `operator delete`).
   never counted as missing.
 - Layout (verified in `virt.o` relocations and by reading the original
   binary's `_ZTV13NuSoundEffect`): `_ZTV` starts 8 bytes *before* the vptr —
-  two zero words (vcall-offset, offset-to-top); the object's vptr points at
-  the **first virtual**. With `-fno-rtti` there is no typeinfo slot. A virtual
+  offset-to-top followed by the typeinfo pointer. For a simple primary vtable
+  both are zero here; `-fno-rtti` makes the typeinfo pointer null rather than
+  removing its slot. The object's vptr points at the **first virtual**. A virtual
   destructor occupies two adjacent slots (`D1` then `D0`).
 - Virtual call codegen (verified, `-O3`):
 
@@ -264,7 +276,7 @@ The repo uses `extern "C"` pervasively for the C-flavored engine surface:
 `src/globals.h:11` (all the globals), `legoapi/level.h:206`, `mission.h`,
 `character.h`, `world.h`, the gizmo headers, `edtools/edstubs.*`,
 `gameframework/saveload.h:8`, `nuwind.h`, `nucore/nuapi.c` side, plus
-one-off definitions like `src/legoapi/terrain.cpp:19-46` and
+one-off definitions like `src/legoapi/render/core/terrain.cpp` and
 `src/batman.cpp:22` `NuMain`. JNI glue is `extern "C"` too (`java/jni.h:1151`).
 When a plain C-looking name appears in the binary's symbol table, wrap it;
 `i686-linux-android-nm res/libTTapp.so | grep ' T [A-Za-z_]'` lists candidates.
@@ -281,20 +293,22 @@ variable named `_ZGVZ<func>E<var>` (verified: `_ZGVZ7get_foovE3foo`, local
 - Original binary: 6 `ZGVZ*`, 1 `__cxa_guard_acquire` ref, and **325
   `_GLOBAL__sub_I_<file>.cpp`** symbols — the original had static
   initializers in nearly every TU.
-- Our build/saga: 24 `_GLOBAL__sub_I_*` (e.g. `_GLOBAL__sub_I_bgproc_android.cpp`).
+- Current build snapshot: 35 `_GLOBAL__sub_I_*`.
 - `_GLOBAL__sub_I_*` are compiler-generated and are **not** defined anywhere
   in `src/` — do not hand-write them; they appear automatically for any TU
   with file-scope init (e.g. an object with a ctor defined at file scope). The
   count will grow as matching work adds real classes; that is expected and
-  check_symbols.py ignores them only because they match the original set —
-  if one is genuinely missing, find the file-scope static that produces it.
+  `check_symbols.py` classifies these names as compiler-generated and excludes
+  them from the must-provide set. Use them as TU evidence, not as symbols to
+  hand-provision.
 
 ## 9. long long / i64 policy
 
 `google-runtime-int` (clang-tidy, wired in `CMakeLists.txt:444-457` with
-`--warnings-as-errors="*"`) flags raw `long long`. The repo has exactly one
-`long long` in `src/` (third-party `java/jni.h`) and uses `i64`/`u64`
-everywhere else. **Do not "fix" `i64` signatures back to `long long`** to
+`--warnings-as-errors="*"`) flags raw `long long`. The current tree has two
+raw occurrences: the third-party `java/jni.h` typedef and one format-argument
+cast in `ios_graphics.cpp`; normal engine code uses `i64`/`u64`. **Do not
+"fix" `i64` signatures back to `long long`** to
 match the original — `i64` mangles identically (`_x`/`_y`, §1) and the
 original binary itself was compiled from `long long`-free-looking code where
 it matters; where the binary really used `long long`, `i64` reproduces the
@@ -317,11 +331,10 @@ same symbol and the same codegen.
 - **`bool` vs `i32`**: `bool` is 1 byte and mangles `_b`. The engine's C side
   uses `i32` flags; the C++ side uses `bool`. Let the binary's mangling /
   Ghidra's size decide.
-- **Enums are 4 bytes** (`-fno-short-enums`); an enum parameter mangles by its
-  *underlying type name* in old GCC ABIs — if the binary shows the enum tag in
-  the demangled name, keep the enum tag; otherwise a 4-byte integer is
-  interchangeable *at the code level*, but the *mangled name* differs, so
-  match the name.
+- **Enums are 4 bytes** with this build's defaults. A named enum parameter
+  mangles as the enum type, not as a plain integer of the same width. A
+  four-byte integer may be code-level compatible, but its mangled name differs;
+  preserve the type shown by the target symbol.
 - **Struct returns**: always via sret on this toolchain — author functions
   returning structs exactly as the binary does; don't try to make small
   structs return in registers.
@@ -330,6 +343,18 @@ same symbol and the same codegen.
   `src/globals.h:13-148`). Naming: `field<NN>_0x<off>` per the placeholder
   convention. `undefined*` types are u8/u16/u32/u64 typedefs and are only
   layout, never codegen-affecting.
+- **Promote recovered offsets into fields**: raw byte padding is temporary,
+  not an implementation style. Once an access establishes a field's width and
+  meaning, add it to the canonical structure and use the member everywhere.
+  Prefer typed pointers, arrays, and function-pointer members over repeated
+  `reinterpret_cast` arithmetic. This both resembles the original source and
+  prevents 32-bit pointer offsets from leaking into host builds.
+- **Serialized records are not necessarily runtime structs**: reconstruct the
+  original sequence of typed reads and writes instead of copying file bytes
+  into a runtime object. Packed fields may place a sample in low bits and
+  tangents or flags above it; confirm the original mask and shift before
+  assigning bitfields. A layout that consumes the correct total byte count can
+  still be semantically wrong.
 - **SAGA_NOMATCH**: `__attribute__((section(".text.nomatch")))`
   (`decomp.h:32`) parks functions that will never byte-match (e.g. original
   compiler artifacts) so they don't pollute diffing.

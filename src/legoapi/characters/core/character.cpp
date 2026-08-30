@@ -1,14 +1,29 @@
 #include "decomp.h"
+#include "globals.h"
 #include "legoapi/characters/core/character.h"
 
 #include "legoapi/characters/core/CharacterObjectInterface.h"
+#include "legoapi/characters/core/players.h"
 #include "nu2api/nucore/nustring.h"
+#include "nu2api/nucore/nuanim3.h"
+#include "nu2api/nucore/nuhgobj.h"
+#include "nu2api/nucore/nuptrblock.h"
 #include "nu2api/nufile/nufpar.h"
+#include "nu2api/nufile/nufilepak.h"
+#include "nu2api/nu3d/nucamera.h"
 
 #include <string.h>
 struct numtx_s;
 struct APICHARACTERMODELLIST_s;
 struct EXTRAMODEL;
+
+extern i32 apiloadcharactermodels_nopakfile;
+
+using ANIMREDIRECTFN = i32 (*)(char *, void *, CHARACTERANIM_s *, char *);
+extern "C" void APIResetCharacterRemap(void);
+static ANIMREDIRECTFN RedirectAnimFn;
+static void *RedirectAnimList;
+static char RedirectAnimDir[0x40];
 
 // Forward declarations for local (static) character/gameplay helper stubs.
 struct nuvec_s;
@@ -78,6 +93,7 @@ extern "C" {
     i16 id_CANTINAALIEN = -1;
     i16 id_CLOUDCITYCITIZEN = -1;
     i16 id_GEONOSIAN = -1;
+    i16 id_BOB = -1;
     i16 id_WATTO = -1;
     i16 id_CHEWBACCA = -1;
     i16 id_WOOKIEE = -1;
@@ -439,6 +455,10 @@ extern "C" {
 i32 CHARCOUNT = 0;
 CHARACTERDATA *CDataList = NULL;
 GAMECHARACTERDATA *GCDataList = NULL;
+// Original data @0x00666960.  Every character starts with the ordinary
+// hierarchy layer selector; FixUpCharacters copies this record into the
+// per-character table before applying character-specific overrides.
+GAMECHARACTERDATA GCDATA_DEFAULT = {MakeLayerList_Index};
 
 i32 g_loadingCharacterInHub;
 
@@ -471,7 +491,7 @@ CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR 
     if (500 < count) {
         count = 500;
     }
-    bufferStart->void_ptr = (void *)(bufferStart->addr + 3U & 0xfffffffc);
+    bufferStart->void_ptr = (void *)ALIGN(bufferStart->addr, 4);
     characterdata = (CHARACTERDATA *)bufferStart->void_ptr;
     i = 0;
 
@@ -518,14 +538,14 @@ CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR 
                     dirnameOffsets[i] = -1;
                     filenameOffsets[i] = -1;
                     cdata->field0_0x0 = -1;
-                    cdata->field1_0x4 = 0;
+                    cdata->model_flags = 0;
                     cdata->dir = (char *)0x0;
                     cdata->file = (char *)0x0;
-                    cdata->field4_0x10 = 0;
+                    cdata->animations = NULL;
                     cdata->field5_0x14 = 0;
-                    cdata->field8_0x18 = 0;
-                    cdata->field9_0x1c = 0;
-                    cdata->field10_0x20 = 0;
+                    cdata->move_fn = NULL;
+                    cdata->animate_fn = NULL;
+                    cdata->draw_fn = NULL;
                     cdata->field11_0x24 = 0;
                     cdata->field12_0x28 = 0;
                     cdata->field13_0x2c = 1.0f;
@@ -552,7 +572,7 @@ CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR 
             characterdata[j].file = (char *)((i32)filenameOffsets[j] + (usize)bufferStart->void_ptr);
         }
         bufferStart->void_ptr = (void *)((usize)bufferStart->void_ptr + offset);
-        bufferStart->void_ptr = (void *)((usize)bufferStart->void_ptr + 3U & 0xfffffffc);
+        bufferStart->void_ptr = (void *)ALIGN((usize)bufferStart->void_ptr, 4);
         if (0 < count2) {
             if (dataList != NULL) {
                 *dataList = (gamecharacterdata_s *)bufferStart->void_ptr;
@@ -562,7 +582,7 @@ CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR 
                 bufferStart->void_ptr = (void *)((usize)bufferStart->void_ptr + count2);
             }
         }
-        bufferStart->void_ptr = (void *)((usize)bufferStart->void_ptr + 3U & 0xfffffffc);
+        bufferStart->void_ptr = (void *)ALIGN((usize)bufferStart->void_ptr, 4);
         if (countDest != (i32 *)0x0) {
             *countDest = i;
         }
@@ -703,27 +723,492 @@ static __used__ void CharConfig(int, char *, char *, variptr_u *, variptr_u *, i
 static __used__ void AddToModelList(APICHARACTERMODELLIST_s *, int *, int, int, int, EXTRAMODEL *) {
 }
 
+static void NormalizeAnimPath(char *path) {
+    while (*path != '\0') {
+        *path = static_cast<char>(NuToUpper(*path));
+        ++path;
+    }
+}
+
+static nuanimdata2_s *LoadAnimFromPAK(char *path, i32 area_animation, void *data, i32 size) {
+    NormalizeAnimPath(path);
+    for (i32 i = 0; i < apicharsys->loaded_animation_count; ++i) {
+        if (NuStrCmp(path, apicharsys->animations[i].path) == 0) {
+            return apicharsys->animations[i].animation;
+        }
+    }
+
+    if (apicharsys->loaded_animation_count >= apicharsys->animation_capacity) {
+        ++apicharsys->animation_load_attempts;
+        return NULL;
+    }
+
+    ANIMLIST_s &entry = apicharsys->animations[apicharsys->loaded_animation_count];
+    NuStrCpy(entry.path, path);
+    entry.animation = static_cast<nuanimdata2_s *>(NuAnimData2LoadBuffFromPAK(data, size));
+    if (entry.animation != NULL) {
+        if (area_animation != 0) {
+            ++apicharsys->area_animation_count;
+        }
+        ++apicharsys->loaded_animation_count;
+        ++apicharsys->animation_load_attempts;
+    }
+    return entry.animation;
+}
+
+static nuanimdata2_s *LoadAnim(char *path, i32 area_animation, VARIPTR *buf, VARIPTR buf_end) {
+    NormalizeAnimPath(path);
+    for (i32 i = 0; i < apicharsys->loaded_animation_count; ++i) {
+        if (NuStrCmp(path, apicharsys->animations[i].path) == 0) {
+            return apicharsys->animations[i].animation;
+        }
+    }
+
+    if (apicharsys->loaded_animation_count >= apicharsys->animation_capacity) {
+        ++apicharsys->animation_load_attempts;
+        return NULL;
+    }
+
+    ANIMLIST_s &entry = apicharsys->animations[apicharsys->loaded_animation_count];
+    NuStrCpy(entry.path, path);
+    entry.animation = static_cast<nuanimdata2_s *>(NuAnimData2LoadBuff(entry.path, buf, &buf_end));
+    if (entry.animation != NULL) {
+        if (area_animation != 0) {
+            ++apicharsys->area_animation_count;
+        }
+        ++apicharsys->loaded_animation_count;
+        ++apicharsys->animation_load_attempts;
+    }
+    return entry.animation;
+}
+
+static void GetAnimationPath(char *path, const char *default_dir, CHARACTERANIM_s *animation, const char *extension) {
+    if (RedirectAnimFn == NULL || RedirectAnimFn(RedirectAnimDir, RedirectAnimList, animation, path) == 0) {
+        NuStrCpy(path, default_dir);
+        NuStrCat(path, animation->name);
+    }
+    NuStrCat(path, extension);
+}
+
+static bool ShouldLoadAnimation(const CHARACTERANIM_s &animation, i32 area_animation) {
+    return (animation.flags & 0x8000) == 0 && ((animation.flags & 1) != 0) == (area_animation != 0);
+}
+
 extern "C" {
 
-    void APICharacterLoaded(void) {
+    i32 apiloadcharactermodels_append = 0;
+
+    void APIObjectRegisterAnimRedirect(ANIMREDIRECTFN fn, void *list, char *directory) {
+        RedirectAnimFn = fn;
+        RedirectAnimList = list;
+        if (NuStrLen(directory) <= 0x3f) {
+            NuStrCpy(RedirectAnimDir, directory);
+            i32 length = NuStrLen(directory);
+            if (length != 0 && directory[length - 1] != '\\') {
+                NuStrCat(RedirectAnimDir, "\\");
+            }
+        }
     }
 
-    void APICharacterModelReset(void) {
+    APICHARACTERMODEL *APICharacterLoaded(i32 character_id) {
+        if (character_id == -1) {
+            return NULL;
+        }
+
+        const i16 model_index = apicharsys->playermodelids[character_id];
+        if (model_index == -1) {
+            return NULL;
+        }
+        return &apicharsys->models[model_index];
     }
 
-    void APICharacterSysInit(void) {
+    void APICharacterModelReset(APICHARACTERMODEL *model) {
+        model->model_id = 0;
+        model->flags &= 0xfe;
+        model->field_0x3 = 0;
+        model->hierarchy = NULL;
+
+        if (apicharsys->model_id_capacity != 0) {
+            usize table_size = (usize)apicharsys->model_id_capacity * sizeof(void *);
+            memset(model->model_data_a, 0, table_size);
+            memset(model->model_data_b, 0, table_size);
+            memset(model->model_data_c, 0, table_size);
+        }
+        memset(model->points_of_interest, 0, sizeof(model->points_of_interest));
     }
 
-    void APIDrawCharacterModel(void) {
+    void APICharacterSysInit(VARIPTR *buf, VARIPTR buf_end, i32 char_count, i32 model_capacity, i32 model_id_capacity,
+                             i32 extra_capacity, CHARACTERDATA *cdata_list, APICHARACTERLIGHTFN set_creature_lights) {
+        (void)buf_end;
+
+        buf->addr = ALIGN(buf->addr, 0x10);
+        apicharsys = (APICHARACTERSYS *)buf->void_ptr;
+        buf->addr += sizeof(*apicharsys);
+        memset(apicharsys, 0, sizeof(*apicharsys));
+
+        apicharsys->character_count = char_count;
+        apicharsys->model_capacity = model_capacity;
+        apicharsys->model_id_capacity = model_id_capacity;
+        apicharsys->animation_capacity = extra_capacity;
+
+        if (model_capacity != 0) {
+            buf->addr = ALIGN(buf->addr, 4);
+            apicharsys->models = (APICHARACTERMODEL *)buf->void_ptr;
+            buf->addr += (usize)model_capacity * sizeof(*apicharsys->models);
+            memset(apicharsys->models, 0, (usize)model_capacity * sizeof(*apicharsys->models));
+
+            for (i32 i = 0; i < model_capacity; i++) {
+                APICHARACTERMODEL *model = &apicharsys->models[i];
+                if (model_id_capacity != 0) {
+                    usize table_size = (usize)model_id_capacity * sizeof(void *);
+
+                    buf->addr = ALIGN(buf->addr, 4);
+                    model->model_data_a = (void **)buf->void_ptr;
+                    buf->addr += table_size;
+
+                    buf->addr = ALIGN(buf->addr, 4);
+                    model->model_data_b = (void **)buf->void_ptr;
+                    buf->addr += table_size;
+
+                    buf->addr = ALIGN(buf->addr, 4);
+                    model->model_data_c = (void **)buf->void_ptr;
+                    buf->addr += table_size;
+                }
+                APICharacterModelReset(model);
+            }
+        }
+
+        if (char_count != 0) {
+            buf->addr = ALIGN(buf->addr, 4);
+            apicharsys->playermodelids = buf->i16_ptr;
+            buf->addr += (usize)char_count * sizeof(*apicharsys->playermodelids);
+            memset(apicharsys->playermodelids, 0, (usize)char_count * sizeof(*apicharsys->playermodelids));
+        }
+
+        if (extra_capacity != 0) {
+            buf->addr = ALIGN(buf->addr, 4);
+            apicharsys->animations = (ANIMLIST_s *)buf->void_ptr;
+            buf->addr += (usize)extra_capacity * sizeof(*apicharsys->animations);
+            memset(apicharsys->animations, 0, (usize)extra_capacity * sizeof(*apicharsys->animations));
+        }
+
+        apicharsys->char_data = cdata_list;
+        apicharsys->set_creature_lights = set_creature_lights;
+    }
+
+    extern void RootFn(NUMTX *, void *, NUVEC *, NUVEC *, NUVEC *, f32);
+    extern void RootFnY(NUMTX *, void *, NUVEC *, NUVEC *, NUVEC *, f32);
+    extern void BlendRootFn(NUMTX *, void *, NUVEC *, NUVEC *, NUVEC *, f32);
+
+    // Original @0x3d0563. This restores the ordinary hierarchy evaluation and
+    // render path; DWA, locator/effect, transparency and random-shadow branches
+    // remain separate pending transcriptions of their original helpers.
+    i32 APIDrawCharacterModel(CHARACTERMODEL_s *model, CHARACTERDATA *, ANIMPACKET_s *animation, NUMTX *matrix, NUMTX *,
+                              NUMTX *reflection_matrix, i32, NUMTX *, GameObject_s *object, u32 flags,
+                              NUJOINTANIM_s *joint_overrides, i32 joint_override_count, WORLDINFO_s *, f32,
+                              NUMTX *output_matrices, i32, void *) {
+        drawcharactermodel_locatorsupdated = 0;
+        if (model == NULL || model->hierarchy == NULL || matrix == NULL) {
+            if (animation != NULL && drawcharactermodel_keepmergeaction == 0) {
+                animation->frame = 0xffff;
+            }
+            return 0;
+        }
+
+        bool evaluate_only = false;
+        if (object == NULL || (object->apiobj.field_0x1f4 & 0x200) == 0) {
+            if (NuCameraClipTestExtents(&model->hierarchy->bounds_min, &model->hierarchy->bounds_max, matrix,
+                                        character_farclip, 0) == 0) {
+                evaluate_only = true;
+            }
+        }
+
+        i16 render_indices[32];
+        const i32 render_count = MakeLayerList != NULL ? MakeLayerList(model, render_indices, flags) : 0;
+        if (render_count <= 0) {
+            if (animation != NULL && drawcharactermodel_keepmergeaction == 0) {
+                animation->frame = 0xffff;
+            }
+            return 0;
+        }
+
+        auto animation_at = [model](i32 index) -> ani3_animheader_s * {
+            if (index < 0 || apicharsys == NULL || index >= apicharsys->model_id_capacity ||
+                model->model_data_b == NULL) {
+                return NULL;
+            }
+            return static_cast<ani3_animheader_s *>(model->model_data_b[index]);
+        };
+        auto animation_flags = [model](i32 index) -> u32 {
+            if (index < 0 || apicharsys == NULL || index >= apicharsys->model_id_capacity ||
+                model->model_data_a == NULL || model->model_data_a[index] == NULL) {
+                return 0;
+            }
+            return static_cast<CHARACTERANIM_s *>(model->model_data_a[index])->flags;
+        };
+
+        bool evaluated = false;
+        if (animation != NULL && drawcharactermodel_noani == 0 && drawcharactermodel_restpose == 0) {
+            if (animation->frame != 0xffff) {
+                const i32 first_index = animation->field_0x3a;
+                const i32 second_index = animation->frame;
+                ani3_animheader_s *first = animation_at(first_index);
+                ani3_animheader_s *second = animation_at(second_index);
+                if (first != NULL && second != NULL) {
+                    NuHGobjEvalAnimBlend2(model->hierarchy, first, animation->time, second, animation->time,
+                                          animation->field_0x44, joint_override_count, joint_overrides,
+                                          output_matrices);
+                    evaluated = true;
+                }
+            } else if (animation->blending != 0) {
+                const i32 first_index = animation->blend_animation_a;
+                const i32 second_index = animation->blend_animation_b;
+                ani3_animheader_s *first = animation_at(first_index);
+                ani3_animheader_s *second = animation_at(second_index);
+                if (first != NULL && second != NULL) {
+                    f32 blend =
+                        animation->blend_duration != 0.0f ? animation->blend_elapsed / animation->blend_duration : 0.0f;
+                    const u32 combined_flags = animation_flags(first_index) | animation_flags(second_index);
+                    if ((combined_flags & 0x20) != 0) {
+                        NuHGobjEvalAnimBlend2Root(model->hierarchy, first, animation->time, second, animation->time2,
+                                                  blend, joint_override_count, joint_overrides, output_matrices,
+                                                  BlendRootFn, object);
+                    } else {
+                        NuHGobjEvalAnimBlend2(model->hierarchy, first, animation->time, second, animation->time2, blend,
+                                              joint_override_count, joint_overrides, output_matrices);
+                    }
+                    evaluated = true;
+                }
+            } else {
+                const i32 index = animation->animation_index;
+                ani3_animheader_s *selected = animation_at(index);
+                if (selected != NULL) {
+                    const u32 selected_flags = animation_flags(index);
+                    if ((selected_flags & 0x20) != 0) {
+                        NUHGOBJROOTFN root_fn = (selected_flags & 0x200) != 0 ? RootFnY : RootFn;
+                        NuHGobjEvalAnim2Root(model->hierarchy, selected, animation->field_0x00, joint_override_count,
+                                             joint_overrides, output_matrices, root_fn, object);
+                    } else {
+                        NuHGobjEvalAnim2(model->hierarchy, selected, animation->field_0x00, joint_override_count,
+                                         joint_overrides, output_matrices);
+                    }
+                    evaluated = true;
+                }
+            }
+        }
+
+        if (!evaluated) {
+            NuHGobjEval(model->hierarchy, joint_override_count,
+                        reinterpret_cast<nuhgobjjointoverride_s *>(joint_overrides), output_matrices);
+        }
+        drawcharactermodel_locatorsupdated = 1;
+
+        i32 result = 0;
+        if (!evaluate_only) {
+            const i32 render_flags = object == NULL || (object->apiobj.field_0x1f4 & 0x200) == 0;
+            result = NuHGobjRndrMtxDwa(model->hierarchy, matrix, render_count, render_indices, output_matrices, NULL,
+                                       render_flags);
+            if (reflection_matrix != NULL) {
+                NuHGobjRndrMtxDwa(model->hierarchy, reflection_matrix, render_count, render_indices, output_matrices,
+                                  NULL, render_flags);
+            }
+        }
+
+        if (animation != NULL && drawcharactermodel_keepmergeaction == 0) {
+            animation->frame = 0xffff;
+        }
+        return result;
     }
 
     void APIDumpCharacterModels(void) {
     }
 
-    void APILoadCharacterModels(void) {
+    void APILoadCharacterModels(APICHARACTERMODELLIST_s *list, i32 area_animation, VARIPTR *buf, VARIPTR buf_end,
+                                i32 area_models) {
+        if (apiloadcharactermodels_append == 0) {
+            APIResetCharacterRemap();
+            for (i32 model_index = 0; model_index < apicharsys->permanent_model_count; ++model_index) {
+                APICHARACTERMODEL &model = apicharsys->models[model_index];
+                for (i32 animation_id = 0; animation_id < apicharsys->model_id_capacity; ++animation_id) {
+                    if ((model.model_data_b[animation_id] != NULL || model.model_data_c[animation_id] != NULL) &&
+                        (static_cast<CHARACTERANIM_s *>(model.model_data_a[animation_id])->flags & 1) == 0) {
+                        model.model_data_a[animation_id] = NULL;
+                        model.model_data_b[animation_id] = NULL;
+                        model.model_data_c[animation_id] = NULL;
+                    }
+                }
+            }
+            for (i32 model_index = apicharsys->permanent_model_count; model_index < apicharsys->model_capacity;
+                 ++model_index) {
+                apicharsys->models[model_index].hierarchy = NULL;
+            }
+            apicharsys->loaded_model_count = apicharsys->permanent_model_count;
+        }
+        apiloadcharactermodels_append = 0;
+
+        while (list != NULL && list->model_id != -1 && apicharsys->loaded_model_count < apicharsys->model_capacity) {
+            const i32 model_id = list->model_id;
+            CHARACTERDATA &character = apicharsys->char_data[model_id];
+
+            char directory[0x40];
+            NuStrCpy(directory, "chars\\");
+            NuStrCat(directory, character.dir);
+            NuStrCat(directory, "\\");
+
+            APICHARACTERMODEL *model;
+            bool model_loaded = false;
+            if (apicharsys->playermodelids[model_id] != -1) {
+                model = &apicharsys->models[apicharsys->playermodelids[model_id]];
+            } else {
+                model = &apicharsys->models[apicharsys->loaded_model_count];
+                APICharacterModelReset(model);
+
+                char hierarchy_path[0x200];
+                char directory_pack_path[0x100];
+                char model_pack_path[0x100];
+                NuStrCpy(hierarchy_path, directory);
+                NuStrCat(hierarchy_path, character.file);
+                NuStrCat(hierarchy_path, ".ghg");
+                NuStrCpy(directory_pack_path, directory);
+                NuStrCat(directory_pack_path, character.dir);
+                NuStrCat(directory_pack_path, ".fpk");
+                NuStrCpy(model_pack_path, directory);
+                NuStrCat(model_pack_path, character.file);
+                NuStrCat(model_pack_path, ".fpk");
+
+                model->hierarchy = NuGHGRead(hierarchy_path, buf, buf_end);
+                if (model->hierarchy == NULL) {
+                    ++list;
+                    continue;
+                }
+                for (i32 poi = 0; poi < 16; ++poi) {
+                    model->points_of_interest[poi] = NuHGobjGetPOI(model->hierarchy, poi);
+                }
+                model_loaded = true;
+
+                CHARACTERANIM_s *animations = area_models != 0 && list->count != 0 ? character.animations : NULL;
+                void *pak = NULL;
+                if (apiloadcharactermodels_nopakfile == 0) {
+                    pak = NuFilePakLoad(directory_pack_path, buf, buf_end, 0x10);
+                    if (pak == NULL) {
+                        pak = NuFilePakLoad(model_pack_path, buf, buf_end, 0x10);
+                    }
+                }
+
+                if (pak != NULL) {
+                    for (CHARACTERANIM_s *animation = animations; animation != NULL && animation->name != NULL;
+                         ++animation) {
+                        if (!ShouldLoadAnimation(*animation, area_animation)) {
+                            continue;
+                        }
+                        char animation_path[0x200];
+                        if ((animation->flags & 4) != 0 && model->model_data_b[animation->animation_id] == NULL) {
+                            GetAnimationPath(animation_path, directory, animation, ".an3");
+                            i32 item = NuFilePakGetItem(pak, animation_path);
+                            if (item != 0) {
+                                NuFilePakSetItemRequired(pak, item, 1);
+                            }
+                        }
+                        if ((animation->flags & 8) != 0 && model->model_data_c[animation->animation_id] == NULL) {
+                            GetAnimationPath(animation_path, directory, animation, ".bsa");
+                            i32 item = NuFilePakGetItem(pak, animation_path);
+                            if (item != 0) {
+                                NuFilePakSetItemRequired(pak, item, 1);
+                            }
+                        }
+                    }
+
+                    buf->addr -= NuFilePakCondense(pak);
+                    for (CHARACTERANIM_s *animation = animations; animation != NULL && animation->name != NULL;
+                         ++animation) {
+                        if (!ShouldLoadAnimation(*animation, area_animation)) {
+                            continue;
+                        }
+                        char animation_path[0x200];
+                        if ((animation->flags & 4) != 0 && model->model_data_b[animation->animation_id] == NULL) {
+                            GetAnimationPath(animation_path, directory, animation, ".an3");
+                            i32 item = NuFilePakGetItem(pak, animation_path);
+                            void *data;
+                            i32 size;
+                            if (item != 0 && NuFilePakGetItemInfo(pak, item, &data, &size) != 0) {
+                                const bool pointer_block = static_cast<i32 *>(data)[1] > static_cast<i32>(0x414e4934);
+                                ani3_animheader_s *joint_animation = reinterpret_cast<ani3_animheader_s *>(
+                                    pointer_block ? static_cast<u8 *>(data) + 4 : data);
+                                if ((joint_animation->field_12 & 0xff) == 0) {
+                                    if (pointer_block) {
+                                        NuPtrBlockFix(data);
+                                    } else {
+                                        NuAnimData2Fixup(size, &data);
+                                    }
+                                    joint_animation->field_12 |= 1;
+                                }
+                                model->model_data_b[animation->animation_id] = joint_animation;
+                                model->model_data_a[animation->animation_id] = animation;
+                            }
+                        }
+                        if ((animation->flags & 8) != 0 && model->model_data_c[animation->animation_id] == NULL) {
+                            GetAnimationPath(animation_path, directory, animation, ".bsa");
+                            i32 item = NuFilePakGetItem(pak, animation_path);
+                            void *data;
+                            i32 size;
+                            if (item != 0 && NuFilePakGetItemInfo(pak, item, &data, &size) != 0) {
+                                model->model_data_c[animation->animation_id] =
+                                    LoadAnimFromPAK(animation_path, area_animation, data, size);
+                                if (model->model_data_c[animation->animation_id] != NULL) {
+                                    model->model_data_a[animation->animation_id] = animation;
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    for (CHARACTERANIM_s *animation = animations; animation != NULL && animation->name != NULL;
+                         ++animation) {
+                        if (!ShouldLoadAnimation(*animation, area_animation)) {
+                            continue;
+                        }
+                        char animation_path[0x200];
+                        if ((animation->flags & 4) != 0 && model->model_data_b[animation->animation_id] == NULL) {
+                            GetAnimationPath(animation_path, directory, animation, ".an3");
+                            if (NuFileExists(animation_path) != 0) {
+                                model->model_data_b[animation->animation_id] =
+                                    LoadAnim(animation_path, area_animation, buf, buf_end);
+                            }
+                            if (model->model_data_b[animation->animation_id] != NULL) {
+                                model->model_data_a[animation->animation_id] = animation;
+                            }
+                        }
+                        if ((animation->flags & 8) != 0 && model->model_data_c[animation->animation_id] == NULL) {
+                            GetAnimationPath(animation_path, directory, animation, ".bsa");
+                            model->model_data_c[animation->animation_id] =
+                                LoadAnim(animation_path, area_animation, buf, buf_end);
+                            if (model->model_data_c[animation->animation_id] != NULL) {
+                                model->model_data_a[animation->animation_id] = animation;
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (model_loaded) {
+                model->model_id = model_id;
+                model->flags = (model->flags & ~1) | (area_models != 0 && list->count != 0 ? 1 : 0);
+                apicharsys->playermodelids[model_id] = apicharsys->loaded_model_count;
+                if (area_animation != 0) {
+                    ++apicharsys->permanent_model_count;
+                    character.model_flags |= 2;
+                }
+                ++apicharsys->loaded_model_count;
+            }
+            ++list;
+        }
     }
 
     void APIResetCharacterRemap(void) {
+        for (i32 i = 0; i < apicharsys->character_count; ++i) {
+            if ((apicharsys->char_data[i].model_flags & 2) == 0) {
+                apicharsys->playermodelids[i] = -1;
+            }
+        }
     }
 
     void APITransparentCharDraw(void) {

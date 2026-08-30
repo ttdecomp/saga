@@ -6,6 +6,21 @@
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nucore/common.h"
 
+// Forward declarations for the function-pointer table below (full types in
+// legoapi/legoapi_types.h).
+struct CUTINFO;
+struct NUGCUTCHAR_s;
+struct BOLT_s;
+struct GameObject_s;
+struct CHARACTERMODEL_s;
+struct nuvec_s;
+struct nuhspecial_s;
+struct GIZMOBLOWUP_s;
+struct GIZOBSTACLE_s;
+struct AREASAVE_s;
+struct GAMECAMERA_s;
+class FadeSystem;
+
 // ----------------------------------------------------------------------
 // Placeholder save-game / model-list structures.
 // ----------------------------------------------------------------------
@@ -45,10 +60,26 @@ struct OPTIONSSAVE_s { /* PlaceHolder Structure */
     undefined field9_0x9;
     undefined field10_0xa;
     undefined field11_0xb;
+    undefined field12_0xc;
 };
 typedef struct OPTIONSSAVE_s OPTIONSSAVE;
 
-struct customisesave_s { /* PlaceHolder Structure */
+struct SUPEROPTIONS_s {
+    i16 field0_0x0;
+    u8 touch_controls;
+    u8 field2_0x3;
+    f32 left_control_x;
+    f32 left_control_y;
+    f32 right_control_x;
+    f32 right_control_y;
+    u8 music_enabled;
+    i8 field8_0x15;
+    u8 field9_0x16[2];
+};
+DECOMP_ASSERT(sizeof(SUPEROPTIONS_s) == 0x18, "SUPEROPTIONS size");
+extern SUPEROPTIONS_s SuperOptions;
+
+struct __attribute__((packed)) customisesave_s { /* PlaceHolder Structure */
     undefined2 field0_0x0;
     undefined2 field1_0x2;
     undefined2 field2_0x4;
@@ -144,6 +175,7 @@ struct customisesave_s { /* PlaceHolder Structure */
     undefined field92_0x6e;
 };
 typedef struct customisesave_s CUSTOMISESAVE;
+DECOMP_ASSERT(sizeof(CUSTOMISESAVE) == 0x6f, "CUSTOMISESAVE size");
 
 struct GAMESAVE_s {
     undefined field0_0x0;
@@ -151,7 +183,6 @@ struct GAMESAVE_s {
     undefined field2_0x2;
     undefined field3_0x3;
     struct OPTIONSSAVE_s options_save;
-    undefined field5_0x10;
     undefined1 level_save; /* Created by retype action */
     undefined field7_0x12[30746];
     undefined1 area_save; /* Created by retype action */
@@ -187,6 +218,7 @@ struct GAMESAVE_s {
     void *character_save;
     char field39_0x7d08[336];
 };
+DECOMP_ASSERT(sizeof(GAMESAVE_s) == 0x7e58, "GAMESAVE size");
 
 struct CHARCAT_s {
     undefined field0_0x0[4];
@@ -216,11 +248,6 @@ struct VEHICLECOLLECTION_s {
     u16 count_0x6;
 };
 
-struct EXTRAMODELLISTENTRY_s {
-    i16 *model_list;
-    void *field4_0x4;
-};
-
 // ----------------------------------------------------------------------
 // Progress table for the shared animation system.
 // ----------------------------------------------------------------------
@@ -237,6 +264,11 @@ extern i32 PAL;
 extern f32 FRAMETIME;
 extern f32 DEFAULTFPS;
 extern f32 DEFAULTFRAMETIME;
+extern void *globalbuffer;
+extern i32 MaxAnimJoints;
+extern u8 ForcePlayEndFrame;
+extern u8 BitCountTable[256];
+extern i32 isBitCountTable;
 extern f32 MAXFRAMETIME;
 
 // ------------------------------------------------------------------------
@@ -246,6 +278,15 @@ extern i32 SUPERBUFFERSIZE;
 extern VARIPTR permbuffer_base;
 extern VARIPTR original_permbuffer_base;
 extern VARIPTR superbuffer_end;
+
+extern "C" {
+    extern VARIPTR superbuffer_base;
+    extern VARIPTR superbuffer_ptr;
+    extern i32 permbuffer_size;
+    extern i32 CHARACTERBUFFERSIZE;
+    extern i32 EDITBUFFERENDSIZE;
+    extern VARIPTR editbuffer_end;
+}
 extern VARIPTR permbuffer_ptr;
 extern VARIPTR permbuffer_end;
 
@@ -310,6 +351,7 @@ extern struct nusound_filename_info_s *MusicInfo;
 extern struct nusound_filename_info_s *g_music;
 extern u32 SFX_MUSIC_COUNT;
 extern u8 g_BackgroundUsedFogColour;
+extern i32 g_BackgroundColour;
 extern i32 NOSOUND;
 extern i32 LevMusicAction;
 extern i32 LevMusicAmbient;
@@ -333,6 +375,7 @@ extern i32 g_isLowestEndDevice;
 extern i32 g_isLowEndDevice;
 extern i32 g_isMidRangeDevice;
 extern i32 g_lowEndLevelBehaviour;
+extern i32 finishloop_backdroponly;
 
 // ------------------------------------------------------------------------
 // Render / compatibility options
@@ -344,6 +387,13 @@ extern i32 Reflections_On;
 extern i32 disable_narrow_socks;
 extern i32 script_spline_selected;
 extern f32 character_farclip;
+extern i32 drawcharactermodel_locatorsupdated;
+extern i32 drawcharactermodel_noani;
+extern i32 drawcharactermodel_restpose;
+extern i32 drawcharactermodel_keepmergeaction;
+extern i32 game_keepmergeaction;
+extern i32 JointRotation_On;
+extern i32 (*MakeLayerList)(CHARACTERMODEL_s *, i16 *, u32);
 
 // ------------------------------------------------------------------------
 // Group scenes (NUGSCN)
@@ -356,16 +406,19 @@ extern NUGSCN *area_scene;
 // Gameplay timers & area state
 // ------------------------------------------------------------------------
 extern f32 DoubleScoreTime;
-extern f32 GameTimer[2];
-extern void *AreaGlobals;
+extern TIMER GameTimer;
+extern u8 AreaGlobals[0x34]; // area-progress save block (inline .bss struct @0x1276de0)
 extern i32 HIGHGAMEOBJECT;
-extern void *Obj;
+extern GameObject_s *Obj;
 extern f32 AreaPickupGravity;
 extern f32 HIGHJUMPHEIGHT;
 extern TIMER AreaTimer;
 extern f32 VehicleAreaRememberSpeed;
+extern nugspline_s *ObstacleCamSpl;
+extern GAMECAMERA_s *GameCam;
+extern i32 MiniCutCam;
 extern i32 Lap;
-extern f32 LevTime;
+extern f32 LevTime[5];
 
 // ------------------------------------------------------------------------
 // Bonus / arcade / challenge mode
@@ -405,11 +458,13 @@ extern i32 FreePlayResidentCount;
 extern i32 FreePlayBonusCount;
 extern CHARCAT_s *CharCategory;
 extern i32 CHARCATEGORYCOUNT;
-extern EXTRAMODELLISTENTRY_s ExtraModelList[];
+extern EXTRAMODEL ExtraModelList[];
 extern VEHICLECOLLECTION_s VehicleCollection;
 extern ARCADEITEM_s ArcadeItem;
 extern ARCADE_MODE_s Arcade_Mode[];
 extern GAME_CUSTOMISER_s *Game_Customiser;
+extern AREASAVE_s *Game_AreaSave;
+extern u8 *Game_CharacterSave;
 extern APICHARACTERMODELLIST_s FreePlayModelList[];
 extern APICHARACTERMODELLIST_s Hub_ModelList[];
 extern i32 Area_PlayerModelCount;
@@ -434,6 +489,16 @@ extern i32 EXTRALEVELOBJECTCOUNT;
 extern char *ExtraLevelObject_NameTable;
 extern i32 ExtraLevelObject_NameTableSize;
 extern i32 ExtraLevelObject_NameTableIndex;
+
+extern i16 drawcharicon_hspecial_spin;
+extern f32 drawcharicon_hspecial_dz;
+extern i32 drawcharicon_find;
+extern f32 drawcharicon_hspecial_scale;
+extern i32 drawcharicon_i_panel;
+extern f32 PANEL3DMULY;
+extern f32 PANEL3DMULX;
+extern i32 LEGOOBJ_ICON_WEIRDO;
+extern i32 LEGOOBJ_ICON_QUESTION;
 
 // ------------------------------------------------------------------------
 // Level / area data pointers (LDATA / ADATA)
@@ -632,18 +697,33 @@ extern i32 other_level;
 extern i32 other_level_override;
 extern i32 CUTSTOPGAME;
 extern void *CutStopInfo;
-extern i32 WaitingForLevelTime;
+extern f32 WaitingForLevelTime;
+extern f32 WaitingForCharacterTime;
 extern f32 g_BgLoadDelayHackTimer;
 extern i32 Door_UseCutCam;
-extern void *LevelLoad;
+extern i16 LevelLoad[48];
 extern i32 LevelLoadCount;
+
+// Main game loop state (read/written by NuMain; see batman.h for the rest).
+extern i32 Level;
+extern struct GIZAIMESSAGESYS_s *gizaimessagesys;
 
 // ------------------------------------------------------------------------
 // Level script arrays (Lev*)
 // ------------------------------------------------------------------------
-extern i32 LevHSpecial[264];
+extern nuhspecial_s LevHSpecial[88];
+extern NUMTX LevMtx;
+extern f32 LevAlpha;
+extern f32 TitlesAlpha;
+extern f32 newgamealpha;
+extern i32 newgamefade;
+extern f32 newgamewait;
+extern i32 newgame_menudrawoff;
+extern i32 netnewgame;
+extern i32 MenuLoadOccurred;
+extern i32 MenuSaveOccurred;
 extern i32 LevSfxFlag[4];
-extern void *dynamic_antinodes;
+extern u8 dynamic_antinodes[0x1500]; // AI anti-node spawn data (cleared per level)
 extern i32 LevInstAnim[12];
 extern i32 LevArea[4];
 extern i32 LevPathNodes[8];
@@ -672,3 +752,71 @@ extern i32 LevSafePlatID[2];
 extern u32 EXBLOWUPFLAGS;
 extern i32 BeenAttacked;
 extern u32 ResetBits;
+
+// ------------------------------------------------------------------------
+// Loading screen (LoadPerm) globals
+// ------------------------------------------------------------------------
+extern LEVELOBJECT ObjTab[0x2ee]; // level-object type table (.data @0x618240, 0xff-terminated)
+extern struct LEVELSPLINE SplTab[26];
+extern u8 LSW_CharCategory[0x78];
+extern u8 Cheat[0x5a0];
+extern u8 CharVariants_Game[0x5c];
+extern u8 theMemoryManager[0x248];
+extern struct TEXTENTRY LSW_Text[713];
+
+extern void *ActionInfo;
+extern char *ExtraActionData;
+extern void *theGameThings;
+extern void *theThingManager;
+
+extern NUGSCN *saveicon_scene;
+extern NUGSCN *button_scene;
+
+extern FadeSystem *pFadeInfo;
+
+// Cut-scene / gameplay hook wiring (original .data function pointers).
+extern void (*CutScene_StartFn)(CUTINFO *);
+extern void (*CutScene_PreUpdateFn)(CUTINFO *);
+extern void (*CutScene_PostUpdateFn)(void);
+extern void (*CutScene_StoppedFn)(CUTINFO *);
+extern void (*CutScene_ReplaceCharacterModelFn)(CUTINFO *, NUGCUTCHAR_s *);
+extern void (*InitBolt_AddMomentumType)(BOLT_s *, GameObject_s *, nuvec_s *);
+extern void (*Bolt_HitPlatFn)(BOLT_s *);
+extern void (*Bolt_HitCustomFn)(BOLT_s *, nuvec_s *);
+extern void (*GameBlowUpBlownUpFn)(GIZMOBLOWUP_s *);
+extern void (*GizObstacle_SetDefaultSFXFn)(void *, GIZOBSTACLE_s *);
+
+extern i32 PermDataLoaded;          // original .data init 1
+extern i32 LoadPerm_LanguageSelect; // bss
+extern i32 LoadPerm_StringsLoaded;  // bss
+extern i32 menu_flash;              // bss
+extern i32 noscenespecials;         // disables automatic display-scene specials
+extern f32 game_pulse;
+extern f32 global_pulse;
+extern i32 IntroText_TextID; // .data init -1
+extern i32 LANGUAGECOUNT;    // .data init 6
+typedef struct langlistentry_s {
+    i32 language;
+    i32 unknown_4;
+} LANGLISTENTRY;
+extern u32 Text_Language;
+extern LANGLISTENTRY Text_LanguageList_Default[6];
+extern LANGLISTENTRY *Text_LanguageList;
+extern f32 INTROTEXT_Y;
+extern f32 INTROTEXT_SCALE;
+
+// IntroText / QFont globals (TTapp BSS @0x127c200 / 0x124f6f0)
+extern char **TTab;
+struct vufnt_s;
+extern vufnt_s *QFont2D;
+extern vufnt_s *QFont2DButtons;
+extern vufnt_s *QFont3D;
+extern vufnt_s *QFont2DZ;
+extern vufnt_s *QFont2DLower;
+extern vufnt_s *QFont3DZ;
+extern vufnt_s *QFont3DTime;
+extern vufnt_s *SmartTextFont;
+extern i32 create_qfont3d;
+extern i32 create_qfont2dz;
+extern i32 create_qfont2dlower;
+extern i32 create_qfont3dz;

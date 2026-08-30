@@ -35,6 +35,20 @@ extern "C" {
 
     void NuSound3Init(i32 zero);
     void NuSound3SetSampleTable(NUSOUND_FILENAME_INFO *info, VARIPTR *buffer_start, VARIPTR buffer_end);
+    void NuSound3SetLoopHoldTime(float t);
+
+    // Stereo-stream control used by the NuMusic player. Streams live in slots
+    // 0/1 (one per music voice). StreamKeyStatus reports 0 = nothing queued,
+    // 1 = loaded, 2 = finished.
+    void NuSound3Update(void);
+    i32 NuSound3GetStereoStreamStatus(void);
+
+    void NuSound3StopStereoStream(i32 stream_index);
+    void NuSound3PauseStereoStream(i32 stream_index);
+    void NuSound3ResumeStereoStream(i32 stream_index);
+    i32 NuSound3StreamKeyStatus(i32 stream_index);
+    void NuSound3SetStereoStreamVolume(i32 stream_index, i32 volume);
+    f32 NuSound3dBToAmplitude(f32 db);
 #ifdef __cplusplus
 }
 #endif

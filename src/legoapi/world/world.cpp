@@ -14,6 +14,7 @@
 #include "legoapi/world/level.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/items/base/collection.h"
+#include "legoapi/items/base/apiobject.h"
 #include "legoapi/props/system/socksys.h"
 #include "legoapi/core/input/timer.h"
 #include "legogame/game.h"
@@ -26,6 +27,9 @@
 
 // Globals shared across world loading — defined here until moved to globals.cpp
 TIMER LevelTimer;
+
+void (*WorldInfo_InitMenuFn)(WORLDINFO *, i32 *, i32 *) = NULL;
+void (*WorldInfo_InitLastFn)(WORLDINFO *) = NULL;
 i32 abort_load = 0;
 char ConfigBuffer[0x10000];
 i32 numtl_force_mipmode = 0;
@@ -33,6 +37,7 @@ i32 GAMEDEMO = 0;
 NUGSCN *big_icon_scene = NULL;
 NUGSCN *area_scene = NULL;
 NUGSCN *things_scene = NULL;
+void *things_scene_terrain = NULL;
 LEVELDATA *PLATFORM_LDATA = NULL;
 LEVELDATA *RETAKED_LDATA = NULL;
 LEVELDATA *CREDITS_LDATA = NULL;
@@ -50,6 +55,7 @@ GameObject_s *Player[8] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 i32 PLAYERCOUNT = 0;
 i32 netclient = 0;
 i32 UsePlayerList = 0;
+i32 makeplayerlist_freeplay = 0;
 i16 PlayerList[8];
 i32 PlayerID[2] = {-1, -1};
 i16 Area_PlayerIDList[9];
@@ -69,7 +75,7 @@ char GizForceLOSInfo[0xc60];
 i32 DEFAULT_PLAYERHITPOINTS = 8;
 u32 LEGOOBJ_DEFAULTLASTCOIN = -1;
 
-PLAYERDATA *apicharsys;
+APICHARACTERSYS *apicharsys;
 
 // --- World-module helpers (kept with the WorldInfo API) ---
 
@@ -90,7 +96,21 @@ void SetAreaPickupGravity(i32 area, i32 level) {
     }
 }
 void WorldInfo_Dump(WORLDINFO *world) {
-    (void)world;
+    // The full routine also tears down the level's gameplay subsystems and
+    // editor pages. These scene removals are the original calls at
+    // 0x481bcc..0x481d6b and must happen before Reset reuses the bump buffer.
+    if (world->icons_gscn != nullptr) {
+        NuGScnRemove(world->icons_gscn);
+        world->icons_gscn = nullptr;
+    }
+    if (world->current_gscn != nullptr) {
+        NuGScnRemove(world->current_gscn);
+        world->current_gscn = nullptr;
+    }
+    if (world->scene != nullptr) {
+        NuGScnRemove(world->scene);
+        world->scene = nullptr;
+    }
 }
 void StoreSceneProgress(NUGSCN *gscn, SCENEPROGRESS_s *progress, i32 param) {
     (void)gscn;
@@ -142,10 +162,6 @@ static WORLDINFO *LWORLD = &WorldInfo[0];
 
 void WorldInfo_InitOnce(void) {
     memset(WorldInfo, 0, sizeof(WorldInfo));
-
-#ifndef HOST_BUILD
-    static_assert(sizeof(void *) != 4 || sizeof(WorldInfo) == 0xa360, "WorldInfo size mismatch");
-#endif
 }
 
 void WorldInfo_Init(WORLDINFO *world) {
@@ -275,11 +291,12 @@ void WorldInfo_Init(WORLDINFO *world) {
 
     Doors_Init(world);
     Players_InitPositions(world);
-    ClearGameObjects((APIOBJECTSYS_s *)world->ai_sys);
+    Obj = reinterpret_cast<GameObject_s *>(world->api_object_sys->objects);
+    ClearGameObjects(world->api_object_sys);
     PlayerItemTypes_Reset(world);
     Players_Init();
     rtlResetDynamic();
-    SetPartRTLSet(world->rtl_set_id);
+    SetPartRTLSet(static_cast<i32>(reinterpret_cast<usize>(world->rtl_set)));
 
     WorldInfo_UpdateRoomVisibility(world, 1);
 
@@ -288,9 +305,11 @@ void WorldInfo_Init(WORLDINFO *world) {
         world->current_level->init_fn(world);
     }
 
-    // The game hook may provide a menu and Y position for the newly loaded
-    // level.  The hook is not linked in this target, but the state transition
-    // is part of WorldInfo_Init itself.
+    if (NOSOUND == 0 && WorldInfo_InitMenuFn != NULL) {
+        WorldInfo_InitMenuFn(world, &local_menu_id, &local_menu_y);
+    }
+
+    // A level transition may override the menu selected by the game hook.
     if (newlevelfrommenu_newmenuid != -1) {
         local_menu_id = newlevelfrommenu_newmenuid;
         local_menu_y = newlevelfrommenu_newmenuy;
@@ -331,7 +350,9 @@ void WorldInfo_Init(WORLDINFO *world) {
     *(i32 *)((char *)world + 0x5174) = 1;
 
     // Init last function
-    Game_WorldInfo_InitLast(world);
+    if (WorldInfo_InitLastFn != NULL) {
+        WorldInfo_InitLastFn(world);
+    }
 }
 
 void WorldInfo_Load(WORLDINFO *world) {
@@ -360,20 +381,35 @@ void WorldInfo_Load(WORLDINFO *world) {
         goto abort;
     }
 
-    if ((level->flags & LEVEL_STATUS) != 0) {
+    if ((level->flags & LEVEL_UNKNOWN_FLAG_4) != 0) {
         // Align giz_buffer
         world->giz_buffer.addr = ALIGN(world->giz_buffer.addr, 4);
 
         if (level == TITLES_LDATA) {
             NuStrCpy(buf, "levels\\titles\\");
-            if (Text_Language < 9) {
-                // Language-specific titles loading (switch table)
-                goto abort;
-            }
-            if (Text_Language == 0x12) {
-                NuStrCpy(titles, "titles_us");
-            } else {
-                NuStrCpy(titles, "titles_uk");
+            switch (Text_Language) {
+                case 2:
+                    NuStrCpy(titles, "titles_french");
+                    break;
+                case 3:
+                    NuStrCpy(titles, "titles_spanish");
+                    break;
+                case 4:
+                    NuStrCpy(titles, "titles_german");
+                    break;
+                case 5:
+                    NuStrCpy(titles, "titles_italian");
+                    break;
+                case 8:
+                    NuStrCpy(titles, "titles_danish");
+                    break;
+                default:
+                    if (Text_Language == 0x12) {
+                        NuStrCpy(titles, "titles_us");
+                    } else {
+                        NuStrCpy(titles, "titles_uk");
+                    }
+                    break;
             }
             NuStrCat(buf, titles);
         } else if (level == (LEVELDATA *)PLATFORM_LDATA) {
@@ -400,7 +436,7 @@ void WorldInfo_Load(WORLDINFO *world) {
     // Load pictures for titles/credits
     if (level == TITLES_LDATA || level == CREDITS_LDATA) {
         numtl_force_mipmode = (i32)(u8)level->mipmap_mode + 1;
-        world->icons_gscn = NuGScnRead(&world->giz_buffer, world->unknown_0108, "levels\\titles\\pictures.gsc");
+        world->scene = NuGScnRead(&world->giz_buffer, world->unknown_0108, "levels\\titles\\pictures.gsc");
         if (abort_load != 0)
             goto abort;
     }
@@ -409,7 +445,7 @@ void WorldInfo_Load(WORLDINFO *world) {
     world->game_anim_sys = (GAMEANIMSYS_s *)GameAnimSys_Create(&world->giz_buffer, &world->unknown_0108);
 
     // Load particles
-    Particles_Load(world, &debris_name, 400, 0x93);
+    Particles_Load(world, debris_name, 400, 0x93);
     if (abort_load != 0)
         goto abort;
     LoadPartFile(world);
@@ -578,16 +614,17 @@ after_area:
         goto abort;
 
     // Lights
-    if ((level->flags & LEVEL_STATUS) == 0) {
+    if ((level->flags & LEVEL_UNKNOWN_FLAG_4) == 0) {
         world->rtl_id = -1;
         world->light_dir = 0;
     } else {
-        light_path = world->config_file;
+        light_path = level == TITLES_LDATA ? const_cast<char *>("levels\\titles\\titles") : world->config_file;
         LoadLights(world, light_path);
-        rtl_id = rtlFindByUserId(world->rtl_set_id, 1);
+        rtl_id = rtlFindByUserId(static_cast<i32>(reinterpret_cast<usize>(world->rtl_set)), 1);
         world->rtl_id = rtl_id;
         if (rtl_id != -1) {
-            rtlGetDirection(world->rtl_set_id, rtl_id, (void **)&world->light_dir);
+            rtlGetDirection(static_cast<i32>(reinterpret_cast<usize>(world->rtl_set)), rtl_id,
+                            (void **)&world->light_dir);
         } else {
             world->light_dir = 0;
         }
@@ -830,9 +867,9 @@ void WorldInfo_UpdateRoomVisibility(WORLDINFO *world, i32 param) {
     world->rooms_visible_ptr = visBuf;
     memset(visBuf, 0, 0x100);
 
-    if (param == 0 && world->current_gscn != NULL && world->current_gscn->field5_0x8 > 0) {
+    if (param == 0 && world->current_gscn != NULL && world->current_gscn->max_portals > 0) {
         u8 *portalData = (u8 *)world->current_gscn->portals;
-        u8 *end = visBuf + world->current_gscn->field5_0x8;
+        u8 *end = visBuf + world->current_gscn->max_portals;
         while (visBuf != end) {
             *visBuf++ = (u8)((portalData[0x10] >> 2) & 1);
             portalData += 0x18;

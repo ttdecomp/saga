@@ -3,7 +3,11 @@
 #include <string.h>
 
 #include "decomp.h"
+#include "nu2api/nu3d/android/nutex_ios_ex.h"
+#include "nu2api/nu3d/nuprim.h"
+#include "nu2api/nu3d/nutex.h"
 #include "nu2api/nucore/common.h"
+#include "nu2api/nucore/nuptrblock.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nuplatform/nuplatform.h"
@@ -441,8 +445,47 @@ f32 qfnt_height_scale = 1.0f;
 
 static f32 justify_stretch = 1.0f;
 static f32 justify_squash = 1.0f;
+f32 nuqfnt_space_width;
+u32 NuQFntMode;
 
 static i32 g_buttonsFont;
+
+VUFNT *NuQFntDuplicate(VUFNT *font, i32 flags, i32 render_plane, VARIPTR *buf, VARIPTR *buf_end) {
+    VUFNT *duplicate = reinterpret_cast<VUFNT *>(ALIGN(buf->addr, 0x10));
+    buf->void_ptr = duplicate;
+    buf->addr += font->size;
+
+    if (buf->addr < buf_end->addr) {
+        memmove(duplicate, font, font->size);
+        duplicate->flags |= 1;
+        duplicate->glyphs =
+            reinterpret_cast<VUFNTCHAR *>(reinterpret_cast<usize>(duplicate) +
+                                          (reinterpret_cast<usize>(font->glyphs) - reinterpret_cast<usize>(font)));
+        duplicate->unicode_map =
+            reinterpret_cast<VUCHARIDX *>(reinterpret_cast<usize>(duplicate) +
+                                          (reinterpret_cast<usize>(font->unicode_map) - reinterpret_cast<usize>(font)));
+    }
+
+    i32 previous_render_plane = NuMtlSetCurrentRenderPlane(render_plane);
+    NUMTL *material = (flags & 8) != 0 ? NuMtlCreate3D(1) : NuMtlCreate(1);
+    duplicate->mtl = material;
+    material->attribs = font->mtl->attribs;
+    material->sort_pri = font->mtl->sort_pri;
+    material->tex_id = font->mtl->tex_id;
+    material->attribs.cull_mode = 2;
+    if ((flags & 8) != 0) {
+        material->attribs.unknown_6_128 = 0;
+    }
+    if ((flags & 0x40) != 0) {
+        material->attribs.cull_mode = 0;
+    }
+    NuMtlUpdate(material);
+    NuMtlSetCurrentRenderPlane(previous_render_plane);
+    return duplicate;
+}
+
+f32 NuQFntPrintJustifiedRSW(RNDRSTREAM *stream, void *font, u16 *text, f32 x, f32 y, f32 z, f32 sx, f32 sy, f32 width,
+                            f32 line_spacing, u32 colour, NUMTX *mtx);
 
 void NuQFntInit(VARIPTR *buf, VARIPTR buf_end) {
     VARIPTR sysfont_ptr;
@@ -492,8 +535,400 @@ NUQFNT *NuQFntRead(char *filepath, VARIPTR *buf, VARIPTR buf_end) {
 }
 
 NUQFNT *NuQFntReadBuffer(VARIPTR *font, VARIPTR *buf, VARIPTR buf_end) {
-    UNIMPLEMENTED();
-    return NULL;
+    VARIPTR base;
+    VARIPTR texture;
+    VARIPTR relocation_table;
+    VARIPTR relocation_entry;
+    VARIPTR pointer;
+    VARIPTR target;
+    i32 texture_size;
+    i32 relocation_table_end;
+    i32 relocation_count;
+    i32 i;
+    i32 width;
+    i32 height;
+    u32 gl_texture;
+    VUFNT *result;
+    NUNATIVETEX *native_texture;
+
+    base = *font;
+    if (base.void_ptr == NULL)
+        return NULL;
+
+    relocation_table.addr = base.addr + *(i32 *)base.void_ptr;
+    relocation_count = *(i32 *)relocation_table.void_ptr;
+    relocation_entry.addr = relocation_table.addr + 4;
+
+    struct Relocation {
+        i32 pointer;
+        i32 target;
+    };
+    Relocation *relocations = (Relocation *)__builtin_alloca(relocation_count * sizeof(Relocation));
+
+    for (i = 0; i < relocation_count; i++, relocation_entry.addr += 4) {
+        pointer.addr = relocation_entry.addr + *(i32 *)relocation_entry.void_ptr;
+        relocations[i].pointer = pointer.addr - base.addr;
+        if (*(i32 *)pointer.void_ptr != 0) {
+            target.addr = pointer.addr + *(i32 *)pointer.void_ptr;
+            relocations[i].target = target.addr - base.addr;
+            *(usize *)pointer.void_ptr = target.addr;
+        } else {
+            relocations[i].target = 0;
+        }
+    }
+
+    texture.addr = ((usize *)base.void_ptr)[2];
+    texture_size = relocation_table.addr - texture.addr;
+    relocation_table_end = relocation_entry.addr - base.addr;
+    gl_texture = NuIOS_CreateGLTexFromPlatformInMemory(texture.void_ptr, &width, &height, false);
+    if (g_buttonsFont != 0) {
+        width /= 2;
+        height /= 2;
+    }
+
+    memmove(texture.void_ptr, relocation_table.void_ptr, relocation_table_end - (relocation_table.addr - base.addr));
+    g_buttonsFont = 0;
+    *(i32 *)base.void_ptr = texture.addr - base.addr;
+
+    if (relocation_count != 0) {
+        relocation_table.addr = texture.addr;
+        *(i32 *)relocation_table.void_ptr = relocation_count;
+        relocation_entry.addr = relocation_table.addr + 4;
+        for (i = 0; i < relocation_count; i++, relocation_entry.addr += 4) {
+            if (relocations[i].pointer != 0) {
+                *(i32 *)relocation_entry.void_ptr = relocations[i].pointer - (relocation_entry.addr - base.addr);
+                *(i32 *)(base.addr + relocations[i].pointer) = relocations[i].target - relocations[i].pointer;
+            } else {
+                *(i32 *)relocation_entry.void_ptr = 0;
+            }
+        }
+    }
+
+    buf->addr -= texture_size;
+    memset(buf->void_ptr, 0, texture_size);
+    result = *(VUFNT **)NuPtrBlockFix(base.void_ptr);
+
+    native_texture = (NUNATIVETEX *)ALIGN(buf->addr, 4);
+    buf->addr = (usize)(native_texture + 1);
+    native_texture->width = width;
+    native_texture->height = height;
+    native_texture->image_data = NULL;
+    native_texture->size = 0;
+    native_texture->platform.gl_tex = gl_texture;
+    i32 texture_id = NuTexCreateNative(native_texture, true);
+    NuQFntReadPS(result, texture_id, 4, 0, buf, buf_end);
+    return result;
+}
+
+NUQFNT *NuQFntLoadPtr(char *path, char *, i32, i32, VARIPTR *buf, VARIPTR *buf_end) {
+    return NuQFntRead(path, buf, *buf_end);
+}
+
+void NuQFntSetSpaceWidth(NUQFNT *, f32 width) {
+    nuqfnt_space_width = width;
+}
+
+void NuQFntSet(NUQFNT *font) {
+    if (font == NULL)
+        font = system_qfont;
+    if (font != NULL) {
+        NuQFntSetRS(NULL, font);
+        NuQFntSetSpaceWidth(font, reinterpret_cast<VUFNT *>(font)->space_width);
+    }
+}
+
+void NuQFntSetColour(NUQFNT *font, u32 colour) {
+    if (font == NULL)
+        font = system_qfont;
+    if (font != NULL)
+        NuQFntSetColourRS(NULL, font, colour);
+}
+
+void NuQFntSetScale(NUQFNT *font, f32 x_scale, f32 y_scale) {
+    if (font == NULL)
+        font = system_qfont;
+    if (font != NULL)
+        NuQFntSetScaleRS(NULL, font, x_scale, y_scale);
+}
+
+void NuQFntMove(NUQFNT *font, f32 x, f32 y, f32 z) {
+    if (font == NULL)
+        font = system_qfont;
+    if (font != NULL)
+        NuQFntMoveRS(NULL, font, x, y, z);
+}
+
+void NuQFntPrintW(NUQFNT *font, u16 *text) {
+    if (font == NULL)
+        font = system_qfont;
+    if (font != NULL)
+        NuQFntPrintRSW(NULL, font, text, NuQFntMode);
+}
+
+static u32 NuQFntModeStack[16];
+static i32 NuQFntModeStackIndex;
+
+void NuQFntPushPrintMode(u32 mode) {
+    if (NuQFntModeStackIndex < 16)
+        NuQFntModeStack[NuQFntModeStackIndex++] = NuQFntMode;
+    NuQFntMode = mode;
+}
+
+void NuQFntPopPrintMode(void) {
+    if (NuQFntModeStackIndex > 0)
+        NuQFntMode = NuQFntModeStack[--NuQFntModeStackIndex];
+}
+
+u16 NuQFntEncodeUnicodeChar(NUQFNT *font, u16 character) {
+    if (font == NULL)
+        font = system_qfont;
+    if (font == NULL)
+        return 0xffff;
+
+    VUFNT *vufnt = reinterpret_cast<VUFNT *>(font);
+    struct UnicodeIndex {
+        u16 unicode;
+        u16 index;
+    };
+    UnicodeIndex *map = reinterpret_cast<UnicodeIndex *>(vufnt->unicode_map);
+    i32 low = 0;
+    i32 high = vufnt->unicode_count - 1;
+    while (low <= high) {
+        i32 middle = (low + high) >> 1;
+        if (map[middle].unicode == character)
+            return map[middle].index;
+        if (map[middle].unicode < character)
+            low = middle + 1;
+        else
+            high = middle - 1;
+    }
+    return 0xffff;
+}
+
+f32 NuQFntPrintJustifiedW(NUQFNT *font, u16 *text, f32 x, f32 y, f32 z, f32 sx, f32 sy, f32 width, f32 line_spacing,
+                          u32 colour, NUMTX *mtx) {
+    if (font == NULL)
+        font = system_qfont;
+    if (font == NULL)
+        return 0.0f;
+    return NuQFntPrintJustifiedRSW(NULL, font, text, x, y, z, sx, sy, width, line_spacing, colour, mtx);
+}
+
+f32 NuQFntPrintJustifiedRSW(RNDRSTREAM *stream, void *font_ptr, u16 *text, f32 x, f32 y, f32 z, f32 sx, f32 sy,
+                            f32 width, f32 line_spacing, u32 colour, NUMTX *mtx) {
+    VUFNT *font = static_cast<VUFNT *>(font_ptr);
+    f32 saved_space_width = nuqfnt_space_width;
+    f32 space_width = saved_space_width == 0.0f ? font->space_width : saved_space_width;
+    f32 saved_ic_gap = font->ic_gap;
+    u16 encoded_space[2] = {0x20, 0};
+
+    NuQFntSetColourRS(stream, font, colour);
+    NuQFntSetScaleRS(stream, font, sx, sy);
+    NuQFntSetSpaceWidth(font, space_width);
+    f32 printed_space_width = NuQFntPrintLenW(font, encoded_space);
+    if (mtx != NULL)
+        NuQFntSetMtx(font, mtx);
+    f32 line_height = NuQFntHeight(font);
+    u16 break_character = NuQFntEncodeUnicodeChar(font, '-');
+    i32 line_number = 0;
+
+    while (*text != 0) {
+        while (*text == 0x20)
+            text++;
+
+        u16 line[256];
+        i32 length = 0;
+        i32 last_space = -1;
+        u16 *line_start = text;
+        bool forced_break = false;
+
+        while (*text != 0 && length < 254) {
+            if (*text == break_character) {
+                text++;
+                forced_break = true;
+                break;
+            }
+            line[length++] = *text++;
+            line[length] = 0;
+            if (line[length - 1] == 0x20)
+                last_space = length - 1;
+            if (NuQFntPrintLenW(font, line) > width) {
+                if (last_space >= 0) {
+                    text = line_start + last_space + 1;
+                    length = last_space;
+                } else if (length > 1) {
+                    text--;
+                    length--;
+                }
+                break;
+            }
+        }
+        while (length > 0 && line[length - 1] == 0x20)
+            length--;
+        line[length] = 0;
+
+        f32 line_width = NuQFntPrintLenW(font, line);
+        i32 spaces = 0;
+        for (i32 i = 0; i < length; i++)
+            if (line[i] == 0x20)
+                spaces++;
+
+        bool final_line = *text == 0;
+        f32 scale = line_width == 0.0f ? 1.0f : width / line_width;
+        f32 limit = final_line || forced_break ? justify_squash : justify_stretch;
+        if (scale > limit)
+            scale = limit;
+        NuQFntSetScaleRS(stream, font, sx * scale, sy);
+
+        if (!final_line && !forced_break && spaces > 0) {
+            f32 non_space_width = line_width - spaces * printed_space_width;
+            NuQFntSetSpaceWidth(font, (space_width * (width - non_space_width * scale)) /
+                                          (scale * printed_space_width * spaces));
+        } else {
+            NuQFntSetSpaceWidth(font, space_width * scale);
+        }
+
+        NuQFntMoveRS(stream, font, x, y + line_number * line_height * line_spacing, z);
+        NuQFntPrintRSW(stream, font, line, mtx == NULL ? 0 : 4);
+        line_number++;
+    }
+
+    NuQFntSetSpaceWidth(font, saved_space_width);
+    NuQFntSetICGap(font, saved_ic_gap);
+    return line_number * line_height * line_spacing;
+}
+
+void NuQFntSetRS(RNDRSTREAM *, NUQFNT *font) {
+    static_cast<VUFNT *>(font)->mode = 1;
+}
+
+void NuQFntSetColourRS(RNDRSTREAM *, NUQFNT *font, u32 colour) {
+    static_cast<VUFNT *>(font)->platform_data->colour = colour;
+}
+
+void NuQFntSetScaleRS(RNDRSTREAM *, NUQFNT *font, f32 x_scale, f32 y_scale) {
+    VUFNT *vufnt = static_cast<VUFNT *>(font);
+    *vufnt->x_scale = x_scale;
+    if ((NuQFntMode & 4) == 0)
+        y_scale *= 0.5f;
+    *vufnt->y_scale = y_scale;
+}
+
+void NuQFntMoveRS(RNDRSTREAM *, NUQFNT *font, f32 x, f32 y, f32 z) {
+    VUFNT *vufnt = static_cast<VUFNT *>(font);
+    if (NuQFntCSMode != NUQFNT_CSMODE_ABSOLUTE) {
+        x = x * qfnt_rezscale_w + qfnt_offscale_x;
+        y = y * qfnt_rezscale_h + qfnt_offscale_y - vufnt->baseline * *vufnt->y_scale;
+    }
+    vufnt->platform_data->x = x;
+    vufnt->platform_data->y = y;
+    vufnt->platform_data->z = z;
+}
+
+f32 NuQFntHeight(NUQFNT *font) {
+    if (font == NULL)
+        font = system_qfont;
+    if (font == NULL)
+        return 0.0f;
+    VUFNT *vufnt = static_cast<VUFNT *>(font);
+    return *vufnt->y_scale * vufnt->height * qfnt_height_scale;
+}
+
+f32 NuQFntPrintLenW(NUQFNT *font, u16 *text) {
+    if (font == NULL)
+        font = system_qfont;
+    if (font == NULL)
+        return 0.0f;
+
+    VUFNT *vufnt = static_cast<VUFNT *>(font);
+    f32 length = 0.0f;
+    for (; *text != 0; text++) {
+        u16 character = *text;
+        f32 width;
+        if (character == 0xffff) {
+            width = 0.0f;
+        } else if (character == 0x20) {
+            width = nuqfnt_space_width == 0.0f ? vufnt->glyphs[0x20].width : nuqfnt_space_width;
+        } else if (character >= 0x30 && character < 0x3a && (NuQFntMode & 1) != 0) {
+            width = vufnt->glyphs[NuQFntEncodeUnicodeChar(font, 0x30)].width;
+        } else {
+            width = vufnt->glyphs[character].width;
+        }
+        length += width + vufnt->ic_gap;
+    }
+    return length * qfnt_len_scale * *vufnt->x_scale;
+}
+
+void NuQFntPrintRSW(RNDRSTREAM *, NUQFNT *font, u16 *text, u32 flags) {
+    NuQFntPrintCharW(font, text, flags);
+}
+
+void NuQFntPrintCharW(NUQFNT *font, u16 *text, u32 flags) {
+    if (text == NULL)
+        return;
+
+    struct FontVertex {
+        f32 x;
+        f32 y;
+        f32 z;
+        u32 colour;
+        f32 u;
+        f32 v;
+    };
+
+    VUFNT *vufnt = static_cast<VUFNT *>(font);
+    VUFNT_ANDROID *platform = vufnt->platform_data;
+    f32 x = platform->x;
+    f32 y = platform->y;
+    f32 z = platform->z;
+    f32 texture_width = 1.0f;
+    f32 texture_height = 1.0f;
+    if (vufnt->mtl->tex_id > 0) {
+        texture_width = static_cast<f32>(NuTexWidth(vufnt->mtl->tex_id));
+        texture_height = static_cast<f32>(NuTexHeight(vufnt->mtl->tex_id));
+    }
+
+    f32 height = vufnt->height * *vufnt->y_scale;
+    f32 space_width = (nuqfnt_space_width == 0.0f ? vufnt->space_width : nuqfnt_space_width) * *vufnt->x_scale;
+    u32 colour = platform->colour;
+    u32 dim_colour = ((colour >> 1) & 0x7f7f7f) | (colour & 0xff000000);
+
+    NuPrimCSPos++;
+    NuPrimSetCoordinateSystem(NUPRIM_SCALEMODE_PS2);
+    NuPrim2DBegin(4, 7, vufnt->mtl);
+
+    for (; *text != 0; text++) {
+        u16 character = *text;
+        VUFNTCHAR *glyph = &vufnt->glyphs[character];
+        f32 advance = character == 0x20 ? space_width : glyph->width * *vufnt->x_scale;
+        f32 left = x;
+        if ((flags & 1) != 0 && character >= 0x30 && character < 0x3a) {
+            VUFNTCHAR *zero = &vufnt->glyphs[NuQFntEncodeUnicodeChar(font, 0x30)];
+            f32 digit_width = zero->width * *vufnt->x_scale;
+            left += digit_width - advance;
+            advance = digit_width;
+        }
+
+        if (character != 0x20) {
+            FontVertex *vertex = reinterpret_cast<FontVertex *>((*g_NuPrim_StreamBufferPtr)->void_ptr);
+            vertex->colour = g_NuPrim_NeedsOverbrightening == 0 ? dim_colour : colour;
+            vertex->u = glyph->x / texture_width;
+            vertex->v = glyph->y / texture_height;
+            NuPrim2DAddXYZ(left, y, 0.0f);
+
+            vertex = reinterpret_cast<FontVertex *>((*g_NuPrim_StreamBufferPtr)->void_ptr);
+            vertex->colour = g_NuPrim_NeedsOverbrightening == 0 ? dim_colour : colour;
+            vertex->u = (glyph->x + glyph->width) / texture_width;
+            vertex->v = (glyph->y + vufnt->height) / texture_height;
+            NuPrim2DAddXYZ(left + advance, y + height, 0.0f);
+        }
+        x += advance + vufnt->ic_gap * *vufnt->x_scale;
+    }
+
+    NuPrim2DEnd();
+    NuPrimCSPos--;
+    NuPrimSetCoordinateSystem(NuPrimCoordSystemStack[NuPrimCSPos]);
+    (void)z;
 }
 
 NUQFNT_CSMODE NuQFntSetCoordinateSystem(NUQFNT_CSMODE mode) {

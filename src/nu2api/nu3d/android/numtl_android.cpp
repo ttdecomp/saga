@@ -96,5 +96,5 @@ void NuMtlCreatePS(NUMTL *mtl, i32 is_3d) {
 }
 
 void NuMtlSetShaderDescPS(NUMTL *mtl, NUSHADERMTLDESC *desc) {
-    UNIMPLEMENTED();
+    memcpy(&mtl->shader_desc, desc, sizeof(mtl->shader_desc));
 }

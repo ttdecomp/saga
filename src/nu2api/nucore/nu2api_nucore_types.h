@@ -26,6 +26,7 @@
 #include "nu2api/nucore/NuTouchInputElement.h"
 #include "nu2api/nucore/NuTouchInputStick.h"
 #include "nu2api/nucore/NuVoiceAndroid.h"
+#include "nu2api/nucore/nugcutscene.h"
 
 struct NUAPPLICATIONSTATUS;
 struct NUGCUTCHAR_s;
@@ -116,8 +117,6 @@ struct rndrstream_s;
 
 struct NUAPPLICATIONSTATUS;
 struct NUGCUTCHAR_s;
-struct NUGCUTLOCATOR_s {};
-struct NUGCUTRIGID_s {};
 struct NUGCUTSCENE_s;
 struct NUJOINTANIM_s {};
 struct NUPADMOTIONVALUE;
@@ -157,7 +156,6 @@ struct numtx_s;
 struct nunativetex_s;
 struct nunetaddr_s {};
 struct nupad_s;
-struct nushaderprogram_s {};
 struct nutex_s;
 struct nutexturetype_e {};
 struct nuvec4_s;

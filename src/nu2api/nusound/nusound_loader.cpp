@@ -95,7 +95,7 @@ void NuSoundLoader::FillStreamBuffer(NuSoundBuffer *buffer, bool param3) {
                 return;
             }
             read_size = buffer_size - uVar3iVar2;
-            u64 size = ReadData(data, read_size);
+            size = ReadData(data, read_size);
 
             context.read_size += size;
 

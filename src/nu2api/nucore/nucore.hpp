@@ -2,12 +2,18 @@
 
 #include "nu2api/nucore/nuthread.h"
 
-struct NUAPPLICATIONSTATUS {};
+// 4-byte application status value (original passes it by value; the render
+// thread wait loop compares it against 1 = "render in progress").
+struct NUAPPLICATIONSTATUS {
+    i32 status;
+};
 
 class NuApplicationState {
   public:
     NuApplicationState();
     ~NuApplicationState();
+
+    NUAPPLICATIONSTATUS status;
 
     void SetStatus(NUAPPLICATIONSTATUS status);
     NUAPPLICATIONSTATUS GetStatus() const;

@@ -1,6 +1,8 @@
 #include "legoapi/world/world_shared.h"
 struct SoundTable;
 
+extern "C" void PlaySfxByIdEx(i32 sfx_id, i32 flags, f32 volume, f32 pitch);
+
 i32 ActionFromQuiet(i32 idx) {
     static i16 ActionPairTab[14] = {-1};
     if (idx != -1) {
@@ -66,6 +68,8 @@ static __used__ void SetSoundFadeDistCallBackFn_LSW(WORLDINFO_s *) {
 
 extern "C" {
 
+    f32 sfx_wait;
+
     void GetLogicalSfxCount(void) {
     }
 
@@ -111,7 +115,8 @@ extern "C" {
     void PlaySfxAndSetVolumeAndPitch(void) {
     }
 
-    void PlaySfxById(void) {
+    void PlaySfxById(i32 sfx_id, i32 flags) {
+        PlaySfxByIdEx(sfx_id, flags, 1.0f, 1.0f);
     }
 
     void PlaySfxByIdAndSetPitch(void) {
@@ -123,7 +128,7 @@ extern "C" {
     void PlaySfxByIdAndSetVolumeAndPitch(void) {
     }
 
-    void PlaySfxByIdEx(void) {
+    void PlaySfxByIdEx(i32, i32, f32, f32) {
     }
 
     void PlayingCutMusic(void) {

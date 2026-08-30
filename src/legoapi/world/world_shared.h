@@ -18,6 +18,8 @@
 // original libTTapp.so exactly.  Forward declarations only — the stubs never
 // dereference these.
 struct GIZMOSYS_s;
+struct NUGCUTSCENE_s;
+struct instNUGCUTSCENE_s;
 struct GIZFLOW_s;
 struct COLLECTION_s;
 struct APIOBJECTSYS_s;
@@ -29,7 +31,7 @@ struct SCENEPROGRESS_s;
 extern LEVELDATA *PLATFORM_LDATA;
 
 // Terrain subsystem (defined in terrain.cpp, used by world.cpp)
-extern char *debris_name;
+extern char *debris_name[147];
 
 // Gizmo subsystem (defined in gizmo_sys.cpp, used by world.cpp)
 extern void *MiniKitCollection;
@@ -40,6 +42,8 @@ extern i32 CUTCAM;
 // World data (defined in world.cpp)
 extern WORLDINFO WorldInfo[2];
 extern WORLDINFO *WORLD;
+extern NUGSCN *things_scene;
+extern void *things_scene_terrain;
 
 // --- render.cpp — nu3d / NuGScn ---
 extern "C" {
@@ -48,6 +52,7 @@ extern "C" {
     void NuGScnRndr3(NUGSCN *scene);
     void NuGScnUpdate(NUGSCN *gscn, i32 param);
     NUGSCN *NuGScnRead(VARIPTR *buf, VARIPTR buf_end, char *path);
+    void NuGScnRemove(NUGSCN *scene);
     void NuGScnReadFromMemory(NUGSCN *scene);
     void NuGHGFixup(NUGSCN *scene);
     void NuRndrInitWorld(void);
@@ -106,7 +111,7 @@ void *LoadGizFlow(void *world, GIZMOSYS_s *gizmo_sys, char *path, VARIPTR *buf, 
 // --- ai_sys.cpp — AI system + API object system ---
 extern "C" {
     void *AISysLoad(void *buf, void *buf_end, i32 size, void *gscn, char *dir, char *name, char *param);
-    void *APIObjectSysInit(i32 size, void *buf, void *buf_end);
+    APIOBJECTSYS_s *APIObjectSysInit(i32 size, VARIPTR *buf, VARIPTR *buf_end);
 }
 void *AIPathCnxControlSysCreate(VARIPTR *buf, VARIPTR *buf_end, i32 count);
 void *AIPathCnxHelperSysCreate(VARIPTR *buf, VARIPTR *buf_end, i32 count);
@@ -123,10 +128,11 @@ void InitGameObjectLights(void);
 // --- cutscene.cpp — cutscenes / character scenes ---
 i32 InStory(void);
 extern "C" {
-    void *NuGCutSceneLoad(char *name, NUGSCN *gscn1, NUGSCN *gscn2, i32 flags);
-    void NuGCutSceneFixUp(void *cutscene, char *name, i32 flags, VARIPTR *end);
-    void NuGCutSceneFixUpExtra(void *cutscene, i32 area);
-    void *instNuGCutSceneCreate(void *cutscene, i32 flags, i32 param, char *name);
+    NUGCUTSCENE_s *NuGCutSceneLoad(char *name, VARIPTR *buf, VARIPTR *buf_end, i32 flags);
+    void NuGCutSceneFixUp(NUGCUTSCENE_s *cutscene, NUGSCN *scene, i32 flags, i8 area);
+    void NuGCutSceneFixUpExtra(NUGCUTSCENE_s *cutscene, NUGSCN *scene);
+    instNUGCUTSCENE_s *instNuGCutSceneCreate(NUGCUTSCENE_s *cutscene, NUGSCN *scene, void *extra, char *name,
+                                             VARIPTR *buf, i32 flags);
 }
 void *CutScenes_Load(char *config, NUGSCN *gscn1, NUGSCN *gscn2, i32 param1, VARIPTR *buf, VARIPTR *buf_end, i32 param2,
                      i32 param3, WORLDINFO *world);
@@ -156,7 +162,6 @@ void *GameAnimSys_Create(VARIPTR *buf, VARIPTR *buf_end);
 void *GameAntnode_CreateSys(WORLDINFO *world, VARIPTR *buf, VARIPTR *buf_end, i32 count);
 extern "C" {
     void SockSys_Configure(void *sock_sys, char *config, i32 param, void *buf, void *buf_end, void *gscn);
-    void SockSys_GenerateData(void *sock_sys, void *buf, void *buf_end);
     void rtlResetDynamic(void);
     void SetPartRTLSet(i32 rtl_set);
     i32 rtlFindByUserId(i32 rtl_set, i32 user_id);
