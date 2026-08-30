@@ -137,15 +137,26 @@ namespace {
 inline i32 test_window(i32 argc, char **argv) {
     LOG_INFO("test_window(argc=%d, argv=%p)", argc, argv);
 
+    bool capture_enabled = false;
+    for (i32 i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "--capture") == 0) {
+            capture_enabled = true;
+        }
+    }
+
     sdl_init();
 
     void *buffer = malloc(0x1000000);
     VARIPTR ptr = VARIPTR{.void_ptr = buffer};
     NuDatSet(NuDatOpen("res/main.1060.com.wb.lego.tcs.obb", &ptr, 0));
 
-    // try to remove .work/capture/* before starting, but don't fail if it doesn't exist
-    system("rm -r .work/capture");
-    system("mkdir -p .work/capture");
+    if (capture_enabled) {
+        // Try to remove .work/capture/* before starting, but don't fail if it
+        // does not exist. Readback is deliberately opt-in: glReadPixels must
+        // synchronize with the render thread and noticeably affects pacing.
+        system("rm -r .work/capture");
+        system("mkdir -p .work/capture");
+    }
 
     NuPlatform::Create();
     NuPlatform::Get()->SetCurrentPlatform(ANDROID_PVRTC_PLATFORM);
@@ -158,6 +169,7 @@ inline i32 test_window(i32 argc, char **argv) {
     u64 captured_hash = 0;
     Uint64 last_capture_ticks = 0;
     Uint64 last_change_ticks = 0;
+    Uint64 next_readback_ticks = 0;
     bool have_hash = false;
     bool image_changing = false;
     std::vector<u8> pixels;
@@ -200,6 +212,19 @@ inline i32 test_window(i32 argc, char **argv) {
             break;
         }
 
+        if (!capture_enabled) {
+            continue;
+        }
+
+        const Uint64 readback_ticks = SDL_GetTicks();
+        if (readback_ticks < next_readback_ticks) {
+            continue;
+        }
+        // glReadPixels synchronizes with the render thread. Sampling it every
+        // host-loop iteration throttles the game itself, so inspect at 10 Hz
+        // and retain the existing 500 ms capture cadence while images move.
+        next_readback_ticks = readback_ticks + 100;
+
         u64 current_hash = 0;
         if (!read_frame(pixels, capture_width, capture_height, current_hash)) {
             continue;
@@ -230,9 +255,12 @@ inline i32 test_window(i32 argc, char **argv) {
         }
     }
 
-    u64 final_hash = 0;
-    if (read_frame(pixels, capture_width, capture_height, final_hash) && (!have_hash || final_hash != captured_hash)) {
-        capture_frame(frame_count, pixels, capture_width, capture_height);
+    if (capture_enabled) {
+        u64 final_hash = 0;
+        if (read_frame(pixels, capture_width, capture_height, final_hash) &&
+            (!have_hash || final_hash != captured_hash)) {
+            capture_frame(frame_count, pixels, capture_width, capture_height);
+        }
     }
 
     if (host_numain_thread != nullptr) {
