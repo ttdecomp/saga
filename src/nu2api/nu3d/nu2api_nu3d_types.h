@@ -39,10 +39,4 @@ struct rndrstream_s;
 struct uv1debdata;
 union variptr_u;
 
-struct NuScreen {
-    void Destroy();
-    NuScreen();
-    ~NuScreen();
-};
-
 #endif // NU2API_NU3D_TYPES_H

@@ -9,8 +9,12 @@ class NuScreen {
     f32 width, height;
 
   public:
+    NuScreen();
+    ~NuScreen();
+
     static bool Exists();
     static void Create();
 
+    void Destroy();
     void SetSceeenDimensions(f32 width, f32 height);
 };

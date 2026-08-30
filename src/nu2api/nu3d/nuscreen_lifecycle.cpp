@@ -1,4 +1,4 @@
-#include "nu2api_nu3d_types.h"
+#include "nuscreen.hpp"
 
 void NuScreen::Destroy() {
 }
