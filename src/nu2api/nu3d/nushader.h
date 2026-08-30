@@ -33,7 +33,7 @@ typedef struct nushaderobjectglsl_s NUSHADEROBJECTGLSL;
 void NuShaderObjectInitGLSL(nushaderobjectglsl_s *obj, nushaderobjectkey_s const *key, i32 param, u32 vshader,
                             u32 pshader);
 
-struct glslparamter_s {
+struct GLSLParameter {
     i16 location;
     u8 element_count_and_setter;
     u8 array_size;
@@ -45,8 +45,6 @@ struct glslparamter_s {
     void setElementsMatrix(i32 first_element, i32 count, const f32 *values) __attribute__((weak));
 #endif
 };
-
-typedef struct glslparamter_s GLSLParameter;
 
 typedef struct nushaderusagemask_s {
     u32 semantics[4];

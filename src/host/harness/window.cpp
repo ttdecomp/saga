@@ -1,5 +1,3 @@
-#pragma once
-
 #include <SDL3/SDL.h>
 
 #include <atomic>
@@ -14,7 +12,9 @@
 #include "globals.h"
 #include "gameapi/gui/apimenu.h"
 #include "gameframework/saveload.h"
-#include "host-utils/input/host_input.h"
+#include "host/harness/window.hpp"
+#include "host/platform/graphics.hpp"
+#include "host/platform/input.hpp"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/area.h"
@@ -27,8 +27,6 @@
 #include "nu2api/nuplatform/nuplatform.h"
 
 extern "C" i32 NuMain(i32 argc, char **argv);
-extern i32 HostReadbackPixels(u32 max_w, u32 max_h, u8 *rgba);
-extern void HostSetDocumentsPath(const char *path);
 extern i32 GetMenuID();
 extern i32 memcard_loadneeded;
 extern i32 memcard_loadstarted;
@@ -43,19 +41,6 @@ extern i32 CharacterDataLoad;
 extern i32 NewMode;
 extern FadeSystem FadeSys;
 extern GAMEPAD_s GamePad[64];
-
-bool g_hostOffscreenRendering = false;
-
-struct HostWindowOptions {
-    bool capture = false;
-    bool script_input = false;
-    bool script_load = false;
-    bool script_play = false;
-    bool offscreen = false;
-    bool mute = false;
-    Uint64 script_tail_ms = 8000;
-    Uint64 timeout_ms = 90000;
-};
 
 namespace {
     struct HostSpecialHandleLayout {
@@ -220,12 +205,6 @@ namespace {
         return result;
     }
 
-    struct HostPixelCounts {
-        u32 red = 0;
-        u32 white = 0;
-        u32 non_black = 0;
-    };
-
     static bool host_write_ppm(const char *path, const u8 *rgba, i32 width, i32 height) {
         FILE *file = fopen(path, "wb");
         if (file == nullptr) {
@@ -257,6 +236,16 @@ namespace {
             }
         }
         return hash;
+    }
+
+    static bool host_frame_has_visible_pixels(const u8 *pixels, usize pixel_count) {
+        for (usize i = 0; i < pixel_count; ++i) {
+            const u8 *pixel = pixels + i * 4;
+            if (pixel[0] != 0 || pixel[1] != 0 || pixel[2] != 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     static bool host_read_frame(std::vector<u8> &pixels, i32 &width, i32 &height, u64 &hash) {
@@ -338,8 +327,8 @@ namespace {
 
 } // namespace
 
-static i32 host_run_window(const HostWindowOptions &options) {
-    g_hostOffscreenRendering = options.offscreen;
+i32 host_run_window(const HostWindowOptions &options) {
+    HostSetReadbackEnabled(options.capture);
     host_sdl_init(options.offscreen, options.mute);
     const char *documents_path = ".work/host-documents/";
     char scripted_documents_path[256];
@@ -366,7 +355,14 @@ static i32 host_run_window(const HostWindowOptions &options) {
         system("mkdir -p .work/capture");
     }
 
+    // AndroidMain performs the process-side lifecycle after the activity has
+    // supplied its surface: platform, screen, render device, then NuMain.
     NuPlatform::Create();
+    NuScreen::Create();
+    g_renderDevice.Initialize();
+
+    // Mesa advertises S3TC, but this bundled OBB contains PVRTC/ETC1 assets
+    // rather than Android S3TC assets. The host upload boundary decodes PVRTC.
     NuPlatform::Get()->SetCurrentPlatform(ANDROID_PVRTC_PLATFORM);
     HostInputReset();
 
@@ -387,6 +383,7 @@ static i32 host_run_window(const HostWindowOptions &options) {
     Uint64 last_change_ticks = 0;
     Uint64 next_readback_ticks = 0;
     bool have_hash = false;
+    bool saw_visible_frame = false;
     bool image_changing = false;
     HostScriptedInputStage scripted_stage = HostScriptedInputStage::title;
     Uint64 scripted_stage_ticks = 0;
@@ -660,6 +657,8 @@ static i32 host_run_window(const HostWindowOptions &options) {
         if (!host_read_frame(pixels, capture_width, capture_height, current_hash)) {
             continue;
         }
+        saw_visible_frame |= host_frame_has_visible_pixels(pixels.data(), static_cast<usize>(capture_width) *
+                                                                              static_cast<usize>(capture_height));
         const Uint64 now = SDL_GetTicks();
         if (!have_hash) {
             host_capture_frame(frame_count, pixels, capture_width, capture_height);
@@ -692,9 +691,17 @@ static i32 host_run_window(const HostWindowOptions &options) {
 
     if (options.capture) {
         u64 final_hash = 0;
-        if (host_read_frame(pixels, capture_width, capture_height, final_hash) &&
-            (!have_hash || final_hash != captured_hash)) {
-            host_capture_frame(frame_count, pixels, capture_width, capture_height);
+        if (host_read_frame(pixels, capture_width, capture_height, final_hash)) {
+            saw_visible_frame |= host_frame_has_visible_pixels(pixels.data(), static_cast<usize>(capture_width) *
+                                                                                  static_cast<usize>(capture_height));
+            if (!have_hash || final_hash != captured_hash) {
+                host_capture_frame(frame_count, pixels, capture_width, capture_height);
+            }
+            have_hash = true;
+        }
+        if (!have_hash || !saw_visible_frame) {
+            LOG_ERR("capture verification failed: framebuffer was %s",
+                    have_hash ? "black for the entire run" : "never available");
         }
     }
 
@@ -844,11 +851,12 @@ static i32 host_run_window(const HostWindowOptions &options) {
     }
     const bool scripted_play_passed =
         !options.script_play || (scripted_play_finished && scripted_play_movement_observed);
+    const bool capture_passed = !options.capture || (have_hash && saw_visible_frame);
     LOG_INFO("presented %d frame_count", frame_count);
     if (numain_finished) {
         const i32 result = host_numain_result.load(std::memory_order_relaxed);
         free(buffer);
-        return result != 0 ? result : (scripted_play_passed ? 0 : 1);
+        return result != 0 ? result : (scripted_play_passed && capture_passed ? 0 : 1);
     }
-    return scripted_play_passed ? 0 : 1;
+    return scripted_play_passed && capture_passed ? 0 : 1;
 }

@@ -1,4 +1,4 @@
-// HOST-ONLY: OpenSL ES object model over SDL3. See opensl_host.hpp.
+// HOST-ONLY: OpenSL ES object model over SDL3. See opensl.hpp.
 //
 // The vtables mirror the SLOT OFFSETS the decompiled code calls (documented
 // in nusound_voice_android.cpp): ObjectItf {Realize 0x0, GetInterface 0xc,
@@ -16,7 +16,7 @@
 // the original's InitAudioDevice take the bare-device path (the optional
 // output queries are gated on the profile bits and are skipped).
 
-#include "opensl_host.hpp"
+#include "host/platform/opensl.hpp"
 
 #include <SDL3/SDL.h>
 
@@ -25,6 +25,7 @@
 #include <stddef.h>
 
 #include "nu2api/nucore/fixed_width.h"
+#include "nu2api/nusound/opensles_abi.hpp"
 #include "decomp.h"
 #include <stdlib.h>
 #include <string.h>
@@ -41,15 +42,6 @@ namespace hostsl {
         const u32 HOST_SL_RESULT_PARAMETER_INVALID = 0x0000000b;
         const u32 HOST_SL_RESULT_BUFFER_INSUFFICIENT = 0x0000000c;
         const u32 HOST_SL_RESULT_CONTENT_UNSUPPORTED = 0x0000000e;
-
-        // Interface id tokens — must match the anonymous-namespace constants in
-        // nusound_voice_android.cpp and InitAudioDevice.
-        const void *HOST_IID_PLAY = (const void *)0x00010001;
-        const void *HOST_IID_BUFFER_QUEUE = (const void *)0x00010002;
-        const void *HOST_IID_VOLUME = (const void *)0x00010003;
-        const void *HOST_IID_ENGINE = (const void *)0x00010004;
-        const void *HOST_IID_ENGINE_CAPABILITIES = (const void *)0x00010005;
-        const void *HOST_IID_ENVIRONMENTAL_REVERB = (const void *)0x00010006;
 
         // SL object kinds (fake-internal dispatch for the shared ObjectItf).
         const u32 HOST_KIND_ENGINE = 1;
@@ -378,11 +370,11 @@ namespace hostsl {
 
             if (kind == HOST_KIND_ENGINE) {
                 EngineObject *engine = (EngineObject *)self;
-                if (iid == HOST_IID_ENGINE) {
+                if (iid == SL_IID_ENGINE) {
                     *out = &engine->engine_itf;
                     return HOST_SL_RESULT_SUCCESS;
                 }
-                if (iid == HOST_IID_ENGINE_CAPABILITIES) {
+                if (iid == SL_IID_ENGINECAPABILITIES) {
                     *out = &engine->caps_itf;
                     return HOST_SL_RESULT_SUCCESS;
                 }
@@ -391,15 +383,15 @@ namespace hostsl {
 
             if (kind == HOST_KIND_PLAYER) {
                 Player *player = (Player *)self;
-                if (iid == HOST_IID_PLAY) {
+                if (iid == SL_IID_PLAY) {
                     *out = &player->play_itf;
                     return HOST_SL_RESULT_SUCCESS;
                 }
-                if (iid == HOST_IID_BUFFER_QUEUE) {
+                if (iid == SL_IID_ANDROIDSIMPLEBUFFERQUEUE) {
                     *out = &player->queue_itf;
                     return HOST_SL_RESULT_SUCCESS;
                 }
-                if (iid == HOST_IID_VOLUME) {
+                if (iid == SL_IID_VOLUME) {
                     *out = &player->volume_itf;
                     return HOST_SL_RESULT_SUCCESS;
                 }
@@ -856,8 +848,8 @@ namespace hostsl {
     // public entry
     // ---------------------------------------------------------------------------
 
-    u32 HostCreateEngine(void **engine_object, u32 num_options, void *options, u32 num_interfaces,
-                         const void **interface_ids, const u32 *required) {
+    u32 host_create_engine(void **engine_object, u32 num_options, const void *options, u32 num_interfaces,
+                           const void **interface_ids, const u32 *required) {
         (void)num_options;
         (void)options;
         (void)num_interfaces;
@@ -891,3 +883,26 @@ namespace hostsl {
     }
 
 } // namespace hostsl
+
+namespace {
+    char host_sl_iid_play;
+    char host_sl_iid_buffer_queue;
+    char host_sl_iid_volume;
+    char host_sl_iid_engine;
+    char host_sl_iid_engine_capabilities;
+    char host_sl_iid_environmental_reverb;
+} // namespace
+
+extern "C" {
+    const void *SL_IID_PLAY = &host_sl_iid_play;
+    const void *SL_IID_ANDROIDSIMPLEBUFFERQUEUE = &host_sl_iid_buffer_queue;
+    const void *SL_IID_VOLUME = &host_sl_iid_volume;
+    const void *SL_IID_ENGINE = &host_sl_iid_engine;
+    const void *SL_IID_ENGINECAPABILITIES = &host_sl_iid_engine_capabilities;
+    const void *SL_IID_ENVIRONMENTALREVERB = &host_sl_iid_environmental_reverb;
+
+    u32 slCreateEngine(void **engine_object, u32 num_options, const void *options, u32 num_interfaces,
+                       const void **interface_ids, const u32 *required) {
+        return hostsl::host_create_engine(engine_object, num_options, options, num_interfaces, interface_ids, required);
+    }
+}

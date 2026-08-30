@@ -1,4 +1,8 @@
 
+#include "nu2api/nufile/nufile.h"
+
+#include <string.h>
+
 extern "C" {
 
     void NuFileAlign(void) {
@@ -121,7 +125,8 @@ extern "C" {
     }
     void NuFileWriteShort(void) {
     }
-    void NuFileWriteString(void) {
+    void NuFileWriteString(NUFILE file, const char *text) {
+        NuFileWrite(file, const_cast<char *>(text), strlen(text));
     }
     void NuFileWriteStringV(void) {
     }

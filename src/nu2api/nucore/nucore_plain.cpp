@@ -857,7 +857,8 @@ extern "C" {
     }
     void NuIOS_IsLowestEndDevice(void) {
     }
-    void NuIOS_IsMidRangeDevice(void) {
+    i32 NuIOS_IsMidRangeDevice(void) {
+        return 0;
     }
     i32 NuIOS_IsSmallScreen(void) {
         return 0;

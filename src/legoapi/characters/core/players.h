@@ -91,6 +91,8 @@ extern u32 LEGOOBJ_DEFAULTLASTCOIN;
 
 extern APICHARACTERSYS *apicharsys;
 
+i32 PlayersDropInOut();
+
 extern "C" APICHARACTERMODEL *APICharacterLoaded(i32 character_id);
 extern "C" void APICharacterModelReset(APICHARACTERMODEL *model);
 extern "C" void APILoadCharacterModels(APICHARACTERMODELLIST_s *list, i32 append, VARIPTR *buf, VARIPTR buf_end,

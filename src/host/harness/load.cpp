@@ -1,18 +1,13 @@
-#pragma once
-
 #include <cctype>
 #include <cstdio>
 #include <cstring>
 #include <strings.h>
 #include <vector>
 
+#include "host/harness/load.hpp"
 #include "decomp.h"
-#include "gameframework/saveload.h"
-#include "globals.h"
 #include "legoapi/world/area.h"
 #include "legoapi/world/level.h"
-#include "legogame/startup.h"
-#include "nu2api/nucore/nuthread.h"
 #include "nu2api/nufile/nufile.h"
 
 static const char *host_strcasestr(const char *haystack, const char *needle) {
@@ -38,19 +33,6 @@ static const char *host_strcasestr(const char *haystack, const char *needle) {
     return strcasestr(haystack, needle);
 #endif
 }
-
-enum class HostLoadAction {
-    inspect,
-    list,
-    extract,
-};
-
-struct HostLoadOptions {
-    HostLoadAction action = HostLoadAction::inspect;
-    const char *filter = nullptr;
-    const char *dat_path = nullptr;
-    const char *output_path = ".work/extracted.bin";
-};
 
 static char host_load_buffer[0x1000000];
 
@@ -86,7 +68,7 @@ static void host_dat_list_names(NUDATHDR *dat, const char *filter) {
     }
 }
 
-static i32 host_run_load(const HostLoadOptions &options) {
+i32 host_run_load(const HostLoadOptions &options) {
     VARIPTR buf_ptr = VARIPTR{.void_ptr = &host_load_buffer};
     VARIPTR end_ptr = VARIPTR{.void_ptr = &host_load_buffer[sizeof(host_load_buffer)]};
 
@@ -136,23 +118,6 @@ static i32 host_run_load(const HostLoadOptions &options) {
     for (i32 i = 0; i < level_count; i++) {
         LEVELDATA *level = &levels[i];
         LOG_INFO("Level %d: %s \\ %s", i, level->dir, level->name);
-    }
-
-    StartPerm();
-    LoadPerm();
-    EndPerm();
-
-    LOG_INFO("COMPLETIONPOINTS=%d", COMPLETIONPOINTS);
-    for (i32 i = 0; i < 3; i++) {
-        f32 completion = (f32)saveload_slotcode[i] * 100.0f / COMPLETIONPOINTS;
-        LOG_INFO("slot %d used=%d completion=%f%% (%.1f%%)", i, saveload_slotused[i], completion, completion);
-    }
-
-    LEVELDATA *level = Level_FindByName("titles", NULL);
-    LOG_INFO("titles level: %p", level);
-
-    while (true) {
-        NuThreadSleep(1);
     }
 
     return 0;

@@ -34,8 +34,7 @@ NuRenderDevice g_renderDevice{};
 // calling thread was assigned.
 thread_local i32 gt_glContextIndex = -1;
 
-thread_local i32 s_criticalDepth = 0;
-static i32 g_nextGLContextIndex = 0;
+i32 g_nextGLContextIndex;
 
 // ---------------------------------------------------------------------------
 // Construction
@@ -44,7 +43,7 @@ static i32 g_nextGLContextIndex = 0;
 NuRenderDeviceGen::NuRenderDeviceGen() : value(false) {
 }
 
-static void InitRecursiveMutex(pthread_mutex_t *mutex) {
+static inline __attribute__((always_inline)) void InitRecursiveMutex(pthread_mutex_t *mutex) {
     pthread_mutexattr_t attrs;
     pthread_mutexattr_init(&attrs);
     pthread_mutexattr_settype(&attrs, PTHREAD_MUTEX_RECURSIVE);
@@ -53,15 +52,22 @@ static void InitRecursiveMutex(pthread_mutex_t *mutex) {
 }
 
 NuRenderDevice::NuRenderDevice() : NuRenderDeviceGen() {
+    this->lock_count = 0;
     InitRecursiveMutex(&this->mutex);
+    this->field10_0x10 = 0;
+    this->field14_0x14 = 0;
 
     // is_not_amazon_kf — true unless the device is an Amazon Kindle Fire
     // (manufacturer "Amazon" + model prefix "KF"). Kindle Fire gets a
     // down-scaled backbuffer path in DetermineBackBufferResolution().
     this->is_not_amazon_kf = true;
+    this->field48_0x45 = true;
     this->focus = false;
+    this->nominal_aspect_ratio = 0;
+    this->aspect_ratio = 1.3333334f;
     this->context_valid = false;
     this->egl_display = EGL_NO_DISPLAY;
+    this->current_context_index = -1;
 
     for (i32 i = 0; i < 4; i++) {
         this->contexts[i] = EGL_NO_CONTEXT;
@@ -261,9 +267,9 @@ void NuRenderDevice::SetThisTreadAsRender() {
 // ---------------------------------------------------------------------------
 
 void NuRenderDevice::BeginCriticalSection(const char * /*file*/, i32 /*line*/) {
-    if (s_criticalDepth == 0) {
-        pthread_mutex_lock(&this->mutex2);
-
+    pthread_mutex_lock(&this->mutex2);
+    const i32 previous_lock_count = this->lock_count++;
+    if (previous_lock_count == 0) {
         if (gt_glContextIndex == -1) {
             gt_glContextIndex = g_nextGLContextIndex;
             g_nextGLContextIndex = (g_nextGLContextIndex + 1) % 4;
@@ -275,15 +281,29 @@ void NuRenderDevice::BeginCriticalSection(const char * /*file*/, i32 /*line*/) {
         eglMakeCurrent(this->egl_display, this->pbuffers[gt_glContextIndex], this->pbuffers[gt_glContextIndex],
                        this->contexts[gt_glContextIndex]);
     }
-    s_criticalDepth++;
 }
 
-__attribute__((weak)) void NuRenderDevice::EndCriticalSection(const char * /*file*/, i32 /*line*/) {
-    UNIMPLEMENTED();
+void NuRenderDevice::EndCriticalSection(const char * /*file*/, i32 /*line*/) {
+    if (--this->lock_count == 0) {
+        const i32 context_index = gt_glContextIndex;
+        const bool render_state_requires_detach = static_cast<u32>(this->field50_0x50 - 2) <= 1;
+        const i32 application_status = NuCore::GetApplicationState()->GetStatus();
+        if (render_state_requires_detach || !this->field54_0x54 || context_index != 0 || application_status == 1) {
+            eglMakeCurrent(this->egl_display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+        }
+    }
+    pthread_mutex_unlock(&this->mutex2);
 }
 
-__attribute__((weak)) void NuRenderDevice::SwapBuffers() {
-    UNIMPLEMENTED();
+void NuRenderDevice::SwapBuffers() {
+    if (NuCore::GetApplicationState()->GetStatus() == 1) {
+        return;
+    }
+
+    g_renderDevice.BeginCriticalSection("none", -1);
+    eglSwapBuffers(this->egl_display, this->pbuffers[3]);
+    g_renderDevice.EndCriticalSection("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/NuRenderDevice_gles2.cpp",
+                                      0x485);
 }
 
 void NuRenderDevice::OnWindowCreated(ANativeWindow *window) {
@@ -355,7 +375,7 @@ void NuRenderDevice::DetermineBackBufferResolution(i32 width, i32 height) {
     }
 }
 
-__attribute__((weak)) void NuRenderDevice::InitialiseOpenGLContext(ANativeWindow *window_) {
+void NuRenderDevice::InitialiseOpenGLContext(ANativeWindow *window_) {
     EGLNativeWindowType window = reinterpret_cast<EGLNativeWindowType>(window_);
 
     pthread_mutex_lock(&this->mutex);

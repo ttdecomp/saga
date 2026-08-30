@@ -232,7 +232,7 @@ def main():
     } | set(rows)
     if ROOT_LABEL in rows:
         keys.add(ROOT_LABEL)
-    keys.discard("host-utils")
+    keys.discard("host")
     table = {k: rows.get(k, _zero()) for k in sorted(keys)}
     _print_table(table,
                  "Matching progress for `src/` subdirectories and `legoapi/*`")

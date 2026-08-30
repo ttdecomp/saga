@@ -1,11 +1,9 @@
 // NuSoundAndroid — decompiled from libTTapp.so
 // (nu2api.2013/nusound/android/nusound_android.cpp).
 //
-// InitAudioDevice / ShutdownAudioDevice are the hardware boundary. On the
-// Android target they stay as recorded (the device itself is not part of the
-// decompilation scope); the HOST build (HOST_BUILD) runs the same call flow
-// against the fake OpenSL object model in host-utils/nusound/opensl_host.cpp,
-// which writes the queued PCM to the real host audio device through SDL3.
+// InitAudioDevice / ShutdownAudioDevice use the OpenSL ES ABI imported by the
+// shipping binary.  The host supplies that same ABI from its SDL-backed
+// adapter, so this reconstructed call flow is shared unchanged.
 
 #include "nu2api/nusound/nusound_android.hpp"
 
@@ -13,10 +11,7 @@
 
 #include "nu2api/nucore/nucore.hpp"
 #include "nu2api/nucore/nuthread.h"
-
-#ifdef HOST_BUILD
-#include "../../host-utils/nusound/opensl_host.hpp"
-#endif
+#include "nu2api/nusound/opensles_abi.hpp"
 
 NuSoundAndroid NuSound;
 i32 NuSoundAndroid::m_workerThreadCount = 0;
@@ -75,23 +70,15 @@ u32 NuSoundAndroid::ReportErrorCode(u32 error, const char *message) {
     return error;
 }
 
-#ifdef HOST_BUILD
-
 namespace {
-
-    // OpenSL interface id tokens — must match the anonymous-namespace
-    // constants in nusound_voice_android.cpp.
-    const void *SL_IID_ENGINE = (const void *)0x00010004;
-    const void *SL_IID_ENGINECAPABILITIES = (const void *)0x00010005;
-    const void *SL_IID_VOLUME = (const void *)0x00010003;
-    const void *SL_IID_ENVIRONMENTALREVERB = (const void *)0x00010006;
-
     // ObjectItf / SLEngineItf slot typedefs for the InitAudioDevice flow.
     typedef u32 (*ObjectRealizeFn)(void *, u32);
     typedef u32 (*ObjectGetInterfaceFn)(void *, const void *, void **);
-    typedef u32 (*ObjectDestroyFn)(void *);
     typedef u32 (*EngineCreateOutputMixFn)(void *, void **, u32, const void **, const u32 *);
     typedef u32 (*QuerySupportedProfilesFn)(void *, u16 *);
+    typedef u32 (*QueryAvailableVoicesFn)(void *, u32, i16 *, u32 *, i16 *);
+    typedef u32 (*VolumeSetVolumeLevelFn)(void *, i32);
+    typedef u32 (*EnvironmentalReverbSetPropertiesFn)(void *, const void *);
 
 #define SL_SLOT(itf, fn_type, byte_offset) (*(fn_type *)((char *)(*(void **)(itf)) + (byte_offset)))
 
@@ -100,11 +87,11 @@ namespace {
 // libTTapp.so 0x32b1d0: create the engine object, realize it, query the
 // engine capabilities, fetch the engine interface, create + realize the
 // output mix, record the closest supported config, then start the clock
-// thread. The fake OpenSL objects (opensl_host.cpp) stand in for the device.
+// thread.
 bool NuSoundAndroid::InitAudioDevice() {
     u32 engine_options[2] = {1, 1}; // SL_ENGINEOPTION_THREADSAFE = SL_BOOLEAN_TRUE
-    u32 error = hostsl::HostCreateEngine(&this->engine_object, 1, engine_options, 0, NULL, NULL);
-    if (ReportErrorCode(error, "HostCreateEngine") != 0) {
+    u32 error = slCreateEngine(&this->engine_object, 1, engine_options, 0, NULL, NULL);
+    if (ReportErrorCode(error, "slCreateEngine") != 0) {
         return false;
     }
 
@@ -113,8 +100,6 @@ bool NuSoundAndroid::InitAudioDevice() {
         return false;
     }
 
-    // Engine capabilities: the fake advertises no optional profiles, so the
-    // original's gated output queries are skipped (bare-device path).
     void *capabilities = NULL;
     error = SL_SLOT(this->engine_object, ObjectGetInterfaceFn, 0xc)(this->engine_object, SL_IID_ENGINECAPABILITIES,
                                                                     &capabilities);
@@ -122,7 +107,19 @@ bool NuSoundAndroid::InitAudioDevice() {
         u16 profiles = 0;
         error = SL_SLOT(capabilities, QuerySupportedProfilesFn, 0)(capabilities, &profiles);
         if (ReportErrorCode(error, "QuerySupportedProfiles") == 0 && (profiles & 4) != 0) {
-            LOG_WARN("NuSound host: optional output queries not implemented (profiles=%u)", profiles);
+            i16 max_voices = 0;
+            u32 absolute_max = 0;
+            i16 free_voices = 0;
+            error = SL_SLOT(capabilities, QueryAvailableVoicesFn, 4)(capabilities, 1, &max_voices, &absolute_max,
+                                                                     &free_voices);
+            ReportErrorCode(error, "QueryAvailableVoices (2D audio)");
+
+            max_voices = 0;
+            absolute_max = 0;
+            free_voices = 0;
+            error = SL_SLOT(capabilities, QueryAvailableVoicesFn, 4)(capabilities, 4, &max_voices, &absolute_max,
+                                                                     &free_voices);
+            ReportErrorCode(error, "QueryAvailableVoices (vibra)");
         }
     }
 
@@ -132,8 +129,10 @@ bool NuSoundAndroid::InitAudioDevice() {
         return false;
     }
 
-    error = SL_SLOT(this->audio_engine, EngineCreateOutputMixFn, 0x1c)(this->audio_engine, &this->output_mix, 0, NULL,
-                                                                       NULL);
+    const void *mix_iids[2] = {SL_IID_VOLUME, SL_IID_ENVIRONMENTALREVERB};
+    const u32 mix_required[2] = {0, 0};
+    error = SL_SLOT(this->audio_engine, EngineCreateOutputMixFn, 0x1c)(this->audio_engine, &this->output_mix, 2,
+                                                                       mix_iids, mix_required);
     if (ReportErrorCode(error, "Create the output mix object") != 0) {
         return false;
     }
@@ -143,13 +142,19 @@ bool NuSoundAndroid::InitAudioDevice() {
         return false;
     }
 
-    // The original also fetches two output-mix interfaces (volume /
-    // environmental reverb) and tolerates both failing; nothing in the
-    // transcribed scope reads them, and the fake mix offers none.
-    void *mix_volume = NULL;
-    void *mix_reverb = NULL;
-    SL_SLOT(this->output_mix, ObjectGetInterfaceFn, 0xc)(this->output_mix, SL_IID_VOLUME, &mix_volume);
-    SL_SLOT(this->output_mix, ObjectGetInterfaceFn, 0xc)(this->output_mix, SL_IID_ENVIRONMENTALREVERB, &mix_reverb);
+    error = SL_SLOT(this->output_mix, ObjectGetInterfaceFn, 0xc)(this->output_mix, SL_IID_VOLUME, &this->mix_volume);
+    if (ReportErrorCode(error, "Get the output mix volume interface") == 0) {
+        error = SL_SLOT(this->mix_volume, VolumeSetVolumeLevelFn, 0xc)(this->mix_volume, 0);
+        ReportErrorCode(error, "Set the output mix volume");
+    }
+
+    error = SL_SLOT(this->output_mix, ObjectGetInterfaceFn, 0xc)(this->output_mix, SL_IID_ENVIRONMENTALREVERB,
+                                                                 &this->mix_reverb);
+    if (ReportErrorCode(error, "Get the environmental reverb interface") == 0) {
+        error = SL_SLOT(this->mix_reverb, EnvironmentalReverbSetPropertiesFn, 0x50)(this->mix_reverb,
+                                                                                    this->reverb_properties);
+        ReportErrorCode(error, "Set the environmental reverb properties");
+    }
 
     NuSoundSystem::sOutputConfig = this->GetClosestSupportedConfig(2);
     NuSoundSystem::sNumAvailableOutputDevices = 1;
@@ -163,32 +168,12 @@ bool NuSoundAndroid::InitAudioDevice() {
 }
 
 void NuSoundAndroid::ShutdownAudioDevice() {
-    // libTTapp.so 0x32aec0 drops the worker count and releases the device
-    // objects (destroy output mix, then the engine object).
+    // libTTapp.so 0x32aec0 only drops the worker count. Object ownership is
+    // released by the surrounding NuSound shutdown path.
     if (NuSoundAndroid::m_workerThreadCount > 0) {
         NuSoundAndroid::m_workerThreadCount--;
     }
-    if (this->output_mix != NULL) {
-        SL_SLOT(this->output_mix, ObjectDestroyFn, 0x18)(this->output_mix);
-        this->output_mix = NULL;
-    }
-    if (this->engine_object != NULL) {
-        SL_SLOT(this->engine_object, ObjectDestroyFn, 0x18)(this->engine_object);
-        this->engine_object = NULL;
-    }
 }
-
-#else
-
-bool NuSoundAndroid::InitAudioDevice() {
-    LOG_WARN("NuSoundAndroid::InitAudioDevice is not implemented");
-    return true;
-}
-
-void NuSoundAndroid::ShutdownAudioDevice() {
-}
-
-#endif
 
 void NuSoundAndroid::UpdateAudioDevice() {
     // The original only polls the application state here.

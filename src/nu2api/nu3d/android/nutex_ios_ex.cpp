@@ -153,8 +153,28 @@ GLuint NuIOS_CreateGLTexFromFile(const char *filename) {
 }
 
 GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, i32 *width, i32 *height, bool is_pvrtc) {
-    UNIMPLEMENTED();
-    return {};
+    const i32 platform = NuPlatform::Get()->GetCurrentPlatform();
+    if (is_pvrtc) {
+        const GLuint texture = NuIOS_CreateGLTexFromPVRInMemory(data, width, height);
+        if (texture != 0) {
+            return texture;
+        }
+    } else if (platform <= ANDROID_ETC1_PLATFORM) {
+        u32 platform_bit = 1;
+        platform_bit <<= platform;
+        if ((platform_bit & 0x1a00) != 0) {
+            const GLuint texture = NuIOS_CreateGLTexFromMemoryDDS(data, width, height);
+            if (texture != 0) {
+                return texture;
+            }
+        } else if ((platform_bit & 0x0500) != 0) {
+            const GLuint texture = NuIOS_CreateGLTexFromPVRInMemory(data, width, height);
+            if (texture != 0) {
+                return texture;
+            }
+        }
+    }
+    return loadDefaultTexture(0, 0, 0x20, GL_TEXTURE_2D, GL_TEXTURE_2D);
 }
 
 GLuint loadDefaultTexture(GLuint texture, GLint level, GLsizei size, GLenum texture_type, GLenum target) {

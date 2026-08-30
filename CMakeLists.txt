@@ -27,6 +27,12 @@ endif()
 
 project(saga)
 
+add_custom_target(check_host_boundary ALL
+    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/check_host_boundary.py
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "Checking host/shared source boundary"
+)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 include("${CMAKE_SOURCE_DIR}/cmake/ogg-vorbis.cmake")
@@ -115,29 +121,38 @@ file(GLOB_RECURSE SAGA_SOURCE_FILES CONFIGURE_DEPENDS
 
 # add platform-specific source files and build rules
 if (BUILD_FOR_HOST)
-    # The host-utils/nuios/ files provide the platform glue for the host; do
-    # not also compile the Android originals (they would duplicate symbols and
-    # pull in Android-only dependencies such as libsquish).
+    # Input is a true platform backend. All other reconstructed Android source
+    # files stay in the host build so the harness exercises the same engine
+    # implementation as the target build.
     list(REMOVE_ITEM SAGA_SOURCE_FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/android/nutex_android.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/android/nutex_ios_ex.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/android/NuInputDevice_android.cpp
+        # An executable-level operator new/delete override is safe on the
+        # monolithic Android target, but interposes allocations made inside
+        # host C++ graphics/audio drivers. Let the host C++ runtime own global
+        # allocation; explicit NuMemory allocations still use the shared
+        # reconstructed manager.
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nunew.cpp
     )
 
     list(APPEND SAGA_SOURCE_FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-utils/main.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-utils/input/host_input.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-utils/nuios/nutex_host.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-utils/nuios/nutex_ios_ex.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-utils/nuios/ios_graphics_host.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-utils/nuios/screen_host.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-utils/nucore/NuMemoryManager_host.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-utils/nusound/opensl_host.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-utils/nu3d/NuRenderDevice_host.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-utils/nu3d/nudlist_host.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-utils/nu3d/nushader_host.cpp
+        # Command-line harness. These files may inspect the game, but never
+        # provide symbols consumed by reconstructed game/engine code.
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/harness/main.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/harness/audio.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/harness/load.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/harness/window.cpp
+
+        # Minimal host platform boundary: one selected input backend and
+        # external API/filesystem adapters only.
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/platform/input.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/platform/compressed_texture.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/platform/documents.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/platform/egl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/platform/opensl.cpp
     )
 
     add_executable(saga ${SAGA_SOURCE_FILES})
+    add_dependencies(saga check_host_boundary)
     
     include(src/host.cmake)
 else()
@@ -148,6 +163,7 @@ else()
     )
 
     add_executable(saga ${SAGA_SOURCE_FILES})
+    add_dependencies(saga check_host_boundary)
 
     include(src/target.cmake)
 endif()

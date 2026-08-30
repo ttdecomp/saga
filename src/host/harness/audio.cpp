@@ -1,9 +1,7 @@
-#pragma once
-
 // HOST-ONLY: runs the real NuMain and checks that the title music actually
 // reaches the host audio device through the decompiled NuSound pipeline:
 // NuSound3PlayStereoV -> streamer -> NuSoundVoiceAndroid -> fake OpenSL
-// buffer queue (opensl_host.cpp) -> SDL3 device. Success requires at least
+// buffer queue (host/platform/opensl.cpp) -> SDL3 device. Success requires at least
 // one hardware player created, several seconds of PCM drained by the device
 // and a non-silent mixed signal.
 
@@ -13,8 +11,10 @@
 
 #include "decomp.h"
 #include "globals.h"
-#include "host-utils/nusound/opensl_host.hpp"
+#include "host/harness/audio.hpp"
+#include "host/platform/opensl.hpp"
 #include "nu2api/nu3d/NuRenderDevice.h"
+#include "nu2api/nu3d/nuscreen.hpp"
 #include "nu2api/nuplatform/nuplatform.h"
 #include "nu2api/nufile/nufile.h"
 
@@ -66,7 +66,7 @@ namespace {
 
 } // namespace
 
-static i32 host_run_audio() {
+i32 host_run_audio() {
     LOG_INFO("audio utility: running NuMain and watching the host audio device");
 
     host_audio_sdl_init();
@@ -76,6 +76,8 @@ static i32 host_run_audio() {
     NuDatSet(NuDatOpen("res/main.1060.com.wb.lego.tcs.obb", &ptr, 0));
 
     NuPlatform::Create();
+    NuScreen::Create();
+    g_renderDevice.Initialize();
     NuPlatform::Get()->SetCurrentPlatform(ANDROID_PVRTC_PLATFORM);
 
     host_audio_numain_thread = SDL_CreateThread(host_audio_numain_main, "numain", nullptr);

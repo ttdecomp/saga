@@ -59,5 +59,5 @@ void NudxFw_D3DBeginCriticalSection() {
 
 void NudxFw_D3DEndCriticalSection() {
     // This is undoubtedly a __FILE__ and __LINE__ usage in the original.
-    BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nucore/android/nuapi_android.c", 0xd7);
+    EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nucore/android/nuapi_android.c", 0xd7);
 }

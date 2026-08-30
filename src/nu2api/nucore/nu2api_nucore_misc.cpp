@@ -658,7 +658,8 @@ void NuIOSDLDeferredTransformCallback(void *) {
 void NuIOS_AreInAppPurchasesAvailable() {
 }
 
-void NuIOS_CreateGLTexFromPVRInMemory(void *, i32 *, i32 *) {
+GLuint NuIOS_CreateGLTexFromPVRInMemory(void *, i32 *, i32 *) {
+    return 0;
 }
 
 void NuOnlineSetPresenceModeProfilePS(i32, i32) {

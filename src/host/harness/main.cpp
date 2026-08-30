@@ -1,6 +1,6 @@
-#include "audio.hpp"
-#include "load.hpp"
-#include "window.hpp"
+#include "host/harness/audio.hpp"
+#include "host/harness/load.hpp"
+#include "host/harness/window.hpp"
 
 #include <cerrno>
 #include <cstdio>
@@ -10,14 +10,6 @@
 #include <unistd.h>
 
 extern char g_language[16];
-
-// HOST-ONLY: the ASAN runtime inside the host toolchain flags the allocator
-// mismatch coming out of Mesa/LLVM's GL driver stack (new/delete vs their
-// internal allocators) and aborts the process before a utility can run.
-// The original binary has no ASAN; this only silences that false positive.
-extern "C" const char *__asan_default_options() {
-    return "alloc_dealloc_mismatch=0";
-}
 
 namespace {
 
@@ -66,7 +58,7 @@ namespace {
         printf("  --timeout-ms <ms>      Stop the window utility after this time (default: 90000)\n");
     }
 
-    bool host_parse_milliseconds(const char *option, const char *value, Uint64 &result) {
+    bool host_parse_milliseconds(const char *option, const char *value, u64 &result) {
         errno = 0;
         char *end = nullptr;
         const u64 parsed = strtoull(value, &end, 10);
@@ -74,7 +66,7 @@ namespace {
             fprintf(stderr, "Invalid value for %s: %s\n", option, value);
             return false;
         }
-        result = static_cast<Uint64>(parsed);
+        result = parsed;
         return true;
     }
 
@@ -140,7 +132,7 @@ namespace {
                     host_print_window_usage(program);
                     return false;
                 }
-                Uint64 &destination =
+                u64 &destination =
                     strcmp(argument, "--script-tail-ms") == 0 ? options.script_tail_ms : options.timeout_ms;
                 if (!host_parse_milliseconds(argument, argv[i], destination)) {
                     host_print_window_usage(program);
@@ -224,10 +216,11 @@ namespace {
         }
     }
 
-    [[noreturn]] void host_finish(i32 status) {
-        // Engine globals contain pointers that are deliberately not owned by
-        // their static containers. Avoid their destructor pass for every host
-        // utility, including help and argument errors.
+    [[noreturn]] void host_finish_engine_session(i32 status) {
+        // NuMain is a process-lifetime entry point and the window/audio
+        // utilities stop observing it before its worker threads have exited.
+        // Keep the hard process boundary local to those utilities until their
+        // reconstructed shutdown path can join every engine thread.
         fflush(nullptr);
         _exit(status);
     }
@@ -238,7 +231,7 @@ i32 main(i32 argc, char **argv) {
     HostHarnessOptions options;
     const HostParseResult result = host_parse_arguments(argc, argv, options);
     if (result != HostParseResult::run) {
-        host_finish(result == HostParseResult::help ? 0 : 1);
+        return result == HostParseResult::help ? 0 : 1;
     }
 
     host_initialize_language();
@@ -255,5 +248,8 @@ i32 main(i32 argc, char **argv) {
             break;
     }
 
-    host_finish(utility_result);
+    if (options.utility == HostUtility::load) {
+        return utility_result;
+    }
+    host_finish_engine_session(utility_result);
 }

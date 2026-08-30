@@ -29,6 +29,7 @@ The standard unattended menu check is therefore:
 timeout 38s ./build-host/saga window --offscreen --mute --script-input --capture
 ```
 
-Host input injection and rendering overrides belong under `src/host-utils/`.
-Original game functions should remain host-independent and may be replaced by
-weak host definitions where a platform override is required.
+The command implementations belong under `src/host/harness/`. Actual platform
+adapters belong under `src/host/platform/` and are limited to imported APIs,
+filesystem/environment access, or a build-selected platform interface. Host
+code must not replace portable game or engine functions.

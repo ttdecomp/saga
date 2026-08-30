@@ -72,13 +72,12 @@ class NuSoundDecoder : public NuSoundSource {
     bool locked_flag;
     bool loop_flag;
 
-    // NuSoundDecoderOGG's NuSoundBufferCallback base starts at +0xe8 in the
-    // original (the three _ZThn232 thunks encode that adjustment).  The
-    // Android pthread types used by this host build are smaller than the
-    // opaque synchronization storage in the original object.
-#ifndef HOST_BUILD
+    // Still-unidentified target fields. They put NuSoundDecoderOGG's
+    // NuSoundBufferCallback base at +0xe8 in the original (the three _ZThn232
+    // thunks encode that adjustment). Host pthread objects are larger, so host
+    // code must use C++ base conversions rather than copying this target
+    // offset.
     u8 field_0x7c_to_0xe8[0x6c];
-#endif
 };
 
 // libTTapp.so: the async decode worker. RequestDecode parks a 0x1c-byte

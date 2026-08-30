@@ -50,7 +50,7 @@ NuApplicationState *NuCore::GetApplicationState(void) {
     return state;
 }
 
-NuApplicationState::NuApplicationState() {
+NuApplicationState::NuApplicationState() : status(NUAPPLICATIONSTATUS_IDLE) {
 }
 
 void NuPlatform::Destroy() {

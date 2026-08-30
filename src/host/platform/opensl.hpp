@@ -9,14 +9,7 @@
 
 #include "decomp.h"
 
-namespace hostsl {
-
-    // HostCreateEngine equivalent. The original calls the Android loader entry with
-    // (SL_ENGINEOPTION_THREADSAFE, SL_BOOLEAN_TRUE) engine options; the fake
-    // engine object it returns exposes the ObjectItf and EngineItf vtable slots
-    // used by NuSoundAndroid::InitAudioDevice and NuVoiceAndroid.
-    u32 HostCreateEngine(void **engine_object, u32 num_options, void *options, u32 num_interfaces,
-                         const void **interface_ids, const u32 *required);
+namespace hostsl { // Host OpenSL adapter diagnostics.
 
     // Aggregate counters for the host audio test: bytes pushed in through
     // Enqueue, bytes drained by the device, and players created.

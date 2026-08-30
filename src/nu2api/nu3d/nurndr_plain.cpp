@@ -346,7 +346,7 @@ extern "C" __attribute__((weak)) i32 NuRndrSwapScreen(void) {
     // (nativeSetSurface / nativeOnPause flip NUAPPLICATIONSTATUS).
     for (;;) {
         NuApplicationState *state = NuCore::GetApplicationState();
-        if (state->GetStatus().status != 1) {
+        if (state->GetStatus() != 1) {
             break;
         }
         g_isBlockedInSwapScreen = 1;

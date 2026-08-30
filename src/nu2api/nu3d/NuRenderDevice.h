@@ -16,42 +16,51 @@ class NuRenderDeviceGen {
 };
 
 class NuRenderDevice : NuRenderDeviceGen {
-    bool focus;
-    bool field48_0x45;
-    EGLDisplay egl_display;
+    i32 lock_count;
     pthread_mutex_t mutex;
     pthread_mutex_t mutex2;
+    i32 field10_0x10;
+    i32 field14_0x14;
+    const char *extensions;
     bool is_not_amazon_kf;
-    volatile bool context_valid;
-    EGLConfig egl_config;
-    EGLNativeWindowType native_window;
-
-    EGLSurface pbuffers[4];
-    EGLContext contexts[4];
-
-    u32 backing_width, backing_height;
-
-    i32 nominal_aspect_ratio;
-    f32 aspect_ratio;
-
+    u8 field1d_0x1d[3];
     i32 max_texture_units;
     i32 max_texture_size;
 
-    const char *extensions;
+  public:
+    // ABI-visible to the platform texture implementation at offset 0x28.
+    u8 enabled_extensions[26];
 
-    bool field54_0x54;
-
-    EGLint attrib_list[16];
-
-    u32 width, height;
-
+  private:
     bool oes_packed_depth_stencil;
     bool oes_depth24;
     bool oes_depth_texture;
+    bool field48_0x45;
+    bool focus;
+    bool field47_0x47;
+    EGLNativeWindowType native_window;
+    i32 field4c_0x4c;
+    i32 field50_0x50;
+    bool field54_0x54;
+    u8 field55_0x55[3];
+    EGLint attrib_list[3];
+    u8 field64_0x64[0x14];
+    EGLDisplay egl_display;
+    EGLConfig egl_config;
+    i32 current_context_index;
+    EGLSurface pbuffers[4];
+    EGLContext contexts[4];
+    volatile bool context_valid;
+    u8 fielda5_0xa5[3];
+    u32 drawable_width;
+    u32 drawable_height;
+    u32 width;
+    u32 height;
+    u32 backing_width;
+    u32 backing_height;
+    i32 nominal_aspect_ratio;
+    f32 aspect_ratio;
 
-    i32 lock_count;
-
-  private:
     void DetermineBackBufferResolution(i32 width, i32 height);
     EGLConfig SelectEGLConfig();
     bool IsExtensionSupported(const char *exts);
@@ -72,7 +81,6 @@ class NuRenderDevice : NuRenderDeviceGen {
 
     void InitialiseOpenGLContext(ANativeWindow *window);
     void CheckForRenderWindowInitialisation();
-    u8 enabled_extensions[26]; // NEEDS TO BE AT 0x28
 
     void OnAppPaused();
     void OnAppRestarted();

@@ -2,10 +2,11 @@
 
 #include "nu2api/nucore/nuthread.h"
 
-// 4-byte application status value (original passes it by value; the render
-// thread wait loop compares it against 1 = "render in progress").
-struct NUAPPLICATIONSTATUS {
-    i32 status;
+// 4-byte application status value. The original returns it directly in EAX;
+// making it an enum preserves that ABI while retaining a distinct type.
+enum NUAPPLICATIONSTATUS : i32 {
+    NUAPPLICATIONSTATUS_IDLE = 0,
+    NUAPPLICATIONSTATUS_RENDERING = 1,
 };
 
 class NuApplicationState {
