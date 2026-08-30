@@ -761,14 +761,14 @@ void NuIOSDLTransformParamsCallback(void *arg) {
 // and +0x44 respectively. The viewport tail is deliberately a no-op on this
 // platform, matching NuRenderContextSetViewport in the original.
 void NuIOSDLCameraCallback(void *arg) {
-    struct CameraPacket {
+    struct NuIOSCameraPacket {
         i32 id;
         NUMTX view;
         NUMTX projection;
         f32 viewport[4];
     };
     static i32 last_id = -1;
-    auto *packet = static_cast<CameraPacket *>(arg);
+    auto *packet = static_cast<NuIOSCameraPacket *>(arg);
     if (packet->id != last_id) {
         last_id = packet->id;
         NuRenderContextSetViewProj(&packet->view, &packet->projection);

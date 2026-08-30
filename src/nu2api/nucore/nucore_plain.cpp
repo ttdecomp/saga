@@ -49,19 +49,19 @@
 struct nuhspecial_s;
 
 namespace {
-    struct NuSpecialHandleLayout {
+    struct NuPlainSpecialHandleLayout {
         NUGSCN *scene;
         void *special;
         void *display_special;
     };
 
-    struct NuLegacySpecialLayout {
+    struct NuPlainLegacySpecialLayout {
         u8 pad_00[0x40];
         u8 *instance;
         u32 flags;
     };
 
-    struct NuDisplaySpecialLayout {
+    struct NuPlainDisplaySpecialLayout {
         NUMTX mtx;
         NUMTX draw_mtx;
         NUVEC min;
@@ -467,8 +467,8 @@ extern "C" {
             return 0;
         }
 
-        NuSpecialHandleLayout *handle = reinterpret_cast<NuSpecialHandleLayout *>(special_handle);
-        NuDisplaySpecialLayout *special = static_cast<NuDisplaySpecialLayout *>(handle->display_special);
+        NuPlainSpecialHandleLayout *handle = reinterpret_cast<NuPlainSpecialHandleLayout *>(special_handle);
+        NuPlainDisplaySpecialLayout *special = static_cast<NuPlainDisplaySpecialLayout *>(handle->display_special);
         if (handle->scene == NULL || special == NULL) {
             return 0;
         }
@@ -1493,7 +1493,7 @@ extern "C" {
     void NuSpecialDrawAt(void) {
     }
     i32 NuSpecialDrawAtAlpha(void *special, NUMTX *mtx, f32 alpha) {
-        NuSpecialHandleLayout *handle = reinterpret_cast<NuSpecialHandleLayout *>(special);
+        NuPlainSpecialHandleLayout *handle = reinterpret_cast<NuPlainSpecialHandleLayout *>(special);
         if (handle->scene == NULL || alpha <= 0.0f) {
             return 0;
         }
@@ -1515,7 +1515,7 @@ extern "C" {
         if (special == NULL) {
             return 0;
         }
-        NuSpecialHandleLayout *handle = reinterpret_cast<NuSpecialHandleLayout *>(special);
+        NuPlainSpecialHandleLayout *handle = reinterpret_cast<NuPlainSpecialHandleLayout *>(special);
         return handle->special != NULL || handle->display_special != NULL;
     }
     void NuSpecialFindMulti(void) {
@@ -1535,14 +1535,14 @@ extern "C" {
     void NuSpecialGetCollision(void) {
     }
     NUMTX *NuSpecialGetDrawMtx(void *special) {
-        NuSpecialHandleLayout *handle = reinterpret_cast<NuSpecialHandleLayout *>(special);
-        NuLegacySpecialLayout *legacy = static_cast<NuLegacySpecialLayout *>(handle->special);
+        NuPlainSpecialHandleLayout *handle = reinterpret_cast<NuPlainSpecialHandleLayout *>(special);
+        NuPlainLegacySpecialLayout *legacy = static_cast<NuPlainLegacySpecialLayout *>(handle->special);
         if (legacy != NULL) {
             NUMTX *instance = reinterpret_cast<NUMTX *>(legacy->instance);
             NUMTX *draw_mtx = *reinterpret_cast<NUMTX **>(legacy->instance + 0x48);
             return draw_mtx != NULL ? draw_mtx : instance;
         }
-        NuDisplaySpecialLayout *display = static_cast<NuDisplaySpecialLayout *>(handle->display_special);
+        NuPlainDisplaySpecialLayout *display = static_cast<NuPlainDisplaySpecialLayout *>(handle->display_special);
         if (display != NULL) {
             usize draw_mtx = reinterpret_cast<usize>(display->draw_mtx_ptr);
             if (draw_mtx != 0 && draw_mtx != static_cast<usize>(-1)) {
@@ -1631,12 +1631,12 @@ extern "C" {
         if (special == NULL) {
             return;
         }
-        NuSpecialHandleLayout *handle = reinterpret_cast<NuSpecialHandleLayout *>(special);
+        NuPlainSpecialHandleLayout *handle = reinterpret_cast<NuPlainSpecialHandleLayout *>(special);
         if (handle->scene == NULL) {
             return;
         }
 
-        NuLegacySpecialLayout *legacy = static_cast<NuLegacySpecialLayout *>(handle->special);
+        NuPlainLegacySpecialLayout *legacy = static_cast<NuPlainLegacySpecialLayout *>(handle->special);
         if (legacy != NULL) {
             if (legacy->instance != NULL) {
                 legacy->instance[0x44] = static_cast<u8>((legacy->instance[0x44] & ~1U) | (visible & 1));
@@ -1649,7 +1649,7 @@ extern "C" {
             return;
         }
 
-        NuDisplaySpecialLayout *display = static_cast<NuDisplaySpecialLayout *>(handle->display_special);
+        NuPlainDisplaySpecialLayout *display = static_cast<NuPlainDisplaySpecialLayout *>(handle->display_special);
         if (display == NULL) {
             return;
         }

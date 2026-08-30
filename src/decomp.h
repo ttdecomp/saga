@@ -2,13 +2,10 @@
 
 #include <stdint.h>
 
+#include "decomp_assert.h"
 #include "nu2api/nucore/common.h"
 
-#ifndef __x86_64__
-#ifdef __cplusplus
-static_assert(sizeof(void *) == 4, "Unsupported pointer size");
-#endif
-#endif
+DECOMP_ASSERT(sizeof(void *) == 4, "Unsupported pointer size");
 
 // Define undefined* types from ghidra
 typedef u8 undefined;
@@ -93,8 +90,11 @@ static void _saga_log(enum log_level level, const char *file, i32 line, const ch
 
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
-    struct tm tm;
-    localtime_r(&ts.tv_sec, &tm);
+    struct tm tm = {};
+    struct tm *local_tm = localtime(&ts.tv_sec);
+    if (local_tm != NULL) {
+        tm = *local_tm;
+    }
     char time[32];
     snprintf(time, sizeof(time), "%02d:%02d:%02d.%06.0f", tm.tm_hour, tm.tm_min, tm.tm_sec, (float)ts.tv_nsec / 1e3);
 

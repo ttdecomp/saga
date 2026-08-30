@@ -2,6 +2,7 @@
 #define LEGOAPI_TYPES_H
 #pragma once
 
+#include "decomp_assert.h"
 #include "nu2api/nucore/fixed_width.h"
 #include "nu2api/nucore/nulist.h"
 #include "nu2api/numath/numtx.h"
@@ -427,7 +428,7 @@ struct GAMECAMERA_s {
     i8 previous_camera_mode; // 0x22e
     u8 pad_22f;
 };
-static_assert(sizeof(GAMECAMERA_s) == 0x230, "GAMECAMERA_s ABI");
+DECOMP_ASSERT(sizeof(GAMECAMERA_s) == 0x230, "GAMECAMERA_s ABI");
 struct GAMECHARACTERDATA_s {};
 
 // game_cutscenes wrapper (pointer at 0x1c).
