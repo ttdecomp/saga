@@ -33,12 +33,10 @@ import re
 import subprocess
 import sys
 
+from ndk_tools import find_ndk_tool
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-NM = os.path.join(
-    ROOT,
-    "ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/linux-x86_64/bin/"
-    "i686-linux-android-nm",
-)
+NM = find_ndk_tool(ROOT, "nm")
 
 
 def defined_text_symbols(binary, include_weak=False, include_local=False):

@@ -42,6 +42,8 @@ import re
 import subprocess
 import sys
 
+from ndk_tools import find_ndk_tool
+
 SRC_EXTENSIONS = {".h", ".hh", ".hpp", ".hxx", ".c", ".cc", ".cpp", ".cxx"}
 
 # Strong (allocated) symbol types we consider real definitions. Weak (W/V)
@@ -49,12 +51,6 @@ SRC_EXTENSIONS = {".h", ".hh", ".hpp", ".hxx", ".c", ".cc", ".cpp", ".cxx"}
 # functions, templates, COMDAT) are normal; undefined (U), debug (N), absolute
 # (A) and special (I) are not definitions.
 _SYMBOL_TYPES = set("TtDdBbRrCcSs")
-
-# Relative path of the NDK nm we use to read the object files' symbol tables.
-_NM_RELPATH = (
-    "ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/linux-x86_64/bin/"
-    "i686-linux-android-nm"
-)
 
 # Tag kinds and their keywords. enum needs care: "enum Foo : int { ... }".
 KEYWORDS = ("struct", "class", "union")
@@ -231,11 +227,8 @@ def is_noise_symbol(name):
 
 def find_nm(script_dir):
     """Locate the NDK nm binary: prefer $NM, else the bundled NDK path."""
-    env = os.environ.get("NM")
-    if env and os.path.isfile(env):
-        return env
     root = os.path.dirname(os.path.abspath(script_dir))
-    candidate = os.path.join(root, _NM_RELPATH)
+    candidate = find_ndk_tool(root, "nm")
     if os.path.isfile(candidate):
         return candidate
     return None

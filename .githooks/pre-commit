@@ -48,7 +48,12 @@ fi
 
 # update badge in README
 BADGE_URL="https://img.shields.io/badge/matching-${PROGRESS}%25-${COLOR}"
-sed -i "s|https://img.shields.io/badge/matching-[^)]*|${BADGE_URL}|g" README.md
+README_TMP=$(mktemp "${TMPDIR:-/tmp}/saga-readme.XXXXXX") || exit 1
+trap 'rm -f "$README_TMP"' EXIT
+sed "s|https://img.shields.io/badge/matching-[^)]*|${BADGE_URL}|g" README.md > "$README_TMP" || exit 1
+cp "$README_TMP" README.md || exit 1
+rm -f "$README_TMP"
+trap - EXIT
 
 git add report.json README.md
 
