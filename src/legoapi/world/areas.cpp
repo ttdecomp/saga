@@ -125,7 +125,7 @@ void Area_Configure(i32 area, i32 param, EXTRAMODEL *models, i16 *s) {
         if (fp != NULL) {
             while (NuFParGetLine(fp) != 0) {
                 NuFParGetWord(fp);
-                if (*(char *)fp + 0x510 == NULL) {
+                if (*(char **)((char *)fp + 0x510) == NULL) {
                     continue;
                 }
                 if (in_area) {

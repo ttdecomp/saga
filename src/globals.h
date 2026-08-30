@@ -19,6 +19,7 @@ struct GIZMOBLOWUP_s;
 struct GIZOBSTACLE_s;
 struct AREASAVE_s;
 struct GAMECAMERA_s;
+struct TEXTCRAWL_s;
 class FadeSystem;
 
 // ----------------------------------------------------------------------
@@ -79,146 +80,44 @@ struct SUPEROPTIONS_s {
 DECOMP_ASSERT(sizeof(SUPEROPTIONS_s) == 0x18, "SUPEROPTIONS size");
 extern SUPEROPTIONS_s SuperOptions;
 
-struct __attribute__((packed)) customisesave_s { /* PlaceHolder Structure */
-    undefined2 field0_0x0;
-    undefined2 field1_0x2;
-    undefined2 field2_0x4;
-    undefined2 field3_0x6;
-    undefined2 field4_0x8;
-    undefined2 field5_0xa;
-    undefined2 field6_0xc;
-    undefined2 field7_0xe;
-    undefined2 field8_0x10;
-    undefined field9_0x12;
-    undefined field10_0x13;
-    char field11_0x14[1];
-    undefined field12_0x15;
-    undefined field13_0x16;
-    undefined field14_0x17;
-    undefined field15_0x18;
-    undefined field16_0x19;
-    undefined field17_0x1a;
-    undefined field18_0x1b;
-    undefined field19_0x1c;
-    undefined field20_0x1d;
-    undefined field21_0x1e;
-    undefined field22_0x1f;
-    undefined field23_0x20;
-    undefined field24_0x21;
-    undefined field25_0x22;
-    undefined field26_0x23;
-    undefined field27_0x24;
-    undefined field28_0x25;
-    undefined field29_0x26;
-    undefined field30_0x27;
-    undefined field31_0x28;
-    undefined field32_0x29;
-    undefined field33_0x2a;
-    undefined field34_0x2b;
-    undefined field35_0x2c;
-    undefined field36_0x2d;
-    undefined field37_0x2e;
-    undefined field38_0x2f;
-    undefined field39_0x30;
-    undefined field40_0x31;
-    undefined field41_0x32;
-    undefined field42_0x33;
-    undefined field43_0x34;
-    undefined field44_0x35;
-    undefined field45_0x36;
-    undefined field46_0x37;
-    undefined2 field47_0x38;
-    undefined2 field48_0x3a;
-    undefined2 field49_0x3c;
-    undefined2 field50_0x3e;
-    undefined2 field51_0x40;
-    undefined2 field52_0x42;
-    undefined2 field53_0x44;
-    undefined2 field54_0x46;
-    undefined2 field55_0x48;
-    undefined field56_0x4a;
-    undefined field57_0x4b;
-    undefined1 name; /* Created by retype action */
-    undefined field59_0x4d;
-    undefined field60_0x4e;
-    undefined field61_0x4f;
-    undefined field62_0x50;
-    undefined field63_0x51;
-    undefined field64_0x52;
-    undefined field65_0x53;
-    undefined field66_0x54;
-    undefined field67_0x55;
-    undefined field68_0x56;
-    undefined field69_0x57;
-    undefined field70_0x58;
-    undefined field71_0x59;
-    undefined field72_0x5a;
-    undefined field73_0x5b;
-    undefined field74_0x5c;
-    undefined field75_0x5d;
-    undefined field76_0x5e;
-    undefined field77_0x5f;
-    undefined field78_0x60;
-    undefined field79_0x61;
-    undefined field80_0x62;
-    undefined field81_0x63;
-    undefined field82_0x64;
-    undefined field83_0x65;
-    undefined field84_0x66;
-    undefined field85_0x67;
-    undefined field86_0x68;
-    undefined field87_0x69;
-    undefined field88_0x6a;
-    undefined field89_0x6b;
-    undefined field90_0x6c;
-    undefined field91_0x6d;
-    undefined field92_0x6e;
-};
-typedef struct customisesave_s CUSTOMISESAVE;
+typedef CUSTOMISESAVE_s CUSTOMISESAVE;
 DECOMP_ASSERT(sizeof(CUSTOMISESAVE) == 0x6f, "CUSTOMISESAVE size");
 
+struct EPISODESAVE_s {
+    f32 superstory_time_limit;
+    i32 superstory_score_target;
+    u32 flags;
+};
+DECOMP_ASSERT(sizeof(EPISODESAVE_s) == 0xc, "EPISODESAVE size");
+
 struct GAMESAVE_s {
-    undefined field0_0x0;
-    undefined field1_0x1;
-    undefined field2_0x2;
-    undefined field3_0x3;
+    u8 field_0x0;
+    u8 save_version;
+    u8 field_0x2[2];
     struct OPTIONSSAVE_s options_save;
-    undefined1 level_save; /* Created by retype action */
-    undefined field7_0x12[30746];
-    undefined1 area_save; /* Created by retype action */
-    undefined field9_0x782d;
-    undefined field10_0x782e;
-    undefined field11_0x782f;
-    undefined field12_0x7830;
-    undefined field13_0x7831;
-    undefined field14_0x7832;
-    undefined field15_0x7833;
-    f32 field16_0x7834;
-    char field17_0x7838[852];
-    undefined1 episode_save; /* Created by retype action */
-    char field19_0x7b8d[107];
-    u32 field20_0x7bf8[1];
-    char field21_0x7bfc[36];
+    u8 level_save[0x781b];
+    AREASAVE_s area_save[72];
+    EPISODESAVE_s episode_save[9];
+    u32 field_0x7bf8;
+    u32 initial_store_pack_flags;
+    u8 field_0x7c00[0x20];
     u32 coins;
-    u16 completion; /* Created by retype action */
-    undefined field24_0x7c26;
-    undefined field25_0x7c27;
-    undefined field26_0x7c28;
-    undefined field27_0x7c29;
-    undefined field28_0x7c2a;
-    undefined field29_0x7c2b;
-    undefined field30_0x7c2c;
-    undefined field31_0x7c2d;
-    undefined field32_0x7c2e;
-    undefined field33_0x7c2f;
+    u16 completion;
+    u8 field_0x7c26[6];
+    u32 field30_0x7c2c;
     CUSTOMISESAVE customizer;
-    undefined field35_0x7c9f;
+    u8 field_0x7c9f;
     MISSIONSAVE mission_save;
-    char field37_0x7ca4[88];
-    void *character_save;
-    char field39_0x7d08[336];
+    u8 mission_save_extra[0x58];
+    u8 character_save[0x154];
 };
 DECOMP_ASSERT(sizeof(GAMESAVE_s) == 0x7e58, "GAMESAVE size");
+DECOMP_ASSERT(offsetof(GAMESAVE_s, options_save) == 0x4, "GAMESAVE options offset");
+DECOMP_ASSERT(offsetof(GAMESAVE_s, area_save) == 0x782c, "GAMESAVE area save offset");
+DECOMP_ASSERT(offsetof(GAMESAVE_s, episode_save) == 0x7b8c, "GAMESAVE episode save offset");
+DECOMP_ASSERT(offsetof(GAMESAVE_s, initial_store_pack_flags) == 0x7bfc, "GAMESAVE store flags offset");
+DECOMP_ASSERT(offsetof(GAMESAVE_s, customizer) == 0x7c30, "GAMESAVE customizer offset");
+DECOMP_ASSERT(offsetof(GAMESAVE_s, character_save) == 0x7d04, "GAMESAVE character save offset");
 
 struct CHARCAT_s {
     undefined field0_0x0[4];
@@ -303,12 +202,36 @@ extern const char *theEmptyString;
 // ------------------------------------------------------------------------
 extern i32 EPISODECOUNT;
 extern i32 AREACOUNT;
+extern struct AREADATA_s *SENATE_ADATA;
+extern struct AREADATA_s *UTAPAU_ADATA;
+extern struct AREADATA_s *HOTH_ADATA;
+extern struct AREADATA_s *BONUSDAGOBAH_ADATA;
+extern struct AREADATA_s *BONUSKAMINO_ADATA;
+extern struct AREADATA_s *BONUSKASHYYYK_ADATA;
 
 // ------------------------------------------------------------------------
 // Game save state
 // ------------------------------------------------------------------------
 extern struct GAMESAVE_s Game;
 extern struct GAMESAVE_s BackupGame;
+#ifdef __cplusplus
+extern "C" {
+#endif
+    extern OPTIONSSAVE TempOptions;
+#ifdef __cplusplus
+}
+#endif
+extern SUIT_s Suit[10];
+extern i16 tBATMANSUIT;
+extern i16 tSHADOWSUIT;
+extern i16 tGLIDESUIT;
+extern i16 tDEMOLITIONSUIT;
+extern i16 tSONARSUIT;
+extern i16 tROBINSUIT;
+extern i16 tWATERSUIT;
+extern i16 tTECHNOLOGYSUIT;
+extern i16 tMAGNETSUIT;
+extern i16 tATTRACTSUIT;
 
 // ------------------------------------------------------------------------
 // Character customiser
@@ -375,6 +298,8 @@ extern i32 g_isLowestEndDevice;
 extern i32 g_isLowEndDevice;
 extern i32 g_isMidRangeDevice;
 extern i32 g_lowEndLevelBehaviour;
+extern i32 NOAICREATURES;
+extern u8 aicreature_sets_alive[16];
 extern i32 finishloop_backdroponly;
 
 // ------------------------------------------------------------------------
@@ -387,6 +312,8 @@ extern i32 Reflections_On;
 extern i32 disable_narrow_socks;
 extern i32 script_spline_selected;
 extern f32 character_farclip;
+extern f32 CutBorderScale;
+extern TEXTCRAWL_s TextCrawl_LSW;
 extern i32 drawcharactermodel_locatorsupdated;
 extern i32 drawcharactermodel_noani;
 extern i32 drawcharactermodel_restpose;
@@ -722,6 +649,8 @@ extern i32 newgame_menudrawoff;
 extern i32 netnewgame;
 extern i32 MenuLoadOccurred;
 extern i32 MenuSaveOccurred;
+extern i32 Tag_DoneFirst;
+extern i32 Tag_DoneAny;
 extern i32 LevSfxFlag[4];
 extern u8 dynamic_antinodes[0x1500]; // AI anti-node spawn data (cleared per level)
 extern i32 LevInstAnim[12];
@@ -731,8 +660,9 @@ extern void *LevPathCnx[16];
 extern i32 LevGameObject[8];
 extern i32 LevGamePart[8];
 extern i32 LevAIMessage[8];
+extern GIZBUILDIT_s *LevBuildIt[4];
 extern i32 LevelLocator;
-extern void *LevGizObst[8];
+extern GIZOBSTACLE_s *LevGizObst[8];
 extern i32 LevBlowUp[5];
 extern i32 LevSfxId[4];
 extern i32 LevelCodeSpline[8];
@@ -745,6 +675,7 @@ extern i32 LevPathCnxDir;
 extern i32 LevDeaths;
 extern i32 LevLock[4];
 extern i32 LevSafePlatID[2];
+extern u64 LevHSpecialExists;
 
 // ------------------------------------------------------------------------
 // Cutscene & system misc

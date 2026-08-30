@@ -2,6 +2,10 @@
 
 #include "decomp.h"
 
+struct TECHNOPROGRESS {
+    i32 state[2];
+};
+
 i32 techno_gizmotype_id = -1;
 
 static i32 Technos_GetMaxGizmos(void *techno) {
@@ -63,8 +67,14 @@ static void *Technos_AllocateProgressData(VARIPTR *, VARIPTR *) {
     return {};
 }
 
-static void Technos_ClearProgress(void *, void *) {
-    UNIMPLEMENTED();
+static void Technos_ClearProgress(void *, void *progress_data) {
+    TECHNOPROGRESS *progress = (TECHNOPROGRESS *)progress_data;
+    if (progress == NULL) {
+        return;
+    }
+
+    progress->state[0] = -1;
+    progress->state[1] = -1;
 }
 
 static void Technos_StoreProgress(void *, void *, void *) {

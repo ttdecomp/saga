@@ -77,7 +77,7 @@ class NuSoundDecoder : public NuSoundSource {
     // Android pthread types used by this host build are smaller than the
     // opaque synchronization storage in the original object.
 #ifndef HOST_BUILD
-    u8 field_0x70_to_0xe8[0x78];
+    u8 field_0x7c_to_0xe8[0x6c];
 #endif
 };
 

@@ -2,6 +2,11 @@
 
 #include "decomp.h"
 
+struct HATMACHINEPROGRESS {
+    i32 preserved_state;
+    i32 state[2];
+};
+
 i32 hatmachine_gizmotype_id = -1;
 
 static i32 HatMachine_GetMaxGizmos(void *hatmachine) {
@@ -54,8 +59,14 @@ static void *HatMachines_AllocateProgressData(VARIPTR *, VARIPTR *) {
     return {};
 }
 
-static void HatMachines_ClearProgress(void *, void *) {
-    UNIMPLEMENTED();
+static void HatMachines_ClearProgress(void *, void *progress_data) {
+    HATMACHINEPROGRESS *progress = (HATMACHINEPROGRESS *)progress_data;
+    if (progress == NULL) {
+        return;
+    }
+
+    progress->state[0] = -1;
+    progress->state[1] = -1;
 }
 
 static void HatMachines_StoreProgress(void *, void *, void *) {

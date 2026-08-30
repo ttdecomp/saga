@@ -21,6 +21,7 @@
 #include "decomp.h"
 
 #include "nu2api/nufile/nufpar.h"
+#include "legoapi/audio/audio.h"
 #include "nu2api/numusic/numusic.h"
 #include "nu2api/nusound/nusound.h"
 
@@ -30,13 +31,13 @@ NuMusic music_man;
 
 // Globals driving GamePlayMusic. The original keeps these in the batman TU.
 i32 NOMUSIC = 0;
-static i32 MusicOther = 0;
+i32 MusicOther = 0;
 static i32 CurrentMusicPair_Quiet = 0;
 static i32 last_currentmusicpair_quiet = 0;
-static i32 sticky_attack = 0;
-static i32 sticky_attack_time = 0;
-static i32 PlayersUnderAttack = 0;
-static i32 (*CheckMusicOtherFn)(void) = NULL;
+i32 sticky_attack __asm__("_ZL13sticky_attack") = 0;
+f32 sticky_attack_time __asm__("_ZL18sticky_attack_time") = 0.0f;
+i32 PlayersUnderAttack = 0;
+i32 (*CheckMusicOtherFn)(void) = NULL;
 
 // GamePlayMusic consults this option byte (original: SuperOptions field 0x14).
 // Non-zero selects the quiet/action attack tracks instead of the plain theme.

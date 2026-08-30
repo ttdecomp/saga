@@ -8,8 +8,14 @@
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/core/players.h"
+#include "legoapi/items/base/collection.h"
 #include "legoapi/items/objects/gameobjects.h"
+#include "legoapi/menus/screens/store.h"
+#include "legoapi/world/level.h"
+#include "legoapi/world/world.h"
 #include "gameapi/edtools/edstubs.h"
+#include "nu2api/nucore/bgproc.h"
+#include "nu2api/nu3d/nudlist.h"
 #include "nu2api/nu3d/nuspecial.h"
 
 #include <string.h>
@@ -76,6 +82,23 @@ void CharConfig_ConfigureAll(i32 permanent, nufpcomjmp_s *game_keywords);
 void ExtraCharacterFixUpAfterConfig();
 extern i32 CHARPAK;
 extern i32 apiloadcharactermodels_nopakfile;
+extern "C" i32 apiloadcharactermodels_append;
+
+extern i32 GetMenuID(void);
+extern i32 InCollectList_Index(i32 id, COLLECTID *list, i32 count);
+extern i32 Collection_Got(i32 id);
+extern void IconScenes_Load(APICHARACTERMODELLIST_s *list, i32 permanent, VARIPTR *buf, VARIPTR *buf_end);
+extern NUGSCN *IconScene_FindById(i32 character_id);
+extern void Customiser_SaveModelTextureIDs(CUSTOMISER *customiser, CHARACTERMODEL_s *model);
+extern CUSTOMISER *CharacterCustomiser;
+extern VARIPTR characterbuffer_ptr;
+extern VARIPTR characterbuffer_end;
+extern i32 waiting_for_character;
+extern f32 WaitingForCharacterTime;
+
+extern "C" {
+    i32 hub_character_ready = -1;
+}
 
 APICHARACTERMODELLIST_s PermModelList[] = {{-1, 0}};
 
@@ -195,12 +218,149 @@ void DeactivateCharacter(char *) {
 }
 
 void LoadSingleCharacter(bgprocinfo_s *) {
+    APICHARACTERMODELLIST_s list[2] = {
+        {static_cast<i16>(waiting_for_character), 1},
+        {-1, 0},
+    };
+
+    apiloadcharactermodels_append = 1;
+    apiloadcharactermodels_nopakfile = CHARPAK == 0;
+    APILoadCharacterModels(list, 0, &characterbuffer_ptr, characterbuffer_end, 1);
+    IconScenes_Load(list, 0, &characterbuffer_ptr, &characterbuffer_end);
+
+    NUGSCN *icon_scene = IconScene_FindById(list[0].model_id);
+    if (icon_scene != NULL && LEVELOBJECTCOUNT > 0) {
+        for (i32 i = 0; i < LEVELOBJECTCOUNT; ++i) {
+            if (ObjTab[i].kind != 3) {
+                continue;
+            }
+
+            LEVEL_OBJECT_RUNTIME &object = WORLD->lev_objs[i];
+            if (object.active != 0) {
+                continue;
+            }
+
+            if (NuSpecialFind(icon_scene, reinterpret_cast<void **>(&object.special), ObjTab[i].name, 1) != 0) {
+                object.active = 1;
+            }
+        }
+    }
+
+    Customiser_SaveModelTextureIDs(CharacterCustomiser, APICharacterLoaded(list[0].model_id));
+    hub_character_ready = waiting_for_character;
+    waiting_for_character = -1;
+    g_loadingCharacterInHub = 0;
 }
 
 void UpdateCharacterIdle(GameObject_s *) {
 }
 
 void UpdateCharacterLoad() {
+    const i32 menu_id = GetMenuID();
+    if (menu_id == 13 || (menu_id >= 15 && menu_id <= 19)) {
+        return;
+    }
+
+    if (LOADEROFF != 0 || BGLOAD == 0 || waiting_for_character != -1 || hub_character_ready != -1 ||
+        bgGetProcActive() != NULL || global_dlist_manager.ndisplay_lists > 0xfd) {
+        return;
+    }
+
+    const i32 required_buffer =
+        (static_cast<i32>((static_cast<f32>(CHARACTERBUFFERSIZE) / 7077888.0f) * 1048576.0f) + 0x3ff) & ~0x3ff;
+    if (required_buffer > static_cast<i32>(characterbuffer_end.addr - characterbuffer_ptr.addr)) {
+        return;
+    }
+
+    i32 candidates[0x154] __attribute__((aligned(16)));
+    i32 candidate_count = 0;
+    i32 candidate = 0;
+    i16 *fixed_candidate = NULL;
+    i32 fixed_value = -1;
+
+    if (id_BARMAN != -1 && APICharacterLoaded(id_BARMAN) == NULL) {
+        fixed_candidate = &id_BARMAN;
+        goto queue_fixed_character;
+    }
+    if (id_CANTINABAND != -1 && APICharacterLoaded(id_CANTINABAND) == NULL) {
+        fixed_candidate = &id_CANTINABAND;
+        goto queue_fixed_character;
+    }
+    if (id_WEIRDO1 != -1 && APICharacterLoaded(id_WEIRDO1) == NULL) {
+        fixed_candidate = &id_WEIRDO1;
+        goto queue_fixed_character;
+    }
+    if (id_WEIRDO2 != -1 && APICharacterLoaded(id_WEIRDO2) == NULL) {
+        fixed_candidate = &id_WEIRDO2;
+        goto queue_fixed_character;
+    }
+    if (id_JABBA != -1 && APICharacterLoaded(id_JABBA) == NULL) {
+        fixed_candidate = &id_JABBA;
+        goto queue_fixed_character;
+    }
+    if (id_MOSEISLEYCITIZEN != -1 && APICharacterLoaded(id_MOSEISLEYCITIZEN) == NULL) {
+        fixed_candidate = &id_MOSEISLEYCITIZEN;
+        goto queue_fixed_character;
+    }
+    if (id_CANTINAALIEN != -1 && APICharacterLoaded(id_CANTINAALIEN) == NULL) {
+        fixed_candidate = &id_CANTINAALIEN;
+        goto queue_fixed_character;
+    }
+    if (id_WOMPRAT != -1 && APICharacterLoaded(id_WOMPRAT) == NULL) {
+        fixed_candidate = &id_WOMPRAT;
+        goto queue_fixed_character;
+    }
+
+    for (i32 pack = 0; pack < 11; ++pack) {
+        if (g_lowEndLevelBehaviour != 0 && Hub_LowEnd_IconsInsteadOfModels != 0) {
+            continue;
+        }
+        if (Store_IsPackUnlocked(pack) != 0 || StorePack[pack].id == NULL) {
+            continue;
+        }
+
+        const i32 id = *StorePack[pack].id;
+        if (id != -1 && APICharacterLoaded(id) == NULL) {
+            fixed_value = id;
+            goto queue_fixed_value;
+        }
+    }
+
+    for (i16 id = 0; id < CHARCOUNT; ++id) {
+        if (id == id_DROIDEKA || (CDataList[id].model_flags & 0x04002000) != 0 || APICharacterLoaded(id) != NULL) {
+            continue;
+        }
+        if (static_cast<i32>(CDataList[id].field5_0x14) + apicharsys->loaded_animation_count >
+            apicharsys->animation_capacity) {
+            continue;
+        }
+        if (InCollectList_Index(id, NULL, 0) == -1 || Collection_Got(id) == 0) {
+            continue;
+        }
+        candidates[candidate_count++] = id;
+    }
+
+    if (candidate_count == 0) {
+        return;
+    }
+
+    if (candidate_count != 1) {
+        candidate = qrand() / ((0xffff / candidate_count) + 1);
+    }
+    goto queue_character;
+
+queue_fixed_character:
+    candidates[0] = *fixed_candidate;
+    candidate = 0;
+    goto queue_character;
+
+queue_fixed_value:
+    candidates[0] = fixed_value;
+    candidate = 0;
+queue_character:
+    waiting_for_character = candidates[candidate];
+    WaitingForCharacterTime = 0.0f;
+    bgPostRequest(LoadSingleCharacter, NULL, NULL, 0);
 }
 
 void CharScenes_LevelDump(WORLDINFO_s *) {

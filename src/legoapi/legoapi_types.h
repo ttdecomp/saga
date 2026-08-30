@@ -348,9 +348,11 @@ struct AREASAVE_s {
     u8 story_buildup_complete;
     u8 freeplay_buildup_complete;
     u8 minikit_count;
-    u8 field_0x5[7];
+    u8 field_0x5[3];
+    f32 challenge_trial_time;
 };
 DECOMP_ASSERT(sizeof(AREASAVE_s) == 0xc, "AREASAVE_s size");
+DECOMP_ASSERT(offsetof(AREASAVE_s, challenge_trial_time) == 0x8, "AREASAVE challenge time offset");
 struct ATTRACTO_s;
 struct BATARANG_s {};
 struct BOLTSYS {};
@@ -366,7 +368,21 @@ struct CHARVARIANT {};
 struct CHEAT;
 struct CLIMBOBJECTSYS_s {};
 struct CUSTOMISER {};
-struct CUSTOMISESAVE_s {};
+struct __attribute__((packed)) CUSTOMISESAVE_s {
+    i16 pieces[9];              // 0x00
+    u8 field_0x12[2];           // 0x12
+    char primary_name[0x20];    // 0x14
+    u8 primary_name_unlocked;   // 0x34
+    u8 field_0x35[0x17];        // 0x35
+    char secondary_name[0x20];  // 0x4c
+    u8 secondary_name_unlocked; // 0x6c
+    u8 field_0x6d[2];           // 0x6d
+};
+DECOMP_ASSERT(sizeof(CUSTOMISESAVE_s) == 0x6f, "CUSTOMISESAVE_s size");
+DECOMP_ASSERT(offsetof(CUSTOMISESAVE_s, primary_name) == 0x14, "CUSTOMISESAVE primary name offset");
+DECOMP_ASSERT(offsetof(CUSTOMISESAVE_s, primary_name_unlocked) == 0x34, "CUSTOMISESAVE primary flag offset");
+DECOMP_ASSERT(offsetof(CUSTOMISESAVE_s, secondary_name) == 0x4c, "CUSTOMISESAVE secondary name offset");
+DECOMP_ASSERT(offsetof(CUSTOMISESAVE_s, secondary_name_unlocked) == 0x6c, "CUSTOMISESAVE secondary flag offset");
 struct CUSTOMPIECE {};
 struct CUTINFO {
     void *scene;
@@ -445,7 +461,15 @@ struct GAMEANIMSYS_s {};
 struct GAMEANTINODEDATA_s {};
 struct GAMEANTINODESYS_s {};
 struct GAMEANTINODE_s {};
-struct GAMEAUDIO {};
+struct GAMEAUDIO {
+    void (*action_music_fn)(void);
+    void (*reset_music_fn)(void);
+    const char *sfx_names[0x55];
+    i16 sfx_ids[0x55];
+};
+
+DECOMP_ASSERT(offsetof(GAMEAUDIO, sfx_names) == 0x8, "GAMEAUDIO sfx_names offset");
+DECOMP_ASSERT(offsetof(GAMEAUDIO, sfx_ids) == 0x15c, "GAMEAUDIO sfx_ids offset");
 // Camera state (GameCam). The original global points directly at a static
 // 0x230-byte block; matrix and mode offsets are verified against
 // MoveGameCamera and InitGameBeforeConfig.
@@ -476,7 +500,9 @@ struct GAMECAMERA_s {
     f32 field_0x1ec;
     f32 field_0x1f0;
     f32 field_0x1f4;
-    u8 pad_1f8[0x204 - 0x1f8];
+    u8 pad_1f8[4];
+    u16 input_yaw; // 0x1fc, added to camera-relative controller angles
+    u8 pad_1fe[0x204 - 0x1fe];
     f32 field_0x204;
     f32 field_0x208;
     f32 field_0x20c;
@@ -522,22 +548,61 @@ struct RUMBLEPACKET {
 };
 struct GAMEPAD_s {
     nupad_s *pad; // 0x00  the bound input pad (fields 0x00..0x1f)
-    u32 unknown_04;
-    u32 buttons_down_08; // bitmask of pressed buttons (GAMEPAD_* masks)
-    u32 unknown_0c;
-    u32 unknown_10;
-    u32 unknown_14;
-    u32 unknown_18;
-    u32 unknown_1c;
+    union {
+        u32 buttons_held;
+        u32 unknown_04;
+    };
+    union {
+        u32 buttons_pressed;
+        u32 buttons_down_08;
+    };
+    union {
+        u32 buttons_released;
+        u32 unknown_0c;
+    };
+    union {
+        u32 left_directions;
+        u32 unknown_10;
+    };
+    union {
+        u32 previous_left_directions;
+        u32 unknown_14;
+    };
+    union {
+        u32 right_directions;
+        u32 unknown_18;
+    };
+    union {
+        u32 previous_right_directions;
+        u32 unknown_1c;
+    };
     u32 unknown_20;
-    u32 unknown_24;
-    f32 unknown_28;
-    char pad_2c[0x40 - 0x2c];
+    union {
+        struct {
+            u8 input_state;
+            u8 input_mode;
+            u16 input_angle;
+        };
+        u32 unknown_24;
+    };
+    union {
+        f32 input_magnitude;
+        f32 unknown_28;
+    };
+    f32 input_direction_x; // 0x2c
+    f32 input_direction_z; // 0x30
+    f32 peak_input_magnitude;
+    f32 previous_input_magnitude;
+    f32 waggle_magnitude;
     RUMBLEPACKET rumble_packet; // 0x40
-    char pad_54[0x5a - 0x54];
-    u8 allocated_5a; // set by GamePad_Allocate()
+    void *operator_data;        // 0x54
+    u16 previous_input_angle;
+    u8 allocated_5a; // allocation and input-state flags
     char pad_5b[0x60 - 0x5b];
 };
+DECOMP_ASSERT(sizeof(GAMEPAD_s) == 0x60, "GAMEPAD_s ABI");
+DECOMP_ASSERT(offsetof(GAMEPAD_s, input_angle) == 0x26, "GAMEPAD input angle offset");
+DECOMP_ASSERT(offsetof(GAMEPAD_s, input_magnitude) == 0x28, "GAMEPAD input magnitude offset");
 struct GIZACTIONDEFN_s {};
 
 // The AI message system: a fixed pool of 0x38-byte messages; the free list
@@ -631,7 +696,9 @@ struct SPLINEPOS_s {};
 // Status / achievements screen packet (332 bytes; fields used by NuMain:
 // model ids at 0x9c/0x9e, per-player bytes at 0xa4/0xa5, flags at 0xb1/0xb2).
 struct STATUSPACKET_s {
-    undefined field_0x00[0x9c];
+    undefined field_0x00[0x04];
+    i32 field_0x04;
+    undefined field_0x08[0x9c - 0x08];
     u16 player0_model; // 0x9c
     u16 player1_model; // 0x9e
     undefined field_0xa0[0xa4 - 0xa0];
@@ -643,7 +710,21 @@ struct STATUSPACKET_s {
     undefined field_0xb3[0x14c - 0xb3];
 };
 struct STATUS_STAGE_s {};
-struct SUIT_s {};
+struct SUIT_s {
+    char *base_character_name;
+    char *suit_character_name;
+    i16 *text_id;
+    u8 store_flag;
+    u8 initially_available;
+    u8 group;
+    char letter;
+    u32 character_flags;
+    i16 character_id;
+    u8 index;
+    u8 field_0x17;
+};
+DECOMP_ASSERT(sizeof(SUIT_s) == 0x18, "SUIT_s size");
+DECOMP_ASSERT(offsetof(SUIT_s, group) == 0xe, "SUIT_s group offset");
 struct SUPERCOUNTER {};
 struct SUPERCOUNTERPICKUP {};
 struct ShaderObjectKey;
@@ -652,8 +733,12 @@ struct TECHNO_s;
 struct TERRPICKUPSET {};
 struct TERRSET {};
 struct TEXTCRAWL_s {
-    u8 pad[32]; // NOLINT(readability-identifier-naming)
+    i16 *heading_text;
+    i16 *vehicle_bonus_text;
+    i16 *character_bonus_text;
+    i32 paragraph_count;
 };
+DECOMP_ASSERT(sizeof(TEXTCRAWL_s) == 0x10, "TEXTCRAWL_s size");
 struct TEXTENTRY {
     i16 *text_id;
     i16 value;
@@ -981,9 +1066,6 @@ DECOMP_ASSERT(sizeof(particlechunkrendertype_s) == 0x64, "particlechunkrendertyp
 struct pushblock_s {};
 struct ripple_node_s {};
 struct ripple_set_s {};
-struct rtldata_s {
-    u8 data[0x144];
-};
 struct rtlset {};
 struct shopitem_s {};
 struct specialsfx_s {};

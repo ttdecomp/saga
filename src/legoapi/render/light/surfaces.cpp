@@ -44,7 +44,13 @@ void SurfaceMaskOn(u32 *) {
 void GetSurfaceInfo(GameObject_s *, i32, float) {
 }
 
-void IntersectWater(GameObject_s *) {
+i32 IntersectWater(GameObject_s *object) {
+    if ((object->apiobj.field_0x27f & static_cast<u8>(~8u)) != 1) {
+        return 0;
+    }
+
+    const f32 water_height = object->apiobj.field_0x21c;
+    return water_height <= object->apiobj.collision_max.y && object->apiobj.collision_min.y <= water_height;
 }
 
 void SurfaceMaskOff(u32 *) {

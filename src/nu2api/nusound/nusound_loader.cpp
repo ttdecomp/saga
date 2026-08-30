@@ -2,6 +2,7 @@
 #include "nu2api/nusound/nusound_system.hpp"
 
 #include "nu2api/numath/nufloat.h"
+#include "nu2api/nucore/nustring.h"
 
 #include <string.h>
 
@@ -46,8 +47,51 @@ i32 NuSoundLoader::LoadFromFile(const char *name, NuSoundStreamDesc *desc, NuSou
 }
 
 i32 NuSoundLoader::Load(NuSoundStreamDesc *desc, NuSoundBuffer *buffer) {
-    UNIMPLEMENTED();
-    return {};
+    i32 result = ReadHeader(desc);
+    if (result != 1) {
+        Close();
+        return result;
+    }
+
+    bool decode_on_open = desc->DecodeStreamOnOpen();
+    char *path = const_cast<char *>(this->path);
+    bool use_decoded_length = NuStrIStr(path, "coin") != NULL || NuStrIStr(path, "counter") != NULL ||
+                              NuStrIStr(path, "fs_") != NULL || NuStrIStr(path, "saber") != NULL || decode_on_open;
+    u64 length = use_decoded_length ? desc->GetDecodedLengthBytes() : desc->GetEncodedLengthBytes();
+
+    result = buffer->Allocate(length, NuSoundSystem::MemoryDiscipline::SAMPLE);
+    if (result != 1) {
+        if (this->oom != NULL) {
+            (*this->oom)();
+        }
+        result = buffer->Allocate(length, NuSoundSystem::MemoryDiscipline::SAMPLE);
+        if (result != 1) {
+            Close();
+            return 5;
+        }
+    }
+
+    this->desc = desc;
+    buffer->Lock();
+    memset(buffer->GetAddress(), 0, length);
+    SeekRawData(0);
+    u64 read = ReadData(buffer->GetAddress(), length);
+
+    NuSoundBuffer::Context context;
+    context.read_size = read;
+    context.size2 = read;
+    context.size3 = 0;
+    context.flags |= 3;
+    context.field5_0x20 = 0;
+    buffer->SetCurrentContext(context);
+    buffer->Unlock();
+
+    Close();
+    if (read == 0) {
+        buffer->Free();
+        return 4;
+    }
+    return 1;
 }
 
 i32 NuSoundLoader::OpenForStreaming(const char *path, f64 length, NuSoundStreamDesc *desc, bool param4) {
@@ -102,6 +146,7 @@ void NuSoundLoader::FillStreamBuffer(NuSoundBuffer *buffer, bool param3) {
             data += size;
 
             context.size2 += size;
+            uVar3iVar2 = context.size2;
 
         } while (read_size == size);
 
@@ -140,7 +185,10 @@ i32 NuSoundLoader::OpenFileForStreaming(char const *name, bool) {
 }
 
 void NuSoundLoader::Close() {
-    UNIMPLEMENTED();
+    if (this->file != 0) {
+        NuFileClose(this->file);
+    }
+    this->file = 0;
 }
 
 u64 NuSoundLoader::ReadData(void *dest, u64 size) {

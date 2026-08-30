@@ -13,7 +13,7 @@ static float g_audioVersion;
 NUSOUNDINFO *g_soundInfo;
 NUSOUNDINFO *g_revertSoundInfo;
 
-static u16 *g_soundMap;
+u16 *g_soundMap;
 nusound_filename_info_s *SfxInfo = NULL;
 
 static i32 NumSfx = 0;
@@ -29,6 +29,7 @@ static char cfgfile_name[256] = "Audio/audio.cfg";
 void InitSoundInfo(i32 index) {
     NUSOUNDINFO *info = &g_soundInfo[index];
     info->index = -1;
+    info->flag_bytes[1] &= 0x7f;
     info->priority = 0;
     info->volume = 0x3fff;
     info->pan = 0.0;
@@ -36,21 +37,19 @@ void InitSoundInfo(i32 index) {
     info->pitch_rnd = 0.0;
     info->rumble_strength = 0;
     info->sfx_name = sfx_name[NumSfxInst];
+    u8 flags = info->flag_bytes[2];
     info->category = 0;
+    flags &= 0x88;
     info->field29_0x40 = 0;
     info->volume_rnd = 0.0;
-
-    // info->field_0x6 = info->field_0x6 & 0x88;
-    info->dirty = 1;
-    info->disabled = 1;
-
+    info->flag_bytes[2] = flags;
     info->falloff_near = 0.0;
     info->falloff_far = 0.0;
     info->buzz_timer = 0.0;
     info->rumble_sustain = 0.0;
     info->rumble_release = 0.0;
 
-    memcpy(&g_revertSoundInfo[index], info, sizeof(NUSOUNDINFO));
+    g_revertSoundInfo[index] = *info;
 }
 
 static void fnAudioAudio(nufpar_s *fpar) {
@@ -61,27 +60,28 @@ static void fnAudioSample(nufpar_s *fpar) {
     InitSoundInfo(NumSfxInst);
 
     NUSOUND_FILENAME_INFO *finfo = NULL;
-    NUSOUNDINFO *sinfo = NULL;
-
-    i32 i = 0;
     while (true) {
         if (NuFParGetWord(fpar) == 0) {
-            sinfo = &g_soundInfo[NumSfxInst];
-            // *(byte *)((i32)&sinfo->flags + 2) = *(byte *)((i32)&sinfo->flags + 2) & 0xef | 0x20;
+            NUSOUNDINFO *sinfo = &g_soundInfo[NumSfxInst];
             sinfo->dirty = 0;
-
-            LOG_DEBUG("fpar->line_buf=%s", fpar->line_buf);
-            LOG_DEBUG("Loaded sound %d: name=%s, filename=%s, pitch=%d, volume=%hd, pri=%d, loop=%d, global=%d, "
-                      "pitch_rnd=%.2f, volume_rnd=%.2f",
-                      NumSfxInst, sinfo->sfx_name, sinfo->filename, sinfo->pitch, sinfo->volume, sinfo->priority,
-                      sinfo->loop, sinfo->global, sinfo->pitch_rnd, sinfo->volume_rnd);
-
-            memmove(&g_revertSoundInfo[NumSfxInst], sinfo, 0x44);
+            sinfo->revertable = 1;
+            memmove(&g_revertSoundInfo[NumSfxInst], sinfo, sizeof(NUSOUNDINFO));
             NumSfxInst++;
             return;
         }
 
-        if (NuStrICmp(fpar->word_buf, "name") == 0) {
+        if (NuStrICmp(fpar->word_buf, "disable") == 0) {
+            g_soundInfo[NumSfxInst].disabled = 1;
+        } else if (NuStrICmp(fpar->word_buf, "comment") == 0) {
+            g_soundInfo[NumSfxInst].comment = 1;
+        } else if (NuStrICmp(fpar->word_buf, "maxvoicesbehaviour") == 0) {
+            NuFParGetWord(fpar);
+            if (NuStrICmp(fpar->word_buf, "noplay") == 0) {
+                g_soundInfo[NumSfxInst].field29_0x40 = 0;
+            } else if (NuStrICmp(fpar->word_buf, "replace") == 0) {
+                g_soundInfo[NumSfxInst].field29_0x40 = 1;
+            }
+        } else if (NuStrICmp(fpar->word_buf, "name") == 0) {
             NuFParGetWord(fpar);
             NuStrNCpy(sfx_name[NumSfxInst], fpar->word_buf, 0x20);
 
@@ -97,54 +97,94 @@ static void fnAudioSample(nufpar_s *fpar) {
                 g_soundInfo[NumSfxInst].next = *id;
                 *id = NumSfxInst;
             }
-
-            if (finfo == NULL) {
-                continue;
-            }
-            sinfo = &g_soundInfo[NumSfxInst];
-
         } else if (NuStrICmp(fpar->word_buf, "fname") == 0) {
             NuFParGetWord(fpar);
 
-            i32 i = 0;
-            for (; i < NumSfx; i++) {
-                sinfo = g_soundInfo;
-                if (NuStrICmp(SfxInfo[i].filename, fpar->word_buf) == 0) {
-                    sfx_refcount[i] = sfx_refcount[i] + 1;
-                    sinfo[NumSfxInst].filename = SfxInfo[i].filename;
-                    break;
+            if (g_soundInfo[NumSfxInst].disabled == 0 && g_soundInfo[NumSfxInst].comment == 0) {
+                i32 i = 0;
+                for (; i < NumSfx; i++) {
+                    if (NuStrICmp(SfxInfo[i].filename, fpar->word_buf) == 0) {
+                        finfo = &SfxInfo[i];
+                        g_soundInfo[NumSfxInst].index = i;
+                        g_soundInfo[NumSfxInst].filename = finfo->filename;
+                        sfx_refcount[i]++;
+                        break;
+                    }
+                }
+                if (i == NumSfx) {
+                    const i32 filename_index = NumSfxNames;
+                    finfo = &SfxInfo[i];
+                    finfo->filename = sfx_filename[filename_index];
+                    finfo->field4_0x4 = NULL;
+                    finfo->index = i + 0x1000 - SFX_MUSIC_COUNT;
+                    NumSfxNames = filename_index + 1;
+                    NuStrNCpy(const_cast<char *>(finfo->filename), fpar->word_buf, 0x40);
+                    const i32 sample_index = NumSfx;
+                    sfx_refcount[sample_index] = 1;
+                    g_soundInfo[NumSfxInst].filename = finfo->filename;
+                    g_soundInfo[NumSfxInst].index = sample_index;
+                    NumSfx = sample_index + 1;
+                }
+            } else {
+                g_soundInfo[NumSfxInst].index = -1;
+                i32 i = 0;
+                for (; i < NumSfx; i++) {
+                    if (NuStrICmp(SfxInfo[i].filename, fpar->word_buf) == 0) {
+                        sfx_refcount[i]++;
+                        g_soundInfo[NumSfxInst].filename = SfxInfo[i].filename;
+                        break;
+                    }
+                }
+                if (i == NumSfx) {
+                    NuStrNCpy(sfx_filename[NumSfxNames], fpar->word_buf, 0x40);
+                    g_soundInfo[NumSfxInst].filename = sfx_filename[NumSfxNames++];
                 }
             }
-            if (i == NumSfx) {
-                NuStrNCpy(sfx_filename[NumSfxNames++], fpar->word_buf, 0x40);
-                g_soundInfo[NumSfxInst].filename = sfx_filename[NumSfxNames - 1];
-            }
-
-            if (finfo == NULL) {
-                continue;
-            }
-
-            sinfo = &g_soundInfo[NumSfxInst];
         } else if (NuStrICmp(fpar->word_buf, "pitch") == 0) {
             g_soundInfo[NumSfxInst].pitch = NuFParGetInt(fpar);
-        } else if (NuStrICmp(fpar->word_buf, "global") == 0) {
-            g_soundInfo[NumSfxInst].global = 1;
-        } else if (NuStrICmp(fpar->word_buf, "pitch_rnd") == 0) {
-            f32 pitch_rnd = NuFParGetFloat(fpar);
-            g_soundInfo[NumSfxInst].pitch_rnd = CLAMP(pitch_rnd, -1.0f, 1.0f);
-        } else if (NuStrICmp(fpar->word_buf, "volume") == 0) {
-            i32 volume = NuFParGetInt(fpar);
-            g_soundInfo[NumSfxInst].volume = CLAMP(volume, -0x3fff, 0x3fff);
+        } else if (NuStrICmp(fpar->word_buf, "pan") == 0) {
+            f32 pan = NuFParGetFloat(fpar);
+            g_soundInfo[NumSfxInst].pan = CLAMP(pan, -1.0f, 1.0f);
         } else if (NuStrICmp(fpar->word_buf, "pri") == 0) {
             i32 priority = NuFParGetInt(fpar);
             g_soundInfo[NumSfxInst].priority = CLAMP(priority, -128, 127);
-        } else if (NuStrICmp(fpar->word_buf, "volume_rnd") == 0) {
-            f32 volume_rnd = NuFParGetFloat(fpar);
-            g_soundInfo[NumSfxInst].volume_rnd = CLAMP(volume_rnd, -1.0f, 1.0f);
         } else if (NuStrICmp(fpar->word_buf, "loop") == 0) {
             g_soundInfo[NumSfxInst].loop = 1;
-        } else {
-            LOG_WARN("Unknown AudioSample command '%s'", fpar->word_buf);
+        } else if (NuStrICmp(fpar->word_buf, "pitch_rnd") == 0) {
+            f32 pitch_rnd = NuFParGetFloat(fpar);
+            g_soundInfo[NumSfxInst].pitch_rnd = CLAMP(pitch_rnd, 0.0f, 1.0f);
+        } else if (NuStrICmp(fpar->word_buf, "volume") == 0) {
+            i32 volume = NuFParGetInt(fpar);
+            g_soundInfo[NumSfxInst].volume = CLAMP(volume, 0, 0x3fff);
+        } else if (NuStrICmp(fpar->word_buf, "nofade") == 0) {
+            g_soundInfo[NumSfxInst].nofade = 1;
+        } else if (NuStrICmp(fpar->word_buf, "volume_rnd") == 0) {
+            f32 volume_rnd = NuFParGetFloat(fpar);
+            g_soundInfo[NumSfxInst].volume_rnd = CLAMP(volume_rnd, -1.0f, 0.0f);
+        } else if (NuStrICmp(fpar->word_buf, "near") == 0) {
+            f32 falloff_near = NuFParGetFloat(fpar);
+            g_soundInfo[NumSfxInst].falloff_near = CLAMP(falloff_near, 0.0f, 250.0f);
+        } else if (NuStrICmp(fpar->word_buf, "far") == 0) {
+            f32 falloff_far = NuFParGetFloat(fpar);
+            g_soundInfo[NumSfxInst].falloff_far = CLAMP(falloff_far, 0.0f, 250.0f);
+        } else if (NuStrICmp(fpar->word_buf, "global") == 0) {
+            g_soundInfo[NumSfxInst].global = 1;
+        } else if (NuStrICmp(fpar->word_buf, "rumble") == 0) {
+            f32 buzz_timer = NuFParGetFloat(fpar);
+            i32 rumble_strength = NuFParGetInt(fpar);
+            g_soundInfo[NumSfxInst].buzz_timer = CLAMP(buzz_timer, 0.0f, 5.0f);
+            g_soundInfo[NumSfxInst].rumble_strength = CLAMP(rumble_strength, 0, 0xff);
+            f32 rumble_sustain = NuFParGetFloat(fpar);
+            g_soundInfo[NumSfxInst].rumble_sustain = CLAMP(rumble_sustain, 0.0f, 5.0f);
+            f32 rumble_release = NuFParGetFloat(fpar);
+            g_soundInfo[NumSfxInst].rumble_release = CLAMP(rumble_release, 0.0f, 5.0f);
+        } else if (NuStrICmp(fpar->word_buf, "fcat") == 0) {
+            i32 category = NuFParGetInt(fpar);
+            g_soundInfo[NumSfxInst].category = CLAMP(category, 0, 0xffff);
+        }
+
+        if (finfo != NULL) {
+            finfo->field7_0x1c = g_soundInfo[NumSfxInst].field29_0x40;
         }
     }
 }
@@ -185,7 +225,7 @@ static NUFPCOMJMP audioCom[] = {
     {NULL, NULL},
 };
 
-static void LoadSfx(const char *file, variptr_u *buffer_start, variptr_u buffer_end);
+void LoadSfx(const char *file, variptr_u *buffer_start, variptr_u buffer_end);
 
 void InitSfx(variptr_u *buffer_start, variptr_u buffer_end, const char *file) {
     // bVar15 = 0;
@@ -248,30 +288,20 @@ void InitSfx(variptr_u *buffer_start, variptr_u buffer_end, const char *file) {
 
     LoadSfx(file, buffer_start, buffer_end);
 
-    // piVar14 = GlobalSfxBits;
-    // for (iVar12 = 0x32; iVar12 != 0; iVar12 = iVar12 + -1) {
-    //     *piVar14 = 0;
-    //     piVar14 = piVar14 + (u32)bVar15 * -2 + 1;
-    // }
+    memset(GlobalSfxBits, 0, sizeof(GlobalSfxBits));
 
-    // if (0 < NumSfxInst) {
-    //     end = g_soundInfo + NumSfxInst;
-    //     sound_info = g_soundInfo;
-    //     do {
-    //         if ((sound_info->flags & 2) != 0) {
-    //             sVar7 = (short)(*(short *)&sound_info->field_0x4 * 2) >> 1;
-    //             local_14 = (byte)sVar7 & 0xf;
-    //             puVar2 = (ushort *)((i32)GlobalSfxBits + ((i32)sVar7 >> 4) * 2);
-    //             *puVar2 = *puVar2 | (ushort)(1 << local_14);
-    //         }
-    //         sound_info = sound_info + 1;
-    //     } while (sound_info != end);
-    // }
+    for (i32 i = 0; i < NumSfxInst; i++) {
+        NUSOUNDINFO *sound_info = &g_soundInfo[i];
+        if (sound_info->global != 0) {
+            i32 index = sound_info->index;
+            GlobalSfxBits[index >> 4] |= static_cast<u16>(1 << (index & 0xf));
+        }
+    }
 
-    // ResetSounds();
+    ResetSounds();
 }
 
-static void LoadSfx(const char *file, variptr_u *buffer_start, variptr_u buffer_end) {
+void LoadSfx(const char *file, variptr_u *buffer_start, variptr_u buffer_end) {
     nufpar_s *fp = NuFParCreate(const_cast<char *>(file));
     if (fp != NULL) {
         NuFParPushCom(fp, audioCom);
@@ -294,14 +324,10 @@ static void LoadSfx(const char *file, variptr_u *buffer_start, variptr_u buffer_
 
     NuSound3SetSampleTable(SfxInfo, buffer_start, buffer_end);
 
-    // piVar3 = SfxBits;
-    // for (iVar2 = 0x32; iVar2 != 0; iVar2 = iVar2 + -1) {
-    // *piVar3 = 0;
-    // piVar3 = piVar3 + (u32)bVar4 * -2 + 1;
-    // }
+    memset(SfxBits, 0, sizeof(SfxBits));
 
     if (NOSOUND == 0) {
-        // NuSound3SetRequestTable(SfxBits, 100);
+        NuSound3SetRequestTable(SfxBits, 100);
     }
 }
 

@@ -109,16 +109,29 @@ int NuSoundDecoderOGG::OGGReadCallbacksDecoder::Read(void *dest, unsigned int si
         }
 
         if (available == take) {
+            // Decode() keeps the current encoded buffer locked while
+            // vorbisfile reads it.  At a buffer boundary the original drops
+            // that persistent lock before moving to the next ring entry.
+            buffer->Unlock();
+
             if (this->decoder->ring_read_pos == this->decoder->ring_write_pos) {
-                break;
+                // A refill is still in flight.  The original re-cues the
+                // current buffer from its start and restores the persistent
+                // lock, returning whatever was copied this call rather than
+                // reporting a false end-of-stream to vorbisfile.
+                buffer->Lock();
+                this->position = 0;
+                return (int)copied;
             }
             this->decoder->locked_buffer = this->decoder->encoded_buffers[this->decoder->ring_read_pos % 4];
             __sync_fetch_and_add(&this->decoder->ring_read_pos, 1);
-            this->position = 0;
 
             NuSoundWeakPtr<NuSoundBufferCallback> callback;
             callback.Set(this->decoder);
             this->decoder->source->RequestBuffer(this->decoder->ogg_loop, callback);
+
+            this->decoder->locked_buffer->Lock();
+            this->position = 0;
         }
     }
 
@@ -214,7 +227,8 @@ u32 NuSoundDecoderOGG::DecodeOggChunk(char *dest, unsigned int size) {
 
     u32 bits_per_sample = desc->GetBitsPerChannel();
 
-    OggVorbis_File *ogg = desc != NULL ? &desc->ogg_file : NULL;
+    NuSoundHeaderOGG *header = (NuSoundHeaderOGG *)desc;
+    OggVorbis_File *ogg = header != NULL ? &header->ogg_file : NULL;
     void *saved_datasource = ogg != NULL ? ogg->datasource : NULL;
     if (ogg != NULL) {
         ogg->datasource = &this->read_callbacks;

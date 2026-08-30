@@ -6,6 +6,7 @@
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/nu3d/android/nuiosdl_gl.h"
+#include "nu2api/nu3d/nudlist.h"
 #include "nu2api/nu3d/nurndrstat.h"
 
 #include <string.h>
@@ -122,7 +123,59 @@ extern "C" {
     void DisplayListCreateRigidSkinTransformPS(void) {
     }
 
-    void DisplayListCreateSkinTransformPS(void) {
+    // Original 0x29b338.  Build the compact skin-palette packet consumed by
+    // NuIOSDLSkinMtxCallback.  Blend-shape deltas are applied to a stream copy
+    // of immediate geometry before the ordinary geometry callback runs.
+    void *DisplayListCreateSkinTransformPS(VARIPTR *buffer, NUMTX *skin_matrices,
+                                           DEFORMERWEIGHTSARRAY *deformer_weights, NUDISPLAYLISTGEOM *geometry,
+                                           NUDISPLAYLISTGEOM **render_geometry) {
+        if (deformer_weights != NULL && geometry->immediate != 0) {
+            buffer->addr = ALIGN(buffer->addr, 0x20);
+            NUDISPLAYLISTGEOM *copy = static_cast<NUDISPLAYLISTGEOM *>(buffer->void_ptr);
+            *render_geometry = copy;
+            buffer->addr += sizeof(*copy);
+            *copy = *geometry;
+
+            buffer->addr = ALIGN(buffer->addr, 0x20);
+            copy->dynamic_vertex_data = buffer->void_ptr;
+            const usize vertex_data_size = static_cast<usize>(geometry->vertex_stride) * geometry->vertex_count;
+            buffer->addr += vertex_data_size;
+
+            u8 *source = reinterpret_cast<u8 *>(static_cast<usize>(geometry->vertex_buffer)) +
+                         static_cast<usize>(geometry->vertex_stride) * geometry->base_vertex;
+            u8 *destination = static_cast<u8 *>(copy->dynamic_vertex_data);
+            memmove(destination, source, vertex_data_size);
+
+            for (i32 vertex = 0; vertex < geometry->vertex_count; ++vertex) {
+                NUVEC *position = reinterpret_cast<NUVEC *>(destination);
+                for (i32 deformer = 0; deformer < deformer_weights->count; ++deformer) {
+                    NUVEC *offsets = geometry->deformer_vertex_offsets[deformer];
+                    const f32 weight = deformer_weights->weights[deformer];
+                    if (offsets != NULL && weight != 0.0f) {
+                        position->x += offsets[vertex].x * weight;
+                        position->y += offsets[vertex].y * weight;
+                        position->z += offsets[vertex].z * weight;
+                    }
+                }
+                destination += geometry->vertex_stride;
+                source += geometry->vertex_stride;
+            }
+        } else {
+            geometry->dynamic_vertex_data = NULL;
+            *render_geometry = geometry;
+        }
+
+        i32 *matrix_count = static_cast<i32 *>(buffer->void_ptr);
+        void *packet = matrix_count;
+        *matrix_count = 0;
+        buffer->addr += sizeof(*matrix_count);
+        for (i32 i = 0; i < 8 && geometry->joint_indices[i] != 0xff; ++i) {
+            NUMTX *packet_matrix = static_cast<NUMTX *>(buffer->void_ptr);
+            *packet_matrix = skin_matrices[geometry->joint_indices[i]];
+            buffer->addr += sizeof(NUMTX);
+            ++*matrix_count;
+        }
+        return packet;
     }
 
     void DisplayListDebugPS(void) {
@@ -138,7 +191,7 @@ extern "C" {
     void DisplayListSetFxItemParamPS(void) {
     }
 
-    void DisplayListSetShadowCasterFlagPS(void) {
+    void DisplayListSetShadowCasterFlagPS(NUDISPLAYLISTITEM *, NUDISPLAYLISTITEM *, i32) {
     }
 
     // DisplayListSwapBuffersPS is fully transcribed in nu3d/nudlist.cpp (original 0x29b8c0 / 0x29b77e).
@@ -330,10 +383,10 @@ extern "C" {
     void RndrStateSetReflection(void) {
     }
 
-    void RndrStateUpdate(void) {
+    void RndrStateUpdate(void *, NUMTL *, NUDISPLAYLISTITEM *) {
     }
 
-    void RndrStateUpdateFx(void) {
+    void RndrStateUpdateFx(void *, NUDISPLAYLISTITEM *) {
     }
 
     void SetAiRndrCullDistance(void) {

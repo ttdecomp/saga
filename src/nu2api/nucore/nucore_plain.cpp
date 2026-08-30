@@ -55,7 +55,9 @@ extern "C" NUGCUTLOCATORFNENTRY_s *locatorfns;
 struct nuhspecial_s;
 struct ani3_animheader_s;
 
-extern "C" u8 CutSceneBoundingBoxTrackRoot = 0;
+extern "C" {
+    u8 CutSceneBoundingBoxTrackRoot = 0;
+}
 
 extern "C" void ANI_FixUpAddrs(ani3_animheader_s *, i32);
 extern "C" void ANI_Ani3ExtractAllNodeCurves(ani3_animheader_s *, f32, f32 *, i32, char *);
@@ -102,6 +104,7 @@ extern "C" {
     NUCOLOUR3 nuspecial_const_tint = {1.0f, 1.0f, 1.0f};
     i32 nuspecial_const_alpha_enabled;
     f32 nuspecial_const_alpha = 1.0f;
+    i32 nuspecial_reflection;
     extern NUGLOBALRNDRSTATE render_state;
     void RndrStateSetConstAlphaTint(i32 alpha_enabled, i32 tint_enabled, f32 alpha, const NUCOLOUR3 *tint, NUMTL *mtl);
 }
@@ -483,11 +486,50 @@ extern "C" {
     void *DisplayListCreateFaceonTransformPS(VARIPTR *buffer, NUMTX *transform, NUMTL *mtl, void *faceon);
     void *DisplayListCreateGeomTransformPS(VARIPTR *buffer, NUMTX *transform, NUMTL *mtl, void *next, void *tx);
 
-    i32 NuDisplayListRndrSpecial(nuhspecial_s *special_handle, NUMTX *mtx, i32 skinned, void *skin_mtx,
-                                 void *blend_values) {
+    // Original local helper cloned as DisplayListProcessSkin.isra.36 by GCC.
+    // It appends the world transform, skin palette, and geometry calls as one
+    // contiguous run in the material display list.
+    static __attribute__((optimize("O3"))) void
+    DisplayListProcessSkin(NUMTL *, NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
+                           NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix, void **transform_packet,
+                           NUMTX *skin_matrices, DEFORMERWEIGHTSARRAY *deformer_weights, i32 shadow_caster) {
+        display_list_buffer->addr = ALIGN(display_list_buffer->addr, 0x10);
+        VARIPTR *buffer = NuDisplayListLinkItems(list, 3);
+
+        *transform_packet = DisplayListCreateGeomTransformPS(buffer, world_matrix, list->dlist->mtls[list->mtl_id],
+                                                             geometry->next, *transform_packet);
+        NUDISPLAYLISTITEM *item = list->items;
+        item->type = 0x8c;
+        item->id = 3;
+        item->next = *transform_packet;
+        list->items = item + 1;
+        first_and_last[0] = item;
+
+        NUDISPLAYLISTGEOM *render_geometry;
+        void *skin_packet =
+            DisplayListCreateSkinTransformPS(buffer, skin_matrices, deformer_weights,
+                                             static_cast<NUDISPLAYLISTGEOM *>(geometry->next), &render_geometry);
+        item = list->items;
+        item->type = 0x99;
+        item->id = 3;
+        item->next = skin_packet;
+        list->items = item + 1;
+
+        item = list->items;
+        item->type = 0x98;
+        item->id = 3;
+        item->next = render_geometry;
+        list->items = item + 1;
+        first_and_last[1] = item;
+
+        DisplayListSetAlphaPS(first_and_last[0], first_and_last[1], 1.0f);
+        DisplayListSetShadowCasterFlagPS(first_and_last[0], first_and_last[1], shadow_caster);
+    }
+
+    __attribute__((optimize("O3"))) i32 NuDisplayListRndrSpecial(nuhspecial_s *special_handle, NUMTX *mtx, i32 skinned,
+                                                                 NUMTX *skin_matrices,
+                                                                 DEFORMERWEIGHTSARRAY *blend_values) {
         (void)skinned;
-        (void)skin_mtx;
-        (void)blend_values;
 
         if (special_handle == NULL || mtx == NULL) {
             return 0;
@@ -550,6 +592,7 @@ extern "C" {
             }
         }
 
+        void *transform_packet = NULL;
         for (u32 i = 0; i < *reinterpret_cast<u32 *>(clip_object); ++i) {
             u32 *material_indices = *reinterpret_cast<u32 **>(reinterpret_cast<u8 *>(clip_object) + 4);
             i32 *item_indices = *reinterpret_cast<i32 **>(reinterpret_cast<u8 *>(clip_object) + 8);
@@ -573,25 +616,37 @@ extern "C" {
                                            nuspecial_const_alpha, &nuspecial_const_tint, material);
                 DisplayListUpdateRenderState(list, &render_state);
 
-                VARIPTR *buffer = NuDisplayListLinkItems(list, 2);
-                NUDISPLAYLISTITEM *items = list->items;
                 if (geometry->type == 0x8f) {
+                    VARIPTR *buffer = NuDisplayListLinkItems(list, 2);
+                    NUDISPLAYLISTITEM *items = list->items;
                     items[0].type = 0x90;
                     items[0].id = 3;
                     items[0].next = DisplayListCreateFaceonTransformPS(buffer, mtx, material, geometry->next);
                     items[1].type = 0x8f;
                     items[1].id = 3;
                     items[1].next = NuDisplayListPrepareFaceonPS(buffer, geometry->next, mtx);
+                    list->items = items + 2;
+                    DisplayListSetAlphaPS(items, items + 1, distance_alpha);
+                } else if (skin_matrices != NULL) {
+                    NUDISPLAYLISTITEM *first_and_last[2];
+                    i32 shadow_caster = 0;
+                    if ((scene->visibility_flags[special->instance_ix] & 0x20) != 0 && nuspecial_reflection == 0) {
+                        shadow_caster = 1;
+                    }
+                    DisplayListProcessSkin(material, list, geometry, first_and_last, mtx, &transform_packet,
+                                           skin_matrices, blend_values, shadow_caster);
                 } else {
+                    VARIPTR *buffer = NuDisplayListLinkItems(list, 2);
+                    NUDISPLAYLISTITEM *items = list->items;
                     items[0].type = 0x8c;
                     items[0].id = 3;
                     items[0].next = DisplayListCreateGeomTransformPS(buffer, mtx, material, geometry->next, NULL);
                     items[1].type = 0x82;
                     items[1].id = 3;
                     items[1].next = geometry->next;
+                    list->items = items + 2;
+                    DisplayListSetAlphaPS(items, items + 1, distance_alpha);
                 }
-                list->items = items + 2;
-                DisplayListSetAlphaPS(items, items + 1, distance_alpha);
             }
         }
         RndrStateSetConstAlphaTint(0, 0, 0.0f, NULL, NULL);
@@ -1979,7 +2034,9 @@ extern "C" {
     }
     void NuSpecialDrawSmoothSkin(void) {
     }
-    i32 NuSpecialDrawSmoothSkinDwa(void *special, NUMTX *skin_matrices, NUMTX *world_matrix, void *blend_values) {
+    __attribute__((optimize("O3"))) i32 NuSpecialDrawSmoothSkinDwa(void *special, NUMTX *skin_matrices,
+                                                                   NUMTX *world_matrix,
+                                                                   DEFORMERWEIGHTSARRAY *blend_values) {
         NuPlainSpecialHandleLayout *handle = static_cast<NuPlainSpecialHandleLayout *>(special);
         if (handle == NULL || handle->scene == NULL || handle->display_special == NULL) {
             return 0;
@@ -2431,8 +2488,9 @@ extern "C" {
     }
     // Original @0x2f56a0. Draw rigid hierarchy pieces at their evaluated joint
     // matrices, then build skin matrices for the smooth hierarchy pieces.
-    i32 NuHGobjRndrMtxDwa(nuhgobj_s *object, NUMTX *world_matrix, i32 render_count, i16 *render_indices,
-                          NUMTX *joint_matrices, void **blend_values, i32) {
+    __attribute__((optimize("O3"))) i32 NuHGobjRndrMtxDwa(nuhgobj_s *object, NUMTX *world_matrix, i32 render_count,
+                                                          i16 *render_indices, NUMTX *joint_matrices,
+                                                          void **blend_values, i32) {
         i32 clip_state = nuspecial_clip_state;
         if (clip_state == -1) {
             clip_state = NuCameraClipHGobj(reinterpret_cast<nugscn_s *>(object), world_matrix, joint_matrices);
@@ -2496,12 +2554,12 @@ extern "C" {
                               &joint_matrices[joint_index]);
                 }
                 if (part.smooth_skin_special != NULL) {
-                    drawn |=
-                        NuSpecialDrawSmoothSkinDwa(part.smooth_skin_special, skin_matrices, world_matrix, blend_value);
+                    drawn |= NuSpecialDrawSmoothSkinDwa(part.smooth_skin_special, skin_matrices, world_matrix,
+                                                        static_cast<DEFORMERWEIGHTSARRAY *>(blend_value));
                 }
                 if (part.alternate_smooth_skin_special != NULL) {
                     drawn |= NuSpecialDrawSmoothSkinDwa(part.alternate_smooth_skin_special, skin_matrices, world_matrix,
-                                                        blend_value);
+                                                        static_cast<DEFORMERWEIGHTSARRAY *>(blend_value));
                 }
             }
         }
@@ -2564,7 +2622,8 @@ extern "C" {
     }
     void NuKeyboard(void) {
     }
-    void NuKeyboard_db(void) {
+    i32 NuKeyboard_db(i32) {
+        return 0;
     }
     void NuMouseButton(void) {
     }

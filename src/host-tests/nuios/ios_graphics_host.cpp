@@ -2,6 +2,7 @@
 
 #include <GLES2/gl2.h>
 #include <pthread.h>
+#include <stdio.h>
 #include <string.h>
 #include <time.h>
 
@@ -79,7 +80,13 @@ u32 NuIOS_YieldThread(void) {
     return sched_yield();
 }
 
+static char g_hostDocumentsPath[256] = ".work/host-documents/";
+
+void HostSetDocumentsPath(const char *path) {
+    snprintf(g_hostDocumentsPath, sizeof(g_hostDocumentsPath), "%s", path);
+}
+
 char *NuIOS_GetDocumentsPath(void) {
     // Keep host test saves isolated from extracted resources and user saves.
-    return const_cast<char *>(".work/host-documents/");
+    return g_hostDocumentsPath;
 }

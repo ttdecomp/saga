@@ -28,8 +28,7 @@ class NuSoundStreamingSample : public NuSoundSample {
     NuSoundBuffer *sound_buffer1;
     NuSoundBuffer *sound_buffer2;
 
-    NuSoundStreamer *streamer;
-    NuSoundLoader *file_loader;
+    u8 field_0x88; // set once this sample allocated its own buffers
 
     // Number of buffers that hold valid data (incremented by Open/ReCue and
     // by every completed fill).
@@ -37,7 +36,8 @@ class NuSoundStreamingSample : public NuSoundSample {
     // Read cursor: how many of the filled buffers have been handed out.
     i32 field8_0x90;
 
-    u8 field_0x88; // set once this sample allocated its own buffers
+    NuSoundStreamer *streamer;
+    NuSoundLoader *file_loader;
 
     NuSoundStreamingSample(const char *file);
 

@@ -259,13 +259,12 @@ void NuSoundStreamer::ThreadFunc(void *self) {
 
 NuSoundStreamingSample::NuSoundStreamingSample(const char *file)
     : NuSoundSample(file, NuSoundSource::FeedType::STREAMING) {
-    this->sound_buffer1 = NULL;
-    this->sound_buffer2 = NULL;
-    this->streamer = NULL;
-    this->file_loader = NULL;
     this->some_count = 0;
     this->field8_0x90 = 0;
+    this->streamer = NULL;
+    this->file_loader = NULL;
     this->field_0x88 = 0;
+    this->field_0x1c = 1;
 }
 
 NuSoundStreamingSample::~NuSoundStreamingSample() {

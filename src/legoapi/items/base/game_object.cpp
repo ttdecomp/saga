@@ -27,16 +27,6 @@ static u32 LayerBit(u8 layer) {
     return 1u << (layer & 31);
 }
 
-struct CreatureCharacterData {
-    u8 pad_000[0x90];
-    u32 flags_090;
-    u8 pad_094[0xa0 - 0x94];
-    u32 layer_mask;
-    u8 pad_0a4[0xf4 - 0xa4];
-    u8 hitpoints;
-    u8 field_0xf5;
-};
-
 extern void SetGameObjectCharacterData(GameObject_s *obj);
 extern void GetTopBot(GameObject_s *obj);
 extern void GameObjectDimensions(GameObject_s *obj);
@@ -119,7 +109,7 @@ i32 InitCreature(GameObject_s *obj, i32 id, i32 param) {
     }
 
     CHARACTERDATA *character_data = &apicharsys->char_data[id];
-    CreatureCharacterData *game_character_data = static_cast<CreatureCharacterData *>(character_data->field11_0x24);
+    GAMECHARACTERDATA *game_character_data = static_cast<GAMECHARACTERDATA *>(character_data->field11_0x24);
     obj->apiobj.character_data = character_data;
     obj->field_0x1054 = game_character_data->layer_mask;
     obj->apiobj.field_0x1f4 = 0;
@@ -187,7 +177,7 @@ i32 InitCreature(GameObject_s *obj, i32 id, i32 param) {
     }
     ResetAnimPacket(&obj->apiobj.anim_packet, reset_animation);
     ResetCharacterIdle(obj, 2, GetDefaultIdle(obj));
-    ResetLights(&obj->apiobj.position, reinterpret_cast<rtldata_s *>(obj->light_data), WORLD->rtl_set);
+    ResetLights(&obj->apiobj.position, &obj->light_data, WORLD->rtl_set);
 
     obj->ai.mover_height = obj->apiobj.field_0x1dc + default_mover_extra;
     GameObjectOrigin(obj);

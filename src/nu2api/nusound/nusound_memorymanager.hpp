@@ -51,13 +51,12 @@ class NuSoundMemoryManager {
     u16 name_length2;
     const char *name;
     NuSoundMemoryBuffer *free_list_head;
+    void *memory2;
+    u32 size2;
     u32 free_bytes;
     pthread_mutex_t mutex;
     u8 flags;
     u32 free_count;
-    void *memory2;
-    u32 size2;
-    u32 size3;
 
   public:
     NuSoundMemoryManager();

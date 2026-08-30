@@ -97,7 +97,12 @@ typedef struct MENUFNINFO_s {
     i16 memory_x;
     i16 memory_y;
     char wrap;
+    i8 confirm_prompt;
+    i8 cancel_prompt;
+    u8 filler_1b;
 } MENUFNINFO;
+
+DECOMP_ASSERT(sizeof(MENUFNINFO) == 0x1c, "MENUFNINFO size");
 
 #ifdef __cplusplus
 extern "C" {

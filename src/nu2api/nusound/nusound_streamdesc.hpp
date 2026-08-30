@@ -7,8 +7,6 @@
 
 #include "nu2api/nucore/common.h"
 
-#include <vorbis/vorbisfile.h>
-
 class NuSoundStreamDesc {
   public:
     enum class DataFormat {
@@ -17,28 +15,12 @@ class NuSoundStreamDesc {
     };
 
   public:
-    u16 format_id;
-    u16 num_channels;
-    u32 sample_rate;
-    u32 samples_per_second;
-    u16 bits_per_channel;
-    u16 block_size;
-    u64 decoded_length_bytes;
-    u16 extended_data_size;
-    void *extended_data;
-
-    OggVorbis_File ogg_file;
-
-    u64 file_size;
-    u64 encoded_length_bytes;
-    u64 length_samples;
-    double length_seconds;
-
-  public:
+    virtual ~NuSoundStreamDesc() {
+    }
     virtual DataFormat GetDecodedDataFormat() const = 0;
     virtual u64 GetEncodedLengthBytes() const = 0;
     virtual u64 GetLengthSamples() const = 0;
-    virtual double GetLengthSeconds() const = 0;
+    virtual f32 GetLengthSeconds() const = 0;
     virtual u64 GetDataOffset() const = 0;
     virtual u16 GetNumChannels() const = 0;
     virtual u32 GetSampleRate() const = 0;

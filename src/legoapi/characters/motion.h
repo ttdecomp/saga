@@ -21,7 +21,8 @@ void ChrisAllocLevelStuff(WORLDINFO_s *world);
 void PodKeyReset(void);
 void PodLoseSpeed(GameObject_s *obj, i32 type, i32 unknown);
 void DrawMeleeTargets(i16 *targets, char *icon, float *a, i32 count);
-GameObject_s *AddDynamicCreature(i32 model, nuvec_s *pos, i32 unknown, char *group, AIPATHINFO_s *path,
-                                 AIGROUP_s *ai_group, i32 a, nugspline_s *spline, nuvec_s *dir, i32 b, i32 c);
+GameObject_s *AddDynamicCreature(i32 model, nuvec_s *position, i32 angle, char *script_name, AIPATHINFO_s *path_info,
+                                 AIGROUP_s *group, i32 set_on_surface, nugspline_s *spline, nuvec_s *spline_offset,
+                                 i32 spline_mode, i32 creature_set);
 
 #endif

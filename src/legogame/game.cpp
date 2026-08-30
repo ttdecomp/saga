@@ -3,6 +3,7 @@
 #include "gameframework/saveload.h"
 #include "globals.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/audio/audio.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/props/doors/door.h"
 #include "legoapi/world/area.h"
@@ -31,6 +32,100 @@ void DrawAutoSaveIcon(void) {
 SUPEROPTIONS_s SuperOptions = {};
 static CUTSCENESYS CutSceneSys_LSW = {0x5b, 0x5c, 0xe7, 2};
 void CutScenes_InitSystem(CUTSCENESYS *);
+void GameAudio_Init(GAMEAUDIO *);
+
+static GAMEAUDIO GameAudio_LSW = {
+    NULL,
+    NULL,
+    {
+        "Jp_Ami_Jump",
+        NULL,
+        "Jp_OQ_Jump",
+        "Jp_OQ_DJump",
+        "JumpLunge",
+        "JumpSlam",
+        "Jp_OQ_BackF",
+        "FS_JLandS",
+        "FS_JLandM",
+        "FS_DLandS",
+        "FS_DLandM",
+        "JediLunge",
+        "JediSlam",
+        "Grv_GrievAngryJump",
+        NULL,
+        "FS_JWalkS",
+        "FS_JWalkM",
+        "FS_DWalkS",
+        "FS_DWalkM",
+        "FS_WaterWade",
+        "Leia_grunt",
+        "Rebel_grunt",
+        "Leia_Hurt",
+        "Luke_Hurt",
+        "Explode1",
+        "exp_thermalDet",
+        "DroidDie01",
+        "Leia_Death",
+        "Luke_Death",
+        "CountdownTimerTick",
+        "CountdownTimerTock",
+        "SwChar",
+        NULL,
+        "SwChar",
+        "SwChar",
+        "ToggleChar",
+        "ToggleChar",
+        "MK-Loop",
+        "MK-Panel",
+        "PickupHeart",
+        "BlastHit",
+        "BlastRic",
+        "SabDefBlas",
+        "StatusAward",
+        "TrueJedi_100pc",
+        "WipeScreen",
+        "NegC_MagnetCoil",
+        "MenuMove",
+        "MenuSelect",
+        "MenuBack",
+        "MenuNoEntry",
+        "Explode1",
+        "imp_punch",
+        "ui_DoubleScoreText",
+        "MenuSelect",
+        "MenuBack",
+        "fly_paddle_rotate_lp",
+        "fly_paddle_stuck",
+        "MK-Pickup",
+        "LegoForm",
+        "LegoSingle",
+        "SaberOff",
+        "SaberOn",
+        "SaberSaber01",
+        "SaberMove01",
+        "SaberSmack01",
+        "BlasterHolster",
+        "BlasterDraw",
+        NULL,
+        NULL,
+        "FS_WaterOut",
+        "Block_Shove",
+        "Block_Push_Lp",
+        "Blaster",
+        "wpn_punch",
+        "Honk",
+        "WhipSwish",
+        "WhipHit",
+        "WhipNowt",
+        "FallApart01",
+        "PowerUp_On",
+        "PowerUp_Loop",
+        "PowerUp_Off",
+        "env_padLight_on",
+        "Shop_BuyCheat",
+    },
+    {},
+};
 
 void InitGameBeforeConfig(void) {
     if (PAL == 0) {
@@ -296,7 +391,7 @@ void InitGameAfterConfig(void) {
     //  SurfaceMaskOn(&TERRAINMASK_NONDROID);
     Hub_UsePlayerList = 1;
     //  BoltSys_Init((BOLTSYS *)BoltSys_LSW);
-    //  GameAudio_Init((GAMEAUDIO *)GameAudio_LSW);
+    GameAudio_Init(&GameAudio_LSW);
     //  KITPOSX = 0;
     //  KITPOS2X = 0;
     //  CONVERTOLDPICKUPS = 1;
@@ -531,7 +626,7 @@ void InitGameAfterConfig(void) {
     //  Grass_Available = 1;
     //  PauseGame_ExtraCodeFn = PauseGame_ExtraCode;
     //  Hub_PanelBusyFn = Hub_PanelBusy;
-    //  CheckMusicOtherFn = CheckMusicOther;
+    CheckMusicOtherFn = CheckMusicOther;
     //  GizBuildIt_CanStartBuildingFn = GizBuildIt_CanStartBuildingFn_Game;
     //  GizBuildIt_FinishFn = GizBuildIt_FinishFn_Game;
     //  POWERUP_TEXTID = (i32)tPOWERUP;
@@ -539,7 +634,7 @@ void InitGameAfterConfig(void) {
     //  Game_100PercentFn = LEGO_100PercentFn;
     //  Game_AllGoldBricksFn = LEGO_AllGoldBricksFn;
     //  LastSafePosExtraFn = LastSafePosExtra;
-    //  GameAudio_ActionMusicFn = ActionMusicFn;
+    GameAudio_ActionMusicFn = ActionMusicFn;
     //  PauseRenderOffFn = PauseRenderOff;
     //  FindSlamOrigin_UseCPosFn = FindSlamOrigin_UseCPos;
     //  GizmoBlowUp_NoTargetFn = GizmoBlowUp_NoTarget;

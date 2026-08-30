@@ -9,6 +9,8 @@ typedef struct nuportal_s {
     u32 is_active;
 } NUPORTAL;
 
+struct nugscn_s;
+
 #ifdef __cplusplus
 extern "C" {
 #endif

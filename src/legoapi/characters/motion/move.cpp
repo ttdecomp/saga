@@ -1,18 +1,89 @@
 #include "decomp.h"
 #include "globals.h"
 #include "legoapi/characters/core/character.h"
+#include "legoapi/characters/core/players.h"
+#include "legoapi/core/input/gamepads.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/props/system/socksys.h"
 #include "legoapi/world/world.h"
+#include "nu2api/nucore/nupad.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/numath/nufloat.h"
+#include "nu2api/numath/nuang.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nutrig.h"
+#include "nu2api/numath/nuvec.h"
+
+void MovePlayer_DIRECTIONAL(GameObject_s *object);
+void ApplyGravity(GameObject_s *object, float *gravity, float terminal_velocity, float gravity_scale,
+                  float *vertical_velocity);
+void GameObjectOrigin(GameObject_s *object);
 
 void MoveBlocks(WORLDINFO_s *, pushblock_s *, i32, nuvec_s *) {
 }
 
-void MovePlayer(GameObject_s *) {
+void MovePlayer(GameObject_s *object) {
+    if (object == NULL || object->pad_gamepad == NULL) {
+        return;
+    }
+
+    GAMEPAD_s *pad = object->pad_gamepad;
+    APIOBJECT &api = object->apiobj;
+
+    api.previous_position[0] = api.position.x;
+    api.previous_position[1] = api.position.y;
+    api.previous_position[2] = api.position.z;
+    pad->previous_input_angle = pad->input_angle;
+    pad->previous_input_magnitude = pad->input_magnitude;
+
+    f32 input_x = 0.0f;
+    f32 input_z = 0.0f;
+    const u32 dpad = pad->buttons_held & (GAMEPAD_DLEFT | GAMEPAD_DRIGHT | GAMEPAD_DUP | GAMEPAD_DDOWN);
+    if (dpad != 0) {
+        if ((dpad & GAMEPAD_DLEFT) != 0) {
+            input_x -= 1.0f;
+        }
+        if ((dpad & GAMEPAD_DRIGHT) != 0) {
+            input_x += 1.0f;
+        }
+        if ((dpad & GAMEPAD_DUP) != 0) {
+            input_z += 1.0f;
+        }
+        if ((dpad & GAMEPAD_DDOWN) != 0) {
+            input_z -= 1.0f;
+        }
+    } else if (pad->pad != NULL) {
+        static const f32 kAnalogCentre = 127.5f;
+        input_x = (static_cast<f32>(pad->pad->analog_left_x) - kAnalogCentre) / kAnalogCentre;
+        input_z = (kAnalogCentre - static_cast<f32>(pad->pad->analog_left_y)) / kAnalogCentre;
+    }
+
+    const f32 raw_magnitude = NuFsqrt(input_x * input_x + input_z * input_z);
+    if (raw_magnitude > 0.0f) {
+        pad->input_direction_x = input_x / raw_magnitude;
+        pad->input_direction_z = input_z / raw_magnitude;
+        pad->input_magnitude = raw_magnitude < 0.2f ? 0.0f : MIN(raw_magnitude, 1.0f);
+        const NUANG camera_yaw = GameCam != NULL ? GameCam->input_yaw : 0;
+        pad->input_angle =
+            static_cast<u16>(NuAngSub(NuAtan2D(pad->input_direction_x, pad->input_direction_z), camera_yaw));
+    } else {
+        pad->input_direction_x = 0.0f;
+        pad->input_direction_z = 0.0f;
+        pad->input_magnitude = 0.0f;
+        pad->input_angle = 0;
+    }
+
+    if (pad->input_magnitude > pad->peak_input_magnitude) {
+        pad->peak_input_magnitude = pad->input_magnitude;
+    }
+
+    MovePlayer_DIRECTIONAL(object);
+
+    api.previous_velocity_x = api.field_0x68;
+    api.previous_velocity_y = api.field_0x6c;
+    api.previous_velocity_z = api.field_0x70;
+    APIObjectVelocities(object);
+    GameObjectOrigin(object);
 }
 
 void Move_BEAST(GameObject_s *) {
@@ -140,7 +211,11 @@ void MoveGameCamera(GAMECAMERA_s *camera) {
 void MovePlayer_POD(GameObject_s *) {
 }
 
-void Move_CHARACTER(GameObject_s *) {
+void Move_CHARACTER(GameObject_s *object) {
+    if (object == NULL) {
+        return;
+    }
+    ApplyGravity(object, NULL, 0.0f, 8.0f, NULL);
 }
 
 void Move_GEONOSIAN(GameObject_s *) {
@@ -194,7 +269,28 @@ void Move_REPUBLICGUNSHIP(GameObject_s *) {
 void Move_SUPERBATTLEDROID(GameObject_s *) {
 }
 
-void MovePlayer_DIRECTIONAL(GameObject_s *) {
+void MovePlayer_DIRECTIONAL(GameObject_s *object) {
+    if (object == NULL || object->pad_gamepad == NULL || object->apiobj.character_data == NULL) {
+        return;
+    }
+
+    GAMECHARACTERDATA *game_character = static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
+    if (game_character == NULL) {
+        return;
+    }
+
+    GAMEPAD_s *pad = object->pad_gamepad;
+    const f32 speed = game_character->movement_speed * pad->input_magnitude;
+    const u16 angle = GamePad_InputAngle(object, pad);
+    NUVEC forward = {0.0f, 0.0f, speed};
+    NUVEC velocity;
+    NuVecRotateY(&velocity, &forward, angle);
+
+    object->apiobj.field_0x68 = velocity.x;
+    object->apiobj.field_0x70 = velocity.z;
+    if (pad->input_magnitude > 0.0f) {
+        object->apiobj.field_0x276 = angle;
+    }
 }
 
 void MovePlayer_VEHICLEDIRECTIONAL(GameObject_s *) {
@@ -322,7 +418,23 @@ float SeekLinearF(float current, float target, float step) {
 void StartLaunch(GameObject_s *) {
 }
 
-void ApplyGravity(GameObject_s *, float *, float, float, float *) {
+void ApplyGravity(GameObject_s *object, float *gravity, float terminal_velocity, float gravity_scale,
+                  float *vertical_velocity) {
+    if (object == NULL || object->move_override != NULL || (object->apiobj.field_0x1f8 & 0x20) != 0) {
+        return;
+    }
+
+    f32 &velocity = vertical_velocity != NULL ? *vertical_velocity : object->apiobj.field_0x6c;
+    if ((object->apiobj.field_0x27d & 1) != 0 && velocity <= 0.0f) {
+        velocity = 0.0f;
+        return;
+    }
+
+    const f32 acceleration = gravity != NULL ? *gravity : gravity_scale;
+    velocity -= acceleration * FRAMETIME;
+    if (terminal_velocity > 0.0f && velocity < -terminal_velocity) {
+        velocity = -terminal_velocity;
+    }
 }
 
 void SetObjTarget(GameObject_s *, GameObject_s *) {

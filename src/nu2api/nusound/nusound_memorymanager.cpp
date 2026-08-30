@@ -141,14 +141,13 @@ u32 NuSoundMemoryManager::Init(const char *name, void *memory, u32 size, u32 ali
         this->name = name;
         this->memory2 = memory;
         this->size2 = size;
-        this->size3 = size;
         this->free_bytes = size;
 
         NuSoundMemoryBuffer *buffer = PopFreeBuffer();
 
         this->free_list_head = buffer;
 
-        buffer->SetSize(this->size3);
+        buffer->SetSize(this->free_bytes);
         this->free_list_head->SetAddress(this->memory2);
     }
 
@@ -160,7 +159,26 @@ void NuSoundMemoryManager::EnableDefragOnAlloc(bool value) {
 }
 
 NuSoundMemoryManager::NuSoundMemoryManager() {
-    pthread_mutex_init(&this->mutex, NULL);
+    this->memory = NULL;
+    this->size = 0;
+    this->align = 0;
+    this->field3_0xc = 0;
+    this->name_length = 0;
+    this->name_length2 = 0;
+    this->name = NULL;
+    this->free_list_head = NULL;
+    this->memory2 = NULL;
+    this->size2 = 0;
+    this->free_bytes = 0;
+
+    pthread_mutexattr_t attributes;
+    pthread_mutexattr_init(&attributes);
+    pthread_mutexattr_settype(&attributes, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_init(&this->mutex, &attributes);
+    pthread_mutexattr_destroy(&attributes);
+
+    this->flags &= 0xf8;
+    this->free_count = 0;
 }
 
 NuSoundMemoryManager::~NuSoundMemoryManager() {
@@ -354,7 +372,6 @@ bool NuSoundMemoryManager::Release() {
     this->memory2 = NULL;
     this->size2 = 0;
     this->free_bytes = 0;
-    this->size3 = 0;
     return true;
 }
 

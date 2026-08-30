@@ -235,9 +235,11 @@ class NuSoundSystem {
 
         virtual bool AllocatePage(NuMemoryManager *manager, u32 size, u32 _unknown) {
             UNIMPLEMENTED("g_handler::AllocatePage");
+            return {};
         }
         virtual bool ReleasePage(NuMemoryManager *manager, void *ptr, u32 _unknown) {
             UNIMPLEMENTED("g_handler::ReleasePage");
+            return {};
         }
     } g_handler;
 
@@ -332,7 +334,7 @@ class NuSoundSystem {
     void ReAllocMemory(NuSoundSystem::MemoryDiscipline, unsigned int, unsigned int);
     void ReleaseBus(NuSoundBus *);
     void ReleaseCrossfadeCurve(unsigned int);
-    void ReleaseDecoder(NuSoundDecoder *decoder);
+    static void ReleaseDecoder(NuSoundDecoder *decoder);
     void ReleaseEffect(NuSoundEffect *);
     void ReleaseSample(NuSoundSample *);
     void RemoveListener(NuSoundListener *);

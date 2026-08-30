@@ -45,11 +45,11 @@ i32 GetParentMenuID() {
         return -1;
     }
 
-    const MENU &parent = GameMenu[GameMenuLevel - 1];
-    if (parent.menu == -1) {
+    const i16 parent_menu = GameMenu[GameMenuLevel - 1].menu;
+    if (parent_menu == -1) {
         return -1;
     }
-    return MenuInfo[parent.menu].id;
+    return MenuInfo[parent_menu].id;
 }
 void GetMenuActiveChild(eduimenu_s *) {
 }

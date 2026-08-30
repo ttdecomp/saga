@@ -2,6 +2,11 @@
 
 #include "decomp.h"
 
+struct SECURITYDOORPROGRESS {
+    i32 state[2];
+    i32 activated;
+};
+
 static i32 SecurityDoors_GetMaxGizmos(void *door) {
     UNIMPLEMENTED();
     return {};
@@ -57,8 +62,15 @@ static void *SecurityDoors_AllocateProgressData(VARIPTR *, VARIPTR *) {
     return {};
 }
 
-static void SecurityDoors_ClearProgress(void *, void *) {
-    UNIMPLEMENTED();
+static void SecurityDoors_ClearProgress(void *, void *progress_data) {
+    SECURITYDOORPROGRESS *progress = (SECURITYDOORPROGRESS *)progress_data;
+    if (progress == NULL) {
+        return;
+    }
+
+    progress->state[0] = -1;
+    progress->state[1] = -1;
+    progress->activated = 0;
 }
 
 static void SecurityDoors_StoreProgress(void *, void *, void *) {

@@ -7,15 +7,11 @@ struct nuhspecial_s;
 struct minitrooperteam_s;
 struct nuvec_s;
 
+extern "C" void *AISysLoadEx(void *buf, void *buf_end, i32 size, void *gscn, char *dir, char *name, char *param,
+                             char *load_dir);
+
 extern "C" void *AISysLoad(void *buf, void *buf_end, i32 size, void *gscn, char *dir, char *name, char *param) {
-    (void)buf;
-    (void)buf_end;
-    (void)size;
-    (void)gscn;
-    (void)dir;
-    (void)name;
-    (void)param;
-    return NULL;
+    return AISysLoadEx(buf, buf_end, size, gscn, dir, name, param, dir);
 }
 void *AIPathCnxControlSysCreate(VARIPTR *buf, VARIPTR *buf_end, i32 count) {
     (void)buf;

@@ -179,10 +179,8 @@ void NuSoundDecoder::VoiceRelease() {
 // Every source's type field is 1 (the original's NuSoundSource ctor hardcodes
 // it), so the table's second entry, 2, is the cap.
 u32 NuSoundDecoder::GetNumInitialBuffers() const {
-    static const u32 sNumInitialBuffersByType[] = {1, 2};
-
-    const u32 type = (u32)this->source_type;
-    const u32 cap = sNumInitialBuffersByType[type];
+    const u32 type = (u32)this->feed_type;
+    const u32 cap = NuSoundSource::sNumInitialBuffers[type];
     return this->ring_count < cap ? this->ring_count : cap;
 }
 

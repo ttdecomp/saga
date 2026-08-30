@@ -2,6 +2,12 @@
 
 #include "decomp.h"
 
+struct GIZPANELPROGRESS {
+    i32 state;
+    i32 goodie_state;
+    i32 baddie_state;
+};
+
 i32 gizpanel_gizmotype_id = -1;
 
 static i32 GizPanel_GetMaxGizmos(void *panel) {
@@ -54,8 +60,15 @@ static void *GizPanels_AllocateProgressData(VARIPTR *, VARIPTR *) {
     return {};
 }
 
-static void GizPanels_ClearProgress(void *, void *) {
-    UNIMPLEMENTED();
+static void GizPanels_ClearProgress(void *, void *progress_data) {
+    GIZPANELPROGRESS *progress = (GIZPANELPROGRESS *)progress_data;
+    if (progress == NULL) {
+        return;
+    }
+
+    progress->state = 0;
+    progress->goodie_state = -1;
+    progress->baddie_state = -1;
 }
 
 static void GizPanels_StoreProgress(void *, void *, void *) {
