@@ -169,6 +169,11 @@ the original section:
 Writing `= 0` does not create dynamic initialization or a guard. Confirm the
 target symbol class with `nm` before changing initialization.
 
+For initialized registries and pointer tables, preserve the complete original order,
+terminator, per-entry flags, and section placement. The target is unstripped, so recover the
+table bytes and pointed-to symbols directly as described in `06-target-binary.md` instead of
+constructing a minimal table for whichever script or host path happens to run today.
+
 ## 8. Authoring checklist
 
 1. Find the exact target symbol and demangle it if needed.

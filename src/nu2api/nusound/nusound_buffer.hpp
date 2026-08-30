@@ -4,9 +4,9 @@
 
 #include "nu2api/nusound/nusound_system.hpp"
 
-class NuSoundBuffer {
+class __attribute__((packed, aligned(4))) NuSoundBuffer {
   public:
-    struct Context {
+    struct __attribute__((packed, aligned(4))) Context {
         u64 read_size;
         u64 size2;
         u64 size3;
@@ -24,7 +24,6 @@ class NuSoundBuffer {
     NuSoundMemoryBuffer *memory_buffer;
     i32 lock_count;
     i32 allocated;
-    u32 flags;
     NuSoundSystem::MemoryDiscipline memory_discipline;
     Context context;
 

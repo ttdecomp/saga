@@ -1,7 +1,21 @@
 #include "legoapi/world/world_shared.h"
+#include "legoapi/audio/audio.h"
+#include "nu2api/numusic/sfx.h"
+#include "nu2api/nusound/nusound.h"
+
+#include <string.h>
+
 struct SoundTable;
 
-extern "C" void PlaySfxByIdEx(i32 sfx_id, i32 flags, f32 volume, f32 pitch);
+extern "C" {
+    u16 GlobalSfxBits[100];
+    u16 SfxBits[100];
+}
+
+void NuSound3CreateVoice(nuvec_s *position, i32 sample_index, f32 volume_bits, f32 pitch, i32 falloff_near,
+                         i32 falloff_far, f32 pan, bool has_3d);
+
+extern "C" void PlaySfxByIdEx(i32 sfx_id, nuvec_s *position, f32 volume, f32 pitch);
 
 i32 ActionFromQuiet(i32 idx) {
     static i16 ActionPairTab[14] = {-1};
@@ -31,6 +45,7 @@ i32 AmbientFromQuiet(i32 idx) {
 }
 
 extern "C" void ResetSounds(void) {
+    memcpy(SfxBits, GlobalSfxBits, sizeof(SfxBits));
 }
 
 void SetLevelSfxBits(WORLDINFO *world) {
@@ -55,11 +70,11 @@ void LoadSpecialSfxFile(WORLDINFO *world) {
     (void)world;
 }
 
-static __used__ bool ActionMusicFn() {
+i32 ActionMusicFn() {
     return {};
 }
 
-static __used__ bool CheckMusicOther() {
+i32 CheckMusicOther() {
     return {};
 }
 
@@ -115,8 +130,8 @@ extern "C" {
     void PlaySfxAndSetVolumeAndPitch(void) {
     }
 
-    void PlaySfxById(i32 sfx_id, i32 flags) {
-        PlaySfxByIdEx(sfx_id, flags, 1.0f, 1.0f);
+    void PlaySfxById(i32 sfx_id, nuvec_s *position) {
+        PlaySfxByIdEx(sfx_id, position, 1.0f, 1.0f);
     }
 
     void PlaySfxByIdAndSetPitch(void) {
@@ -128,7 +143,28 @@ extern "C" {
     void PlaySfxByIdAndSetVolumeAndPitch(void) {
     }
 
-    void PlaySfxByIdEx(i32, i32, f32, f32) {
+    void PlaySfxByIdEx(i32 sfx_id, nuvec_s *position, f32 volume, f32 pitch) {
+        if (sfx_id == -1 || g_soundInfo == NULL) {
+            return;
+        }
+
+        NUSOUNDINFO *sound = &g_soundInfo[sfx_id];
+        if (sound->disabled != 0 || sound->comment != 0 || sound->index < 0) {
+            return;
+        }
+
+        i32 voice_volume = static_cast<i32>(static_cast<f32>(sound->volume) * volume);
+        voice_volume = CLAMP(voice_volume, 0, 0x3fff);
+
+        // NuSound3CreateVoice keeps the original ABI: its float slot carries
+        // the raw PS2-volume dword which the update path converts to 0..1.
+        f32 volume_bits;
+        memcpy(&volume_bits, &voice_volume, sizeof(volume_bits));
+
+        nuvec_s origin = {0.0f, 0.0f, 0.0f};
+        nuvec_s *voice_position = position != NULL ? position : &origin;
+        NuSound3CreateVoice(voice_position, sound->index, volume_bits, pitch, static_cast<i32>(sound->falloff_near),
+                            static_cast<i32>(sound->falloff_far), sound->pan, position != NULL);
     }
 
     void PlayingCutMusic(void) {
@@ -275,9 +311,6 @@ void AddLevelSfxFromName(char *, i32 *, i32 *, i32) {
 }
 
 void AddLevelSfxGizmoSys(GIZMOSYS_s *, void *, i32 *, i32 *, i32) {
-}
-
-void LoadSfx(char const *, variptr_u *, variptr_u) {
 }
 
 void BlockSfx(GameObject_s *) {

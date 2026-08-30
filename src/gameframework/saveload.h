@@ -28,6 +28,9 @@ extern "C" {
     extern i32 memcard_extra_savedatasize;
     extern void *memcard_extra_savedatabuffer;
     extern void (*memcard_drawasiconfn)(void);
+    extern i32 memcard_autosavestarted;
+    extern f32 memcard_autosavepredelay;
+    extern f32 memcard_autosavepostdelay;
 
     void saveloadInit(VARIPTR *buf, VARIPTR buf_end, i32, char *prodcode, char *iconname, char *unicodename, i32);
 

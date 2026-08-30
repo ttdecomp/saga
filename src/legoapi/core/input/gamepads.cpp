@@ -1,14 +1,30 @@
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/props/system/socksys.h"
+#include "legoapi/world/world.h"
 #include "nu2api/nucore/NuInputDevice.h"
 #include "nu2api/nucore/nupad.h"
+
+#include <string.h>
+
+extern "C" nupad_s **Game_NuPad;
+extern GAMECAMERA_s *GameCam;
+extern WORLDINFO_s *WORLD;
 
 // Original bss @0x127a500: 64 pads x 0x60 bytes.
 GAMEPAD_s GamePad[64];
 // Original bss @0x127a4e0.
 i32 readpads_always = 0;
 
-void GamePads_Init() {
+__attribute__((optimize("O2"))) void GamePads_Init() {
+    Game_NuPad[0] = NuPadOpen(0, 0);
+    Game_NuPad[1] = NuPadOpen(1, 0);
+
+    for (i32 i = 0; i < 64; ++i) {
+        memset(&GamePad[i], 0, sizeof(GamePad[i]));
+    }
+    GamePad[0].pad = Game_NuPad[0];
+    GamePad[1].pad = Game_NuPad[1];
 }
 
 void GamePad_Rotate(GameObject_s *) {
@@ -33,7 +49,25 @@ void GamePads_NetHost() {
 void GamePads_NetReset(i32) {
 }
 
-void GamePad_InputAngle(GameObject_s *, GAMEPAD_s *) {
+__attribute__((optimize("O2,omit-frame-pointer,no-reorder-blocks"))) u16 GamePad_InputAngle(GameObject_s *object,
+                                                                                            GAMEPAD_s *pad) {
+    if (static_cast<i8>(object->apiobj.field_0x1f8) >= 0 || object->field_0x661 == 0xff) {
+        goto camera_relative;
+    }
+    {
+        SOCK &socket = WORLD->sock_sys->sock[static_cast<i8>(object->field_0x661)];
+        if ((socket.flags & 0x40) != 0) {
+            goto socket_relative;
+        }
+    }
+
+camera_relative:
+    return static_cast<u16>(pad->input_angle + GameCam->input_yaw);
+
+socket_relative: {
+    SOCK &socket = WORLD->sock_sys->sock[static_cast<i8>(object->field_0x661)];
+    return static_cast<u16>(pad->input_angle + object->yrot + socket.input_yaw);
+}
 }
 
 void GamePads_NetClient() {

@@ -46,44 +46,42 @@ void NuSoundSample::Release() {
 }
 
 NuSoundSample::ErrorState NuSoundSample::Load(void *param_1, i32 param_2, NuSoundOutOfMemCallback *oomCallback) {
-    NuSoundLoader *loader;
-    NuSoundStreamDesc *desc;
-    NuSoundBuffer *buffer;
-    LoadState LVar2;
+    (void)param_1;
+    (void)param_2;
 
-    ErrorState EVar3 = ErrorState::NONE;
+    ErrorState error = ErrorState::NONE;
     if (GetLoadState() != LoadState::LOADED) {
-        loader = NuSoundSystem::CreateFileLoader(this->file_type);
+        NuSoundLoader *loader = NuSoundSystem::CreateFileLoader(this->file_type);
+        NuSoundStreamDesc *desc = loader->CreateHeader();
 
-        // desc = (NuSoundStreamDesc *)(*(code *)loader->vtable[2])(loader);
-        desc = loader->CreateHeader();
-
-        /*if (desc == NULL) {
-            EVar3 = 3;
+        if (desc == NULL) {
+            error = ErrorState::UNSUPPORTED;
             NuSoundSystem::ReleaseFileLoader(loader);
         } else {
-            NuSoundSource::SetStreamDesc((NuSoundSource *)this, desc);
-            buffer = (NuSoundBuffer *)GetSourceBuffer(this);
-            iVar1 = NuSoundLoader::LoadFromFile(loader, this->path, desc, buffer, oomCallback);
+            SetStreamDesc(desc);
+            NuSoundBuffer *source_buffer = static_cast<NuSoundBuffer *>(GetSourceBuffer());
+            i32 result = loader->LoadFromFile(this->name, desc, source_buffer, oomCallback);
             NuSoundSystem::ReleaseFileLoader(loader);
-            LVar2 = 1;
-            if (iVar1 != 1) {
-                EVar3 = 1;
-                if (iVar1 - 2U < 4) {
-                    EVar3 = *(ErrorState *)(CSWTCH.185 + (iVar1 - 2U) * 4);
+
+            LoadState load_state = LoadState::LOADED;
+            if (result != 1) {
+                error = ErrorState::FILE_NOT_FOUND;
+                if (result >= 2 && result <= 5) {
+                    static const ErrorState errors[4] = {ErrorState::FILE_NOT_FOUND, ErrorState::OUT_OF_MEMORY,
+                                                         ErrorState::OUT_OF_MEMORY, ErrorState::UNSUPPORTED};
+                    error = errors[result - 2];
                 }
-                NuSoundSystem::FreeMemory(0, (u32)desc, 0);
-                NuSoundSource::SetStreamDesc((NuSoundSource *)this, (NuSoundStreamDesc *)0x0);
-                LVar2 = 0;
+                NuSoundSystem::FreeMemory(NuSoundSystem::MemoryDiscipline::SCRATCH, reinterpret_cast<usize>(desc), 0);
+                SetStreamDesc(NULL);
+                load_state = LoadState::NOT_LOADED;
             }
 
-            SetLoadState(this, LVar2);
-            SetLastErrorState(this, EVar3);
+            SetLoadState(load_state);
+            SetLastErrorState(error);
         }
-            */
     }
 
-    return EVar3;
+    return error;
 }
 
 u32 NuSoundSample::GetResourceCount() {
@@ -108,23 +106,42 @@ NuSoundSample::~NuSoundSample() {
 }
 
 void NuSoundSample::SetLastErrorState(ErrorState state) {
+    pthread_mutex_lock(&sCriticalSection);
+    this->last_error = state;
+    pthread_mutex_unlock(&sCriticalSection);
 }
 
 void *NuSoundSample::GetSourceBuffer() {
-    return NULL;
+    return &this->buffer;
 }
 
 bool NuSoundSample::IsLocked() const {
-    return false;
+    return this->buffer.IsLocked();
 }
 
 void NuSoundSample::Lock() {
+    this->buffer.Lock();
 }
 
 void NuSoundSample::Unlock() {
+    this->buffer.Unlock();
 }
 
-void NuSoundSample::Unload() {
+i32 NuSoundSample::Unload() {
+    if (this->buffer.IsAllocated()) {
+        this->buffer.Free();
+    }
+
+    if (this->stream_desc != NULL) {
+        this->stream_desc->~NuSoundStreamDesc();
+        NuSoundSystem::FreeMemory(NuSoundSystem::MemoryDiscipline::SCRATCH, reinterpret_cast<usize>(this->stream_desc),
+                                  0);
+        SetStreamDesc(NULL);
+    }
+
+    SetLoadState(LoadState::NOT_LOADED);
+    SetLastErrorState(ErrorState::NONE);
+    return 1;
 }
 
 void NuSoundSample::RequestBuffer(bool loop, NuSoundWeakPtr<NuSoundBufferCallback> callback) {
@@ -139,5 +156,5 @@ void NuSoundSample::RequestBuffer(bool loop, NuSoundWeakPtr<NuSoundBufferCallbac
 }
 
 bool NuSoundSample::IsStreamOpen() const {
-    return false;
+    return GetLoadState() == LoadState::LOADED;
 }

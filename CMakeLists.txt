@@ -134,6 +134,7 @@ if (BUILD_FOR_HOST)
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nusound/opensl_host.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nu3d/NuRenderDevice_host.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nu3d/nudlist_host.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nu3d/nushader_host.cpp
     )
 
     add_executable(saga ${SAGA_SOURCE_FILES})
@@ -153,7 +154,12 @@ endif()
 
 # set common compile options and definitions
 target_include_directories(saga PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
-target_compile_options(saga PRIVATE -fno-exceptions -fno-rtti -Wno-write-strings -DANDROID)
+target_compile_options(saga PRIVATE
+    -fno-exceptions
+    -Wno-write-strings
+    -DANDROID
+    $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
+)
 if(CMAKE_HOST_WIN32)
     set_target_properties(saga PROPERTIES ENABLE_EXPORTS TRUE)
     if(NOT BUILD_FOR_HOST)

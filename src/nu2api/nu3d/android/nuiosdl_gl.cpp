@@ -379,11 +379,11 @@ static void NuIOS_BindVertexAttributesInternal(isize dataAddr, usize baseVertex,
 }
 
 // original 0x2939fe — bind using the currently bound vertex format.
-static void NuIOS_BindVertexAttributesImmediate(isize dataAddr, usize baseVertex) {
+static void NuIOS_BindVertexAttributesImmediate(isize, isize dataAddr) {
     NuIOSBindVAO(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     const u32 *fmt = (const u32 *)u32ToPtr(g_boundVertexFormat); // NOLINT
-    NuIOS_BindVertexAttributesInternal(dataAddr, baseVertex, fmt, fmt[0]);
+    NuIOS_BindVertexAttributesInternal(dataAddr, 0, fmt, fmt[0]);
 }
 
 static void NuIOS_BindVertexAttributes(isize dataAddr, usize baseVertex);
@@ -400,7 +400,7 @@ void NuIOSDLDebrisCallback(void *data) {
         NuIOS_BindVertexAttributes(0, 0);
     } else {
         NuIOS_BindVertexAttributesImmediate(
-            PtrToArgInt(g_DebriSysMemVB[g_readBufferIndex][packet->vertex_buffer_index]), 0);
+            0, PtrToArgInt(g_DebriSysMemVB[g_readBufferIndex][packet->vertex_buffer_index]));
     }
     glDrawArrays(GL_TRIANGLES, packet->first_vertex, packet->vertex_count);
 }
@@ -785,7 +785,7 @@ void NuIOSDLGeomCallback(void *arg) {
                 NuIOS_BindVertexAttributes(0, geom->base_vertex);
             } else if (geom->dynamic_data == nullptr) {
                 NuIOSBindVAO(0);
-                NuIOS_BindVertexAttributesImmediate(geom->vertex_buffer, geom->vertex_stride * geom->base_vertex);
+                NuIOS_BindVertexAttributesImmediate(0, geom->vertex_buffer + geom->vertex_stride * geom->base_vertex);
             } else {
                 NuIOSBindVAO(0);
                 glBindBuffer(GL_ARRAY_BUFFER, geom->vertex_format);

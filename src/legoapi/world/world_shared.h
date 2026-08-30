@@ -13,6 +13,7 @@
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nugscn.h"
 #include "nu2api/nucore/nulist.h"
+#include "nu2api/numath/nuvec.h"
 
 // Struct tags for helper functions whose C++ mangled names must match the
 // original libTTapp.so exactly.  Forward declarations only — the stubs never
@@ -77,9 +78,19 @@ extern "C" {
     void TerrainPlatformOldUpdate(void);
     void TerrainPlatformNewUpdate(void);
     void TerrainSetWallDeflectYScale(f32 scale);
+    void NewTerrainScaleYMask(NUVEC *position, NUVEC *movement, u8 *hit_flags, i32 object_index, f32 radius,
+                              f32 collision_height_scale, f32 object_scale, i32 embedded_retry, i32 scan_flags,
+                              i32 terrain_mask);
     void *TerrainInitEx(i32 param1, void *buf, void *buf_end, i32 param2, char *path, void *gscn, i32 param3,
                         u32 param4, u32 param5, u32 param6);
 }
+
+// Results written by the original terrain query pipeline.
+extern i16 TerrImpact;
+extern i32 terrhitflags;
+extern NUVEC TerrImpactPos;
+extern NUVEC TerrImpactNormal;
+extern NUVEC ShadNorm;
 void *InitPartDebris(VARIPTR *buf, VARIPTR *buf_end, i32 param1, i32 param2, char **param3, i32 page);
 void LoadTerrainFile(WORLDINFO *world);
 void LoadGrassFile(WORLDINFO *world);

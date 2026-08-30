@@ -3,14 +3,30 @@
 #include "nu2api/nucore/fixed_width.h"
 #include "nu2api/nusound/nusound_loader.hpp"
 
+#include <vorbis/vorbisfile.h>
+
 class NuSoundHeaderOGG : public NuSoundStreamDesc {
   public:
+    u16 format_id;
+    u16 num_channels;
+    u32 sample_rate;
+    u32 samples_per_second;
+    u16 block_size;
+    u16 bits_per_channel;
+    u16 extended_data_size;
+    u8 extended_data[0x16];
+    OggVorbis_File ogg_file;
+    u64 encoded_length_bytes;
+    u64 decoded_length_bytes;
+    u64 length_samples;
+    f32 length_seconds;
+
     NuSoundHeaderOGG() = default;
 
     DataFormat GetDecodedDataFormat() const;
     u64 GetEncodedLengthBytes() const;
     u64 GetLengthSamples() const;
-    double GetLengthSeconds() const;
+    f32 GetLengthSeconds() const;
     u64 GetDataOffset() const;
     u16 GetNumChannels() const;
     u32 GetSampleRate() const;
@@ -56,6 +72,7 @@ class NuSoundLoaderOGG : public NuSoundLoader {
     static long OggCallbackTell(void *callbacks);                        // NOLINT(google-runtime-int)
 
   private:
+    OggVorbis_File field_0x1c;
     OGGFileCallbacks file_callbacks;
     void *buffer;
 

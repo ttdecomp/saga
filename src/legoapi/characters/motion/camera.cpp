@@ -1,6 +1,13 @@
 #include "globals.h"
+#include "legoapi/characters/core/character.h"
+#include "legoapi/items/base/apiobject.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/world.h"
+#include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/numath/numtx.h"
+#include "nu2api/numath/nuvec.h"
 
 void Minicam_InitSystem(void);
 void GameCam_ResetLookRot(GAMECAMERA_s *camera);
@@ -43,7 +50,13 @@ void GameCam_Judder(GAMECAMERA_s *, float, i32, nuvec_s *) {
 void GameCam_HitRoll() {
 }
 
-void GameCam_NewShake(GAMECAMERA_s *, float, float, float) {
+void GameCam_NewShake(GAMECAMERA_s *camera, float amount, float speed, float duration) {
+    if (camera == NULL) {
+        camera = GameCam;
+    }
+    camera->field_0x1d4 = amount;
+    camera->field_0x1d8 = speed;
+    camera->field_0x1dc = duration;
 }
 
 void GameCam_HitJudder() {
@@ -78,7 +91,11 @@ void GameCameraMakeMiniCut3(u32, float, i32, i32, i32, void *, i32, nuvec_s *, f
                             float, i32, nugspline_s *, char, char) {
 }
 
-void GameCam_GetAdjustedYRot(GAMECAMERA_s *) {
+u16 GameCam_GetAdjustedYRot(GAMECAMERA_s *camera) {
+    if (camera == NULL) {
+        camera = GameCam;
+    }
+    return static_cast<u16>(camera->input_yaw + static_cast<i32>(camera->field_0x218));
 }
 
 static __used__ variptr_u buildFrustrum(nuvec_s *, nuvec_s *, i16) {
@@ -120,6 +137,22 @@ void KeepPointOnScreen(nuvec_s *, nuvec_s *) {
 }
 
 void SetCameraMatrices() {
+    NuRndrLightingStateCurrent.field_0x60 = 1;
+    NuRndrLightingStateCurrent.field_0x74 = 0;
+    NuRndrSetSpecularLightPS(NULL, NULL);
+
+    NUMTX effect_matrix;
+    NUVEC scale = {1.0f, 1.0f, 1.0f};
+    NuMtxInvR(&effect_matrix, &global_camera.mtx);
+    NuMtxScale(&effect_matrix, &scale);
+    effect_matrix.m30 = 1.0f;
+    effect_matrix.m31 = 1.0f;
+    effect_matrix.m32 = 0.0f;
+    effect_matrix.m33 = 1.0f;
+    effect_matrix.m23 = 0.0f;
+    effect_matrix.m13 = 0.0f;
+    effect_matrix.m03 = 0.0f;
+    NuRndrSetFxMtx(&effect_matrix);
 }
 
 void ViewCamGetGamePad() {
@@ -128,7 +161,13 @@ void ViewCamGetGamePad() {
 void KeepVehicleOnScreen(GameObject_s *, i32, i32, i32) {
 }
 
-void CentreTwoPlayerCamera(nuvec_s *, nuvec_s *, nuvec_s *, nuvec_s *) {
+void CentreTwoPlayerCamera(nuvec_s *center, nuvec_s *player_a, nuvec_s *player_b, nuvec_s *reference) {
+    const f32 distance_a = NuVecDist(reference, player_a, NULL);
+    const f32 distance_b = NuVecDist(reference, player_b, NULL);
+    const f32 blend = distance_a / (distance_a + distance_b);
+    center->x = player_a->x + (player_b->x - player_a->x) * blend;
+    center->y = player_a->y + (player_b->y - player_a->y) * blend;
+    center->z = player_a->z + (player_b->z - player_a->z) * blend;
 }
 
 void do_Pad_flymode_camera(edcam_s *, float, nupad_s *) {
@@ -137,7 +176,18 @@ void do_Pad_flymode_camera(edcam_s *, float, nupad_s *) {
 void InitCameraTargetMaterial() {
 }
 
-void GetTopBot(GameObject_s *) {
+void GetTopBot(GameObject_s *object) {
+    CHARACTERDATA *character = object->apiobj.character_data;
+    const f32 bottom = character->field15_0x34;
+    const f32 top = character->field16_0x38;
+    object->field_0xffc = bottom;
+    object->field_0x1000 = top;
+
+    if (object->field_0x1008 == 0.0f) {
+        object->collision_height_scale = 0.0f;
+    } else {
+        object->collision_height_scale = (top - bottom) / (object->field_0x1008 * 2.0f);
+    }
 }
 
 extern "C" {

@@ -22,8 +22,12 @@ class NuSoundSource {
   public:
     FeedType feed_type;
     SourceType source_type;
+    u16 name_length;
+    u16 name_capacity;
     const char *name;
     NuSoundStreamDesc *stream_desc;
+    i32 field_0x18;
+    i32 field_0x1c;
 
   public:
     NuSoundSource(const char *file, SourceType source_type, FeedType feed_type);

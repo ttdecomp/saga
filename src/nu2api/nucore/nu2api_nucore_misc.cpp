@@ -4,6 +4,8 @@
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/numtl.h"
 #include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nu3d/nushader.h"
+#include "nu2api/nu3d/nushader_plain.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nucore/nuhgobj.h"
@@ -415,7 +417,15 @@ void NuGCutLocatorCalcMtx_3(NUGCUTLOCATOR_s *locator, numtx_s *mtx, float frame)
     NuMtxTranslate(mtx, reinterpret_cast<NUVEC *>(&locator->base_matrix.m30));
 }
 
-void NuIOSDLSkinMtxCallback(void *) {
+// Original 0x294764. The skin packet begins with the number of palette
+// matrices followed by their contiguous 4x4 values.
+void __attribute__((weak)) NuIOSDLSkinMtxCallback(void *data) {
+    i32 *packet = static_cast<i32 *>(data);
+    const i32 matrix_count = *packet++;
+    const i32 shader = NuShaderManagerGetCurrentShader();
+    if (shader != 0) {
+        NuShaderObjectSetElementsfv(shader, 0x5a, 0, matrix_count * 4, reinterpret_cast<const f32 *>(packet));
+    }
 }
 
 void NuGCutCharAnimProcess_3(NUGCUTCHAR_s *, float, numtx_s *, i32 *, u32 *, float *, float *, float *, i32 *) {

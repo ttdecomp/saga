@@ -14,8 +14,13 @@ extern "C" {
 
     struct AISYS_s;
 
-    void *AIPathFindLocator(AISYS_s *aisys, char *name);
-    void *AISysFindArea(void *ai_sys, char *name);
+    struct AILOCATOR_s;
+    struct AIAREA_s;
+    struct AIPATH_s;
+
+    AILOCATOR_s *AIPathFindLocator(AISYS_s *aisys, char *name);
+    AIAREA_s *AISysFindArea(AISYS_s *ai_sys, char *name);
+    AIPATH_s *AISysFindPath(AISYS_s *ai_sys, char *name);
     void *AIPathFindNode(AISYS_s *aisys, char *name, i32 unknown);
 
 #ifdef __cplusplus

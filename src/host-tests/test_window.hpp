@@ -3,6 +3,7 @@
 #include <SDL3/SDL.h>
 
 #include <atomic>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -11,20 +12,23 @@
 
 #include "decomp.h"
 #include "globals.h"
-#include "MechInputTouch/MechInputTouch_types.h"
 #include "gameapi/gui/apimenu.h"
 #include "gameframework/saveload.h"
 #include "host-tests/input/host_input.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/world/area.h"
 #include "legoapi/world/level.h"
 #include "nu2api/nu3d/NuRenderDevice.h"
+#include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nu3d/nudlist.h"
 #include "nu2api/nu3d/nuscreen.hpp"
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nuplatform/nuplatform.h"
 
 extern "C" i32 NuMain(i32 argc, char **argv);
 extern i32 HostReadbackPixels(u32 max_w, u32 max_h, u8 *rgba);
+extern void HostSetDocumentsPath(const char *path);
 extern i32 GetMenuID();
 extern i32 memcard_loadneeded;
 extern i32 memcard_loadstarted;
@@ -36,11 +40,38 @@ extern i32 waiting_for_new_level;
 extern i32 abort_load;
 extern i32 reset_load;
 extern i32 CharacterDataLoad;
+extern i32 NewMode;
 extern FadeSystem FadeSys;
+extern GAMEPAD_s GamePad[64];
 
 bool g_hostOffscreenRendering = false;
 
 namespace {
+    struct HostSpecialHandleLayout {
+        NUGSCN *scene;
+        void *special;
+        void *display_special;
+    };
+
+    struct HostDisplaySpecialLayout {
+        NUMTX mtx;
+        NUMTX draw_mtx;
+        NUVEC min;
+        f32 min_w;
+        NUVEC max;
+        f32 max_w;
+        u8 pad_a0[0x10];
+        NUCLIPOBJECT *clip_objects;
+        char *name;
+        u32 flags;
+        f32 *clip_range;
+        i32 instance_ix;
+        NUMTX *draw_mtx_ptr;
+        i16 wind_speed;
+        i16 wind_scale;
+        u32 pad_cc;
+    };
+
 #ifdef _WIN32
     constexpr const char *host_video_driver = "windows";
 #else
@@ -56,8 +87,10 @@ namespace {
     // one-second menu result delay to complete after the final scripted tap.
     constexpr Uint64 scripted_input_tail_ms = 8000;
 
-    constexpr Uint64 scripted_title_touch_ms = 18000;
+    constexpr Uint64 scripted_title_input_ms = 18000;
     constexpr Uint64 scripted_menu_settle_ms = 500;
+    constexpr Uint64 scripted_play_move_ms = 2000;
+    constexpr Uint64 scripted_play_settle_ms = 1000;
 
     enum class ScriptedInputStage {
         title,
@@ -66,24 +99,117 @@ namespace {
         load_wait,
         save_slot,
         overwrite_confirm,
-        overwrite_accept,
+        cantina_wait,
+        play_move,
+        play_settle,
         complete,
     };
 
-    static void touch_menu_item(i32 menu_id, i32 row, i32 column) {
-        const MENU &menu = GameMenu[GameMenuLevel];
-        if (menu_id == 1) {
-            const f32 centre_offset = static_cast<f32>(menu.last_row - menu.first_row) * MENUDY * -0.5f;
-            const f32 first_y = -0.5f - centre_offset;
-            const f32 y = first_y + static_cast<f32>(row) * MENUDY;
-            const i32 screen_y = static_cast<i32>((1.0f - y) * 0.5f * host_window_height);
-            HostInputTouch(host_window_width / 2, screen_y, host_window_width, host_window_height);
-            return;
+    struct ScriptedPlaySnapshot {
+        NUVEC player_position{};
+        NUVEC camera_position{};
+        NUVEC player_velocity{};
+        u16 player_yrot = 0;
+        u32 player_flags = 0;
+        u32 player_motion_flags = 0;
+        u32 buttons_held = 0;
+        f32 input_magnitude = 0.0f;
+        f32 movement_speed = 0.0f;
+        f32 frame_time = 0.0f;
+        i32 object_index = -1;
+    };
+
+    enum class ScriptedMenuAction {
+        waiting,
+        navigating,
+        confirmed,
+    };
+
+    static bool finite_vec(const NUVEC &vec) {
+        return std::isfinite(vec.x) && std::isfinite(vec.y) && std::isfinite(vec.z);
+    }
+
+    static bool player_matrix_ready(const GameObject_s *object) {
+        const NUMTX &matrix = object->apiobj.field_0xb8;
+        const f32 basis_squared = matrix.m00 * matrix.m00 + matrix.m01 * matrix.m01 + matrix.m02 * matrix.m02 +
+                                  matrix.m10 * matrix.m10 + matrix.m11 * matrix.m11 + matrix.m12 * matrix.m12 +
+                                  matrix.m20 * matrix.m20 + matrix.m21 * matrix.m21 + matrix.m22 * matrix.m22;
+        const f32 dx = matrix.m30 - object->apiobj.position.x;
+        const f32 dy = matrix.m31 - object->apiobj.position.y;
+        const f32 dz = matrix.m32 - object->apiobj.position.z;
+        return std::isfinite(basis_squared) && basis_squared > 0.0001f && std::isfinite(matrix.m33) &&
+               std::fabs(matrix.m33 - 1.0f) < 0.001f && dx * dx + dy * dy + dz * dz < 0.0001f;
+    }
+
+    static bool scripted_play_ready() {
+        // current_level can point at the hub while the asynchronous world and
+        // character loads are still finishing.  Require the active hub area,
+        // its gameplay socket system, the normal idle load sentinels, and the
+        // real Player 0 controller assignment before injecting any input.
+        if (WORLD == nullptr || WORLD->loaded == 0 || WORLD->current_level != HUB_LDATA || WORLD->area != HUB_ADATA ||
+            WORLD->sock_sys == nullptr || Player[0] == nullptr) {
+            return false;
         }
 
-        const f32 x = -0.75f + (static_cast<f32>(column - menu.first_column) + 0.5f) * 0.5f;
-        const i32 screen_x = static_cast<i32>((x + 1.0f) * 0.5f * host_window_width);
-        HostInputTouch(screen_x, host_window_height / 2, host_window_width, host_window_height);
+        const u32 player_flags = Player[0]->apiobj.field_0x1f8;
+        return NewLData == nullptr && NewMode == 0 && player == Player[0] && Player[1] == nullptr &&
+               (player_flags & 0x1001) == 0x1001 && static_cast<i8>(player_flags) < 0 &&
+               Player[0]->pad_gamepad == &GamePad[0] && player_matrix_ready(Player[0]) &&
+               finite_vec(Player[0]->apiobj.position) && std::isfinite(global_camera.mtx.m30) &&
+               std::isfinite(global_camera.mtx.m31) && std::isfinite(global_camera.mtx.m32) &&
+               waiting_for_level == -1 && waiting_for_character == -1 && waiting_for_new_level == 0 && abort_load == 0;
+    }
+
+    static ScriptedPlaySnapshot scripted_play_snapshot() {
+        ScriptedPlaySnapshot snapshot;
+        snapshot.player_position = Player[0]->apiobj.position;
+        snapshot.player_velocity = {Player[0]->apiobj.field_0x68, Player[0]->apiobj.field_0x6c,
+                                    Player[0]->apiobj.field_0x70};
+        snapshot.player_yrot = Player[0]->yrot;
+        snapshot.player_flags = Player[0]->apiobj.field_0x1f8;
+        snapshot.player_motion_flags = Player[0]->apiobj.field_0x1f4;
+        snapshot.buttons_held = GamePad[0].buttons_held;
+        snapshot.input_magnitude = GamePad[0].input_magnitude;
+        snapshot.frame_time = FRAMETIME;
+        if (Obj != nullptr && Player[0] >= Obj && Player[0] < Obj + HIGHGAMEOBJECT) {
+            snapshot.object_index = static_cast<i32>(Player[0] - Obj);
+        }
+        if (Player[0]->apiobj.character_data != nullptr && Player[0]->apiobj.character_data->field11_0x24 != nullptr) {
+            snapshot.movement_speed =
+                static_cast<GAMECHARACTERDATA *>(Player[0]->apiobj.character_data->field11_0x24)->movement_speed;
+        }
+        snapshot.camera_position = {global_camera.mtx.m30, global_camera.mtx.m31, global_camera.mtx.m32};
+        return snapshot;
+    }
+
+    static ScriptedMenuAction scripted_menu_select(i32 row, i32 column, Uint64 elapsed_ticks,
+                                                   Uint64 &last_action_ticks) {
+        if (elapsed_ticks < last_action_ticks + scripted_menu_settle_ms) {
+            return ScriptedMenuAction::waiting;
+        }
+
+        const MENU &menu = GameMenu[GameMenuLevel];
+        u32 button = GAMEPAD_JUMP;
+        ScriptedMenuAction result = ScriptedMenuAction::confirmed;
+        if (menu.selected_row < row) {
+            button = GAMEPAD_DDOWN;
+            result = ScriptedMenuAction::navigating;
+        } else if (menu.selected_row > row) {
+            button = GAMEPAD_DUP;
+            result = ScriptedMenuAction::navigating;
+        } else if (menu.selected_column < column) {
+            button = GAMEPAD_DRIGHT;
+            result = ScriptedMenuAction::navigating;
+        } else if (menu.selected_column > column) {
+            button = GAMEPAD_DLEFT;
+            result = ScriptedMenuAction::navigating;
+        }
+
+        LOG_INFO("scripted gamepad menu=%d cursor=(%d,%d) target=(%d,%d) button=0x%x", GetMenuID(),
+                 menu.selected_column, menu.selected_row, column, row, button);
+        HostInputTap(0, button);
+        last_action_ticks = elapsed_ticks;
+        return result;
     }
 
     struct PixelCounts {
@@ -210,6 +336,7 @@ inline i32 test_window(i32 argc, char **argv) {
     bool capture_enabled = false;
     bool scripted_input_enabled = false;
     bool scripted_load_enabled = false;
+    bool scripted_play_enabled = false;
     bool offscreen_enabled = false;
     bool mute_enabled = false;
     Uint64 scripted_tail_ms = scripted_input_tail_ms;
@@ -222,6 +349,9 @@ inline i32 test_window(i32 argc, char **argv) {
         } else if (strcmp(argv[i], "--script-load") == 0) {
             scripted_input_enabled = true;
             scripted_load_enabled = true;
+        } else if (strcmp(argv[i], "--script-play") == 0) {
+            scripted_input_enabled = true;
+            scripted_play_enabled = true;
         } else if (strcmp(argv[i], "--offscreen") == 0) {
             offscreen_enabled = true;
         } else if (strcmp(argv[i], "--mute") == 0) {
@@ -235,9 +365,18 @@ inline i32 test_window(i32 argc, char **argv) {
 
     g_hostOffscreenRendering = offscreen_enabled;
     sdl_init(offscreen_enabled, mute_enabled);
-    if (!SDL_CreateDirectory(".work/host-documents")) {
-        LOG_ERR("failed to create host documents directory: %s", SDL_GetError());
+    const char *documents_path = ".work/host-documents/";
+    char scripted_documents_path[256];
+    if (scripted_input_enabled) {
+        SDL_CreateDirectory(".work/host-documents-scripted");
+        snprintf(scripted_documents_path, sizeof(scripted_documents_path), ".work/host-documents-scripted/%llu/",
+                 static_cast<unsigned long long>(SDL_GetTicksNS()));
+        documents_path = scripted_documents_path;
     }
+    if (!SDL_CreateDirectory(documents_path)) {
+        LOG_ERR("failed to create host documents directory %s: %s", documents_path, SDL_GetError());
+    }
+    HostSetDocumentsPath(documents_path);
 
     void *buffer = malloc(0x1000000);
     VARIPTR ptr = VARIPTR{.void_ptr = buffer};
@@ -277,6 +416,14 @@ inline i32 test_window(i32 argc, char **argv) {
     Uint64 scripted_stage_ticks = 0;
     i32 scripted_last_menu = -2;
     Uint64 scripted_menu_since = 0;
+    ScriptedPlaySnapshot scripted_play_before{};
+    ScriptedPlaySnapshot scripted_play_during{};
+    ScriptedPlaySnapshot scripted_play_after{};
+    bool scripted_play_started = false;
+    bool scripted_play_finished = false;
+    bool scripted_play_movement_observed = false;
+    bool scripted_play_input_held = false;
+    u32 keyboard_held_buttons = 0;
     std::vector<u8> pixels;
     i32 capture_width = 0;
     i32 capture_height = 0;
@@ -290,26 +437,45 @@ inline i32 test_window(i32 argc, char **argv) {
             }
             if (event.type == SDL_EVENT_QUIT) {
                 quit_requested = true;
-            } else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
-                HostInputTouch(static_cast<i32>(event.button.x), static_cast<i32>(event.button.y), host_window_width,
-                               host_window_height);
-            } else if (event.type == SDL_EVENT_FINGER_DOWN) {
-                HostInputTouch(static_cast<i32>(event.tfinger.x * host_window_width),
-                               static_cast<i32>(event.tfinger.y * host_window_height), host_window_width,
-                               host_window_height);
             } else if (event.type == SDL_EVENT_KEY_DOWN) {
+                u32 button = 0;
                 if (event.key.key == SDLK_RETURN || event.key.key == SDLK_SPACE) {
-                    HostInputTap(host_window_width / 2, host_window_height / 2, GAMEPAD_START | GAMEPAD_JUMP);
+                    button = event.key.key == SDLK_RETURN ? GAMEPAD_START | GAMEPAD_JUMP : GAMEPAD_JUMP;
                 } else if (event.key.key == SDLK_UP || event.key.key == SDLK_W) {
-                    HostInputTap(host_window_width / 2, 0, GAMEPAD_DUP);
+                    button = GAMEPAD_DUP;
                 } else if (event.key.key == SDLK_DOWN || event.key.key == SDLK_S) {
-                    HostInputTap(host_window_width / 2, host_window_height - 1, GAMEPAD_DDOWN);
+                    button = GAMEPAD_DDOWN;
                 } else if (event.key.key == SDLK_LEFT || event.key.key == SDLK_A) {
-                    HostInputTap(0, host_window_height / 2, GAMEPAD_DLEFT);
+                    button = GAMEPAD_DLEFT;
                 } else if (event.key.key == SDLK_RIGHT || event.key.key == SDLK_D) {
-                    HostInputTap(host_window_width - 1, host_window_height / 2, GAMEPAD_DRIGHT);
+                    button = GAMEPAD_DRIGHT;
                 } else if (event.key.key == SDLK_ESCAPE) {
-                    HostInputTap(host_window_width / 2, host_window_height / 2, GAMEPAD_TAG);
+                    button = GAMEPAD_TAG;
+                }
+                if (button != 0) {
+                    keyboard_held_buttons |= button;
+                    HostInputSetHeld(0, keyboard_held_buttons);
+                }
+            } else if (event.type == SDL_EVENT_KEY_UP) {
+                u32 button = 0;
+                if (event.key.key == SDLK_RETURN) {
+                    button = GAMEPAD_START | GAMEPAD_JUMP;
+                } else if (event.key.key == SDLK_SPACE) {
+                    button = GAMEPAD_JUMP;
+                } else if (event.key.key == SDLK_UP || event.key.key == SDLK_W) {
+                    button = GAMEPAD_DUP;
+                } else if (event.key.key == SDLK_DOWN || event.key.key == SDLK_S) {
+                    button = GAMEPAD_DDOWN;
+                } else if (event.key.key == SDLK_LEFT || event.key.key == SDLK_A) {
+                    button = GAMEPAD_DLEFT;
+                } else if (event.key.key == SDLK_RIGHT || event.key.key == SDLK_D) {
+                    button = GAMEPAD_DRIGHT;
+                } else if (event.key.key == SDLK_ESCAPE) {
+                    button = GAMEPAD_TAG;
+                }
+                if (button != 0) {
+                    keyboard_held_buttons &= ~button;
+                    HostInputSetHeld(0, keyboard_held_buttons);
                 }
             }
         }
@@ -336,30 +502,36 @@ inline i32 test_window(i32 argc, char **argv) {
             }
 
             if (scripted_stage == ScriptedInputStage::title && menu_id == 0 &&
-                elapsed_ticks >= scripted_title_touch_ms) {
-                HostInputTouch(host_window_width / 2, host_window_height / 2, host_window_width, host_window_height);
+                elapsed_ticks >= scripted_title_input_ms) {
+                HostInputTap(0, GAMEPAD_START | GAMEPAD_JUMP);
                 scripted_stage = ScriptedInputStage::new_or_load;
                 scripted_stage_ticks = elapsed_ticks;
             } else if (scripted_stage == ScriptedInputStage::new_or_load && menu_id == 1 &&
                        elapsed_ticks - scripted_menu_since >= scripted_menu_settle_ms) {
                 // The original menu defaults to Load Game when any save is
                 // present. This route deliberately exercises New Game.
-                touch_menu_item(menu_id, scripted_load_enabled ? 1 : 0, 0);
-                if (scripted_load_enabled) {
+                const ScriptedMenuAction action =
+                    scripted_menu_select(scripted_load_enabled ? 1 : 0, 0, elapsed_ticks, scripted_stage_ticks);
+                if (action == ScriptedMenuAction::confirmed && scripted_load_enabled) {
                     // Load Game may lead to the original No Data screen
                     // (menu 1005); dismiss it once it has settled.
                     scripted_stage = ScriptedInputStage::load_wait;
-                } else {
+                } else if (action == ScriptedMenuAction::confirmed) {
                     // New Game now follows the original Select Controls
                     // screen (menu 33). Its default entry is Classic, so
                     // confirm it after the normal settle interval before
                     // looking for the save-slot menu.
                     scripted_stage = ScriptedInputStage::select_controls;
                 }
-                scripted_stage_ticks = elapsed_ticks;
             } else if (scripted_stage == ScriptedInputStage::select_controls && menu_id == 33 &&
                        elapsed_ticks - scripted_menu_since >= scripted_menu_settle_ms) {
-                HostInputTap(host_window_width / 2, host_window_height / 2, GAMEPAD_JUMP);
+                if (scripted_menu_select(0, 0, elapsed_ticks, scripted_stage_ticks) == ScriptedMenuAction::confirmed) {
+                    scripted_stage = ScriptedInputStage::save_slot;
+                }
+            } else if (scripted_stage == ScriptedInputStage::select_controls && menu_id == 1000) {
+                // A connected keyboard-backed gamepad follows the original
+                // controller path directly to save slots. Touch-only mode
+                // visits menu 33 first; support both without forcing either.
                 scripted_stage = ScriptedInputStage::save_slot;
                 scripted_stage_ticks = elapsed_ticks;
             } else if (scripted_stage == ScriptedInputStage::load_wait && menu_id == 1012 &&
@@ -369,13 +541,15 @@ inline i32 test_window(i32 argc, char **argv) {
                     ++slot;
                 }
                 if (slot < SAVESLOTS) {
-                    touch_menu_item(menu_id, 0, slot);
+                    if (scripted_menu_select(0, slot, elapsed_ticks, scripted_stage_ticks) ==
+                        ScriptedMenuAction::confirmed) {
+                        scripted_stage = ScriptedInputStage::complete;
+                        scripted_stage_ticks = elapsed_ticks;
+                    }
                 }
-                scripted_stage = ScriptedInputStage::complete;
-                scripted_stage_ticks = elapsed_ticks;
             } else if (scripted_stage == ScriptedInputStage::load_wait && menu_id == 1005 &&
                        elapsed_ticks - scripted_menu_since >= scripted_menu_settle_ms) {
-                HostInputTap(host_window_width / 2, host_window_height / 2, GAMEPAD_JUMP);
+                HostInputTap(0, GAMEPAD_JUMP);
                 scripted_stage = ScriptedInputStage::complete;
                 scripted_stage_ticks = elapsed_ticks;
             } else if (scripted_stage == ScriptedInputStage::save_slot && menu_id == 1000 &&
@@ -388,17 +562,94 @@ inline i32 test_window(i32 argc, char **argv) {
                 if (overwrite) {
                     slot = 0;
                 }
-                touch_menu_item(menu_id, 0, slot);
-                scripted_stage = overwrite ? ScriptedInputStage::overwrite_confirm : ScriptedInputStage::complete;
-                scripted_stage_ticks = elapsed_ticks;
+                if (scripted_menu_select(0, slot, elapsed_ticks, scripted_stage_ticks) ==
+                    ScriptedMenuAction::confirmed) {
+                    scripted_stage = overwrite ? ScriptedInputStage::overwrite_confirm
+                                               : (scripted_play_enabled ? ScriptedInputStage::cantina_wait
+                                                                        : ScriptedInputStage::complete);
+                }
             } else if (scripted_stage == ScriptedInputStage::overwrite_confirm && menu_id == 1008 &&
                        elapsed_ticks - scripted_menu_since >= scripted_menu_settle_ms) {
-                HostInputTap(host_window_width / 2, host_window_height / 2, GAMEPAD_DUP);
-                scripted_stage = ScriptedInputStage::overwrite_accept;
+                if (scripted_menu_select(0, 0, elapsed_ticks, scripted_stage_ticks) == ScriptedMenuAction::confirmed) {
+                    scripted_stage =
+                        scripted_play_enabled ? ScriptedInputStage::cantina_wait : ScriptedInputStage::complete;
+                }
+            } else if (scripted_stage == ScriptedInputStage::cantina_wait && scripted_play_ready()) {
+                scripted_play_before = scripted_play_snapshot();
+                scripted_play_started = true;
+                const CHARACTERMODEL_s *player_model = Player[0]->apiobj.character_model;
+                LOG_INFO("scripted play: cantina ready level=%s idx=%d area=%d player=%p pad=%p pad0=%p "
+                         "flags=(state=0x%x,motion=0x%x) position=(%.3f,%.3f,%.3f) "
+                         "velocity=(%.3f,%.3f,%.3f) yrot=%u "
+                         "input=(held=0x%x,magnitude=%.3f,speed=%.3f) objects=(base=%p,high=%d,index=%d) "
+                         "render=(model=%p,hierarchy=%p,draw=%u,mode=%u,scale=%.3f) "
+                         "frametime=%.6f camera=(%.3f,%.3f,%.3f)",
+                         WORLD->current_level->name, WORLD->current_level->idx, WORLD->area->index, Player[0],
+                         Player[0]->pad_gamepad, &GamePad[0], scripted_play_before.player_flags,
+                         scripted_play_before.player_motion_flags, scripted_play_before.player_position.x,
+                         scripted_play_before.player_position.y, scripted_play_before.player_position.z,
+                         scripted_play_before.player_velocity.x, scripted_play_before.player_velocity.y,
+                         scripted_play_before.player_velocity.z, scripted_play_before.player_yrot,
+                         scripted_play_before.buttons_held, scripted_play_before.input_magnitude,
+                         scripted_play_before.movement_speed, Obj, HIGHGAMEOBJECT, scripted_play_before.object_index,
+                         player_model, player_model != nullptr ? player_model->hierarchy : nullptr,
+                         Player[0]->apiobj.model_draw_result, Player[0]->field_0x1086, Player[0]->apiobj.field_0xa8,
+                         scripted_play_before.frame_time, scripted_play_before.camera_position.x,
+                         scripted_play_before.camera_position.y, scripted_play_before.camera_position.z);
+                HostInputSetHeld(0, GAMEPAD_DRIGHT);
+                scripted_play_input_held = true;
+                scripted_stage = ScriptedInputStage::play_move;
                 scripted_stage_ticks = elapsed_ticks;
-            } else if (scripted_stage == ScriptedInputStage::overwrite_accept && menu_id == 1008 &&
-                       elapsed_ticks >= scripted_stage_ticks + scripted_menu_settle_ms) {
-                HostInputTap(host_window_width / 2, host_window_height / 2, GAMEPAD_JUMP);
+            } else if (scripted_stage == ScriptedInputStage::play_move &&
+                       elapsed_ticks >= scripted_stage_ticks + scripted_play_move_ms) {
+                scripted_play_during = scripted_play_snapshot();
+                LOG_INFO("scripted play: during DRIGHT flags=(state=0x%x,motion=0x%x) "
+                         "position=(%.3f,%.3f,%.3f) velocity=(%.3f,%.3f,%.3f) "
+                         "input=(held=0x%x,magnitude=%.3f,speed=%.3f) object-index=%d frametime=%.6f",
+                         scripted_play_during.player_flags, scripted_play_during.player_motion_flags,
+                         scripted_play_during.player_position.x, scripted_play_during.player_position.y,
+                         scripted_play_during.player_position.z, scripted_play_during.player_velocity.x,
+                         scripted_play_during.player_velocity.y, scripted_play_during.player_velocity.z,
+                         scripted_play_during.buttons_held, scripted_play_during.input_magnitude,
+                         scripted_play_during.movement_speed, scripted_play_during.object_index,
+                         scripted_play_during.frame_time);
+                HostInputSetHeld(0, 0);
+                scripted_play_input_held = false;
+                scripted_stage = ScriptedInputStage::play_settle;
+                scripted_stage_ticks = elapsed_ticks;
+            } else if (scripted_stage == ScriptedInputStage::play_settle &&
+                       elapsed_ticks >= scripted_stage_ticks + scripted_play_settle_ms) {
+                scripted_play_after = scripted_play_snapshot();
+                scripted_play_finished = true;
+                const NUVEC player_delta = {
+                    scripted_play_after.player_position.x - scripted_play_before.player_position.x,
+                    scripted_play_after.player_position.y - scripted_play_before.player_position.y,
+                    scripted_play_after.player_position.z - scripted_play_before.player_position.z,
+                };
+                const NUVEC camera_delta = {
+                    scripted_play_after.camera_position.x - scripted_play_before.camera_position.x,
+                    scripted_play_after.camera_position.y - scripted_play_before.camera_position.y,
+                    scripted_play_after.camera_position.z - scripted_play_before.camera_position.z,
+                };
+                const f32 player_delta_squared =
+                    player_delta.x * player_delta.x + player_delta.y * player_delta.y + player_delta.z * player_delta.z;
+                scripted_play_movement_observed = player_delta_squared > 0.0001f;
+                LOG_INFO("scripted play: held DRIGHT for %llu ms; "
+                         "after position=(%.3f,%.3f,%.3f) velocity=(%.3f,%.3f,%.3f) yrot=%u "
+                         "input=(held=0x%x,magnitude=%.3f,speed=%.3f) camera=(%.3f,%.3f,%.3f); "
+                         "deltas player=(%.3f,%.3f,%.3f) yrot=%d camera=(%.3f,%.3f,%.3f); "
+                         "movement_observed=%d",
+                         static_cast<unsigned long long>(scripted_play_move_ms), scripted_play_after.player_position.x,
+                         scripted_play_after.player_position.y, scripted_play_after.player_position.z,
+                         scripted_play_after.player_velocity.x, scripted_play_after.player_velocity.y,
+                         scripted_play_after.player_velocity.z, scripted_play_after.player_yrot,
+                         scripted_play_after.buttons_held, scripted_play_after.input_magnitude,
+                         scripted_play_after.movement_speed, scripted_play_after.camera_position.x,
+                         scripted_play_after.camera_position.y, scripted_play_after.camera_position.z, player_delta.x,
+                         player_delta.y, player_delta.z,
+                         static_cast<i32>(scripted_play_after.player_yrot) -
+                             static_cast<i32>(scripted_play_before.player_yrot),
+                         camera_delta.x, camera_delta.y, camera_delta.z, scripted_play_movement_observed ? 1 : 0);
                 scripted_stage = ScriptedInputStage::complete;
                 scripted_stage_ticks = elapsed_ticks;
             } else if (scripted_stage == ScriptedInputStage::complete &&
@@ -457,6 +708,10 @@ inline i32 test_window(i32 argc, char **argv) {
         }
     }
 
+    if (scripted_play_input_held) {
+        HostInputSetHeld(0, 0);
+    }
+
     if (capture_enabled) {
         u64 final_hash = 0;
         if (read_frame(pixels, capture_width, capture_height, final_hash) &&
@@ -488,12 +743,134 @@ inline i32 test_window(i32 argc, char **argv) {
                  WORLD != nullptr && WORLD->current_level != nullptr ? WORLD->current_level->name : "-", FadeSys.fade,
                  FadeSys.pending_type, FadeSys.busy, waiting_for_level, waiting_for_character, waiting_for_new_level,
                  abort_load, reset_load, PlayerID[0], Player[0], PlayerID[1], Player[1], CharacterDataLoad);
+
+        i32 active_objects = 0;
+        i32 model_objects = 0;
+        i32 drawn_objects = 0;
+        for (i32 index = 0; Obj != nullptr && index < HIGHGAMEOBJECT; ++index) {
+            const GameObject_s &object = Obj[index];
+            if ((object.apiobj.field_0x1f8 & 1) == 0) {
+                continue;
+            }
+            ++active_objects;
+            if (object.apiobj.character_model != nullptr && object.apiobj.character_model->hierarchy != nullptr) {
+                ++model_objects;
+            }
+            if (object.apiobj.model_draw_result != 0) {
+                ++drawn_objects;
+            }
+        }
+        LOG_INFO("scripted objects: high=%d active=%d models=%d drawn=%d", HIGHGAMEOBJECT, active_objects,
+                 model_objects, drawn_objects);
+        if (Player[0] != nullptr) {
+            const CHARACTERMODEL_s *model = Player[0]->apiobj.character_model;
+            i16 render_indices[32] = {};
+            i32 render_count = 0;
+            i32 clip_state = -1;
+            if (model != nullptr && model->hierarchy != nullptr) {
+                MAKELAYERLISTFN make_layer_list = GCDataList[model->model_id].make_layer_list;
+                if (make_layer_list != nullptr) {
+                    render_count =
+                        make_layer_list(Player[0]->apiobj.character_model, render_indices, Player[0]->field_0x1054);
+                }
+                clip_state = NuCameraClipTestExtents(&model->hierarchy->bounds_min, &model->hierarchy->bounds_max,
+                                                     &Player[0]->apiobj.field_0xb8, character_farclip, 0);
+            }
+            LOG_INFO("scripted player render: object=%p id=%d model=%p hierarchy=%p draw=%u "
+                     "flags=(state=0x%x,motion=0x%x) transform-mode=%u scale=%.3f matrix-m33=%.3f "
+                     "hierarchy=(renders=%d,joints=%d) layer=(count=%d,first=%d) clip=%d far=%.3f",
+                     Player[0], Player[0]->id, model, model != nullptr ? model->hierarchy : nullptr,
+                     Player[0]->apiobj.model_draw_result, Player[0]->apiobj.field_0x1f8, Player[0]->apiobj.field_0x1f4,
+                     Player[0]->field_0x1086, Player[0]->apiobj.field_0xa8, Player[0]->apiobj.field_0xb8.m33,
+                     model != nullptr && model->hierarchy != nullptr ? model->hierarchy->render_count : -1,
+                     model != nullptr && model->hierarchy != nullptr ? model->hierarchy->joint_count : -1, render_count,
+                     render_count > 0 ? render_indices[0] : -1, clip_state, character_farclip);
+            if (model != nullptr && model->hierarchy != nullptr && render_count > 0) {
+                nuhgobj_s *hierarchy = model->hierarchy;
+                nuhgobjrender_s &part = hierarchy->render_parts[render_indices[0]];
+                i32 rigid_count = 0;
+                i32 alternate_rigid_count = 0;
+                void *first_rigid = nullptr;
+                void *first_alternate_rigid = nullptr;
+                for (i32 joint = 0; part.rigid_specials != nullptr && joint < hierarchy->joint_count; ++joint) {
+                    rigid_count += part.rigid_specials[joint] != nullptr;
+                    if (first_rigid == nullptr) {
+                        first_rigid = part.rigid_specials[joint];
+                    }
+                }
+                for (i32 joint = 0; part.alternate_rigid_specials != nullptr && joint < hierarchy->joint_count;
+                     ++joint) {
+                    alternate_rigid_count += part.alternate_rigid_specials[joint] != nullptr;
+                    if (first_alternate_rigid == nullptr) {
+                        first_alternate_rigid = part.alternate_rigid_specials[joint];
+                    }
+                }
+                HostSpecialHandleLayout *handle = static_cast<HostSpecialHandleLayout *>(
+                    part.smooth_skin_special != nullptr
+                        ? part.smooth_skin_special
+                        : (part.alternate_smooth_skin_special != nullptr
+                               ? part.alternate_smooth_skin_special
+                               : (first_rigid != nullptr ? first_rigid : first_alternate_rigid)));
+                HostDisplaySpecialLayout *special =
+                    handle != nullptr ? static_cast<HostDisplaySpecialLayout *>(handle->display_special) : nullptr;
+                NUDLDLISTSCENE *scene = handle != nullptr && handle->scene != nullptr
+                                            ? static_cast<NUDLDLISTSCENE *>(handle->scene->display_list)
+                                            : nullptr;
+                NUCLIPOBJECT *clip_object = special != nullptr ? special->clip_objects : nullptr;
+                LOG_INFO("scripted player special: part=%d visibility=%p rigid=(array=%p,count=%d) "
+                         "smooth=%p alternate=(rigid=%p,count=%d,smooth=%p) handle=(scene=%p,legacy=%p,display=%p) "
+                         "display=(name=%s,flags=0x%x,instance=%d,clip=%p,range=%p,bounds=(%.3f,%.3f,%.3f)-"
+                         "(%.3f,%.3f,%.3f)) scene=(display=%p,items=%d,clip=%d,mtls=%u,specials=%d,flags=0x%x) "
+                         "clip-object=(materials=%d,ids=%p,indices=%p)",
+                         render_indices[0], part.visibility, part.rigid_specials, rigid_count, part.smooth_skin_special,
+                         part.alternate_rigid_specials, alternate_rigid_count, part.alternate_smooth_skin_special,
+                         handle != nullptr ? handle->scene : nullptr, handle != nullptr ? handle->special : nullptr,
+                         handle != nullptr ? handle->display_special : nullptr,
+                         special != nullptr && special->name != nullptr ? special->name : "-",
+                         special != nullptr ? special->flags : 0, special != nullptr ? special->instance_ix : -1,
+                         special != nullptr ? special->clip_objects : nullptr,
+                         special != nullptr ? special->clip_range : nullptr, special != nullptr ? special->min.x : 0.0f,
+                         special != nullptr ? special->min.y : 0.0f, special != nullptr ? special->min.z : 0.0f,
+                         special != nullptr ? special->max.x : 0.0f, special != nullptr ? special->max.y : 0.0f,
+                         special != nullptr ? special->max.z : 0.0f, scene, scene != nullptr ? scene->nitems : -1,
+                         scene != nullptr ? scene->nclip_objects : -1, scene != nullptr ? scene->nmtls : 0,
+                         scene != nullptr ? scene->nspecials : -1, scene != nullptr ? scene->flags : 0,
+                         clip_object != nullptr ? clip_object->nmaterials : -1,
+                         clip_object != nullptr ? clip_object->material_ids : nullptr,
+                         clip_object != nullptr ? clip_object->indices : nullptr);
+            }
+        }
     }
+    if (scripted_play_enabled && !scripted_play_finished) {
+        LOG_INFO("scripted play: incomplete started=%d ready_now=%d stage=%d movement_observed=unavailable",
+                 scripted_play_started ? 1 : 0, scripted_play_ready() ? 1 : 0, static_cast<i32>(scripted_stage));
+        if (Player[0] != nullptr) {
+            const NUMTX &matrix = Player[0]->apiobj.field_0xb8;
+            const f32 basis_squared = matrix.m00 * matrix.m00 + matrix.m01 * matrix.m01 + matrix.m02 * matrix.m02 +
+                                      matrix.m10 * matrix.m10 + matrix.m11 * matrix.m11 + matrix.m12 * matrix.m12 +
+                                      matrix.m20 * matrix.m20 + matrix.m21 * matrix.m21 + matrix.m22 * matrix.m22;
+            LOG_INFO("scripted play: readiness world=(%p,loaded=%d,level=%p,hub=%p,area=%p,hub-area=%p,sock=%p) "
+                     "load=(new=%p,mode=%d,level-wait=%d,char-wait=%d,new-wait=%d,abort=%d) "
+                     "player=(global=%p,p0=%p,p1=%p,flags=0x%x,pad=%p,pad0=%p) "
+                     "matrix=(basis2=%.3f,m33=%.3f,pos=%.3f,%.3f,%.3f,translation=%.3f,%.3f,%.3f) "
+                     "camera=(%.3f,%.3f,%.3f)",
+                     WORLD, WORLD != nullptr ? WORLD->loaded : 0, WORLD != nullptr ? WORLD->current_level : nullptr,
+                     HUB_LDATA, WORLD != nullptr ? WORLD->area : nullptr, HUB_ADATA,
+                     WORLD != nullptr ? WORLD->sock_sys : nullptr, NewLData, NewMode, waiting_for_level,
+                     waiting_for_character, waiting_for_new_level, abort_load, player, Player[0], Player[1],
+                     Player[0]->apiobj.field_0x1f8, Player[0]->pad_gamepad, &GamePad[0], basis_squared, matrix.m33,
+                     Player[0]->apiobj.position.x, Player[0]->apiobj.position.y, Player[0]->apiobj.position.z,
+                     matrix.m30, matrix.m31, matrix.m32, global_camera.mtx.m30, global_camera.mtx.m31,
+                     global_camera.mtx.m32);
+        }
+    }
+    const bool scripted_play_passed =
+        !scripted_play_enabled || (scripted_play_finished && scripted_play_movement_observed);
     LOG_INFO("presented %d frame_count", frame_count);
     if (numain_finished) {
         const i32 result = host_numain_result.load(std::memory_order_relaxed);
         free(buffer);
-        return result;
+        return result != 0 ? result : (scripted_play_passed ? 0 : 1);
     }
-    _exit(0);
+    _exit(scripted_play_passed ? 0 : 1);
 }

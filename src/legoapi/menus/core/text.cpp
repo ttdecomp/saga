@@ -11,6 +11,7 @@ extern i32 MenuDrawDropShadows;
 f32 text3d_height;
 f32 text3d_width;
 extern "C" {
+    i32 smarttextex_drawmessagebox = 0;
     void NuQFntSetJustifiedTolerances(float squash, float stretch);
     unsigned char *NuUnicodeCharFromUTF8(u16 *character, unsigned char *text);
     unsigned char *NuUTF8CharFromUnicode(unsigned char *text, u16 character);
@@ -430,7 +431,15 @@ extern "C" {
         f32 width = NuQFntPrintLenW(font, encoded);
         f32 available_width = max_width * STCOORDSCALE;
         if (message_box == nullptr && suppress_draw == 0 && max_lines != 0) {
-            if (available_width <= 0.0f || width <= available_width || max_lines == 1) {
+            bool has_explicit_break = false;
+            for (unsigned char *cursor = decoded; cursor[0] != '\0'; ++cursor) {
+                if (cursor[0] == '\\' && cursor[1] == 'n') {
+                    has_explicit_break = true;
+                    break;
+                }
+            }
+
+            if (!has_explicit_break && (available_width <= 0.0f || width <= available_width || max_lines == 1)) {
                 if (available_width > 0.0f && width > available_width) {
                     draw_x_scale *= available_width / width;
                 }
@@ -446,8 +455,17 @@ extern "C" {
                 while (*remaining != '\0' && line_count < line_limit) {
                     const i32 remaining_length = NuStrLen(reinterpret_cast<char *>(remaining));
                     i32 break_position = remaining_length;
+                    bool forced_break = false;
 
-                    if (line_count + 1 < line_limit) {
+                    for (i32 pos = 0; pos + 1 < remaining_length; ++pos) {
+                        if (remaining[pos] == '\\' && remaining[pos + 1] == 'n') {
+                            break_position = pos;
+                            forced_break = true;
+                            break;
+                        }
+                    }
+
+                    if (!forced_break && line_count + 1 < line_limit && available_width > 0.0f) {
                         i32 last_fitting_space = -1;
                         for (i32 pos = 0; pos < remaining_length; ++pos) {
                             if (remaining[pos] != ' ') {
@@ -474,13 +492,21 @@ extern "C" {
                     lines[line_count][break_position] = '\0';
                     ++line_count;
                     remaining += break_position;
-                    while (*remaining == ' ') {
-                        ++remaining;
+                    if (forced_break) {
+                        remaining += 2;
+                    } else {
+                        while (*remaining == ' ') {
+                            ++remaining;
+                        }
                     }
                 }
 
                 const f32 line_height = NuQFntHeight(font);
-                f32 line_y = y + static_cast<f32>(line_count - 1) * line_height * 0.5f;
+                f32 line_y = y;
+                if ((alignment & 1) == 0) {
+                    const f32 line_offset = static_cast<f32>(line_count - 1) * line_height;
+                    line_y -= (alignment & 4) != 0 ? line_offset : line_offset * 0.5f;
+                }
                 for (i32 line = 0; line < line_count; ++line) {
                     Text3DStringEncodeFont(lines[line], encoded, font);
                     const f32 line_width = NuQFntPrintLenW(font, encoded);
@@ -490,7 +516,7 @@ extern "C" {
                     }
                     Text3DEx(reinterpret_cast<char *>(lines[line]), x * STCOORDSCALE, line_y, z, line_x_scale,
                              draw_y_scale, z_scale, alignment, red, green, blue, alpha & 0xff);
-                    line_y -= line_height;
+                    line_y += line_height;
                 }
             }
         }

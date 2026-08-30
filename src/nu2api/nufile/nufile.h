@@ -189,27 +189,35 @@ namespace NuFile {
         // Return types uncertain.
         // NOLINTBEGIN
         virtual i32 GetCapabilities() const {
+            return {};
         }
 
         virtual const char *GetFilename() const {
+            return {};
         }
 
         virtual u32 GetType() const {
+            return {};
         }
 
         virtual i64 Seek(i64 offset, SeekOrigin::T) {
+            return {};
         }
 
         virtual isize Read(void *buf, usize size) {
+            return {};
         }
 
         virtual isize Write(const void *buf, usize size) {
+            return {};
         }
 
         virtual i64 GetPos() const {
+            return {};
         }
 
         virtual i64 GetSize() const {
+            return {};
         }
 
         virtual void Close() {

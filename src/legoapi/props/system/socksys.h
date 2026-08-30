@@ -98,8 +98,7 @@ typedef struct SOCK {
     u8 unknown_6b;                 // 0x6b
     u8 unknown_6c;                 // 0x6c
     u8 unknown_6d;                 // 0x6d
-    u8 unknown_6e;                 // 0x6e
-    u8 unknown_6f;                 // 0x6f
+    u16 input_yaw;                 // 0x6e — controller angle offset on camera-relative sockets
     u8 unknown_70;                 // 0x70
     u8 unknown_71;                 // 0x71
     u8 unknown_72;                 // 0x72

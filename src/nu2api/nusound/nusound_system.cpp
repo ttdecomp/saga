@@ -197,9 +197,7 @@ u32 NuSoundSystem::FreeMemory(MemoryDiscipline disc, usize address, u32 size) {
             }
             break;
         case MemoryDiscipline::SCRATCH:
-            // The original accounts NuMemoryManager::GetBlockSize(ptr); the
-            // host _TryBlockAlloc has no block header, so the accounting uses
-            // the size the alloc was charged.
+            freed = sScratchMemMgr->GetBlockSize((void *)address);
             sScratchMemMgr->BlockFree((void *)address, 0);
             break;
         default:
@@ -365,7 +363,8 @@ NuSoundSystem::FileType NuSoundSystem::DetermineFileType(const char *path) {
 }
 
 void NuSoundSystem::ReleaseFileLoader(NuSoundLoader *loader) {
-    UNIMPLEMENTED();
+    loader->~NuSoundLoader();
+    FreeMemory(MemoryDiscipline::SCRATCH, reinterpret_cast<usize>(loader), 0);
 }
 
 NuSoundSystem::~NuSoundSystem() {
@@ -531,8 +530,8 @@ void NuSoundSystem::ReleaseCrossfadeCurve(u32) {
 }
 
 void NuSoundSystem::ReleaseDecoder(NuSoundDecoder *decoder) {
-    (void)decoder;
-    UNIMPLEMENTED("NuSoundSystem::ReleaseDecoder");
+    decoder->~NuSoundDecoder();
+    FreeMemory(MemoryDiscipline::SCRATCH, reinterpret_cast<usize>(decoder), 0);
 }
 
 void NuSoundSystem::ReleaseEffect(NuSoundEffect *) {

@@ -1,6 +1,20 @@
 #include "nu2api/nusound/nusound.h"
 
+extern __attribute__((visibility("hidden"))) u16 *g_NuSoundLoadBits asm("_ZL17g_NuSoundLoadBits");
+extern __attribute__((visibility("hidden"))) u16 *g_NuSoundLoadBitsCache asm("_ZL22g_NuSoundLoadBitsCache");
+extern __attribute__((visibility("hidden"))) i32 g_NuSoundNumLoadBitShorts asm("_ZL25g_NuSoundNumLoadBitShorts");
+
 extern "C" {
+
+    void NuSound3SetRequestTable(u16 *request_bits, i32 short_count) {
+        if (g_NuSoundLoadBitsCache != NULL && g_NuSoundNumLoadBitShorts != short_count) {
+            delete g_NuSoundLoadBitsCache;
+        }
+
+        g_NuSoundLoadBitsCache = new u16[short_count];
+        g_NuSoundNumLoadBitShorts = short_count;
+        g_NuSoundLoadBits = request_bits;
+    }
 
     void NuSound3AddRumble(void) {
     }
@@ -78,7 +92,8 @@ extern "C" {
     }
     void NuSound3LoadAllSpotFX(void) {
     }
-    void NuSound3LoadingSfx(void) {
+    i32 NuSound3LoadingSfx(void) {
+        return 0;
     }
     void NuSound3Play(void) {
     }
@@ -118,8 +133,6 @@ extern "C" {
         (void)t;
     }
     void NuSound3SetMonoIopBufferSize(void) {
-    }
-    void NuSound3SetRequestTable(void) {
     }
     void NuSound3SetReverb(void) {
     }

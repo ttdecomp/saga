@@ -45,9 +45,6 @@ extern "C" void NuShaderObjectBaseUpdateWaterTable(void) {
 extern "C" void NuShaderObjectGLSLAllocateParameter(void) {
 }
 
-extern "C" void NuShaderObjectGLSLProbeSemantics(void) {
-}
-
 extern "C" void NuShaderObjectGLSLSetupTextureStates(void) {
 }
 
@@ -64,9 +61,6 @@ extern "C" void NuShaderObjectKeySetUberShaderHash(void) {
 }
 
 extern "C" void NuShaderObjectLoadFromFile(void) {
-}
-
-extern "C" void NuShaderObjectSetElementsfv(void) {
 }
 
 extern "C" void NuShaderObjectSetElementsfv_transpose(void) {

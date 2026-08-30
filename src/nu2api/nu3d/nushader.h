@@ -2,6 +2,7 @@
 
 #include <GLES2/gl2.h>
 
+#include "decomp_assert.h"
 #include "nu2api/nucore/common.h"
 
 struct nushaderobjectkey_s;
@@ -33,19 +34,33 @@ void NuShaderObjectInitGLSL(nushaderobjectglsl_s *obj, nushaderobjectkey_s const
                             u32 pshader);
 
 struct glslparamter_s {
-    i16 unk1;
-    i16 unk2;
-    char unk3;
-    char unk4[3];
+    i16 location;
+    u8 element_count_and_setter;
+    u8 array_size;
+    u8 semantic;
+    u8 type_and_flags;
+    u8 reserved[2];
+
+#ifdef __cplusplus
+    void setElementsMatrix(i32 first_element, i32 count, const f32 *values) __attribute__((weak));
+#endif
 };
 
 typedef struct glslparamter_s GLSLParameter;
+
+typedef struct nushaderusagemask_s {
+    u32 semantics[4];
+} NUSHADERUSAGEMASK;
+
+DECOMP_ASSERT(sizeof(GLSLParameter) == 8, "GLSL parameter metadata size");
+DECOMP_ASSERT(offsetof(GLSLParameter, semantic) == 4, "GLSL parameter semantic offset");
 
 #define NUSHADEROBJECT_PARAMETERS_COUNT 91
 
 struct nushaderobject_s {
     NUSHADEROBJECTGLSL glsl;
-    char unk[0x10];
+    NUSHADERUSAGEMASK *usage_mask;
+    char unk[0x0c];
     GLSLParameter parameters[NUSHADEROBJECT_PARAMETERS_COUNT];
 };
 
@@ -79,6 +94,7 @@ extern "C" {
 #endif
     void NuShaderObjectBaseCreate(NUSHADEROBJECTBASE *shader);
     void NuShaderObjectGLSLCreate(NUSHADEROBJECTGLSL *shader);
+    void NuShaderObjectGLSLProbeSemantics(NUSHADEROBJECT *shader);
     void NuShaderObjectCreate(NUSHADEROBJECT *shader);
     void NuShaderObjectBaseDestroy(NUSHADEROBJECTBASE *shader);
     void NuShaderObjectGLSLDestroy(NUSHADEROBJECTGLSL *shader);
@@ -87,6 +103,7 @@ extern "C" {
     void NuShaderObjectUnInit(NUSHADEROBJECT *shader);
     void NuShaderObjectBaseUnInit(NUSHADEROBJECTBASE *shader);
     void NuShaderObjectBaseSetWaterSpeed(f32 speed);
+    void NuShaderObjectSetElementsfv(i32 shader_object, i32 semantic, i32 first_element, i32 count, const f32 *values);
     NUSHADERPROGRAM *NuShaderProgramCreateIOS(const char *vertex_source, const char *fragment_source);
     void NuShaderProgramSetVertexParamfv(NUSHADERPROGRAM *program, u32 register_index, const f32 *values,
                                          i32 component_count);

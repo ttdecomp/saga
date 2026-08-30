@@ -1,7 +1,10 @@
 #include "decomp.h"
+#include "legoapi/core/config/cheat.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nu3d/nurndrstat.h"
 #include "nu2api/nu3d/nutex.h"
 
 #include <stdio.h>
@@ -11,13 +14,33 @@ struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
 
+void SetLights(NUCOLOUR3 *colour0, NUVEC *direction0, NUCOLOUR3 *colour1, NUVEC *direction1, NUCOLOUR3 *colour2,
+               NUVEC *direction2, NUVEC *ambient);
+
 void SetFlicker(GameObject_s *, float) {
 }
 
 void ResetLights(nuvec_s *, rtldata_s *, void *) {
 }
 
+extern "C" {
+    NULIGHTINGSTATE NuRndrLightingStateCurrent = {};
+}
+
 void SetZeroLights() {
+    const NUCOLOUR3 black = {0.0f, 0.0f, 0.0f};
+
+    NuRndrLightingStateCurrent.direction[0] = nuvec_x;
+    NuRndrLightingStateCurrent.direction[1] = nuvec_x;
+    NuRndrLightingStateCurrent.direction[2] = nuvec_x;
+    NuRndrLightingStateCurrent.intensity[0] = black;
+    NuRndrLightingStateCurrent.intensity[1] = black;
+    NuRndrLightingStateCurrent.intensity[2] = black;
+    NuRndrSetDirectionalLightsPS(&nuvec_x, &black, &nuvec_x, &black, &nuvec_x, &black);
+
+    NUCOLOUR3 *ambient = reinterpret_cast<NUCOLOUR3 *>(&nuvec_zero);
+    NuRndrLightingStateCurrent.ambient = *ambient;
+    NuRndrSetAmbientLightPS(ambient);
 }
 
 rtldata_s lev_rtldata;
@@ -44,7 +67,24 @@ void LightSabreDebris(GameObject_s *) {
 void SetSpotLightMode() {
 }
 
-void SetCreatureLights(APIOBJECT_s *) {
+void SetCreatureLights(APIOBJECT_s *object) {
+    GameObject_s *owner = object->objptr;
+
+    if (Cheats_CheckFlags(1) != 0) {
+        SetZeroLights();
+        return;
+    }
+
+    if (owner->apiobj.field_0x287 != 0) {
+        rtldata_s *lights = &owner->light_data;
+        SetLights(&lights->intensity[0], &lights->direction[0], &lights->intensity[1], &lights->direction[1],
+                  &lights->intensity[2], &lights->direction[2], &lights->ambient);
+        return;
+    }
+
+    OBJECTLIGHTINGSTATE_s *lights = &owner->lighting_state;
+    SetLights(&lights->intensity[0], &lights->direction[0], &lights->intensity[1], &lights->direction[1],
+              &lights->intensity[2], &lights->direction[2], &lights->ambient);
 }
 
 void SetLights_RTLDATA(rtldata_s *data, float scale) {
@@ -53,12 +93,14 @@ void SetLights_RTLDATA(rtldata_s *data, float scale) {
         return;
     }
     rtldata_s scaled = *data;
-    for (i32 offset = 0x78; offset < 0x9c; offset += 4) {
-        *reinterpret_cast<f32 *>(scaled.data + offset) *= scale;
+    for (i32 i = 0; i < 3; ++i) {
+        scaled.intensity[i].r *= scale;
+        scaled.intensity[i].g *= scale;
+        scaled.intensity[i].b *= scale;
     }
-    for (i32 offset = 0xc0; offset < 0xcc; offset += 4) {
-        *reinterpret_cast<f32 *>(scaled.data + offset) *= scale;
-    }
+    scaled.ambient.x *= scale;
+    scaled.ambient.y *= scale;
+    scaled.ambient.z *= scale;
     rtlSetLights(&scaled);
 }
 
@@ -71,7 +113,19 @@ void TurnEpisodeDoorLightsOn(i32) {
 void LightSabre_ColourFromObj(i32, i32 *) {
 }
 
-void SetLights(nucolour3_s *, nuvec_s *, nucolour3_s *, nuvec_s *, nucolour3_s *, nuvec_s *, nuvec_s *) {
+void SetLights(NUCOLOUR3 *colour0, NUVEC *direction0, NUCOLOUR3 *colour1, NUVEC *direction1, NUCOLOUR3 *colour2,
+               NUVEC *direction2, NUVEC *ambient) {
+    NuRndrLightingStateCurrent.direction[0] = *direction0;
+    NuRndrLightingStateCurrent.direction[1] = *direction1;
+    NuRndrLightingStateCurrent.direction[2] = *direction2;
+    NuRndrLightingStateCurrent.intensity[0] = *colour0;
+    NuRndrLightingStateCurrent.intensity[1] = *colour1;
+    NuRndrLightingStateCurrent.intensity[2] = *colour2;
+    NuRndrSetDirectionalLightsPS(direction0, colour0, direction1, colour1, direction2, colour2);
+
+    NUCOLOUR3 *ambient_colour = reinterpret_cast<NUCOLOUR3 *>(ambient);
+    NuRndrLightingStateCurrent.ambient = *ambient_colour;
+    NuRndrSetAmbientLightPS(ambient_colour);
 }
 
 extern "C" rtlset *rtlLoadSet(char *, VARIPTR *, i32);

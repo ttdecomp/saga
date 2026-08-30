@@ -2,6 +2,10 @@
 
 #include "decomp.h"
 
+struct TIGHTROPEPROGRESS {
+    i32 state[2];
+};
+
 static i32 TightRopes_GetMaxGizmos(void *tightrope) {
     UNIMPLEMENTED();
     return {};
@@ -48,8 +52,14 @@ static void *TightRopes_AllocateProgressData(VARIPTR *, VARIPTR *) {
     return {};
 }
 
-static void TightRopes_ClearProgress(void *, void *) {
-    UNIMPLEMENTED();
+static void TightRopes_ClearProgress(void *, void *progress_data) {
+    TIGHTROPEPROGRESS *progress = (TIGHTROPEPROGRESS *)progress_data;
+    if (progress == NULL) {
+        return;
+    }
+
+    progress->state[0] = -1;
+    progress->state[1] = -1;
 }
 
 static void TightRopes_StoreProgress(void *, void *, void *) {
