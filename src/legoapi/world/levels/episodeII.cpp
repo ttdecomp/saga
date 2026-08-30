@@ -164,15 +164,15 @@ i32 KaminoInside() {
     if (WORLD->area != NULL && WORLD->area == KAMINO_ADATA) {
         if (WORLD->current_level == KAMINOA_LDATA) {
             if (CUTSTOPGAME == 0) {
-                if (GameCam->field_0x01 == 5)
+                if (GameCam->sock_position.location.sock == 5)
                     return 1;
-                if (GameCam->field_0x01 == 6)
+                if (GameCam->sock_position.location.sock == 6)
                     return 1;
             } else {
                 return 1;
             }
         } else if (WORLD->current_level == KAMINOE_LDATA) {
-            if (CUTSTOPGAME == 0 && GameCam->field_0x01 != 0x1e)
+            if (CUTSTOPGAME == 0 && GameCam->sock_position.location.sock != 0x1e)
                 return 1;
         }
     }
@@ -186,14 +186,14 @@ i32 KaminoDiscoOn() {
 i32 KaminoInDiscoRoom() {
     i32 r = 0;
     if (WORLD->current_level == KAMINOC_LDATA)
-        r = (GameCam->field_0x01 == 0x15);
+        r = (GameCam->sock_position.location.sock == 0x15);
     return r;
 }
 
 void KaminoA_AlwaysUpdate(WORLDINFO_s *) {
     bool v = 0;
     if (CUTSTOPGAME == 0) {
-        u8 b = GameCam->field_0x01;
+        u8 b = GameCam->sock_position.location.sock;
         if (b != 5)
             v = (b != 6);
     }
@@ -243,7 +243,7 @@ void KaminoE_Update(WORLDINFO_s *) {
 void KaminoE_AlwaysUpdate(WORLDINFO_s *) {
     bool v = 1;
     if (CUTSTOPGAME == 0)
-        v = (GameCam->field_0x01 == 0x1e);
+        v = (GameCam->sock_position.location.sock == 0x1e);
     object_switches[1] = v;
 }
 
@@ -251,7 +251,7 @@ void KaminoE_Draw(WORLDINFO_s *world) {
     if (netclient == 0) {
         if (kamino_e_state != NULL && kamino_e_state->field_0x28 > 0.0f) {
             GameObject_s *obj = (GameObject_s *)FindGameObject((i32)(i16)id_JANGOFETT, 1, 1, 1, 0);
-            if (obj != NULL && kamino_e_state != NULL && obj->apiobj.field_0x28 == 1.0f)
+            if (obj != NULL && kamino_e_state != NULL && obj->apiobj.anim_packet.field_0x20 == 1.0f)
                 DrawBossHitPoints(obj);
         }
     }
@@ -281,7 +281,7 @@ void KaminoF_Init(WORLDINFO_s *world) {
 void KaminoOutro_Init(WORLDINFO_s *) {
     bool v = 0;
     if (CUTSTOPGAME == 0) {
-        u8 b = GameCam->field_0x01;
+        u8 b = GameCam->sock_position.location.sock;
         if (b != 5)
             v = (b != 6);
     }
@@ -379,9 +379,7 @@ void FactoryG_Update(WORLDINFO_s *world) {
         if (FreePlay == 0)
             NewCutScene(NULL, world->cutscene_sys, "factory_escape", 1);
     } else {
-        ObiWan->apiobj.field_0x5c = 79.2f;
-        ObiWan->apiobj.field_0x60 = 0.75f;
-        ObiWan->apiobj.field_0x64 = -10.5f;
+        ObiWan->apiobj.position = {79.2f, 0.75f, -10.5f};
     }
 }
 
@@ -600,6 +598,6 @@ void DookuC_DrawPanel(WORLDINFO_s *) {
     if (netclient != 0)
         return;
     GameObject_s *obj = (GameObject_s *)FindGameObject((i32)(i16)id_COUNTDOOKU, 1, 1, 1, 0);
-    if (obj != NULL && dooku_c != 0 && obj->apiobj.field_0x28 == 1.0f)
+    if (obj != NULL && dooku_c != 0 && obj->apiobj.anim_packet.field_0x20 == 1.0f)
         DrawBossHitPoints(obj);
 }

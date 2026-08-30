@@ -95,3 +95,12 @@ i32 NuCameraClipTestExtents(NUVEC *min, NUVEC *max, NUMTX *world_mtx, f32 far_cl
 
     return 2;
 }
+
+// The original has a separately vectorised 0x665-byte implementation for
+// identity-world AABBs.  Its observable result is the same three-state clip
+// code produced by the generic extent test: 0 outside, 1 wholly inside, 2
+// intersecting.  Keep the original public ABI while sharing the already
+// transcribed scalar test.
+i32 NuCameraClipTestExtentsAxisAligned(NUVEC *min, NUVEC *max, f32 far_clip) {
+    return NuCameraClipTestExtents(min, max, &numtx_identity, far_clip, 0);
+}

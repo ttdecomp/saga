@@ -37,6 +37,8 @@ extern "C" NUGCUTLOCATORFNENTRY_s *locatorfns;
 #include "nu2api/nucore/nuanim3.h"
 #include "nu2api/nucore/nuapi.h"
 #include "nu2api/nucore/nuhgobj.h"
+#include "nu2api/nucore/nuptrblock.h"
+#include "nu2api/nufile/nufile.h"
 #include "nu2api/nu3d/nudlist.h"
 #include "nu2api/nu3d/nugscn.h"
 #include "nu2api/nu3d/numtl.h"
@@ -52,6 +54,8 @@ extern "C" NUGCUTLOCATORFNENTRY_s *locatorfns;
 
 struct nuhspecial_s;
 struct ani3_animheader_s;
+
+extern "C" u8 CutSceneBoundingBoxTrackRoot = 0;
 
 extern "C" void ANI_FixUpAddrs(ani3_animheader_s *, i32);
 extern "C" void ANI_Ani3ExtractAllNodeCurves(ani3_animheader_s *, f32, f32 *, i32, char *);
@@ -89,6 +93,8 @@ namespace {
     };
 
     static i32 nuspecial_clip_state = -1;
+    static i32 nuspecial_shadow_light_count = 0;
+    static i32 nuspecial_shadow_light_have_clip_results = 0;
 } // namespace
 
 extern "C" {
@@ -105,6 +111,7 @@ void DisplayListCreateDynMtlList(VARIPTR *buf, VARIPTR buf_end); // supportall.c
 void NuPadRecordEndFrame(void);                                  // nupad_interface.cpp
 void bgSuspendMain(i32);                                         // main.cpp
 void NuAnimBuffInit(i32, VARIPTR *, VARIPTR);                    // nu2api_nucore_misc.cpp
+i32 NuCameraClipHGobj(nugscn_s *, NUMTX *, NUMTX *);             // nu2api_nucore_misc.cpp
 
 extern "C" {
 
@@ -119,6 +126,8 @@ extern "C" {
     void NuTimeBarSetRender(void);
     void NuRndrSwapScreenEx(i32 mode, void (*callback)(void));
     void NuShaderManagerSetfv(i32 semantic, const f32 *values);
+    void *NuScratchAlloc32(i32 size);
+    void NuScratchRelease(void);
 
     extern VARIPTR *display_list_buffer_end;
     extern VARIPTR rndrstream_free;
@@ -177,8 +186,6 @@ extern "C" {
     void NuCameraCalcRootFStop(void) {
     }
     void NuCameraClearStateBuffer(void) {
-    }
-    void NuCameraClipTestExtentsAxisAligned(void) {
     }
     void NuCameraClipTestExtentsGeneric(void) {
     }
@@ -605,10 +612,6 @@ extern "C" {
     }
     void NuDisplaySceneDebug(void) {
     }
-    void NuDisplaySceneDestroy(void) {
-    }
-    void NuDisplaySceneDestroyPS(void) {
-    }
 
     // ---------------------------------------------------------------------------
     // Frame lifecycle (NuFrameEnd is faithful; neighbours are stubs)
@@ -801,11 +804,12 @@ extern "C" {
     }
     void NuIOS_IsMidRangeDevice(void) {
     }
-    void NuIOS_IsSmallScreen(void) {
+    i32 NuIOS_IsSmallScreen(void) {
+        return 0;
     }
     void NuIOS_IsWidescreen(void) {
     }
-    void NuIOS_RecordFlurryEvent(void) {
+    void NuIOS_RecordFlurryEvent(char *) {
     }
     void NuIOS_ShowAchievements(void) {
     }
@@ -814,7 +818,29 @@ extern "C" {
     // Animation / curves / data
     // ---------------------------------------------------------------------------
 
-    void NuAnimBuffAccumulate_3(void) {
+    // Original @0x2c6560.  The first contribution overwrites the buffer;
+    // subsequent contributions use the blend player.
+    void NuAnimBuffAccumulate_3(nuanimbuff_s *buffer, ani3_animheader_s *animation, f32 time, i32 overwrite, f32 blend,
+                                i32 first_joint, nuhgobj_s *object, NUVEC *root_translation) {
+        if (buffer == NULL) {
+            buffer = static_cast<nuanimbuff_s *>(globalbuffer);
+        }
+        buffer->joint_count = object->joint_count;
+
+        // The public hierarchy evaluators pass zero here.  Non-zero values
+        // name a restricted hierarchy range and are handled by findrange in
+        // the original; that range helper is still pending transcription.
+        i32 joint = first_joint;
+        if (overwrite != 0) {
+            ANI_SimpleAni3PlayerV4Joint(animation, time - 1.0f, buffer, joint, object->joint_count - joint);
+        } else {
+            ANI_SimpleAni3PlayerV4Joint_Blend(animation, time - 1.0f, buffer, blend, joint, object->joint_count - joint,
+                                              root_translation);
+        }
+        if (root_translation != NULL && object->joint_count != 0) {
+            *root_translation = buffer->joints[0].translation;
+            root_translation->z = -root_translation->z;
+        }
     }
     void *NuAnimBuffCreate(i32 max_joints, VARIPTR *buf) {
         u32 *anim_buffer = reinterpret_cast<u32 *>(ALIGN(buf->addr, 0x10));
@@ -827,13 +853,121 @@ extern "C" {
         anim_buffer[0] = 0;
         return anim_buffer;
     }
-    void NuAnimBuffCreateScratch(void) {
+    // Original @0x2bbf90.  Scratch buffers are nested allocations from the
+    // engine's LIFO scratch arena, so destruction deliberately releases them
+    // in the reverse order.
+    void NuAnimBuffCreateScratch(nuanimbuff_s *buffer) {
+        if (buffer == NULL) {
+            return;
+        }
+
+        nuanimbuff_s *global = static_cast<nuanimbuff_s *>(globalbuffer);
+        buffer->joint_count = 0;
+        buffer->max_joints = global->max_joints;
+        buffer->use_quaternions = 0;
+        buffer->pad_07 = 0;
+        buffer->joints = static_cast<nuanimbuffjoint_s *>(NuScratchAlloc32((buffer->max_joints * 3 + 3) * 0x10));
+        buffer->joints = reinterpret_cast<nuanimbuffjoint_s *>(ALIGN(reinterpret_cast<usize>(buffer->joints), 0x10));
+        buffer->joint_flags = static_cast<u8 *>(NuScratchAlloc32(buffer->max_joints));
     }
-    void NuAnimBuffDestroyScratch(void) {
+    // Original @0x2bc000.
+    void NuAnimBuffDestroyScratch(nuanimbuff_s *buffer) {
+        if (buffer == NULL) {
+            return;
+        }
+        NuScratchRelease();
+        NuScratchRelease();
+        buffer->max_joints = 0;
+        buffer->joints = NULL;
+        buffer->joint_flags = NULL;
     }
     void NuAnimBuffEvaluateCallback(void) {
     }
-    void NuAnimBuffEvaluate_3(void) {
+    // Original @0x2bd180.  Evaluate the decompressed per-joint samples into
+    // hierarchy matrices while carrying scale through the parent chain.
+    void NuAnimBuffEvaluate_3(nuanimbuff_s *buffer, nuhgobj_s *object, NUMTX *matrices, ani3_animheader_s *,
+                              NUHGOBJROOTFN root_fn, NUVEC *, void *root_data) {
+        if (buffer == NULL) {
+            buffer = static_cast<nuanimbuff_s *>(globalbuffer);
+        }
+
+        NUVEC accumulated_scale[256];
+        const i32 evaluated_count =
+            buffer->joint_count < object->joint_count ? buffer->joint_count : object->joint_count;
+        for (i32 joint_index = 0; joint_index < evaluated_count; ++joint_index) {
+            const nuanimbuffjoint_s &joint = buffer->joints[joint_index];
+            const u8 flags = buffer->joint_flags[joint_index];
+            const u8 parent_index = object->joints[joint_index].parent_index;
+            const NUVEC parent_scale = parent_index == 0xff ? NUVEC{1.0f, 1.0f, 1.0f} : accumulated_scale[parent_index];
+
+            NUMTX local_matrix;
+            if ((flags & 1) != 0) {
+                constexpr f32 kRadiansToNuAngle = 10430.378f;
+                NUANGVEC angles = {
+                    static_cast<NUANG>(joint.rotation.x * kRadiansToNuAngle),
+                    static_cast<NUANG>(joint.rotation.y * kRadiansToNuAngle),
+                    static_cast<NUANG>(joint.rotation.z * kRadiansToNuAngle),
+                };
+                NuMtxSetRotateXYZ(&local_matrix, &angles);
+                if ((flags & 0x20) != 0) {
+                    NuMtxMulH(&local_matrix, &local_matrix, &object->bind_matrices[joint_index]);
+                }
+            } else if ((flags & 0x20) != 0) {
+                local_matrix = object->bind_matrices[joint_index];
+            } else {
+                NuMtxSetIdentity(&local_matrix);
+            }
+
+            if ((flags & 8) != 0) {
+                NuMtxPreScale(&local_matrix, const_cast<NUVEC *>(&joint.scale));
+                accumulated_scale[joint_index] = {
+                    joint.scale.x * parent_scale.x,
+                    joint.scale.y * parent_scale.y,
+                    joint.scale.z * parent_scale.z,
+                };
+            } else {
+                accumulated_scale[joint_index] = parent_scale;
+            }
+
+            if ((flags & 0x10) != 0) {
+                NUVEC inverse_parent_scale = {
+                    parent_scale.x != 0.0f ? 1.0f / parent_scale.x : 1.0f,
+                    parent_scale.y != 0.0f ? 1.0f / parent_scale.y : 1.0f,
+                    parent_scale.z != 0.0f ? 1.0f / parent_scale.z : 1.0f,
+                };
+                NuMtxScale(&local_matrix, &inverse_parent_scale);
+            }
+
+            if ((flags & 2) != 0) {
+                NUVEC translation = joint.translation;
+                translation.z = -translation.z;
+                NuMtxTranslate(&local_matrix, &translation);
+            }
+
+            local_matrix.m02 = -local_matrix.m02;
+            local_matrix.m12 = -local_matrix.m12;
+            local_matrix.m20 = -local_matrix.m20;
+            local_matrix.m21 = -local_matrix.m21;
+            local_matrix.m23 = -local_matrix.m23;
+            local_matrix.m32 = -local_matrix.m32;
+
+            if (root_fn != NULL && joint_index == 0) {
+                NUVEC translation = joint.translation;
+                NUVEC rotation = joint.rotation;
+                NUVEC scale = joint.scale;
+                root_fn(&local_matrix, root_data, &translation, &rotation, &scale, 1.0f);
+            }
+
+            if (parent_index == 0xff) {
+                matrices[joint_index] = local_matrix;
+            } else {
+                NuMtxMulH(&matrices[joint_index], &local_matrix, &matrices[parent_index]);
+            }
+        }
+
+        for (i32 joint_index = evaluated_count; joint_index < object->joint_count; ++joint_index) {
+            NuMtxSetIdentity(&matrices[joint_index]);
+        }
     }
     void NuAnimBuffProceduralAnimation(void) {
     }
@@ -1058,13 +1192,64 @@ extern "C" {
         }
         return anim;
     }
-    void NuAnimData2Fixup(void) {
+    void *NuAnimData2Fixup(i32 file_size, void **data) {
+        u32 *header = static_cast<u32 *>(*data);
+        if (static_cast<i32>(header[1]) > static_cast<i32>(0x414e4934)) {
+            return NuPtrBlockFix(header);
+        }
+
+        if (header[0] == 0x414e4933 || header[0] == 0x414e4934) {
+            ANI_FixUpAddrs(reinterpret_cast<ani3_animheader_s *>(header),
+                           static_cast<i32>(reinterpret_cast<usize>(header)));
+            return header;
+        }
+
+        header[0] = static_cast<u32>(file_size);
+        header[2] = static_cast<u32>(reinterpret_cast<usize>(NuAnimData2FixPtrs(
+            reinterpret_cast<void *>(header[2]),
+            static_cast<i32>(reinterpret_cast<usize>(header) - static_cast<usize>(header[1])), 0, 0)));
+        header[1] = static_cast<u32>(reinterpret_cast<usize>(header));
+        return reinterpret_cast<void *>(header[2]);
     }
-    void NuAnimData2LoadBuff(void) {
+
+    void *NuAnimData2LoadBuffEx(char *path, VARIPTR *buf, VARIPTR *buf_end, void **result) {
+        buf->addr = ALIGN(buf->addr, 0x10);
+        const i32 file_size = NuFileLoadBuffer(path, buf->void_ptr, static_cast<i32>(buf_end->addr - buf->addr));
+        if (file_size == 0) {
+            if (NuFileGetLastError() == -1) {
+                *buf = *buf_end;
+            }
+            *result = NULL;
+            return NULL;
+        }
+
+        void *data = buf->void_ptr;
+        if (static_cast<i32>(static_cast<u32 *>(data)[1]) > static_cast<i32>(0x414e4934)) {
+            data = NuPtrBlockFix(data);
+            buf->void_ptr = data;
+            buf->addr += static_cast<usize>(file_size);
+            *result = data;
+            return data;
+        }
+
+        *result = data;
+        buf->addr += static_cast<usize>(file_size);
+        return NuAnimData2Fixup(file_size, result);
     }
-    void NuAnimData2LoadBuffEx(void) {
+
+    void *NuAnimData2LoadBuff(char *path, VARIPTR *buf, VARIPTR *buf_end) {
+        void *result;
+        return NuAnimData2LoadBuffEx(path, buf, buf_end, &result);
     }
-    void NuAnimData2LoadBuffFromPAK(void) {
+
+    void *NuAnimData2LoadBuffFromPAK(void *data, i32 file_size) {
+        if (file_size == 0) {
+            return NULL;
+        }
+        if (static_cast<i32>(static_cast<u32 *>(data)[1]) > static_cast<i32>(0x414e4934)) {
+            return NuPtrBlockFix(data);
+        }
+        return NuAnimData2Fixup(file_size, &data);
     }
     void NuAnimData2Relocate(void) {
     }
@@ -1192,15 +1377,40 @@ extern "C" {
     }
     void NuMemSetHeap(void) {
     }
-    void NuScratchAlloc128(void) {
-    }
-    void NuScratchAlloc32(void) {
-    }
-    void NuScratchAlloc64(void) {
-    }
-    void NuScratchRelease(void) {
-    }
+    u8 PS2_SCRATCH_BASE[0x8000];
+    static u8 *ps2_scratch_free;
+
+    // Original @0x316d41.
     void NuScratchReset(void) {
+        ps2_scratch_free = PS2_SCRATCH_BASE;
+    }
+
+    static void *NuScratchAllocAligned(i32 size, usize alignment) {
+        if (ps2_scratch_free == NULL) {
+            NuScratchReset();
+        }
+        u8 *previous = ps2_scratch_free;
+        u8 *allocation = reinterpret_cast<u8 *>(ALIGN(reinterpret_cast<usize>(ps2_scratch_free), alignment));
+        ps2_scratch_free = allocation + ALIGN(size, 4);
+        *reinterpret_cast<u8 **>(ps2_scratch_free) = previous;
+        ps2_scratch_free += sizeof(previous);
+        return allocation;
+    }
+
+    // Original @0x316e45 / 0x316d5d / 0x316dd1.
+    void *NuScratchAlloc128(i32 size) {
+        return NuScratchAllocAligned(size, 16);
+    }
+    void *NuScratchAlloc32(i32 size) {
+        return NuScratchAllocAligned(size, 4);
+    }
+    void *NuScratchAlloc64(i32 size) {
+        return NuScratchAllocAligned(size, 8);
+    }
+
+    // Original @0x316eb9.
+    void NuScratchRelease(void) {
+        ps2_scratch_free = *reinterpret_cast<u8 **>(ps2_scratch_free - sizeof(ps2_scratch_free));
     }
     void NuPtrBlockRead(void) {
     }
@@ -1291,7 +1501,8 @@ extern "C" {
     }
     void NuMtxMulRVU0(void) {
     }
-    void NuMtxMulVU0(void) {
+    void NuMtxMulVU0(NUMTX *result, NUMTX *left, NUMTX *right) {
+        NuMtxMulH(result, left, right);
     }
     void NuMtxMulnVU0(void) {
     }
@@ -1301,7 +1512,8 @@ extern "C" {
     }
     void NuMtxScaleVU0(void) {
     }
-    void NuMtxSetRotateXYZVU0(void) {
+    void NuMtxSetRotateXYZVU0(NUMTX *matrix, NUANGVEC *angles) {
+        NuMtxSetRotateXYZ(matrix, angles);
     }
     void NuMtxSetRotationXYVU0(void) {
     }
@@ -1728,12 +1940,14 @@ extern "C" {
     void NuSpecialClear(void) {
     }
     void NuSpecialClearShadowClipTestResults(void) {
+        nuspecial_shadow_light_have_clip_results = 0;
     }
     void NuSpecialClearShadowLights(void) {
     }
     void NuSpecialClipTestExtents(void) {
     }
-    void NuSpecialClipTestShadowLights(void) {
+    i32 NuSpecialClipTestShadowLights(NUVEC *, NUVEC *, i32) {
+        return 0;
     }
     void NuSpecialCompare(void) {
     }
@@ -1765,7 +1979,13 @@ extern "C" {
     }
     void NuSpecialDrawSmoothSkin(void) {
     }
-    void NuSpecialDrawSmoothSkinDwa(void) {
+    i32 NuSpecialDrawSmoothSkinDwa(void *special, NUMTX *skin_matrices, NUMTX *world_matrix, void *blend_values) {
+        NuPlainSpecialHandleLayout *handle = static_cast<NuPlainSpecialHandleLayout *>(special);
+        if (handle == NULL || handle->scene == NULL || handle->display_special == NULL) {
+            return 0;
+        }
+        return NuDisplayListRndrSpecial(reinterpret_cast<nuhspecial_s *>(special), world_matrix, 2, skin_matrices,
+                                        blend_values);
     }
     void NuSpecialDrawWith(void) {
     }
@@ -1856,7 +2076,8 @@ extern "C" {
         NuPlainDisplaySpecialLayout *display = static_cast<NuPlainDisplaySpecialLayout *>(handle->display_special);
         return display != NULL ? (display->flags >> 1) & 1 : 0;
     }
-    void NuSpecialHasActiveShadowLights(void) {
+    i32 NuSpecialHasActiveShadowLights(void) {
+        return nuspecial_shadow_light_count > 0;
     }
     void NuSpecialHaveShadowClipTestResults(void) {
     }
@@ -2079,21 +2300,91 @@ extern "C" {
 
     void NuHGobjDestroy(void) {
     }
-    void NuHGobjEval(void) {
+    // Original @0x2cce60. Build bind-pose joint matrices, applying the optional
+    // per-joint rotation/translation overrides before parent concatenation.
+    void NuHGobjEval(nuhgobj_s *object, i32 override_count, nuhgobjjointoverride_s *overrides, NUMTX *matrices) {
+        nuhgobjjointoverride_s *override_by_joint[256];
+        memset(override_by_joint, 0, static_cast<usize>(object->joint_count) * sizeof(*override_by_joint));
+
+        for (i32 i = 0; i < override_count; ++i) {
+            const u8 override_index = overrides[i].joint_index;
+            if (override_index < object->joint_override_map_count) {
+                const u8 joint_index = object->joint_override_map[override_index];
+                if (joint_index != 0xff) {
+                    override_by_joint[joint_index] = &overrides[i];
+                }
+            }
+        }
+
+        for (i32 joint_index = 0; joint_index < object->joint_count; ++joint_index) {
+            NUMTX local_matrix = object->bind_matrices[joint_index];
+            nuhgobjjointoverride_s *joint_override = override_by_joint[joint_index];
+            if (joint_override != NULL) {
+                constexpr f32 kRadiansToNuAngle = 10430.378f;
+                NUANGVEC angles = {
+                    static_cast<NUANG>(joint_override->rotation_x * kRadiansToNuAngle),
+                    static_cast<NUANG>(joint_override->rotation_y * kRadiansToNuAngle),
+                    static_cast<NUANG>(joint_override->rotation_z * kRadiansToNuAngle),
+                };
+                NUMTX override_matrix;
+                NuMtxSetRotateXYZVU0(&override_matrix, &angles);
+                NuMtxTranslate(&override_matrix, &joint_override->translation);
+                NuMtxMulVU0(&local_matrix, &local_matrix, &override_matrix);
+            }
+
+            const u8 parent_index = object->joints[joint_index].parent_index;
+            if (parent_index == 0xff) {
+                matrices[joint_index] = local_matrix;
+            } else {
+                NuMtxMulVU0(&matrices[joint_index], &local_matrix, &matrices[parent_index]);
+            }
+        }
     }
     void NuHGobjEvalAnim(void) {
     }
-    void NuHGobjEvalAnim2(void) {
+    // Original @0x2cd730.
+    void NuHGobjEvalAnim2(nuhgobj_s *object, ani3_animheader_s *animation, f32 time, i32 override_count,
+                          NUJOINTANIM_s *overrides, NUMTX *matrices) {
+        NuHGobjEvalAnim2Root(object, animation, time, override_count, overrides, matrices, NULL, NULL);
     }
-    void NuHGobjEvalAnim2Root(void) {
+    void NuHGobjEvalAnim2Root(nuhgobj_s *object, ani3_animheader_s *animation, f32 time, i32 override_count,
+                              NUJOINTANIM_s *overrides, NUMTX *matrices, NUHGOBJROOTFN root_fn, void *root_data) {
+        if (animation != NULL && (animation->magic == 0x414e4934 || animation->magic == 0x414e4935)) {
+            NuHGobjEvalAnim2Root_3(object, animation, time, override_count, overrides, matrices, root_fn, root_data);
+            return;
+        }
+
+        // Older NuAnimData2 animations use the curve evaluator below this
+        // branch in the original function; that legacy path remains pending.
     }
-    void NuHGobjEvalAnim2Root_3(void) {
+    // Original @0x2cd150.
+    void NuHGobjEvalAnim2Root_3(nuhgobj_s *object, ani3_animheader_s *animation, f32 time, i32, NUJOINTANIM_s *,
+                                NUMTX *matrices, NUHGOBJROOTFN root_fn, void *root_data) {
+        nuanimbuff_s buffer;
+        NUVEC root_translation = {0.0f, 0.0f, 0.0f};
+        NuAnimBuffCreateScratch(&buffer);
+        NuAnimBuffAccumulate_3(&buffer, animation, time, 1, 0.0f, 0, object, NULL);
+        NuAnimBuffEvaluate_3(&buffer, object, matrices, animation, root_fn, &root_translation, root_data);
+        NuAnimBuffDestroyScratch(&buffer);
     }
     void NuHGobjEvalAnimBlend(void) {
     }
-    void NuHGobjEvalAnimBlend2(void) {
+    // Original @0x2ce980.
+    void NuHGobjEvalAnimBlend2(nuhgobj_s *object, ani3_animheader_s *animation_a, f32 time_a,
+                               ani3_animheader_s *animation_b, f32 time_b, f32 blend, i32 override_count,
+                               NUJOINTANIM_s *overrides, NUMTX *matrices) {
+        NuHGobjEvalAnimBlend2Root(object, animation_a, time_a, animation_b, time_b, blend, override_count, overrides,
+                                  matrices, NULL, NULL);
     }
-    void NuHGobjEvalAnimBlend2Root(void) {
+    // Original @0x2ce8e0. ANI4/ANI5 are the only accepted animation formats.
+    void NuHGobjEvalAnimBlend2Root(nuhgobj_s *object, ani3_animheader_s *animation_a, f32 time_a,
+                                   ani3_animheader_s *animation_b, f32 time_b, f32 blend, i32 override_count,
+                                   NUJOINTANIM_s *overrides, NUMTX *matrices, NUHGOBJROOTFN root_fn, void *root_data) {
+        if (animation_a == NULL || (animation_a->magic != 0x414e4934 && animation_a->magic != 0x414e4935)) {
+            return;
+        }
+        NuHGobjEvalAnimBlend2Root_3(reinterpret_cast<nugscn_s *>(object), animation_a, time_a, animation_b, time_b,
+                                    blend, override_count, overrides, matrices, root_fn, root_data);
     }
     void NuHGobjEvalDwa(void) {
     }
@@ -2110,7 +2401,16 @@ extern "C" {
     }
     void NuHGobjGetLayerIndex(void) {
     }
-    void NuHGobjGetPOI(void) {
+    nuhgobjpoi_s *NuHGobjGetPOI(nuhgobj_s *object, i32 index) {
+        const u8 mapped_index = static_cast<u8>(index);
+        if (mapped_index >= object->point_of_interest_count) {
+            return NULL;
+        }
+        const u8 point_index = object->point_of_interest_map[mapped_index];
+        if (point_index == 0xff) {
+            return NULL;
+        }
+        return &object->points_of_interest[point_index];
     }
     void NuHGobjJointMtx(void) {
     }
@@ -2129,7 +2429,86 @@ extern "C" {
     }
     void NuHGobjRndr(void) {
     }
-    void NuHGobjRndrMtxDwa(void) {
+    // Original @0x2f56a0. Draw rigid hierarchy pieces at their evaluated joint
+    // matrices, then build skin matrices for the smooth hierarchy pieces.
+    i32 NuHGobjRndrMtxDwa(nuhgobj_s *object, NUMTX *world_matrix, i32 render_count, i16 *render_indices,
+                          NUMTX *joint_matrices, void **blend_values, i32) {
+        i32 clip_state = nuspecial_clip_state;
+        if (clip_state == -1) {
+            clip_state = NuCameraClipHGobj(reinterpret_cast<nugscn_s *>(object), world_matrix, joint_matrices);
+        }
+
+        i32 shadow_clip = 0;
+        if (NuSpecialHasActiveShadowLights() != 0) {
+            NUVEC bounds_min;
+            NUVEC bounds_max;
+            NuVecMtxTransform(&bounds_min, &object->bounds_min, world_matrix);
+            NuVecMtxTransform(&bounds_max, &object->bounds_max, world_matrix);
+            shadow_clip = NuSpecialClipTestShadowLights(&bounds_min, &bounds_max, 1);
+        }
+        if ((clip_state | shadow_clip) == 0) {
+            NuSpecialClearShadowClipTestResults();
+            return 0;
+        }
+
+        const i32 previous_clip_state = NuSpecialSetClipping(1, clip_state);
+        i32 drawn = 0;
+
+        for (i32 render_index = 0; render_index < render_count; ++render_index) {
+            const i32 part_index = render_indices != NULL ? render_indices[render_index] : 0;
+            if (part_index < 0 || part_index >= object->render_count) {
+                continue;
+            }
+
+            nuhgobjrender_s &part = object->render_parts[part_index];
+            NUMTX *skin_matrices = NULL;
+            if (part.smooth_skin_special != NULL || part.alternate_smooth_skin_special != NULL) {
+                display_list_buffer->addr = ALIGN(display_list_buffer->addr, 0x80);
+                skin_matrices = reinterpret_cast<NUMTX *>(display_list_buffer->addr);
+                display_list_buffer->addr += static_cast<usize>(object->joint_count) * sizeof(NUMTX);
+            }
+
+            void *blend_value = blend_values != NULL ? blend_values[render_index] : NULL;
+
+            if (part.rigid_specials != NULL) {
+                for (i32 joint_index = 0; joint_index < object->joint_count; ++joint_index) {
+                    if (part.rigid_specials[joint_index] != NULL) {
+                        NUMTX draw_matrix;
+                        NuMtxMulVU0(&draw_matrix, &joint_matrices[joint_index], world_matrix);
+                        drawn |= NuSpecialDrawAt(part.rigid_specials[joint_index], &draw_matrix);
+                    }
+                }
+            }
+
+            if (part.alternate_rigid_specials != NULL) {
+                for (i32 joint_index = 0; joint_index < object->joint_count; ++joint_index) {
+                    if (part.alternate_rigid_specials[joint_index] != NULL) {
+                        NUMTX draw_matrix;
+                        NuMtxMulVU0(&draw_matrix, &joint_matrices[joint_index], world_matrix);
+                        drawn |= NuSpecialDrawAt(part.alternate_rigid_specials[joint_index], &draw_matrix);
+                    }
+                }
+            }
+
+            if (part.smooth_skin_special != NULL || part.alternate_smooth_skin_special != NULL) {
+                for (i32 joint_index = 0; joint_index < object->joint_count; ++joint_index) {
+                    NuMtxMulH(&skin_matrices[joint_index], &object->inverse_bind_matrices[joint_index],
+                              &joint_matrices[joint_index]);
+                }
+                if (part.smooth_skin_special != NULL) {
+                    drawn |=
+                        NuSpecialDrawSmoothSkinDwa(part.smooth_skin_special, skin_matrices, world_matrix, blend_value);
+                }
+                if (part.alternate_smooth_skin_special != NULL) {
+                    drawn |= NuSpecialDrawSmoothSkinDwa(part.alternate_smooth_skin_special, skin_matrices, world_matrix,
+                                                        blend_value);
+                }
+            }
+        }
+
+        NuSpecialSetClipping(1, previous_clip_state);
+        NuSpecialClearShadowClipTestResults();
+        return drawn;
     }
     void NuHGobjRndrRandShadowSurfacePoints(void) {
     }
@@ -2163,8 +2542,6 @@ extern "C" {
     void NuGHGPostRelocateFixupPS(void) {
     }
     void NuGHGPreRelocateFixupPS(void) {
-    }
-    void NuGHGRead(void) {
     }
     void NuGHGRelocate(void) {
     }
@@ -2231,7 +2608,7 @@ extern "C" {
     }
     void NuPadSetMotorsPS(void) {
     }
-    void NuPadSetStatus(void) {
+    void NuPadSetStatus(i32, i32) {
     }
     void NuPadSetValid(void) {
     }

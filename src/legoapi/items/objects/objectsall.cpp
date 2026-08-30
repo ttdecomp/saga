@@ -57,7 +57,7 @@ void AddDevice(nufile_device_s *) {
 void LevelObjects_InitForLevel(WORLDINFO_s *world) {
     u32 aligned = ((u32)world->giz_buffer.addr + 3) & ~3u;
 
-    world->lev_objs = (void *)(usize)aligned;
+    world->lev_objs = reinterpret_cast<LEVEL_OBJECT_RUNTIME *>(static_cast<usize>(aligned));
     world->giz_buffer.addr = (usize)(aligned + (u32)LEVELOBJECTCOUNT * 0x10);
     memset((void *)(usize)aligned, 0, (usize)LEVELOBJECTCOUNT * 0x10);
 }

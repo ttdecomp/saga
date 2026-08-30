@@ -163,6 +163,7 @@ extern "C" {
     void NuMtxMul(NUMTX *m, NUMTX *m0, NUMTX *m1);
     void NuMtxMulH(NUMTX *m, NUMTX *m0, NUMTX *m1);
     void NuMtxMulR(NUMTX *m, NUMTX *m0, NUMTX *m1);
+    void NuMtxMulVU0(NUMTX *result, NUMTX *left, NUMTX *right);
     void NuMtxInvRSS(NUMTX *inv, NUMTX *T);
     void NuMtxInvRSSH(NUMTX *inv, NUMTX *T);
     void NuMtxInvH(NUMTX *mi, NUMTX *m0);

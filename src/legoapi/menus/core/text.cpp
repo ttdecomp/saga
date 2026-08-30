@@ -7,6 +7,9 @@
 #include "nu2api/nufile/nufpar.h"
 #include <string.h>
 extern char **TTab;
+extern i32 MenuDrawDropShadows;
+f32 text3d_height;
+f32 text3d_width;
 extern "C" {
     void NuQFntSetJustifiedTolerances(float squash, float stretch);
     unsigned char *NuUnicodeCharFromUTF8(u16 *character, unsigned char *text);
@@ -35,6 +38,8 @@ void Text3DStringEncodeFont(unsigned char *src, u16 *dst, void *font);
 extern "C" void TextDecode(char *source, unsigned char *dest);
 extern "C" void Text3DEx(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u8 alignment, u8 red,
                          u8 green, u8 blue, i32 alpha);
+extern "C" void Text3DEx2(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u8 alignment, u8 red,
+                          u8 green, u8 blue, i32 alpha);
 void Text_MakeTime(float, i32, i32, i32, char *) {
 }
 
@@ -309,7 +314,17 @@ void Text_LoadAndFixUpStrings(unsigned char *filename, unsigned char **buffer, c
 }
 void Text_GetMaxOverallStrings() {
 }
-void Text_LocaliseDecimalPoint(char *) {
+void Text_LocaliseDecimalPoint(char *text) {
+    if ((Text_Language >= 2 && Text_Language <= 5) || Text_Language == 6 || Text_Language == 7 || Text_Language == 8 ||
+        Text_Language == 12 || Text_Language == 16) {
+        while (*text != '\0') {
+            if (*text == '.') {
+                *text = ',';
+                return;
+            }
+            ++text;
+        }
+    }
 }
 void Text_ExpandAllButtonStrings(char *, char *) {
 }
@@ -369,9 +384,23 @@ extern "C" {
     }
     void MatrixText(void) {
     }
-    void MenuSmartTextEx(void) {
+    void MenuSmartTextEx(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u32 alignment, u8 red,
+                         u8 green, u8 blue, f32 max_width, i32 max_lines, void *message_box, i32 suppress_draw,
+                         u32 alpha) {
+        if (MenuDrawDropShadows != 0) {
+            SmartTextEx2(text, x + x_scale * 0.015f, y - y_scale * 0.015f, z, x_scale, y_scale, z_scale, alignment, 0,
+                         0, 0, max_width, max_lines, message_box, suppress_draw, alpha >> 2);
+        }
+        SmartTextEx(text, x, y, z, x_scale, y_scale, z_scale, alignment, red, green, blue, max_width, max_lines,
+                    message_box, suppress_draw, alpha);
     }
-    void MenuText3DEx(void) {
+    void MenuText3DEx(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u8 alignment, u8 red,
+                      u8 green, u8 blue, i32 alpha) {
+        if (MenuDrawDropShadows != 0) {
+            Text3DEx2(text, x + x_scale * 0.015f, y - y_scale * 0.015f, z, x_scale, y_scale, z_scale, alignment, 0, 0,
+                      0, alpha >> 2);
+        }
+        Text3DEx(text, x, y, z, x_scale, y_scale, z_scale, alignment, red, green, blue, alpha);
     }
     void Set3DGameFont(void) {
     }
@@ -400,17 +429,84 @@ extern "C" {
         NuQFntSetScale(font, draw_x_scale * QFONTSCALEX, draw_y_scale * QFONTSCALEY);
         f32 width = NuQFntPrintLenW(font, encoded);
         f32 available_width = max_width * STCOORDSCALE;
-        if (available_width > 0.0f && width > available_width)
-            draw_x_scale *= available_width / width;
+        if (message_box == nullptr && suppress_draw == 0 && max_lines != 0) {
+            if (available_width <= 0.0f || width <= available_width || max_lines == 1) {
+                if (available_width > 0.0f && width > available_width) {
+                    draw_x_scale *= available_width / width;
+                }
+                Text3DEx(reinterpret_cast<char *>(decoded), x * STCOORDSCALE, y, z, draw_x_scale, draw_y_scale, z_scale,
+                         alignment, red, green, blue, alpha & 0xff);
+            } else {
+                constexpr i32 max_wrapped_lines = 16;
+                unsigned char lines[max_wrapped_lines][513] = {};
+                const i32 line_limit = max_lines < max_wrapped_lines ? max_lines : max_wrapped_lines;
+                unsigned char *remaining = decoded;
+                i32 line_count = 0;
 
-        if (message_box == nullptr && suppress_draw == 0 && max_lines != 0)
-            Text3DEx(reinterpret_cast<char *>(decoded), x * STCOORDSCALE, y, z, draw_x_scale, draw_y_scale, z_scale,
-                     alignment, red, green, blue, alpha & 0xff);
+                while (*remaining != '\0' && line_count < line_limit) {
+                    const i32 remaining_length = NuStrLen(reinterpret_cast<char *>(remaining));
+                    i32 break_position = remaining_length;
+
+                    if (line_count + 1 < line_limit) {
+                        i32 last_fitting_space = -1;
+                        for (i32 pos = 0; pos < remaining_length; ++pos) {
+                            if (remaining[pos] != ' ') {
+                                continue;
+                            }
+
+                            const unsigned char saved = remaining[pos];
+                            remaining[pos] = '\0';
+                            Text3DStringEncodeFont(remaining, encoded, font);
+                            const f32 candidate_width = NuQFntPrintLenW(font, encoded);
+                            remaining[pos] = saved;
+                            if (candidate_width <= available_width) {
+                                last_fitting_space = pos;
+                            } else {
+                                break;
+                            }
+                        }
+                        if (last_fitting_space >= 0) {
+                            break_position = last_fitting_space;
+                        }
+                    }
+
+                    memcpy(lines[line_count], remaining, static_cast<usize>(break_position));
+                    lines[line_count][break_position] = '\0';
+                    ++line_count;
+                    remaining += break_position;
+                    while (*remaining == ' ') {
+                        ++remaining;
+                    }
+                }
+
+                const f32 line_height = NuQFntHeight(font);
+                f32 line_y = y + static_cast<f32>(line_count - 1) * line_height * 0.5f;
+                for (i32 line = 0; line < line_count; ++line) {
+                    Text3DStringEncodeFont(lines[line], encoded, font);
+                    const f32 line_width = NuQFntPrintLenW(font, encoded);
+                    f32 line_x_scale = draw_x_scale;
+                    if (line_width > available_width) {
+                        line_x_scale *= available_width / line_width;
+                    }
+                    Text3DEx(reinterpret_cast<char *>(lines[line]), x * STCOORDSCALE, line_y, z, line_x_scale,
+                             draw_y_scale, z_scale, alignment, red, green, blue, alpha & 0xff);
+                    line_y -= line_height;
+                }
+            }
+        }
 
         APITEXTSCALEX = saved_x_scale;
         APITEXTSCALEY = saved_y_scale;
     }
-    void SmartTextEx2(void) {
+    void SmartTextEx2(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u32 alignment, u8 red,
+                      u8 green, u8 blue, f32 max_width, i32 max_lines, void *message_box, i32 suppress_draw,
+                      u32 alpha) {
+        VUFNT *saved_font = SmartTextFont;
+        if (QFont2DLower != nullptr)
+            SmartTextFont = QFont2DLower;
+        SmartTextEx(text, x, y, z, x_scale, y_scale, z_scale, alignment, red, green, blue, max_width, max_lines,
+                    message_box, suppress_draw, alpha);
+        SmartTextFont = saved_font;
     }
     void SmartTextExDrop(void) {
     }
@@ -453,6 +549,8 @@ extern "C" {
         NuQFntSetScale(font, draw_x_scale * QFONTSCALEX, draw_y_scale * QFONTSCALEY);
         f32 width = NuQFntPrintLenW(font, encoded);
         f32 height = NuQFntHeight(font);
+        text3d_width = width;
+        text3d_height = height;
         f32 draw_y = y + NuQFntBaseline(font) - height * 0.5f;
 
         if ((alignment & 4) != 0)
@@ -467,7 +565,16 @@ extern "C" {
         TextPrintSubstring(decoded, x, draw_y, z, draw_x_scale, draw_y_scale, colour, 0);
         NuQFntPopPrintMode();
     }
-    void Text3DEx2(void) {
+    void Text3DEx2(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u8 alignment, u8 red,
+                   u8 green, u8 blue, i32 alpha) {
+        if (QFont2DLower == nullptr) {
+            return;
+        }
+
+        VUFNT *saved_font = SmartTextFont;
+        SmartTextFont = QFont2DLower;
+        Text3DEx(text, x, y, z, x_scale, y_scale, z_scale, alignment, red, green, blue, alpha);
+        SmartTextFont = saved_font;
     }
     void TextDecode(char *source, unsigned char *dest) {
         i32 source_pos = 0;

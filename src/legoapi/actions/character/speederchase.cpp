@@ -1,4 +1,6 @@
 #include "decomp.h"
+#include "globals.h"
+#include "legoapi/items/base/apiobject.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nu3d/nutex.h"
 
@@ -76,7 +78,28 @@ void FindGunshipHoverHeight(GameObject_s *) {
 void SpeederChaseATATInOutMul(nuvec_s *, nuvec_s *) {
 }
 
-void GetVehicleAreaRememberSpeed() {
+f32 GetVehicleAreaRememberSpeed() {
+    if (bonusmodearcade == 0) {
+        return 0.0f;
+    }
+
+    f32 speed = 0.0f;
+    f32 player_count = 0.0f;
+    if (Player[0] != NULL && (Player[0]->apiobj.field_0x1f8 & 0x80) != 0) {
+        speed += Player[0]->field_0xdc8;
+        player_count = 1.0f;
+    }
+    if (Player[1] != NULL && (Player[1]->apiobj.field_0x1f8 & 0x80) != 0) {
+        speed += Player[1]->field_0xdc8;
+        player_count = 2.0f;
+    }
+    if (player_count > 1.0f) {
+        speed /= player_count;
+    }
+    if (speed < 0.25f) {
+        speed = 0.25f;
+    }
+    return speed;
 }
 
 void SpeederChase_DrawMeleeTargets(i16 *, char *, i32) {

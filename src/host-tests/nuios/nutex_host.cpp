@@ -772,9 +772,9 @@ i32 NuGScnReadTexturesPS(i32 file, VARIPTR *buf, VARIPTR) {
 }
 
 void NuGScnCreatePS(NUGSCN *scene, VARIPTR *, VARIPTR *) {
-    NUNATIVETEX **textures = reinterpret_cast<NUNATIVETEX **>(scene->field5_0x8);
+    NUNATIVETEX **textures = scene->textures;
     i32 staged_count = 0;
-    for (i32 i = 0; i < scene->field4_0x4; ++i) {
+    for (i32 i = 0; i < scene->ntextures; ++i) {
         NUNATIVETEX *texture = textures[i];
         texture->image_data = nullptr;
         texture->size = 0;
@@ -791,7 +791,7 @@ void NuGScnCreatePS(NUGSCN *scene, VARIPTR *, VARIPTR *) {
             staged_count++;
         }
     }
-    LOG_INFO("[tex-scene] create scene=%p textures=%d blobs=%u staged=%d", scene, scene->field4_0x4,
+    LOG_INFO("[tex-scene] create scene=%p textures=%d blobs=%u staged=%d", scene, scene->ntextures,
              (u32)g_hostSceneTextureBlobs.size(), staged_count);
     g_hostSceneTextureBlobs.clear();
 }

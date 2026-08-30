@@ -52,6 +52,7 @@ extern "C" {
     void NuGScnRndr3(NUGSCN *scene);
     void NuGScnUpdate(NUGSCN *gscn, i32 param);
     NUGSCN *NuGScnRead(VARIPTR *buf, VARIPTR buf_end, char *path);
+    void NuGScnRemove(NUGSCN *scene);
     void NuGScnReadFromMemory(NUGSCN *scene);
     void NuGHGFixup(NUGSCN *scene);
     void NuRndrInitWorld(void);
@@ -110,7 +111,7 @@ void *LoadGizFlow(void *world, GIZMOSYS_s *gizmo_sys, char *path, VARIPTR *buf, 
 // --- ai_sys.cpp — AI system + API object system ---
 extern "C" {
     void *AISysLoad(void *buf, void *buf_end, i32 size, void *gscn, char *dir, char *name, char *param);
-    void *APIObjectSysInit(i32 size, void *buf, void *buf_end);
+    APIOBJECTSYS_s *APIObjectSysInit(i32 size, VARIPTR *buf, VARIPTR *buf_end);
 }
 void *AIPathCnxControlSysCreate(VARIPTR *buf, VARIPTR *buf_end, i32 count);
 void *AIPathCnxHelperSysCreate(VARIPTR *buf, VARIPTR *buf_end, i32 count);
@@ -161,7 +162,6 @@ void *GameAnimSys_Create(VARIPTR *buf, VARIPTR *buf_end);
 void *GameAntnode_CreateSys(WORLDINFO *world, VARIPTR *buf, VARIPTR *buf_end, i32 count);
 extern "C" {
     void SockSys_Configure(void *sock_sys, char *config, i32 param, void *buf, void *buf_end, void *gscn);
-    void SockSys_GenerateData(void *sock_sys, void *buf, void *buf_end);
     void rtlResetDynamic(void);
     void SetPartRTLSet(i32 rtl_set);
     i32 rtlFindByUserId(i32 rtl_set, i32 user_id);

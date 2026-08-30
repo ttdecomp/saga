@@ -74,3 +74,12 @@ void NuIOS_AllocateSystemFramebuffers(void) {
 
     EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nuandroid/ios_graphics.cpp", 260);
 }
+
+u32 NuIOS_YieldThread(void) {
+    return sched_yield();
+}
+
+char *NuIOS_GetDocumentsPath(void) {
+    // Keep host test saves isolated from extracted resources and user saves.
+    return const_cast<char *>(".work/host-documents/");
+}

@@ -14,6 +14,7 @@
 static EGLContext g_hostPresentCtx = EGL_NO_CONTEXT;
 EGLSurface g_hostPbufferReadback = EGL_NO_SURFACE;
 EGLContext g_hostContextReadback = EGL_NO_CONTEXT;
+extern bool g_hostOffscreenRendering;
 
 namespace {
     struct PresentResources {
@@ -76,6 +77,15 @@ namespace {
 } // namespace
 
 void NuRenderDevice::SwapBuffers() {
+    if (g_hostOffscreenRendering) {
+        // Offscreen tests consume the shared early-colour texture directly.
+        // Flush its producer context, but do not present a hidden native
+        // window surface or move the render thread onto the presentation
+        // context.
+        glFlush();
+        return;
+    }
+
     extern GLuint g_earlyColorTexture;
     EGLContext present_ctx = (g_hostPresentCtx != EGL_NO_CONTEXT) ? g_hostPresentCtx : this->contexts[3];
     bool have_context = false;

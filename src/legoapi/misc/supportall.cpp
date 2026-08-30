@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include "decomp.h"
+#include "globals.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/world/level.h"
 #include "nu2api/nu3d/nudlist.h"
 #include "nu2api/nu3d/numtl.h"
 #include "nu2api/nu3d/nurndrstat.h"
@@ -10,6 +12,37 @@
 #include "legoapi/world/world.h"
 
 void CutScenes_Reset(WORLDINFO_s *);
+void ClearLevelProgress(i32, WORLDINFO_s *);
+void Cheats_Reset(void);
+void ResetScene(nugscn_s *, SCENEPROGRESS_s *);
+void GizmoBlowupVisibilityOverrides(WORLDINFO_s *);
+void SetTexAnimSignals(void);
+void Customiser_SetUpCharacterData(CUSTOMISER *);
+void Surfaces_Reset(void);
+void ResetStreaks(void);
+void Bolts_Reset(void);
+void Batarangs_Reset(void);
+void Detonators_Reset(void);
+void ResetExplosions(void);
+void ShoveObjectSysReset(void);
+void Panel_Clear(void);
+void GameCam_Reset(GAMECAMERA_s *);
+void ResetGameMessages(void);
+void Tag_ResetTransfers(void);
+void Hint_Reset(void);
+void Hint_CancelCurrent(void);
+void Teleports_Reset(WORLDINFO_s *);
+void TrafficAnimSys_Reset(TRAFFICANIMSYS_s *);
+void Pulses_Reset(PULSESYS_s *);
+void ResetRepeatSfx(void);
+void ResetRippleSet(ripple_set_s *);
+void Grabber_Reset(WORLDINFO_s *);
+void Faders_Reset(WORLDINFO_s *);
+void InitGameMode(void);
+extern GAMECAMERA_s *GameCam;
+extern ripple_set_s *ripples;
+extern "C" void ResetParts(void);
+extern "C" void NuSound3StopRumble(void);
 void NuDisplayListCreate(nudisplayscene_s *, variptr_u *, variptr_u, i32, i32, i32, i32, i32, i32, i32);
 
 struct AIROW_s;
@@ -48,7 +81,52 @@ void RndrTexQuad3D(VuMtx const &, i32, numtl_s *) {
 }
 
 void CheckResetBits() {
+    if ((ResetBits & 0x20) != 0 && WORLD->current_level->area_level_index != -1) {
+        ClearLevelProgress(WORLD->current_level->area_level_index, WORLD);
+    }
+
+    Cheats_Reset();
+    if (WORLD->level_progress != NULL) {
+        ResetScene(WORLD->current_gscn, reinterpret_cast<SCENEPROGRESS_s *>(WORLD->level_progress));
+        WORLD->level_progress->flags |= 1;
+    }
+
+    GizmoBlowupVisibilityOverrides(WORLD);
+    texanimbits = 0;
+    SetTexAnimSignals();
+    SetTexAnimSignals();
     CutScenes_Reset(WORLD);
+
+    if (NOSOUND == 0) {
+        if ((ResetBits & 0x40) == 0) {
+            InitGameMode();
+        } else {
+            Customiser_SetUpCharacterData(CharacterCustomiser);
+        }
+    }
+
+    Surfaces_Reset();
+    ResetStreaks();
+    Bolts_Reset();
+    Batarangs_Reset();
+    Detonators_Reset();
+    ResetParts();
+    ResetExplosions();
+    ShoveObjectSysReset();
+    Panel_Clear();
+    GameCam_Reset(GameCam);
+    ResetGameMessages();
+    Tag_ResetTransfers();
+    Hint_Reset();
+    Hint_CancelCurrent();
+    Teleports_Reset(WORLD);
+    TrafficAnimSys_Reset(WORLD->trafficanim_sys);
+    Pulses_Reset(WORLD->pulses_sys);
+    NuSound3StopRumble();
+    ResetRepeatSfx();
+    ResetRippleSet(ripples);
+    Grabber_Reset(WORLD);
+    Faders_Reset(WORLD);
 }
 
 void DebrisTimeSlip(i32) {

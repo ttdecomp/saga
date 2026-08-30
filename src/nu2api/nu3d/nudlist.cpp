@@ -439,6 +439,69 @@ extern "C" void NuDisplaySceneAddPS(NUDLDLISTSCENE *scene) {
     }
 }
 
+// NuDisplaySceneDestroy @ 0x2f9fd0
+extern "C" void NuDisplaySceneDestroy(NUDLDLISTSCENE *scene) {
+    if (scene == nullptr) {
+        return;
+    }
+
+    NuThreadCriticalSectionBegin(global_dlist_manager.loading_critical_section);
+    NuDisplaySceneDestroyPS(scene);
+
+    i32 scene_index = 0;
+    while (global_dlist_manager.dlists[scene_index] != scene) {
+        ++scene_index;
+    }
+
+    NUSORTPRI *sort_list = global_dlist_manager.sort_list;
+    for (i32 i = 0; i < scene->nsort_pris; ++i) {
+        NUSORTPRI *sort_pri = &scene->sort_pris[i];
+        if (sort_list == sort_pri) {
+            sort_list = sort_pri->sys_next;
+            continue;
+        }
+
+        NUSORTPRI *previous = sort_list;
+        while (previous->sys_next != sort_pri) {
+            previous = previous->sys_next;
+        }
+        previous->sys_next = sort_pri->sys_next;
+    }
+    global_dlist_manager.sort_list = sort_list;
+    global_dlist_manager.nused_sort_pris -= scene->nsort_pris;
+
+    if (scene->field_8c != nullptr) {
+        void *node = global_dlist_manager.mtlanim_list;
+        if (node == scene->field_8c) {
+            global_dlist_manager.mtlanim_list =
+                *reinterpret_cast<void **>(reinterpret_cast<u8 *>(scene->field_8c) + 0xc);
+        } else {
+            while (*reinterpret_cast<void **>(reinterpret_cast<u8 *>(node) + 0xc) != scene->field_8c) {
+                node = *reinterpret_cast<void **>(reinterpret_cast<u8 *>(node) + 0xc);
+            }
+            *reinterpret_cast<void **>(reinterpret_cast<u8 *>(node) + 0xc) =
+                *reinterpret_cast<void **>(reinterpret_cast<u8 *>(scene->field_8c) + 0xc);
+        }
+    }
+
+    i32 removed = 0;
+    for (i32 i = 0; i < global_dlist_manager.ndisplay_lists; ++i) {
+        global_dlist_manager.dlists[i - removed] = global_dlist_manager.dlists[i];
+        if (global_dlist_manager.dlists[i] == scene) {
+            ++removed;
+        }
+    }
+    if (removed != 0) {
+        --global_dlist_manager.ndisplay_lists;
+    }
+
+    NuThreadCriticalSectionEnd(global_dlist_manager.loading_critical_section);
+}
+
+// NuDisplaySceneDestroyPS @ 0x2ab7f9
+extern "C" void NuDisplaySceneDestroyPS(NUDLDLISTSCENE *) {
+}
+
 extern "C" void NuDisplayListSwapBuffersBeginFrame(void) {
     NuThreadCriticalSectionBegin(global_dlist_manager.loading_critical_section);
 

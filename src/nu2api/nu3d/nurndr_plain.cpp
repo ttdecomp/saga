@@ -397,8 +397,6 @@ extern "C" void NuGScnNumSpecials(void) {
 }
 extern "C" void NuGScnReadForMultiRender(void) {
 }
-extern "C" void NuGScnRemove(void) {
-}
 extern "C" void NuGScnRestoreTIDsPS(void) {
 }
 extern "C" void NuGScnRndr(void) {
@@ -925,7 +923,7 @@ extern "C" void NuTexCreateEx(void) {
 }
 extern "C" void NuTexCreateFramebufferCopy(void) {
 }
-extern "C" void NuTexDestroy(void) {
+extern "C" void NuTexDestroy(i32) {
 }
 static void NuTexGenTexture(void) {
 }

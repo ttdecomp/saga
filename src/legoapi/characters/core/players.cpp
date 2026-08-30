@@ -13,6 +13,7 @@ struct HINT_s;
 #include "legoapi/world/levels/episode.h"
 #include "legoapi/world/level.h"
 #include "legoapi/characters/core/players.h"
+#include "legoapi/props/doors/door.h"
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/props/system/socksys.h"
 #include "legoapi/core/input/timer.h"
@@ -57,8 +58,8 @@ void Players_Init(void) {
             list0 = PlayerList[0];
         }
 
-        if (LevelChangesInArea == 0 && UsePlayerList != 0 && PlayerProgress[0].field_0x6 == 0 &&
-            PlayerProgress[1].field_0x6 != 0 && FreePlay == 0 && (WORLD->area->flags & 5) == 1 && list0 != -1 &&
+        if (LevelChangesInArea == 0 && UsePlayerList != 0 && PlayerProgress[0].active == 0 &&
+            PlayerProgress[1].active != 0 && FreePlay == 0 && (WORLD->area->flags & 5) == 1 && list0 != -1 &&
             list0 == Area_StoryModelList[0].model_id && list[1] != -1 && list[1] == Area_StoryModelList[2].model_id &&
             list0 != list[1]) {
             list[0] = list[1];
@@ -96,7 +97,7 @@ void Players_Init(void) {
                 } else {
                     char c = g->apiobj.field_0x27c;
                     *(u8 *)&g->apiobj.field_0x1f8 =
-                        (u8)((*(u8 *)&g->apiobj.field_0x1f8 & 0x7f) | (PlayerProgress[c].field_0x6 << 7));
+                        (u8)((*(u8 *)&g->apiobj.field_0x1f8 & 0x7f) | (PlayerProgress[c].active << 7));
 
                     if (Area == last_area) {
                         if (UsePlayerList == 1) {
@@ -187,11 +188,6 @@ void Players_Init(void) {
 
 // --- Helpers moved from world.cpp ---
 
-typedef struct spawnsys_s {
-    char pad[0xa0];
-    PORTALPOS *portal; // 0xa0
-} SPAWNSYS;
-
 static char sMissionStartDoor[] = "MissionStartDoor";
 static char sArcadeStartDoor[] = "ArcadeStartDoor";
 
@@ -212,9 +208,9 @@ void Players_InitPositions(WORLDINFO *world) {
 
     PORTALPOS *A = NULL;
     i32 ninit = 2;
-    SPAWNSYS *np = world->spawn_sys;
-    if (np != NULL && bonus == 0) {
-        A = np->portal;
+    DOOR_s *start_door = world->start_door;
+    if (start_door != NULL && bonus == 0) {
+        A = reinterpret_cast<PORTALPOS *>(start_door->spline);
     } else if (LEGOSPL_START != -1) {
         A = world->portal_places[LEGOSPL_START];
         ninit = 0;
@@ -297,12 +293,11 @@ void Players_InitPositions(WORLDINFO *world) {
     }
     Door_ExitCameraSplineName[0] = 0;
 
-    void *camArg = world->api_object_sys;
     for (i32 i = 0; i < 8; i++) {
         SOCKPOSITION sp;
-        ComplexSockPosition(camArg, (void *)PlayerStart[i].pos, -1, -1, &sp);
-        PlayerStart[i].u4 = sp.x;
-        PlayerStart[i].u8 = sp.y;
+        ComplexSockPosition(world->sock_sys, PlayerStart[i].pos, -1, -1, &sp);
+        PlayerStart[i].sock_location = sp.location;
+        PlayerStart[i].sock_ratio = sp.ratio;
     }
     HubStartDoor = NULL;
 
@@ -613,11 +608,11 @@ void RememberPlayerIDs(i32 a, i32 b, i32 c) {
             return;
         }
     }
-    if (b != -1 && (CDataList[b].field1_0x4 & 0x2000) == 0 && PlayerID[0] != b && Collection_Got(b) == 1 &&
+    if (b != -1 && (CDataList[b].model_flags & 0x2000) == 0 && PlayerID[0] != b && Collection_Got(b) == 1 &&
         GCDataList[b].field275_0x116 != 0 && PlayerID[1] != b) {
         PlayerID[0] = b;
     }
-    if (c != -1 && (CDataList[c].field1_0x4 & 0x2000) == 0 && PlayerID[1] != c && Collection_Got(c) == 1 &&
+    if (c != -1 && (CDataList[c].model_flags & 0x2000) == 0 && PlayerID[1] != c && Collection_Got(c) == 1 &&
         GCDataList[c].field275_0x116 != 0 && PlayerID[0] != c) {
         PlayerID[1] = c;
     }
@@ -631,17 +626,6 @@ void RememberPlayerIDs(i32 a, i32 b, i32 c) {
 PLAYERSTARTENTRY PlayerStart[8];
 
 // ---- Misc player/gameobject helpers relocated from doorstubs.cpp ----
-
-extern "C" void ComplexSockPosition(void *a, void *b, i32 c, i32 d, SOCKPOSITION *out) {
-    (void)a;
-    (void)b;
-    (void)c;
-    (void)d;
-    out->x = 0.0f;
-    out->y = 0.0f;
-    out->z = 0.0f;
-    out->heading = 0.0f;
-}
 
 void *CutScenePlayer_Available(void) {
     return NULL;
@@ -687,7 +671,8 @@ i32 Player_HasPurpleForce(GameObject_s *obj) {
     return 0;
 }
 
-// Directional/button mask constants (original .data @0x667c00-0x667c40).
+// Directional/button mask constants (original .data @0x667bf0-0x667c40).
+u32 GAMEPAD_DRIGHT = 0x2000;
 u32 GAMEPAD_DLEFT = 0x8000;
 u32 GAMEPAD_DDOWN = 0x4000;
 u32 GAMEPAD_DUP = 0x1000;
@@ -698,6 +683,9 @@ u32 GAMEPAD_SPECIAL = 32;
 u32 GAMEPAD_ACTION = 128;
 u32 GAMEPAD_JUMP = 64;
 u32 GAMEPAD_START = 2048;
+u32 GAMEPAD_SELECT = 256;
+u32 GAMEPAD_MENUSELECT = 64;
+u32 GAMEPAD_MENUCANCEL = 16;
 
 void PlayerTakeHit(GameObject_s *, GameObject_s *) {
 }
@@ -708,7 +696,13 @@ void PlayerItem_Set(PLAYERITEM_s *, PLAYERITEMTYPE_s *) {
 void Player_FindByID(i32) {
 }
 
-void Player_StartPos(GameObject_s *) {
+NUVEC *Player_StartPos(GameObject_s *obj) {
+    i32 index = obj->apiobj.field_0x27c;
+    if (index < 0 || index > 7) {
+        index = obj->apiobj.field_0x289;
+    }
+    index &= 7;
+    return PlayerStart[index].pos != NULL ? PlayerStart[index].pos : PlayerStart[0].pos;
 }
 
 void PlayersDropInOut() {
@@ -720,7 +714,9 @@ void PlayerItem_GotAmmo(PLAYERITEM_s *) {
 void Players_AveragePos(nuvec_s *, SOCKPOSITION_s *) {
 }
 
-void Players_BothActive() {
+i32 Players_BothActive() {
+    return Player[0] != NULL && static_cast<i8>(Player[0]->apiobj.field_0x1f8) < 0 && Player[1] != NULL &&
+           static_cast<i8>(Player[1]->apiobj.field_0x1f8) < 0;
 }
 
 void PlayerItemType_Find(i32) {
@@ -816,7 +812,62 @@ void ResetPlayerAI(GameObject_s *) {
 void ActivatePlayer(GameObject_s *) {
 }
 
-void MakePlayerList(i32) {
+i32 MakePlayerList(i32 count) {
+    i32 player_count = 0;
+
+    for (i32 i = 0; i < count; i++) {
+        GameObject_s *player = Player[i];
+        if (player == NULL) {
+            if (makeplayerlist_freeplay == 1 && player_count == 1 && WORLD != NULL &&
+                WORLD->current_level == HUB_LDATA && HUB_LDATA != NewLData) {
+                PlayerList[1] = FreePlayModelList[i].model_id;
+                PlayerProgress[1].active = 0;
+                player_count = 2;
+            }
+            continue;
+        }
+
+        if (makeplayerlist_freeplay == 1) {
+            PlayerList[player_count] = FreePlayModelList[i].model_id;
+        } else if (makeplayerlist_freeplay != 2) {
+            PlayerList[player_count] = player->id;
+        }
+
+        PLAYERPROGRESS *progress = &PlayerProgress[player_count];
+        progress->active = (u8)player->apiobj.field_0x1f8 >> 7;
+
+        bool unavailable = false;
+        if (player->field_0x7a5 != 6 && player->field_0xe32 != 2) {
+            unavailable = true;
+            if ((player->field_0xe22 & 1) == 0) {
+                unavailable = player->field_0xe32 != 0;
+            }
+        }
+        progress->field_0x7 = unavailable;
+        progress->coins = player->coinpacket != NULL ? player->coinpacket->coins : 0;
+        progress->field_0xb = player->field_0xe31 == 1;
+
+        if (player->apiobj.field_0x287 != 0) {
+            progress->hitpoints = player->hitpoints;
+            progress->field_0x9 = 4;
+        } else {
+            progress->hitpoints = player->current_hp;
+            progress->field_0x9 = player->field_0xe38;
+        }
+        progress->field_0xa = player->field_0x108e;
+        progress->field_0x4 = player->field_0x106e;
+        progress->field_0xc = player->field_0xdec;
+
+        PlayerSuit[player_count] = player->suit;
+        PlayerTorpedoCount[player_count] = player->torpedo != NULL ? player->torpedo->count : 0;
+        player_count++;
+    }
+
+    for (i32 i = player_count; i < 8; i++) {
+        PlayerList[i] = -1;
+    }
+    makeplayerlist_freeplay = 0;
+    return player_count;
 }
 
 void CollectHitPoint(GameObject_s *, nuvec_s *, i32) {

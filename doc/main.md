@@ -15,6 +15,12 @@ target binary reference, and the mismatch diagnostics playbook.
 
 Start at [decomp/00-index.md](decomp/00-index.md).
 
+## Host testing
+
+[host-testing.md](host-testing.md) documents interactive and unattended host
+render checks, including hidden framebuffer capture and dummy audio. Host tests
+are diagnostics only; original-binary evidence remains authoritative.
+
 ## Codex skill
 
 Codex-compatible agents can load the repository-local `saga-decomp` skill from

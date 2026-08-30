@@ -127,8 +127,8 @@ static void Titles_Init(WORLDINFO *world) {
     Door_Reset();
     newgamealpha = 1.0f;
     if (GAMEDEMO == 0) {
-        PlayerProgress[0].field_0x6 = 0;
-        PlayerProgress[1].field_0x6 = 0;
+        PlayerProgress[0].active = 0;
+        PlayerProgress[1].active = 0;
         newgamefade = 0;
         newgame_menudrawoff = 0;
     }
@@ -701,6 +701,7 @@ void FixUpLevels(LEVELFIXUP *fixup) {
 
     {
         LEVELDATA *level = Level_FindByName("map", NULL);
+        HUB_LDATA = level;
         if (level != NULL) {
             level->load_fn = Hub_Load;
             level->init_fn = Hub_Init;

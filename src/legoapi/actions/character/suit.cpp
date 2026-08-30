@@ -12,7 +12,8 @@ void Suit_GetNext(SUIT_s *) {
 void Suit_GetIndex(SUIT_s *) {
 }
 
-void Suit_GetDefault(i32) {
+void *Suit_GetDefault(i32) {
+    return NULL;
 }
 
 void Suits_CollectAll() {

@@ -9,19 +9,19 @@ extern "C" i16 FindPlatInst(void *);
 
 void *LevObj_FindByPlatID(WORLDINFO_s *world, i32 platID) {
     i32 count = LEVELOBJECTCOUNT;
-    u8 *obj;
+    LEVEL_OBJECT_RUNTIME *obj;
     i32 i;
 
     if (count <= 0) {
         return NULL;
     }
-    obj = (u8 *)world->lev_objs;
-    if (*(i16 *)(obj + 0xc) == platID) {
+    obj = world->lev_objs;
+    if (obj->platform_id == platID) {
         return obj;
     }
     for (i = 1; i < count; i++) {
-        obj += 0x10;
-        if (*(i16 *)(obj + 0xc) == platID) {
+        obj++;
+        if (obj->platform_id == platID) {
             return obj;
         }
     }
@@ -76,19 +76,19 @@ void LevelObjects_InitForGame(LEVELOBJECT *tab, VARIPTR *buf, VARIPTR *buf_end, 
 
 void LevObj_FixUpPlatIDs(WORLDINFO_s *world) {
     i32 i;
-    u8 *obj;
+    LEVEL_OBJECT_RUNTIME *obj;
 
     if (ObjTabList == NULL || LEVELOBJECTCOUNT <= 0) {
         return;
     }
     for (i = 0; i < LEVELOBJECTCOUNT; i++) {
-        obj = (u8 *)world->lev_objs + i * 0x10;
-        *(i16 *)(obj + 0xc) = -1;
+        obj = &world->lev_objs[i];
+        obj->platform_id = -1;
         if (world->terrain != NULL) {
-            if (NuSpecialExistsFn(obj)) {
-                if (*(u8 *)((char *)ObjTabList + i * 8) == 1) {
+            if (NuSpecialExistsFn(&obj->special)) {
+                if (ObjTabList[i].kind == 1) {
                     i++;
-                    *(i16 *)(obj + 0xc) = FindPlatInst(NuSpecialGetInstanceix(obj));
+                    obj->platform_id = FindPlatInst(NuSpecialGetInstanceix(&obj->special));
                 }
             }
         }

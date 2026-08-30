@@ -4,6 +4,7 @@
 #include "legoapi/render/core/render.h"
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nu3d/nutex.h"
+#include "nu2api/nu3d/nucamera.h"
 
 struct AIROW_s;
 struct nuqthdr_s;
@@ -15,6 +16,8 @@ extern "C" i32 NuRndrBeginScene(i32 flags);
 extern "C" void NuRndrClear(i32 flags, i32 colour, f32 alpha);
 extern "C" void NuRndrEndScene(void);
 extern FadeSystem FadeSys;
+extern NUCAMERA *pNuCam;
+extern "C" f32 NuIOS_GetAspectRatio(void);
 void SetPanelLights(f32 intensity);
 void TimingBars(void);
 
@@ -41,4 +44,8 @@ void CoinsGoToMainTotal() {
 }
 
 void InitPanel(i32) {
+    const f32 panel_fov = pNuCam->fov / 0.75f;
+    const f32 divisor = (1.0f - panel_fov) * 0.22f + 2.545f;
+    PANEL3DMULX = NuIOS_GetAspectRatio() * panel_fov / divisor;
+    PANEL3DMULY = panel_fov / divisor;
 }

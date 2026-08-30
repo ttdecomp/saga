@@ -13,7 +13,7 @@ struct LEVEL_PROGRESS_s;
 struct APIDEBRISSYS_s;
 struct PARTDEBSYS_s;
 struct GAMEANIMSYS_s;
-struct SOCKSYS_s;
+struct SOCKSYS;
 struct APIOBJECTSYS_s;
 struct burnset_s;
 struct rtlset;
@@ -37,8 +37,8 @@ struct GAMEANTINODESYS_s;
 struct GIZBOMBGENSYS_s;
 struct TRAFFICANIMSYS_s;
 struct GIZTIMER_s;
-struct spawnsys_s;
 struct TIMER_s;
+struct LEVEL_OBJECT_RUNTIME_s;
 
 // A portal-position spline stores camera/player points as position/target
 // pairs (six floats per point).  MoveGameCamera uses portal_places[2] for
@@ -94,7 +94,7 @@ typedef struct WORLDINFO_s {
     NUGSCN *icons_gscn;             // 0x2964
     MINIKIT minikit;                // 0x2968
     void *minikit_pieces_buf;       // 0x2984
-    struct SOCKSYS_s *sock_sys;     // 0x2988
+    struct SOCKSYS *sock_sys;       // 0x2988
     APIOBJECTSYS_s *api_object_sys; // 0x298c
 
     u8 room_visibility_flag; // 0x2990
@@ -111,7 +111,7 @@ typedef struct WORLDINFO_s {
     rtlset *rtl_set;                    // 0x2ab4  level real-time-light set
     i32 rtl_id;                         // 0x2ab8  rtlFindByUserId result
     void *light_dir;                    // 0x2abc  rtlGetDirection out-pointer
-    void *lev_objs;                     // 0x2ac0  level-object array
+    LEVEL_OBJECT_RUNTIME_s *lev_objs;   // 0x2ac0  level-object array
     struct portalpos_s **portal_places; // 0x2ac4
 
     GIZMOSYS_s *gizmo_sys; // 0x2ac8
@@ -134,9 +134,9 @@ typedef struct WORLDINFO_s {
     MechAutoJumpManager *mech_auto_jump_manager;
 
     char filler6a[0x469c - 0x4684];     // 0x4684 .. 0x469c
-    void *portal_list;                  // 0x469c
-    i32 portal_count;                   // 0x46a0
-    struct spawnsys_s *spawn_sys;       // 0x46a4
+    DOOR_s *doors;                      // 0x469c
+    i32 door_count;                     // 0x46a0
+    DOOR_s *start_door;                 // 0x46a4
     GIZOBSTACLESYS_s *giz_obstacle_sys; // 0x46a8
     GIZTURRETSYS_s *giz_turret_sys;     // 0x46ac
     GIZFORCESYS_s *giz_force_sys;       // 0x46b0

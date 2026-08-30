@@ -2,6 +2,7 @@
 
 #include "globals.h"
 #include "legoapi/core/input/timer.h"
+#include "legoapi/characters/core/character.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/area.h"
 #include "legoapi/world/levels/levels.h"
@@ -149,11 +150,12 @@ f32 DoubleScoreTime = 0.0f;
 TIMER GameTimer;
 u8 AreaGlobals[0x34] = {0};
 i32 HIGHGAMEOBJECT = 0;
-void *Obj = NULL;
+GameObject_s *Obj = NULL;
 f32 AreaPickupGravity = 0.0f;
 f32 HIGHJUMPHEIGHT = 0.0f;
 TIMER AreaTimer;
 f32 VehicleAreaRememberSpeed = 0;
+nugspline_s *ObstacleCamSpl = NULL;
 f32 LevTime[5] = {0.0f};
 i32 Lap = 0;
 
@@ -216,11 +218,13 @@ i32 FreePlayResidentCount = 0;
 i32 FreePlayBonusCount = 0;
 CHARCAT_s *CharCategory = NULL;
 i32 CHARCATEGORYCOUNT = 0;
-EXTRAMODELLISTENTRY_s ExtraModelList[1] = {{0}};
+EXTRAMODEL ExtraModelList[1] = {{0}};
 VEHICLECOLLECTION_s VehicleCollection = {0};
 ARCADEITEM_s ArcadeItem = {0};
 ARCADE_MODE_s Arcade_Mode[1] = {{0}};
 GAME_CUSTOMISER_s *Game_Customiser = NULL;
+AREASAVE_s *Game_AreaSave = NULL;
+u8 *Game_CharacterSave = NULL;
 void *CurrentCList = NULL;
 void *CurrentStoryCList = NULL;
 i32 CharacterDataLoad = 0;
@@ -242,6 +246,16 @@ i32 EXTRALEVELOBJECTCOUNT = 0;
 char *ExtraLevelObject_NameTable = NULL;
 i32 ExtraLevelObject_NameTableSize = 0;
 i32 ExtraLevelObject_NameTableIndex = 0;
+
+i16 drawcharicon_hspecial_spin = 0;
+f32 drawcharicon_hspecial_dz = 0.0f;
+i32 drawcharicon_find = 0;
+f32 drawcharicon_hspecial_scale = 1.0f;
+i32 drawcharicon_i_panel = -1;
+f32 PANEL3DMULY = 0.0f;
+f32 PANEL3DMULX = 0.0f;
+i32 LEGOOBJ_ICON_WEIRDO = -1;
+i32 LEGOOBJ_ICON_QUESTION = -1;
 
 // ------------------------------------------------------------------------
 // Level / area data pointers (LDATA / ADATA)
@@ -440,7 +454,7 @@ void *CutStopInfo = NULL;
 f32 WaitingForLevelTime = 0;
 f32 WaitingForCharacterTime = 0;
 i32 LevelLoadCount = 0;
-void *LevelLoad = NULL;
+i16 LevelLoad[48] = {-1};
 i32 new_level_from_menu = 0;
 // The original .data initialises BGLOAD to 1 (background loading enabled).
 i32 BGLOAD = 1;
@@ -461,6 +475,7 @@ f32 newgamealpha = 0.0f;
 i32 newgamefade = 0;
 f32 newgamewait = 0.0f;
 i32 newgame_menudrawoff = 0;
+i32 netnewgame = 0;
 i32 MenuLoadOccurred = 0;
 i32 MenuSaveOccurred = 0;
 i32 LevSfxFlag[4] = {0};
@@ -972,6 +987,12 @@ u32 EXBLOWUPFLAGS = 0;
 i32 BeenAttacked = 0;
 FadeSystem FadeSys;
 i32 Paused = 0;
+f32 PauseMenus_X;
+i32 PauseMenus_Align;
+u8 MENUEXITR = 0xff;
+u8 MENUEXITG = 0xbf;
+u8 MENUEXITB;
+i32 pause_i_pad;
 i32 MiniCutCam = 0;
 i32 LEGOSPL_SPLIT = 0;
 GAMECUTSCENES_s game_cutscenes;
@@ -1000,10 +1021,18 @@ i32 CutSceneWaiting = 0;
 i32 dagobah_training = 0;
 i32 DoubleScore = 0;
 i32 drawcharactermodel_nobsa = 0;
+i32 drawcharactermodel_noani = 0;
+i32 drawcharactermodel_restpose = 0;
+i32 drawcharactermodel_keepmergeaction = 0;
+i32 game_keepmergeaction = 0;
+i32 JointRotation_On = 0;
+MAKELAYERLISTFN MakeLayerList = NULL;
 i32 DRAWCMODELCALLS = 0;
+i32 drawcharactermodel_locatorsupdated = 0;
 i32 editor_active = 0;
 i32 enable_zero_frametime = 0;
 i32 FinishLoop_On = 1;
+i32 finishloop_backdroponly = 0;
 i32 noscenespecials = 0;
 LANGUAGEDATA Game_LanguageList[7] = {{1, 0}, {2, 0}, {4, 0}, {5, 0}, {3, 0}, {8, 0}, {-1, 0}};
 OPTIONSSAVE *Game_OptionsSave = NULL;
@@ -1044,7 +1073,7 @@ numtl_s *ShadowMat = NULL;
 STATUSPACKET_s StatusPacket = {0};
 u8 status_plr_active[8] = {0};
 i32 SuperStory = 0;
-u8 TempOptions[13] = {0};
+OPTIONSSAVE TempOptions = {};
 i32 TERRAINCALLS = 0;
 f32 tieoffsfxwait = 0.0f;
 f32 tieonsfxwait = 0.0f;

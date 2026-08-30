@@ -230,7 +230,7 @@ void Hint_Process(float);
 void Hint_CancelCurrent(void);
 void Cheats_Update(void);
 void UpdateGameMenu(GAMEPAD_s *, i32);
-void MakePlayerList(i32);
+i32 MakePlayerList(i32);
 void Faders_Draw(WORLDINFO_s *);
 void Level_Draw(WORLDINFO_s *);
 void SpecialMiniKits_Draw(WORLDINFO_s *);
@@ -334,9 +334,7 @@ extern "C" {
     extern i32 GameMenuLevel;
     extern GAMEPAD_s GamePad[64];
     extern MENUFNINFO MenuInfo[100];
-    extern u8 TempOptions[13];
-    extern char SuperOptions[24];
-
+    extern OPTIONSSAVE TempOptions;
     extern i32 abort_load;
     extern i32 AddCoinDelay[2];
     extern i32 adaptivedifficulty[3];

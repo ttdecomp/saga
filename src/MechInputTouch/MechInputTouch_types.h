@@ -263,6 +263,10 @@ struct MechInputTouchSpeederChaseController {
     virtual ~MechInputTouchSpeederChaseController();
 };
 struct MechInputTouchSystem {
+    static i32 s_baseControlMode;
+    static i32 s_actualTouchMode;
+    virtual ~MechInputTouchSystem();
+    virtual char const *GetName();
     void AddChangeLayoutButtons(NuVirtualTouchDevice &, i32);
     void ChooseTouchLayout(bool);
     void ConvertToScreenCoords(float, float, float &, float &);
@@ -281,10 +285,12 @@ struct MechInputTouchSystem {
     void FindTargetObject(GameObject_s &, VuVec const &, i32, MechObjectInterface *, MechTempPosInterface *);
     void Init();
     MechInputTouchSystem();
-    void ProcessEvenWhenPaused(ThingProcessData *);
+    virtual void ProcessEvenWhenPaused(ThingProcessData *);
     void ResetAllOwners();
     void SetTouchLockedBy(u32, MechInputTouchButton *, bool);
     void TouchLockedBy(u32);
+
+    i32 control_mode;
 };
 struct MechInputTouchVirtualConsoleController {
     void Activate();
@@ -349,6 +355,9 @@ struct MechSystems : BaseThing {
     void NewTagButton(GameObject_s &, TouchHolder &);
     void RenderCurrentPlayerHighlight();
     void UnhookClickToPressStart();
+
+    u32 unknown_0x10[6];
+    MechInputTouchSystem input_touch_system;
 };
 struct MechTempPosInterface {
     void GetFloorTargetPos(VuVec &, i32) const;

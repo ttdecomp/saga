@@ -43,8 +43,8 @@ struct instNUGCUTLOCATOR_s {
     i32 effect_handle;
 };
 
-typedef void (*NUGCUTLOCATORFN)(instNUGCUTSCENE_s *, NUGCUTLOCATORSYS_s *, instNUGCUTLOCATOR_s *,
-                                NUGCUTLOCATOR_s *, f32, NUMTX *, i32);
+typedef void (*NUGCUTLOCATORFN)(instNUGCUTSCENE_s *, NUGCUTLOCATORSYS_s *, instNUGCUTLOCATOR_s *, NUGCUTLOCATOR_s *,
+                                f32, NUMTX *, i32);
 
 struct NUGCUTLOCATORFNENTRY_s {
     const char *name;
@@ -159,7 +159,6 @@ DECOMP_ASSERT(sizeof(NUGCUTLOCATOR_s) == 0x64, "NUGCUTLOCATOR_s must match the o
 DECOMP_ASSERT(sizeof(NUGCUTLOCATORTYPE_s) == 0x0c, "NUGCUTLOCATORTYPE_s must match the original x86 layout");
 DECOMP_ASSERT(sizeof(NUGCUTLOCATORSYS_s) == 0x0c, "NUGCUTLOCATORSYS_s must match the original x86 layout");
 DECOMP_ASSERT(sizeof(instNUGCUTLOCATOR_s) == 0x08, "instNUGCUTLOCATOR_s must match the original x86 layout");
-DECOMP_ASSERT(sizeof(NUGCUTLOCATORFNENTRY_s) == 0x14,
-              "NUGCUTLOCATORFNENTRY_s must match the original x86 layout");
+DECOMP_ASSERT(sizeof(NUGCUTLOCATORFNENTRY_s) == 0x14, "NUGCUTLOCATORFNENTRY_s must match the original x86 layout");
 DECOMP_ASSERT(sizeof(NUGCUTRIGID_s) == 0x5c, "NUGCUTRIGID_s must match the original x86 layout");
 DECOMP_ASSERT(sizeof(instNUGCUTSCENE_s) == 0xf8, "instNUGCUTSCENE_s must match the original x86 layout");

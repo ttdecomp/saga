@@ -13,6 +13,7 @@
 #include "legoapi/items/base/apiobject.h"
 #include "MechInputTouch/MechInputTouch_types.h"
 #include "legoapi/characters/core/CharacterObjectInterface.h"
+#include "legoapi/characters/motion/animlist.h"
 #include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
 #include "legoapi/gizmo/base/GizBuildItObjectInterface.h"
 #include "legoapi/gizmo/base/GizForceObjectInterface.h"
@@ -339,20 +340,17 @@ struct AISCRIPTPROCESS_s;
 struct AISCRIPT_s;
 struct AITRIGGERSETSYS_s {};
 struct AITRIGGERSET_s {};
-struct ANIMLIST_s {};
-struct ANIMPACKET_s {
-    char pad_0x00[0x10];
-    float time;  // 0x10
-    float time2; // 0x14
-    char pad_0x18[0x3a - 0x18];
-    u16 field_0x3a; // 0x3a
-    char pad_0x3c[0x42 - 0x3c];
-    u16 frame;      // 0x42
-    f32 field_0x44; // 0x44
-};
 struct ANIMREDIRECT {};
 struct AREADATA_s;
-struct AREASAVE_s {};
+struct AREASAVE_s {
+    u8 complete;
+    u8 area_complete;
+    u8 story_buildup_complete;
+    u8 freeplay_buildup_complete;
+    u8 minikit_count;
+    u8 field_0x5[7];
+};
+DECOMP_ASSERT(sizeof(AREASAVE_s) == 0xc, "AREASAVE_s size");
 struct ATTRACTO_s;
 struct BATARANG_s {};
 struct BOLTSYS {};
@@ -360,7 +358,6 @@ struct BOLT_s;
 struct BUILDIT_FIND_ENUM {};
 struct CABLE_s {};
 struct CHARACTERDATA_s {};
-struct CHARACTERMODEL_s {};
 struct CHARCATEGORY {};
 struct CHARFIXUP;
 struct CHARPIVOT {};
@@ -401,7 +398,11 @@ struct DETONATOR_s {};
 struct EDCREATURE_s {};
 struct EPISODEDATA;
 struct EXPLOSION {};
-struct EXTRAMODEL {};
+struct EXTRAMODEL {
+    i16 *model_list;
+    void *field_04;
+};
+DECOMP_ASSERT(sizeof(EXTRAMODEL) == 8, "EXTRAMODEL size");
 struct EdClass;
 struct EdControl;
 struct EdFileInputStream;
@@ -449,20 +450,40 @@ struct GAMEAUDIO {};
 // 0x230-byte block; matrix and mode offsets are verified against
 // MoveGameCamera and InitGameBeforeConfig.
 struct GAMECAMERA_s {
-    u8 pad_00;
-    u8 field_0x01;
-    u8 pad_02[0x2a];
-    f32 zoom; // 0x02c
-    u8 pad_030[0x08];
-    NUMTX mtx;          // 0x038
-    NUMTX target_mtx;   // 0x078
-    NUMTX render_mtx;   // 0x0b8
-    NUVEC shaken_right; // 0x0f8
-    NUVEC shaken_up;    // 0x104
-    NUVEC dir;          // 0x110
-    NUVEC pos;          // 0x11c
-    NUVEC target;       // 0x128
-    u8 pad_134[0x22a - 0x134];
+    SOCKPOSITION sock_position; // 0x000; camera begins with its rail position state
+    NUMTX mtx;                  // 0x038
+    NUMTX target_mtx;           // 0x078
+    NUMTX render_mtx;           // 0x0b8
+    NUVEC shaken_right;         // 0x0f8
+    NUVEC shaken_up;            // 0x104
+    NUVEC dir;                  // 0x110
+    NUVEC pos;                  // 0x11c
+    NUVEC target;               // 0x128
+    u8 pad_134[0x1b8 - 0x134];
+    f32 field_0x1b8;
+    f32 field_0x1bc;
+    f32 field_0x1c0;
+    u8 pad_1c4[4];
+    f32 field_0x1c8;
+    u8 pad_1cc[4];
+    f32 field_0x1d0;
+    f32 field_0x1d4;
+    f32 field_0x1d8;
+    f32 field_0x1dc;
+    f32 position_seek;
+    f32 angle_seek;
+    f32 field_0x1e8;
+    f32 field_0x1ec;
+    f32 field_0x1f0;
+    f32 field_0x1f4;
+    u8 pad_1f8[0x204 - 0x1f8];
+    f32 field_0x204;
+    f32 field_0x208;
+    f32 field_0x20c;
+    f32 field_0x210;
+    f32 field_0x214;
+    f32 field_0x218;
+    u8 pad_21c[0x22a - 0x21c];
     u8 reset_blend;          // 0x22a
     u8 blend_mode;           // 0x22b
     i8 mode;                 // 0x22c
@@ -605,8 +626,7 @@ struct RGBA {};
 struct SCENEPROGRESS_s {};
 struct SHADERSEMANTIC_enum {};
 struct SHARD_s;
-struct SOCKPOSITION_s {};
-struct SOCKSYS {};
+struct SOCKPOSITION_s;
 struct SPLINEPOS_s {};
 // Status / achievements screen packet (332 bytes; fields used by NuMain:
 // model ids at 0x9c/0x9e, per-player bytes at 0xa4/0xa5, flags at 0xb1/0xb2).

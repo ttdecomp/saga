@@ -14,6 +14,7 @@
 #include "legoapi/world/level.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/items/base/collection.h"
+#include "legoapi/items/base/apiobject.h"
 #include "legoapi/props/system/socksys.h"
 #include "legoapi/core/input/timer.h"
 #include "legogame/game.h"
@@ -54,6 +55,7 @@ GameObject_s *Player[8] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 i32 PLAYERCOUNT = 0;
 i32 netclient = 0;
 i32 UsePlayerList = 0;
+i32 makeplayerlist_freeplay = 0;
 i16 PlayerList[8];
 i32 PlayerID[2] = {-1, -1};
 i16 Area_PlayerIDList[9];
@@ -73,7 +75,7 @@ char GizForceLOSInfo[0xc60];
 i32 DEFAULT_PLAYERHITPOINTS = 8;
 u32 LEGOOBJ_DEFAULTLASTCOIN = -1;
 
-PLAYERDATA *apicharsys;
+APICHARACTERSYS *apicharsys;
 
 // --- World-module helpers (kept with the WorldInfo API) ---
 
@@ -94,7 +96,21 @@ void SetAreaPickupGravity(i32 area, i32 level) {
     }
 }
 void WorldInfo_Dump(WORLDINFO *world) {
-    (void)world;
+    // The full routine also tears down the level's gameplay subsystems and
+    // editor pages. These scene removals are the original calls at
+    // 0x481bcc..0x481d6b and must happen before Reset reuses the bump buffer.
+    if (world->icons_gscn != nullptr) {
+        NuGScnRemove(world->icons_gscn);
+        world->icons_gscn = nullptr;
+    }
+    if (world->current_gscn != nullptr) {
+        NuGScnRemove(world->current_gscn);
+        world->current_gscn = nullptr;
+    }
+    if (world->scene != nullptr) {
+        NuGScnRemove(world->scene);
+        world->scene = nullptr;
+    }
 }
 void StoreSceneProgress(NUGSCN *gscn, SCENEPROGRESS_s *progress, i32 param) {
     (void)gscn;
@@ -275,7 +291,8 @@ void WorldInfo_Init(WORLDINFO *world) {
 
     Doors_Init(world);
     Players_InitPositions(world);
-    ClearGameObjects((APIOBJECTSYS_s *)world->ai_sys);
+    Obj = reinterpret_cast<GameObject_s *>(world->api_object_sys->objects);
+    ClearGameObjects(world->api_object_sys);
     PlayerItemTypes_Reset(world);
     Players_Init();
     rtlResetDynamic();

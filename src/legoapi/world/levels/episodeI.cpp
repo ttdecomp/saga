@@ -585,8 +585,8 @@ void ResetPodStuff() {
     i16 val = apicharsys->playermodelids[id_ANAKINSPOD];
     float *fp = NULL;
     if (val != -1) {
-        PODCHARENTRY_s *entry = &((PODCHARENTRY_s *)apicharsys->field_0x18)[val];
-        fp = ((PODMODELDATA_s *)entry->model)->value;
+        APICHARACTERMODEL *entry = &apicharsys->models[val];
+        fp = ((PODMODELDATA_s *)entry->model_data_b)->value;
     }
     if (fp != NULL && *fp > 0.0f) {
         pod_animtime[0] = 1.0f;
@@ -744,7 +744,7 @@ void PodRaceAUpdate(WORLDINFO_s *world) {
     if (t > 1.0f) {
         GAMECAMERA_s *cam = GameCam;
         if (mines->spawn_timer == 1000000000.0f) {
-            float v = cam->zoom;
+            float v = cam->sock_position.distance;
             mines->spawn_timer = v;
             if (v < 100.0f) {
                 nuvec_s vec = {(0.5f - NuRandFloat()) * 60.0f, 0.0f, 100.0f};
@@ -753,7 +753,7 @@ void PodRaceAUpdate(WORLDINFO_s *world) {
                 NUVEC player_pos = {player->apiobj.pos_x, player->apiobj.pos_y, player->apiobj.pos_z};
                 NuVecAdd(&p, &vec, &player_pos);
                 if (CreatePodRaceMine(&p) != NULL)
-                    mines->spawn_timer = cam->zoom;
+                    mines->spawn_timer = cam->sock_position.distance;
             }
         }
     }
@@ -808,7 +808,7 @@ void PodRaceBUpdate(WORLDINFO_s *world) {
         if (PodRace->mushroom_timer > 1.0f && mushroom_collapse != 0) {
             switch (LevFlag.mushroom_state) {
                 case 0:
-                    if (gamcam->zoom > mushroom0_along) {
+                    if (gamcam->sock_position.distance > mushroom0_along) {
                         NewCutScene(NULL, world->cutscene_sys, "ep1_podrace_mushroom0", 1);
                         LevFlag.mushroom_state = 1;
                     }
@@ -823,7 +823,7 @@ void PodRaceBUpdate(WORLDINFO_s *world) {
                 case 2:
                     mushroom_countdown -= FRAMETIME;
                     if (mushroom_countdown > 0.0f) {
-                        if (gamcam->zoom > mushroom2_along)
+                        if (gamcam->sock_position.distance > mushroom2_along)
                             LevFlag.mushroom_state = 3;
                     } else {
                         NewCutScene(NULL, world->cutscene_sys, "EP1_PODRACE_MUSHROOM2", 1);
@@ -1051,8 +1051,8 @@ void PodRaceInit(WORLDINFO_s *world) {
     ResetPodStuff();
     i16 id = apicharsys->playermodelids[id_ANAKINSPOD];
     if (id != -1) {
-        PODCHARENTRY_s *entry = &((PODCHARENTRY_s *)apicharsys->field_0x18)[id];
-        if (entry->model != NULL && ((PODMODELDATA_s *)entry->model)->value != NULL)
+        APICHARACTERMODEL *entry = &apicharsys->models[id];
+        if (entry->model_data_b != NULL && ((PODMODELDATA_s *)entry->model_data_b)->value != NULL)
             podanimendframe = AnimEndFrame(entry, 1);
     }
 }
@@ -1195,14 +1195,15 @@ void PodSprintA_Reset(WORLDINFO_s *world) {
             p->field_0xdc8 = 1.0f;
             p->apiobj.field_0x68 = 0.0f;
             p->apiobj.field_0x6c = 0.0f;
-            p->apiobj.field_0x70 = ((PLAYERSUBOBJ2_s *)((PLAYERSUBOBJ_s *)p->apiobj.field_0x54)->field_0x24)->value;
+            p->apiobj.field_0x70 = ((PLAYERSUBOBJ2_s *)((PLAYERSUBOBJ_s *)p->apiobj.character_data)->field_0x24)->value;
             NuVecRotateY((NUVEC *)&p->apiobj.field_0x68, (NUVEC *)&p->apiobj.field_0x68, p->apiobj.field_0x276);
         } else if (player2 != NULL && (player2->apiobj.field_0x1f8 & 0x1000)) {
             GameObject_s *p2 = player2;
             p2->field_0xdc8 = 1.0f;
             p2->apiobj.field_0x68 = 0.0f;
             p2->apiobj.field_0x6c = 0.0f;
-            p2->apiobj.field_0x70 = ((PLAYERSUBOBJ2_s *)((PLAYERSUBOBJ_s *)p2->apiobj.field_0x54)->field_0x24)->value;
+            p2->apiobj.field_0x70 =
+                ((PLAYERSUBOBJ2_s *)((PLAYERSUBOBJ_s *)p2->apiobj.character_data)->field_0x24)->value;
             NuVecRotateY((NUVEC *)&p2->apiobj.field_0x68, (NUVEC *)&p2->apiobj.field_0x68, p2->apiobj.field_0x276);
         }
         void *cs = game_cutscenes.cutscene;

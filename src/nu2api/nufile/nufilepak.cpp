@@ -4,6 +4,8 @@
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufile.h"
 
+#include <string.h>
+
 static NUFILEPAK_ERROR fpk_err;
 
 static u32 CalcChecksum(void *data, i32 len) {
@@ -184,4 +186,49 @@ i32 NuFilePakGetItemInfo(void *hdr_ptr, i32 item_handle, void **addr, i32 *size)
     }
 
     return 0;
+}
+
+i32 NuFilePakCondense(void *hdr_ptr) {
+    fpk_err = NUFILEPAK_ERROR_NONE;
+
+    NUFILEPAKHDR *hdr = static_cast<NUFILEPAKHDR *>(hdr_ptr);
+    NUFILEPAKITEM *items = GetItems(hdr);
+    i32 removed_size = 0;
+    for (u32 i = 0; i < hdr->item_count; ++i) {
+        NUFILEPAKITEM &item = items[i];
+        if (item.attr.removed) {
+            continue;
+        }
+        if (item.attr.required) {
+            if (removed_size != 0 && item.alignment != 0) {
+                removed_size &= -item.alignment;
+            }
+            if (removed_size != 0) {
+                memmove(static_cast<char *>(hdr_ptr) + item.data_offset - removed_size,
+                        static_cast<char *>(hdr_ptr) + item.data_offset, item.size);
+                item.data_offset -= removed_size;
+            }
+        } else {
+            item.attr.removed = 1;
+            removed_size += item.size;
+            removed_size = (removed_size + item.alignment - 1) & -item.alignment;
+        }
+    }
+    hdr->file_size -= removed_size;
+    return removed_size;
+}
+
+i32 NuFilePakSetItemRequired(void *hdr_ptr, i32 item_handle, i32 required) {
+    fpk_err = NUFILEPAK_ERROR_NONE;
+
+    NUFILEPAKHDR *hdr = static_cast<NUFILEPAKHDR *>(hdr_ptr);
+    --item_handle;
+    if (item_handle < 0 || item_handle >= static_cast<i32>(hdr->item_count)) {
+        return 0;
+    }
+    NUFILEPAKITEM &item = GetItems(hdr)[item_handle];
+    if (!item.attr.removed) {
+        item.attr.required = required;
+    }
+    return 1;
 }

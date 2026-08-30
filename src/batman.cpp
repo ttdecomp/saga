@@ -84,7 +84,11 @@ extern "C" __attribute__((optimize("O2"))) i32 NuMain(i32 argc, char **argv) {
     WorldInfo_InitOnce();
     InitOnce(argc, argv);
     TriggerExtraDataLoad();
-    MenuInitialise(GameMenuInfo, 34, LANGUAGECOUNT, DrawSaveSlots, 1, 0);
+    // The shipped binary passes 34 here even though GameMenuInfo contains 33
+    // entries (menu id 28 is absent). Its final memcpy iteration therefore
+    // reads the unrelated data immediately after the table. Only register the
+    // real menu descriptors; the accidental entry has no valid callbacks.
+    MenuInitialise(GameMenuInfo, 33, LANGUAGECOUNT, DrawSaveSlots, 1, 0);
     MenuReset();
     edGraInitTerrainSwapProtection();
     NuHGobjReversibleCharacters(1);
@@ -276,7 +280,7 @@ giz_freeplay:
     }
 
     GamePlayMusic(WORLD->current_level, 0, &Game.options_save);
-    if ((WORLD->current_level == TITLES_LDATA) && (SuperOptions[20] == 0)) {
+    if ((WORLD->current_level == TITLES_LDATA) && (SuperOptions.music_enabled == 0)) {
         legoSetMusicVolume(0.0f);
     }
 
@@ -309,7 +313,7 @@ giz_freeplay:
         CheckResetBits();
         music_man.SetFader(1.0f, 0.0f);
         GamePlayMusic(WORLD->current_level, 1, &Game.options_save);
-        if ((WORLD->current_level == TITLES_LDATA) && (SuperOptions[20] == 0)) {
+        if ((WORLD->current_level == TITLES_LDATA) && (SuperOptions.music_enabled == 0)) {
             legoSetMusicVolume(0.0f);
         }
 
@@ -350,7 +354,7 @@ giz_freeplay:
             DebrisSetTimeIncrement(FRAMETIME);
 
             i = GetMenuID();
-            panelOpts = (byte)TempOptions[11];
+            panelOpts = TempOptions.field11_0xb;
             if (i != 4) {
                 panelOpts = *(byte *)((char *)&Game.options_save + 0xb);
             }
@@ -434,7 +438,7 @@ giz_freeplay:
                     if ((Paused == 0) || (GameMenu[GameMenuLevel].menu != 4)) {
                         NuSound3SetDPL((i32)(byte)Game.options_save.field2_0x2, 0);
                     } else {
-                        NuSound3SetDPL((i32)(byte)TempOptions[2], 0);
+                        NuSound3SetDPL(TempOptions.field2_0x2, 0);
                     }
                     UpdateLevelSfx(world, Paused);
 
@@ -795,6 +799,7 @@ giz_freeplay:
                                 fadeType = 1;
                             }
                             FadeSys.SetFade((FADETYPE &)fadeType, 0);
+                            goto level_fade_stage2;
                         }
                         if (NewLData != NULL) {
                             goto level_fade_common;
@@ -846,7 +851,7 @@ giz_freeplay:
 
             FRAMETIME = savedFrametime;
             i = GetMenuID();
-            panelOpts = (byte)TempOptions[11];
+            panelOpts = TempOptions.field11_0xb;
             if (i != 4) {
                 panelOpts = *(byte *)((char *)&Game.options_save + 0xb);
             }
@@ -1275,7 +1280,7 @@ giz_freeplay:
     }
 
     Area = (i32)(char)NewLData->area_index;
-    i = NewLData->music_index;
+    i = NewLData->idx;
     Level = i;
 
     if (Area == last_area) {
@@ -1283,13 +1288,13 @@ giz_freeplay:
         if (last_area != -1) {
             i = LevelChangesInArea + 1;
         }
-        LevelChange = (u32)(NewLData->music_index != LastLData->music_index);
+        LevelChange = (u32)(NewLData->idx != LastLData->idx);
         LevelChangesInArea = i;
         if (new_level_from_menu == 0) {
             goto after_sound;
         }
     } else {
-        LevelChange = (u32)(NewLData->music_index != LastLData->music_index);
+        LevelChange = (u32)(NewLData->idx != LastLData->idx);
         LevelChangesInArea = 0;
     }
 
@@ -1343,14 +1348,14 @@ after_sound:
         }
     } else {
         UsePlayerList = 2;
-        PlayerProgress[0].field_0x6 = status_plr_active[0];
-        PlayerProgress[1].field_0x6 = status_plr_active[1];
-        PlayerProgress[2].field_0x6 = status_plr_active[2];
-        PlayerProgress[3].field_0x6 = status_plr_active[3];
-        PlayerProgress[4].field_0x6 = status_plr_active[4];
-        PlayerProgress[5].field_0x6 = status_plr_active[5];
-        PlayerProgress[6].field_0x6 = status_plr_active[6];
-        PlayerProgress[7].field_0x6 = status_plr_active[7];
+        PlayerProgress[0].active = status_plr_active[0];
+        PlayerProgress[1].active = status_plr_active[1];
+        PlayerProgress[2].active = status_plr_active[2];
+        PlayerProgress[3].active = status_plr_active[3];
+        PlayerProgress[4].active = status_plr_active[4];
+        PlayerProgress[5].active = status_plr_active[5];
+        PlayerProgress[6].active = status_plr_active[6];
+        PlayerProgress[7].active = status_plr_active[7];
     }
 
     afterArea = HUB_ADATA;
@@ -1393,35 +1398,35 @@ after_sound:
         }
     } else {
         PlayerList[0] = StatusPacket.player0_model;
-        PlayerProgress[0].field_0x6 = StatusPacket.player0_active;
+        PlayerProgress[0].active = StatusPacket.player0_active;
         PlayerProgress[0].field_0x7 = 0;
         PlayerProgress[0].coins = 0;
         PlayerList[1] = StatusPacket.player1_model;
-        PlayerProgress[1].field_0x6 = StatusPacket.player1_active;
+        PlayerProgress[1].active = StatusPacket.player1_active;
         PlayerProgress[1].field_0x7 = 0;
         PlayerProgress[1].coins = 0;
         PlayerList[2] = -1;
-        PlayerProgress[2].field_0x6 = 0;
+        PlayerProgress[2].active = 0;
         PlayerProgress[2].field_0x7 = 0;
         PlayerProgress[2].coins = 0;
         PlayerList[3] = -1;
-        PlayerProgress[3].field_0x6 = 0;
+        PlayerProgress[3].active = 0;
         PlayerProgress[3].field_0x7 = 0;
         PlayerProgress[3].coins = 0;
         PlayerList[4] = -1;
-        PlayerProgress[4].field_0x6 = 0;
+        PlayerProgress[4].active = 0;
         PlayerProgress[4].field_0x7 = 0;
         PlayerProgress[4].coins = 0;
         PlayerList[5] = -1;
-        PlayerProgress[5].field_0x6 = 0;
+        PlayerProgress[5].active = 0;
         PlayerProgress[5].field_0x7 = 0;
         PlayerProgress[5].coins = 0;
         PlayerList[6] = -1;
-        PlayerProgress[6].field_0x6 = 0;
+        PlayerProgress[6].active = 0;
         PlayerProgress[6].field_0x7 = 0;
         PlayerProgress[6].coins = 0;
         PlayerList[7] = -1;
-        PlayerProgress[7].field_0x6 = 0;
+        PlayerProgress[7].active = 0;
         PlayerProgress[7].field_0x7 = 0;
         PlayerProgress[7].coins = 0;
 

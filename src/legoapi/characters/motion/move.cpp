@@ -1,6 +1,8 @@
 #include "decomp.h"
 #include "globals.h"
+#include "legoapi/characters/core/character.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/props/system/socksys.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/numath/nufloat.h"
@@ -40,21 +42,21 @@ void Move_DRAGBOMB(GameObject_s *) {
 void Move_DROIDEKA(GameObject_s *) {
 }
 
-void MoveGameCamera(GAMECAMERA_s *camera) {
-    // Original title-camera mode (3): portal_places[2] contains one camera
-    // position followed by its look target.  The complete function selects
-    // many gameplay camera modes; only this currently reachable mode is
-    // transcribed here.
-    if (camera == NULL || pNuCam == NULL || WORLD == NULL || WORLD->current_level != TITLES_LDATA ||
-        WORLD->portal_places == NULL || WORLD->portal_places[2] == NULL || WORLD->portal_places[2]->positions == NULL) {
-        return;
-    }
+static void PlayerCamPos(GameObject_s *object, NUVEC *camera_position, NUVEC *) {
+    CHARACTERDATA *character = object->apiobj.character_data;
+    f32 centre_height = (character->field15_0x34 + character->field16_0x38) * character->field17_0x3c * 0.5f;
 
-    f32 *points = WORLD->portal_places[2]->positions;
-    NUVEC position = {points[0], points[1], points[2]};
-    NUVEC target = {points[3], points[4], points[5]};
+    // This is the common character path in the original. Special vehicles,
+    // grapples and targetable objects select a different focus point below
+    // this branch; ordinary hub characters use their world position plus the
+    // vertical centre of the configured character bounds.
+    *camera_position = object->apiobj.position;
+    camera_position->y += centre_height;
+}
+
+static void SetGameCameraView(GAMECAMERA_s *camera, const NUVEC &position, const NUVEC &target) {
     NUVEC delta;
-    NuVecSub(&delta, &target, &position);
+    NuVecSub(&delta, const_cast<NUVEC *>(&target), const_cast<NUVEC *>(&position));
 
     NUANG pitch = static_cast<NUANG>(-NuAtan2D(delta.y, NuFsqrt(delta.x * delta.x + delta.z * delta.z)));
     NUANG yaw = static_cast<NUANG>(NuAtan2D(delta.x, delta.z));
@@ -62,14 +64,77 @@ void MoveGameCamera(GAMECAMERA_s *camera) {
     NuMtxSetRotationZ(&camera->mtx, 0);
     NuMtxRotateX(&camera->mtx, pitch);
     NuMtxRotateY(&camera->mtx, yaw);
-    NuMtxTranslate(&camera->mtx, &position);
+    NuMtxTranslate(&camera->mtx, const_cast<NUVEC *>(&position));
     camera->render_mtx = camera->mtx;
     camera->pos = position;
     camera->target = target;
-    camera->mode = 3;
 
-    pNuCam->mtx = camera->render_mtx;
-    NuCameraSet(pNuCam);
+    if (pNuCam != NULL) {
+        pNuCam->mtx = camera->render_mtx;
+        NuCameraSet(pNuCam);
+    }
+}
+
+void MoveGameCamera(GAMECAMERA_s *camera) {
+    // Original title-camera mode (3): portal_places[2] contains one camera
+    // position followed by its look target.  The complete function selects
+    // many gameplay camera modes; only this currently reachable mode is
+    // transcribed here.
+    if (camera == NULL || WORLD == NULL || WORLD->current_level == NULL) {
+        return;
+    }
+
+    if (WORLD->current_level == TITLES_LDATA) {
+        if (WORLD->portal_places == NULL || WORLD->portal_places[2] == NULL ||
+            WORLD->portal_places[2]->positions == NULL) {
+            return;
+        }
+        f32 *points = WORLD->portal_places[2]->positions;
+        NUVEC position = {points[0], points[1], points[2]};
+        NUVEC target = {points[3], points[4], points[5]};
+        camera->mode = 3;
+        SetGameCameraView(camera, position, target);
+        camera->previous_mode = camera->mode;
+        return;
+    }
+
+    if (WORLD->sock_sys == NULL) {
+        return;
+    }
+
+    camera->mode = 1;
+    NUVEC player_camera_positions[2];
+    NUVEC player_positions[2];
+    i32 player_count = 0;
+    for (i32 i = 0; i < 2; ++i) {
+        if (Player[i] == NULL) {
+            continue;
+        }
+        PlayerCamPos(Player[i], &player_camera_positions[player_count], &camera->pos);
+        player_positions[player_count] = Player[i]->apiobj.position;
+        ++player_count;
+    }
+    if (player_count == 0) {
+        return;
+    }
+
+    NUVEC position;
+    NUVEC target;
+    f32 overlap_blend;
+    f32 position_seek;
+    f32 angle_seek;
+    f32 terrain_clearance;
+    f32 separation_scale;
+    i32 found_socket =
+        SockSysCamera(WORLD->sock_sys, &camera->pos, camera->mode != camera->previous_mode, player_camera_positions,
+                      player_positions, player_count, &camera->sock_position, &position, &target, &overlap_blend,
+                      &position_seek, &angle_seek, &terrain_clearance, &separation_scale);
+    if (found_socket != 0) {
+        camera->position_seek = position_seek;
+        camera->angle_seek = angle_seek;
+        SetGameCameraView(camera, position, target);
+    }
+    camera->previous_mode = camera->mode;
 }
 
 void MovePlayer_POD(GameObject_s *) {
@@ -296,7 +361,41 @@ void SetObjOnSurface(GameObject_s *, i32) {
 void TurnCodeCamSafe(GameObject_s *, numtx_s *) {
 }
 
-void RotateGameMatrix(numtx_s *, i32, u16, u16, u16) {
+void RotateGameMatrix(numtx_s *matrix, i32 order, u16 x, u16 y, u16 z) {
+    switch (order) {
+        case 0:
+            if (x != 0)
+                NuMtxRotateX(matrix, x);
+            if (y != 0)
+                NuMtxRotateY(matrix, y);
+            if (z != 0)
+                NuMtxRotateZ(matrix, z);
+            break;
+        case 1:
+            if (y != 0)
+                NuMtxRotateY(matrix, y);
+            if (x != 0)
+                NuMtxRotateX(matrix, x);
+            if (z != 0)
+                NuMtxRotateZ(matrix, z);
+            break;
+        case 2:
+            if (y != 0)
+                NuMtxRotateY(matrix, y);
+            if (z != 0)
+                NuMtxRotateZ(matrix, z);
+            if (x != 0)
+                NuMtxRotateX(matrix, x);
+            break;
+        case 3:
+            if (z != 0)
+                NuMtxRotateZ(matrix, z);
+            if (x != 0)
+                NuMtxRotateX(matrix, x);
+            if (y != 0)
+                NuMtxRotateY(matrix, y);
+            break;
+    }
 }
 
 void Hang_SetTargetMom(GameObject_s *) {

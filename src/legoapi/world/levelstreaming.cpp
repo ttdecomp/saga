@@ -1,9 +1,10 @@
 #include "legoapi/world/level.h"
+#include "legoapi/world/mission.h"
 #include "globals.h"
+#include "legoapi/props/doors/door.h"
 
 #include <string.h>
 
-extern i32 Mission_Active(struct MISSIONSYS_s *);
 extern i32 Players_AveragePos(struct nuvec_s *, struct SOCKPOSITION_s *);
 
 void LevelStreaming_Update(WORLDINFO_s *world) {
@@ -29,16 +30,16 @@ void LevelStreaming_Update(WORLDINFO_s *world) {
                 u8 *pos = (u8 *)world; // placeholder
                 if (Players_AveragePos((struct nuvec_s *)(pos + 0x54), NULL) != 0) {
                     other_level = -1;
-                    if (world->portal_count > 0) {
+                    if (world->door_count > 0) {
                         f32 best = 1000000.0f;
-                        for (i = 0; i < world->portal_count; i++) {
-                            u8 *entry = (u8 *)world->portal_list + i * 0x120;
-                            i32 lev = *(i16 *)(entry + 0xf0);
+                        for (i = 0; i < world->door_count; i++) {
+                            DOOR_s *door = &world->doors[i];
+                            i32 lev = door->level;
                             if (lev != world->level_idx) {
-                                f32 d = NuVecDistSqr((NUVEC *)(entry + 0xd4), (NUVEC *)(pos + 0x54), NULL);
+                                f32 d = NuVecDistSqr(&door->pos, (NUVEC *)(pos + 0x54), NULL);
                                 if (d < best) {
                                     best = d;
-                                    other_level = *(i16 *)(entry + 0xf0);
+                                    other_level = door->level;
                                 }
                             }
                         }

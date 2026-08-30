@@ -1,6 +1,9 @@
 #include "decomp.h"
 #include "globals.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/characters/core/character.h"
+#include "legoapi/characters/core/players.h"
+#include "legoapi/items/base/apiobject.h"
 #include "nu2api/nucore/nugcutscene.h"
 
 float CalcValue1648(char *, i32, i32, float, ani3_scalemin_s *);
@@ -322,10 +325,78 @@ extern "C" {
         }
     }
 
-    void ANI_SimpleAni3PlayerV4Joint(void) {
+    // Original @0x2c17d0.  The non-quaternion ANI4 player decodes the three
+    // vector curve groups directly into the animation buffer.
+    void ANI_SimpleAni3PlayerV4Joint(ani3_animheader_s *anim, f32 frame, nuanimbuff_s *buffer, i32 first_joint,
+                                     i32 joint_count) {
+        buffer->use_quaternions = 0;
+
+        i32 end_joint = first_joint + joint_count;
+        if (end_joint > anim->node_count) {
+            end_joint = anim->node_count;
+        }
+
+        for (i32 joint_index = first_joint; joint_index < end_joint; ++joint_index) {
+            const u8 flags = anim->node_flags[joint_index];
+            buffer->joint_flags[joint_index] = flags;
+
+            f32 curves[9] = {};
+            ANI_Ani3ExtractAllNodeCurves(anim, frame, curves, joint_index, NULL);
+
+            nuanimbuffjoint_s &joint = buffer->joints[joint_index];
+            if ((flags & 2) != 0) {
+                joint.translation = {curves[0], curves[1], curves[2]};
+            } else {
+                joint.translation = {0.0f, 0.0f, 0.0f};
+            }
+            joint.translation_w = 0.0f;
+
+            if ((flags & 1) != 0) {
+                joint.rotation = {curves[3], curves[4], curves[5]};
+            } else {
+                joint.rotation = {0.0f, 0.0f, 0.0f};
+            }
+            joint.rotation_w = 0.0f;
+
+            if ((flags & 8) != 0) {
+                joint.scale = {curves[6], curves[7], curves[8]};
+            } else {
+                joint.scale = {1.0f, 1.0f, 1.0f};
+            }
+            joint.scale_w = 0.0f;
+        }
     }
 
-    void ANI_SimpleAni3PlayerV4Joint_Blend(void) {
+    void ANI_SimpleAni3PlayerV4Joint_Blend(ani3_animheader_s *anim, f32 frame, nuanimbuff_s *buffer, f32 blend,
+                                           i32 first_joint, i32 joint_count, NUVEC *root_translation) {
+        nuanimbuffjoint_s target_joints[256];
+        u8 target_flags[256];
+        nuanimbuff_s target = {
+            buffer->joint_count, buffer->max_joints, 0, 0, target_joints, target_flags,
+        };
+        ANI_SimpleAni3PlayerV4Joint(anim, frame, &target, first_joint, joint_count);
+
+        i32 end_joint = first_joint + joint_count;
+        if (end_joint > anim->node_count) {
+            end_joint = anim->node_count;
+        }
+        for (i32 joint_index = first_joint; joint_index < end_joint; ++joint_index) {
+            nuanimbuffjoint_s &joint = buffer->joints[joint_index];
+            const nuanimbuffjoint_s &target_joint = target.joints[joint_index];
+            joint.translation.x += (target_joint.translation.x - joint.translation.x) * blend;
+            joint.translation.y += (target_joint.translation.y - joint.translation.y) * blend;
+            joint.translation.z += (target_joint.translation.z - joint.translation.z) * blend;
+            joint.rotation.x += (target_joint.rotation.x - joint.rotation.x) * blend;
+            joint.rotation.y += (target_joint.rotation.y - joint.rotation.y) * blend;
+            joint.rotation.z += (target_joint.rotation.z - joint.rotation.z) * blend;
+            joint.scale.x += (target_joint.scale.x - joint.scale.x) * blend;
+            joint.scale.y += (target_joint.scale.y - joint.scale.y) * blend;
+            joint.scale.z += (target_joint.scale.z - joint.scale.z) * blend;
+            buffer->joint_flags[joint_index] |= target.joint_flags[joint_index];
+        }
+        if (root_translation != NULL && end_joint != first_joint) {
+            *root_translation = target.joints[first_joint].translation;
+        }
     }
 
     void ANI_SimpleAni3PlayerV4Joint_Blend_EulerQuat(void) {
@@ -382,7 +453,7 @@ extern "C" {
     void AnimsAvailableToBothCharacters(void) {
     }
 
-    void BlendRootFn(void) {
+    void BlendRootFn(NUMTX *, void *, NUVEC *, NUVEC *, NUVEC *, f32) {
     }
 
     void BlendTimeBetweenAnims(void) {
@@ -406,16 +477,16 @@ extern "C" {
     void GetInstAnimEndFrame(void) {
     }
 
-    void ResetAnimPacket(void) {
+    void ResetAnimPacket(void *, i32) {
     }
 
     void ResetMiniAnimPacket(void) {
     }
 
-    void RootFn(void) {
+    void RootFn(NUMTX *, void *, NUVEC *, NUVEC *, NUVEC *, f32) {
     }
 
-    void RootFnY(void) {
+    void RootFnY(NUMTX *, void *, NUVEC *, NUVEC *, NUVEC *, f32) {
     }
 
     void SetActionInfo(void *action_info, void *extra_action_data) {
@@ -520,7 +591,32 @@ extern "C" {
 void SetAnimFrame(nuhspecial_s *, float) {
 }
 
-void GetDefaultIdle(GameObject_s *) {
+struct DefaultIdleCharacterData {
+    u8 pad[0x116];
+    u8 use_standard_idle;
+};
+
+i32 GetDefaultIdle(GameObject_s *obj) {
+    CHARACTERDATA *character = obj->apiobj.character_data;
+    DefaultIdleCharacterData *game_character = static_cast<DefaultIdleCharacterData *>(character->field11_0x24);
+
+    i32 animation = 25;
+    i32 table_offset = 100;
+    if (game_character->use_standard_idle == 0 && (character->model_flags & 0x80) != 0) {
+        animation = 118;
+        table_offset = 472;
+    }
+    if (obj->batarang != NULL && *(reinterpret_cast<u8 *>(obj->batarang) + 0x7d) != 0) {
+        return 151;
+    }
+
+    u8 *animation_table = reinterpret_cast<u8 *>(obj->apiobj.character_model->model_data_b);
+    void *entry = *reinterpret_cast<void **>(animation_table + table_offset);
+    if (entry != NULL &&
+        (*reinterpret_cast<i32 *>(animation_table + 4) == 0 || (obj->field_0xe22 & 1) != 0 || obj->field_0xe32 == 1)) {
+        return animation;
+    }
+    return 1;
 }
 
 void GetAnimDirection(nuinstanim_s *) {

@@ -1,4 +1,11 @@
 #include "legoapi/render/core/render.h"
+#include <stdio.h>
+
+#include "gameapi/gui/apimenu.h"
+#include "gameframework/saveload.h"
+#include "legoapi/menus/core/text.h"
+#include "legoapi/characters/core/character.h"
+#include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/world/world_shared.h"
 #include "globals.h"
 struct starfighter_s;
@@ -7,6 +14,7 @@ struct rtlidata_s;
 
 #include "legoapi/render/core/SwipeDecalRenderer.h"
 #include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/nurndrstat.h"
 #include "nu2api/nu3d/nuvport.h"
 #include "nu2api/nu3d/NuRenderDevice.h"
@@ -17,6 +25,8 @@ struct rtlidata_s;
 #include "nu2api/nu3d/android/nugscn_android.h"
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nucore/bgproc.h"
+#include "nu2api/nucore/nuapi.h"
+#include "nu2api/nucore/nuhgobj.h"
 #include "nu2api/nucore/nuptrblock.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufile.h"
@@ -29,6 +39,10 @@ extern NuVertexFormatPS *g_nuFaceOnVertexFormat;
 extern NuVertexFormatPS *g_nuDebrisVertexFormat;
 
 void DisplayListGenerateTransforms(nudisplayscene_s *scene);
+void DrawGameObjectsDraw(i32 pass);
+void EnableShadowMapRendering(i32 enable);
+void ResetShadowMapRendering();
+static void DrawParaphernalia(GameObject_s *object);
 
 struct GAMEMESSAGE_s;
 struct HINT_s;
@@ -53,12 +67,48 @@ extern "C" void NuRndrGradRectUV2di(i32, i32, i32, i32, f32, f32, f32, f32, u32 
 extern "C" void NuRndrRectUV2di(i32, i32, i32, i32, f32, f32, f32, f32, u32, numtl_s *);
 extern "C" void NuRndrClear(u32, u32, f32);
 extern "C" NUVIEWPORT *NuVpGetCurrentViewport(void);
+extern char *apiGameName;
+extern char *apitxt_EMPTY;
+extern char *apitxt_PRESENT;
+extern char *apitxt_AUTOSAVE_WARNING;
+extern char *apitxt_LOADING;
+extern char *apitxt_SAVING;
+extern char *apitxt_NODATAAVAILABLE;
+extern i16 tCURRENTGAME;
+extern i16 tEMPTY;
+extern i16 tGAME;
+extern i16 tNOSPACE;
+extern f32 MENUTEXTSCALE;
+extern f32 AUTOSAVEICONY;
+extern f32 AUTOSAVEICONX;
+extern f32 AUTOSAVEICONSIZE;
+extern f32 MenuAlpha;
+extern i32 MenuA;
+extern f32 memcard_loadmessage_delay;
+extern f32 memcard_loadresult_delay;
+extern u8 MENUNORMALR;
+extern u8 MENUNORMALG;
+extern u8 MENUNORMALB;
+extern u8 MENUFLASH0R;
+extern u8 MENUFLASH0G;
+extern u8 MENUFLASH0B;
+extern u8 MENUFLASH1R;
+extern u8 MENUFLASH1G;
+extern u8 MENUFLASH1B;
+extern f32 menu_pulse;
+extern f32 menu_pulsate;
+extern i32 menu_flash;
+extern "C" i32 TestForController(void);
+extern f32 text3d_height;
+extern f32 text3d_width;
 extern FadeSystem FadeSys;
 extern f32 MainRenderTime;
 extern numtl_s *pause_rndr_mtl;
 extern i32 editor_active;
 extern i32 Paused;
 extern i32 noscenespecials;
+extern void RotateGameMatrix(numtx_s *matrix, i32 order, u16 x, u16 y, u16 z);
+extern NUGSCN *IconScene_FindById(i32 character_id);
 
 namespace {
     struct NuSpecialHandleLayout {
@@ -110,6 +160,57 @@ extern "C" {
     void RndrStateCopyGlobalState(NUGLOBALRNDRSTATE *state);
     i32 NuDisplayListRndrSpecial(nuhspecial_s *special, NUMTX *mtx, i32 skinned, void *skin_mtx, void *blend_values);
 
+    static void DisplaySceneSetClipResult(NUDLDLISTSCENE *scene, i32 clip_index, i32 clip_result) {
+        const u32 buffer = scene->render_buffer >> 7;
+        u8 *clip_bits = scene->clip_used[buffer];
+        const u32 shift = static_cast<u32>(clip_index & 3) * 2;
+        clip_bits[clip_index >> 2] |= static_cast<u8>(clip_result << shift);
+
+        if (clip_result == 0) {
+            return;
+        }
+
+        NUCLIPOBJECT &clip = scene->clip_objects[clip_index];
+        u8 *material_bits = scene->mtl_used[buffer];
+        for (i32 i = 0; i < clip.nmaterials; ++i) {
+            const i32 material_id = clip.material_ids[i];
+            material_bits[material_id >> 3] |= static_cast<u8>(1u << (material_id & 7));
+        }
+    }
+
+    // NuDisplaySceneRndr.part.101's non-NuVisi branch.  This is the original
+    // camera-culling fallback used when no visibility tree supplies a result.
+    // LOD child records (visibility bit 0 clear) are selected by their parent;
+    // zero-range scenes such as the Map therefore evaluate only the parent
+    // records and skip their child entries exactly as the original loop does.
+    static void DisplaySceneEvaluateClipFallback(NUDLDLISTSCENE *scene) {
+        scene->alpha_values = NULL;
+        if (scene->nclip_objects <= 0) {
+            return;
+        }
+
+        if (scene->fade_ranges != NULL) {
+            VARIPTR *buffer = NuDisplayListGetBuffer();
+            scene->alpha_values = static_cast<f32 *>(buffer->void_ptr);
+            buffer->addr += static_cast<usize>(scene->nclip_objects) * sizeof(f32);
+        }
+
+        for (i32 clip_index = 0; clip_index < scene->nclip_objects; ++clip_index) {
+            const u8 flags = static_cast<u8>(scene->visibility_flags[clip_index]);
+            if ((flags & 1) == 0) {
+                continue;
+            }
+
+            NUCLIPBOUNDS &bounds = scene->clip_bounds[clip_index];
+            const f32 far_clip = scene->far_clip_ranges != NULL ? scene->far_clip_ranges[clip_index] : 0.0f;
+            const i32 clip_result = NuCameraClipTestExtentsAxisAligned(&bounds.min, &bounds.max, far_clip);
+            if (scene->alpha_values != NULL) {
+                scene->alpha_values[clip_index] = clip_result != 0 ? 1.0f : 0.0f;
+            }
+            DisplaySceneSetClipResult(scene, clip_index, clip_result);
+        }
+    }
+
     void NuDisplaySceneRndr(void *display_scene) {
         NUDLDLISTSCENE *scene = static_cast<NUDLDLISTSCENE *>(display_scene);
         if ((scene->flags & NUDL_SCENE_FLAG_CLIPPING) != 0) {
@@ -119,6 +220,7 @@ extern "C" {
         RndrStateCopyGlobalState(scene->local_state);
         if (scene->nclip_objects != 0) {
             scene->flags |= NUDL_SCENE_FLAG_CLIPPING;
+            DisplaySceneEvaluateClipFallback(scene);
         }
         DisplayListGenerateTransforms(reinterpret_cast<nudisplayscene_s *>(scene));
 
@@ -126,7 +228,7 @@ extern "C" {
             NUGSCN temporary_scene = {};
             NUGSCN *gscene = scene->gscene;
             if (gscene == NULL) {
-                temporary_scene.display_list = reinterpret_cast<nudisplayscene_s *>(scene);
+                temporary_scene.display_list = scene;
                 gscene = &temporary_scene;
             }
 
@@ -298,9 +400,9 @@ static NUGSCN *NuReadGraphicsData(VARIPTR *buf, VARIPTR *buf_end, char *path, NU
     if (fixed_scene != NULL) {
         NuGScnCreatePS(fixed_scene, buf, buf_end);
 
-        i32 *texture_ids = *reinterpret_cast<i32 **>(fixed_scene);
-        NUNATIVETEX **textures = reinterpret_cast<NUNATIVETEX **>(fixed_scene->field5_0x8);
-        for (i32 i = 0; i < fixed_scene->field4_0x4; ++i) {
+        i32 *texture_ids = fixed_scene->texture_ids;
+        NUNATIVETEX **textures = fixed_scene->textures;
+        for (i32 i = 0; i < fixed_scene->ntextures; ++i) {
             if (textures[i]->ref_count < 0) {
                 texture_ids[i] = 0xabcdabcd;
             } else {
@@ -333,6 +435,17 @@ extern "C" {
     }
     void NuGHGFixup(NUGSCN *scene) {
         NuGScnReadFromMemory(scene);
+    }
+    nuhgobj_s *NuGHGRead(char *path, VARIPTR *buf, VARIPTR buf_end) {
+        nuapi.loading_hgobj = 1;
+        nuhgobj_s *object = reinterpret_cast<nuhgobj_s *>(NuReadGraphicsData(buf, &buf_end, path, NULL));
+        if (object != NULL && nuapi.force_hgobj_visibility != 0 && object->display_list != NULL) {
+            for (i32 i = 0; i < object->display_list->nspecials; ++i) {
+                object->display_list->visibility_flags[i] |= 0x20;
+            }
+        }
+        nuapi.loading_hgobj = 0;
+        return object;
     }
 } // extern "C"
 
@@ -398,7 +511,67 @@ void Draw_LOADED() {
 void Draw3DObject(WORLDINFO_s *, i32, nuvec_s *, u16, u16, u16, float, float, float, i32) {
 }
 
-void DrawCharIcon(i32, float, float, float, float, i32, float, float, i32, nuhspecial_s *) {
+void DrawCharIcon(i32 character_id, float x, float y, float z, float scale, i32 frame_object_id, float character_alpha,
+                  float frame_alpha, i32 draw_character, nuhspecial_s *override_special) {
+    WORLDINFO *world = WorldInfo_CurrentlyActive();
+    const u16 character_spin = static_cast<u16>(drawcharicon_hspecial_spin);
+    drawcharicon_hspecial_spin = 0;
+
+    if (ObjTabList == NULL || world == NULL) {
+        return;
+    }
+
+    nuhspecial_s special;
+    if (drawcharicon_find != 0) {
+        NuSpecialFind(things_scene, reinterpret_cast<void **>(&special), ObjTabList[frame_object_id].name, 1);
+    } else {
+        special = world->lev_objs[frame_object_id].special;
+    }
+
+    if (NuSpecialExistsFn(&special) != 0) {
+        DrawPanel3DObject(x, y, z + 1.0f, scale, scale, scale, 0, 0, 0, &special, 0, frame_alpha);
+    }
+
+    if (draw_character != 0) {
+        if (override_special != NULL && NuSpecialExistsFn(override_special) != 0) {
+            const f32 special_scale = scale * drawcharicon_hspecial_scale;
+            DrawPanel3DObject(x, y, z + 1.0f + drawcharicon_hspecial_dz, special_scale, special_scale, special_scale, 0,
+                              character_spin, 0, override_special, 0, character_alpha);
+        } else {
+            i32 icon_object_id;
+            if (character_id == -1) {
+                icon_object_id = LEGOOBJ_ICON_QUESTION;
+            } else {
+                icon_object_id = CDataList[character_id].field20_0x42;
+                if (icon_object_id != -1 && GCDataList[character_id].field275_0x116 == 0 &&
+                    icon_object_id != LEGOOBJ_ICON_WEIRDO) {
+                    ++icon_object_id;
+                }
+            }
+
+            if (icon_object_id != -1) {
+                if (drawcharicon_find != 0) {
+                    NUGSCN *icon_scene = character_id == -1 ? NULL : IconScene_FindById(character_id);
+                    if (icon_scene != NULL) {
+                        NuSpecialFind(icon_scene, reinterpret_cast<void **>(&special), ObjTabList[icon_object_id].name,
+                                      1);
+                    } else {
+                        NuSpecialFind(things_scene, reinterpret_cast<void **>(&special),
+                                      ObjTabList[icon_object_id].name, 1);
+                    }
+                } else {
+                    special = world->lev_objs[icon_object_id].special;
+                }
+
+                if (NuSpecialExistsFn(&special) != 0) {
+                    DrawPanel3DObject(x, y, z + 1.0f, scale, scale, scale, 0, 0, 0, &special, 0, character_alpha);
+                }
+            }
+        }
+    }
+
+    drawcharicon_find = 0;
+    drawcharicon_i_panel = -1;
 }
 
 void DrawCodeMenu() {
@@ -443,7 +616,52 @@ void DrawBonusTime(STATUSPACKET_s *, float, i32) {
 void DrawCross_Now(_vuv_s *, float, i32, i32) {
 }
 
-void DrawGameState(float, float, i32, i32) {
+void DrawGameState(float x, float y, i32 highlight, i32 slot) {
+    char game_name[64];
+    if (slot == -1) {
+        NuStrCpy(game_name, TTab[tCURRENTGAME]);
+    } else {
+        sprintf(game_name, "%s %i", TTab[tGAME], slot + 1);
+    }
+
+    u8 red = MENUNORMALR;
+    u8 green = MENUNORMALG;
+    u8 blue = MENUNORMALB;
+    if (highlight != 0 && TestForController() != 0) {
+        if (menu_pulsate > 0.0f) {
+            red = static_cast<u8>(static_cast<i32>(MENUFLASH0R * menu_pulsate + MENUFLASH1R * (1.0f - menu_pulsate)));
+            green = static_cast<u8>(static_cast<i32>(MENUFLASH0G * menu_pulsate + MENUFLASH1G * (1.0f - menu_pulsate)));
+            blue = static_cast<u8>(static_cast<i32>(MENUFLASH0B * menu_pulsate + MENUFLASH1B * (1.0f - menu_pulsate)));
+        } else if (menu_flash != 0) {
+            red = MENUFLASH0R;
+            green = MENUFLASH0G;
+            blue = MENUFLASH0B;
+        } else {
+            red = MENUFLASH1R;
+            green = MENUFLASH1G;
+            blue = MENUFLASH1B;
+        }
+    } else if (menu_pulse > 0.0f) {
+        red = static_cast<u8>(static_cast<i32>(MENUFLASH0R * menu_pulse + MENUNORMALR * (1.0f - menu_pulse)));
+        green = static_cast<u8>(static_cast<i32>(MENUFLASH0G * menu_pulse + MENUNORMALG * (1.0f - menu_pulse)));
+        blue = static_cast<u8>(static_cast<i32>(MENUFLASH0B * menu_pulse + MENUNORMALB * (1.0f - menu_pulse)));
+    }
+    SmartTextEx(game_name, x, y, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 4, red, green, blue, 0.45f, 1, NULL,
+                0, MenuA);
+
+    if (slot >= 0) {
+        if (saveload_slotused[slot] != 0) {
+            char progress[32];
+            sprintf(progress, "%.1f%%", static_cast<f32>(saveload_slotcode[slot] * 100) / COMPLETIONPOINTS);
+            Text_LocaliseDecimalPoint(progress);
+            Text3DEx(progress, x, y, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 1, 255, 191, 0, MenuA);
+        } else {
+            char *state = TTab[saveload_freespace < SAVESIZE_ADDITIONAL ? tNOSPACE : tEMPTY];
+            const u8 state_red = saveload_freespace < SAVESIZE_ADDITIONAL ? 255 : 0;
+            SmartTextEx(state, x, y, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 1, state_red, 255 - state_red,
+                        0, 0.45f, 1, NULL, 0, MenuA);
+        }
+    }
 }
 
 void DrawPauseFade() {
@@ -452,7 +670,21 @@ void DrawPauseFade() {
 void DrawRippleSet(ripple_set_s *) {
 }
 
-void DrawSaveSlots(MENU_s *, float) {
+void DrawSaveSlots(MENU_s *menu, float y) {
+    static const f32 slot_x[3] = {-0.5f, 0.0f, 0.5f};
+    const bool slot_row_selected = menu->selected_row == menu->first_row;
+
+    for (i32 slot = 0; slot < 3; ++slot) {
+        DrawGameState(slot_x[slot], y, slot_row_selected && menu->selected_column == slot, slot);
+
+        const i32 item = slot + 2;
+        menu->item_x[item] = slot_x[slot];
+        menu->item_y[item] = y;
+        menu->item_width[item] = text3d_width;
+        menu->item_height[item] = text3d_height * 2.0f;
+        menu->item_column[item] = slot;
+        menu->item_row[item] = 0;
+    }
 }
 
 void DrawShopPanel() {
@@ -513,13 +745,24 @@ void Draw3DObjectMtx(WORLDINFO_s *world, i32 object_index, numtx_s *mtx) {
             return;
         }
     }
-    u8 *object = static_cast<u8 *>(world->lev_objs) + object_index * 0x10;
-    if (object[0x0e] != 0) {
-        NuSpecialDrawAt(object, mtx);
+    LEVEL_OBJECT_RUNTIME &object = world->lev_objs[object_index];
+    if (object.active != 0) {
+        NuSpecialDrawAt(&object.special, mtx);
     }
 }
 
 void DrawGameObjects() {
+    const f32 saved_far_clip = global_camera.unknown_64;
+    const f32 object_far_clip = -999.0f;
+    if (object_far_clip <= global_camera.unknown_64) {
+        global_camera.unknown_64 = object_far_clip;
+    }
+
+    NuCameraSet(&global_camera);
+    DrawGameObjectsDraw(0);
+
+    global_camera.unknown_64 = saved_far_clip;
+    NuCameraSet(&global_camera);
 }
 
 void DrawPaintLights() {
@@ -586,7 +829,24 @@ void DrawBossHitPoints(GameObject_s *) {
 void DrawCameraTarget2(nuvec_s *) {
 }
 
-void DrawPanel3DObject(float, float, float, float, float, float, u16, u16, u16, nuhspecial_s *, i32, float) {
+void DrawPanel3DObject(float x, float y, float z, float scale_x, float scale_y, float scale_z, u16 rotate_x,
+                       u16 rotate_y, u16 rotate_z, nuhspecial_s *special, i32 rotate_order, float alpha) {
+    if (alpha <= 0.0f || special == NULL || NuSpecialExistsFn(special) == 0) {
+        return;
+    }
+    if (scale_x == 0.0f && scale_y == 0.0f && scale_z == 0.0f) {
+        return;
+    }
+
+    NUVEC scale = {scale_x / CameraZoom, scale_y / CameraZoom, scale_z / CameraZoom};
+    NUMTX matrix;
+    NuMtxSetScale(&matrix, &scale);
+    RotateGameMatrix(&matrix, rotate_order, rotate_x, rotate_y, rotate_z);
+    matrix.m30 = x * PANEL3DMULX;
+    matrix.m31 = y * PANEL3DMULY;
+    matrix.m32 = z;
+    NuMtxMulVU0(&matrix, &matrix, NuCameraGetMtx());
+    NuSpecialDrawAtAlpha(special, &matrix, alpha);
 }
 
 void DrawStatusMiniKit(float, float, float, float, float, i32, STATUSPACKET_s *, float) {
@@ -682,6 +942,50 @@ void DrawForceGlowSprite(nuvec_s *, float, i32, float, GameObject_s *) {
 }
 
 void DrawGameObjectsDraw(i32) {
+    EnableShadowMapRendering(0);
+
+    for (i32 index = 0; index < HIGHGAMEOBJECT; ++index) {
+        GameObject_s *object = &Obj[index];
+
+        if ((object->apiobj.field_0x1f4 & 0x800) != 0) {
+            if (object->field_0xcc0 != NULL && object->field_0x7a5 == 0x3b) {
+                object->apiobj.model_draw_result = object->field_0xcc0->apiobj.model_draw_result;
+            }
+            continue;
+        }
+
+        NUMTX *secondary_matrix = (object->field_0xefe & 2) != 0 ? &object->apiobj.field_0xf8 : NULL;
+        NUMTX *tertiary_matrix = object->field_0x1088 != 0 ? &object->apiobj.field_0x138 : NULL;
+        const i32 drawn = GameDrawCharacterModel(object->apiobj.character_model, &object->apiobj.anim_packet,
+                                                 &object->apiobj.field_0xb8, secondary_matrix, tertiary_matrix,
+                                                 &object->field_0x7f4, object, object->field_0x1054);
+
+        object->apiobj.model_draw_result = static_cast<u8>(drawn);
+        object->field_0xe24 =
+            static_cast<u8>((object->field_0xe24 & ~8) | ((drawcharactermodel_locatorsupdated & 1) << 3));
+
+        if (drawn != 0) {
+            DrawParaphernalia(object);
+        }
+
+        // The force-glow branch rejoins here after its level-character and
+        // character-variant visibility tests. Those structures are not typed
+        // yet; keep the ordinary original path intact while they are recovered.
+        if (object->field_0x10b8 != NULL) {
+            DrawSnakeBody(object);
+        }
+
+        object->apiobj.field_0x288 = 1;
+        if (object->apiobj.model_draw_result != 0) {
+            object->field_0xefe |= 4;
+        }
+
+        if (Paused == 0 && object->apiobj.character_data != NULL && object->apiobj.character_data->draw_fn != NULL) {
+            object->apiobj.character_data->draw_fn(object);
+        }
+    }
+
+    ResetShadowMapRendering();
 }
 
 void DrawPauseScreenWipe() {
@@ -758,9 +1062,26 @@ void DrawPanel3DObjectMtx(nuhspecial_s *, numtx_s *, float) {
 }
 
 void Draw_AUTOSAVEWARNING() {
+    const f32 scale = MENUTEXTSCALE * 0.8f;
+
+    if (memcard_drawasiconfn != NULL) {
+        memcard_drawasiconfn();
+    }
+
+    const char *message = apitxt_SAVING;
+    if (memcard_loadmessage_delay > 0.0f || memcard_loadresult_delay > 0.0f) {
+        message = apitxt_LOADING;
+    }
+
+    MenuSmartTextEx(const_cast<char *>(message), AUTOSAVEICONX - AUTOSAVEICONSIZE * 1.8f, AUTOSAVEICONY, 1.0f, scale,
+                    scale, scale, 8, MENUNORMALR, MENUNORMALG, MENUNORMALB, 1.2f, 1, NULL, 0, MenuA);
 }
 
 void Draw_NODATAAVAILABLE() {
+    char message[1024];
+    sprintf(message, apitxt_NODATAAVAILABLE, apiGameName);
+    MenuSmartTextEx(message, 0.0f, -0.4f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0, MENUNORMALR,
+                    MENUNORMALG, MENUNORMALB, 1.5f, 3, NULL, 0, MenuA);
 }
 
 void DrawInDoubleScoreZone(float) {
@@ -859,8 +1180,8 @@ static __used__ void SelectNextFog() {
 static __used__ void SelectPrevFog() {
 }
 
-static __used__ void PreWarmGeomsAndBakeVAOs(nudisplayscene_s *display_scene, nunativegscene_s *) {
-    NUDLDLISTSCENE *scene = reinterpret_cast<NUDLDLISTSCENE *>(display_scene);
+static __used__ void PreWarmGeomsAndBakeVAOs(nudisplayscene_s *raw_scene, nunativegscene_s *) {
+    NUDLDLISTSCENE *scene = reinterpret_cast<NUDLDLISTSCENE *>(raw_scene);
     for (i32 clip_index = 0; clip_index < scene->nclip_objects; ++clip_index) {
         u8 *clip = reinterpret_cast<u8 *>(&scene->clip_objects[clip_index]);
         u32 nitems = *reinterpret_cast<u32 *>(clip);
@@ -939,7 +1260,7 @@ extern "C" void NuGScnFixupPS(NUGSCN *scene) {
         NuMtlUpdate(scene->mtls[i]);
     }
     NuPortalMaxDepth(scene, scene->max_portals);
-    PreWarmGeomsAndBakeVAOs(scene->display_list, scene->field437_0x1d0);
+    PreWarmGeomsAndBakeVAOs(reinterpret_cast<nudisplayscene_s *>(scene->display_list), scene->field437_0x1d0);
 }
 
 #include "legoapi/legoapi_types.h"

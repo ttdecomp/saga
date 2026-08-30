@@ -24,7 +24,7 @@ CUTSYS *CS_cutsys = NULL;
 WORLDINFO *CS_worldinfo = NULL;
 f32 CutSceneScale = 1.0f;
 i32 CUTCAM = 0;
-i32 CharScene_Area = 0;
+CHARSCENE_s *CharScene_Area = NULL;
 
 __attribute__((noinline)) static void CutScene_Configure_Load(CUTINFO *cut, char *name, VARIPTR *buf,
                                                               VARIPTR *buf_end) {
@@ -169,11 +169,11 @@ void CharScenes_LevelLoad(WORLDINFO *world) {
     }
 
     for (i32 i = 0; i < CHARCOUNT; i++) {
-        void **entry = (void **)(*(i32 *)&world->minikit.field_0x18 + i * 0x10);
+        void **entry = (void **)(*(i32 *)&world->minikit.field_0x18 + i * sizeof(CHARSCENE_s));
         *entry = NULL;
 
         // Check if we should load this character scene
-        if ((CharScene_Area == 0 || *(i32 *)(CharScene_Area + i * 0x10) == 0) && (CDataList[i].flags & 1) != 0 &&
+        if ((CharScene_Area == NULL || CharScene_Area[i].scene == NULL) && (CDataList[i].flags & 1) != 0 &&
             world->cutscene_sys != NULL) {
             // Check if this character is in a cutscene
             u32 *cutscene_flags = *(u32 **)((char *)world->cutscene_sys + 8);

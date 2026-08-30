@@ -3,12 +3,19 @@
 #include "gameframework/saveload.h"
 #include "globals.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/characters/core/players.h"
+#include "legoapi/props/doors/door.h"
 #include "legoapi/world/area.h"
 #include "legoapi/core/config/cheat.h"
 #include "legoapi/items/base/collection.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/levels/episode.h"
 #include "nu2api/nucore/nustring.h"
+#include "nu2api/nucore/nuvideo.h"
+
+extern "C" i32 NuIOS_IsSmallScreen(void);
+f32 GameSetSoundVolume(OPTIONSSAVE_s *);
+f32 GameSetMusicVolume(OPTIONSSAVE_s *);
 
 u16 MakeSaveHash(void) {
     return Game.completion;
@@ -21,7 +28,7 @@ void DrawAutoSaveIcon(void) {
     return;
 }
 
-char SuperOptions[24] = {0};
+SUPEROPTIONS_s SuperOptions = {};
 static CUTSCENESYS CutSceneSys_LSW = {0x5b, 0x5c, 0xe7, 2};
 void CutScenes_InitSystem(CUTSCENESYS *);
 
@@ -41,8 +48,48 @@ void InitGameBeforeConfig(void) {
 
     saveloadInit(&permbuffer_base, superbuffer_end, 0x7e58, prodcode, iconname, unicodename, 4);
     original_permbuffer_base = permbuffer_base;
-    SaveSystemInitialise(3, (void *)MakeSaveHash, &Game, sizeof(GAMESAVE_s), 1, (void *)DrawAutoSaveIcon, SuperOptions,
+    SaveSystemInitialise(3, (void *)MakeSaveHash, &Game, sizeof(GAMESAVE_s), 1, DrawAutoSaveIcon, &SuperOptions,
                          sizeof(SuperOptions));
+
+    // Original option defaults.  OPTIONSSAVE occupies Game[0x4..0x10]; the
+    // final brightness byte at 0xc was previously misplaced outside the type.
+    Game.options_save.field0_0x0 = 1;
+    Game.options_save.field1_0x1 = 1;
+    Game.options_save.field2_0x2 = 0;
+    Game.options_save.field3_0x3 = 10;
+    Game.options_save.field4_0x4 = 10;
+    Game.options_save.field5_0x5 = 10;
+    Game.options_save.field6_0x6 = 1;
+    Game.options_save.field7_0x7 = 0;
+    Game.options_save.field8_0x8 = 0;
+    const i32 aspect = NuVideoGetAspect();
+    Game.options_save.field11_0xb = aspect != 0 && aspect != 3;
+    Game.options_save.field12_0xc = 10;
+
+    // Persistent touch/control options are initialized before any save data is
+    // loaded.  In particular, byte 0x14 is the original music-enable gate.
+    SuperOptions.field0_0x0 = -1;
+    SuperOptions.touch_controls = 1;
+    SuperOptions.field2_0x3 = 1;
+    if (NuIOS_IsSmallScreen() == 0) {
+        SuperOptions.left_control_x = -0.72f;
+        SuperOptions.left_control_y = -0.65f;
+        SuperOptions.right_control_x = 0.77f;
+        SuperOptions.right_control_y = -0.62f;
+    } else {
+        SuperOptions.left_control_x = -0.62f;
+        SuperOptions.left_control_y = -0.49f;
+        SuperOptions.right_control_x = 0.62f;
+        SuperOptions.right_control_y = -0.49f;
+    }
+    SuperOptions.music_enabled = 1;
+    SuperOptions.field8_0x15 = -1;
+
+    GameSetSoundVolume(&Game.options_save);
+    GameSetMusicVolume(&Game.options_save);
+
+    Game_AreaSave = reinterpret_cast<AREASAVE_s *>(reinterpret_cast<u8 *>(&Game) + 0x782c);
+    Game_CharacterSave = reinterpret_cast<u8 *>(&Game) + 0x7d04;
 }
 
 void InitGameAfterConfig(void) {
@@ -247,7 +294,7 @@ void InitGameAfterConfig(void) {
     //  APIObjectRegisterAnimRedirect(RedirectAnim, AnimRedirectList_LSW, "chars\\commonanims");
     //  SurfaceMaskOff(&TERRAINMASK_NONWEAPON);
     //  SurfaceMaskOn(&TERRAINMASK_NONDROID);
-    //  Hub_UsePlayerList = 1;
+    Hub_UsePlayerList = 1;
     //  BoltSys_Init((BOLTSYS *)BoltSys_LSW);
     //  GameAudio_Init((GAMEAUDIO *)GameAudio_LSW);
     //  KITPOSX = 0;
@@ -439,8 +486,8 @@ void InitGameAfterConfig(void) {
     //  LEGOOBJ_ICON_WEIRDO = 0xa3;
     //  LEGOOBJ_CHARKIT = 0xcf;
     //  LEGOOBJ_MINIKIT = 0xce;
-    //  LEGOSPL_SPLIT = 5;
-    //  LEGOSPL_START = 0;
+    LEGOSPL_SPLIT = 5;
+    LEGOSPL_START = 0;
     //  LEGOGDEB_SPLASH = 0xd;
     //  GizBuilditGDeb._0_2_ = 0x4c;
     //  GizBuilditGDeb._2_2_ = 0x4d;

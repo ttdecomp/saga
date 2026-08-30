@@ -1,10 +1,13 @@
 #include "legoapi/items/objects/gameobjects.h"
 #include "decomp.h"
+#include "gameapi/gui/apimenu.h"
 #include "globals.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
 #include "legoapi/characters/motion.h"
+#include "legoapi/characters/core/players.h"
+#include "legoapi/world/area.h"
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/core/input/timer.h"
 #include "nu2api/numath/nufloat.h"
@@ -31,6 +34,9 @@ void GameShadow(GameObject_s *, nuvec_s *, float, i32) {
 extern f32 MainRenderTime;
 extern f32 MainRenderTargetTime;
 extern i32 Paused;
+extern f32 PauseMenus_X;
+extern i32 PauseMenus_Align;
+extern i32 CutScenePlayer_Active();
 
 void GameTiming(WORLDINFO_s *, float *game_time) {
     if (Paused == 0) {
@@ -119,13 +125,19 @@ void GameAI_TotalScore() {
 void GameAudio_PlaySfx(i32, nuvec_s *, i32, i32) {
 }
 
-void GameDrawMenuEntry(MENU_s *, char *) {
+void GameDrawMenuEntry(MENU_s *menu, char *text) {
+    if (Paused != 0) {
+        dme_align = PauseMenus_Align;
+        menu->draw_x = PauseMenus_X;
+    }
+    DrawMenuEntryEx(menu, text, static_cast<u8>(MenuA));
 }
 
 void GameAnimSys_Update(GAMEANIMSYS_s *) {
 }
 
-void GameAudio_GetSfxId(i32) {
+i32 GameAudio_GetSfxId(i32) {
+    return -1;
 }
 
 void GameObjIsCableTied(GameObject_s *) {
@@ -141,12 +153,11 @@ f32 GameGetMusicVolume(OPTIONSSAVE_s *options) {
 }
 
 // Original: applies GameGetMusicVolume, zeroing it while the title logos are
-// up (SuperOptions[20] == 0 on the titles level); the title menu code restores
+// up (SuperOptions.music_enabled == 0 on the titles level); the title menu restores
 // the user's volume via GameGetMusicVolume once the menu phase starts.
 f32 GameSetMusicVolume(OPTIONSSAVE_s *options) {
-    extern char SuperOptions[24];
     f32 volume = GameGetMusicVolume(options);
-    if (SuperOptions[20] == 0 && WORLD->current_level == TITLES_LDATA) {
+    if (SuperOptions.music_enabled == 0 && WORLD->current_level == TITLES_LDATA) {
         volume = 0.0f;
     }
     legoSetMusicVolume(volume);
@@ -186,8 +197,23 @@ void Game_GotAllGoldBricks() {
 void GameAPIOBJECTFromObjID(unsigned char) {
 }
 
-void GameDrawCharacterModel(CHARACTERMODEL_s *, ANIMPACKET_s *, numtx_s *, numtx_s *, numtx_s *, numtx_s *,
-                            GameObject_s *, u32) {
+i32 GameDrawCharacterModel(CHARACTERMODEL_s *model, ANIMPACKET_s *animation, NUMTX *matrix, NUMTX *secondary_matrix,
+                           NUMTX *reflection_matrix, NUMTX *auxiliary_matrix, GameObject_s *object, u32 flags) {
+    if (model == NULL) {
+        return 0;
+    }
+
+    drawcharactermodel_keepmergeaction = game_keepmergeaction;
+    MakeLayerList = GCDataList[model->model_id].make_layer_list;
+
+    CHARACTERDATA *character_data =
+        object != NULL ? object->apiobj.character_data : &apicharsys->char_data[model->model_id];
+
+    // The original reserves a fixed 256-matrix evaluation array in this
+    // wrapper before calling APIDrawCharacterModel.
+    NUMTX output_matrices[256];
+    return APIDrawCharacterModel(model, character_data, animation, matrix, secondary_matrix, reflection_matrix, 0,
+                                 auxiliary_matrix, object, flags, NULL, 0, WORLD, FRAMETIME, output_matrices, 0, NULL);
 }
 
 void GameObjectToCameraCode(GameObject_s *) {
@@ -202,7 +228,13 @@ void GameAudio_GetPlrSfxBits(void *) {
 void GameBlowUpBlownUpFn_LSW(GIZMOBLOWUP_s *) {
 }
 
-void GameLoadCharacterModels(APICHARACTERMODELLIST_s *, i32, variptr_u *, variptr_u *, i32, i32) {
+void GameLoadCharacterModels(APICHARACTERMODELLIST_s *list, i32 append, VARIPTR *buf, VARIPTR *buf_end, i32 area_models,
+                             i32 area) {
+    if (area_models != 0 && CutScenePlayer_Active() != 0 && area != -1 && &ADataList[area] != HUB_ADATA) {
+        area_models = 0;
+    }
+
+    APILoadCharacterModels(list, append, buf, *buf_end, area_models);
 }
 
 void Game_100PercentComplete() {
@@ -654,7 +686,50 @@ void PowerUp_AddPart(nuvec_s *, nuvec_s *, float, float) {
 void ScaleGameObject(GameObject_s *) {
 }
 
-void RemoveGameObject(GameObject_s *, i32) {
+void DestroySnakeBody(GameObject_s *obj);
+
+void RemoveGameObject(GameObject_s *obj, i32) {
+    if (obj == NULL) {
+        return;
+    }
+
+    obj->KillTasks();
+    obj->ClearAddons();
+    obj->ClearMechObjectInterface();
+
+    const u32 low_mask = ~obj->apiobj.field_0x1e4;
+    const u32 high_mask = ~obj->apiobj.field_0x1e8;
+    const u8 index = obj->apiobj.field_0x289;
+    const u32 index_low_mask = index < 32 ? ~(1u << index) : ~0u;
+    const u32 index_high_mask = index < 32 ? ~0u : ~(1u << (index - 32));
+    for (i32 i = 0; i < HIGHGAMEOBJECT; i++) {
+        Obj[i].apiobj.field_0x1ec &= low_mask;
+        Obj[i].apiobj.field_0x1f0 &= high_mask;
+        Obj[i].apiobj.field387_0x2a0 &= index_low_mask;
+        Obj[i].apiobj.field388_0x2a4 &= index_high_mask;
+        Obj[i].field_0xebc &= index_low_mask;
+        Obj[i].field_0xec0 &= index_high_mask;
+        Obj[i].field_0xec4 &= index_low_mask;
+        Obj[i].field_0xec8 &= index_high_mask;
+    }
+
+    if (obj->pad_gamepad != NULL) {
+        obj->pad_gamepad->allocated_5a &= ~1u;
+    }
+    DestroySnakeBody(obj);
+    APIObjectDestroy(WORLD->api_object_sys, &obj->apiobj);
+
+    HIGHGAMEOBJECT = 0;
+    for (i32 i = 0; i < 64; i++) {
+        if ((Obj[i].apiobj.field_0x1f8 & 1) != 0) {
+            HIGHGAMEOBJECT = i + 1;
+        }
+    }
+    for (i32 i = 0; i < 8; i++) {
+        if (Player[i] == obj) {
+            Player[i] = NULL;
+        }
+    }
 }
 
 void TargetGameObject(GameObject_s *, nuvec_s *, nuvec_s *, float, float, u32, i32, i32, i32) {

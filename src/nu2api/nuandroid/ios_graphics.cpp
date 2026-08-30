@@ -75,7 +75,7 @@ i32 NuIOS_ShouldUseMSAA(void) {
 // Filesystem shims — original iOS used NSBundle / Documents.
 // ---------------------------------------------------------------------------
 
-SAGA_NOMATCH char *NuIOS_GetDocumentsPath(void) {
+SAGA_NOMATCH __attribute__((weak)) char *NuIOS_GetDocumentsPath(void) {
     return "res/";
 }
 
@@ -88,7 +88,7 @@ char *NuIOS_GetAppBundlePath(void) {
     return s_bundlePath;
 }
 
-u32 NuIOS_YieldThread(void) {
+u32 __attribute__((weak)) NuIOS_YieldThread(void) {
     UNIMPLEMENTED();
     return 0;
 }

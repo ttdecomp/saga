@@ -9,7 +9,8 @@ void edanimSoundPlace(i32, nuvec_s *) {
 void edanimSoundCreate(nuvec_s *) {
 }
 
-void GameSetSoundVolume(OPTIONSSAVE_s *) {
+f32 GameSetSoundVolume(OPTIONSSAVE_s *) {
+    return 0.0f;
 }
 
 NuSoundListener *NuSoundSystem::GetNearestRealListener(NuEList<NuSoundListener, DefaultElist> const &, VuVec const &) {

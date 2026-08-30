@@ -129,7 +129,7 @@ extern "C" void NuTexAnimProgSysInit(void) {
 extern "C" void NuTexAnimProgWrite(void) {
 }
 
-extern "C" void NuTexAnimRemoveList(void) {
+extern "C" void NuTexAnimRemoveList(void *) {
 }
 
 extern "C" void NuTexAnimRestart(void) {

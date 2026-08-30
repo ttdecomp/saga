@@ -7,7 +7,13 @@
 #include "nu2api/nu3d/nutex.h"
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/characters/core/character.h"
+#include "legoapi/characters/core/players.h"
+#include "legoapi/items/objects/gameobjects.h"
 #include "gameapi/edtools/edstubs.h"
+#include "nu2api/nu3d/nuspecial.h"
+
+#include <string.h>
+#include <stdio.h>
 
 // LoadPerm1 is one of the few game-level entry points which wires together
 // otherwise C-linkage engine subsystems.  Keep these declarations local: the
@@ -66,6 +72,13 @@ struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
 
+void CharConfig_ConfigureAll(i32 permanent, nufpcomjmp_s *game_keywords);
+void ExtraCharacterFixUpAfterConfig();
+extern i32 CHARPAK;
+extern i32 apiloadcharactermodels_nopakfile;
+
+APICHARACTERMODELLIST_s PermModelList[] = {{-1, 0}};
+
 void LSW_SetIndy(i32) {
 }
 
@@ -84,10 +97,41 @@ void fullcodename(i32) {
 void CharScene_Draw(WORLDINFO_s *, i32, numtx_s *, numtx_s *) {
 }
 
-void CharScenes_Init(variptr_u *, variptr_u *) {
+void CharScenes_Init(variptr_u *buf, variptr_u *) {
+    buf->addr = ALIGN(buf->addr, 4);
+    CharScene_Area = reinterpret_cast<CHARSCENE_s *>(buf->void_ptr);
+    buf->addr += static_cast<usize>(CHARCOUNT) * sizeof(*CharScene_Area);
+    memset(CharScene_Area, 0, static_cast<usize>(CHARCOUNT) * sizeof(*CharScene_Area));
 }
 
-void FixUpCharacters(CHARFIXUP *) {
+extern i16 tUNKNOWN;
+void Move_CHARACTER(GameObject_s *);
+void Animate_CHARACTER(GameObject_s *);
+
+void FixUpCharacters(CHARFIXUP *fixup) {
+    for (i32 i = 0; i < CHARCOUNT; ++i) {
+        GCDataList[i] = GCDATA_DEFAULT;
+
+        CHARACTERDATA &character = CDataList[i];
+        if (character.field0_0x0 == -1) {
+            character.field0_0x0 = tUNKNOWN;
+        }
+        if (character.move_fn == NULL) {
+            character.move_fn = Move_CHARACTER;
+        }
+        if (character.animate_fn == NULL) {
+            character.animate_fn = Animate_CHARACTER;
+        }
+    }
+
+    if (fixup != NULL) {
+        while (fixup->name != NULL) {
+            if (fixup->id != NULL) {
+                *fixup->id = (i16)CharIDFromName(fixup->name);
+            }
+            ++fixup;
+        }
+    }
 }
 
 void PostAnimate_FETT(GameObject_s *) {
@@ -97,9 +141,6 @@ void ActivateCharacter(char *, nuvec_s *, i32) {
 }
 
 void FinishWeirdoNames(i32) {
-}
-
-void LoadAreaCharacters() {
 }
 
 void NewPlayerCharacter(GameObject_s *, i32, i32, i32) {
@@ -112,9 +153,42 @@ void UpdateCharacterIDs() {
 }
 
 void CharScenes_AreaDump() {
+    if (CharScene_Area == NULL) {
+        return;
+    }
+    for (i32 i = 0; i < CHARCOUNT; ++i) {
+        CHARSCENE_s &entry = CharScene_Area[i];
+        if (entry.scene != NULL) {
+            NuGScnRemove(entry.scene);
+        }
+        entry.scene = NULL;
+    }
 }
 
-void CharScenes_AreaLoad(APICHARACTERMODELLIST_s *, variptr_u *, variptr_u) {
+void CharScenes_AreaLoad(APICHARACTERMODELLIST_s *list, variptr_u *buf, variptr_u buf_end) {
+    if (CharScene_Area == NULL || apicharsys->loaded_model_count == 0) {
+        return;
+    }
+
+    for (i32 i = 0; i < apicharsys->loaded_model_count; ++i) {
+        const i32 model_id = apicharsys->models[i].model_id;
+        CHARSCENE_s &entry = CharScene_Area[model_id];
+        if (entry.scene != NULL || (CDataList[model_id].flags & 1) == 0) {
+            continue;
+        }
+
+        i32 list_index;
+        if (InModelList(list, model_id, &list_index) == 0 || list[list_index].count == 0) {
+            continue;
+        }
+
+        char path[128];
+        sprintf(path, "chars\\%s\\%s.gsc", CDataList[model_id].dir, CDataList[model_id].file);
+        entry.scene = NuGScnRead(buf, buf_end, path);
+        if (entry.scene != NULL) {
+            NuSpecialFind(entry.scene, &entry.special_scene, CDataList[model_id].file, 1);
+        }
+    }
 }
 
 void DeactivateCharacter(char *) {
@@ -180,7 +254,15 @@ void CollectCharactersOff_Draw(STATUS_STAGE_s *, STATUSPACKET_s *, i32) {
 void CollectCharactersOff_Skip(STATUS_STAGE_s *, STATUSPACKET_s *) {
 }
 
-void SetGameObjectCharacterData(GameObject_s *) {
+void ScaleGameObject(GameObject_s *obj);
+
+void SetGameObjectCharacterData(GameObject_s *obj) {
+    CHARACTERDATA *data = obj->apiobj.character_data;
+    obj->apiobj.field_0xa8 = data->field17_0x3c;
+    obj->field_0x1008 = data->field14_0x30;
+    obj->field_0xffc = data->field15_0x34;
+    obj->field_0x1000 = data->field16_0x38;
+    ScaleGameObject(obj);
 }
 
 void CollectCharactersOff_Update(STATUS_STAGE_s *, STATUSPACKET_s *, float) {
@@ -278,6 +360,10 @@ void LoadPerm1() {
 }
 
 void LoadPerm2() {
+    CharConfig_ConfigureAll(1, NULL);
+    ExtraCharacterFixUpAfterConfig();
+    apiloadcharactermodels_nopakfile = CHARPAK == 0;
+    APILoadCharacterModels(PermModelList, 1, &permbuffer_ptr, permbuffer_end, 1);
 }
 
 void MapToGrid(nuvec_s *, nuvec_s *, i32 *, i32 *, nuvec_s *, nutexmanager_s *) {

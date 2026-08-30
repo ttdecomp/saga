@@ -1,5 +1,15 @@
 #include "MechInputTouch_types.h"
 
+i32 MechInputTouchSystem::s_baseControlMode = 1;
+i32 MechInputTouchSystem::s_actualTouchMode = 2;
+
+MechInputTouchSystem::~MechInputTouchSystem() {
+}
+
+char const *MechInputTouchSystem::GetName() {
+    return "MechInputTouchSystem";
+}
+
 void MechAutoJumpGetBest(JumpTriggerPacket const &, i32) {
 }
 

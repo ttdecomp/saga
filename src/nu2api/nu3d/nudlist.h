@@ -1,6 +1,7 @@
 #pragma once
 
 #include "nu2api/nucore/common.h"
+#include "nu2api/numath/nuvec.h"
 
 // Forward declarations shared with sibling headers.
 struct numtl_s;
@@ -86,9 +87,20 @@ extern "C" {
     // Per-display-list clip object entry (12-byte stride; indices pointer at +0x8,
     // read by NuDisplayListSwapBuffersEndFrame @0x2eaef0).
     typedef struct nuclipobject_s {
-        u8 unknown_0[8]; // 0x00
-        i32 *indices;    // 0x08 item indices affected by this object
+        i32 nmaterials;    // 0x00 number of material ids touched by this object
+        i32 *material_ids; // 0x04 material ids whose used bits must be set
+        i32 *indices;      // 0x08 display-list item indices affected by this object
     } NUCLIPOBJECT;
+
+    // Per-object axis-aligned clipping bounds.  The w components are retained
+    // because this is the exact 0x20-byte record stored in the scene, although
+    // the camera clip test consumes only xyz.
+    typedef struct nuclipbounds_s {
+        NUVEC min; // 0x00
+        f32 min_w; // 0x0c
+        NUVEC max; // 0x10
+        f32 max_w; // 0x1c
+    } NUCLIPBOUNDS;
 
     // ---------------------------------------------------------------------------
     // Display-list scene record.
@@ -111,10 +123,11 @@ extern "C" {
         void *field_1c;                          // 0x1c
         void *field_20;                          // 0x20
         void *field_24;                          // 0x24
-        f32 *lod_ranges;                         // 0x28 zero-terminated ranges per instance
-        u32 *lod_clip_masks;                     // 0x2c clip mask selected for each LOD
+        f32 *lod_ranges;                         // 0x28 zero-terminated LOD ranges per instance
+        f32 *far_clip_ranges;                    // 0x2c per-instance camera far-clip override
         u8 *clip_used[2];                        // 0x30 double-buffered clip word bitmaps
-        u8 pad_38[0x10];                         // 0x38..0x47 unnamed in original DB
+        u8 pad_38[0x0c];                         // 0x38..0x43 unnamed in original DB
+        NUCLIPBOUNDS *clip_bounds;               // 0x44 per-instance min/max bounds
         char *visibility_flags;                  // 0x48
         u32 nmtls;                               // 0x4c
         NUMTL **mtls;                            // 0x50
@@ -149,6 +162,7 @@ extern "C" {
     static_assert(sizeof(NUDLDLISTSCENE) == 0x90, "dlist scene size");
     static_assert(offsetof(NUDLDLISTSCENE, clip_used) == 0x30, "scene.clip_used");
     static_assert(offsetof(NUDLDLISTSCENE, clip_counts) == 0x18, "scene.clip_counts");
+    static_assert(offsetof(NUDLDLISTSCENE, clip_bounds) == 0x44, "scene.clip_bounds");
     static_assert(offsetof(NUDLDLISTSCENE, visibility_flags) == 0x48, "scene.visibility_flags");
     static_assert(offsetof(NUDLDLISTSCENE, nmtls) == 0x4c, "scene.nmtls");
     static_assert(offsetof(NUDLDLISTSCENE, mtls) == 0x50, "scene.mtls");
@@ -257,6 +271,8 @@ extern "C" {
     void NuDisplayListSetItemTable(i32 which);
     void NuDisplaySceneAdd(NUDLDLISTSCENE *scene);
     void NuDisplaySceneAddPS(NUDLDLISTSCENE *scene);
+    void NuDisplaySceneDestroy(NUDLDLISTSCENE *scene);
+    void NuDisplaySceneDestroyPS(NUDLDLISTSCENE *scene);
     static void DisplayListLinkDynamicMtls(void);
     void DisplayListSwapBuffersPS(void);
     void DisplayListSetAlphaPS(nudisplaylistitem_s *prev_item, nudisplaylistitem_s *item, f32 alpha);

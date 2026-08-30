@@ -64,6 +64,8 @@ extern "C" {
 
     i32 NuFilePakGetItem(void *hdr, char *item_name);
     i32 NuFilePakGetItemInfo(void *hdr, i32 item_handle, void **addr, i32 *size);
+    i32 NuFilePakCondense(void *hdr);
+    i32 NuFilePakSetItemRequired(void *hdr, i32 item_handle, i32 required);
 #ifdef __cplusplus
 }
 #endif

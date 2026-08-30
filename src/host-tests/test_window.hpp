@@ -2,6 +2,7 @@
 
 #include <SDL3/SDL.h>
 
+#include <atomic>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -11,6 +12,12 @@
 #include "decomp.h"
 #include "globals.h"
 #include "MechInputTouch/MechInputTouch_types.h"
+#include "gameapi/gui/apimenu.h"
+#include "gameframework/saveload.h"
+#include "host-tests/input/host_input.h"
+#include "legoapi/characters/core/players.h"
+#include "legoapi/legoapi_types.h"
+#include "legoapi/world/level.h"
 #include "nu2api/nu3d/NuRenderDevice.h"
 #include "nu2api/nu3d/nuscreen.hpp"
 #include "nu2api/nufile/nufile.h"
@@ -18,6 +25,20 @@
 
 extern "C" i32 NuMain(i32 argc, char **argv);
 extern i32 HostReadbackPixels(u32 max_w, u32 max_h, u8 *rgba);
+extern i32 GetMenuID();
+extern i32 memcard_loadneeded;
+extern i32 memcard_loadstarted;
+extern i32 memcard_loadfailed;
+extern i32 memcard_loadcorrupt;
+extern i32 waiting_for_level;
+extern i32 waiting_for_character;
+extern i32 waiting_for_new_level;
+extern i32 abort_load;
+extern i32 reset_load;
+extern i32 CharacterDataLoad;
+extern FadeSystem FadeSys;
+
+bool g_hostOffscreenRendering = false;
 
 namespace {
 #ifdef _WIN32
@@ -31,6 +52,39 @@ namespace {
     constexpr i32 host_poll_interval_ms = 16;
     constexpr i32 host_timeout_ms = 90000;
     constexpr i32 host_tail_frames = 30;
+    // Leave enough time for the original asynchronous load result and its
+    // one-second menu result delay to complete after the final scripted tap.
+    constexpr Uint64 scripted_input_tail_ms = 8000;
+
+    constexpr Uint64 scripted_title_touch_ms = 18000;
+    constexpr Uint64 scripted_menu_settle_ms = 500;
+
+    enum class ScriptedInputStage {
+        title,
+        new_or_load,
+        select_controls,
+        load_wait,
+        save_slot,
+        overwrite_confirm,
+        overwrite_accept,
+        complete,
+    };
+
+    static void touch_menu_item(i32 menu_id, i32 row, i32 column) {
+        const MENU &menu = GameMenu[GameMenuLevel];
+        if (menu_id == 1) {
+            const f32 centre_offset = static_cast<f32>(menu.last_row - menu.first_row) * MENUDY * -0.5f;
+            const f32 first_y = -0.5f - centre_offset;
+            const f32 y = first_y + static_cast<f32>(row) * MENUDY;
+            const i32 screen_y = static_cast<i32>((1.0f - y) * 0.5f * host_window_height);
+            HostInputTouch(host_window_width / 2, screen_y, host_window_width, host_window_height);
+            return;
+        }
+
+        const f32 x = -0.75f + (static_cast<f32>(column - menu.first_column) + 0.5f) * 0.5f;
+        const i32 screen_x = static_cast<i32>((x + 1.0f) * 0.5f * host_window_width);
+        HostInputTouch(screen_x, host_window_height / 2, host_window_width, host_window_height);
+    }
 
     struct PixelCounts {
         u32 red = 0;
@@ -91,8 +145,11 @@ namespace {
         return write_ppm(filename, pixels.data(), width, height);
     }
 
-    static void sdl_init() {
+    static void sdl_init(bool offscreen, bool mute) {
         SDL_SetHint(SDL_HINT_VIDEO_DRIVER, host_video_driver);
+        if (mute) {
+            SDL_SetHint(SDL_HINT_AUDIO_DRIVER, "dummy");
+        }
 
         if (!SDL_Init(SDL_INIT_VIDEO)) {
             LOG_ERR("SDL_Init(VIDEO) failed: %s", SDL_GetError());
@@ -100,7 +157,9 @@ namespace {
         }
         SDL_InitSubSystem(SDL_INIT_AUDIO);
 
-        SDL_Window *window = SDL_CreateWindow("saga", host_window_width, host_window_height, 0);
+        const SDL_WindowFlags window_flags =
+            offscreen ? static_cast<SDL_WindowFlags>(SDL_WINDOW_HIDDEN | SDL_WINDOW_NOT_FOCUSABLE) : 0;
+        SDL_Window *window = SDL_CreateWindow("saga", host_window_width, host_window_height, window_flags);
         if (window == nullptr) {
             LOG_ERR("SDL_CreateWindow failed: %s", SDL_GetError());
             return;
@@ -121,15 +180,26 @@ namespace {
     }
 
     static SDL_Thread *host_numain_thread = nullptr;
-    static i32 host_numain_result = 0;
-    static volatile bool host_numain_done = false;
+    static std::atomic<i32> host_numain_result{0};
+    static std::atomic<bool> host_numain_done{false};
+
+    static i32 host_menu_id() {
+        // GetMenuID is an original game helper and assumes the menu system has
+        // already been initialized. The host thread starts polling before
+        // NuMain reaches APIInitMenu, so do that host-only lifetime check here.
+        if (GameMenuLevel < 0 || GameMenuLevel >= 10) {
+            return -1;
+        }
+        return GetMenuID();
+    }
 
     static int SDLCALL numain_thread_main(void *arg) {
         (void)arg;
         char *argv[] = {const_cast<char *>("saga"), nullptr};
-        host_numain_result = NuMain(1, argv);
-        host_numain_done = true;
-        return host_numain_result;
+        const i32 result = NuMain(1, argv);
+        host_numain_result.store(result, std::memory_order_relaxed);
+        host_numain_done.store(true, std::memory_order_release);
+        return result;
     }
 
 } // namespace
@@ -138,13 +208,36 @@ inline i32 test_window(i32 argc, char **argv) {
     LOG_INFO("test_window(argc=%d, argv=%p)", argc, argv);
 
     bool capture_enabled = false;
+    bool scripted_input_enabled = false;
+    bool scripted_load_enabled = false;
+    bool offscreen_enabled = false;
+    bool mute_enabled = false;
+    Uint64 scripted_tail_ms = scripted_input_tail_ms;
+    Uint64 timeout_ms = host_timeout_ms;
     for (i32 i = 1; i < argc; ++i) {
         if (strcmp(argv[i], "--capture") == 0) {
             capture_enabled = true;
+        } else if (strcmp(argv[i], "--script-input") == 0) {
+            scripted_input_enabled = true;
+        } else if (strcmp(argv[i], "--script-load") == 0) {
+            scripted_input_enabled = true;
+            scripted_load_enabled = true;
+        } else if (strcmp(argv[i], "--offscreen") == 0) {
+            offscreen_enabled = true;
+        } else if (strcmp(argv[i], "--mute") == 0) {
+            mute_enabled = true;
+        } else if (strcmp(argv[i], "--script-tail-ms") == 0 && i + 1 < argc) {
+            scripted_tail_ms = strtoull(argv[++i], nullptr, 10);
+        } else if (strcmp(argv[i], "--timeout-ms") == 0 && i + 1 < argc) {
+            timeout_ms = strtoull(argv[++i], nullptr, 10);
         }
     }
 
-    sdl_init();
+    g_hostOffscreenRendering = offscreen_enabled;
+    sdl_init(offscreen_enabled, mute_enabled);
+    if (!SDL_CreateDirectory(".work/host-documents")) {
+        LOG_ERR("failed to create host documents directory: %s", SDL_GetError());
+    }
 
     void *buffer = malloc(0x1000000);
     VARIPTR ptr = VARIPTR{.void_ptr = buffer};
@@ -160,8 +253,16 @@ inline i32 test_window(i32 argc, char **argv) {
 
     NuPlatform::Create();
     NuPlatform::Get()->SetCurrentPlatform(ANDROID_PVRTC_PLATFORM);
+    HostInputReset();
 
+    host_numain_result.store(0, std::memory_order_relaxed);
+    host_numain_done.store(false, std::memory_order_relaxed);
     host_numain_thread = SDL_CreateThread(numain_thread_main, "numain", nullptr);
+    if (host_numain_thread == nullptr) {
+        LOG_ERR("failed to create NuMain thread: %s", SDL_GetError());
+        free(buffer);
+        return 1;
+    }
 
     const Uint64 start_ticks = SDL_GetTicks();
     i32 frame_count = 0;
@@ -172,6 +273,10 @@ inline i32 test_window(i32 argc, char **argv) {
     Uint64 next_readback_ticks = 0;
     bool have_hash = false;
     bool image_changing = false;
+    ScriptedInputStage scripted_stage = ScriptedInputStage::title;
+    Uint64 scripted_stage_ticks = 0;
+    i32 scripted_last_menu = -2;
+    Uint64 scripted_menu_since = 0;
     std::vector<u8> pixels;
     i32 capture_width = 0;
     i32 capture_height = 0;
@@ -180,22 +285,39 @@ inline i32 test_window(i32 argc, char **argv) {
     while (!quit_requested) {
         SDL_Event event{};
         while (SDL_PollEvent(&event)) {
+            if (offscreen_enabled) {
+                continue;
+            }
             if (event.type == SDL_EVENT_QUIT) {
                 quit_requested = true;
-            } else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN || event.type == SDL_EVENT_FINGER_DOWN ||
-                       (event.type == SDL_EVENT_KEY_DOWN &&
-                        (event.key.key == SDLK_RETURN || event.key.key == SDLK_SPACE))) {
-                // Android reports a newly pressed title/menu touch through
-                // this per-frame latch. Let a host click, tap, Enter, or Space
-                // exercise the same original menu-update path.
-                MechInputTouchMenuController::AnyTouchesThisFrame = 1;
+            } else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+                HostInputTouch(static_cast<i32>(event.button.x), static_cast<i32>(event.button.y), host_window_width,
+                               host_window_height);
+            } else if (event.type == SDL_EVENT_FINGER_DOWN) {
+                HostInputTouch(static_cast<i32>(event.tfinger.x * host_window_width),
+                               static_cast<i32>(event.tfinger.y * host_window_height), host_window_width,
+                               host_window_height);
+            } else if (event.type == SDL_EVENT_KEY_DOWN) {
+                if (event.key.key == SDLK_RETURN || event.key.key == SDLK_SPACE) {
+                    HostInputTap(host_window_width / 2, host_window_height / 2, GAMEPAD_START | GAMEPAD_JUMP);
+                } else if (event.key.key == SDLK_UP || event.key.key == SDLK_W) {
+                    HostInputTap(host_window_width / 2, 0, GAMEPAD_DUP);
+                } else if (event.key.key == SDLK_DOWN || event.key.key == SDLK_S) {
+                    HostInputTap(host_window_width / 2, host_window_height - 1, GAMEPAD_DDOWN);
+                } else if (event.key.key == SDLK_LEFT || event.key.key == SDLK_A) {
+                    HostInputTap(0, host_window_height / 2, GAMEPAD_DLEFT);
+                } else if (event.key.key == SDLK_RIGHT || event.key.key == SDLK_D) {
+                    HostInputTap(host_window_width - 1, host_window_height / 2, GAMEPAD_DRIGHT);
+                } else if (event.key.key == SDLK_ESCAPE) {
+                    HostInputTap(host_window_width / 2, host_window_height / 2, GAMEPAD_TAG);
+                }
             }
         }
         if (quit_requested) {
             break;
         }
 
-        if (host_numain_done) {
+        if (host_numain_done.load(std::memory_order_acquire)) {
             for (i32 i = 0; i < host_tail_frames; i++) {
                 SDL_Delay(host_poll_interval_ms);
                 frame_count++;
@@ -205,10 +327,90 @@ inline i32 test_window(i32 argc, char **argv) {
 
         frame_count++;
 
+        const Uint64 elapsed_ticks = SDL_GetTicks() - start_ticks;
+        if (scripted_input_enabled) {
+            const i32 menu_id = host_menu_id();
+            if (menu_id != scripted_last_menu) {
+                scripted_last_menu = menu_id;
+                scripted_menu_since = elapsed_ticks;
+            }
+
+            if (scripted_stage == ScriptedInputStage::title && menu_id == 0 &&
+                elapsed_ticks >= scripted_title_touch_ms) {
+                HostInputTouch(host_window_width / 2, host_window_height / 2, host_window_width, host_window_height);
+                scripted_stage = ScriptedInputStage::new_or_load;
+                scripted_stage_ticks = elapsed_ticks;
+            } else if (scripted_stage == ScriptedInputStage::new_or_load && menu_id == 1 &&
+                       elapsed_ticks - scripted_menu_since >= scripted_menu_settle_ms) {
+                // The original menu defaults to Load Game when any save is
+                // present. This route deliberately exercises New Game.
+                touch_menu_item(menu_id, scripted_load_enabled ? 1 : 0, 0);
+                if (scripted_load_enabled) {
+                    // Load Game may lead to the original No Data screen
+                    // (menu 1005); dismiss it once it has settled.
+                    scripted_stage = ScriptedInputStage::load_wait;
+                } else {
+                    // New Game now follows the original Select Controls
+                    // screen (menu 33). Its default entry is Classic, so
+                    // confirm it after the normal settle interval before
+                    // looking for the save-slot menu.
+                    scripted_stage = ScriptedInputStage::select_controls;
+                }
+                scripted_stage_ticks = elapsed_ticks;
+            } else if (scripted_stage == ScriptedInputStage::select_controls && menu_id == 33 &&
+                       elapsed_ticks - scripted_menu_since >= scripted_menu_settle_ms) {
+                HostInputTap(host_window_width / 2, host_window_height / 2, GAMEPAD_JUMP);
+                scripted_stage = ScriptedInputStage::save_slot;
+                scripted_stage_ticks = elapsed_ticks;
+            } else if (scripted_stage == ScriptedInputStage::load_wait && menu_id == 1012 &&
+                       elapsed_ticks - scripted_menu_since >= scripted_menu_settle_ms) {
+                i32 slot = 0;
+                while (slot < SAVESLOTS && saveload_slotused[slot] == 0) {
+                    ++slot;
+                }
+                if (slot < SAVESLOTS) {
+                    touch_menu_item(menu_id, 0, slot);
+                }
+                scripted_stage = ScriptedInputStage::complete;
+                scripted_stage_ticks = elapsed_ticks;
+            } else if (scripted_stage == ScriptedInputStage::load_wait && menu_id == 1005 &&
+                       elapsed_ticks - scripted_menu_since >= scripted_menu_settle_ms) {
+                HostInputTap(host_window_width / 2, host_window_height / 2, GAMEPAD_JUMP);
+                scripted_stage = ScriptedInputStage::complete;
+                scripted_stage_ticks = elapsed_ticks;
+            } else if (scripted_stage == ScriptedInputStage::save_slot && menu_id == 1000 &&
+                       elapsed_ticks - scripted_menu_since >= scripted_menu_settle_ms) {
+                i32 slot = 0;
+                while (slot < SAVESLOTS && saveload_slotused[slot] != 0) {
+                    ++slot;
+                }
+                const bool overwrite = slot == SAVESLOTS;
+                if (overwrite) {
+                    slot = 0;
+                }
+                touch_menu_item(menu_id, 0, slot);
+                scripted_stage = overwrite ? ScriptedInputStage::overwrite_confirm : ScriptedInputStage::complete;
+                scripted_stage_ticks = elapsed_ticks;
+            } else if (scripted_stage == ScriptedInputStage::overwrite_confirm && menu_id == 1008 &&
+                       elapsed_ticks - scripted_menu_since >= scripted_menu_settle_ms) {
+                HostInputTap(host_window_width / 2, host_window_height / 2, GAMEPAD_DUP);
+                scripted_stage = ScriptedInputStage::overwrite_accept;
+                scripted_stage_ticks = elapsed_ticks;
+            } else if (scripted_stage == ScriptedInputStage::overwrite_accept && menu_id == 1008 &&
+                       elapsed_ticks >= scripted_stage_ticks + scripted_menu_settle_ms) {
+                HostInputTap(host_window_width / 2, host_window_height / 2, GAMEPAD_JUMP);
+                scripted_stage = ScriptedInputStage::complete;
+                scripted_stage_ticks = elapsed_ticks;
+            } else if (scripted_stage == ScriptedInputStage::complete &&
+                       elapsed_ticks >= scripted_stage_ticks + scripted_tail_ms) {
+                break;
+            }
+        }
+
         SDL_Delay(host_poll_interval_ms);
 
-        if (SDL_GetTicks() - start_ticks > static_cast<Uint64>(host_timeout_ms)) {
-            LOG_ERR("test_window: timeout after %d ms", host_timeout_ms);
+        if (SDL_GetTicks() - start_ticks > timeout_ms) {
+            LOG_ERR("test_window: timeout after %llu ms", static_cast<unsigned long long>(timeout_ms));
             break;
         }
 
@@ -263,13 +465,35 @@ inline i32 test_window(i32 argc, char **argv) {
         }
     }
 
-    if (host_numain_thread != nullptr) {
+    const bool numain_finished = host_numain_done.load(std::memory_order_acquire);
+    if (host_numain_thread != nullptr && numain_finished) {
+        i32 thread_result = 0;
+        SDL_WaitThread(host_numain_thread, &thread_result);
+        host_numain_result.store(thread_result, std::memory_order_relaxed);
+        host_numain_thread = nullptr;
+    } else if (host_numain_thread != nullptr) {
         SDL_DetachThread(host_numain_thread);
         host_numain_thread = nullptr;
     }
 
+    if (scripted_input_enabled) {
+        LOG_INFO("scripted input stopped on menu id %d, save slot %d, status %d, load=(%d,%d,%d,%d), occurred=%d, "
+                 "new-level=%p idx=%d name=%s current-level=%p idx=%d name=%s fade=(%.3f,%d,%d), "
+                 "waits=(level=%d,character=%d,new=%d,abort=%d,reset=%d), players=(%d:%p,%d:%p), char-load=%d",
+                 host_menu_id(), saveload_slotid, saveload_status, memcard_loadneeded, memcard_loadstarted,
+                 memcard_loadfailed, memcard_loadcorrupt, MenuLoadOccurred, NewLData,
+                 NewLData != nullptr ? NewLData->idx : -1, NewLData != nullptr ? NewLData->name : "-",
+                 WORLD != nullptr ? WORLD->current_level : nullptr,
+                 WORLD != nullptr && WORLD->current_level != nullptr ? WORLD->current_level->idx : -1,
+                 WORLD != nullptr && WORLD->current_level != nullptr ? WORLD->current_level->name : "-", FadeSys.fade,
+                 FadeSys.pending_type, FadeSys.busy, waiting_for_level, waiting_for_character, waiting_for_new_level,
+                 abort_load, reset_load, PlayerID[0], Player[0], PlayerID[1], Player[1], CharacterDataLoad);
+    }
     LOG_INFO("presented %d frame_count", frame_count);
+    if (numain_finished) {
+        const i32 result = host_numain_result.load(std::memory_order_relaxed);
+        free(buffer);
+        return result;
+    }
     _exit(0);
-
-    free(buffer);
 }

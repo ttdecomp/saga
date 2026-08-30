@@ -24,6 +24,10 @@ i32 nufile_buffering_enabled;
 static i32 nufile_lasterror = 0;
 NUDATFILEINFO dat_file_infos[20];
 
+extern "C" i32 NuFileGetLastError(void) {
+    return nufile_lasterror;
+}
+
 NUFILE_DEVICE host_device = {
     0,
     0,

@@ -73,8 +73,6 @@ extern "C" {
     void NewMenu(i32 menu_id, i32 menu_y, i32 param3);
     void edGraEnableTerrainSwap(void);
     void edGraDisableTerrainSwap(void);
-    void APICharacterSysInit(VARIPTR *buf, VARIPTR buf_end, i32 char_count, i32 a4, i32 a5, CHARACTERDATA *cdata_list,
-                             i32 a7);
     void SetActionInfo(void *action_info, void *extra_action_data);
     void SetProceduralAnimationFn(void *fn);
     void NuAnimBuffProceduralAnimation(void);
@@ -145,6 +143,7 @@ void ReadPads(void);
 
 // Globals / objects declared elsewhere.
 extern i16 id_DEFAULTCHARACTER[2];
+extern i16 id_QUIGONJINN;
 extern i16 id_OBIWANKENOBI;
 extern GAMEPAD_s GamePad[64]; // gamepads.cpp, bss @0x127a500
 extern i32 readpads_always;
@@ -349,11 +348,13 @@ static void LoadPermData(BGPROCINFO *proc) {
     FixUpCharacters(CharFixUp);
     MiniKits_Init(&permbuffer_ptr, &permbuffer_end);
 
-    PlayerID[0] = id_DEFAULTCHARACTER[0];
-    PlayerID[1] = id_OBIWANKENOBI;
+    id_DEFAULTCHARACTER[0] = id_QUIGONJINN;
+    id_DEFAULTCHARACTER[1] = id_OBIWANKENOBI;
 
     CharCategories_Init(reinterpret_cast<CHARCATEGORY *>(LSW_CharCategory));
     Cheats_Init(reinterpret_cast<CHEAT *>(Cheat));
+    PlayerID[0] = id_DEFAULTCHARACTER[0];
+    PlayerID[1] = id_DEFAULTCHARACTER[1];
     CharVariants_Init(reinterpret_cast<CHARVARIANT *>(CharVariants_Game), 0x17);
 
     LDataList = Levels_ConfigureList((char *)"levels\\levels.txt", &permbuffer_ptr, &permbuffer_end, 0x16d, &LEVELCOUNT,
@@ -369,7 +370,7 @@ static void LoadPermData(BGPROCINFO *proc) {
     NewGame();
     InitGameAfterConfig();
 
-    APICharacterSysInit(&permbuffer_ptr, permbuffer_end, CHARCOUNT, 0x30, 0xe9, CDataList, 0x400);
+    APICharacterSysInit(&permbuffer_ptr, permbuffer_end, CHARCOUNT, 0x30, 0xe9, 0x400, CDataList, SetCreatureLights);
     SetActionInfo(ActionInfo, ExtraActionData);
 
     gizaimessagesys = CreateGizAIMessageSys(&permbuffer_ptr, &permbuffer_end, kExtraGizAIMessageCount);

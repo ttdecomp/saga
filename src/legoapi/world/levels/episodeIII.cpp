@@ -279,7 +279,7 @@ void VaderC_DrawPanel(WORLDINFO_s *) {
 
 void VaderA_GoneThroughDoor(WORLDINFO_s *, DOOR_s *door) {
     if (netclient == 0 && door != NULL)
-        door->field_0xf7 = 1;
+        door->active = 1;
 }
 
 static __used__ void VaderA_StartCollapseStage(WORLDINFO_s *) {

@@ -1,10 +1,13 @@
 #include "nu2api_nucore_types.h"
 #include "nu2api/nu3d/android/nutex_ios_ex.h"
 #include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/numtl.h"
 #include "nu2api/nu3d/nurndrstat.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nuandroid/ios_graphics.h"
+#include "nu2api/nucore/nuhgobj.h"
+#include "nu2api/nucore/nuanim3.h"
 
 #include <GLES2/gl2.h>
 #include <string.h>
@@ -18,6 +21,14 @@ extern "C" f32 NuAnimCurve2CalcValEx(nuanimcurve2_s *, nuanimtime_s *, u32);
 void NuGCutRigidCalcMtx_3(NUGCUTRIGID_s *, f32, numtx_s *);
 extern void *globalbuffer;
 extern i32 MaxAnimJoints;
+
+extern "C" void NuAnimBuffCreateScratch(nuanimbuff_s *buffer);
+extern "C" void NuAnimBuffDestroyScratch(nuanimbuff_s *buffer);
+extern "C" void NuAnimBuffAccumulate_3(nuanimbuff_s *buffer, ani3_animheader_s *animation, f32 time, i32 overwrite,
+                                       f32 blend, i32 first_joint, nuhgobj_s *object, NUVEC *root_translation);
+extern "C" void NuAnimBuffEvaluate_3(nuanimbuff_s *buffer, nuhgobj_s *object, NUMTX *matrices,
+                                     ani3_animheader_s *animation, NUHGOBJROOTFN root_fn, NUVEC *root_translation,
+                                     void *root_data);
 
 void NuMemAlloc(i32) {
 }
@@ -116,7 +127,25 @@ void NuLgtSetArcMatEx(i32, numtl_s *, float, float, float, float) {
 void NuMemGetExternal() {
 }
 
-void NuCameraClipHGobj(nugscn_s *, numtx_s *, numtx_s *) {
+extern "C" u8 CutSceneBoundingBoxTrackRoot;
+
+// Original @0x2da1a0. The public type is nugscn_s in the mangled symbol, but
+// GHG objects carry the hierarchy layout consumed here.
+i32 NuCameraClipHGobj(nugscn_s *scene, numtx_s *world_matrix, numtx_s *root_matrix) {
+    nuhgobj_s *object = reinterpret_cast<nuhgobj_s *>(scene);
+    if (CutSceneBoundingBoxTrackRoot == 0) {
+        return NuCameraClipTestExtents(&object->bounds_min, &object->bounds_max, world_matrix, 0.0f, 0);
+    }
+
+    NUVEC half_extents;
+    NuVecSub(&half_extents, &object->bounds_max, &object->bounds_min);
+    NuVecScale(&half_extents, &half_extents, 0.5f);
+    NUVEC min;
+    NuVecNeg(&min, &half_extents);
+
+    NUMTX translated_world = *world_matrix;
+    NuMtxPreTranslate(&translated_world, NUMTX_GET_ROW_VEC(root_matrix, 3));
+    return NuCameraClipTestExtents(&min, &half_extents, &translated_world, 0.0f, 0);
 }
 
 void NuFadeObjFreeMtxs(numtx_s *, i32) {
@@ -538,9 +567,21 @@ void NuIOS_GetNumInAppPurchases() {
 void NuIOS_PurchaseInAppProduct(char *) {
 }
 
-void NuHGobjEvalAnimBlend2Root_3(nugscn_s *, ani3_animheader_s *, float, ani3_animheader_s *, float, float, i32,
-                                 NUJOINTANIM_s *, numtx_s *,
-                                 void (*)(numtx_s *, void *, nuvec_s *, nuvec_s *, nuvec_s *, float), void *) {
+// Original @0x2ce760.
+void NuHGobjEvalAnimBlend2Root_3(nugscn_s *scene, ani3_animheader_s *animation_a, f32 time_a,
+                                 ani3_animheader_s *animation_b, f32 time_b, f32 blend, i32, NUJOINTANIM_s *,
+                                 NUMTX *matrices, NUHGOBJROOTFN root_fn, void *root_data) {
+    nuhgobj_s *object = reinterpret_cast<nuhgobj_s *>(scene);
+    nuanimbuff_s buffer;
+    NUVEC root_a = {0.0f, 0.0f, 0.0f};
+    NUVEC root_b = {0.0f, 0.0f, 0.0f};
+    NUVEC root_translation = {0.0f, 0.0f, 0.0f};
+
+    NuAnimBuffCreateScratch(&buffer);
+    NuAnimBuffAccumulate_3(&buffer, animation_a, time_a, 1, 0.0f, 0, object, &root_a);
+    NuAnimBuffAccumulate_3(&buffer, animation_b, time_b, 0, blend, 0, object, &root_b);
+    NuAnimBuffEvaluate_3(&buffer, object, matrices, animation_a, root_fn, &root_translation, root_data);
+    NuAnimBuffDestroyScratch(&buffer);
 }
 
 void NuIOSDLVertexGroupsCallback(void *) {

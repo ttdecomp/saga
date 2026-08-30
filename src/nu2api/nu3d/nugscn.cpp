@@ -1,6 +1,7 @@
 #include "nu2api/nu3d/nugscn.h"
 
 #include "nu2api/nu3d/nutex.h"
+#include "nu2api/nu3d/nudlist.h"
 #include "nu2api/nu3d/android/nutex_ios_ex.h"
 #include "nu2api/nu3d/numtl.h"
 #include "nu2api/nucore/nuapi.h"
@@ -9,9 +10,9 @@
 #include <string.h>
 
 __attribute__((weak)) void NuGScnCreatePS(nugscn_s *scene, variptr_u *, variptr_u *) {
-    NUNATIVETEX **textures = reinterpret_cast<NUNATIVETEX **>(scene->field5_0x8);
+    NUNATIVETEX **textures = scene->textures;
     if (g_VideoResHeader.texture_hashes == 0) {
-        for (i32 i = 0; i < scene->field4_0x4; ++i) {
+        for (i32 i = 0; i < scene->ntextures; ++i) {
             NUNATIVETEX *texture = textures[i];
             texture->image_data = nullptr;
             texture->size = 0;
@@ -44,6 +45,29 @@ i32 NuGScnFixupTID(nugscn_s *scene, i32 tid) {
 }
 
 void NuGScnDestroyPS(nugscn_s *) {
+}
+
+extern "C" void NuTexAnimRemoveList(void *texture_anims);
+
+extern "C" void NuGScnRemove(nugscn_s *scene) {
+    if (scene->texture_anims != nullptr) {
+        NuTexAnimRemoveList(scene->texture_anims);
+    }
+
+    NuGScnRestoreTIDs(scene);
+    for (i32 i = 0; i < scene->ntextures; ++i) {
+        if (scene->textures[i]->ref_count >= 0) {
+            NuTexDestroy(scene->texture_ids[i]);
+        }
+    }
+
+    if (scene->additional_scenes != nullptr) {
+        for (NUGSCN **additional = scene->additional_scenes; *additional != nullptr; ++additional) {
+            NuDisplaySceneDestroy((*additional)->display_list);
+        }
+    }
+    NuDisplaySceneDestroy(scene->display_list);
+    NuGScnDestroyPS(scene);
 }
 
 void NuGScnFixupTIDs(nugscn_s *scene) {

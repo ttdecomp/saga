@@ -83,7 +83,7 @@ void GetNativeTextureFormatName(NUTEXFORMAT) {
 void CatIToX(char *, i32) {
 }
 
-void DoInput(WORLDINFO_s *) {
+__attribute__((weak)) void DoInput(WORLDINFO_s *) {
 }
 
 void CatI64ToX(char *, i64) {

@@ -95,6 +95,13 @@ bool NuSoundMemoryBuffer::IsLocked() {
 }
 
 NuSoundMemoryBuffer::NuSoundMemoryBuffer() {
+    this->address = NULL;
+    this->size_l = 0;
+    this->size_m = 0;
+    this->size_h = 0;
+    this->flags = 0;
+    this->prev = NULL;
+    this->next = NULL;
 }
 
 NuSoundMemoryBuffer::~NuSoundMemoryBuffer() {

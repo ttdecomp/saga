@@ -12,10 +12,13 @@ struct CUTINFO;
 struct NUGCUTCHAR_s;
 struct BOLT_s;
 struct GameObject_s;
+struct CHARACTERMODEL_s;
 struct nuvec_s;
 struct nuhspecial_s;
 struct GIZMOBLOWUP_s;
 struct GIZOBSTACLE_s;
+struct AREASAVE_s;
+struct GAMECAMERA_s;
 class FadeSystem;
 
 // ----------------------------------------------------------------------
@@ -57,10 +60,26 @@ struct OPTIONSSAVE_s { /* PlaceHolder Structure */
     undefined field9_0x9;
     undefined field10_0xa;
     undefined field11_0xb;
+    undefined field12_0xc;
 };
 typedef struct OPTIONSSAVE_s OPTIONSSAVE;
 
-struct customisesave_s { /* PlaceHolder Structure */
+struct SUPEROPTIONS_s {
+    i16 field0_0x0;
+    u8 touch_controls;
+    u8 field2_0x3;
+    f32 left_control_x;
+    f32 left_control_y;
+    f32 right_control_x;
+    f32 right_control_y;
+    u8 music_enabled;
+    i8 field8_0x15;
+    u8 field9_0x16[2];
+};
+DECOMP_ASSERT(sizeof(SUPEROPTIONS_s) == 0x18, "SUPEROPTIONS size");
+extern SUPEROPTIONS_s SuperOptions;
+
+struct __attribute__((packed)) customisesave_s { /* PlaceHolder Structure */
     undefined2 field0_0x0;
     undefined2 field1_0x2;
     undefined2 field2_0x4;
@@ -156,6 +175,7 @@ struct customisesave_s { /* PlaceHolder Structure */
     undefined field92_0x6e;
 };
 typedef struct customisesave_s CUSTOMISESAVE;
+DECOMP_ASSERT(sizeof(CUSTOMISESAVE) == 0x6f, "CUSTOMISESAVE size");
 
 struct GAMESAVE_s {
     undefined field0_0x0;
@@ -163,7 +183,6 @@ struct GAMESAVE_s {
     undefined field2_0x2;
     undefined field3_0x3;
     struct OPTIONSSAVE_s options_save;
-    undefined field5_0x10;
     undefined1 level_save; /* Created by retype action */
     undefined field7_0x12[30746];
     undefined1 area_save; /* Created by retype action */
@@ -199,6 +218,7 @@ struct GAMESAVE_s {
     void *character_save;
     char field39_0x7d08[336];
 };
+DECOMP_ASSERT(sizeof(GAMESAVE_s) == 0x7e58, "GAMESAVE size");
 
 struct CHARCAT_s {
     undefined field0_0x0[4];
@@ -226,11 +246,6 @@ struct VEHICLECOLLECTION_s {
     void *field0_0x0;
     undefined field4_0x4[2];
     u16 count_0x6;
-};
-
-struct EXTRAMODELLISTENTRY_s {
-    i16 *model_list;
-    void *field4_0x4;
 };
 
 // ----------------------------------------------------------------------
@@ -360,6 +375,7 @@ extern i32 g_isLowestEndDevice;
 extern i32 g_isLowEndDevice;
 extern i32 g_isMidRangeDevice;
 extern i32 g_lowEndLevelBehaviour;
+extern i32 finishloop_backdroponly;
 
 // ------------------------------------------------------------------------
 // Render / compatibility options
@@ -371,6 +387,13 @@ extern i32 Reflections_On;
 extern i32 disable_narrow_socks;
 extern i32 script_spline_selected;
 extern f32 character_farclip;
+extern i32 drawcharactermodel_locatorsupdated;
+extern i32 drawcharactermodel_noani;
+extern i32 drawcharactermodel_restpose;
+extern i32 drawcharactermodel_keepmergeaction;
+extern i32 game_keepmergeaction;
+extern i32 JointRotation_On;
+extern i32 (*MakeLayerList)(CHARACTERMODEL_s *, i16 *, u32);
 
 // ------------------------------------------------------------------------
 // Group scenes (NUGSCN)
@@ -386,11 +409,14 @@ extern f32 DoubleScoreTime;
 extern TIMER GameTimer;
 extern u8 AreaGlobals[0x34]; // area-progress save block (inline .bss struct @0x1276de0)
 extern i32 HIGHGAMEOBJECT;
-extern void *Obj;
+extern GameObject_s *Obj;
 extern f32 AreaPickupGravity;
 extern f32 HIGHJUMPHEIGHT;
 extern TIMER AreaTimer;
 extern f32 VehicleAreaRememberSpeed;
+extern nugspline_s *ObstacleCamSpl;
+extern GAMECAMERA_s *GameCam;
+extern i32 MiniCutCam;
 extern i32 Lap;
 extern f32 LevTime[5];
 
@@ -432,11 +458,13 @@ extern i32 FreePlayResidentCount;
 extern i32 FreePlayBonusCount;
 extern CHARCAT_s *CharCategory;
 extern i32 CHARCATEGORYCOUNT;
-extern EXTRAMODELLISTENTRY_s ExtraModelList[];
+extern EXTRAMODEL ExtraModelList[];
 extern VEHICLECOLLECTION_s VehicleCollection;
 extern ARCADEITEM_s ArcadeItem;
 extern ARCADE_MODE_s Arcade_Mode[];
 extern GAME_CUSTOMISER_s *Game_Customiser;
+extern AREASAVE_s *Game_AreaSave;
+extern u8 *Game_CharacterSave;
 extern APICHARACTERMODELLIST_s FreePlayModelList[];
 extern APICHARACTERMODELLIST_s Hub_ModelList[];
 extern i32 Area_PlayerModelCount;
@@ -461,6 +489,16 @@ extern i32 EXTRALEVELOBJECTCOUNT;
 extern char *ExtraLevelObject_NameTable;
 extern i32 ExtraLevelObject_NameTableSize;
 extern i32 ExtraLevelObject_NameTableIndex;
+
+extern i16 drawcharicon_hspecial_spin;
+extern f32 drawcharicon_hspecial_dz;
+extern i32 drawcharicon_find;
+extern f32 drawcharicon_hspecial_scale;
+extern i32 drawcharicon_i_panel;
+extern f32 PANEL3DMULY;
+extern f32 PANEL3DMULX;
+extern i32 LEGOOBJ_ICON_WEIRDO;
+extern i32 LEGOOBJ_ICON_QUESTION;
 
 // ------------------------------------------------------------------------
 // Level / area data pointers (LDATA / ADATA)
@@ -663,7 +701,7 @@ extern f32 WaitingForLevelTime;
 extern f32 WaitingForCharacterTime;
 extern f32 g_BgLoadDelayHackTimer;
 extern i32 Door_UseCutCam;
-extern void *LevelLoad;
+extern i16 LevelLoad[48];
 extern i32 LevelLoadCount;
 
 // Main game loop state (read/written by NuMain; see batman.h for the rest).
@@ -681,6 +719,7 @@ extern f32 newgamealpha;
 extern i32 newgamefade;
 extern f32 newgamewait;
 extern i32 newgame_menudrawoff;
+extern i32 netnewgame;
 extern i32 MenuLoadOccurred;
 extern i32 MenuSaveOccurred;
 extern i32 LevSfxFlag[4];

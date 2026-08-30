@@ -40,8 +40,6 @@ static i32 (*CheckMusicOtherFn)(void) = NULL;
 
 // GamePlayMusic consults this option byte (original: SuperOptions field 0x14).
 // Non-zero selects the quiet/action attack tracks instead of the plain theme.
-extern char SuperOptions[24];
-
 NuMusic::NuMusic() {
     for (i32 i = 0; i < 6; i++) {
         this->class_volumes[i] = 1.0f;
@@ -1161,7 +1159,7 @@ i32 GamePlayMusic(LEVELDATA_s *level, i32 check, OPTIONSSAVE_s *options) {
     music_man.SelectTrackByHandle(TRACK_CLASS_ACTION, level->music_tracks[1][MusicOther]);
     music_man.SelectTrackByHandle(TRACK_CLASS_NOMUSIC, level->music_tracks[2][MusicOther]);
 
-    if (SuperOptions[20] == 0) {
+    if (SuperOptions.music_enabled == 0) {
         return music_man.PlayTrack(TRACK_CLASS_NOMUSIC);
     }
 

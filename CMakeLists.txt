@@ -5,6 +5,7 @@ if(POLICY CMP0135)
 endif()
 
 option(BUILD_FOR_HOST "Build for host system" OFF)
+option(HOST_ENABLE_ASAN "Enable AddressSanitizer in non-Windows host builds" ON)
 
 include("${CMAKE_SOURCE_DIR}/cmake/ndk.cmake")
 
@@ -35,9 +36,12 @@ if (BUILD_FOR_HOST)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-stack-protector -msse2")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-stack-protector -msse2")
 
-    if (NOT CMAKE_HOST_WIN32)
+    if (NOT CMAKE_HOST_WIN32 AND HOST_ENABLE_ASAN)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -march=i686 -fsanitize=address")
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32 -march=i686 -fsanitize=address")
+    elseif(NOT CMAKE_HOST_WIN32)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -march=i686")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32 -march=i686")
     endif()
 else()
     message(STATUS "Using Android NDK toolchain: ${NDK_TOOLCHAIN}")
@@ -121,6 +125,7 @@ if (BUILD_FOR_HOST)
 
     list(APPEND SAGA_SOURCE_FILES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/main.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/input/host_input.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/nutex_host.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/nutex_ios_ex.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/ios_graphics_host.cpp

@@ -40,10 +40,9 @@ void InitStillRender(variptr_u *, variptr_u) {
     // black; Mesa zeroes its alpha as well, which makes the original wipe
     // invisible under alpha blending. Reproduce the Android allocation state
     // in the host backend without changing the decompiled target function.
-    std::vector<u32> opaqueBlack(static_cast<usize>(g_backingWidth) * static_cast<usize>(g_backingHeight),
-                                 0xff000000u);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, g_backingWidth, g_backingHeight, 0, GL_RGBA,
-                 GL_UNSIGNED_BYTE, opaqueBlack.data());
+    std::vector<u32> opaqueBlack(static_cast<usize>(g_backingWidth) * static_cast<usize>(g_backingHeight), 0xff000000u);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, g_backingWidth, g_backingHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                 opaqueBlack.data());
     EndCriticalSectionGL("i:/SagaTouch-Android_9176564/legoapi.saga/screen.cpp", 0x56d);
 
     pause_rndr_mtl = NuMtlCreate3D(1);
