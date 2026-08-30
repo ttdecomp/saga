@@ -881,7 +881,7 @@ static void DisplayListLinkDynamicMtls(void) {
 
         mgr->dyn_mtl_dlist.mtls[insert] = mtl;
         dl->dyn_geom = items + 6;
-        dl->dlist_id = static_cast<u32>(reinterpret_cast<usize>(&mgr->dyn_mtl_dlist));
+        dl->dlist = &mgr->dyn_mtl_dlist;
         dl->mtl_item = items;
         dl->mtl_id = insert;
 

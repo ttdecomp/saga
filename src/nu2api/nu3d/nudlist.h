@@ -6,6 +6,7 @@
 struct numtl_s;
 typedef struct numtl_s NUMTL;
 struct nugscn_s;
+struct nudldlistscene_s;
 
 // ---------------------------------------------------------------------------
 // Display-list item (original type `nudisplaylistitem_s`, 16 bytes).
@@ -32,7 +33,7 @@ typedef struct nudisplaylistitem_s {
 // (it is the next-free-item cursor consumed by NuDisplayListAddItem).
 // ---------------------------------------------------------------------------
 typedef struct nudisplaylist_s {
-    u32 dlist_id;                        // 0x00 (written as constant by LinkDynamicMtls)
+    struct nudldlistscene_s *dlist;      // 0x00 owning display-list scene
     i32 mtl_id;                          // 0x04 index into owning scene->mtls[]
     struct nurndrstate_s *state;         // 0x08 per-material render-state cache
     nudisplaylistitem_s *mtl_item;       // 0x0c

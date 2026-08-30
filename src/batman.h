@@ -397,7 +397,7 @@ extern "C" {
     extern i32 save_paused;
     extern i32 screendump;
     extern i32 SHADOWCALLS;
-    extern void *ShadowMat;
+    extern numtl_s *ShadowMat;
     extern STATUSPACKET_s StatusPacket;
     extern u8 status_plr_active[8];
     extern i32 SuperStory;

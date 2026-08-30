@@ -703,13 +703,47 @@ void SetAllInstancesHidden(nugscn_s *) {
 void RemoveAnyChunkControls(i32 *) {
 }
 
-void RemoveChunkFromRenderStack(particlechunkrendertype_s *, particlechunkrendertype_s **) {
+void RemoveChunkFromRenderStack(particlechunkrendertype_s *chunk, particlechunkrendertype_s **stack) {
+    if (chunk->previous != NULL) {
+        chunk->previous->next = chunk->next;
+    } else if (*stack == chunk) {
+        *stack = chunk->next;
+    }
+    if (chunk->next != NULL) {
+        chunk->next->previous = chunk->previous;
+    }
+    chunk->previous = NULL;
+    chunk->next = NULL;
 }
 
-void RemoveChunkControlFromStack(debris_chunk_control_s *, debris_chunk_control_s **) {
+void RemoveChunkControlFromStack(debris_chunk_control_s *control, debris_chunk_control_s **stack) {
+    debris_chunk_control_s *current = *stack;
+    while (current != NULL && current != control) {
+        stack = &current->next;
+        current = current->next;
+    }
+    if (current == control) {
+        *stack = control->next;
+    }
+    control->next = NULL;
 }
 
-void RemoveDebrisEffectFromStack(debkeydatatype_s *) {
+extern "C" debkeydatatype_s *debris_keystack;
+
+void RemoveDebrisEffectFromStack(debkeydatatype_s *key) {
+    if (key->next == NULL) {
+        debris_keystack = key->previous;
+        if (debris_keystack != NULL) {
+            debris_keystack->next = NULL;
+        }
+    } else {
+        key->next->previous = key->previous;
+        if (key->previous != NULL) {
+            key->previous->next = key->next;
+        }
+    }
+    key->next = NULL;
+    key->previous = NULL;
 }
 
 void ReStoreStatusTakeOverObjectSys(i32) {

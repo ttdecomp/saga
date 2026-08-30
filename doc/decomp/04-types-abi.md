@@ -161,6 +161,16 @@ build with `-malign-double` (the repo does not). A decompiled struct with a
 `double` at a 4-aligned offset stays 4-aligned here — that's correct, don't
 "fix" it to 8.
 
+Original-layout checks must use `DECOMP_ASSERT` from `decomp_assert.h`, not a
+bare `static_assert`. It is a compile-time assertion in the original 32-bit
+matching build and a no-op in host builds, whose pointer width legitimately
+changes pointer-bearing structure sizes and offsets. Runtime code must use
+typed members, typed pointer/array arithmetic, and `sizeof` for the ABI it is
+actually compiled for. Localized byte arithmetic is only appropriate while a
+range is genuinely unknown; original byte offsets and record sizes belong in
+the decompilation/layout description and must not drive host allocation or
+access.
+
 Bitfields (verified with a runtime dump of
 `{ unsigned a:3; b:5; c:12; d:7; }`, little-endian): fields pack LSB-first
 within each 4-byte unit — `a` = bits 0-2, `b` = bits 3-7, `c` = bits 8-19,
@@ -333,6 +343,18 @@ same symbol and the same codegen.
   `src/globals.h:13-148`). Naming: `field<NN>_0x<off>` per the placeholder
   convention. `undefined*` types are u8/u16/u32/u64 typedefs and are only
   layout, never codegen-affecting.
+- **Promote recovered offsets into fields**: raw byte padding is temporary,
+  not an implementation style. Once an access establishes a field's width and
+  meaning, add it to the canonical structure and use the member everywhere.
+  Prefer typed pointers, arrays, and function-pointer members over repeated
+  `reinterpret_cast` arithmetic. This both resembles the original source and
+  prevents 32-bit pointer offsets from leaking into host builds.
+- **Serialized records are not necessarily runtime structs**: reconstruct the
+  original sequence of typed reads and writes instead of copying file bytes
+  into a runtime object. Packed fields may place a sample in low bits and
+  tangents or flags above it; confirm the original mask and shift before
+  assigning bitfields. A layout that consumes the correct total byte count can
+  still be semantically wrong.
 - **SAGA_NOMATCH**: `__attribute__((section(".text.nomatch")))`
   (`decomp.h:32`) parks functions that will never byte-match (e.g. original
   compiler artifacts) so they don't pollute diffing.

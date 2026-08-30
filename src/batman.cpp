@@ -527,7 +527,7 @@ giz_freeplay:
                         NuFadeObjUpdateArray(&windObjs[0]);
                     }
 
-                    rtlProcessLights((void *)(usize)world->rtl_set_id, FRAMETIME);
+                    rtlProcessLights(world->rtl_set, FRAMETIME);
                     CharPlatforms_Update(world->char_platform_sys);
                     Grabber_Update(world);
                     TrafficAnimSys_Update(world->trafficanim_sys);
@@ -865,7 +865,7 @@ giz_freeplay:
                 } else {
                     GameFog_Update(WORLD);
                     GameFog_Set();
-                    SetLevelLights((void *)(usize)world->rtl_set_id, 1.0f);
+                    SetLevelLights(world->rtl_set, 1.0f);
                     SetSpotLightMode();
 
                     if (CUTSTOPGAME == 0) {
@@ -906,7 +906,7 @@ giz_freeplay:
                     }
 
                     Grabber_Draw(world);
-                    SetLevelLights((void *)(usize)world->rtl_set_id, 1.0f);
+                    SetLevelLights(world->rtl_set, 1.0f);
 
                     if ((editor_active == 0) && (Paused == 0)) {
                         if (CUTSTOPGAME == 0) {

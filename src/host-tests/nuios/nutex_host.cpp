@@ -435,7 +435,7 @@ static usize PlatformTextureBlobSize(const void *data) {
     if (src[0] == 'D' && src[1] == 'D' && src[2] == 'S' && src[3] == ' ') {
         const usize width = *reinterpret_cast<const u32 *>(src + 0x0c);
         const usize height = *reinterpret_cast<const u32 *>(src + 0x10);
-        return 128 + width * height / 2;
+        return 128 + ((width + 3) / 4) * ((height + 3) / 4) * 8;
     }
     if (src[0] == 'P' && src[1] == 'V' && src[2] == 'R') {
         u32 width = *reinterpret_cast<const u32 *>(src + 0x1c);
@@ -469,10 +469,6 @@ static GLuint CreateGLTexFromPlatformInMemory(void *data, usize data_size, i32 *
     // DDS container ("mob" platform blobs): here it wraps a full ETC1 mip
     // chain (fourcc 'ETC1'). HOST-ONLY software decode to RGBA.
     if (src[0] == 'D' && src[1] == 'D' && src[2] == 'S' && src[3] == ' ') {
-        u32 fourcc = *(const u32 *)(src + 0x54);
-        if (fourcc != 0x31435445) { // 'ETC1'
-            return 0;
-        }
         i32 w = *(const i32 *)(src + 0x0c);
         i32 h = *(const i32 *)(src + 0x10);
         *width = w;
@@ -488,17 +484,44 @@ static GLuint CreateGLTexFromPlatformInMemory(void *data, usize data_size, i32 *
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        const u8 *cur = src + 128;
-        {
-            usize bytes = (usize)w * h / 2;
+        u32 pixel_flags = *(const u32 *)(src + 0x50);
+        u32 fourcc = *(const u32 *)(src + 0x54);
+        if (pixel_flags == 0x41 && *(const u32 *)(src + 0x58) == 32 && *(const u32 *)(src + 0x5c) == 0x00ff0000 &&
+            *(const u32 *)(src + 0x60) == 0x0000ff00 && *(const u32 *)(src + 0x64) == 0x000000ff &&
+            *(const u32 *)(src + 0x68) == 0xff000000) {
+            // NuDDSGetTextureDescription classifies this as NUTEX_RGBA32 and
+            // the original upload path passes the payload straight to
+            // glTexImage2D(..., GL_RGBA, GL_UNSIGNED_BYTE, ...).  In
+            // particular it does not reinterpret the legacy DDS masks.
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, src + 128);
+        } else if (fourcc == 0x31435445) { // 'ETC1'
+            if (w <= 0 || h <= 0 || data_size < 128) {
+                glDeleteTextures(1, &tex);
+                return 0;
+            }
+            const usize block_width = ((usize)w + 3) / 4;
+            const usize block_height = ((usize)h + 3) / 4;
+            const usize payload_size = block_width * block_height * 8;
+            if (payload_size > data_size - 128) {
+                LOG_WARN("[tex] truncated ETC1 texture %dx%d: have=%u need=%u", w, h, (u32)(data_size - 128),
+                         (u32)payload_size);
+                glDeleteTextures(1, &tex);
+                return 0;
+            }
+            const u8 *cur = src + 128;
             u8 *rgba = (u8 *)malloc((usize)w * h * 4);
-            for (i32 by = 0; by < h / 4; by++) {
-                for (i32 bx = 0; bx < w / 4; bx++) {
+            for (usize by = 0; by < block_height; by++) {
+                for (usize bx = 0; bx < block_width; bx++) {
                     u8 px[16][3];
-                    Etc1DecodeBlock(cur + ((usize)by * (w / 4) + bx) * 8, px);
+                    Etc1DecodeBlock(cur + (by * block_width + bx) * 8, px);
                     for (i32 y = 0; y < 4; y++) {
                         for (i32 x = 0; x < 4; x++) {
-                            u8 *d = rgba + (((usize)(by * 4 + y) * w) + bx * 4 + x) * 4;
+                            const usize dst_x = bx * 4 + x;
+                            const usize dst_y = by * 4 + y;
+                            if (dst_x >= (usize)w || dst_y >= (usize)h) {
+                                continue;
+                            }
+                            u8 *d = rgba + (dst_y * (usize)w + dst_x) * 4;
                             d[0] = px[y * 4 + x][0];
                             d[1] = px[y * 4 + x][1];
                             d[2] = px[y * 4 + x][2];
@@ -509,6 +532,9 @@ static GLuint CreateGLTexFromPlatformInMemory(void *data, usize data_size, i32 *
             }
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
             free(rgba);
+        } else {
+            glDeleteTextures(1, &tex);
+            return 0;
         }
         return tex;
     }
@@ -626,6 +652,16 @@ i32 NuTexRead(char *name, VARIPTR *buf, VARIPTR *buf_end) {
 // private snapshot of each pending blob here, keyed by NUNATIVETEX*, so the
 // deferred upload decodes real pixels instead of recycled arena bytes.
 static std::map<NUNATIVETEX *, std::vector<u8>> g_hostStagedTextures;
+// Retain the scene hash after the deferred blob has been consumed.  This is
+// host-test diagnostics only: it lets debugger/capture tooling identify the
+// source asset behind a live GL texture without changing the game texture
+// registry or the original render path.
+static std::map<const NUNATIVETEX *, u32> g_hostTextureHashes;
+
+extern "C" u32 NuTexHostGetHash(const NUNATIVETEX *texture) {
+    auto it = g_hostTextureHashes.find(texture);
+    return it != g_hostTextureHashes.end() ? it->second : 0;
+}
 
 // NuGScnReadTexturesPS uploads through a stack-local NUNATIVETEX in the
 // original.  That is safe there because the Android loading thread owns a GL
@@ -634,35 +670,45 @@ static std::map<NUNATIVETEX *, std::vector<u8>> g_hostStagedTextures;
 // texture objects on the host.
 static std::vector<std::vector<u8>> g_hostSceneTextureBlobs;
 
-static bool HostStageHashedTexture(NUNATIVETEX *texture, u32 hash) {
+static bool HostReadHashedTexture(u32 hash, std::vector<u8> &data) {
     char path[0x10c];
-    // The host test ships only the engine's universal fallback texture set.
-    snprintf(path, sizeof(path), "SHAREDTEXTURES/0X%08X.PVRNC", hash);
-    NUFILE file = NuFileOpen(path, NUFILE_READ);
+    const char *extensions[] = {"ETC1", "PVRNC"};
+
+    NUFILE file = 0;
+    for (usize i = 0; i < sizeof(extensions) / sizeof(extensions[0]); ++i) {
+        snprintf(path, sizeof(path), "SHAREDTEXTURES/0X%08X.%s", hash, extensions[i]);
+        file = NuFileOpen(path, NUFILE_READ);
+        if (file != 0) {
+            break;
+        }
+    }
     if (file == 0) {
-        LOG_WARN("[tex-scene] missing hash 0x%08x", hash);
         return false;
     }
 
     const i32 size = NuFileOpenSize(file);
-    std::vector<u8> data(size);
+    data.resize(size);
     NuFileRead(file, data.data(), size);
     NuFileClose(file);
+    return true;
+}
+
+static bool HostStageHashedTexture(NUNATIVETEX *texture, u32 hash) {
+    std::vector<u8> data;
+    if (!HostReadHashedTexture(hash, data)) {
+        LOG_WARN("[tex-scene] missing hash 0x%08x", hash);
+        return false;
+    }
     g_hostStagedTextures[texture] = std::move(data);
+    g_hostTextureHashes[texture] = hash;
     return true;
 }
 
 GLuint NuIOS_CreateGLTexFromHash(u32 hash) {
-    char path[0x10c];
-    snprintf(path, sizeof(path), "SHAREDTEXTURES/0X%08X.PVRNC", hash);
-    NUFILE file = NuFileOpen(path, NUFILE_READ);
-    if (file == 0) {
+    std::vector<u8> data;
+    if (!HostReadHashedTexture(hash, data)) {
         return 0;
     }
-    const i32 size = NuFileOpenSize(file);
-    std::vector<u8> data(size);
-    NuFileRead(file, data.data(), size);
-    NuFileClose(file);
     i32 width = 0;
     i32 height = 0;
     return CreateGLTexFromPlatformInMemory(data.data(), data.size(), &width, &height, false);
@@ -760,16 +806,13 @@ void NuTexSetTextureWithStagePS(NUNATIVETEX *tex, u32 stage) {
     if (tex != NULL && tex->platform.gl_tex == 0) {
         std::vector<u8> staged;
         if (NuTexHostTakeStaged(tex, staged)) {
-            LOG_WARN("[tex] staged size=%d wh=%dx%d", (int)staged.size(), tex->width, tex->height);
             void *data_ptr = staged.data();
             GLuint created = 0;
             {
                 i32 w = tex->width, h = tex->height;
                 created = CreateGLTexFromPlatformInMemory(data_ptr, staged.size(), &w, &h, true);
-                LOG_WARN("[tex] PVR upload created=%u", created);
                 if (created == 0) {
                     created = CreateGLTexFromPlatformInMemory(data_ptr, staged.size(), &w, &h, false);
-                    LOG_WARN("[tex] ETC1 try created=%u", created);
                 }
                 tex->width = w;
                 tex->height = h;
@@ -778,10 +821,8 @@ void NuTexSetTextureWithStagePS(NUNATIVETEX *tex, u32 stage) {
                 tex->platform.gl_tex = created;
                 tex->image_data = NULL;
                 tex->size = 0;
-                LOG_WARN("[tex] staged upload ok tex=%u", created);
             } else {
                 LOG_WARN("[tex] staged upload failed");
-                g_hostStagedTextures[tex] = std::move(staged);
             }
         } else if (tex->image_data != NULL && tex->size != 0) {
             NuTexCreatePS(tex, true);
@@ -792,14 +833,12 @@ void NuTexSetTextureWithStagePS(NUNATIVETEX *tex, u32 stage) {
     glBindTexture(GL_TEXTURE_2D, tex != NULL ? tex->platform.gl_tex : 0);
 }
 
-// original 0x2fb280 — hand out the next free native-texture slot index. The
-// original scans the loaded-texture table for a NULL entry; the shared
-// registry here keeps full NUNATIVETEX structs, so the free-slot scan reduces
-// to a monotonic counter (same observable: unique fresh id per call).
 i32 NuTexGenTexture(NUNATIVETEX *tex) {
-    static i32 next_slot;
-    (void)tex;
-    return ++next_slot;
+    // The original stores the supplied native texture in the first free
+    // texture-list slot.  The host registry is owned by NuTexCreateNative,
+    // whose extra upload step is a no-op for these initially empty render
+    // targets, so use it to preserve both the slot and pointer association.
+    return NuTexCreateNative(tex, false);
 }
 
 void NuTexCreatePS(NUNATIVETEX *tex, bool is_pvrtc) {

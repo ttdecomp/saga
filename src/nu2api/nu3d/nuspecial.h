@@ -16,10 +16,11 @@ extern "C" {
     i32 NuSpecialFind(NUGSCN *scene, void **dest, char *name, i32 flags);
     i32 NuSpecialExistsFn(void *special);
     void NuSpecialSetVisibility(void *special, i32 visible);
-    void NuSpecialSetDrawMtx(void *special, void *mtx);
+    void NuSpecialSetDrawMtx(void *special, NUMTX *mtx);
     NUMTX *NuSpecialGetDrawMtx(void *special);
     struct nuvec_s *NuSpecialGetPos(void *special);
-    void NuSpecialDrawAt(void *special, void *mtx);
+    i32 NuSpecialDrawAt(void *special, NUMTX *mtx);
+    i32 NuSpecialGetVisibilityFn(void *special);
     void NuSpecialSetDrawPos(void *special, void *pos);
     i32 NuSpecialClipTestExtents(void *special, void *mtx);
     i32 NuSpecialSetClipping(i32 enabled, i32 state);

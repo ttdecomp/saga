@@ -18,7 +18,7 @@
 extern "C" {
     void NuFramebufferInitEx(void);
     void NuPostEffectInit(void);
-    void NuAnimInit(void);
+    void NuAnimInit(i32 max_joints, VARIPTR *buf, VARIPTR buf_end);
     void NuDisplayListInit(VARIPTR *buf, VARIPTR *buf_end);
 }
 
@@ -166,7 +166,7 @@ i32 NuInitHardware(VARIPTR *buf, VARIPTR *buf_end, i32 heap_size, ...) {
     NuPostEffectInit();
     NuMtlInitEx(buf, 512);
     NuRndrInitGeneric();
-    NuAnimInit();
+    NuAnimInit(0xa0, buf, *buf_end);
     NuTimeInitPS();
     bgProcInit(); // starts the background-loading thread used by bgPostRequest
 

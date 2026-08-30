@@ -249,6 +249,11 @@ extern i32 PAL;
 extern f32 FRAMETIME;
 extern f32 DEFAULTFPS;
 extern f32 DEFAULTFRAMETIME;
+extern void *globalbuffer;
+extern i32 MaxAnimJoints;
+extern u8 ForcePlayEndFrame;
+extern u8 BitCountTable[256];
+extern i32 isBitCountTable;
 extern f32 MAXFRAMETIME;
 
 // ------------------------------------------------------------------------
@@ -746,6 +751,7 @@ extern i32 PermDataLoaded;          // original .data init 1
 extern i32 LoadPerm_LanguageSelect; // bss
 extern i32 LoadPerm_StringsLoaded;  // bss
 extern i32 menu_flash;              // bss
+extern i32 noscenespecials;         // disables automatic display-scene specials
 extern f32 game_pulse;
 extern f32 global_pulse;
 extern i32 IntroText_TextID; // .data init -1

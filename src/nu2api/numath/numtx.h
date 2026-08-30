@@ -176,7 +176,7 @@ extern "C" {
     void NuMtx24BitCorrection(NUMTX *m);
     void NuMtxCalcFaceOn(NUMTX *m, NUVEC *v);
     void NuMtxCalcCheapFaceOn(NUMTX *m, NUVEC *v);
-    void NuMtxCalcDebrisFaceOn(NUMTX *m, NUVEC *v);
+    void NuMtxCalcDebrisFaceOn(NUMTX *m);
     void NuMtxCalcFaceY(NUMTX *m, NUVEC *v);
     void NuMtxGetPerspectivePS3(NUMTX *mtx, f32 *fovy, f32 *aspect, f32 *zNear, f32 *zFar);
     void NuMtxLookAtInverseD3D(NUMTX *mtx, NUVEC *eye, NUVEC *center, NUVEC *up);

@@ -36,6 +36,7 @@ i32 GAMEDEMO = 0;
 NUGSCN *big_icon_scene = NULL;
 NUGSCN *area_scene = NULL;
 NUGSCN *things_scene = NULL;
+void *things_scene_terrain = NULL;
 LEVELDATA *PLATFORM_LDATA = NULL;
 LEVELDATA *RETAKED_LDATA = NULL;
 LEVELDATA *CREDITS_LDATA = NULL;
@@ -278,7 +279,7 @@ void WorldInfo_Init(WORLDINFO *world) {
     PlayerItemTypes_Reset(world);
     Players_Init();
     rtlResetDynamic();
-    SetPartRTLSet(world->rtl_set_id);
+    SetPartRTLSet(static_cast<i32>(reinterpret_cast<usize>(world->rtl_set)));
 
     WorldInfo_UpdateRoomVisibility(world, 1);
 
@@ -596,16 +597,17 @@ after_area:
         goto abort;
 
     // Lights
-    if ((level->flags & LEVEL_STATUS) == 0) {
+    if ((level->flags & LEVEL_UNKNOWN_FLAG_4) == 0) {
         world->rtl_id = -1;
         world->light_dir = 0;
     } else {
-        light_path = world->config_file;
+        light_path = level == TITLES_LDATA ? const_cast<char *>("levels\\titles\\titles") : world->config_file;
         LoadLights(world, light_path);
-        rtl_id = rtlFindByUserId(world->rtl_set_id, 1);
+        rtl_id = rtlFindByUserId(static_cast<i32>(reinterpret_cast<usize>(world->rtl_set)), 1);
         world->rtl_id = rtl_id;
         if (rtl_id != -1) {
-            rtlGetDirection(world->rtl_set_id, rtl_id, (void **)&world->light_dir);
+            rtlGetDirection(static_cast<i32>(reinterpret_cast<usize>(world->rtl_set)), rtl_id,
+                            (void **)&world->light_dir);
         } else {
             world->light_dir = 0;
         }

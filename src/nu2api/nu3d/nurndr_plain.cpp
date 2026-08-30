@@ -25,6 +25,7 @@
 #include <string.h>
 
 #include "decomp.h"
+#include "legoapi/legoapi_types.h"
 #include "nu2api/nucore/nucore.hpp"
 #include "globals.h"
 #include "nu2api/nucore/common.h"
@@ -76,10 +77,6 @@ i32 g_NuPrim_VertexCount;
 static u16 *s_pendingVertexCount = nullptr;
 static u16 s_activePrimType = 0;
 
-// Default 2D render-state constant passed to RndrStateSetConstAlphaTint.
-// The original passes a pointer into .rodata @0x57bd40; content is all-zero.
-static const u32 kDefault2DState[4] = {0};
-
 // Display-list cursor for the 2D stream.  Defined in nudlist.cpp.
 extern VARIPTR *display_list_buffer;
 
@@ -128,7 +125,7 @@ extern "C" {
     i32 NuDisplayListAddRenderScene(void);
     i32 NuDynamicLightIsEnabled(i32);
     void NuDynamicLightAddRenderScene(i32, i32, i32);
-    void RndrStateSetConstAlphaTint(i32, i32, const void *, i32, i32);
+    void RndrStateSetConstAlphaTint(i32 alpha_enabled, i32 tint_enabled, f32 alpha, const NUCOLOUR3 *tint, NUMTL *mtl);
     void DisplayListUpdateRenderState(void *list, void *state);
     void NuDisplayListLinkMtl(nudisplaylist_s *list, NUMTL *mtl);
     VARIPTR *NuDisplayListLinkItems(nudisplaylist_s *list, i32 count);
@@ -213,7 +210,7 @@ extern "C" __attribute__((weak)) void NuPrim2DBegin(u32 prim_type, u32 /*vtx_fmt
         NuDisplayListLinkMtl(list, mtl);
     }
 
-    RndrStateSetConstAlphaTint(0, 0, kDefault2DState, 0, 0);
+    RndrStateSetConstAlphaTint(0, 0, 0.0f, nullptr, nullptr);
     DisplayListUpdateRenderState(list, &render_state);
     NuDisplayListLinkItems(list, 1);
 
@@ -497,9 +494,96 @@ extern "C" void NuRndrGlobalFrameCount(void) {
 }
 extern "C" void NuRndrGlobalFrameCountPause(void) {
 }
-extern "C" void NuRndrGradRect2di(void) {
+
+// NuRndrRect2di and NuRndrGradRect2di write the attributes for the current
+// vertex before handing its position to NuPrim2DAddXYZ.  The latter advances
+// the stream cursor, so doing this in one helper preserves the ordering of
+// the original immediate-mode implementation.
+static inline u32 NuRndrPrimColour(u32 colour) {
+    if (g_NuPrim_NeedsOverbrightening != 0) {
+        return colour;
+    }
+    return (colour & 0xff000000u) | ((colour >> 1) & 0x007f7f7fu);
 }
-extern "C" void NuRndrGradRectUV2di(void) {
+
+static inline void NuRndrPrimAttributes(u32 colour, bool u_one, bool v_one) {
+    u8 *vertex = reinterpret_cast<u8 *>((*g_NuPrim_StreamBufferPtr)->addr);
+    *reinterpret_cast<u32 *>(vertex + 0xc) = NuRndrPrimColour(colour);
+    if (g_NuPrim_NeedsHalfUVs != 0) {
+        *reinterpret_cast<u16 *>(vertex + 0x10) = u_one ? 0x3c00 : 0;
+        *reinterpret_cast<u16 *>(vertex + 0x12) = v_one ? 0x3c00 : 0;
+    } else {
+        *reinterpret_cast<f32 *>(vertex + 0x10) = u_one ? 1.0f : 0.0f;
+        *reinterpret_cast<f32 *>(vertex + 0x14) = v_one ? 1.0f : 0.0f;
+    }
+}
+
+extern "C" void NuRndrGradRect2di(i32 x, i32 y, i32 w, i32 h, i32 *colour, numtl_s *mtl) {
+    const f32 sx = static_cast<f32>(x) * 0.2f;
+    const f32 sy = static_cast<f32>(y) * 0.2f;
+    const f32 sw = static_cast<f32>(w) * 0.2f;
+    const f32 sh = static_cast<f32>(h) * 0.2f;
+
+    NuPrim2DBegin(1, 7, mtl);
+    NuRndrPrimAttributes(static_cast<u32>(colour[0]), false, false);
+    NuPrim2DAddXYZ(sx, sy, 0.0f);
+    NuRndrPrimAttributes(static_cast<u32>(colour[1]), true, false);
+    NuPrim2DAddXYZ(sx + sw, sy, 0.0f);
+    NuRndrPrimAttributes(static_cast<u32>(colour[2]), false, true);
+    NuPrim2DAddXYZ(sx, sy + sh, 0.0f);
+    NuRndrPrimAttributes(static_cast<u32>(colour[3]), true, true);
+    NuPrim2DAddXYZ(sx + sw, sy + sh, 0.0f);
+    NuPrim2DEnd();
+}
+static inline u16 NuRndrFloatToHalf(f32 value) {
+    union {
+        f32 value;
+        u32 bits;
+    } conversion = {value};
+    i32 exponent = static_cast<i32>((conversion.bits >> 23) & 0xff) - 0x70;
+    u16 half_exponent = 0;
+    if (exponent >= 0) {
+        half_exponent = 0x7c00;
+        if (exponent < 0x20) {
+            half_exponent = static_cast<u16>(exponent * 0x400);
+        }
+    }
+    return static_cast<u16>((conversion.bits & 0x7fffff) >> 13) | static_cast<u16>((conversion.bits >> 31) << 15) |
+           half_exponent;
+}
+
+static inline void NuRndrPrimUV(f32 u, f32 v) {
+    u8 *vertex = reinterpret_cast<u8 *>((*g_NuPrim_StreamBufferPtr)->addr);
+    if (g_NuPrim_NeedsHalfUVs != 0) {
+        *reinterpret_cast<u16 *>(vertex + 0x10) = NuRndrFloatToHalf(u);
+        *reinterpret_cast<u16 *>(vertex + 0x12) = NuRndrFloatToHalf(v);
+    } else {
+        *reinterpret_cast<f32 *>(vertex + 0x10) = u;
+        *reinterpret_cast<f32 *>(vertex + 0x14) = v;
+    }
+}
+
+extern "C" void NuRndrGradRectUV2di(i32 x, i32 y, i32 w, i32 h, f32 u0, f32 v0, f32 u1, f32 v1, u32 *colours,
+                                    numtl_s *mtl) {
+    const f32 sx = static_cast<f32>(x) * 0.0625f;
+    const f32 sy = static_cast<f32>(y) * 0.0625f;
+    const f32 ex = sx + static_cast<f32>(w) * 0.0625f;
+    const f32 ey = sy + static_cast<f32>(h) * 0.0625f;
+
+    NuPrim2DBegin(1, 7, mtl);
+    NuRndrPrimAttributes(colours[0], false, false);
+    NuRndrPrimUV(u0, v0);
+    NuPrim2DAddXYZ(sx, sy, 0.0f);
+    NuRndrPrimAttributes(colours[1], false, false);
+    NuRndrPrimUV(u1, v0);
+    NuPrim2DAddXYZ(ex, sy, 0.0f);
+    NuRndrPrimAttributes(colours[2], false, false);
+    NuRndrPrimUV(u0, v1);
+    NuPrim2DAddXYZ(sx, ey, 0.0f);
+    NuRndrPrimAttributes(colours[3], false, false);
+    NuRndrPrimUV(u1, v1);
+    NuPrim2DAddXYZ(ex, ey, 0.0f);
+    NuPrim2DEnd();
 }
 extern "C" void NuRndrGrid(void) {
 }
@@ -521,7 +605,73 @@ extern "C" void NuRndrLineStrip2d(void) {
 }
 extern "C" void NuRndrLineStrip2di(void) {
 }
-extern "C" void NuRndrParticleGroup(void) {
+void BuildDebrisVerts(PartHeader *, uv1debdata *, numtl_s *, f32, numtx_s *, i32, f32, f32, f32, f32);
+void AddParticleGroupToDisplayList(nunativedebrisdata_s *);
+
+extern NUMTX NuRndr_DebrisMtx;
+extern NUMTX *NuRndr_DebrisRotMtxPtr;
+extern NUVEC4 NuRndr_DebrisPlane;
+extern nunativedebrisdata_s *g_ParticleGroup;
+extern void *g_debrisUploadBuffer;
+extern void *g_pVBData;
+extern u32 g_CurrentDebriVBIndex;
+extern i32 g_UseSysMemVB;
+extern u32 g_CurrentVBVertexCount;
+extern void *g_lastPartEffect;
+
+extern "C" void NuRndrParticleGroup(uv1debdata *chunks, PartHeader *header, NUMTL *material, f32 time, NUMTX *matrix,
+                                    i32 particle_type, f32 a, f32 b, f32 c, f32 near_clip) {
+    if (header == NULL) {
+        g_lastPartEffect = NULL;
+        return;
+    }
+    if (material == NULL) {
+        return;
+    }
+
+    if (header != g_lastPartEffect) {
+        if (NuRndr_DebrisRotMtxPtr == NULL) {
+            NuMtxCalcDebrisFaceOn(&NuRndr_DebrisMtx);
+        } else {
+            NuRndr_DebrisMtx = *NuRndr_DebrisRotMtxPtr;
+        }
+
+        NUCAMERA camera;
+        NuCameraGet(&camera);
+        NuRndr_DebrisPlane.x = camera.mtx.m20;
+        NuRndr_DebrisPlane.y = camera.mtx.m21;
+        NuRndr_DebrisPlane.z = camera.mtx.m22;
+        NuRndr_DebrisPlane.w =
+            -(camera.mtx.m30 * camera.mtx.m20 + camera.mtx.m31 * camera.mtx.m21 + camera.mtx.m32 * camera.mtx.m22);
+        header->last_render_time = time;
+
+        VARIPTR *buffer = NuDisplayListGetBuffer();
+        g_ParticleGroup = static_cast<nunativedebrisdata_s *>(buffer->void_ptr);
+        buffer->addr += sizeof(nunativedebrisdata_s);
+        g_ParticleGroup->vertex_buffer_index = static_cast<u8>(g_CurrentDebriVBIndex);
+        g_ParticleGroup->use_system_memory_vb = g_UseSysMemVB;
+        g_ParticleGroup->first_vertex = static_cast<i32>(g_CurrentVBVertexCount);
+        g_ParticleGroup->vertex_count = 0;
+        g_ParticleGroup->material = material;
+        if (g_pVBData == NULL) {
+            g_pVBData = g_debrisUploadBuffer;
+        }
+        AddParticleGroupToDisplayList(g_ParticleGroup);
+        g_lastPartEffect = header;
+    }
+
+    dma_particle_chunk_s *chunk = reinterpret_cast<dma_particle_chunk_s *>(chunks);
+    for (i32 count = 0; chunk != NULL && count < 0x101; ++count) {
+        BuildDebrisVerts(header, reinterpret_cast<uv1debdata *>(chunk), material, time, matrix, particle_type, a, b, c,
+                         near_clip);
+        if (chunk->command == 0x52) {
+            break;
+        }
+        if (chunk->command != 0x4e) {
+            break;
+        }
+        chunk = chunk->next;
+    }
 }
 extern "C" void NuRndrPspDraw(void) {
 }
@@ -529,9 +679,33 @@ extern "C" void NuRndrRect(void) {
 }
 extern "C" void NuRndrRect2d(void) {
 }
-extern "C" void NuRndrRect2di(void) {
+extern "C" void NuRndrRect2di(i32 x, i32 y, i32 w, i32 h, i32 colour, numtl_s *mtl) {
+    const f32 sx = static_cast<f32>(x) * 0.2f;
+    const f32 sy = static_cast<f32>(y) * 0.2f;
+    const f32 sw = static_cast<f32>(w) * 0.2f;
+    const f32 sh = static_cast<f32>(h) * 0.2f;
+
+    NuPrim2DBegin(4, 7, mtl);
+    NuRndrPrimAttributes(static_cast<u32>(colour), false, false);
+    NuPrim2DAddXYZ(sx, sy, 0.0f);
+    NuRndrPrimAttributes(static_cast<u32>(colour), true, false);
+    NuPrim2DAddXYZ(sx + sw, sy + sh, 0.0f);
+    NuPrim2DEnd();
 }
-extern "C" void NuRndrRectUV2di(void) {
+extern "C" void NuRndrRectUV2di(i32 x, i32 y, i32 w, i32 h, f32 u0, f32 v0, f32 u1, f32 v1, u32 colour, numtl_s *mtl) {
+    const f32 sx = static_cast<f32>(x) * 0.0625f;
+    const f32 sy = static_cast<f32>(y) * 0.0625f;
+    const f32 ex = sx + static_cast<f32>(w) * 0.0625f;
+    const f32 ey = sy + static_cast<f32>(h) * 0.0625f;
+
+    NuPrim2DBegin(4, 7, mtl);
+    NuRndrPrimAttributes(colour, false, false);
+    NuRndrPrimUV(u0, v0);
+    NuPrim2DAddXYZ(sx, sy, 0.0f);
+    NuRndrPrimAttributes(colour, false, false);
+    NuRndrPrimUV(u1, v1);
+    NuPrim2DAddXYZ(ex, ey, 0.0f);
+    NuPrim2DEnd();
 }
 extern "C" void NuRndrScreenGrabTileBegin(void) {
 }
@@ -541,7 +715,12 @@ extern "C" void NuRndrScreenGrabTileEnd(void) {
 }
 extern "C" void NuRndrScreenGrabTileInit(void) {
 }
-extern "C" void NuRndrSetAmbientLightPS(void) {
+extern "C" i32 NuRndrSetAmbientLightPS(const NUCOLOUR3 *colour) {
+    render_state.ambient_intensity = *colour;
+    render_state.light_state = nullptr;
+    render_state.state.global_id++;
+    render_state.state.lights_id++;
+    return 1;
 }
 extern "C" void NuRndrSetAmbientLightSpecular(void) {
 }
@@ -553,7 +732,20 @@ extern "C" void NuRndrSetDebBaseRange(void) {
 }
 extern "C" void NuRndrSetDebBox(void) {
 }
-extern "C" void NuRndrSetDirectionalLightsPS(void) {
+extern "C" i32 NuRndrSetDirectionalLightsPS(const NUVEC *dir0, const NUCOLOUR3 *colour0, const NUVEC *dir1,
+                                            const NUCOLOUR3 *colour1, const NUVEC *dir2, const NUCOLOUR3 *colour2) {
+    NUMTX *view = NuCameraGetViewMtx();
+    const NUVEC *directions[3] = {dir0, dir1, dir2};
+    const NUCOLOUR3 *colours[3] = {colour0, colour1, colour2};
+    for (i32 i = 0; i < 3; i++) {
+        render_state.light_intensity[i] = *colours[i];
+        NuVecMtxRotate(&render_state.light_direction[i], const_cast<NUVEC *>(directions[i]), view);
+        NuVecNorm(&render_state.light_direction[i], &render_state.light_direction[i]);
+    }
+    render_state.light_state = nullptr;
+    render_state.state.global_id++;
+    render_state.state.lights_id++;
+    return 1;
 }
 extern "C" void NuRndrSetFxMtx(void) {
 }
@@ -561,7 +753,8 @@ extern "C" void NuRndrSetGlobalMinMipLevel(void) {
 }
 extern "C" void NuRndrSetGlobalMipMapBias(void) {
 }
-extern "C" void NuRndrSetParticleRotation(void) {
+extern "C" void NuRndrSetParticleRotation(NUMTX *rotation) {
+    NuRndr_DebrisRotMtxPtr = rotation;
 }
 extern "C" void NuRndrSetSpecularLightPS(void) {
 }
@@ -571,7 +764,7 @@ extern "C" void NuRndrShadPolys(void) {
 }
 extern "C" void NuRndrShadowDirCol(void) {
 }
-extern "C" void NuRndrShadowInit(void) {
+extern "C" void NuRndrShadowInit(u8 *) {
 }
 extern "C" void NuRndrShadowOnOff(void) {
 }
@@ -626,6 +819,27 @@ extern "C" void NuRndrStateUpdateCameraState(void) {
     render_state.state.camera_id++;
 }
 
+void *RndrStateBuildKonstState(NUGLOBALRNDRSTATE *state);
+
+static void *RndrStateBuildLightState(NUGLOBALRNDRSTATE *state) {
+    VARIPTR *buffer = NuDisplayListGetBuffer();
+    auto *packet = static_cast<NULIGHTSTATE *>(buffer->void_ptr);
+    buffer->addr += sizeof(NULIGHTSTATE);
+
+    packet->ambient_intensity = {state->ambient_intensity.r, state->ambient_intensity.g, state->ambient_intensity.b,
+                                 1.0f};
+    for (i32 i = 0; i < 3; i++) {
+        packet->light_intensity[i] = {state->light_intensity[i].r, state->light_intensity[i].g,
+                                      state->light_intensity[i].b, 1.0f};
+        packet->light_direction[i] = {state->light_direction[i].x, state->light_direction[i].y,
+                                      state->light_direction[i].z, 1.0f};
+    }
+    packet->specular_mtx = state->specular_mtx;
+    packet->specular_colour = state->specular_colour;
+    packet->specular_intensity = state->specular_intensity;
+    return packet;
+}
+
 // Camera-state portion of original DisplayListUpdateRenderState @0x2fd5d0.
 // The remaining light/fog/konst branches are independent state builders and
 // are left for their respective subsystem transcriptions.
@@ -634,6 +848,14 @@ extern "C" void DisplayListUpdateRenderState(void *display_list, void *state) {
     auto *global = static_cast<NUGLOBALRNDRSTATE *>(state);
     if (global == nullptr || dl->state->global_id == global->state.global_id) {
         return;
+    }
+
+    if (dl->state->lights_id != global->state.lights_id) {
+        if (global->light_state == nullptr) {
+            global->light_state = RndrStateBuildLightState(global);
+        }
+        NuDisplayListLinkItem(dl, 0x94, global->light_state);
+        dl->state->lights_id = global->state.lights_id;
     }
 
     if (dl->state->camera_id != global->state.camera_id) {
@@ -668,6 +890,13 @@ extern "C" void DisplayListUpdateRenderState(void *display_list, void *state) {
         NuDisplayListLinkItem(dl, 0x9a, global->camera_state);
         dl->state->camera_id = global->state.camera_id;
     }
+    if (dl->state->konst_id != global->state.konst_id) {
+        if (global->konst_state == nullptr) {
+            global->konst_state = RndrStateBuildKonstState(global);
+        }
+        NuDisplayListLinkItem(dl, 0xa5, global->konst_state);
+        dl->state->konst_id = global->state.konst_id;
+    }
     dl->state->global_id = global->state.global_id;
 }
 extern "C" void NuRndrStrip3d(void) {
@@ -687,8 +916,6 @@ extern "C" void NuRndrWireTri(void) {
 
 // Shader / texture / vertex state
 extern "C" void NuShaderGetDirtyMask(void) {
-}
-extern "C" void NuShaderProgramCreateIOS(void) {
 }
 extern "C" void NuShaderUniformGetByString(void) {
 }

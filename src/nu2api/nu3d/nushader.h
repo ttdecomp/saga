@@ -51,6 +51,24 @@ struct nushaderobject_s {
 
 typedef nushaderobject_s NUSHADEROBJECT;
 
+struct nushaderprogramparameter_s {
+    u16 register_index;
+    u16 location_and_setter;
+};
+
+typedef nushaderprogramparameter_s NUSHADERPROGRAMPARAMETER;
+
+struct nushaderprogram_s {
+    GLuint vertex_shader;
+    GLuint fragment_shader;
+    GLuint program;
+    i32 parameter_count;
+    nushaderprogramparameter_s *parameters;
+    u32 unused[3];
+};
+
+typedef nushaderprogram_s NUSHADERPROGRAM;
+
 #ifdef __cplusplus
 i32 NuShaderObjectBindAttributeLocationsGLSL(GLuint program);
 i32 NuShaderObjectCombineGLSLShadersIntoProgram(GLuint *program_dest, GLuint vertex_shader, GLuint fragment_shader);
@@ -69,6 +87,11 @@ extern "C" {
     void NuShaderObjectUnInit(NUSHADEROBJECT *shader);
     void NuShaderObjectBaseUnInit(NUSHADEROBJECTBASE *shader);
     void NuShaderObjectBaseSetWaterSpeed(f32 speed);
+    NUSHADERPROGRAM *NuShaderProgramCreateIOS(const char *vertex_source, const char *fragment_source);
+    void NuShaderProgramSetVertexParamfv(NUSHADERPROGRAM *program, u32 register_index, const f32 *values,
+                                         i32 component_count);
+    void NuShaderProgramSetFragmentParamfv(NUSHADERPROGRAM *program, u32 register_index, const f32 *values,
+                                           i32 component_count);
 #ifdef __cplusplus
 }
 #endif

@@ -6,6 +6,7 @@
 #include "nu2api/numath/nuquat.h"
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/numath/nuvec.h"
+#include "nu2api/nu3d/nucamera.h"
 
 NUMTX numtx_zero = {0};
 
@@ -1388,22 +1389,44 @@ void NuMtxCalcFaceOn(NUMTX *m, NUVEC *v) {
 }
 
 void NuMtxCalcCheapFaceOn(NUMTX *m, NUVEC *v) {
-    NUANG x;
-    NUANG y;
-
-    y = NuAtan2D(v->x, v->z);
-    x = -NuAtan2D(v->y, NuFsqrt(v->x * v->x + v->z * v->z));
-
-    NuMtxSetRotationX(m, x);
-    NuMtxRotateY(m, y);
+    NUMTX *view = NuCameraGetViewMtx();
+    m->m00 = -view->m00;
+    m->m10 = view->m01;
+    m->m20 = -view->m02;
+    m->m01 = -view->m10;
+    m->m11 = view->m11;
+    m->m21 = -view->m12;
+    m->m02 = -view->m20;
+    m->m12 = view->m21;
+    m->m22 = -view->m22;
+    m->m03 = 0.0f;
+    m->m13 = 0.0f;
+    m->m23 = 0.0f;
+    m->m30 = v->x;
+    m->m31 = v->y;
+    m->m32 = v->z;
+    m->m33 = 1.0f;
 }
 
 void NuMtxCalcCheapFaceOnDebug(NUMTX *m, NUVEC *v) {
     NuMtxCalcCheapFaceOn(m, v);
 }
 
-void NuMtxCalcDebrisFaceOn(NUMTX *m, NUVEC *v) {
-    NuMtxCalcFaceOnGeneric(m, v, false);
+void NuMtxCalcDebrisFaceOn(NUMTX *m) {
+    NUMTX *view = NuCameraGetViewMtx();
+    m->m00 = -view->m00;
+    m->m10 = view->m01;
+    m->m20 = -view->m02;
+    m->m01 = -view->m10;
+    m->m11 = view->m11;
+    m->m21 = -view->m12;
+    m->m02 = -view->m20;
+    m->m12 = view->m21;
+    m->m22 = -view->m22;
+    m->m03 = 0.0f;
+    m->m13 = 0.0f;
+    m->m23 = 0.0f;
+    m->m33 = 1.0f;
 }
 
 void NuMtxCalcFaceY(NUMTX *m, NUVEC *v) {
@@ -1411,15 +1434,55 @@ void NuMtxCalcFaceY(NUMTX *m, NUVEC *v) {
 }
 
 void NuMtxCalcCheapFaceY(NUMTX *m, NUVEC *v) {
-    NUANG y = NuAtan2D(v->x, v->z);
+    NUMTX *view = NuCameraGetViewMtx();
+    NUVEC right = {-view->m00, 0.0f, -view->m20};
+    NUVEC forward = {-view->m02, 0.0f, -view->m22};
+    NuVecNorm(&right, &right);
+    NuVecNorm(&forward, &forward);
 
-    NuMtxSetRotationY(m, y);
+    m->m00 = right.x;
+    m->m01 = right.y;
+    m->m02 = right.z;
+    m->m03 = 0.0f;
+    m->m10 = 0.0f;
+    m->m11 = 1.0f;
+    m->m12 = 0.0f;
+    m->m13 = 0.0f;
+    m->m20 = forward.x;
+    m->m21 = forward.y;
+    m->m22 = forward.z;
+    m->m23 = 0.0f;
+    m->m30 = v->x;
+    m->m31 = v->y;
+    m->m32 = v->z;
+    m->m33 = 1.0f;
 }
 
 void NuMtxCalcCheapFaceY_v2(NUMTX *m, NUVEC *v) {
-    NUANG y = NuAtan2D(v->x, v->z);
+    NUMTX *camera = NuCameraGetMtx();
+    NUVEC camera_forward = {camera->m20, camera->m21, camera->m22};
+    NUVEC right;
+    NUVEC forward;
+    NuVecCross(&right, &camera_forward, v);
+    NuVecNorm(&right, &right);
 
-    NuMtxSetRotationY(m, y);
+    m->m00 = right.x;
+    m->m01 = right.y;
+    m->m02 = right.z;
+    m->m10 = v->x;
+    m->m11 = v->y;
+    m->m12 = v->z;
+    NuVecCross(&forward, &right, v);
+    m->m20 = forward.x;
+    m->m21 = forward.y;
+    m->m22 = forward.z;
+    m->m03 = 0.0f;
+    m->m13 = 0.0f;
+    m->m23 = 0.0f;
+    m->m30 = 0.0f;
+    m->m31 = 0.0f;
+    m->m32 = 0.0f;
+    m->m33 = 1.0f;
 }
 
 void NuMtxGetPerspectivePS3(NUMTX *mtx, f32 *fovy, f32 *aspect, f32 *zNear, f32 *zFar) {

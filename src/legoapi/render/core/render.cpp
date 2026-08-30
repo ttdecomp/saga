@@ -8,6 +8,7 @@ struct rtlidata_s;
 #include "legoapi/render/core/SwipeDecalRenderer.h"
 #include "nu2api/nu3d/nudlist.h"
 #include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nu3d/nuvport.h"
 #include "nu2api/nu3d/NuRenderDevice.h"
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nu3d/nutex.h"
@@ -44,8 +45,57 @@ struct VuVec;
 
 extern "C" void SetQFont2D(void);
 extern "C" void DrawMenu(i32 paused);
+extern "C" i32 NuRndrBeginScene(i32);
+extern "C" void NuRndrEndScene(void);
+extern "C" void NuRndrGradRect2di(i32, i32, i32, i32, i32 *, numtl_s *);
+extern "C" void NuRndrRect2di(i32, i32, i32, i32, i32, numtl_s *);
+extern "C" void NuRndrGradRectUV2di(i32, i32, i32, i32, f32, f32, f32, f32, u32 *, numtl_s *);
+extern "C" void NuRndrRectUV2di(i32, i32, i32, i32, f32, f32, f32, f32, u32, numtl_s *);
+extern "C" void NuRndrClear(u32, u32, f32);
+extern "C" NUVIEWPORT *NuVpGetCurrentViewport(void);
+extern FadeSystem FadeSys;
+extern f32 MainRenderTime;
+extern numtl_s *pause_rndr_mtl;
 extern i32 editor_active;
 extern i32 Paused;
+extern i32 noscenespecials;
+
+namespace {
+    struct NuSpecialHandleLayout {
+        NUGSCN *scene;
+        void *special;
+        void *display_special;
+    };
+
+    struct NuDisplaySpecialLayout {
+        NUMTX mtx;
+        NUMTX draw_mtx;
+        NUVEC min;
+        f32 min_w;
+        NUVEC max;
+        f32 max_w;
+        u8 pad_a0[0x10];
+        NUCLIPOBJECT *clip_objects;
+        char *name;
+        u32 flags;
+        f32 *clip_range;
+        i32 instance_ix;
+        NUMTX *draw_mtx_ptr;
+        i16 wind_speed;
+        i16 wind_scale;
+        u32 pad_cc;
+    };
+
+    struct NuLegacySpecialLayout {
+        u8 pad_00[0x40];
+        void *instance;
+        char *name;
+        u32 flags;
+    };
+} // namespace
+
+DECOMP_ASSERT(sizeof(NuSpecialHandleLayout) == 0xc, "special handle size");
+DECOMP_ASSERT(sizeof(NuDisplaySpecialLayout) == 0xd0, "display special size");
 
 // Camera zoom state
 f32 CameraZoom = 1.0f;
@@ -58,6 +108,7 @@ NUVIDEORESHEADER g_VideoResHeader;
 
 extern "C" {
     void RndrStateCopyGlobalState(NUGLOBALRNDRSTATE *state);
+    i32 NuDisplayListRndrSpecial(nuhspecial_s *special, NUMTX *mtx, i32 skinned, void *skin_mtx, void *blend_values);
 
     void NuDisplaySceneRndr(void *display_scene) {
         NUDLDLISTSCENE *scene = static_cast<NUDLDLISTSCENE *>(display_scene);
@@ -70,6 +121,28 @@ extern "C" {
             scene->flags |= NUDL_SCENE_FLAG_CLIPPING;
         }
         DisplayListGenerateTransforms(reinterpret_cast<nudisplayscene_s *>(scene));
+
+        if ((scene->pad_76[0] & 1) == 0 && noscenespecials == 0 && scene->nspecials > 0) {
+            NUGSCN temporary_scene = {};
+            NUGSCN *gscene = scene->gscene;
+            if (gscene == NULL) {
+                temporary_scene.display_list = reinterpret_cast<nudisplayscene_s *>(scene);
+                gscene = &temporary_scene;
+            }
+
+            NuSpecialHandleLayout handle = {gscene, NULL, NULL};
+            NuDisplaySpecialLayout *special = static_cast<NuDisplaySpecialLayout *>(scene->specials);
+            for (i32 i = 0; i < scene->nspecials; ++i, ++special) {
+                if ((special->flags & 2) != 0) {
+                    handle.display_special = special;
+                    NUMTX *draw_mtx = special->draw_mtx_ptr;
+                    if (draw_mtx == NULL || draw_mtx == reinterpret_cast<NUMTX *>(-1)) {
+                        draw_mtx = &special->draw_mtx;
+                    }
+                    NuDisplayListRndrSpecial(reinterpret_cast<nuhspecial_s *>(&handle), draw_mtx, 0, NULL, NULL);
+                }
+            }
+        }
     }
 
     void NuPortalVisibility(NUGSCN *scene) {
@@ -263,27 +336,6 @@ extern "C" {
     }
 } // extern "C"
 
-namespace {
-    struct NuSpecialHandleLayout {
-        NUGSCN *scene;
-        void *special;
-        void *display_special;
-    };
-
-    struct NuLegacySpecialLayout {
-        u8 pad_00[0x40];
-        void *instance;
-        char *name;
-        u32 flags;
-    };
-
-    struct NuDisplaySpecialLayout {
-        u8 pad_00[0xb4];
-        char *name;
-        u8 pad_b8[0xd0 - 0xb8];
-    };
-} // namespace
-
 i32 NuSpecialFind(NUGSCN *scene, void **dest, char *name, i32 flags) {
     (void)flags; // Present in the exported ABI; unused by the original body.
 
@@ -451,7 +503,20 @@ void DrawStatusText(char *, u16, float, float, float, u32, i32) {
 void DrawWallSpline(float) {
 }
 
-void Draw3DObjectMtx(WORLDINFO_s *, i32, numtx_s *) {
+void Draw3DObjectMtx(WORLDINFO_s *world, i32 object_index, numtx_s *mtx) {
+    if (object_index == -1) {
+        return;
+    }
+    if (world == NULL) {
+        world = WorldInfo_CurrentlyActive();
+        if (world == NULL) {
+            return;
+        }
+    }
+    u8 *object = static_cast<u8 *>(world->lev_objs) + object_index * 0x10;
+    if (object[0x0e] != 0) {
+        NuSpecialDrawAt(object, mtx);
+    }
 }
 
 void DrawGameObjects() {
@@ -466,7 +531,20 @@ void DrawShopPrompts() {
 void DrawStatusIcons(STATUSPACKET_s *, float, float) {
 }
 
-void DrawStillScreen(i32) {
+void DrawStillScreen(i32 clear) {
+    NuRndrBeginScene(-1);
+    NuVpGetCurrentViewport();
+    if (clear != 0) {
+        NuRndrClear(0x500, 0, 1.0f);
+    }
+    if (MainRenderTime >= 1.0f) {
+        NuRndrRectUV2di(0, 0, 0x2800, 0xe00, 0.0f, 1.0f, 1.0f, 0.0f, 0x80808080u, pause_rndr_mtl);
+    } else {
+        const u32 colour = (static_cast<i32>(MainRenderTime * 128.0f) << 24) | 0x00808080u;
+        u32 colours[4] = {colour, colour, colour, colour};
+        NuRndrGradRectUV2di(0, 0, 0x2800, 0xe00, 0.0f, 1.0f, 1.0f, 0.0f, colours, pause_rndr_mtl);
+    }
+    NuRndrEndScene();
 }
 
 void DrawTouchPrompt(char *, char *, bool, bool) {
@@ -524,6 +602,71 @@ void Draw_NOMEMORYCARD() {
 }
 
 void DrawFadeScreenWipe() {
+    extern FadeSystem *pFadeInfo;
+
+    NuRndrBeginScene(-1);
+    extern numtl_s *FadeMtl2;
+    extern numtl_s *SolidMtl;
+
+    // The original routine unconditionally dereferences the shared fade
+    // pointer after beginning a scene.  `pFadeInfo` is installed by
+    // LoadPermData and points at FadeSys; retaining that indirection keeps
+    // this call ABI-identical to the original.
+    FadeSystem &fade_info = *pFadeInfo;
+    const f32 fade_amount = fade_info.fade;
+    const u32 direction = fade_info.direction;
+    i32 gradient[4];
+    i32 solid_x = 0;
+    i32 solid_y = 0;
+    i32 solid_width = 10240;
+    i32 solid_height = 3584;
+
+    if ((direction & 3) != 0) {
+        const bool positive = (direction & 1) != 0;
+        if ((positive && fade_info.rate > 0.0f) || (!positive && fade_info.rate <= 0.0f)) {
+            gradient[0] = static_cast<i32>(0x80000000u);
+            gradient[1] = 0;
+            gradient[2] = static_cast<i32>(0x80000000u);
+            gradient[3] = 0;
+            solid_width = static_cast<i32>(fade_amount * 10240.0f);
+            NuRndrGradRect2di(solid_width, 0, 1024, 3584, gradient, FadeMtl2);
+        } else {
+            gradient[0] = 0;
+            gradient[1] = static_cast<i32>(0x80000000u);
+            gradient[2] = 0;
+            gradient[3] = static_cast<i32>(0x80000000u);
+            const i32 edge = static_cast<i32>((1.0f - fade_amount) * 10240.0f);
+            NuRndrGradRect2di(edge - 1024, 0, 1024, 3584, gradient, FadeMtl2);
+            solid_x = edge;
+            solid_width = 10240 - edge;
+        }
+    } else if ((direction & 0xc) != 0) {
+        // The vertical sign test is the same two-way rate/direction test as
+        // the horizontal one, with bit 2 selecting the opposite side.
+        const bool edge_first = (direction & 4) != 0 ? fade_info.rate <= 0.0f : fade_info.rate > 0.0f;
+        if (edge_first) {
+            gradient[0] = static_cast<i32>(0x80000000u);
+            gradient[1] = static_cast<i32>(0x80000000u);
+            gradient[2] = 0;
+            gradient[3] = 0;
+            const i32 edge = static_cast<i32>((1.0f - fade_amount) * 3584.0f);
+            NuRndrGradRect2di(0, edge - 358, 10240, 358, gradient, FadeMtl2);
+            solid_y = edge;
+            solid_height = 3584 - edge;
+        } else {
+            gradient[0] = 0;
+            gradient[1] = 0;
+            gradient[2] = static_cast<i32>(0x80000000u);
+            gradient[3] = static_cast<i32>(0x80000000u);
+            solid_height = static_cast<i32>(fade_amount * 3584.0f);
+            NuRndrGradRect2di(0, solid_height, 10240, 358, gradient, FadeMtl2);
+        }
+    }
+
+    if (fade_amount >= 0.0f) {
+        NuRndrRect2di(solid_x, solid_y, solid_width, solid_height, 0, SolidMtl);
+    }
+    NuRndrEndScene();
 }
 
 void DrawMessageBoxRGBA(float, float, float, float, u32, u32, u32, u32, numtl_s *, i32, float) {
@@ -542,6 +685,64 @@ void DrawGameObjectsDraw(i32) {
 }
 
 void DrawPauseScreenWipe() {
+    NuRndrBeginScene(-1);
+
+    const f32 fade = FadeSys.fade;
+    i32 x = 0;
+    i32 y = 0;
+    i32 width = 0x2800;
+    i32 height = 0xe00;
+    f32 u0 = 0.0f;
+    f32 v0 = 1.0f;
+    f32 u1 = 1.0f;
+    f32 v1 = 0.0f;
+    u32 colours[4];
+
+    if ((FadeSys.direction & 3) != 0) {
+        if ((FadeSys.direction & 1) == 0) {
+            width = static_cast<i32>(fade * 10240.0f);
+            colours[0] = 0x80808080u;
+            colours[1] = 0x00808080u;
+            colours[2] = 0x80808080u;
+            colours[3] = 0x00808080u;
+            NuRndrGradRectUV2di(width, 0, 0x400, 0xe00, fade, 1.0f, fade + 0.1f, 0.0f, colours, pause_rndr_mtl);
+            u1 = fade;
+        } else {
+            u0 = 1.0f - fade;
+            x = static_cast<i32>(u0 * 10240.0f);
+            width = 0x2800 - x;
+            colours[0] = 0x00808080u;
+            colours[1] = 0x80808080u;
+            colours[2] = 0x00808080u;
+            colours[3] = 0x80808080u;
+            NuRndrGradRectUV2di(x - 0x400, 0, 0x400, 0xe00, u0 - 0.1f, 1.0f, u0, 0.0f, colours, pause_rndr_mtl);
+        }
+    } else if ((FadeSys.direction & 0xc) != 0) {
+        if ((FadeSys.direction & 4) == 0) {
+            height = static_cast<i32>(fade * 3584.0f);
+            colours[0] = 0x80808080u;
+            colours[1] = 0x80808080u;
+            colours[2] = 0x00808080u;
+            colours[3] = 0x00808080u;
+            NuRndrGradRectUV2di(0, height, 0x2800, 0x166, 0.0f, 1.0f - fade, 1.0f, 1.0f - (fade + 0.1f), colours,
+                                pause_rndr_mtl);
+            v1 = 1.0f - fade;
+        } else {
+            const f32 edge = 1.0f - fade;
+            y = static_cast<i32>(edge * 3584.0f);
+            height = 0xe00 - y;
+            colours[0] = 0x00808080u;
+            colours[1] = 0x00808080u;
+            colours[2] = 0x80808080u;
+            colours[3] = 0x80808080u;
+            NuRndrGradRectUV2di(0, y - 0x166, 0x2800, 0x166, 0.0f, 1.0f - (edge - 0.1f), 1.0f, 1.0f - edge, colours,
+                                pause_rndr_mtl);
+            v0 = 1.0f - edge;
+        }
+    }
+
+    NuRndrRectUV2di(x, y, width, height, u0, v0, u1, v1, 0x80808080u, pause_rndr_mtl);
+    NuRndrEndScene();
 }
 
 void Draw_AUTOSAVECANCEL() {

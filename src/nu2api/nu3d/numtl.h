@@ -181,7 +181,9 @@ typedef struct numtl_s {
     f32 delta_u;
     f32 delta_v;
 
-    u8 unknown_88[0x2c];
+    u8 unknown_88[0x11];
+    i8 particle_type_tag; // 0x99 (-105 marks the untextured debris material)
+    u8 unknown_9a[0x1a];
 
     NUSHADERMTLDESC shader_desc;
 
@@ -199,7 +201,7 @@ typedef struct numtl_s {
 void DefaultMtl(NUMTL *mtl);
 void NuMtlCreatePS(NUMTL *mtl, i32 is_3d);
 extern "C" NUMTL *NuMtlCreate3D(i32 count);
-extern "C" void NuDisplayListCreateMtl(void); // defined among the nucore_plain stubs
+extern "C" void NuDisplayListCreateMtl(NUMTL *mtl);
 void NuMtlUpdatePS(NUMTL *mtl);
 
 extern "C" {

@@ -118,6 +118,13 @@ class name can change mangling even when layout is unchanged. See
 - Use `abi_long`/`abi_ulong` only when the target mangle requires `long`/`unsigned long`.
 - Match placeholder struct offsets and total size exactly. A field name such as
   `field3_0x14` documents uncertainty; it does not excuse a wrong offset.
+- Do not leave known data behind `u8` blobs and raw offset casts. Recover named,
+  typed fields as evidence accumulates, then convert all touched callers to
+  member access. Keep padding only for ranges whose contents are still unknown.
+- Express original-binary ABI checks with `DECOMP_ASSERT`, which is disabled
+  for host builds. Do not use an original 32-bit byte size or field offset for
+  runtime allocation, iteration, or access: use typed fields and `sizeof` so
+  the host ABI remains correct when pointers are wider.
 - Prefer a forward declaration over a second empty definition. Run
   `scripts/check_duplicate_definitions.py` when changing shared types.
 
@@ -135,6 +142,19 @@ builds. `__FILENAME__` is currently a correct repository-relative path such as
 hide the symbol from `nm` or exempt it from `check_symbols.py`; a global symbol
 can still count toward the extra-symbol baseline. Use the attribute only for
 its section-placement purpose, not as a symbol-filtering mechanism.
+
+Host-only diagnostic helpers belong under `src/host-tests/`. Keep asset tools
+general: `./build-host/saga load list [filter]` lists DAT entries and
+`./build-host/saga load extract <dat-path> <output>` extracts any entry. Do not
+add sequence- or level-specific extraction code to target translation units.
+
+Platform replacements follow the same boundary: keep the reconstructed target
+body in its original translation unit with weak linkage, then provide the strong
+host implementation under `src/host-tests/`. This is especially important for
+graphics behavior that the API leaves undefined. For example, a fresh render
+target's texels need not have the same initial alpha on Android and Mesa; model
+the observed target-driver state in the host replacement instead of adding
+`HOST_BUILD` branches or changing the decompiled target body.
 
 ## 7. Globals and data placement
 

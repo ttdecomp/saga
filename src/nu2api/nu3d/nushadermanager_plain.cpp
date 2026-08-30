@@ -330,7 +330,21 @@ extern "C" void NuShaderManagerBindShader(i32 slotAddr) {
 
 extern "C" void NuShaderManagerSetfv(i32 semantic, const f32 *values) {
     using namespace nu2api;
-    const i32 vec4Count = *reinterpret_cast<const i32 *>(g_shaderUniforms[semantic].raw + 8);
+    i32 vec4Count = *reinterpret_cast<const i32 *>(g_shaderUniforms[semantic].raw + 8);
+    if (vec4Count == 0) {
+        switch (semantic) {
+            case 0x3c:
+            case 0x3d:
+            case 0x3e:
+            case 0x4b:
+                vec4Count = 4;
+                break;
+            default:
+                vec4Count = 1;
+                break;
+        }
+        *reinterpret_cast<i32 *>(g_shaderUniforms[semantic].raw + 8) = vec4Count;
+    }
     if (vec4Count < 5) {
         std::memcpy(g_shaderUniforms[semantic].raw + 0x1c, values, static_cast<size_t>(vec4Count) << 4);
     }
@@ -851,6 +865,12 @@ extern "C" void NuShaderObjectGLSLSetupMaterial(i32 program, struct numtl_s *mtl
             glUniform4fv(location, count, value);
         }
     };
+    auto set3fv = [gl_program](const char *name, i32 count, const f32 *value) {
+        const GLint location = glGetUniformLocation(gl_program, name);
+        if (location >= 0) {
+            glUniform3fv(location, count, value);
+        }
+    };
 
     // These are the generated GLSL names for the original material semantics
     // consumed by the legal/intro 2D shaders.
@@ -858,6 +878,37 @@ extern "C" void NuShaderObjectGLSLSetupMaterial(i32 program, struct numtl_s *mtl
     set4fv("_viewProj", 4, g_renderContext_viewProj);
     set4fv("_vs_view", 4, g_renderContext_view);
     set4fv("_kTint", 1, g_renderContext_kTint);
+    set4fv("_vs_sceneAmbientColor", 1, reinterpret_cast<const f32 *>(nu2api::g_shaderUniforms[0x35].raw + 0x1c));
+    set4fv("_vs_lightColor0", 1, reinterpret_cast<const f32 *>(nu2api::g_shaderUniforms[0x36].raw + 0x1c));
+    set4fv("_vs_lightColor1", 1, reinterpret_cast<const f32 *>(nu2api::g_shaderUniforms[0x37].raw + 0x1c));
+    set4fv("_vs_lightPosition0", 1, reinterpret_cast<const f32 *>(nu2api::g_shaderUniforms[0x39].raw + 0x1c));
+    set4fv("_vs_lightPosition1", 1, reinterpret_cast<const f32 *>(nu2api::g_shaderUniforms[0x3a].raw + 0x1c));
+    set4fv("_averageLightColor", 1, reinterpret_cast<const f32 *>(nu2api::g_shaderUniforms[0x4d].raw + 0x1c));
+    set4fv("_averageLightDir", 1, reinterpret_cast<const f32 *>(nu2api::g_shaderUniforms[0x4e].raw + 0x1c));
+    auto unpackColour = [](u32 packed, f32 *colour) {
+        colour[0] = static_cast<f32>(packed & 0xff) / 255.0f;
+        colour[1] = static_cast<f32>((packed >> 8) & 0xff) / 255.0f;
+        colour[2] = static_cast<f32>((packed >> 16) & 0xff) / 255.0f;
+        colour[3] = static_cast<f32>(packed >> 24) / 255.0f;
+    };
+    const u8 *material = reinterpret_cast<const u8 *>(mtl);
+    f32 ambient[4];
+    f32 incandescent[4];
+    f32 specular[4];
+    f32 specularParams[4] = {
+        *reinterpret_cast<const f32 *>(material + 0x130),
+        *reinterpret_cast<const f32 *>(material + 0x12c),
+        *reinterpret_cast<const f32 *>(material + 0x144),
+        *reinterpret_cast<const f32 *>(material + 0x148),
+    };
+    unpackColour(*reinterpret_cast<const u32 *>(material + 0x11c), ambient);
+    unpackColour(*reinterpret_cast<const u32 *>(material + 0x120), incandescent);
+    incandescent[3] = *reinterpret_cast<const f32 *>(material + 0x1b4);
+    unpackColour(*reinterpret_cast<const u32 *>(material + 0x128), specular);
+    set4fv("_ambientColor", 1, ambient);
+    set4fv("_incandescentGlow", 1, incandescent);
+    set4fv("_specular_params", 1, specularParams);
+    set3fv("_specular_specular", 1, specular);
     const u32 diffuse = *reinterpret_cast<const u32 *>(&mtl->shader_desc.diffuse_color[0]);
     const f32 layer0Diffuse[4] = {
         static_cast<f32>(diffuse & 0xff) / 255.0f,

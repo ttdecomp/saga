@@ -2,15 +2,30 @@
 #pragma once
 
 #include "decomp.h"
+#include "nu2api/numath/numtx.h"
 
 struct numtl_s;
 struct nunativetex_s;
 
 typedef u32 NuVertexFormatPS;
 
+struct NuFaceOnTransformPacket {
+    NUMTX world;
+    f32 magnitude;
+    NUMTX face_on;
+};
+
+struct NuFaceOnDrawPacket {
+    u32 reserved;
+    i32 face_count;
+    u32 vertex_buffer;
+    i32 first_vertex;
+};
+
 // Globals defined in nuiosdl_gl.cpp (original bss 0x99b440..).
 extern u32 g_boundShader;
-extern i32 g_currentShaderProgram;
+struct nushaderprogram_s;
+extern nushaderprogram_s *g_currentShaderProgram;
 extern numtl_s *g_boundMaterial;
 extern numtl_s *g_renderContext_materialInUse;
 extern numtl_s *g_LastMtl;

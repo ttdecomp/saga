@@ -3,6 +3,7 @@
 #include "nu2api/nucore/common.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nuvec.h"
+#include "nu2api/numath/nuvec4.h"
 #include "nu2api/nu3d/nurndr.h"
 
 struct numtl_s;
@@ -78,6 +79,17 @@ typedef struct nuglobalrndrstate_s {
     f32 proj_20;                  // 0x1a8
     f32 proj_21;                  // 0x1ac
 } NUGLOBALRNDRSTATE;
+
+// Display-list light packet built from NUGLOBALRNDRSTATE (original size 0xcc).
+typedef struct nulightstate_s {
+    NUCOLOUR4 ambient_intensity;
+    NUCOLOUR4 light_intensity[3];
+    NUVEC4 light_direction[3];
+    NUMTX specular_mtx;
+    NUCOLOUR3 specular_colour;
+    f32 padding_bc;
+    NUVEC specular_intensity;
+} NULIGHTSTATE;
 
 #ifdef __cplusplus
 #if !defined(__x86_64__) // the tidy pre-pass parses as 64-bit host; real build is i686

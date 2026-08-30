@@ -129,18 +129,20 @@ void NuRndrCalcRandCylinderPos(nuvec4_s *, numtx_s *, nuvec_s *) {
 void NuRndrCreateBlendShapeDWAPointers(i32) {
 }
 
-struct nuglobalrndrstate_s;
-
 extern "C" {
-    static __used__ void NuRndrSetAmbientLight(f32 *) {
+    i32 NuRndrSetAmbientLightPS(const NUCOLOUR3 *);
+    i32 NuRndrSetDirectionalLightsPS(const NUVEC *, const NUCOLOUR3 *, const NUVEC *, const NUCOLOUR3 *, const NUVEC *,
+                                     const NUCOLOUR3 *);
+
+    static __used__ void NuRndrSetAmbientLight(NUCOLOUR3 *colour) {
+        NuRndrSetAmbientLightPS(colour);
     }
 
-    static __used__ void NuRndrSetDirectionalLights(f32 *, f32 *, f32 *, f32 *, f32 *, f32 *) {
+    static __used__ void NuRndrSetDirectionalLights(NUVEC *dir0, NUCOLOUR3 *colour0, NUVEC *dir1, NUCOLOUR3 *colour1,
+                                                    NUVEC *dir2, NUCOLOUR3 *colour2) {
+        NuRndrSetDirectionalLightsPS(dir0, colour0, dir1, colour1, dir2, colour2);
     }
 
     static __used__ void NuRndrSetSpecularLight(nuvec_s *, nucolour4_s *) {
-    }
-
-    static __used__ void RndrStateClear(struct nuglobalrndrstate_s *) {
     }
 }

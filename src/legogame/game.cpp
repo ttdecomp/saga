@@ -2,6 +2,7 @@
 
 #include "gameframework/saveload.h"
 #include "globals.h"
+#include "legoapi/legoapi_types.h"
 #include "legoapi/world/area.h"
 #include "legoapi/core/config/cheat.h"
 #include "legoapi/items/base/collection.h"
@@ -21,6 +22,8 @@ void DrawAutoSaveIcon(void) {
 }
 
 char SuperOptions[24] = {0};
+static CUTSCENESYS CutSceneSys_LSW = {0x5b, 0x5c, 0xe7, 2};
+void CutScenes_InitSystem(CUTSCENESYS *);
 
 void InitGameBeforeConfig(void) {
     if (PAL == 0) {
@@ -238,7 +241,7 @@ void InitGameAfterConfig(void) {
     //_DAT_00631432 = 0x62;
     //  DEFAULT_PLAYERHITPOINTS = 8;
     //  PLAYERHITPOINTS_2HEARTSIN1 = 1;
-    //  CutScenes_InitSystem((CUTSCENESYS *)&CutSceneSys_LSW);
+    CutScenes_InitSystem(&CutSceneSys_LSW);
     //  NuGCutDebFixUp_SearchAllPages = 1;
     //  NarrowSockExceptions_Init((NARROWSOCKEXCEPTION *)NarrowSockException_LSW);
     //  APIObjectRegisterAnimRedirect(RedirectAnim, AnimRedirectList_LSW, "chars\\commonanims");

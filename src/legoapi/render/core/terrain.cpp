@@ -155,10 +155,8 @@ void LoadPartFile(WORLDINFO *world) {
             page = edpartLoadPage(path, 1, world->current_gscn);
             world->page_part = page;
         }
-        void *partDebrisSys =
-            InitPartDebris(&world->giz_buffer, &world->unknown_0108, 0x40, PDEBCOUNT, (char **)PDebNameList, page);
-        // 0x2aa0 is both the anim page handle and, here, the part-debris system.
-        world->page_anim = (i32)(usize)partDebrisSys;
+        world->part_debris_sys = static_cast<PARTDEBSYS_s *>(
+            InitPartDebris(&world->giz_buffer, &world->unknown_0108, 0x40, PDEBCOUNT, (char **)PDebNameList, page));
     }
 }
 void ScanTerrId(void *) {

@@ -123,7 +123,19 @@ NUFPAR *NuFParCreate(char *filename) {
 }
 
 NUFPAR *NuFParCreateMem(char *name, char *buffer, i32 bufferSize) {
-    // Stub
+    if (bufferSize != 0 && buffer != NULL) {
+        NUFILE file_handle = NuMemFileOpen(buffer, bufferSize, NUFILE_READ);
+        if (file_handle != 0) {
+            NUFPAR *parser = NuFParOpen(file_handle);
+            if (parser != NULL) {
+                NuStrCpy(parser->file_name, name);
+                return parser;
+            }
+
+            NuFileClose(file_handle);
+        }
+    }
+
     return NULL;
 }
 

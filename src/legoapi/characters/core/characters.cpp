@@ -1,7 +1,65 @@
 #include "decomp.h"
+#include "globals.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/world/world_shared.h"
+#include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nu3d/numtl.h"
 #include "nu2api/nu3d/nutex.h"
+#include "legoapi/core/input/qrand.h"
 #include "legoapi/characters/core/character.h"
+#include "gameapi/edtools/edstubs.h"
+
+// LoadPerm1 is one of the few game-level entry points which wires together
+// otherwise C-linkage engine subsystems.  Keep these declarations local: the
+// individual subsystem TUs intentionally expose their original plain names.
+extern "C" {
+    void rtlInitDynamic(VARIPTR *, VARIPTR, i32);
+    void DebrisSetup(VARIPTR *, VARIPTR, char *, i32, i32, i32);
+    void DebrisRegisterCutoffCameraVec(void *);
+    void edgraSetup(VARIPTR *, VARIPTR, i32, i32, i32);
+    void InitParts(i32, VARIPTR *, VARIPTR);
+    void ParticleReset(void);
+    i32 NuFileExists(char *);
+    void NuStrCpy(char *, char *);
+    i32 edppLoadPage(char *, i32, i32);
+    void *InitGameDebris(VARIPTR *, VARIPTR, i32, i32, char **, char);
+    void NuRndrShadowInit(u8 *);
+    void NuTexAnimProgSysInit(void);
+    void terrainpickupinit(char *, void **);
+
+    extern i32 Grass_Available;
+    extern i32 DEBPAGE_GENERAL;
+    extern i32 DEBPAGE_CHARACTER;
+    extern void *perm_debrissys;
+}
+
+struct AISYS_s;
+void AIScriptLoadAll(char *path, VARIPTR *buf, VARIPTR *buf_end, AISYS_s *sys);
+void InitTexAnimScripts(char **names);
+void BackDrop_Init(char *path, VARIPTR *buf, VARIPTR *buf_end);
+
+i32 PARTPAGE_GENERAL = -1;
+
+// The original table at 0x006281a0.  These are the material animation
+// scripts made available before the permanent things scene is loaded.
+char *TexAnimList_LSW[32] = {
+    (char *)"arrow",          (char *)"blink_01",      (char *)"blink_02",    (char *)"blink_03",
+    (char *)"coin",           (char *)"coin_pause",    (char *)"control",     (char *)"ds_esc_intro_1",
+    (char *)"ds_esc_intro_2", (char *)"ds_1",          (char *)"helpmeobi",   (char *)"lightening1",
+    (char *)"plasma",         (char *)"screen",        (char *)"Dso_screen",  (char *)"anakinbows",
+    (char *)"anakinkilling",  (char *)"anakinspod",    (char *)"boost1",      (char *)"boost2",
+    (char *)"boost3",         (char *)"boost4",        (char *)"gasganospod", (char *)"helpobi",
+    (char *)"hologram1",      (char *)"hologramnoise", (char *)"play8",       (char *)"quidie",
+    (char *)"sebulbaspod",    (char *)"sidious",       (char *)"crowd",       NULL,
+};
+
+void InitStreaks(VARIPTR *, VARIPTR, char *);
+void InitRopeMtl(char *, VARIPTR *, VARIPTR *);
+void InitRipples(ripple_set_s **, VARIPTR *, VARIPTR *, i32);
+void CreateFadeMaterials();
+void CreateUsefulMaterials();
+extern ripple_set_s *ripples;
+extern NUMTL *ShadowMat;
 
 struct AIROW_s;
 struct nuqthdr_s;
@@ -138,6 +196,85 @@ void SetProtocolDroidDeactivatedAction(GameObject_s *) {
 }
 
 void LoadPerm1() {
+    char buf[0x100];
+
+    rtlInitDynamic(&permbuffer_ptr, superbuffer_end, 0x40);
+    permbuffer_ptr.addr = (permbuffer_ptr.addr + 3) & ~3u;
+    DebrisSetup(&permbuffer_ptr, permbuffer_end, (char *)"stuff\\particle", 0x100, 0x200, 0x200);
+    DebrisRegisterCutoffCameraVec(reinterpret_cast<NUVEC *>(&global_camera.mtx.m30));
+    if (Grass_Available != 0) {
+        edgraSetup(&permbuffer_ptr, permbuffer_end, 0x200, 0x20, 0x40);
+    }
+    InitParts(0x40, &permbuffer_ptr, permbuffer_end);
+    ParticleReset();
+
+    NuStrCpy(buf, (char *)"stuff\\general.ptl");
+    if (NuFileExists(buf) != 0) {
+        DEBPAGE_GENERAL = edppLoadPage(buf, 0, 0);
+    }
+    NuStrCpy(buf, (char *)"stuff\\char.ptl");
+    if (NuFileExists(buf) != 0) {
+        DEBPAGE_CHARACTER = edppLoadPage(buf, 5, 0);
+    }
+    perm_debrissys = InitGameDebris(&permbuffer_ptr, permbuffer_end, 0x190, 0x93, debris_name, 0);
+
+    permbuffer_ptr.addr = (permbuffer_ptr.addr + 3) & ~3u;
+    InitStreaks(&permbuffer_ptr, permbuffer_end, (char *)"stuff\\streak.pnt");
+    permbuffer_ptr.addr = (permbuffer_ptr.addr + 3) & ~3u;
+    InitRopeMtl((char *)"rope", &permbuffer_ptr, &permbuffer_end);
+    InitRipples(&ripples, &permbuffer_ptr, &permbuffer_end, 0x40);
+    permbuffer_ptr.addr = (permbuffer_ptr.addr + 0xff) & ~0xffu;
+
+    ShadowMat = NuMtlCreate3D(1);
+    ShadowMat->diffuse_color.r = 1.0f;
+    ShadowMat->diffuse_color.g = 1.0f;
+    ShadowMat->diffuse_color.b = 1.0f;
+    ShadowMat->sort_pri = 0xff;
+    ShadowMat->opacity = 0.999f;
+    u8 *attributes = reinterpret_cast<u8 *>(&ShadowMat->attribs);
+    attributes[1] = (attributes[1] & 0x0f) | 0x60;
+    attributes[0] = (attributes[0] & 0xf0) | 1;
+    attributes[2] = (attributes[2] & 0x8c) | 0x12;
+    ShadowMat->tex_id = static_cast<i16>(NuTexRead((char *)"stuff\\gradient", &permbuffer_ptr, &permbuffer_end));
+    NuMtlUpdate(ShadowMat);
+
+    u8 shadow_random[0x800];
+    for (i32 i = 0; i < 0x800; ++i) {
+        shadow_random[i] = static_cast<u8>(qrand() >> 8);
+    }
+    NuRndrShadowInit(shadow_random);
+    CreateFadeMaterials();
+    CreateUsefulMaterials();
+
+    edgraClumpsReset();
+    edanimParamReset();
+    NuTexAnimProgSysInit();
+    InitTexAnimScripts(TexAnimList_LSW);
+
+    permbuffer_ptr.addr = (permbuffer_ptr.addr + 3) & ~3u;
+    things_scene = NuGScnRead(&permbuffer_ptr, permbuffer_end, (char *)"stuff\\things.gsc");
+    NUGSCN *terrain_scene = NULL;
+    if (things_scene != NULL) {
+        edbitsRegisterThingsScene(things_scene);
+        terrain_scene = things_scene;
+        if (things_scene->display_list != NULL) {
+            things_scene->display_list->flags |= NU_DISPLAYSCENE_FLAG_NEEDS_BUILD;
+        }
+    }
+
+    things_scene_terrain = TerrainInitEx(-1, &permbuffer_ptr, permbuffer_end.void_ptr, 0, (char *)"stuff\\things",
+                                         terrain_scene, 0, 0x14, 0x14, 0x14);
+    terrainpickupinit((char *)"stuff\\things", &things_scene_terrain);
+    BackDrop_Init((char *)"stuff\\starfield.gsc", &permbuffer_ptr, &permbuffer_end);
+
+    NuMtlSetCurrentRenderPlane(0xf);
+    edpartSetParticlePage(DEBPAGE_GENERAL);
+    NuStrCpy(buf, (char *)"stuff\\general.par");
+    if (NuFileExists(buf) != 0) {
+        PARTPAGE_GENERAL = edpartLoadPage(buf, 0, things_scene);
+    }
+    NuMtlSetCurrentRenderPlane(0);
+    AIScriptLoadAll((char *)"scripts", &permbuffer_ptr, &permbuffer_end, NULL);
 }
 
 void LoadPerm2() {

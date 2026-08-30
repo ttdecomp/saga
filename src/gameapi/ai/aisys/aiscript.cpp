@@ -1087,7 +1087,7 @@ void AIScriptLoadAllPakFile(void *pak, char *path, VARIPTR *buf, VARIPTR *buf_en
     i32 memfile_size;
     NUFILE file;
     char filepath[0x80];
-    char script_files[0x18][0x80];
+    char script_files[0x80][0x18];
     NUFPAR *parser;
     i32 i;
     i32 j;
@@ -1134,8 +1134,8 @@ void AIScriptLoadAllPakFile(void *pak, char *path, VARIPTR *buf, VARIPTR *buf_en
 
         NuFileClose(file);
 
-        for (; i != 0; i--) {
-            script = AIScriptLoadPakFile(pak, script_files[i], path, buf, buf_end);
+        for (j = 0; j < i; ++j) {
+            script = AIScriptLoadPakFile(pak, script_files[j], path, buf, buf_end);
 
             if (script != NULL) {
                 NuLinkedListAppend(scripts, &script->list_node);

@@ -48,8 +48,10 @@ char buf[0x1000000];
 // HOST-ONLY: walk the dat's hash-name section and print "index name" pairs
 // (mirrors the scan in NuDatFileFindHash).
 static void DatListNames(NUDATHDR *dat, const char *filter) {
+    fprintf(stderr, "dat version=%d files=%d hashes=%d hash_bytes=%d\n", dat->version, dat->file_count, dat->hash_count,
+            dat->hashes_len);
     if (dat->hash_count == 0) {
-        printf("no hash-name section\n");
+        fprintf(stderr, "no hash-name section\n");
         return;
     }
     const char *cur = dat->hashes;
@@ -89,6 +91,12 @@ int test_load(int argc, char **argv) {
     }
 
     if (strcmp(cmd, "extract") == 0 && argc > 2) {
+        i32 node_idx = NuDatFileFindTree(dat, argv[2]);
+        if (node_idx >= 0 && dat->file_info != NULL) {
+            NUDATFINFO *info = &dat->file_info[node_idx];
+            fprintf(stderr, "entry=%d len=%d decomp=%d mode=%d offset=%d\n", node_idx, info->file_len,
+                    info->decompressed_len, info->compression_mode, info->file_offset);
+        }
         NUFILE f = NuFileOpen((char *)argv[2], NUFILE_READ);
         if (f == 0) {
             fprintf(stderr, "not found: %s\n", argv[2]);

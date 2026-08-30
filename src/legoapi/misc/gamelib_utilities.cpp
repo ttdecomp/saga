@@ -1,4 +1,5 @@
 #include "legoapi/legoapi_types.h"
+#include "globals.h"
 
 void GroupBuffer_InGroup(i32, i32) {
 }
@@ -42,6 +43,34 @@ extern "C" {
     }
 
     void buildBitCountTable(void) {
+        BitCountTable[0] = 0;
+        for (u32 value = 0; value < 0x100; ++value) {
+            if ((value & 2) != 0) {
+                ++BitCountTable[value];
+            }
+            if ((value & 4) != 0) {
+                ++BitCountTable[value];
+            }
+            if ((value & 8) != 0) {
+                ++BitCountTable[value];
+            }
+            if ((value & 0x10) != 0) {
+                ++BitCountTable[value];
+            }
+            if ((value & 0x20) != 0) {
+                ++BitCountTable[value];
+            }
+            if ((value & 0x40) != 0) {
+                ++BitCountTable[value];
+            }
+            if ((value >> 7) != 0) {
+                ++BitCountTable[value];
+            }
+            if (value + 1 < 0x100) {
+                BitCountTable[value + 1] = static_cast<u8>((value + 1) & 1);
+            }
+        }
+        isBitCountTable = 1;
     }
 
 } // extern "C"

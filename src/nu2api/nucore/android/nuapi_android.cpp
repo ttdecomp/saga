@@ -11,6 +11,8 @@
 #include "nu2api/nusound/nusound.h"
 
 extern "C" void NuRenderContextInit(void);
+extern "C" void NuInitDebrisRenderer(VARIPTR *buffer);
+extern "C" void NuIOSMtlInit(void);
 
 void InitializeGLMutex(void) {
 }
@@ -27,8 +29,8 @@ i32 NuInitHardwarePS(VARIPTR *buf, VARIPTR *buf_end, i32 heap_size) {
     NuPad_Interface_InputManagerInitialise();
 
     BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nucore/android/nuapi_android.c", 0xf9);
-    // NuIOSMtlInit();
-    // NuInitDebrisRenderer(buffer_start, buffer_end->voidptr);
+    NuIOSMtlInit();
+    NuInitDebrisRenderer(buf);
     EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nucore/android/nuapi_android.c", 0xfe);
 
     NuRenderThreadCreate();

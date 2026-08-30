@@ -124,6 +124,7 @@ if (BUILD_FOR_HOST)
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/nutex_host.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/nutex_ios_ex.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/ios_graphics_host.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/screen_host.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nucore/NuMemoryManager_host.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nusound/opensl_host.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nu3d/NuRenderDevice_host.cpp

@@ -127,9 +127,9 @@ NUMTL *NuMtlCreate(i32 count) {
 }
 
 // original 0x2f24a0 — same allocation sweep as NuMtlCreate, but WITHOUT
-// the attribs byte6 bit7 set (asm has no `orb $0x80,0x46` here), without
-// display-list registration, and the platform pass runs with is_3d=1
-// (no has_no_transform bit). Byte6 clear keeps NuMtlUpdatePS on the
+// the attribs byte6 bit7 set (asm has no `orb $0x80,0x46` here). The material
+// is queued for dynamic display-list creation and the platform pass runs with
+// is_3d=1 (no has_no_transform bit). Byte6 clear keeps NuMtlUpdatePS on the
 // RetrieveShaderVariant path instead of the vtx_desc bit2 poke path.
 extern "C" NUMTL *NuMtlCreate3D(i32 count) {
     i32 i;
@@ -162,7 +162,7 @@ extern "C" NUMTL *NuMtlCreate3D(i32 count) {
         next = mtl;
     }
 
-    NuDisplayListCreateMtl();
+    NuDisplayListCreateMtl(mtl);
 
     NuMtlCreatePS(mtl, 1);
 

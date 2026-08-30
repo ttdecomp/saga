@@ -108,7 +108,7 @@ typedef struct WORLDINFO_s {
     i32 page_bridge;                    // 0x2aa8  edbri page handle
     burnset_s *burnset;                 // 0x2aac
     CUTSYS *cutscene_sys;               // 0x2ab0
-    i32 rtl_set_id;                     // 0x2ab4  SetPartRTLSet / rtlFindByUserId arg
+    rtlset *rtl_set;                    // 0x2ab4  level real-time-light set
     i32 rtl_id;                         // 0x2ab8  rtlFindByUserId result
     void *light_dir;                    // 0x2abc  rtlGetDirection out-pointer
     void *lev_objs;                     // 0x2ac0  level-object array

@@ -18,6 +18,8 @@
 // original libTTapp.so exactly.  Forward declarations only — the stubs never
 // dereference these.
 struct GIZMOSYS_s;
+struct NUGCUTSCENE_s;
+struct instNUGCUTSCENE_s;
 struct GIZFLOW_s;
 struct COLLECTION_s;
 struct APIOBJECTSYS_s;
@@ -40,6 +42,8 @@ extern i32 CUTCAM;
 // World data (defined in world.cpp)
 extern WORLDINFO WorldInfo[2];
 extern WORLDINFO *WORLD;
+extern NUGSCN *things_scene;
+extern void *things_scene_terrain;
 
 // --- render.cpp — nu3d / NuGScn ---
 extern "C" {
@@ -123,10 +127,11 @@ void InitGameObjectLights(void);
 // --- cutscene.cpp — cutscenes / character scenes ---
 i32 InStory(void);
 extern "C" {
-    void *NuGCutSceneLoad(char *name, NUGSCN *gscn1, NUGSCN *gscn2, i32 flags);
-    void NuGCutSceneFixUp(void *cutscene, char *name, i32 flags, VARIPTR *end);
-    void NuGCutSceneFixUpExtra(void *cutscene, i32 area);
-    void *instNuGCutSceneCreate(void *cutscene, i32 flags, i32 param, char *name);
+    NUGCUTSCENE_s *NuGCutSceneLoad(char *name, VARIPTR *buf, VARIPTR *buf_end, i32 flags);
+    void NuGCutSceneFixUp(NUGCUTSCENE_s *cutscene, NUGSCN *scene, i32 flags, i8 area);
+    void NuGCutSceneFixUpExtra(NUGCUTSCENE_s *cutscene, NUGSCN *scene);
+    instNUGCUTSCENE_s *instNuGCutSceneCreate(NUGCUTSCENE_s *cutscene, NUGSCN *scene, void *extra, char *name,
+                                             VARIPTR *buf, i32 flags);
 }
 void *CutScenes_Load(char *config, NUGSCN *gscn1, NUGSCN *gscn2, i32 param1, VARIPTR *buf, VARIPTR *buf_end, i32 param2,
                      i32 param3, WORLDINFO *world);

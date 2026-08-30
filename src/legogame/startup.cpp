@@ -374,10 +374,6 @@ static void LoadPermData(BGPROCINFO *proc) {
 
     gizaimessagesys = CreateGizAIMessageSys(&permbuffer_ptr, &permbuffer_end, kExtraGizAIMessageCount);
 
-    LOG_INFO("LoadPermData: before backdrop");
-    permbuffer_ptr.addr = ALIGN(permbuffer_ptr.addr, 0x10);
-    BackDrop_Init((char *)"stuff\\starfield.gsc", &permbuffer_ptr, &permbuffer_end);
-
     LOG_INFO("LoadPermData: before LoadPerm1");
     LoadPerm1();
     LOG_INFO("LoadPermData: before LoadPerm2");
