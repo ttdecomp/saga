@@ -184,7 +184,7 @@ rel.ro symbols** (474 rows in `readelf -sW` because each is listed in both `.dyn
 ### Recover initialized registries from the ELF
 
 Do not recreate a named initialized pointer table from the call sites, or keep only the
-entries needed by the current host test. The unstripped ELF usually preserves the table's
+entries needed by the current host utility. The unstripped ELF usually preserves the table's
 address and size, every pointed-to local function symbol, and its strings. Recover the exact
 entry order and flags from the original bytes, then express that complete initializer in the
 owning source file. This matters because parsers commonly persist a table index in loaded

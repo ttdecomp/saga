@@ -1,4 +1,4 @@
-# Host testing
+# Host utilities
 
 The host executable is a diagnostic aid for the decompilation. A successful
 host run does not justify behavior that is absent from the original binary;
@@ -6,7 +6,7 @@ game-side fixes must still come from the original code, data, and ABI.
 
 ## Non-interactive visual captures
 
-Use the window test in hidden, muted mode when testing alongside other desktop
+Use the window utility in hidden, muted mode when running alongside other desktop
 applications:
 
 ```sh
@@ -29,6 +29,6 @@ The standard unattended menu check is therefore:
 timeout 38s ./build-host/saga window --offscreen --mute --script-input --capture
 ```
 
-Host input injection and rendering overrides belong under `src/host-tests/`.
+Host input injection and rendering overrides belong under `src/host-utils/`.
 Original game functions should remain host-independent and may be replaced by
 weak host definitions where a platform override is required.

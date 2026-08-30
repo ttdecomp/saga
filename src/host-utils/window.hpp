@@ -3,18 +3,18 @@
 #include <SDL3/SDL.h>
 
 #include <atomic>
+#include <cerrno>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <vector>
-#include <string.h>
 
 #include "decomp.h"
 #include "globals.h"
 #include "gameapi/gui/apimenu.h"
 #include "gameframework/saveload.h"
-#include "host-tests/input/host_input.h"
+#include "host-utils/input/host_input.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/area.h"
@@ -45,6 +45,17 @@ extern FadeSystem FadeSys;
 extern GAMEPAD_s GamePad[64];
 
 bool g_hostOffscreenRendering = false;
+
+struct HostWindowOptions {
+    bool capture = false;
+    bool script_input = false;
+    bool script_load = false;
+    bool script_play = false;
+    bool offscreen = false;
+    bool mute = false;
+    Uint64 script_tail_ms = 8000;
+    Uint64 timeout_ms = 90000;
+};
 
 namespace {
     struct HostSpecialHandleLayout {
@@ -81,18 +92,15 @@ namespace {
     constexpr i32 host_window_width = 1280;
     constexpr i32 host_window_height = 720;
     constexpr i32 host_poll_interval_ms = 16;
-    constexpr i32 host_timeout_ms = 90000;
     constexpr i32 host_tail_frames = 30;
     // Leave enough time for the original asynchronous load result and its
     // one-second menu result delay to complete after the final scripted tap.
-    constexpr Uint64 scripted_input_tail_ms = 8000;
+    constexpr Uint64 host_scripted_title_input_ms = 18000;
+    constexpr Uint64 host_scripted_menu_settle_ms = 500;
+    constexpr Uint64 host_scripted_play_move_ms = 2000;
+    constexpr Uint64 host_scripted_play_settle_ms = 1000;
 
-    constexpr Uint64 scripted_title_input_ms = 18000;
-    constexpr Uint64 scripted_menu_settle_ms = 500;
-    constexpr Uint64 scripted_play_move_ms = 2000;
-    constexpr Uint64 scripted_play_settle_ms = 1000;
-
-    enum class ScriptedInputStage {
+    enum class HostScriptedInputStage {
         title,
         new_or_load,
         select_controls,
@@ -105,7 +113,7 @@ namespace {
         complete,
     };
 
-    struct ScriptedPlaySnapshot {
+    struct HostScriptedPlaySnapshot {
         NUVEC player_position{};
         NUVEC camera_position{};
         NUVEC player_velocity{};
@@ -119,17 +127,17 @@ namespace {
         i32 object_index = -1;
     };
 
-    enum class ScriptedMenuAction {
+    enum class HostScriptedMenuAction {
         waiting,
         navigating,
         confirmed,
     };
 
-    static bool finite_vec(const NUVEC &vec) {
+    static bool host_finite_vec(const NUVEC &vec) {
         return std::isfinite(vec.x) && std::isfinite(vec.y) && std::isfinite(vec.z);
     }
 
-    static bool player_matrix_ready(const GameObject_s *object) {
+    static bool host_player_matrix_ready(const GameObject_s *object) {
         const NUMTX &matrix = object->apiobj.field_0xb8;
         const f32 basis_squared = matrix.m00 * matrix.m00 + matrix.m01 * matrix.m01 + matrix.m02 * matrix.m02 +
                                   matrix.m10 * matrix.m10 + matrix.m11 * matrix.m11 + matrix.m12 * matrix.m12 +
@@ -141,7 +149,7 @@ namespace {
                std::fabs(matrix.m33 - 1.0f) < 0.001f && dx * dx + dy * dy + dz * dz < 0.0001f;
     }
 
-    static bool scripted_play_ready() {
+    static bool host_scripted_play_ready() {
         // current_level can point at the hub while the asynchronous world and
         // character loads are still finishing.  Require the active hub area,
         // its gameplay socket system, the normal idle load sentinels, and the
@@ -154,14 +162,14 @@ namespace {
         const u32 player_flags = Player[0]->apiobj.field_0x1f8;
         return NewLData == nullptr && NewMode == 0 && player == Player[0] && Player[1] == nullptr &&
                (player_flags & 0x1001) == 0x1001 && static_cast<i8>(player_flags) < 0 &&
-               Player[0]->pad_gamepad == &GamePad[0] && player_matrix_ready(Player[0]) &&
-               finite_vec(Player[0]->apiobj.position) && std::isfinite(global_camera.mtx.m30) &&
+               Player[0]->pad_gamepad == &GamePad[0] && host_player_matrix_ready(Player[0]) &&
+               host_finite_vec(Player[0]->apiobj.position) && std::isfinite(global_camera.mtx.m30) &&
                std::isfinite(global_camera.mtx.m31) && std::isfinite(global_camera.mtx.m32) &&
                waiting_for_level == -1 && waiting_for_character == -1 && waiting_for_new_level == 0 && abort_load == 0;
     }
 
-    static ScriptedPlaySnapshot scripted_play_snapshot() {
-        ScriptedPlaySnapshot snapshot;
+    static HostScriptedPlaySnapshot host_scripted_play_snapshot() {
+        HostScriptedPlaySnapshot snapshot;
         snapshot.player_position = Player[0]->apiobj.position;
         snapshot.player_velocity = {Player[0]->apiobj.field_0x68, Player[0]->apiobj.field_0x6c,
                                     Player[0]->apiobj.field_0x70};
@@ -182,27 +190,27 @@ namespace {
         return snapshot;
     }
 
-    static ScriptedMenuAction scripted_menu_select(i32 row, i32 column, Uint64 elapsed_ticks,
-                                                   Uint64 &last_action_ticks) {
-        if (elapsed_ticks < last_action_ticks + scripted_menu_settle_ms) {
-            return ScriptedMenuAction::waiting;
+    static HostScriptedMenuAction host_scripted_menu_select(i32 row, i32 column, Uint64 elapsed_ticks,
+                                                            Uint64 &last_action_ticks) {
+        if (elapsed_ticks < last_action_ticks + host_scripted_menu_settle_ms) {
+            return HostScriptedMenuAction::waiting;
         }
 
         const MENU &menu = GameMenu[GameMenuLevel];
         u32 button = GAMEPAD_JUMP;
-        ScriptedMenuAction result = ScriptedMenuAction::confirmed;
+        HostScriptedMenuAction result = HostScriptedMenuAction::confirmed;
         if (menu.selected_row < row) {
             button = GAMEPAD_DDOWN;
-            result = ScriptedMenuAction::navigating;
+            result = HostScriptedMenuAction::navigating;
         } else if (menu.selected_row > row) {
             button = GAMEPAD_DUP;
-            result = ScriptedMenuAction::navigating;
+            result = HostScriptedMenuAction::navigating;
         } else if (menu.selected_column < column) {
             button = GAMEPAD_DRIGHT;
-            result = ScriptedMenuAction::navigating;
+            result = HostScriptedMenuAction::navigating;
         } else if (menu.selected_column > column) {
             button = GAMEPAD_DLEFT;
-            result = ScriptedMenuAction::navigating;
+            result = HostScriptedMenuAction::navigating;
         }
 
         LOG_INFO("scripted gamepad menu=%d cursor=(%d,%d) target=(%d,%d) button=0x%x", GetMenuID(),
@@ -212,13 +220,13 @@ namespace {
         return result;
     }
 
-    struct PixelCounts {
+    struct HostPixelCounts {
         u32 red = 0;
         u32 white = 0;
         u32 non_black = 0;
     };
 
-    static bool write_ppm(const char *path, const u8 *rgba, i32 width, i32 height) {
+    static bool host_write_ppm(const char *path, const u8 *rgba, i32 width, i32 height) {
         FILE *file = fopen(path, "wb");
         if (file == nullptr) {
             LOG_ERR("failed to open %s for writing: %s", path, strerror(errno));
@@ -237,7 +245,7 @@ namespace {
         return true;
     }
 
-    static u64 pixel_hash(const u8 *pixels, usize pixel_count) {
+    static u64 host_pixel_hash(const u8 *pixels, usize pixel_count) {
         u64 hash = 1469598103934665603ULL;
         // The capture files contain RGB. Ignore framebuffer alpha as well:
         // blend-state changes can alter it without changing the visible image.
@@ -251,7 +259,7 @@ namespace {
         return hash;
     }
 
-    static bool read_frame(std::vector<u8> &pixels, i32 &width, i32 &height, u64 &hash) {
+    static bool host_read_frame(std::vector<u8> &pixels, i32 &width, i32 &height, u64 &hash) {
         pixels.resize(static_cast<usize>(host_window_width) * host_window_height * 4);
         const i32 packed = HostReadbackPixels(host_window_width, host_window_height, pixels.data());
         if (packed <= 0) {
@@ -260,18 +268,18 @@ namespace {
 
         width = packed / 1000;
         height = packed % 1000;
-        hash = pixel_hash(pixels.data(), static_cast<usize>(width) * height);
+        hash = host_pixel_hash(pixels.data(), static_cast<usize>(width) * height);
         return true;
     }
 
-    static bool capture_frame(i32 frame, const std::vector<u8> &pixels, i32 width, i32 height) {
+    static bool host_capture_frame(i32 frame, const std::vector<u8> &pixels, i32 width, i32 height) {
         char filename[64];
         snprintf(filename, sizeof(filename), ".work/capture/window_%04d.ppm", frame);
 
-        return write_ppm(filename, pixels.data(), width, height);
+        return host_write_ppm(filename, pixels.data(), width, height);
     }
 
-    static void sdl_init(bool offscreen, bool mute) {
+    static void host_sdl_init(bool offscreen, bool mute) {
         SDL_SetHint(SDL_HINT_VIDEO_DRIVER, host_video_driver);
         if (mute) {
             SDL_SetHint(SDL_HINT_AUDIO_DRIVER, "dummy");
@@ -319,7 +327,7 @@ namespace {
         return GetMenuID();
     }
 
-    static int SDLCALL numain_thread_main(void *arg) {
+    static int SDLCALL host_numain_thread_main(void *arg) {
         (void)arg;
         char *argv[] = {const_cast<char *>("saga"), nullptr};
         const i32 result = NuMain(1, argv);
@@ -330,44 +338,12 @@ namespace {
 
 } // namespace
 
-inline i32 test_window(i32 argc, char **argv) {
-    LOG_INFO("test_window(argc=%d, argv=%p)", argc, argv);
-
-    bool capture_enabled = false;
-    bool scripted_input_enabled = false;
-    bool scripted_load_enabled = false;
-    bool scripted_play_enabled = false;
-    bool offscreen_enabled = false;
-    bool mute_enabled = false;
-    Uint64 scripted_tail_ms = scripted_input_tail_ms;
-    Uint64 timeout_ms = host_timeout_ms;
-    for (i32 i = 1; i < argc; ++i) {
-        if (strcmp(argv[i], "--capture") == 0) {
-            capture_enabled = true;
-        } else if (strcmp(argv[i], "--script-input") == 0) {
-            scripted_input_enabled = true;
-        } else if (strcmp(argv[i], "--script-load") == 0) {
-            scripted_input_enabled = true;
-            scripted_load_enabled = true;
-        } else if (strcmp(argv[i], "--script-play") == 0) {
-            scripted_input_enabled = true;
-            scripted_play_enabled = true;
-        } else if (strcmp(argv[i], "--offscreen") == 0) {
-            offscreen_enabled = true;
-        } else if (strcmp(argv[i], "--mute") == 0) {
-            mute_enabled = true;
-        } else if (strcmp(argv[i], "--script-tail-ms") == 0 && i + 1 < argc) {
-            scripted_tail_ms = strtoull(argv[++i], nullptr, 10);
-        } else if (strcmp(argv[i], "--timeout-ms") == 0 && i + 1 < argc) {
-            timeout_ms = strtoull(argv[++i], nullptr, 10);
-        }
-    }
-
-    g_hostOffscreenRendering = offscreen_enabled;
-    sdl_init(offscreen_enabled, mute_enabled);
+static i32 host_run_window(const HostWindowOptions &options) {
+    g_hostOffscreenRendering = options.offscreen;
+    host_sdl_init(options.offscreen, options.mute);
     const char *documents_path = ".work/host-documents/";
     char scripted_documents_path[256];
-    if (scripted_input_enabled) {
+    if (options.script_input) {
         SDL_CreateDirectory(".work/host-documents-scripted");
         snprintf(scripted_documents_path, sizeof(scripted_documents_path), ".work/host-documents-scripted/%llu/",
                  static_cast<unsigned long long>(SDL_GetTicksNS()));
@@ -382,7 +358,7 @@ inline i32 test_window(i32 argc, char **argv) {
     VARIPTR ptr = VARIPTR{.void_ptr = buffer};
     NuDatSet(NuDatOpen("res/main.1060.com.wb.lego.tcs.obb", &ptr, 0));
 
-    if (capture_enabled) {
+    if (options.capture) {
         // Try to remove .work/capture/* before starting, but don't fail if it
         // does not exist. Readback is deliberately opt-in: glReadPixels must
         // synchronize with the render thread and noticeably affects pacing.
@@ -396,7 +372,7 @@ inline i32 test_window(i32 argc, char **argv) {
 
     host_numain_result.store(0, std::memory_order_relaxed);
     host_numain_done.store(false, std::memory_order_relaxed);
-    host_numain_thread = SDL_CreateThread(numain_thread_main, "numain", nullptr);
+    host_numain_thread = SDL_CreateThread(host_numain_thread_main, "numain", nullptr);
     if (host_numain_thread == nullptr) {
         LOG_ERR("failed to create NuMain thread: %s", SDL_GetError());
         free(buffer);
@@ -412,13 +388,13 @@ inline i32 test_window(i32 argc, char **argv) {
     Uint64 next_readback_ticks = 0;
     bool have_hash = false;
     bool image_changing = false;
-    ScriptedInputStage scripted_stage = ScriptedInputStage::title;
+    HostScriptedInputStage scripted_stage = HostScriptedInputStage::title;
     Uint64 scripted_stage_ticks = 0;
     i32 scripted_last_menu = -2;
     Uint64 scripted_menu_since = 0;
-    ScriptedPlaySnapshot scripted_play_before{};
-    ScriptedPlaySnapshot scripted_play_during{};
-    ScriptedPlaySnapshot scripted_play_after{};
+    HostScriptedPlaySnapshot scripted_play_before{};
+    HostScriptedPlaySnapshot scripted_play_during{};
+    HostScriptedPlaySnapshot scripted_play_after{};
     bool scripted_play_started = false;
     bool scripted_play_finished = false;
     bool scripted_play_movement_observed = false;
@@ -432,7 +408,7 @@ inline i32 test_window(i32 argc, char **argv) {
     while (!quit_requested) {
         SDL_Event event{};
         while (SDL_PollEvent(&event)) {
-            if (offscreen_enabled) {
+            if (options.offscreen) {
                 continue;
             }
             if (event.type == SDL_EVENT_QUIT) {
@@ -494,66 +470,67 @@ inline i32 test_window(i32 argc, char **argv) {
         frame_count++;
 
         const Uint64 elapsed_ticks = SDL_GetTicks() - start_ticks;
-        if (scripted_input_enabled) {
+        if (options.script_input) {
             const i32 menu_id = host_menu_id();
             if (menu_id != scripted_last_menu) {
                 scripted_last_menu = menu_id;
                 scripted_menu_since = elapsed_ticks;
             }
 
-            if (scripted_stage == ScriptedInputStage::title && menu_id == 0 &&
-                elapsed_ticks >= scripted_title_input_ms) {
+            if (scripted_stage == HostScriptedInputStage::title && menu_id == 0 &&
+                elapsed_ticks >= host_scripted_title_input_ms) {
                 HostInputTap(0, GAMEPAD_START | GAMEPAD_JUMP);
-                scripted_stage = ScriptedInputStage::new_or_load;
+                scripted_stage = HostScriptedInputStage::new_or_load;
                 scripted_stage_ticks = elapsed_ticks;
-            } else if (scripted_stage == ScriptedInputStage::new_or_load && menu_id == 1 &&
-                       elapsed_ticks - scripted_menu_since >= scripted_menu_settle_ms) {
+            } else if (scripted_stage == HostScriptedInputStage::new_or_load && menu_id == 1 &&
+                       elapsed_ticks - scripted_menu_since >= host_scripted_menu_settle_ms) {
                 // The original menu defaults to Load Game when any save is
                 // present. This route deliberately exercises New Game.
-                const ScriptedMenuAction action =
-                    scripted_menu_select(scripted_load_enabled ? 1 : 0, 0, elapsed_ticks, scripted_stage_ticks);
-                if (action == ScriptedMenuAction::confirmed && scripted_load_enabled) {
+                const HostScriptedMenuAction action =
+                    host_scripted_menu_select(options.script_load ? 1 : 0, 0, elapsed_ticks, scripted_stage_ticks);
+                if (action == HostScriptedMenuAction::confirmed && options.script_load) {
                     // Load Game may lead to the original No Data screen
                     // (menu 1005); dismiss it once it has settled.
-                    scripted_stage = ScriptedInputStage::load_wait;
-                } else if (action == ScriptedMenuAction::confirmed) {
+                    scripted_stage = HostScriptedInputStage::load_wait;
+                } else if (action == HostScriptedMenuAction::confirmed) {
                     // New Game now follows the original Select Controls
                     // screen (menu 33). Its default entry is Classic, so
                     // confirm it after the normal settle interval before
                     // looking for the save-slot menu.
-                    scripted_stage = ScriptedInputStage::select_controls;
+                    scripted_stage = HostScriptedInputStage::select_controls;
                 }
-            } else if (scripted_stage == ScriptedInputStage::select_controls && menu_id == 33 &&
-                       elapsed_ticks - scripted_menu_since >= scripted_menu_settle_ms) {
-                if (scripted_menu_select(0, 0, elapsed_ticks, scripted_stage_ticks) == ScriptedMenuAction::confirmed) {
-                    scripted_stage = ScriptedInputStage::save_slot;
+            } else if (scripted_stage == HostScriptedInputStage::select_controls && menu_id == 33 &&
+                       elapsed_ticks - scripted_menu_since >= host_scripted_menu_settle_ms) {
+                if (host_scripted_menu_select(0, 0, elapsed_ticks, scripted_stage_ticks) ==
+                    HostScriptedMenuAction::confirmed) {
+                    scripted_stage = HostScriptedInputStage::save_slot;
                 }
-            } else if (scripted_stage == ScriptedInputStage::select_controls && menu_id == 1000) {
+            } else if (scripted_stage == HostScriptedInputStage::select_controls && menu_id == 1000) {
                 // A connected keyboard-backed gamepad follows the original
                 // controller path directly to save slots. Touch-only mode
                 // visits menu 33 first; support both without forcing either.
-                scripted_stage = ScriptedInputStage::save_slot;
+                scripted_stage = HostScriptedInputStage::save_slot;
                 scripted_stage_ticks = elapsed_ticks;
-            } else if (scripted_stage == ScriptedInputStage::load_wait && menu_id == 1012 &&
-                       elapsed_ticks - scripted_menu_since >= scripted_menu_settle_ms) {
+            } else if (scripted_stage == HostScriptedInputStage::load_wait && menu_id == 1012 &&
+                       elapsed_ticks - scripted_menu_since >= host_scripted_menu_settle_ms) {
                 i32 slot = 0;
                 while (slot < SAVESLOTS && saveload_slotused[slot] == 0) {
                     ++slot;
                 }
                 if (slot < SAVESLOTS) {
-                    if (scripted_menu_select(0, slot, elapsed_ticks, scripted_stage_ticks) ==
-                        ScriptedMenuAction::confirmed) {
-                        scripted_stage = ScriptedInputStage::complete;
+                    if (host_scripted_menu_select(0, slot, elapsed_ticks, scripted_stage_ticks) ==
+                        HostScriptedMenuAction::confirmed) {
+                        scripted_stage = HostScriptedInputStage::complete;
                         scripted_stage_ticks = elapsed_ticks;
                     }
                 }
-            } else if (scripted_stage == ScriptedInputStage::load_wait && menu_id == 1005 &&
-                       elapsed_ticks - scripted_menu_since >= scripted_menu_settle_ms) {
+            } else if (scripted_stage == HostScriptedInputStage::load_wait && menu_id == 1005 &&
+                       elapsed_ticks - scripted_menu_since >= host_scripted_menu_settle_ms) {
                 HostInputTap(0, GAMEPAD_JUMP);
-                scripted_stage = ScriptedInputStage::complete;
+                scripted_stage = HostScriptedInputStage::complete;
                 scripted_stage_ticks = elapsed_ticks;
-            } else if (scripted_stage == ScriptedInputStage::save_slot && menu_id == 1000 &&
-                       elapsed_ticks - scripted_menu_since >= scripted_menu_settle_ms) {
+            } else if (scripted_stage == HostScriptedInputStage::save_slot && menu_id == 1000 &&
+                       elapsed_ticks - scripted_menu_since >= host_scripted_menu_settle_ms) {
                 i32 slot = 0;
                 while (slot < SAVESLOTS && saveload_slotused[slot] != 0) {
                     ++slot;
@@ -562,20 +539,21 @@ inline i32 test_window(i32 argc, char **argv) {
                 if (overwrite) {
                     slot = 0;
                 }
-                if (scripted_menu_select(0, slot, elapsed_ticks, scripted_stage_ticks) ==
-                    ScriptedMenuAction::confirmed) {
-                    scripted_stage = overwrite ? ScriptedInputStage::overwrite_confirm
-                                               : (scripted_play_enabled ? ScriptedInputStage::cantina_wait
-                                                                        : ScriptedInputStage::complete);
+                if (host_scripted_menu_select(0, slot, elapsed_ticks, scripted_stage_ticks) ==
+                    HostScriptedMenuAction::confirmed) {
+                    scripted_stage = overwrite ? HostScriptedInputStage::overwrite_confirm
+                                               : (options.script_play ? HostScriptedInputStage::cantina_wait
+                                                                      : HostScriptedInputStage::complete);
                 }
-            } else if (scripted_stage == ScriptedInputStage::overwrite_confirm && menu_id == 1008 &&
-                       elapsed_ticks - scripted_menu_since >= scripted_menu_settle_ms) {
-                if (scripted_menu_select(0, 0, elapsed_ticks, scripted_stage_ticks) == ScriptedMenuAction::confirmed) {
+            } else if (scripted_stage == HostScriptedInputStage::overwrite_confirm && menu_id == 1008 &&
+                       elapsed_ticks - scripted_menu_since >= host_scripted_menu_settle_ms) {
+                if (host_scripted_menu_select(0, 0, elapsed_ticks, scripted_stage_ticks) ==
+                    HostScriptedMenuAction::confirmed) {
                     scripted_stage =
-                        scripted_play_enabled ? ScriptedInputStage::cantina_wait : ScriptedInputStage::complete;
+                        options.script_play ? HostScriptedInputStage::cantina_wait : HostScriptedInputStage::complete;
                 }
-            } else if (scripted_stage == ScriptedInputStage::cantina_wait && scripted_play_ready()) {
-                scripted_play_before = scripted_play_snapshot();
+            } else if (scripted_stage == HostScriptedInputStage::cantina_wait && host_scripted_play_ready()) {
+                scripted_play_before = host_scripted_play_snapshot();
                 scripted_play_started = true;
                 const CHARACTERMODEL_s *player_model = Player[0]->apiobj.character_model;
                 LOG_INFO("scripted play: cantina ready level=%s idx=%d area=%d player=%p pad=%p pad0=%p "
@@ -598,11 +576,11 @@ inline i32 test_window(i32 argc, char **argv) {
                          scripted_play_before.camera_position.y, scripted_play_before.camera_position.z);
                 HostInputSetHeld(0, GAMEPAD_DRIGHT);
                 scripted_play_input_held = true;
-                scripted_stage = ScriptedInputStage::play_move;
+                scripted_stage = HostScriptedInputStage::play_move;
                 scripted_stage_ticks = elapsed_ticks;
-            } else if (scripted_stage == ScriptedInputStage::play_move &&
-                       elapsed_ticks >= scripted_stage_ticks + scripted_play_move_ms) {
-                scripted_play_during = scripted_play_snapshot();
+            } else if (scripted_stage == HostScriptedInputStage::play_move &&
+                       elapsed_ticks >= scripted_stage_ticks + host_scripted_play_move_ms) {
+                scripted_play_during = host_scripted_play_snapshot();
                 LOG_INFO("scripted play: during DRIGHT flags=(state=0x%x,motion=0x%x) "
                          "position=(%.3f,%.3f,%.3f) velocity=(%.3f,%.3f,%.3f) "
                          "input=(held=0x%x,magnitude=%.3f,speed=%.3f) object-index=%d frametime=%.6f",
@@ -615,11 +593,11 @@ inline i32 test_window(i32 argc, char **argv) {
                          scripted_play_during.frame_time);
                 HostInputSetHeld(0, 0);
                 scripted_play_input_held = false;
-                scripted_stage = ScriptedInputStage::play_settle;
+                scripted_stage = HostScriptedInputStage::play_settle;
                 scripted_stage_ticks = elapsed_ticks;
-            } else if (scripted_stage == ScriptedInputStage::play_settle &&
-                       elapsed_ticks >= scripted_stage_ticks + scripted_play_settle_ms) {
-                scripted_play_after = scripted_play_snapshot();
+            } else if (scripted_stage == HostScriptedInputStage::play_settle &&
+                       elapsed_ticks >= scripted_stage_ticks + host_scripted_play_settle_ms) {
+                scripted_play_after = host_scripted_play_snapshot();
                 scripted_play_finished = true;
                 const NUVEC player_delta = {
                     scripted_play_after.player_position.x - scripted_play_before.player_position.x,
@@ -639,33 +617,33 @@ inline i32 test_window(i32 argc, char **argv) {
                          "input=(held=0x%x,magnitude=%.3f,speed=%.3f) camera=(%.3f,%.3f,%.3f); "
                          "deltas player=(%.3f,%.3f,%.3f) yrot=%d camera=(%.3f,%.3f,%.3f); "
                          "movement_observed=%d",
-                         static_cast<unsigned long long>(scripted_play_move_ms), scripted_play_after.player_position.x,
-                         scripted_play_after.player_position.y, scripted_play_after.player_position.z,
-                         scripted_play_after.player_velocity.x, scripted_play_after.player_velocity.y,
-                         scripted_play_after.player_velocity.z, scripted_play_after.player_yrot,
-                         scripted_play_after.buttons_held, scripted_play_after.input_magnitude,
-                         scripted_play_after.movement_speed, scripted_play_after.camera_position.x,
-                         scripted_play_after.camera_position.y, scripted_play_after.camera_position.z, player_delta.x,
-                         player_delta.y, player_delta.z,
+                         static_cast<unsigned long long>(host_scripted_play_move_ms),
+                         scripted_play_after.player_position.x, scripted_play_after.player_position.y,
+                         scripted_play_after.player_position.z, scripted_play_after.player_velocity.x,
+                         scripted_play_after.player_velocity.y, scripted_play_after.player_velocity.z,
+                         scripted_play_after.player_yrot, scripted_play_after.buttons_held,
+                         scripted_play_after.input_magnitude, scripted_play_after.movement_speed,
+                         scripted_play_after.camera_position.x, scripted_play_after.camera_position.y,
+                         scripted_play_after.camera_position.z, player_delta.x, player_delta.y, player_delta.z,
                          static_cast<i32>(scripted_play_after.player_yrot) -
                              static_cast<i32>(scripted_play_before.player_yrot),
                          camera_delta.x, camera_delta.y, camera_delta.z, scripted_play_movement_observed ? 1 : 0);
-                scripted_stage = ScriptedInputStage::complete;
+                scripted_stage = HostScriptedInputStage::complete;
                 scripted_stage_ticks = elapsed_ticks;
-            } else if (scripted_stage == ScriptedInputStage::complete &&
-                       elapsed_ticks >= scripted_stage_ticks + scripted_tail_ms) {
+            } else if (scripted_stage == HostScriptedInputStage::complete &&
+                       elapsed_ticks >= scripted_stage_ticks + options.script_tail_ms) {
                 break;
             }
         }
 
         SDL_Delay(host_poll_interval_ms);
 
-        if (SDL_GetTicks() - start_ticks > timeout_ms) {
-            LOG_ERR("test_window: timeout after %llu ms", static_cast<unsigned long long>(timeout_ms));
+        if (SDL_GetTicks() - start_ticks > options.timeout_ms) {
+            LOG_ERR("window utility: timeout after %llu ms", static_cast<unsigned long long>(options.timeout_ms));
             break;
         }
 
-        if (!capture_enabled) {
+        if (!options.capture) {
             continue;
         }
 
@@ -679,12 +657,12 @@ inline i32 test_window(i32 argc, char **argv) {
         next_readback_ticks = readback_ticks + 100;
 
         u64 current_hash = 0;
-        if (!read_frame(pixels, capture_width, capture_height, current_hash)) {
+        if (!host_read_frame(pixels, capture_width, capture_height, current_hash)) {
             continue;
         }
         const Uint64 now = SDL_GetTicks();
         if (!have_hash) {
-            capture_frame(frame_count, pixels, capture_width, capture_height);
+            host_capture_frame(frame_count, pixels, capture_width, capture_height);
             captured_hash = current_hash;
             last_capture_ticks = now;
             previous_hash = current_hash;
@@ -692,7 +670,7 @@ inline i32 test_window(i32 argc, char **argv) {
         } else if (current_hash != previous_hash) {
             last_change_ticks = now;
             if (!image_changing || now - last_capture_ticks >= 500) {
-                capture_frame(frame_count, pixels, capture_width, capture_height);
+                host_capture_frame(frame_count, pixels, capture_width, capture_height);
                 captured_hash = current_hash;
                 last_capture_ticks = now;
             }
@@ -700,7 +678,7 @@ inline i32 test_window(i32 argc, char **argv) {
             image_changing = true;
         } else if (image_changing && now - last_change_ticks >= 500) {
             if (current_hash != captured_hash) {
-                capture_frame(frame_count, pixels, capture_width, capture_height);
+                host_capture_frame(frame_count, pixels, capture_width, capture_height);
                 captured_hash = current_hash;
                 last_capture_ticks = now;
             }
@@ -712,11 +690,11 @@ inline i32 test_window(i32 argc, char **argv) {
         HostInputSetHeld(0, 0);
     }
 
-    if (capture_enabled) {
+    if (options.capture) {
         u64 final_hash = 0;
-        if (read_frame(pixels, capture_width, capture_height, final_hash) &&
+        if (host_read_frame(pixels, capture_width, capture_height, final_hash) &&
             (!have_hash || final_hash != captured_hash)) {
-            capture_frame(frame_count, pixels, capture_width, capture_height);
+            host_capture_frame(frame_count, pixels, capture_width, capture_height);
         }
     }
 
@@ -731,7 +709,7 @@ inline i32 test_window(i32 argc, char **argv) {
         host_numain_thread = nullptr;
     }
 
-    if (scripted_input_enabled) {
+    if (options.script_input) {
         LOG_INFO("scripted input stopped on menu id %d, save slot %d, status %d, load=(%d,%d,%d,%d), occurred=%d, "
                  "new-level=%p idx=%d name=%s current-level=%p idx=%d name=%s fade=(%.3f,%d,%d), "
                  "waits=(level=%d,character=%d,new=%d,abort=%d,reset=%d), players=(%d:%p,%d:%p), char-load=%d",
@@ -841,9 +819,9 @@ inline i32 test_window(i32 argc, char **argv) {
             }
         }
     }
-    if (scripted_play_enabled && !scripted_play_finished) {
+    if (options.script_play && !scripted_play_finished) {
         LOG_INFO("scripted play: incomplete started=%d ready_now=%d stage=%d movement_observed=unavailable",
-                 scripted_play_started ? 1 : 0, scripted_play_ready() ? 1 : 0, static_cast<i32>(scripted_stage));
+                 scripted_play_started ? 1 : 0, host_scripted_play_ready() ? 1 : 0, static_cast<i32>(scripted_stage));
         if (Player[0] != nullptr) {
             const NUMTX &matrix = Player[0]->apiobj.field_0xb8;
             const f32 basis_squared = matrix.m00 * matrix.m00 + matrix.m01 * matrix.m01 + matrix.m02 * matrix.m02 +
@@ -865,12 +843,12 @@ inline i32 test_window(i32 argc, char **argv) {
         }
     }
     const bool scripted_play_passed =
-        !scripted_play_enabled || (scripted_play_finished && scripted_play_movement_observed);
+        !options.script_play || (scripted_play_finished && scripted_play_movement_observed);
     LOG_INFO("presented %d frame_count", frame_count);
     if (numain_finished) {
         const i32 result = host_numain_result.load(std::memory_order_relaxed);
         free(buffer);
         return result != 0 ? result : (scripted_play_passed ? 0 : 1);
     }
-    _exit(scripted_play_passed ? 0 : 1);
+    return scripted_play_passed ? 0 : 1;
 }

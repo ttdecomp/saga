@@ -19,7 +19,7 @@ The major roots are:
 | `src/MechInputTouch/` | Android touch controls |
 | `src/nu2api/` | core engine modules (`nu3d`, `nucore`, `nufile`, `numath`, `numusic`, `nuplatform`, `nusound`, and platform glue) |
 | `src/java/` | JNI compatibility code |
-| `src/host-tests/` | host-only harness and target replacements |
+| `src/host-utils/` | host-only utilities, harness, and target replacements |
 
 At the 2026-08-29 snapshot, the target build has 464 TUs: 451 C++ and 13 C.
 Run `jq 'length' build/compile_commands.json` and inspect `.file` values for the
@@ -76,7 +76,7 @@ that it is external library code.
   destination optimization level.
 - `*_types.h` contains provisional/Ghidra-derived type scaffolding. Avoid
   duplicating a type already defined canonically elsewhere.
-- `android/` contains target platform code. `host-tests/` contains selected
+- `android/` contains target platform code. `host-utils/` contains selected
   host replacements and is not part of the target TU set.
 - `*_gen.cpp` denotes manually maintained split/generated content; the suffix
   does not imply a regeneration tool exists.
@@ -143,18 +143,22 @@ hide the symbol from `nm` or exempt it from `check_symbols.py`; a global symbol
 can still count toward the extra-symbol baseline. Use the attribute only for
 its section-placement purpose, not as a symbol-filtering mechanism.
 
-Host-only diagnostic helpers belong under `src/host-tests/`. Keep asset tools
+Host-only diagnostic helpers belong under `src/host-utils/`. Keep asset tools
 general: `./build-host/saga load list [filter]` lists DAT entries and
 `./build-host/saga load extract <dat-path> <output>` extracts any entry. Do not
 add sequence- or level-specific extraction code to target translation units.
 
 Platform replacements follow the same boundary: keep the reconstructed target
 body in its original translation unit with weak linkage, then provide the strong
-host implementation under `src/host-tests/`. This is especially important for
+host implementation under `src/host-utils/`. This is especially important for
 graphics behavior that the API leaves undefined. For example, a fresh render
 target's texels need not have the same initial alpha on Android and Mesa; model
 the observed target-driver state in the host replacement instead of adding
 `HOST_BUILD` branches or changing the decompiled target body.
+
+Prefix host-only internal functions and storage with `host` (for example,
+`host_read_frame` or `g_hostTextureHashes`). Strong replacements keep the
+original engine or platform name because the linker-facing API requires it.
 
 ## 7. Globals and data placement
 

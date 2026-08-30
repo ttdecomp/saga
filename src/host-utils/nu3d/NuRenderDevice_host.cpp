@@ -12,19 +12,19 @@
 #include <string.h>
 
 static EGLContext g_hostPresentCtx = EGL_NO_CONTEXT;
-EGLSurface g_hostPbufferReadback = EGL_NO_SURFACE;
-EGLContext g_hostContextReadback = EGL_NO_CONTEXT;
+static EGLSurface g_hostPbufferReadback = EGL_NO_SURFACE;
+static EGLContext g_hostContextReadback = EGL_NO_CONTEXT;
 extern bool g_hostOffscreenRendering;
 
 namespace {
-    struct PresentResources {
+    struct HostPresentResources {
         GLuint program = 0;
         GLint pos_loc = -1;
         GLint uv_loc = -1;
         GLint tex_loc = -1;
         GLuint vbo = 0;
     };
-    void EnsurePresentResources(PresentResources &res) {
+    void host_ensure_present_resources(HostPresentResources &res) {
         if (res.program != 0)
             return;
         const char *vertex_src = "attribute vec2 a_position; attribute vec2 a_texcoord; varying vec2 v_uv; void "
@@ -55,7 +55,7 @@ namespace {
         const float verts[] = {-1, -1, 0, 0, 1, -1, 1, 0, -1, 1, 0, 1, 1, -1, 1, 0, 1, 1, 1, 1, -1, 1, 0, 1};
         glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
     }
-    void DrawFullscreenTexturedQuad(const PresentResources &res, GLuint texture) {
+    void host_draw_fullscreen_textured_quad(const HostPresentResources &res, GLuint texture) {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDisable(GL_BLEND);
         glDisable(GL_DEPTH_TEST);
@@ -95,14 +95,14 @@ void NuRenderDevice::SwapBuffers() {
             eglGetError();
     }
     if (have_context && g_earlyColorTexture != 0 && glIsTexture(g_earlyColorTexture)) {
-        static PresentResources s_present{};
-        EnsurePresentResources(s_present);
+        static HostPresentResources host_present_resources{};
+        host_ensure_present_resources(host_present_resources);
         EGLint surf_w = 0, surf_h = 0;
         eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_WIDTH, &surf_w);
         eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_HEIGHT, &surf_h);
         if (surf_w > 0 && surf_h > 0)
             glViewport(0, 0, surf_w, surf_h);
-        DrawFullscreenTexturedQuad(s_present, g_earlyColorTexture);
+        host_draw_fullscreen_textured_quad(host_present_resources, g_earlyColorTexture);
     }
     if (this->egl_display != EGL_NO_DISPLAY && this->pbuffers[3] != EGL_NO_SURFACE) {
         if (!have_context)

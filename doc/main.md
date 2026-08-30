@@ -15,11 +15,11 @@ target binary reference, and the mismatch diagnostics playbook.
 
 Start at [decomp/00-index.md](decomp/00-index.md).
 
-## Host testing
+## Host utilities
 
-[host-testing.md](host-testing.md) documents interactive and unattended host
-render checks, including hidden framebuffer capture and dummy audio. Host tests
-are diagnostics only; original-binary evidence remains authoritative.
+[host-utilities.md](host-utilities.md) documents interactive and unattended
+host utilities, including hidden framebuffer capture and dummy audio. These
+diagnostics do not replace original-binary evidence.
 
 ## Codex skill
 

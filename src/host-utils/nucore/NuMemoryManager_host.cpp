@@ -8,30 +8,30 @@
 #include "nu2api/nucore/common.h"
 
 namespace {
-    pthread_mutex_t s_host_alloc_sizes_lock = PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_t host_alloc_sizes_lock = PTHREAD_MUTEX_INITIALIZER;
     struct HostAllocSize {
         void *ptr;
         u32 size;
         HostAllocSize *next;
     };
-    HostAllocSize *s_host_alloc_sizes;
+    HostAllocSize *host_alloc_sizes;
 
-    void RecordHostAlloc(void *ptr, u32 size) {
+    void host_record_alloc(void *ptr, u32 size) {
         HostAllocSize *record = (HostAllocSize *)malloc(sizeof(HostAllocSize));
         if (record == NULL) {
             return;
         }
         record->ptr = ptr;
         record->size = size;
-        pthread_mutex_lock(&s_host_alloc_sizes_lock);
-        record->next = s_host_alloc_sizes;
-        s_host_alloc_sizes = record;
-        pthread_mutex_unlock(&s_host_alloc_sizes_lock);
+        pthread_mutex_lock(&host_alloc_sizes_lock);
+        record->next = host_alloc_sizes;
+        host_alloc_sizes = record;
+        pthread_mutex_unlock(&host_alloc_sizes_lock);
     }
 
-    u32 ForgetHostAlloc(void *ptr) {
-        pthread_mutex_lock(&s_host_alloc_sizes_lock);
-        HostAllocSize **link = &s_host_alloc_sizes;
+    u32 host_forget_alloc(void *ptr) {
+        pthread_mutex_lock(&host_alloc_sizes_lock);
+        HostAllocSize **link = &host_alloc_sizes;
         while (*link != NULL && (*link)->ptr != ptr) {
             link = &(*link)->next;
         }
@@ -41,7 +41,7 @@ namespace {
             *link = record->next;
             size = record->size;
         }
-        pthread_mutex_unlock(&s_host_alloc_sizes_lock);
+        pthread_mutex_unlock(&host_alloc_sizes_lock);
         free(record);
         return size;
     }
@@ -52,25 +52,25 @@ void *NuMemoryManager::_TryBlockAlloc(u32 size, u32 alignment, u32 flags, const 
               alignment, flags, name, category);
     void *ptr = malloc(size);
     if (ptr != NULL) {
-        RecordHostAlloc(ptr, size);
+        host_record_alloc(ptr, size);
     }
     return ptr;
 }
 
 void NuMemoryManager::BlockFree(void *ptr, u32 flags) {
     LOG_DEBUG("replacing BlockFree with free");
-    ForgetHostAlloc(ptr);
+    host_forget_alloc(ptr);
     free(ptr);
 }
 
 u32 NuMemoryManager::GetBlockSize(void *ptr) {
-    pthread_mutex_lock(&s_host_alloc_sizes_lock);
-    HostAllocSize *record = s_host_alloc_sizes;
+    pthread_mutex_lock(&host_alloc_sizes_lock);
+    HostAllocSize *record = host_alloc_sizes;
     while (record != NULL && record->ptr != ptr) {
         record = record->next;
     }
     u32 size = record != NULL ? record->size : 0;
-    pthread_mutex_unlock(&s_host_alloc_sizes_lock);
+    pthread_mutex_unlock(&host_alloc_sizes_lock);
     return size;
 }
 
@@ -78,8 +78,8 @@ void *NuMemoryManager::_BlockReAlloc(void *ptr, u32 size, u32 alignment, u32 fla
     LOG_DEBUG("replacing _BlockReAlloc with realloc");
     void *result = realloc(ptr, size);
     if (result != NULL) {
-        ForgetHostAlloc(ptr);
-        RecordHostAlloc(result, size);
+        host_forget_alloc(ptr);
+        host_record_alloc(result, size);
     }
     return result;
 }

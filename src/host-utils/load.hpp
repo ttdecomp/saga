@@ -1,28 +1,22 @@
-#include <format>
-#include <regex>
-#include <unistd.h>
-#include <cstring>
+#pragma once
+
+#include <cctype>
 #include <cstdio>
+#include <cstring>
 #include <strings.h>
 #include <vector>
-
-#include <string>
 
 #include "decomp.h"
 #include "gameframework/saveload.h"
 #include "globals.h"
+#include "legoapi/world/area.h"
 #include "legoapi/world/level.h"
 #include "legogame/startup.h"
-#include "legogame/target.h"
-#include "nu2api/nu3d/NuRenderDevice.h"
-#include "nu2api/nu3d/nuscreen.hpp"
+#include "nu2api/nucore/nuthread.h"
 #include "nu2api/nufile/nufile.h"
-#include "nu2api/nuplatform/nudevicespecs.hpp"
-#include "nu2api/nuplatform/nuplatform.h"
-#include "legoapi/world/area.h"
 
+static const char *host_strcasestr(const char *haystack, const char *needle) {
 #ifdef _WIN32
-static const char *strcasestr(const char *haystack, const char *needle) {
     if (!*needle)
         return haystack;
 
@@ -40,14 +34,29 @@ static const char *strcasestr(const char *haystack, const char *needle) {
     }
 
     return NULL;
-}
+#else
+    return strcasestr(haystack, needle);
 #endif
+}
 
-char buf[0x1000000];
+enum class HostLoadAction {
+    inspect,
+    list,
+    extract,
+};
+
+struct HostLoadOptions {
+    HostLoadAction action = HostLoadAction::inspect;
+    const char *filter = nullptr;
+    const char *dat_path = nullptr;
+    const char *output_path = ".work/extracted.bin";
+};
+
+static char host_load_buffer[0x1000000];
 
 // HOST-ONLY: walk the dat's hash-name section and print "index name" pairs
 // (mirrors the scan in NuDatFileFindHash).
-static void DatListNames(NUDATHDR *dat, const char *filter) {
+static void host_dat_list_names(NUDATHDR *dat, const char *filter) {
     fprintf(stderr, "dat version=%d files=%d hashes=%d hash_bytes=%d\n", dat->version, dat->file_count, dat->hash_count,
             dat->hashes_len);
     if (dat->hash_count == 0) {
@@ -67,7 +76,7 @@ static void DatListNames(NUDATHDR *dat, const char *filter) {
         if ((uintptr_t)cur & 1) {
             cur++;
         }
-        if (filter == NULL || strcasestr(name, filter) != NULL) {
+        if (filter == NULL || host_strcasestr(name, filter) != NULL) {
             NUDATFINFO *info = dat->file_info != NULL ? &dat->file_info[idx] : NULL;
             fprintf(stderr, "%d %s (len=%d decomp=%d mode=%d)\n", idx, name, info ? info->file_len : -1,
                     info ? info->decompressed_len : -1, info ? info->compression_mode : -1);
@@ -77,41 +86,39 @@ static void DatListNames(NUDATHDR *dat, const char *filter) {
     }
 }
 
-int test_load(int argc, char **argv) {
-    VARIPTR buf_ptr = VARIPTR{.void_ptr = &buf};
-    const char *cmd = argc > 1 ? argv[1] : "";
-    VARIPTR end_ptr = VARIPTR{.void_ptr = &buf[sizeof(buf)]};
+static i32 host_run_load(const HostLoadOptions &options) {
+    VARIPTR buf_ptr = VARIPTR{.void_ptr = &host_load_buffer};
+    VARIPTR end_ptr = VARIPTR{.void_ptr = &host_load_buffer[sizeof(host_load_buffer)]};
 
     NUDATHDR *dat = NuDatOpen("res/main.1060.com.wb.lego.tcs.obb", &buf_ptr, 0);
     NuDatSet(dat);
 
-    if (strcmp(cmd, "list") == 0) {
-        DatListNames(dat, argc > 2 ? argv[2] : NULL);
-        _exit(0); // skip static dtors: engine globals free non-heap pointers
+    if (options.action == HostLoadAction::list) {
+        host_dat_list_names(dat, options.filter);
+        return 0;
     }
 
-    if (strcmp(cmd, "extract") == 0 && argc > 2) {
-        i32 node_idx = NuDatFileFindTree(dat, argv[2]);
+    if (options.action == HostLoadAction::extract) {
+        i32 node_idx = NuDatFileFindTree(dat, const_cast<char *>(options.dat_path));
         if (node_idx >= 0 && dat->file_info != NULL) {
             NUDATFINFO *info = &dat->file_info[node_idx];
             fprintf(stderr, "entry=%d len=%d decomp=%d mode=%d offset=%d\n", node_idx, info->file_len,
                     info->decompressed_len, info->compression_mode, info->file_offset);
         }
-        NUFILE f = NuFileOpen((char *)argv[2], NUFILE_READ);
+        NUFILE f = NuFileOpen(const_cast<char *>(options.dat_path), NUFILE_READ);
         if (f == 0) {
-            fprintf(stderr, "not found: %s\n", argv[2]);
-            _exit(1);
+            fprintf(stderr, "not found: %s\n", options.dat_path);
+            return 1;
         }
         i32 size = NuFileOpenSize(f);
         std::vector<char> data(size);
         NuFileRead(f, data.data(), size);
         NuFileClose(f);
-        const char *out = argc > 3 ? argv[3] : ".work/extracted.bin";
-        FILE *fp = fopen(out, "wb");
+        FILE *fp = fopen(options.output_path, "wb");
         fwrite(data.data(), 1, size, fp);
         fclose(fp);
-        fprintf(stderr, "extracted %d bytes -> %s\n", size, out);
-        _exit(0); // skip static dtors: engine globals free non-heap pointers
+        fprintf(stderr, "extracted %d bytes -> %s\n", size, options.output_path);
+        return 0;
     }
 
     i32 area_count = 0;

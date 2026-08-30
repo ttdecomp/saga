@@ -4,7 +4,7 @@
 // InitAudioDevice / ShutdownAudioDevice are the hardware boundary. On the
 // Android target they stay as recorded (the device itself is not part of the
 // decompilation scope); the HOST build (HOST_BUILD) runs the same call flow
-// against the fake OpenSL object model in host-tests/nusound/opensl_host.cpp,
+// against the fake OpenSL object model in host-utils/nusound/opensl_host.cpp,
 // which writes the queued PCM to the real host audio device through SDL3.
 
 #include "nu2api/nusound/nusound_android.hpp"
@@ -15,7 +15,7 @@
 #include "nu2api/nucore/nuthread.h"
 
 #ifdef HOST_BUILD
-#include "../../host-tests/nusound/opensl_host.hpp"
+#include "../../host-utils/nusound/opensl_host.hpp"
 #endif
 
 NuSoundAndroid NuSound;
@@ -103,8 +103,8 @@ namespace {
 // thread. The fake OpenSL objects (opensl_host.cpp) stand in for the device.
 bool NuSoundAndroid::InitAudioDevice() {
     u32 engine_options[2] = {1, 1}; // SL_ENGINEOPTION_THREADSAFE = SL_BOOLEAN_TRUE
-    u32 error = hostsl::slCreateEngine(&this->engine_object, 1, engine_options, 0, NULL, NULL);
-    if (ReportErrorCode(error, "slCreateEngine") != 0) {
+    u32 error = hostsl::HostCreateEngine(&this->engine_object, 1, engine_options, 0, NULL, NULL);
+    if (ReportErrorCode(error, "HostCreateEngine") != 0) {
         return false;
     }
 

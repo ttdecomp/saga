@@ -11,16 +11,16 @@
 
 namespace hostsl {
 
-    // slCreateEngine equivalent. The original calls the Android loader entry with
+    // HostCreateEngine equivalent. The original calls the Android loader entry with
     // (SL_ENGINEOPTION_THREADSAFE, SL_BOOLEAN_TRUE) engine options; the fake
     // engine object it returns exposes the ObjectItf and EngineItf vtable slots
     // used by NuSoundAndroid::InitAudioDevice and NuVoiceAndroid.
-    u32 slCreateEngine(void **engine_object, u32 num_options, void *options, u32 num_interfaces,
-                       const void **interface_ids, const u32 *required);
+    u32 HostCreateEngine(void **engine_object, u32 num_options, void *options, u32 num_interfaces,
+                         const void **interface_ids, const u32 *required);
 
     // Aggregate counters for the host audio test: bytes pushed in through
     // Enqueue, bytes drained by the device, and players created.
-    struct Stats {
+    struct HostStats {
         u32 players_created;
         u32 players_playing;
         u64 bytes_enqueued;
@@ -28,6 +28,6 @@ namespace hostsl {
         f32 last_mix_rms;
     };
 
-    Stats GetStats();
+    HostStats HostGetStats();
 
 } // namespace hostsl

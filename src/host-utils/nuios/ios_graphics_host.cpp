@@ -87,6 +87,6 @@ void HostSetDocumentsPath(const char *path) {
 }
 
 char *NuIOS_GetDocumentsPath(void) {
-    // Keep host test saves isolated from extracted resources and user saves.
+    // Keep host utility saves isolated from extracted resources and user saves.
     return g_hostDocumentsPath;
 }

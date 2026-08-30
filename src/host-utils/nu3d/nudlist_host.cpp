@@ -10,8 +10,8 @@ void NuIOSDLSkinMtxCallback(void *data) {
     const i32 matrix_count = *packet++;
     const i32 shader_address = NuShaderManagerGetCurrentShader();
 
-    static bool logged;
-    if (!logged) {
+    static bool host_logged;
+    if (!host_logged) {
         const NUSHADEROBJECT *shader = reinterpret_cast<const NUSHADEROBJECT *>(static_cast<uintptr_t>(shader_address));
         const GLSLParameter *parameter = shader != NULL ? &shader->parameters[0x5a] : NULL;
         LOG_INFO("skin callback: matrices=%d shader=%p program=%u semantic=0x5a "
@@ -20,7 +20,7 @@ void NuIOSDLSkinMtxCallback(void *data) {
                  parameter != NULL ? parameter->location : -1, parameter != NULL ? parameter->type_and_flags & 0x0f : 0,
                  parameter != NULL ? parameter->element_count_and_setter >> 2 : 0,
                  parameter != NULL ? parameter->array_size : 0);
-        logged = true;
+        host_logged = true;
     }
 
     if (shader_address != 0) {

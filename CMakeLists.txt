@@ -115,7 +115,7 @@ file(GLOB_RECURSE SAGA_SOURCE_FILES CONFIGURE_DEPENDS
 
 # add platform-specific source files and build rules
 if (BUILD_FOR_HOST)
-    # The host-tests/nuios/ files provide the platform glue for the host; do
+    # The host-utils/nuios/ files provide the platform glue for the host; do
     # not also compile the Android originals (they would duplicate symbols and
     # pull in Android-only dependencies such as libsquish).
     list(REMOVE_ITEM SAGA_SOURCE_FILES
@@ -124,17 +124,17 @@ if (BUILD_FOR_HOST)
     )
 
     list(APPEND SAGA_SOURCE_FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/main.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/input/host_input.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/nutex_host.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/nutex_ios_ex.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/ios_graphics_host.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/screen_host.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nucore/NuMemoryManager_host.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nusound/opensl_host.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nu3d/NuRenderDevice_host.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nu3d/nudlist_host.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nu3d/nushader_host.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-utils/main.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-utils/input/host_input.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-utils/nuios/nutex_host.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-utils/nuios/nutex_ios_ex.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-utils/nuios/ios_graphics_host.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-utils/nuios/screen_host.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-utils/nucore/NuMemoryManager_host.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-utils/nusound/opensl_host.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-utils/nu3d/NuRenderDevice_host.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-utils/nu3d/nudlist_host.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-utils/nu3d/nushader_host.cpp
     )
 
     add_executable(saga ${SAGA_SOURCE_FILES})

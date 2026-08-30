@@ -250,7 +250,7 @@ NDK g++, followed by an undefined-symbol scan and relocation dump:
   still passes `-DANDROID`.
 - deps via pkg-config (`src/host.cmake`): `vorbis vorbisfile sdl3` (+ `glesv2 egl` on Linux,
   `angleproject` on Windows; `libsquish` is **commented out** in the list).
-- TU set differs: host adds eight files under `src/host-tests/` and removes the
+- TU set differs: host adds files under `src/host-utils/` and removes the
   two Android texture TUs. The target instead adds those two Android TUs plus
   `src/nu2api/nuandroid/ios_graphics.cpp`. Compare the two generated JSON files
   for the current exact set.

@@ -37,30 +37,30 @@ namespace hostsl {
     namespace {
 
         // SL result codes (from SLresult's 1.0.1 table).
-        const u32 SL_RESULT_SUCCESS = 0x00000000;
-        const u32 SL_RESULT_PARAMETER_INVALID = 0x0000000b;
-        const u32 SL_RESULT_BUFFER_INSUFFICIENT = 0x0000000c;
-        const u32 SL_RESULT_CONTENT_UNSUPPORTED = 0x0000000e;
+        const u32 HOST_SL_RESULT_SUCCESS = 0x00000000;
+        const u32 HOST_SL_RESULT_PARAMETER_INVALID = 0x0000000b;
+        const u32 HOST_SL_RESULT_BUFFER_INSUFFICIENT = 0x0000000c;
+        const u32 HOST_SL_RESULT_CONTENT_UNSUPPORTED = 0x0000000e;
 
         // Interface id tokens — must match the anonymous-namespace constants in
         // nusound_voice_android.cpp and InitAudioDevice.
-        const void *IID_PLAY = (const void *)0x00010001;
-        const void *IID_BUFFER_QUEUE = (const void *)0x00010002;
-        const void *IID_VOLUME = (const void *)0x00010003;
-        const void *IID_ENGINE = (const void *)0x00010004;
-        const void *IID_ENGINECAPABILITIES = (const void *)0x00010005;
-        const void *IID_ENVIRONMENTALREVERB = (const void *)0x00010006;
+        const void *HOST_IID_PLAY = (const void *)0x00010001;
+        const void *HOST_IID_BUFFER_QUEUE = (const void *)0x00010002;
+        const void *HOST_IID_VOLUME = (const void *)0x00010003;
+        const void *HOST_IID_ENGINE = (const void *)0x00010004;
+        const void *HOST_IID_ENGINE_CAPABILITIES = (const void *)0x00010005;
+        const void *HOST_IID_ENVIRONMENTAL_REVERB = (const void *)0x00010006;
 
         // SL object kinds (fake-internal dispatch for the shared ObjectItf).
-        const u32 KIND_ENGINE = 1;
-        const u32 KIND_MIX = 2;
-        const u32 KIND_PLAYER = 3;
+        const u32 HOST_KIND_ENGINE = 1;
+        const u32 HOST_KIND_MIX = 2;
+        const u32 HOST_KIND_PLAYER = 3;
 
         // The device sink: everything is converted to 16-bit stereo.
-        SDL_AudioSpec device_spec = {SDL_AUDIO_S16LE, 2, 48000};
-        SDL_AudioStream *device_stream = NULL;
+        SDL_AudioSpec host_device_spec = {SDL_AUDIO_S16LE, 2, 48000};
+        SDL_AudioStream *host_device_stream = NULL;
 
-        struct Stats s_stats = {};
+        struct HostStats host_stats = {};
 
         // ---------------------------------------------------------------------------
         // vtable shapes (field order = slot order; pads are uncalled slots)
@@ -140,7 +140,7 @@ namespace hostsl {
             bool realized;
         };
 
-        enum { PLAYER_MAX_QUEUE = 16 };
+        enum { HOST_PLAYER_MAX_QUEUE = 16 };
 
         // One SL buffer-queue entry. The game owns the buffer memory it passes
         // to Enqueue (the decoder ring reuses it for the next chunk), so the
@@ -190,7 +190,7 @@ namespace hostsl {
             // out of the device-side buffer)
             u64 consumed_device_frames;
             // the SL buffer queue, consumed in order
-            QueueEntry queue[PLAYER_MAX_QUEUE];
+            QueueEntry queue[HOST_PLAYER_MAX_QUEUE];
             u32 queue_head;
             u32 queue_count;
 
@@ -204,63 +204,72 @@ namespace hostsl {
         // ---------------------------------------------------------------------------
 
         // ObjectItf (shared by engine / mix / player)
-        u32 ObjectRealize(void *self, u32 async);
-        u32 ObjectResume(void *self);
-        u32 ObjectGetState(void *self, u32 *out);
-        u32 ObjectGetInterface(void *self, const void *iid, void **out);
-        u32 ObjectDestroy(void *self);
+        u32 host_object_realize(void *self, u32 async);
+        u32 host_object_resume(void *self);
+        u32 host_object_get_state(void *self, u32 *out);
+        u32 host_object_get_interface(void *self, const void *iid, void **out);
+        u32 host_object_destroy(void *self);
 
         // EngineItf / EngineCapabilitiesItf
-        u32 EngineCreateAudioPlayer(void *self, void **player_object, void *audio_src, void *audio_sink,
-                                    u32 num_interfaces, const void **interface_ids, const u32 *required);
-        u32 EngineCreateOutputMix(void *self, void **mix_object, u32 num_interfaces, const void **interface_ids,
-                                  const u32 *required);
-        u32 EngineQuerySupportedProfiles(void *self, u16 *profiles);
-        u32 EngineQueryAvailableOutputs(void *self, u32 max_outputs, u32 *output_ids, u32 *output_details,
-                                        u32 *num_outputs);
-        u32 EngineQueryRealtime(void *self, u32 *config);
+        u32 host_engine_create_audio_player(void *self, void **player_object, void *audio_src, void *audio_sink,
+                                            u32 num_interfaces, const void **interface_ids, const u32 *required);
+        u32 host_engine_create_output_mix(void *self, void **mix_object, u32 num_interfaces, const void **interface_ids,
+                                          const u32 *required);
+        u32 host_engine_query_supported_profiles(void *self, u16 *profiles);
+        u32 host_engine_query_available_outputs(void *self, u32 max_outputs, u32 *output_ids, u32 *output_details,
+                                                u32 *num_outputs);
+        u32 host_engine_query_realtime(void *self, u32 *config);
 
         // PlayItf
-        u32 PlaySetPlayState(void *self, u32 state);
-        u32 PlayGetPlayState(void *self, u32 *state);
-        u32 PlayGetPosition(void *self, u32 *millisec);
-        u32 PlayRegisterCallback(void *self, PlayCallbackFn callback, void *context);
-        u32 PlaySetCallbackEventsMask(void *self, u32 mask);
+        u32 host_play_set_play_state(void *self, u32 state);
+        u32 host_play_get_play_state(void *self, u32 *state);
+        u32 host_play_get_position(void *self, u32 *millisec);
+        u32 host_play_register_callback(void *self, PlayCallbackFn callback, void *context);
+        u32 host_play_set_callback_events_mask(void *self, u32 mask);
 
         // AndroidSimpleBufferQueueItf
-        u32 QueueEnqueue(void *self, void *data, u32 size);
-        u32 QueueClear(void *self);
-        u32 QueueGetState(void *self, u32 *count);
+        u32 host_queue_enqueue(void *self, void *data, u32 size);
+        u32 host_queue_clear(void *self);
+        u32 host_queue_get_state(void *self, u32 *count);
 
         // VolumeItf
-        u32 VolumeSetVolumeLevel(void *self, i32 level);
-        u32 VolumeEnableStereoPosition(void *self, u32 enabled);
-        u32 VolumeSetStereoPosition(void *self, i32 position);
+        u32 host_volume_set_volume_level(void *self, i32 level);
+        u32 host_volume_enable_stereo_position(void *self, u32 enabled);
+        u32 host_volume_set_stereo_position(void *self, i32 position);
 
         // device mix loop
-        void DeviceMixCallback(void *userdata, SDL_AudioStream *stream, int additional, int total);
+        void host_device_mix_callback(void *userdata, SDL_AudioStream *stream, int additional, int total);
 
-        const ObjectVTable s_object_vt = {
-            ObjectRealize, ObjectResume, ObjectGetState, ObjectGetInterface, NULL, NULL, ObjectDestroy,
+        const ObjectVTable host_object_vt = {
+            host_object_realize, host_object_resume, host_object_get_state, host_object_get_interface, NULL, NULL,
+            host_object_destroy,
         };
-        const EngineVTable s_engine_vt = {
-            NULL, NULL, EngineCreateAudioPlayer, NULL, NULL, NULL, NULL, EngineCreateOutputMix,
+        const EngineVTable host_engine_vt = {
+            NULL, NULL, host_engine_create_audio_player, NULL, NULL, NULL, NULL, host_engine_create_output_mix,
         };
-        const EngineCapsVTable s_caps_vt = {
-            EngineQuerySupportedProfiles,
-            EngineQueryAvailableOutputs,
-            EngineQueryRealtime,
+        const EngineCapsVTable host_caps_vt = {
+            host_engine_query_supported_profiles,
+            host_engine_query_available_outputs,
+            host_engine_query_realtime,
         };
-        const PlayVTable s_play_vt = {
-            NULL, PlaySetPlayState, PlayGetPlayState, PlayGetPosition, PlayRegisterCallback, PlaySetCallbackEventsMask,
+        const PlayVTable host_play_vt = {
+            NULL,
+            host_play_set_play_state,
+            host_play_get_play_state,
+            host_play_get_position,
+            host_play_register_callback,
+            host_play_set_callback_events_mask,
         };
-        const QueueVTable s_queue_vt = {
-            QueueEnqueue,
-            QueueClear,
-            QueueGetState,
+        const QueueVTable host_queue_vt = {
+            host_queue_enqueue,
+            host_queue_clear,
+            host_queue_get_state,
         };
-        const VolumeVTable s_volume_vt = {
-            NULL, NULL, NULL, VolumeSetVolumeLevel, NULL, VolumeEnableStereoPosition, NULL, VolumeSetStereoPosition,
+        const VolumeVTable host_volume_vt = {
+            NULL, NULL,
+            NULL, host_volume_set_volume_level,
+            NULL, host_volume_enable_stereo_position,
+            NULL, host_volume_set_stereo_position,
         };
 
         // ---------------------------------------------------------------------------
@@ -272,42 +281,42 @@ namespace hostsl {
         // removes buffers from the SL queue on that hand-off, so the playhead
         // lags the queue by the AudioTrack buffer size. The cap bounds how much the
         // device holds; 16384 device bytes ≈ 4 × 21 ms periods at 48 kHz.
-        const u32 TRACK_CAP_BYTES = 16384;
+        const u32 HOST_TRACK_CAP_BYTES = 16384;
 
         // Frees and drops every queued entry.
-        void QueueReleaseAll(Player *player) {
+        void host_queue_release_all(Player *player) {
             while (player->queue_count > 0) {
                 QueueEntry *entry = &player->queue[player->queue_head];
                 free(entry->data);
                 entry->data = NULL;
-                player->queue_head = (player->queue_head + 1) % PLAYER_MAX_QUEUE;
+                player->queue_head = (player->queue_head + 1) % HOST_PLAYER_MAX_QUEUE;
                 player->queue_count--;
             }
         }
 
-        pthread_mutex_t g_lock = PTHREAD_MUTEX_INITIALIZER;
-        Player *g_players[32];
-        u32 g_player_count = 0;
+        pthread_mutex_t host_lock = PTHREAD_MUTEX_INITIALIZER;
+        Player *host_players[32];
+        u32 host_player_count = 0;
 
-        void RegisterPlayer(Player *player) {
-            pthread_mutex_lock(&g_lock);
-            if (g_player_count < 32) {
-                g_players[g_player_count++] = player;
-                s_stats.players_created++;
+        void host_register_player(Player *player) {
+            pthread_mutex_lock(&host_lock);
+            if (host_player_count < 32) {
+                host_players[host_player_count++] = player;
+                host_stats.players_created++;
             }
-            pthread_mutex_unlock(&g_lock);
+            pthread_mutex_unlock(&host_lock);
         }
 
-        void RemovePlayer(Player *player) {
-            pthread_mutex_lock(&g_lock);
-            for (u32 i = 0; i < g_player_count; i++) {
-                if (g_players[i] == player) {
-                    g_players[i] = g_players[--g_player_count];
+        void host_remove_player(Player *player) {
+            pthread_mutex_lock(&host_lock);
+            for (u32 i = 0; i < host_player_count; i++) {
+                if (host_players[i] == player) {
+                    host_players[i] = host_players[--host_player_count];
                     break;
                 }
             }
-            pthread_mutex_unlock(&g_lock);
-            QueueReleaseAll(player);
+            pthread_mutex_unlock(&host_lock);
+            host_queue_release_all(player);
             if (player->stream != NULL) {
                 SDL_DestroyAudioStream(player->stream);
                 player->stream = NULL;
@@ -318,40 +327,40 @@ namespace hostsl {
         // ObjectItf (shared by engine / mix / player)
         // ---------------------------------------------------------------------------
 
-        u32 ObjectRealize(void *self, u32 async) {
+        u32 host_object_realize(void *self, u32 async) {
             (void)async;
-            switch (((ObjectVTable **)self)[0] == &s_object_vt ? ((u32 *)self)[1] : 0) {
-                case KIND_ENGINE:
+            switch (((ObjectVTable **)self)[0] == &host_object_vt ? ((u32 *)self)[1] : 0) {
+                case HOST_KIND_ENGINE:
                     ((EngineObject *)self)->realized = true;
-                    return SL_RESULT_SUCCESS;
-                case KIND_MIX:
+                    return HOST_SL_RESULT_SUCCESS;
+                case HOST_KIND_MIX:
                     ((MixObject *)self)->realized = true;
-                    return SL_RESULT_SUCCESS;
-                case KIND_PLAYER:
+                    return HOST_SL_RESULT_SUCCESS;
+                case HOST_KIND_PLAYER:
                     ((Player *)self)->realized = true;
-                    return SL_RESULT_SUCCESS;
+                    return HOST_SL_RESULT_SUCCESS;
                 default:
-                    return SL_RESULT_PARAMETER_INVALID;
+                    return HOST_SL_RESULT_PARAMETER_INVALID;
             }
         }
 
         // SLObjectItf::Resume (object vtable slot 0x4). The engine's state poll uses
         // it to resume a suspended player object.
-        u32 ObjectResume(void *self) {
+        u32 host_object_resume(void *self) {
             (void)self;
-            return SL_RESULT_SUCCESS;
+            return HOST_SL_RESULT_SUCCESS;
         }
 
         // SLObjectItf::GetState (object vtable slot 0x8): the realized state of the
         // object, not the play state.
-        u32 ObjectGetState(void *self, u32 *out) {
+        u32 host_object_get_state(void *self, u32 *out) {
             const u32 kind = ((u32 *)self)[1];
             bool realized = false;
-            if (kind == KIND_ENGINE) {
+            if (kind == HOST_KIND_ENGINE) {
                 realized = ((EngineObject *)self)->realized;
-            } else if (kind == KIND_MIX) {
+            } else if (kind == HOST_KIND_MIX) {
                 realized = ((MixObject *)self)->realized;
-            } else if (kind == KIND_PLAYER) {
+            } else if (kind == HOST_KIND_PLAYER) {
                 realized = ((Player *)self)->realized;
             }
 
@@ -360,77 +369,77 @@ namespace hostsl {
             // UpdateState down its re-realization recovery path during the
             // priming Update in Play(). The real object reports 2 here.
             *out = realized ? 2 : 1;
-            return SL_RESULT_SUCCESS;
+            return HOST_SL_RESULT_SUCCESS;
         }
 
-        u32 ObjectGetInterface(void *self, const void *iid, void **out) {
+        u32 host_object_get_interface(void *self, const void *iid, void **out) {
             *out = NULL;
             const u32 kind = ((u32 *)self)[1];
 
-            if (kind == KIND_ENGINE) {
+            if (kind == HOST_KIND_ENGINE) {
                 EngineObject *engine = (EngineObject *)self;
-                if (iid == IID_ENGINE) {
+                if (iid == HOST_IID_ENGINE) {
                     *out = &engine->engine_itf;
-                    return SL_RESULT_SUCCESS;
+                    return HOST_SL_RESULT_SUCCESS;
                 }
-                if (iid == IID_ENGINECAPABILITIES) {
+                if (iid == HOST_IID_ENGINE_CAPABILITIES) {
                     *out = &engine->caps_itf;
-                    return SL_RESULT_SUCCESS;
+                    return HOST_SL_RESULT_SUCCESS;
                 }
-                return SL_RESULT_PARAMETER_INVALID;
+                return HOST_SL_RESULT_PARAMETER_INVALID;
             }
 
-            if (kind == KIND_PLAYER) {
+            if (kind == HOST_KIND_PLAYER) {
                 Player *player = (Player *)self;
-                if (iid == IID_PLAY) {
+                if (iid == HOST_IID_PLAY) {
                     *out = &player->play_itf;
-                    return SL_RESULT_SUCCESS;
+                    return HOST_SL_RESULT_SUCCESS;
                 }
-                if (iid == IID_BUFFER_QUEUE) {
+                if (iid == HOST_IID_BUFFER_QUEUE) {
                     *out = &player->queue_itf;
-                    return SL_RESULT_SUCCESS;
+                    return HOST_SL_RESULT_SUCCESS;
                 }
-                if (iid == IID_VOLUME) {
+                if (iid == HOST_IID_VOLUME) {
                     *out = &player->volume_itf;
-                    return SL_RESULT_SUCCESS;
+                    return HOST_SL_RESULT_SUCCESS;
                 }
-                return SL_RESULT_PARAMETER_INVALID;
+                return HOST_SL_RESULT_PARAMETER_INVALID;
             }
 
             // Output mix: the original tolerates both of its interface queries
             // failing (nothing in the transcribed scope reads the results).
-            return SL_RESULT_PARAMETER_INVALID;
+            return HOST_SL_RESULT_PARAMETER_INVALID;
         }
 
-        u32 ObjectDestroy(void *self) {
+        u32 host_object_destroy(void *self) {
             const u32 kind = ((u32 *)self)[1];
-            if (kind == KIND_PLAYER) {
-                RemovePlayer((Player *)self);
+            if (kind == HOST_KIND_PLAYER) {
+                host_remove_player((Player *)self);
                 free(self);
-                return SL_RESULT_SUCCESS;
+                return HOST_SL_RESULT_SUCCESS;
             }
-            if (kind == KIND_MIX) {
+            if (kind == HOST_KIND_MIX) {
                 free(self);
-                return SL_RESULT_SUCCESS;
+                return HOST_SL_RESULT_SUCCESS;
             }
-            if (kind == KIND_ENGINE) {
+            if (kind == HOST_KIND_ENGINE) {
                 // Engine teardown shuts the device.
-                if (device_stream != NULL) {
-                    SDL_DestroyAudioStream(device_stream);
-                    device_stream = NULL;
+                if (host_device_stream != NULL) {
+                    SDL_DestroyAudioStream(host_device_stream);
+                    host_device_stream = NULL;
                 }
                 free(self);
-                return SL_RESULT_SUCCESS;
+                return HOST_SL_RESULT_SUCCESS;
             }
-            return SL_RESULT_PARAMETER_INVALID;
+            return HOST_SL_RESULT_PARAMETER_INVALID;
         }
 
         // ---------------------------------------------------------------------------
         // EngineItf / EngineCapabilitiesItf
         // ---------------------------------------------------------------------------
 
-        u32 EngineCreateAudioPlayer(void *self, void **player_object, void *audio_src, void *audio_sink,
-                                    u32 num_interfaces, const void **interface_ids, const u32 *required) {
+        u32 host_engine_create_audio_player(void *self, void **player_object, void *audio_src, void *audio_sink,
+                                            u32 num_interfaces, const void **interface_ids, const u32 *required) {
             (void)self;
             (void)audio_sink;
             (void)num_interfaces;
@@ -443,10 +452,10 @@ namespace hostsl {
             const u32 *locator = (const u32 *)((void **)audio_src)[0];
             const u32 *pcm = (const u32 *)((void **)audio_src)[1];
             if (locator[0] != 0x800007bdu) { // SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE
-                return SL_RESULT_PARAMETER_INVALID;
+                return HOST_SL_RESULT_PARAMETER_INVALID;
             }
             if (pcm[0] != 2) { // SL_DATAFORMAT_PCM
-                return SL_RESULT_CONTENT_UNSUPPORTED;
+                return HOST_SL_RESULT_CONTENT_UNSUPPORTED;
             }
 
             const u32 channels = pcm[1];
@@ -454,25 +463,25 @@ namespace hostsl {
             const u32 bits = pcm[3];
 
             if (channels != 1 && channels != 2) {
-                return SL_RESULT_CONTENT_UNSUPPORTED;
+                return HOST_SL_RESULT_CONTENT_UNSUPPORTED;
             }
             if (bits != 8 && bits != 16 && bits != 24) {
-                return SL_RESULT_CONTENT_UNSUPPORTED;
+                return HOST_SL_RESULT_CONTENT_UNSUPPORTED;
             }
             if (rate == 0) {
-                return SL_RESULT_CONTENT_UNSUPPORTED;
+                return HOST_SL_RESULT_CONTENT_UNSUPPORTED;
             }
 
             Player *player = (Player *)calloc(1, sizeof(Player));
             if (player == NULL) {
-                return SL_RESULT_PARAMETER_INVALID;
+                return HOST_SL_RESULT_PARAMETER_INVALID;
             }
 
-            player->object_vt = (ObjectVTable *)&s_object_vt;
-            player->kind = KIND_PLAYER;
-            player->play_itf.vt = (PlayVTable *)&s_play_vt;
-            player->queue_itf.vt = (QueueVTable *)&s_queue_vt;
-            player->volume_itf.vt = (VolumeVTable *)&s_volume_vt;
+            player->object_vt = (ObjectVTable *)&host_object_vt;
+            player->kind = HOST_KIND_PLAYER;
+            player->play_itf.vt = (PlayVTable *)&host_play_vt;
+            player->queue_itf.vt = (QueueVTable *)&host_queue_vt;
+            player->volume_itf.vt = (VolumeVTable *)&host_volume_vt;
             player->channels = channels;
             player->rate = rate;
             player->bits = bits;
@@ -485,15 +494,15 @@ namespace hostsl {
             } else if (bits == 24) {
                 src.format = SDL_AUDIO_S32LE; // expanded on Enqueue
             }
-            player->stream = SDL_CreateAudioStream(&src, &device_spec);
+            player->stream = SDL_CreateAudioStream(&src, &host_device_spec);
 
-            RegisterPlayer(player);
+            host_register_player(player);
             *player_object = player;
-            return SL_RESULT_SUCCESS;
+            return HOST_SL_RESULT_SUCCESS;
         }
 
-        u32 EngineCreateOutputMix(void *self, void **mix_object, u32 num_interfaces, const void **interface_ids,
-                                  const u32 *required) {
+        u32 host_engine_create_output_mix(void *self, void **mix_object, u32 num_interfaces, const void **interface_ids,
+                                          const u32 *required) {
             (void)self;
             (void)num_interfaces;
             (void)interface_ids;
@@ -504,115 +513,116 @@ namespace hostsl {
             // far larger, which lets one mix pass consume the whole queued
             // buffer and breaks the real-time consumption cadence the game's
             // streaming refill depends on.
-            if (device_stream == NULL) {
+            if (host_device_stream == NULL) {
                 SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES, "1024");
-                device_stream =
-                    SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &device_spec, DeviceMixCallback, NULL);
-                if (device_stream == NULL) {
+                host_device_stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &host_device_spec,
+                                                               host_device_mix_callback, NULL);
+                if (host_device_stream == NULL) {
                     *mix_object = NULL;
-                    return SL_RESULT_PARAMETER_INVALID;
+                    return HOST_SL_RESULT_PARAMETER_INVALID;
                 }
-                SDL_ResumeAudioStreamDevice(device_stream);
+                SDL_ResumeAudioStreamDevice(host_device_stream);
             }
 
             MixObject *mix = (MixObject *)calloc(1, sizeof(MixObject));
             if (mix == NULL) {
-                return SL_RESULT_PARAMETER_INVALID;
+                return HOST_SL_RESULT_PARAMETER_INVALID;
             }
-            mix->object_vt = (ObjectVTable *)&s_object_vt;
-            mix->kind = KIND_MIX;
+            mix->object_vt = (ObjectVTable *)&host_object_vt;
+            mix->kind = HOST_KIND_MIX;
             *mix_object = mix;
-            return SL_RESULT_SUCCESS;
+            return HOST_SL_RESULT_SUCCESS;
         }
 
-        u32 EngineQuerySupportedProfiles(void *self, u16 *profiles) {
+        u32 host_engine_query_supported_profiles(void *self, u16 *profiles) {
             (void)self;
             // Advertise no optional profiles: the original skips its optional output
             // queries unless the android profile bit (0x4) is set.
             *profiles = 0;
-            return SL_RESULT_SUCCESS;
+            return HOST_SL_RESULT_SUCCESS;
         }
 
-        u32 EngineQueryAvailableOutputs(void *self, u32 max_outputs, u32 *output_ids, u32 *output_details,
-                                        u32 *num_outputs) {
+        u32 host_engine_query_available_outputs(void *self, u32 max_outputs, u32 *output_ids, u32 *output_details,
+                                                u32 *num_outputs) {
             (void)self;
             (void)max_outputs;
             (void)output_ids;
             (void)output_details;
             *num_outputs = 0;
-            return SL_RESULT_SUCCESS;
+            return HOST_SL_RESULT_SUCCESS;
         }
 
-        u32 EngineQueryRealtime(void *self, u32 *config) {
+        u32 host_engine_query_realtime(void *self, u32 *config) {
             (void)self;
             *config = 0;
-            return SL_RESULT_SUCCESS;
+            return HOST_SL_RESULT_SUCCESS;
         }
 
         // ---------------------------------------------------------------------------
         // PlayItf
         // ---------------------------------------------------------------------------
 
-        u32 PlaySetPlayState(void *self, u32 state) {
+        u32 host_play_set_play_state(void *self, u32 state) {
             Player *player = (Player *)HOSTSL_CONTAINER_OF(self, Player, play_itf);
             player->play_state = state;
-            return SL_RESULT_SUCCESS;
+            return HOST_SL_RESULT_SUCCESS;
         }
 
-        u32 PlayGetPlayState(void *self, u32 *state) {
+        u32 host_play_get_play_state(void *self, u32 *state) {
             *state = ((Player *)HOSTSL_CONTAINER_OF(self, Player, play_itf))->play_state;
-            return SL_RESULT_SUCCESS;
+            return HOST_SL_RESULT_SUCCESS;
         }
 
-        u32 PlayGetPosition(void *self, u32 *millisec) {
+        u32 host_play_get_position(void *self, u32 *millisec) {
             Player *player = (Player *)HOSTSL_CONTAINER_OF(self, Player, play_itf);
-            const u64 consumed_src_frames = player->consumed_device_frames * (u64)player->rate / (u64)device_spec.freq;
+            const u64 consumed_src_frames =
+                player->consumed_device_frames * (u64)player->rate / (u64)host_device_spec.freq;
             *millisec = (u32)(consumed_src_frames * 1000ULL / (u64)player->rate);
-            return SL_RESULT_SUCCESS;
+            return HOST_SL_RESULT_SUCCESS;
         }
 
-        u32 PlayRegisterCallback(void *self, PlayCallbackFn callback, void *context) {
+        u32 host_play_register_callback(void *self, PlayCallbackFn callback, void *context) {
             Player *player = (Player *)HOSTSL_CONTAINER_OF(self, Player, play_itf);
             player->play_callback = callback;
             player->callback_context = context;
-            return SL_RESULT_SUCCESS;
+            return HOST_SL_RESULT_SUCCESS;
         }
 
-        u32 PlaySetCallbackEventsMask(void *self, u32 mask) {
+        u32 host_play_set_callback_events_mask(void *self, u32 mask) {
             ((Player *)HOSTSL_CONTAINER_OF(self, Player, play_itf))->callback_mask = mask;
-            return SL_RESULT_SUCCESS;
+            return HOST_SL_RESULT_SUCCESS;
         }
 
         // ---------------------------------------------------------------------------
         // AndroidSimpleBufferQueueItf
         // ---------------------------------------------------------------------------
 
-        u32 QueueEnqueue(void *self, void *data, u32 size) {
+        u32 host_queue_enqueue(void *self, void *data, u32 size) {
             Player *player = (Player *)HOSTSL_CONTAINER_OF(self, Player, queue_itf);
             if (data == NULL || size == 0 || player->stream == NULL) {
-                return SL_RESULT_PARAMETER_INVALID;
+                return HOST_SL_RESULT_PARAMETER_INVALID;
             }
 
-            pthread_mutex_lock(&g_lock);
-            if (player->queue_count == PLAYER_MAX_QUEUE) {
-                pthread_mutex_unlock(&g_lock);
-                return SL_RESULT_BUFFER_INSUFFICIENT;
+            pthread_mutex_lock(&host_lock);
+            if (player->queue_count == HOST_PLAYER_MAX_QUEUE) {
+                pthread_mutex_unlock(&host_lock);
+                return HOST_SL_RESULT_BUFFER_INSUFFICIENT;
             }
 
-            QueueEntry *entry = &player->queue[(player->queue_head + player->queue_count) % PLAYER_MAX_QUEUE];
+            QueueEntry *entry = &player->queue[(player->queue_head + player->queue_count) % HOST_PLAYER_MAX_QUEUE];
             memset(entry, 0, sizeof(*entry));
             entry->sl_size = size;
             if (player->bits == 24) {
                 // 24-bit LE samples expand into 32-bit words for SDL.
                 const u32 samples = size / 3;
                 if (samples > 0x20000) {
-                    pthread_mutex_unlock(&g_lock);
-                    return SL_RESULT_BUFFER_INSUFFICIENT;
+                    pthread_mutex_unlock(&host_lock);
+                    return HOST_SL_RESULT_BUFFER_INSUFFICIENT;
                 }
                 entry->data = (u8 *)malloc(samples * 4);
                 if (entry->data == NULL) {
-                    pthread_mutex_unlock(&g_lock);
-                    return SL_RESULT_BUFFER_INSUFFICIENT;
+                    pthread_mutex_unlock(&host_lock);
+                    return HOST_SL_RESULT_BUFFER_INSUFFICIENT;
                 }
                 const u8 *in = (const u8 *)data;
                 u32 *out = (u32 *)entry->data;
@@ -624,33 +634,33 @@ namespace hostsl {
             } else {
                 entry->data = (u8 *)malloc(size);
                 if (entry->data == NULL) {
-                    pthread_mutex_unlock(&g_lock);
-                    return SL_RESULT_BUFFER_INSUFFICIENT;
+                    pthread_mutex_unlock(&host_lock);
+                    return HOST_SL_RESULT_BUFFER_INSUFFICIENT;
                 }
                 memcpy(entry->data, data, size);
                 entry->stream_size = size;
             }
 
             player->queue_count++;
-            s_stats.bytes_enqueued += size;
-            pthread_mutex_unlock(&g_lock);
-            return SL_RESULT_SUCCESS;
+            host_stats.bytes_enqueued += size;
+            pthread_mutex_unlock(&host_lock);
+            return HOST_SL_RESULT_SUCCESS;
         }
 
-        u32 QueueClear(void *self) {
+        u32 host_queue_clear(void *self) {
             Player *player = (Player *)HOSTSL_CONTAINER_OF(self, Player, queue_itf);
-            pthread_mutex_lock(&g_lock);
+            pthread_mutex_lock(&host_lock);
             if (player->stream != NULL) {
                 SDL_ClearAudioStream(player->stream);
             }
-            QueueReleaseAll(player);
-            pthread_mutex_unlock(&g_lock);
-            return SL_RESULT_SUCCESS;
+            host_queue_release_all(player);
+            pthread_mutex_unlock(&host_lock);
+            return HOST_SL_RESULT_SUCCESS;
         }
 
         // Drops queue entries that have been handed completely to the
         // device-side buffer; returns the hand-off count for queue accounting.
-        u32 QueueCountHandedOff(Player *player) {
+        u32 host_queue_count_handed_off(Player *player) {
             u32 done = 0;
             while (player->queue_count > 0) {
                 QueueEntry *entry = &player->queue[player->queue_head];
@@ -659,61 +669,61 @@ namespace hostsl {
                 }
                 free(entry->data);
                 entry->data = NULL;
-                player->queue_head = (player->queue_head + 1) % PLAYER_MAX_QUEUE;
+                player->queue_head = (player->queue_head + 1) % HOST_PLAYER_MAX_QUEUE;
                 player->queue_count--;
                 done++;
             }
             return done;
         }
 
-        u32 QueueGetState(void *self, u32 *count) {
+        u32 host_queue_get_state(void *self, u32 *count) {
             Player *player = (Player *)HOSTSL_CONTAINER_OF(self, Player, queue_itf);
-            pthread_mutex_lock(&g_lock);
-            QueueCountHandedOff(player);
+            pthread_mutex_lock(&host_lock);
+            host_queue_count_handed_off(player);
             *count = player->queue_count;
-            pthread_mutex_unlock(&g_lock);
-            return SL_RESULT_SUCCESS;
+            pthread_mutex_unlock(&host_lock);
+            return HOST_SL_RESULT_SUCCESS;
         }
 
         // ---------------------------------------------------------------------------
         // VolumeItf
         // ---------------------------------------------------------------------------
 
-        u32 VolumeSetVolumeLevel(void *self, i32 level) {
+        u32 host_volume_set_volume_level(void *self, i32 level) {
             ((Player *)HOSTSL_CONTAINER_OF(self, Player, volume_itf))->volume_millibels = level;
-            return SL_RESULT_SUCCESS;
+            return HOST_SL_RESULT_SUCCESS;
         }
 
-        u32 VolumeEnableStereoPosition(void *self, u32 enabled) {
+        u32 host_volume_enable_stereo_position(void *self, u32 enabled) {
             ((Player *)HOSTSL_CONTAINER_OF(self, Player, volume_itf))->stereo_position_enabled = enabled != 0;
-            return SL_RESULT_SUCCESS;
+            return HOST_SL_RESULT_SUCCESS;
         }
 
-        u32 VolumeSetStereoPosition(void *self, i32 position) {
+        u32 host_volume_set_stereo_position(void *self, i32 position) {
             Player *player = (Player *)HOSTSL_CONTAINER_OF(self, Player, volume_itf);
             if (position < -1000 || position > 1000) {
-                return SL_RESULT_PARAMETER_INVALID;
+                return HOST_SL_RESULT_PARAMETER_INVALID;
             }
             player->stereo_position_milli = position;
-            return SL_RESULT_SUCCESS;
+            return HOST_SL_RESULT_SUCCESS;
         }
 
         // ---------------------------------------------------------------------------
         // device mix loop
         // ---------------------------------------------------------------------------
 
-        const u32 MIX_CHUNK_BYTES = 4096; // one pull per player per pass
-        enum { FIRED_MAX = 64 };
+        const u32 HOST_MIX_CHUNK_BYTES = 4096; // one pull per player per pass
+        enum { HOST_FIRED_MAX = 64 };
 
         // Hands queue data to the device-side buffer while it has room (the
         // AudioTrack analog). Finishing an SL queue entry is not a play-interface
         // event: SL_PLAYEVENT_HEADATEND fires only when the play head itself
         // reaches the end of all queued audio.
-        void TopUpPlayerStream(Player *player) {
-            QueueCountHandedOff(player);
+        void host_top_up_player_stream(Player *player) {
+            host_queue_count_handed_off(player);
 
             const u32 available = (u32)SDL_GetAudioStreamAvailable(player->stream);
-            u32 space = TRACK_CAP_BYTES > available ? TRACK_CAP_BYTES - available : 0;
+            u32 space = HOST_TRACK_CAP_BYTES > available ? HOST_TRACK_CAP_BYTES - available : 0;
             space &= ~3u; // whole s16 stereo frames in the device format
             while (space > 0 && player->queue_count > 0) {
                 QueueEntry *entry = &player->queue[player->queue_head];
@@ -724,37 +734,37 @@ namespace hostsl {
                 }
                 entry->fed += take;
                 space -= take;
-                QueueCountHandedOff(player);
+                host_queue_count_handed_off(player);
             }
         }
 
-        void DeviceMixCallback(void *userdata, SDL_AudioStream *stream, int additional, int total) {
+        void host_device_mix_callback(void *userdata, SDL_AudioStream *stream, int additional, int total) {
             (void)userdata;
             (void)total;
 
-            static u8 pull_buffer[MIX_CHUNK_BYTES];
-            static f32 mix_acc[MIX_CHUNK_BYTES / 2]; // s16 stereo frame accumulator
+            static u8 host_pull_buffer[HOST_MIX_CHUNK_BYTES];
+            static f32 host_mix_acc[HOST_MIX_CHUNK_BYTES / 2]; // s16 stereo frame accumulator
 
             // Buffer-consumed events fire after the registry lock is dropped: the
             // handler takes the voice mutex, and Enqueue holds that mutex while
-            // touching the registry, so taking it under g_lock would invert the order.
-            Player *fired[FIRED_MAX];
+            // touching the registry, so taking it under host_lock would invert the order.
+            Player *fired[HOST_FIRED_MAX];
             u32 fired_count = 0;
 
-            pthread_mutex_lock(&g_lock);
+            pthread_mutex_lock(&host_lock);
 
             while (additional > 0) {
-                u32 chunk = (additional < (int)MIX_CHUNK_BYTES) ? (u32)additional : MIX_CHUNK_BYTES;
+                u32 chunk = (additional < (int)HOST_MIX_CHUNK_BYTES) ? (u32)additional : HOST_MIX_CHUNK_BYTES;
                 chunk &= ~3u; // whole s16 stereo frames
                 if (chunk == 0) {
                     break;
                 }
                 const u32 frames = chunk / 4;
 
-                memset(mix_acc, 0, (usize)chunk * 2);
+                memset(host_mix_acc, 0, (usize)chunk * 2);
 
-                for (u32 i = 0; i < g_player_count; i++) {
-                    Player *player = g_players[i];
+                for (u32 i = 0; i < host_player_count; i++) {
+                    Player *player = host_players[i];
                     if (player->play_state != 3 || player->stream == NULL) {
                         continue; // stopped/paused players keep their data queued
                     }
@@ -762,7 +772,7 @@ namespace hostsl {
                     // The device-side buffer drains into the mix; the SL queue
                     // keeps feeding it while there is room. Play-interface events
                     // are based on the play head below, not this queue hand-off.
-                    TopUpPlayerStream(player);
+                    host_top_up_player_stream(player);
 
                     const u32 available = (u32)SDL_GetAudioStreamAvailable(player->stream);
                     const u32 take = (available < chunk ? available : chunk) & ~3u;
@@ -774,13 +784,13 @@ namespace hostsl {
                             player->underrunning = true;
                             player->underrun_start_ms = SDL_GetTicks();
                             LOG_WARN("audio: buffer underrun on player %p (playing, queue empty)", (void *)player);
-                            if (fired_count < FIRED_MAX) {
+                            if (fired_count < HOST_FIRED_MAX) {
                                 fired[fired_count++] = player;
                             }
                         }
                         continue;
                     }
-                    const int got = SDL_GetAudioStreamData(player->stream, pull_buffer, (int)take);
+                    const int got = SDL_GetAudioStreamData(player->stream, host_pull_buffer, (int)take);
                     if (got < 4) {
                         continue;
                     }
@@ -800,20 +810,20 @@ namespace hostsl {
                         right = gain * (1.0f + pan) * 0.5f;
                     }
 
-                    const i16 *in = (const i16 *)pull_buffer;
+                    const i16 *in = (const i16 *)host_pull_buffer;
                     for (u32 f = 0; f < (u32)got / 4; f++) {
-                        mix_acc[f * 2 + 0] += (f32)in[f * 2 + 0] * left;
-                        mix_acc[f * 2 + 1] += (f32)in[f * 2 + 1] * right;
+                        host_mix_acc[f * 2 + 0] += (f32)in[f * 2 + 0] * left;
+                        host_mix_acc[f * 2 + 1] += (f32)in[f * 2 + 1] * right;
                     }
 
                     player->consumed_device_frames += (u32)got / 4;
-                    s_stats.bytes_consumed += (u32)got;
+                    host_stats.bytes_consumed += (u32)got;
                 }
 
-                i16 *out16 = (i16 *)pull_buffer;
+                i16 *out16 = (i16 *)host_pull_buffer;
                 f64 sum = 0;
                 for (u32 f = 0; f < frames * 2; f++) {
-                    f32 sample = mix_acc[f];
+                    f32 sample = host_mix_acc[f];
                     if (sample > 32767.0f) {
                         sample = 32767.0f;
                     } else if (sample < -32768.0f) {
@@ -822,13 +832,13 @@ namespace hostsl {
                     out16[f] = (i16)sample;
                     sum += (f64)out16[f] * out16[f];
                 }
-                s_stats.last_mix_rms = (f32)sqrt(sum / (frames * 2));
+                host_stats.last_mix_rms = (f32)sqrt(sum / (frames * 2));
 
                 SDL_PutAudioStreamData(stream, out16, (int)chunk);
                 additional -= (int)chunk;
             }
 
-            pthread_mutex_unlock(&g_lock);
+            pthread_mutex_unlock(&host_lock);
 
             for (u32 i = 0; i < fired_count; i++) {
                 Player *player = fired[i];
@@ -846,8 +856,8 @@ namespace hostsl {
     // public entry
     // ---------------------------------------------------------------------------
 
-    u32 slCreateEngine(void **engine_object, u32 num_options, void *options, u32 num_interfaces,
-                       const void **interface_ids, const u32 *required) {
+    u32 HostCreateEngine(void **engine_object, u32 num_options, void *options, u32 num_interfaces,
+                         const void **interface_ids, const u32 *required) {
         (void)num_options;
         (void)options;
         (void)num_interfaces;
@@ -857,26 +867,26 @@ namespace hostsl {
         *engine_object = NULL;
         EngineObject *engine = (EngineObject *)calloc(1, sizeof(EngineObject));
         if (engine == NULL) {
-            return SL_RESULT_PARAMETER_INVALID;
+            return HOST_SL_RESULT_PARAMETER_INVALID;
         }
-        engine->object_vt = (ObjectVTable *)&s_object_vt;
-        engine->kind = KIND_ENGINE;
-        engine->engine_itf.vt = (EngineVTable *)&s_engine_vt;
-        engine->caps_itf.vt = (EngineCapsVTable *)&s_caps_vt;
+        engine->object_vt = (ObjectVTable *)&host_object_vt;
+        engine->kind = HOST_KIND_ENGINE;
+        engine->engine_itf.vt = (EngineVTable *)&host_engine_vt;
+        engine->caps_itf.vt = (EngineCapsVTable *)&host_caps_vt;
         *engine_object = engine;
-        return SL_RESULT_SUCCESS;
+        return HOST_SL_RESULT_SUCCESS;
     }
 
-    Stats GetStats() {
-        pthread_mutex_lock(&g_lock);
-        Stats stats = s_stats;
+    HostStats HostGetStats() {
+        pthread_mutex_lock(&host_lock);
+        HostStats stats = host_stats;
         stats.players_playing = 0;
-        for (u32 i = 0; i < g_player_count; i++) {
-            if (g_players[i]->play_state == 3) {
+        for (u32 i = 0; i < host_player_count; i++) {
+            if (host_players[i]->play_state == 3) {
                 stats.players_playing++;
             }
         }
-        pthread_mutex_unlock(&g_lock);
+        pthread_mutex_unlock(&host_lock);
         return stats;
     }
 

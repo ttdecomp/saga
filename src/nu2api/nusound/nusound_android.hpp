@@ -6,7 +6,7 @@
 // ShutdownAudioDevice / UpdateAudioDevice are the hardware boundary — on the
 // Android target they stay as recorded; the HOST build replaces Init/Shutdown
 // with the same call flow over the fake OpenSL object model in
-// host-tests/nusound/opensl_host.cpp, which writes the mixed PCM to the real
+// host-utils/nusound/opensl_host.cpp, which writes the mixed PCM to the real
 // host device through SDL3. Every other function here is decompiled
 // faithfully.
 struct NuSoundAndroid : public NuSoundSystem {

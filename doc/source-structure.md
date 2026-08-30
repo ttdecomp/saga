@@ -69,7 +69,7 @@ The current layout is domain-oriented. Important roots are:
 | `src/nu2api/nu3d/` | renderer, with `android/` and `generic/` subtrees |
 | `src/nu2api/nucore/` | core runtime and Android platform adapters |
 | `src/nu2api/nufile/`, `numath/`, `numusic/`, `nusound/` | file, math, music, and sound subsystems |
-| `src/host-tests/` | host-only replacements and harness code |
+| `src/host-utils/` | host-only utilities, replacements, and harness code |
 
 Use `rg --files src` for the live tree. Historical flat paths such as
 `src/legoapi/qrand.cpp` or `src/legoapi/world.cpp` are no longer authoritative;
@@ -151,7 +151,7 @@ example `legoapi/core/input/qrand.cpp.o` and
   when the target path and optimization level are understood.
 - `*_types.h` contains provisional type scaffolding. Replace placeholders with
   canonical definitions carefully to avoid ODR and layout errors.
-- `android/` contains target-specific implementations; `host-tests/` supplies
+- `android/` contains target-specific implementations; `host-utils/` supplies
   selected host replacements.
 - A shared basename in different directories is not evidence that the files
   should be merged. Directory identity is preserved in current split units.

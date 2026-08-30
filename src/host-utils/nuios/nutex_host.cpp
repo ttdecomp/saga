@@ -39,12 +39,12 @@
 // (black background, red/white LEGO text) with zero differing pixels vs the
 // reference decoder.
 
-static bool PvrIsPow2(u32 n) {
+static bool host_pvr_is_pow2(u32 n) {
     return n != 0 && (n & (n - 1)) == 0;
 }
 
 // Interleave the x/y block coordinates into a "twiddled" (Morton) data index.
-static u32 PvrTwiddleUV(u32 xsize, u32 ysize, u32 xpos, u32 ypos) {
+static u32 host_pvr_twiddle_uv(u32 xsize, u32 ysize, u32 xpos, u32 ypos) {
     u32 min_dim = xsize;
     u32 max_val = ypos;
     u32 twiddled = 0;
@@ -72,7 +72,7 @@ static u32 PvrTwiddleUV(u32 xsize, u32 ysize, u32 xpos, u32 ypos) {
     return twiddled;
 }
 
-static void PvrGetColorA(u32 cd, u8 rgb[4]) {
+static void host_pvr_get_color_a(u32 cd, u8 rgb[4]) {
     if (cd & 0x8000) { // opaque RGB 554
         rgb[0] = (u8)((cd & 0x7c00) >> 10);
         rgb[1] = (u8)((cd & 0x3e0) >> 5);
@@ -86,7 +86,7 @@ static void PvrGetColorA(u32 cd, u8 rgb[4]) {
     }
 }
 
-static void PvrGetColorB(u32 cd, u8 rgb[4]) {
+static void host_pvr_get_color_b(u32 cd, u8 rgb[4]) {
     if (cd & 0x80000000) { // opaque RGB 555
         rgb[0] = (u8)((cd & 0x7c000000) >> 26);
         rgb[1] = (u8)((cd & 0x3e00000) >> 21);
@@ -101,8 +101,8 @@ static void PvrGetColorB(u32 cd, u8 rgb[4]) {
 }
 
 // Bilinear upscale of the 2x2 endpoint grid into the 4x4 (bpp==4) texel block.
-static void PvrInterpolateColors(const i32 P[4], const i32 Q[4], const i32 R[4], const i32 S[4], i32 bpp,
-                                 u8 px[16][4]) {
+static void host_pvr_interpolate_colors(const i32 P[4], const i32 Q[4], const i32 R[4], const i32 S[4], i32 bpp,
+                                        u8 px[16][4]) {
     i32 W = 4;
     i32 H = 4;
     if (bpp == 2) {
@@ -169,7 +169,7 @@ static void PvrInterpolateColors(const i32 P[4], const i32 Q[4], const i32 R[4],
 }
 
 // Read the 2-bit-per-texel modulation of one 4x4 sub-block into mod_vals.
-static void PvrUnpackModulations(u32 mod_data, u32 cd, i32 offset_x, i32 offset_y, u8 mod_vals[16][16]) {
+static void host_pvr_unpack_modulations(u32 mod_data, u32 cd, i32 offset_x, i32 offset_y, u8 mod_vals[16][16]) {
     u32 word_mod_mode = cd & 0x1;
     u32 bits = mod_data;
     if (word_mod_mode) {
@@ -203,8 +203,8 @@ static void PvrUnpackModulations(u32 mod_data, u32 cd, i32 offset_x, i32 offset_
 
 // Decode a 4x4 texel block from four 16x16 sub-grid words.
 typedef u32 PvrWordPair[2];
-static void PvrGetPixels(const PvrWordPair &P, const PvrWordPair &Q, const PvrWordPair &R, const PvrWordPair &S,
-                         i32 bpp, u8 out[16][4]) {
+static void host_pvr_get_pixels(const PvrWordPair &P, const PvrWordPair &Q, const PvrWordPair &R, const PvrWordPair &S,
+                                i32 bpp, u8 out[16][4]) {
     i32 W = 4;
     i32 H = 4;
     if (bpp == 2) {
@@ -213,41 +213,41 @@ static void PvrGetPixels(const PvrWordPair &P, const PvrWordPair &Q, const PvrWo
     }
     u8 mod_vals[16][16];
     memset(mod_vals, 0, sizeof(mod_vals));
-    PvrUnpackModulations(P[0], P[1], 0, 0, mod_vals);
-    PvrUnpackModulations(Q[0], Q[1], W, 0, mod_vals);
-    PvrUnpackModulations(R[0], R[1], 0, H, mod_vals);
-    PvrUnpackModulations(S[0], S[1], W, H, mod_vals);
+    host_pvr_unpack_modulations(P[0], P[1], 0, 0, mod_vals);
+    host_pvr_unpack_modulations(Q[0], Q[1], W, 0, mod_vals);
+    host_pvr_unpack_modulations(R[0], R[1], 0, H, mod_vals);
+    host_pvr_unpack_modulations(S[0], S[1], W, H, mod_vals);
 
     i32 pa[4], qa[4], ra[4], sa[4], pb[4], qb[4], rb[4], sb[4];
     u8 tmp[4];
-    PvrGetColorA(P[1], tmp);
+    host_pvr_get_color_a(P[1], tmp);
     for (int i = 0; i < 4; i++)
         pa[i] = tmp[i];
-    PvrGetColorA(Q[1], tmp);
+    host_pvr_get_color_a(Q[1], tmp);
     for (int i = 0; i < 4; i++)
         qa[i] = tmp[i];
-    PvrGetColorA(R[1], tmp);
+    host_pvr_get_color_a(R[1], tmp);
     for (int i = 0; i < 4; i++)
         ra[i] = tmp[i];
-    PvrGetColorA(S[1], tmp);
+    host_pvr_get_color_a(S[1], tmp);
     for (int i = 0; i < 4; i++)
         sa[i] = tmp[i];
-    PvrGetColorB(P[1], tmp);
+    host_pvr_get_color_b(P[1], tmp);
     for (int i = 0; i < 4; i++)
         pb[i] = tmp[i];
-    PvrGetColorB(Q[1], tmp);
+    host_pvr_get_color_b(Q[1], tmp);
     for (int i = 0; i < 4; i++)
         qb[i] = tmp[i];
-    PvrGetColorB(R[1], tmp);
+    host_pvr_get_color_b(R[1], tmp);
     for (int i = 0; i < 4; i++)
         rb[i] = tmp[i];
-    PvrGetColorB(S[1], tmp);
+    host_pvr_get_color_b(S[1], tmp);
     for (int i = 0; i < 4; i++)
         sb[i] = tmp[i];
 
     u8 A[16][4], B[16][4];
-    PvrInterpolateColors(pa, qa, ra, sa, bpp, A);
-    PvrInterpolateColors(pb, qb, rb, sb, bpp, B);
+    host_pvr_interpolate_colors(pa, qa, ra, sa, bpp, A);
+    host_pvr_interpolate_colors(pb, qb, rb, sb, bpp, B);
 
     i32 w, h;
     for (h = 0; h < H; h++) {
@@ -270,8 +270,8 @@ static void PvrGetPixels(const PvrWordPair &P, const PvrWordPair &Q, const PvrWo
 }
 
 // Scatter one 4x4 (bpp4) decoded block into the final RGBA image.
-static void PvrMapData(u8 *out, i32 width, u8 word[16][4], u32 py, u32 px, u32 qy, u32 qx, u32 ry, u32 rx, u32 sy,
-                       u32 sx, i32 bpp) {
+static void host_pvr_map_data(u8 *out, i32 width, u8 word[16][4], u32 py, u32 px, u32 qy, u32 qx, u32 ry, u32 rx,
+                              u32 sy, u32 sx, i32 bpp) {
     i32 W = 4;
     i32 H = 4;
     if (bpp == 2) {
@@ -294,7 +294,7 @@ static void PvrMapData(u8 *out, i32 width, u8 word[16][4], u32 py, u32 px, u32 q
 }
 
 // Software-decode a PVRTC 4bpp image (width*height/2 bytes) to RGBA.
-static void PvrDecode4bpp(const u8 *data, usize data_size, i32 width, i32 height, u8 *outRGBA) {
+static void host_pvr_decode_4bpp(const u8 *data, usize data_size, i32 width, i32 height, u8 *outRGBA) {
     i32 bpp = 4;
     i32 W = 4;
     i32 H = 4;
@@ -314,8 +314,8 @@ static void PvrDecode4bpp(const u8 *data, usize data_size, i32 width, i32 height
             u32 Ry = ((u32)(wy + 1)) % nyw;
             u32 Sx = ((u32)(wx + 1)) % nxw;
             u32 Sy = ((u32)(wy + 1)) % nyw;
-            u32 offs[4] = {PvrTwiddleUV(nxw, nyw, Px, Py) * 2, PvrTwiddleUV(nxw, nyw, Qx, Qy) * 2,
-                           PvrTwiddleUV(nxw, nyw, Rx, Ry) * 2, PvrTwiddleUV(nxw, nyw, Sx, Sy) * 2};
+            u32 offs[4] = {host_pvr_twiddle_uv(nxw, nyw, Px, Py) * 2, host_pvr_twiddle_uv(nxw, nyw, Qx, Qy) * 2,
+                           host_pvr_twiddle_uv(nxw, nyw, Rx, Ry) * 2, host_pvr_twiddle_uv(nxw, nyw, Sx, Sy) * 2};
             if (offs[0] + 1 >= word_count || offs[1] + 1 >= word_count || offs[2] + 1 >= word_count ||
                 offs[3] + 1 >= word_count) {
                 continue;
@@ -325,8 +325,8 @@ static void PvrDecode4bpp(const u8 *data, usize data_size, i32 width, i32 height
             PvrWordPair RW = {words[offs[2]], words[offs[2] + 1]};
             PvrWordPair SW = {words[offs[3]], words[offs[3] + 1]};
             u8 block[16][4];
-            PvrGetPixels(PW, QW, RW, SW, bpp, block);
-            PvrMapData(out.data(), width, block, Py, Px, Qy, Qx, Ry, Rx, Sy, Sx, bpp);
+            host_pvr_get_pixels(PW, QW, RW, SW, bpp, block);
+            host_pvr_map_data(out.data(), width, block, Py, Px, Qy, Qx, Ry, Rx, Sy, Sx, bpp);
         }
     }
     memcpy(outRGBA, out.data(), (usize)width * height * 4);
@@ -335,20 +335,20 @@ static void PvrDecode4bpp(const u8 *data, usize data_size, i32 width, i32 height
 // --- ETC1 (host software decode) --------------------------------------------
 //
 // The "mob" platform texture blobs are DDS containers with an 'ETC1' fourcc.
-// Desktop GL on the host test machine does not guarantee the OES ETC1
+// Desktop GL on the host machine does not guarantee the OES ETC1
 // extension, so decode to RGBA on the CPU. Algorithm per the Khronos ETC1
 // specification; verified against the first-boot legal texture.
 
-static const i32 Etc1ModifierTable[8][4] = {
+static const i32 host_etc1_modifier_table[8][4] = {
     {2, 8, -2, -8},     {5, 17, -5, -17},   {9, 29, -9, -29},     {13, 42, -13, -42},
     {18, 60, -18, -60}, {24, 80, -24, -80}, {33, 106, -33, -106}, {47, 183, -47, -183},
 };
 
-static u8 Etc1Clamp(i32 v) { // signed: modifier deltas go negative
+static u8 host_etc1_clamp(i32 v) { // signed: modifier deltas go negative
     return (u8)(v < 0 ? 0 : (v > 255 ? 255 : v));
 }
 
-static void Etc1DecodeBlock(const u8 *blk, u8 out[16][3]) {
+static void host_etc1_decode_block(const u8 *blk, u8 out[16][3]) {
     // The blob serializes each 64-bit block in spec-canonical MSB-first byte
     // order: control/colour word first, texel-index word second, both
     // big-endian. (A PKM file would hold the same bits as two little-endian
@@ -406,11 +406,11 @@ static void Etc1DecodeBlock(const u8 *blk, u8 out[16][3]) {
                 pi = (y < 2) ? 0 : 1;
             }
             const u8 *base = (pi == 0) ? c1 : c2;
-            i32 m = Etc1ModifierTable[tbl][(msb << 1) | lsb];
+            i32 m = host_etc1_modifier_table[tbl][(msb << 1) | lsb];
             u8 *o = out[y * 4 + x];
-            o[0] = Etc1Clamp(base[0] + m);
-            o[1] = Etc1Clamp(base[1] + m);
-            o[2] = Etc1Clamp(base[2] + m);
+            o[0] = host_etc1_clamp(base[0] + m);
+            o[1] = host_etc1_clamp(base[1] + m);
+            o[2] = host_etc1_clamp(base[2] + m);
         }
     }
 }
@@ -421,7 +421,7 @@ static void Etc1DecodeBlock(const u8 *blk, u8 out[16][3]) {
 // texture object and the render thread can perform the upload.
 static std::vector<std::vector<u8>> g_hostUnownedTextureBlobs;
 
-static u32 PvrBitsPerPixel(const u8 *src) {
+static u32 host_pvr_bits_per_pixel(const u8 *src) {
     const u32 channel_bits = *reinterpret_cast<const u32 *>(src + 0x0c);
     if (channel_bits == 0) {
         const u32 compressed_format = *reinterpret_cast<const u32 *>(src + 0x08);
@@ -430,7 +430,7 @@ static u32 PvrBitsPerPixel(const u8 *src) {
     return (src[0x0c] + src[0x0d] + src[0x0e] + src[0x0f]);
 }
 
-static usize PlatformTextureBlobSize(const void *data) {
+static usize host_platform_texture_blob_size(const void *data) {
     const u8 *src = static_cast<const u8 *>(data);
     if (src[0] == 'D' && src[1] == 'D' && src[2] == 'S' && src[3] == ' ') {
         const usize width = *reinterpret_cast<const u32 *>(src + 0x0c);
@@ -445,7 +445,7 @@ static usize PlatformTextureBlobSize(const void *data) {
         const u32 surfaces = *reinterpret_cast<const u32 *>(src + 0x24);
         const u32 faces = *reinterpret_cast<const u32 *>(src + 0x28);
         const u32 mip_count = *reinterpret_cast<const u32 *>(src + 0x2c);
-        const u32 bits_per_pixel = PvrBitsPerPixel(src);
+        const u32 bits_per_pixel = host_pvr_bits_per_pixel(src);
         usize payload_size = 0;
         for (u32 level = 0; level < mip_count; ++level) {
             usize level_size = static_cast<usize>(width) * height * bits_per_pixel / 8;
@@ -463,7 +463,8 @@ static usize PlatformTextureBlobSize(const void *data) {
 
 // Creates a GL texture from a PVR or DDS texture blob, returning the texture id
 // and setting *width/*height. Host-only: software decodes PVRTC to RGBA.
-static GLuint CreateGLTexFromPlatformInMemory(void *data, usize data_size, i32 *width, i32 *height, bool is_pvrtc) {
+static GLuint host_create_gl_tex_from_platform_in_memory(void *data, usize data_size, i32 *width, i32 *height,
+                                                         bool is_pvrtc) {
     const u8 *src = (const u8 *)data;
 
     // DDS container ("mob" platform blobs): here it wraps a full ETC1 mip
@@ -513,7 +514,7 @@ static GLuint CreateGLTexFromPlatformInMemory(void *data, usize data_size, i32 *
             for (usize by = 0; by < block_height; by++) {
                 for (usize bx = 0; bx < block_width; bx++) {
                     u8 px[16][3];
-                    Etc1DecodeBlock(cur + (by * block_width + bx) * 8, px);
+                    host_etc1_decode_block(cur + (by * block_width + bx) * 8, px);
                     for (i32 y = 0; y < 4; y++) {
                         for (i32 x = 0; x < 4; x++) {
                             const usize dst_x = bx * 4 + x;
@@ -570,7 +571,7 @@ static GLuint CreateGLTexFromPlatformInMemory(void *data, usize data_size, i32 *
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data_ptr);
     } else if (channel_bits == 0) {
         u8 *rgba = (u8 *)malloc((usize)w * h * 4);
-        PvrDecode4bpp(data_ptr, payload_size, w, h, rgba); // host software PVRTC 4bpp -> RGBA
+        host_pvr_decode_4bpp(data_ptr, payload_size, w, h, rgba); // host software PVRTC 4bpp -> RGBA
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba);
         free(rgba);
     } else {
@@ -583,7 +584,7 @@ static GLuint CreateGLTexFromPlatformInMemory(void *data, usize data_size, i32 *
 GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, i32 *width, i32 *height, bool is_pvrtc) {
     if (eglGetCurrentContext() == EGL_NO_CONTEXT) {
         const u8 *src = static_cast<const u8 *>(data);
-        const usize size = PlatformTextureBlobSize(data);
+        const usize size = host_platform_texture_blob_size(data);
         if (size == 0) {
             return 0;
         }
@@ -597,7 +598,8 @@ GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, i32 *width, i32 *height
         g_hostUnownedTextureBlobs.emplace_back(src, src + size);
         return 0;
     }
-    return CreateGLTexFromPlatformInMemory(data, PlatformTextureBlobSize(data), width, height, is_pvrtc);
+    return host_create_gl_tex_from_platform_in_memory(data, host_platform_texture_blob_size(data), width, height,
+                                                      is_pvrtc);
 }
 
 // --- Shared NuTex layer entry points (host) ----------------------------------
@@ -653,7 +655,7 @@ i32 NuTexRead(char *name, VARIPTR *buf, VARIPTR *buf_end) {
 // deferred upload decodes real pixels instead of recycled arena bytes.
 static std::map<NUNATIVETEX *, std::vector<u8>> g_hostStagedTextures;
 // Retain the scene hash after the deferred blob has been consumed.  This is
-// host-test diagnostics only: it lets debugger/capture tooling identify the
+// Host utility diagnostics only: this lets debugger/capture tooling identify the
 // source asset behind a live GL texture without changing the game texture
 // registry or the original render path.
 static std::map<const NUNATIVETEX *, u32> g_hostTextureHashes;
@@ -711,7 +713,7 @@ GLuint NuIOS_CreateGLTexFromHash(u32 hash) {
     }
     i32 width = 0;
     i32 height = 0;
-    return CreateGLTexFromPlatformInMemory(data.data(), data.size(), &width, &height, false);
+    return host_create_gl_tex_from_platform_in_memory(data.data(), data.size(), &width, &height, false);
 }
 
 bool NuTexHostTakeStaged(NUNATIVETEX *tex, std::vector<u8> &out) {
@@ -810,9 +812,9 @@ void NuTexSetTextureWithStagePS(NUNATIVETEX *tex, u32 stage) {
             GLuint created = 0;
             {
                 i32 w = tex->width, h = tex->height;
-                created = CreateGLTexFromPlatformInMemory(data_ptr, staged.size(), &w, &h, true);
+                created = host_create_gl_tex_from_platform_in_memory(data_ptr, staged.size(), &w, &h, true);
                 if (created == 0) {
-                    created = CreateGLTexFromPlatformInMemory(data_ptr, staged.size(), &w, &h, false);
+                    created = host_create_gl_tex_from_platform_in_memory(data_ptr, staged.size(), &w, &h, false);
                 }
                 tex->width = w;
                 tex->height = h;
@@ -874,7 +876,8 @@ void NuTexCreatePS(NUNATIVETEX *tex, bool is_pvrtc) {
     }
 
     const usize data_size = staged.empty() ? tex->size : staged.size();
-    tex->platform.gl_tex = CreateGLTexFromPlatformInMemory(data_ptr, data_size, &tex->width, &tex->height, is_pvrtc);
+    tex->platform.gl_tex =
+        host_create_gl_tex_from_platform_in_memory(data_ptr, data_size, &tex->width, &tex->height, is_pvrtc);
     if (tex->platform.gl_tex != 0) {
         tex->image_data = NULL;
         tex->size = 0;

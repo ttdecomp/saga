@@ -106,6 +106,6 @@ See the [documentation index](doc/main.md).
 | `legoapi/render` | 5.4% | 4.5% | 95.6% |
 | `legoapi/world` | 21.1% | 28.7% | 0.2% |
 | `legogame` | 6.1% | 5.3% | 81.2% |
-| `nu2api` | 31.2% | 23.6% | 9.3% |
+| `nu2api` | 31.2% | 23.8% | 9.3% |
 
 <!-- matching-table-end -->

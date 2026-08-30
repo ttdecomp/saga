@@ -15,21 +15,21 @@ extern NUMTL *pause_rndr_mtl;
 extern i32 pause_rndr_on;
 
 void InitStillRender(variptr_u *, variptr_u) {
-    static NUNATIVETEX nativePauseTex;
+    static NUNATIVETEX host_native_pause_tex;
 
-    pause_rt = NuTexGenTexture(&nativePauseTex);
-    nativePauseTex.ref_count = 1;
-    memset(nativePauseTex.checksum, 0, sizeof(nativePauseTex.checksum));
-    nativePauseTex.width = g_backingWidth;
-    nativePauseTex.height = g_backingHeight;
-    nativePauseTex.image_data = nullptr;
-    nativePauseTex.size = 0;
+    pause_rt = NuTexGenTexture(&host_native_pause_tex);
+    host_native_pause_tex.ref_count = 1;
+    memset(host_native_pause_tex.checksum, 0, sizeof(host_native_pause_tex.checksum));
+    host_native_pause_tex.width = g_backingWidth;
+    host_native_pause_tex.height = g_backingHeight;
+    host_native_pause_tex.image_data = nullptr;
+    host_native_pause_tex.size = 0;
 
     BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/legoapi.saga/screen.cpp", 0x561);
-    glGenTextures(1, &nativePauseTex.platform.gl_tex);
+    glGenTextures(1, &host_native_pause_tex.platform.gl_tex);
     glActiveTexture(GL_TEXTURE0);
     g_currentTexUnit = 0;
-    glBindTexture(GL_TEXTURE_2D, nativePauseTex.platform.gl_tex);
+    glBindTexture(GL_TEXTURE_2D, host_native_pause_tex.platform.gl_tex);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
