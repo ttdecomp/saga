@@ -6,6 +6,8 @@
 #include "nu2api/nucore/NuInputDevice.h"
 
 namespace {
+    constexpr u32 host_touch_device = 0;
+    constexpr u32 host_gamepad_device = 1;
     std::atomic<u32> host_pending_buttons[2];
     std::atomic<u32> host_held_buttons[2];
     u32 host_frame_buttons[2];
@@ -39,7 +41,10 @@ namespace NuInputDevicePS {
 
     u32 ClassInitPS() {
         HostInputReset();
-        return 1;
+        // Android exposes a built-in touch device at index 0 and the external
+        // gamepad at index 1. Game code also queries index 1 directly when it
+        // decides whether to render controller-oriented menu feedback.
+        return 2;
     }
 
     void ClassShutdownPS() {
@@ -54,8 +59,8 @@ namespace NuInputDevicePS {
         }
     }
 
-    bool IsConnectedPS(u32 port) {
-        return port == 0;
+    bool IsConnectedPS(u32 device) {
+        return device == host_touch_device || device == host_gamepad_device;
     }
 
     bool IsInterceptedPS(u32) {
@@ -66,16 +71,16 @@ namespace NuInputDevicePS {
         return false;
     }
 
-    NUPADTYPE GetTypePS(u32 port) {
-        return port == 0 ? NUPADTYPE_GAMEPAD : NUPADTYPE_UNKNOWN_7;
+    NUPADTYPE GetTypePS(u32 device) {
+        return device == host_touch_device ? NUPADTYPE_TOUCH : NUPADTYPE_GAMEPAD;
     }
 
     NUPADATTACHMENTTYPE GetAttachmentTypePS(u32) {
         return NUPADATTACHMENTTYPE_NONE;
     }
 
-    u32 GetCapsPS(u32) {
-        return 0;
+    u32 GetCapsPS(u32 device) {
+        return device == host_touch_device ? 0x440 : 0;
     }
 
     f32 GetVolumePS(u32) {
@@ -85,8 +90,10 @@ namespace NuInputDevicePS {
     void SetMotorsPS(u32, f32, f32) {
     }
 
-    void ReadButtonsPS(u32 port, u32 *states) {
-        *states = port < 2 ? host_frame_buttons[port] : 0;
+    void ReadButtonsPS(u32 device, u32 *states) {
+        // Harness port 0 is the first player-facing gamepad. The platform
+        // device index remains 1, matching the Android device topology.
+        *states = device == host_gamepad_device ? host_frame_buttons[0] : 0;
     }
 
     void ReadAnalogValuesPS(u32, f32 *values) {

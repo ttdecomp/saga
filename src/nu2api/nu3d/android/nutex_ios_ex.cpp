@@ -643,7 +643,7 @@ i32 GetMipOffset(i32 width, i32 height, NUTEXFORMAT format, i32 depth, bool isCu
         depth = 1;
     }
 
-    isAuto = targetMip < 0 || targetSlice < 0;
+    isAuto = targetMip < 0 && targetSlice < 0;
 
     if (isAuto != 0) {
         sliceLimit = 5;
@@ -661,11 +661,12 @@ i32 GetMipOffset(i32 width, i32 height, NUTEXFORMAT format, i32 depth, bool isCu
     i32 bytesPerBlockOrPixel;
     i32 blockWidth;
 
-    if (format < 119) {
-        isCompressed = FormatIsCompressedTable[format];
-        minBlocks = FormatMinBlocksYTable[format];
-        bytesPerBlockOrPixel = FormatBytesPerElementTable[format];
-        blockWidth = FormatBlockWidthTable[format];
+    if (format > 0 && format < 119) {
+        const i32 formatIndex = format - 1;
+        isCompressed = FormatIsCompressedTable[formatIndex];
+        minBlocks = FormatMinBlocksYTable[formatIndex];
+        bytesPerBlockOrPixel = FormatBytesPerElementTable[formatIndex];
+        blockWidth = FormatBlockWidthTable[formatIndex];
     } else {
         isCompressed = false;
         minBlocks = 1;

@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 
-static char host_documents_path[256] = ".work/host-documents/";
+static char host_documents_path[256] = "./res";
 
 void HostSetDocumentsPath(const char *path) {
     snprintf(host_documents_path, sizeof(host_documents_path), "%s", path);
