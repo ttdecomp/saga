@@ -27,8 +27,15 @@ endif()
 
 project(saga)
 
+if(CMAKE_VERSION VERSION_LESS 3.12)
+    find_package(PythonInterp REQUIRED)
+    set(Python3_EXECUTABLE ${PYTHON_EXECUTABLE})
+else()
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+endif()
+
 add_custom_target(check_host_boundary ALL
-    COMMAND python3 ${CMAKE_CURRENT_SOURCE_DIR}/scripts/check_host_boundary.py
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/check_host_boundary.py
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMENT "Checking host/shared source boundary"
 )
