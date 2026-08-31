@@ -78,7 +78,7 @@ i32 host_run_audio() {
     NuPlatform::Create();
     NuScreen::Create();
     g_renderDevice.Initialize();
-    NuPlatform::Get()->SetCurrentPlatform(ANDROID_PVRTC_PLATFORM);
+    NuPlatform::Get()->SetCurrentPlatform(ANDROID_ETC1_PLATFORM);
 
     host_audio_numain_thread = SDL_CreateThread(host_audio_numain_main, "numain", nullptr);
 

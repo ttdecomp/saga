@@ -361,9 +361,9 @@ i32 host_run_window(const HostWindowOptions &options) {
     NuScreen::Create();
     g_renderDevice.Initialize();
 
-    // Mesa advertises S3TC, but this bundled OBB contains PVRTC/ETC1 assets
-    // rather than Android S3TC assets. The host upload boundary decodes PVRTC.
-    NuPlatform::Get()->SetCurrentPlatform(ANDROID_PVRTC_PLATFORM);
+    // Mesa advertises S3TC, but this bundled OBB contains Android ETC1 assets.
+    // The host upload boundary decodes ETC1 when the driver cannot upload it.
+    NuPlatform::Get()->SetCurrentPlatform(ANDROID_ETC1_PLATFORM);
     HostInputReset();
 
     host_numain_result.store(0, std::memory_order_relaxed);

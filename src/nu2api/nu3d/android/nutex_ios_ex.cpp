@@ -735,8 +735,9 @@ i32 GetMipOffset(i32 width, i32 height, NUTEXFORMAT format, i32 depth, bool isCu
 void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, bool isCubemap, i32 mips,
                      NUTEXFORMAT format, u32 &glFormat, u32 &glInternalFormat, u32 glType, bool isCompressed) {
     u32 faceTarget = GL_TEXTURE_CUBE_MAP_POSITIVE_X;
+    const i32 faceCount = isCubemap ? 6 : 1;
 
-    for (i32 loopCounter; loopCounter < isCubemap ? 6 : 1; faceTarget++) {
+    for (i32 loopCounter = 0; loopCounter < faceCount; ++loopCounter, ++faceTarget) {
         if (mips != 0) {
             u32 texTarget = GL_TEXTURE_2D;
             if (isCubemap) {
@@ -836,8 +837,6 @@ void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, 
                 }
             }
         }
-
-        loopCounter = faceTarget - (GL_TEXTURE_CUBE_MAP_POSITIVE_X - 1);
     }
 
     if (!isCompressed) {
