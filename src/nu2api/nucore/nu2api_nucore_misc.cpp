@@ -598,7 +598,8 @@ void NuHGobjEvalAnimBlend2Root_3(nugscn_s *scene, ani3_animheader_s *animation_a
 void NuIOSDLVertexGroupsCallback(void *) {
 }
 
-void NuIOS_CanMakeInAppPurchases() {
+i32 NuIOS_CanMakeInAppPurchases() {
+    return 0;
 }
 
 void NuIOS_RestoreInAppPurchases() {
@@ -656,7 +657,8 @@ void NuIOS_PurchaseInAppProductByNum(i32) {
 void NuIOSDLDeferredTransformCallback(void *) {
 }
 
-void NuIOS_AreInAppPurchasesAvailable() {
+i32 NuIOS_AreInAppPurchasesAvailable() {
+    return 0;
 }
 
 GLuint NuIOS_CreateGLTexFromPVRInMemory(void *data, i32 *out_width, i32 *out_height) {

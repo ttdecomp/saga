@@ -500,7 +500,8 @@ extern "C" {
     void AIMoveInstruction(void) {
     }
 
-    void AIPAthFindPathCnx(void) {
+    void *AIPAthFindPathCnx(AISYS_s *, i32, char *, void *, void *) {
+        return NULL;
     }
 
     AILOCATOR *AIPathFindLocator(AISYS *sys, char *name) {
@@ -517,7 +518,8 @@ extern "C" {
     void AIPathFindLocatorSet(void) {
     }
 
-    void AIPathFindNode(void) {
+    void *AIPathFindNode(AISYS_s *, char *, i32) {
+        return NULL;
     }
 
     void AIPathFindPathCnxFromIX(void) {
@@ -737,8 +739,13 @@ extern "C" {
     void AddLocalAIMessage(void) {
     }
 
+#ifdef __EMSCRIPTEN__
+    void AddToAIGroup(AIGROUP *, GameObject_s *) {
+    }
+#else
     void AddToAIGroup(void) {
     }
+#endif
 
     void AiRndrLine3d(void) {
     }

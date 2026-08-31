@@ -159,8 +159,14 @@ void LoadPartFile(WORLDINFO *world) {
             InitPartDebris(&world->giz_buffer, &world->unknown_0108, 0x40, PDEBCOUNT, (char **)PDebNameList, page));
     }
 }
+#ifdef __EMSCRIPTEN__
+i32 ScanTerrId(void *) {
+    return 0;
+}
+#else
 void ScanTerrId(void *) {
 }
+#endif
 i32 UnderWater(GameObject_s *object) {
     if ((object->apiobj.field_0x27f & static_cast<u8>(~8u)) != 1) {
         return 0;
@@ -195,8 +201,14 @@ void TerrainStaticMtx(PLATSKININFO *, nuvec_s *, i32) {
 }
 void ScanTerrainHandel(i32, i16 *) {
 }
+#ifdef __EMSCRIPTEN__
+i32 TerrShapeSideStep(nuvec_s *, nuvec_s *, unsigned char *) {
+    return 0;
+}
+#else
 void TerrShapeSideStep(nuvec_s *, nuvec_s *, unsigned char *) {
 }
+#endif
 void TerrainImpactNorm() {
 }
 void ScanTerrainPlatform(i32, i32) {
@@ -213,8 +225,14 @@ void TerrainImpactPlatform(unsigned char *) {
 }
 void TerrainMoveImpactData() {
 }
+#ifdef __EMSCRIPTEN__
+i32 TerrainPlatformEmbedded(nuvec_s *) {
+    return 0;
+}
+#else
 void TerrainPlatformEmbedded(nuvec_s *) {
 }
+#endif
 void TerrainPlatformMoveCheck(nuvec_s *, nuvec_s *, i32, i32, i32) {
 }
 void TerrDraw(tertype *, i16) {

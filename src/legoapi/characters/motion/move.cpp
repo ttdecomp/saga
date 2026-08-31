@@ -552,7 +552,8 @@ void TurnRot(u16, u16, i32, i32 *) {
 void HoldCode(GameObject_s *) {
 }
 
-void SeekValF(float, float, float) {
+float SeekValF(float, float, float) {
+    return 0.0f;
 }
 
 void TurnCode(GameObject_s *, i32, GAMEPAD_s *) {

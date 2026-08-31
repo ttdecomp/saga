@@ -191,5 +191,5 @@ constructing a minimal table for whichever script or host path happens to run to
 7. Use `scripts/objdiff-cli.py SYMBOL` for the focused diff.
 8. Run the project's normal format/lint/matching checks before commit.
 
-The pre-commit hook formats and stages source files and regenerates/stages
-matching artifacts. Review its staged changes before committing.
+The prek hook formats changed source files and regenerates matching artifacts.
+Review and stage its changes before committing again.

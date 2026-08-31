@@ -13,8 +13,14 @@ void SkinPlatform(terrsitu_s *, unsigned char *, PLATSKININFO *) {
 void Platform_Init(WORLDINFO_s *) {
 }
 
+#ifdef __EMSCRIPTEN__
+i32 PlatformChecks(i32, nuvec_s *) {
+    return 0;
+}
+#else
 void PlatformChecks(i32, nuvec_s *) {
 }
+#endif
 
 void Platform_Reset(WORLDINFO_s *) {
 }

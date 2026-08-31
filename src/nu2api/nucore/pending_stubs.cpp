@@ -129,7 +129,7 @@ extern "C" void NuTexAnimRemoveList(void *) {
 extern "C" void NuTexAnimRestart(void) {
 }
 
-extern "C" void NuTexAnimSetMask(void) {
+extern "C" void NuTexAnimSetMask(int) {
 }
 
 extern "C" void NuTexAnimSetSignals(void) {

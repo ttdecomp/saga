@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+#MISE description="Configure the native host"
+#MISE hide=true
+set -euo pipefail
+
+args=(-S . -B build-host -G Ninja -DBUILD_FOR_HOST=ON)
+if [[ -f build-host/CMakeCache.txt ]] && ! grep -q '^CMAKE_GENERATOR:INTERNAL=Ninja$' build-host/CMakeCache.txt; then
+    args=(--fresh "${args[@]}")
+fi
+cmake "${args[@]}"

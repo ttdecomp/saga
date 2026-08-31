@@ -863,8 +863,14 @@ extern "C" {
     i32 NuIOS_IsSmallScreen(void) {
         return 0;
     }
+#ifdef __EMSCRIPTEN__
+    i32 NuIOS_IsWidescreen(void) {
+        return 1;
+    }
+#else
     void NuIOS_IsWidescreen(void) {
     }
+#endif
     void NuIOS_RecordFlurryEvent(char *) {
     }
     void NuIOS_ShowAchievements(void) {
@@ -1351,7 +1357,7 @@ extern "C" {
 
     void NuBridgeCreate(void) {
     }
-    void NuBridgeDraw(void) {
+    void NuBridgeDraw(i32) {
     }
     void NuBridgeInit(void) {
     }
@@ -1359,7 +1365,7 @@ extern "C" {
     }
     void NuBridgeRemove(void) {
     }
-    void NuBridgeUpdate(void) {
+    void NuBridgeUpdate(void *) {
     }
     void NuDatClose(void) {
     }
@@ -1784,7 +1790,7 @@ extern "C" {
     }
     void NuFadeObjUpdate(void) {
     }
-    void NuFadeObjUpdateArray(void) {
+    void NuFadeObjUpdateArray(void *) {
     }
     void NuFramebufferAttachTex2D(void) {
     }
@@ -1856,7 +1862,7 @@ extern "C" {
     }
     void NuLgtLaser(void) {
     }
-    void NuLgtLaserDraw(void) {
+    void NuLgtLaserDraw(i32) {
     }
     void NuLgtSetArcMat(void) {
     }
@@ -2000,7 +2006,8 @@ extern "C" {
     }
     void NuSpecialClearShadowLights(void) {
     }
-    void NuSpecialClipTestExtents(void) {
+    i32 NuSpecialClipTestExtents(void *, void *) {
+        return 0;
     }
     i32 NuSpecialClipTestShadowLights(NUVEC *, NUVEC *, i32) {
         return 0;
@@ -2054,8 +2061,13 @@ extern "C" {
         NuPlainSpecialHandleLayout *handle = reinterpret_cast<NuPlainSpecialHandleLayout *>(special);
         return handle->special != NULL || handle->display_special != NULL;
     }
+#ifdef __EMSCRIPTEN__
+    void NuSpecialFindMulti(NUGSCN *, void **, char *, i32, i32) {
+    }
+#else
     void NuSpecialFindMulti(void) {
     }
+#endif
     void NuSpecialFindMultiWC(void) {
     }
     void NuSpecialForceMtl(void) {
@@ -2096,7 +2108,8 @@ extern "C" {
     }
     void NuSpecialGetInstanceMtx(void) {
     }
-    void NuSpecialGetInstanceix(void) {
+    void *NuSpecialGetInstanceix(void *) {
+        return NULL;
     }
     void NuSpecialGetMtl(void) {
     }
@@ -2112,9 +2125,11 @@ extern "C" {
     }
     void NuSpecialGetOnScreenFn(void) {
     }
-    void NuSpecialGetOriginRadius(void) {
+    f32 NuSpecialGetOriginRadius(void *) {
+        return 0.0f;
     }
-    void NuSpecialGetPos(void) {
+    NUVEC *NuSpecialGetPos(void *) {
+        return NULL;
     }
     void NuSpecialGetRadius(void) {
     }
@@ -2176,7 +2191,7 @@ extern "C" {
             display->flags |= 0x400;
         }
     }
-    void NuSpecialSetDrawPos(void) {
+    void NuSpecialSetDrawPos(void *, void *) {
     }
     void NuSpecialSetInstAnimTime(void) {
     }
@@ -2254,14 +2269,14 @@ extern "C" {
     }
     void NuWaterRender(void) {
     }
-    void NuWaterSpeed(void) {
+    void NuWaterSpeed(f32) {
     }
 
     // ---------------------------------------------------------------------------
     // Light / wind / particles / debris
     // ---------------------------------------------------------------------------
 
-    void NuDynamicLightAddRenderScene(void) {
+    void NuDynamicLightAddRenderScene(i32, i32, i32) {
     }
     void NuDynamicLightAddShadowCasterScene(void) {
     }
@@ -2339,7 +2354,7 @@ extern "C" {
     }
     void NuWindUpdate(void) {
     }
-    void NuWindUpdateArray(void) {
+    void NuWindUpdateArray(void *) {
     }
     void NuPartEnableRayCasts(void) {
     }

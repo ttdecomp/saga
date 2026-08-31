@@ -4,8 +4,14 @@
 void GizBuildItMul(GameObject_s *) {
 }
 
+#ifdef __EMSCRIPTEN__
+GIZBUILDIT_s *GizBuildIt_Find(WORLDINFO_s *, char *) {
+    return nullptr;
+}
+#else
 void GizBuildIt_Find(WORLDINFO_s *, char *) {
 }
+#endif
 
 void GizBuildIt_AtEnd(GIZBUILDIT_s *) {
 }

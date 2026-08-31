@@ -1,3 +1,8 @@
+if(EMSCRIPTEN)
+    include(src/host-wasm.cmake)
+    return()
+endif()
+
 find_package(PkgConfig REQUIRED)
 
 # find and link dependencies

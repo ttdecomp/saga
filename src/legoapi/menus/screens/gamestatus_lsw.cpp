@@ -67,7 +67,8 @@ void TrueHero_LSW_Draw(STATUS_STAGE_s *, STATUSPACKET_s *, i32) {
 void TrueHero_LSW_Skip(STATUS_STAGE_s *, STATUSPACKET_s *) {
 }
 
-void UpdateAchievements(STATUSPACKET_s *) {
+i32 UpdateAchievements(STATUSPACKET_s *) {
+    return 0;
 }
 
 void UpdateStatusScreen(WORLDINFO_s *) {

@@ -2,6 +2,9 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#ifdef HOST_BUILD
+#include <sys/types.h>
+#endif
 
 // Define fixed-width types for convenience.
 typedef uint8_t u8;

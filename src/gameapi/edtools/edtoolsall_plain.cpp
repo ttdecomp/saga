@@ -67,7 +67,7 @@ extern "C" {
     }
     void edanimStopPage(void) {
     }
-    void edanimUpdateObjects(void) {
+    void edanimUpdateObjects(float) {
     }
     void edbitsDrawBBox(void) {
     }
@@ -185,7 +185,7 @@ extern "C" {
     }
     void edgraSetThinning(void) {
     }
-    void edgraSetup(void) {
+    void edgraSetup(VARIPTR *, VARIPTR, i32, i32, i32) {
     }
     void edgraStopPage(i32) {
     }

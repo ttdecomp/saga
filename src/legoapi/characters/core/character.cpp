@@ -1099,7 +1099,7 @@ extern "C" {
         return result;
     }
 
-    void APIDumpCharacterModels(void) {
+    void APIDumpCharacterModels(i32) {
     }
 
     void APILoadCharacterModels(APICHARACTERMODELLIST_s *list, i32 area_animation, VARIPTR *buf, VARIPTR buf_end,

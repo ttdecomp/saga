@@ -316,7 +316,7 @@ extern "C" void NuRndrEndScene(void) {
     }
 }
 
-extern "C" void NuRndrEndSceneEx(void) {
+extern "C" void NuRndrEndSceneEx(i32) {
     NuRndrEndScene();
 }
 
@@ -407,9 +407,9 @@ extern "C" void NuGScnToVideoMem(void) {
 // Material
 extern "C" void NuMtlAnimate(void) {
 }
-extern "C" void NuMtlAnimateSetMask(void) {
+extern "C" void NuMtlAnimateSetMask(i32) {
 }
-extern "C" void NuMtlAnimateSetSpeedScale(void) {
+extern "C" void NuMtlAnimateSetSpeedScale(f32) {
 }
 extern "C" void NuMtlAnimateShaderMtlTextures(void) {
 }
@@ -460,7 +460,7 @@ extern "C" void NuRndrAxes(void) {
 }
 extern "C" void NuRndrAxisArrows(void) {
 }
-extern "C" void NuRndrAxisArrowsMtx(void) {
+extern "C" void NuRndrAxisArrowsMtx(void *, f32, void *) {
 }
 extern "C" void NuRndrAxisBright(void) {
 }
@@ -484,13 +484,13 @@ extern "C" void NuRndrEndShadowReceiveRender(void) {
 }
 extern "C" void NuRndrFootPrints(void) {
 }
-extern "C" void NuRndrFx(void) {
+extern "C" void NuRndrFx(i32, void *) {
 }
 extern "C" void NuRndrGetCullDebug(void) {
 }
 extern "C" void NuRndrGlobalFrameCount(void) {
 }
-extern "C" void NuRndrGlobalFrameCountPause(void) {
+extern "C" void NuRndrGlobalFrameCountPause(i32) {
 }
 
 // NuRndrRect2di and NuRndrGradRect2di write the attributes for the current
@@ -759,13 +759,13 @@ extern "C" void NuRndrSetSpecularLightPS(const NUVEC *, const NUCOLOUR4 *) {
 }
 extern "C" void NuRndrSetWind(void) {
 }
-extern "C" void NuRndrShadPolys(void) {
+extern "C" void NuRndrShadPolys(void *) {
 }
 extern "C" void NuRndrShadowDirCol(void) {
 }
 extern "C" void NuRndrShadowInit(u8 *) {
 }
-extern "C" void NuRndrShadowOnOff(void) {
+extern "C" void NuRndrShadowOnOff(i32) {
 }
 extern "C" void NuRndrSolidTri(void) {
 }

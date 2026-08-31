@@ -10,8 +10,9 @@ struct SHOPINPUT;
 void AddGameMsg(ADDGAMEMSG *) {
 }
 
-void AddGameMessage(char *, nuvec_s *, float, nuvec_s *, float, unsigned char, unsigned char, unsigned char, u32,
-                    float) {
+void *AddGameMessage(char *, nuvec_s *, float, nuvec_s *, float, unsigned char, unsigned char, unsigned char, u32,
+                     float) {
+    return NULL;
 }
 
 void AddFancyMessage(char *, float, float, float, float, i32, i32) {

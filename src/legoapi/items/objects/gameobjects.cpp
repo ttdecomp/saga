@@ -22,7 +22,7 @@
 extern "C" {
     void *NuTimeBarCreateSet(i32);
     void _NuTimeBarSlotBegin(void *, i32, char const *);
-    void _NuTimeBarSlotEnd(void *, i32);
+    u32 _NuTimeBarSlotEnd(void *, i32);
     void AddToAIGroup(AIGROUP_s *group, GameObject_s *object);
     extern NUVEC plr_lastpos;
 }
