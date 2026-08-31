@@ -481,8 +481,13 @@ extern "C" {
     void ResetAnimPacket(void *, i32) {
     }
 
+#ifdef __EMSCRIPTEN__
+    void ResetMiniAnimPacket(void *, i32) {
+    }
+#else
     void ResetMiniAnimPacket(void) {
     }
+#endif
 
     void RootFn(NUMTX *, void *, NUVEC *, NUVEC *, NUVEC *, f32) {
     }

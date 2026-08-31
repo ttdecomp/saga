@@ -739,8 +739,13 @@ extern "C" {
     void AddLocalAIMessage(void) {
     }
 
+#ifdef __EMSCRIPTEN__
+    void AddToAIGroup(AIGROUP *, GameObject_s *) {
+    }
+#else
     void AddToAIGroup(void) {
     }
+#endif
 
     void AiRndrLine3d(void) {
     }

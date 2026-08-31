@@ -2061,8 +2061,13 @@ extern "C" {
         NuPlainSpecialHandleLayout *handle = reinterpret_cast<NuPlainSpecialHandleLayout *>(special);
         return handle->special != NULL || handle->display_special != NULL;
     }
+#ifdef __EMSCRIPTEN__
+    void NuSpecialFindMulti(NUGSCN *, void **, char *, i32, i32) {
+    }
+#else
     void NuSpecialFindMulti(void) {
     }
+#endif
     void NuSpecialFindMultiWC(void) {
     }
     void NuSpecialForceMtl(void) {
