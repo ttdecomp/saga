@@ -21,12 +21,12 @@
 extern "C" {
     void rtlInitDynamic(VARIPTR *, VARIPTR, i32);
     void DebrisSetup(VARIPTR *, VARIPTR, char *, i32, i32, i32);
-    void DebrisRegisterCutoffCameraVec(void *);
+    void DebrisRegisterCutoffCameraVec(NUVEC *);
     void edgraSetup(VARIPTR *, VARIPTR, i32, i32, i32);
     void InitParts(i32, VARIPTR *, VARIPTR);
     void ParticleReset(void);
     i32 NuFileExists(char *);
-    void NuStrCpy(char *, char *);
+    i32 NuStrCpy(char *, const char *);
     i32 edppLoadPage(char *, i32, i32);
     void *InitGameDebris(VARIPTR *, VARIPTR, i32, i32, char **, char);
     void NuRndrShadowInit(u8 *);

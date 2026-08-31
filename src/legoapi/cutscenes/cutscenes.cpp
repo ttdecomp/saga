@@ -114,7 +114,8 @@ void CutScene_SnapToEnd(CUTINFO *) {
 void CutScene_StartAudio() {
 }
 
-void CutScene_IsSkippable(CUTINFO *) {
+bool CutScene_IsSkippable(CUTINFO *) {
+    return false;
 }
 
 void CutScene_StartFn_LSW(CUTINFO *) {

@@ -38,16 +38,19 @@ extern "C" {
     void AIMoveInstruction(void) {
     }
 
-    void AIPAthFindPathCnx(void) {
+    void *AIPAthFindPathCnx(AISYS_s *, i32, char *, void *, void *) {
+        return NULL;
     }
 
-    void AIPathFindLocator(void) {
+    void *AIPathFindLocator(AISYS_s *, char *) {
+        return NULL;
     }
 
     void AIPathFindLocatorSet(void) {
     }
 
-    void AIPathFindNode(void) {
+    void *AIPathFindNode(AISYS_s *, char *, i32) {
+        return NULL;
     }
 
     void AIPathFindPathCnxFromIX(void) {
@@ -111,7 +114,8 @@ extern "C" {
     void AISysCreatureInteraction3D(void) {
     }
 
-    void AISysFindArea(void) {
+    void *AISysFindArea(void *, char *) {
+        return NULL;
     }
 
     void AISysFindPath(void) {

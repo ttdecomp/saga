@@ -12,29 +12,21 @@ Terminology (objdiff convention, as wired up by gonk):
 
 One paragraph: verification is **local-only for symbol completeness, CI-only for
 match-progress reporting**. `check_symbols.py` needs `res/libTTapp.so` and only runs
-in the pre-commit hook on a developer machine; GitHub CI never builds the game or
+in the prek hook on a developer machine; GitHub CI never builds the game or
 runs gonk — it only diffs the committed `report.json` against the previous commit's
-and posts the verdict as a PR comment. The pre-commit hook is therefore the gate:
+and posts the verdict as a PR comment. The prek hook is therefore the gate:
 every commit must carry an up-to-date `report.json` and README badge, regenerated in
 the hook itself.
 
-`.githooks/pre-commit` (enable with `git config core.hooksPath .githooks`, per
-CONTRIBUTING.md:104-106), in order:
+`prek.toml` invokes the mise matching pipeline installed by `mise run setup`:
 
 ```bash
-cmake -B build . && cmake --build build            # 1. recompile base objects + build/saga
-cargo build --release --manifest-path gonk/Cargo.toml
-./gonk/target/release/gonk split                   # 2. carve build/split/, rewrite objdiff.json
-objdiff-cli installed on demand if missing         # 3. pre-commit:8-11: cargo install objdiff-cli --git https://github.com/ttdecomp/objdiff
-objdiff-cli report generate -o report.json         # 4. measure everything
-git add report.json
-PROGRESS=$(jq ".measures.fuzzy_match_percent" report.json)
-PROGRESS=$(printf "%.2f" "$PROGRESS")              # pre-commit:18-19: 2-decimal rounding for the badge
-                                                   # badge color by % (>=90 brightgreen, >=70 green, >=50 yellow, >=30 orange, else red)
-sed -i "s|https://img.shields.io/badge/matching-[^)]*|...|g" README.md
-git add report.json README.md
-if [ -f res/libTTapp.so ]; then python3 scripts/check_symbols.py || exit 1; fi   # 5. symbol surface gate (skipped in CI)
+mise run match
 ```
+
+The task builds the target and gonk, splits the original, generates
+`report.json`, updates the README table and badge, and runs
+`scripts/check_symbols.py` when the original library is available.
 
 CI (`.github/workflows/diff.yaml`, on PR + push to main): fetches `BASE_SHA`
 (`pull_request.base.sha`, or `github.event.before` for pushes),
@@ -190,7 +182,7 @@ moved units:
 > moved-but-lost function is unchanged, this is a gonk/objdiff re-pairing artifact (see
 > Context), not a real regression.
 
-**Headline metrics**: the README badge (pre-commit:36) tracks
+**Headline metrics**: the README badge tracks
 `measures.fuzzy_match_percent` (9.30% in the current snapshot) — the overall fuzzy average.
 objdiffdiff.py's "headline verdict" is `matched_code`/`matched_functions`. The repo-root
 `report.md` is a **historical artifact** of an earlier Markdown-diff format and
@@ -225,7 +217,7 @@ now carries a warning banner. Neither current `objdiffdiff.py` (stdout) nor
 
 - Exit codes: 0 = complete + within baseline; 1 = ≥1 original symbol missing; 2 = no
   missing but extras over baseline (missing always wins; --no-baseline / --baseline-extra
-  override). Only the pre-commit hook runs it, and only when `res/libTTapp.so` exists.
+  override). The matching check runs it only when `res/libTTapp.so` exists.
 
 ## 6. gonk.toml
 
@@ -299,10 +291,8 @@ original).
 ## 8. Workflow recipes
 
 ```bash
-# Build + split + report (mirrors the pre-commit pipeline, minus git steps)
-cmake -B build . && cmake --build build -j
-cargo build --release --manifest-path gonk/Cargo.toml && ./gonk/target/release/gonk split
-objdiff-cli report generate -o report.json          # reads ./objdiff.json; -p <dir> to select project
+# Build + split + report
+mise run match
 
 # Diff one function (one-shot JSON; per-symbol match_percent + per-instruction detail)
 objdiff-cli diff -1 build/split/gameapi/ai/aisys/aiscript.cpp.o -2 build/CMakeFiles/saga.dir/src/gameapi/ai/aisys/aiscript.cpp.o \

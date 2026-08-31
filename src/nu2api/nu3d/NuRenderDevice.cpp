@@ -13,6 +13,9 @@
 
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
+#ifdef __EMSCRIPTEN__
+#include <emscripten/html5_webgl.h>
+#endif
 #include <math.h>
 #include <pthread.h>
 #include <string.h>
@@ -85,20 +88,24 @@ NuRenderDevice::NuRenderDevice() : NuRenderDeviceGen() {
 // Untyped proc pointers — kept as in the original; only existence is
 // checked elsewhere. Typed PFN typedefs would be more precise but would
 // diverge from the decompiled signature.
+#ifndef __EMSCRIPTEN__
 void (*glGetProgramBinaryOES)();
 void (*glProgramBinaryOES)();
 void (*glDiscardFramebufferEXT)();
 void (*glGenVertexArraysOES)();
 void (*glBindVertexArrayOES)();
 void (*glDeleteVertexArraysOES)();
+#endif
 
 void NuGLES2ExtensionsInit() {
+#ifndef __EMSCRIPTEN__
     glGetProgramBinaryOES = reinterpret_cast<void (*)()>(eglGetProcAddress("glGetProgramBinaryOES"));
     glProgramBinaryOES = reinterpret_cast<void (*)()>(eglGetProcAddress("glProgramBinaryOES"));
     glDiscardFramebufferEXT = reinterpret_cast<void (*)()>(eglGetProcAddress("glDiscardFramebufferEXT"));
     glGenVertexArraysOES = reinterpret_cast<void (*)()>(eglGetProcAddress("glGenVertexArraysOES"));
     glBindVertexArrayOES = reinterpret_cast<void (*)()>(eglGetProcAddress("glBindVertexArrayOES"));
     glDeleteVertexArraysOES = reinterpret_cast<void (*)()>(eglGetProcAddress("glDeleteVertexArraysOES"));
+#endif
 }
 
 // ---------------------------------------------------------------------------
@@ -167,6 +174,7 @@ void NuRenderDevice::Initialize() {
     // attribute ids are the standard EGL_*_SIZE values:
     //  0x3024 EGL_RED_SIZE, 0x3022 EGL_BLUE_SIZE, 0x3023 EGL_GREEN_SIZE,
     //  0x3021 EGL_ALPHA_SIZE, 0x3025 EGL_DEPTH_SIZE, 0x3026 EGL_STENCIL_SIZE.
+#ifndef __EMSCRIPTEN__
     EGLint config_attribs[6] = {};
     eglGetConfigAttrib(this->egl_display, this->egl_config, EGL_RED_SIZE, &config_attribs[0]);
     eglGetConfigAttrib(this->egl_display, this->egl_config, EGL_BLUE_SIZE, &config_attribs[1]);
@@ -175,6 +183,7 @@ void NuRenderDevice::Initialize() {
     eglGetConfigAttrib(this->egl_display, this->egl_config, EGL_DEPTH_SIZE, &config_attribs[4]);
     eglGetConfigAttrib(this->egl_display, this->egl_config, EGL_STENCIL_SIZE, &config_attribs[5]);
     (void)config_attribs;
+#endif
 
     DetermineNominalAspectRatio(this->width, this->height);
     this->aspect_ratio = static_cast<f32>(this->width) / static_cast<f32>(this->height);
@@ -272,8 +281,12 @@ void NuRenderDevice::BeginCriticalSection(const char * /*file*/, i32 /*line*/) {
         LOG_DEBUG("this->egl_display: %p, this->pbuffers[%d]: %p, this->contexts[%d]: %p", this->egl_display,
                   gt_glContextIndex, this->pbuffers[gt_glContextIndex], gt_glContextIndex,
                   this->contexts[gt_glContextIndex]);
+#ifdef __EMSCRIPTEN__
+        emscripten_webgl_make_context_current(reinterpret_cast<uintptr_t>(this->contexts[gt_glContextIndex]));
+#else
         eglMakeCurrent(this->egl_display, this->pbuffers[gt_glContextIndex], this->pbuffers[gt_glContextIndex],
                        this->contexts[gt_glContextIndex]);
+#endif
     }
     s_criticalDepth++;
 }
@@ -304,7 +317,11 @@ EGLConfig NuRenderDevice::SelectEGLConfig() {
         EGL_LEVEL,
         0, //
         EGL_SURFACE_TYPE,
+#ifdef __EMSCRIPTEN__
+        EGL_WINDOW_BIT,
+#else
         EGL_WINDOW_BIT | EGL_PBUFFER_BIT,
+#endif
         EGL_RENDERABLE_TYPE,
         EGL_OPENGL_ES2_BIT,
         EGL_CONFORMANT,

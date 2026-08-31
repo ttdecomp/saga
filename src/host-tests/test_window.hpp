@@ -41,7 +41,9 @@ extern FadeSystem FadeSys;
 bool g_hostOffscreenRendering = false;
 
 namespace {
-#ifdef _WIN32
+#ifdef __EMSCRIPTEN__
+    constexpr const char *host_video_driver = "emscripten";
+#elif defined(_WIN32)
     constexpr const char *host_video_driver = "windows";
 #else
     constexpr const char *host_video_driver = "x11";
@@ -171,12 +173,15 @@ namespace {
         }
 
         const SDL_PropertiesID props = SDL_GetWindowProperties(window);
-#ifdef _WIN32
+#ifdef __EMSCRIPTEN__
+        g_renderDevice.OnWindowCreated(nullptr);
+#elif defined(_WIN32)
         HWND handle = static_cast<HWND>(SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
+        g_renderDevice.OnWindowCreated(reinterpret_cast<ANativeWindow *>(handle));
 #else
         auto handle = static_cast<i32>(SDL_GetNumberProperty(props, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0));
-#endif
         g_renderDevice.OnWindowCreated(reinterpret_cast<ANativeWindow *>(handle));
+#endif
     }
 
     static SDL_Thread *host_numain_thread = nullptr;

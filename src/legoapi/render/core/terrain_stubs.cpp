@@ -567,7 +567,7 @@ extern "C" {
         }
     }
 
-    void DebrisRegisterCutoffCameraVec(void) {
+    void DebrisRegisterCutoffCameraVec(NUVEC *) {
     }
 
     void DebrisReserveTrashableSpace(void) {
@@ -576,7 +576,7 @@ extern "C" {
     void DebrisResetTimers(void) {
     }
 
-    void DebrisSetCutSceneMode(void) {
+    void DebrisSetCutSceneMode(i32) {
     }
 
     void DebrisSetDetailLevels(void) {
@@ -759,7 +759,8 @@ extern "C" {
     void DrawPlatform(void) {
     }
 
-    void FindPlatInst(void) {
+    i16 FindPlatInst(void *) {
+        return -1;
     }
 
     void NewMSituTerrEx(void) {

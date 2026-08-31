@@ -16,15 +16,17 @@ void PlayAMusic(i32 a, i32 b, i32 c, i32 d) {
     (void)d;
     LOG_DEBUG("PlayAMusic %d %d %d %d", a, b, c, d);
 }
-void GetMusicIndex(char *name, nusound_filename_info_s *table, i32 def) {
-    (void)name;
-    (void)table;
-    (void)def;
-    if (name == nullptr || table == nullptr)
-        return;
-    for (auto *p = table; p->filename != nullptr; ++p)
-        if (NuStrICmp(p->filename, name) == 0)
-            return;
+i16 GetMusicIndex(char *name, nusound_filename_info_s *table, i32 def) {
+    if (name == nullptr || table == nullptr) {
+        return static_cast<i16>(def);
+    }
+    i16 index = 0;
+    for (auto *entry = table; entry->filename != nullptr; ++entry, ++index) {
+        if (NuStrICmp(entry->filename, name) == 0) {
+            return index;
+        }
+    }
+    return static_cast<i16>(def);
 }
 void MusicClearAll() {
     LOG_DEBUG("MusicClearAll");

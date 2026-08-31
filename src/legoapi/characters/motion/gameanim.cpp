@@ -414,7 +414,8 @@ extern "C" {
     void AnimDuration(void) {
     }
 
-    void AnimEndFrame(void) {
+    float AnimEndFrame(void *, i32) {
+        return 0.0f;
     }
 
     void AnimListFrame(void) {

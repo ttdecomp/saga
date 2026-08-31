@@ -1,4 +1,4 @@
-![Progress](https://img.shields.io/badge/matching-10.27%25-red)
+![Progress](https://img.shields.io/badge/matching-10.28%25-red)
 [![Discord](https://img.shields.io/discord/1467775700894224555?color=%235865F2&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/2HJuMtzA7q)
 
 |                 | Target (Android x86)                                                                                                                                                                                  | Host                                                                                                                                                                                  |
@@ -25,7 +25,14 @@ any game assets, media, original source code, or any other copyrighted material.
 
 ## Build Instructions
 
-The project uses CMake as its build system. There are two build modes:
+The project uses CMake as its build system. Install mise, then bootstrap every
+pinned tool and the Git hooks with one command:
+
+```bash
+mise run setup
+```
+
+There are three build modes:
 
 The Android x86 build uses the NDK r8e toolchain and targets the original
 Android platform. It is the matching build; its output is not a host-runnable
@@ -39,21 +46,36 @@ development.
 ### Android x86 build
 
 ```bash
-# configure
-cmake -B build
-# build
-cmake --build build
+mise run target:build
 ```
 
 ### Host build
 
 ```bash
-cmake -B build-host -DBUILD_FOR_HOST=ON
-cmake --build build-host
+mise run host:build
 
-# executable
-./build-host/saga
+# build and run
+mise run host:run
 ```
+
+### WebAssembly host build
+
+Build the browser target with the pinned Emscripten SDK:
+
+```bash
+mise run wasm:build
+```
+
+Serve the result with the headers required by browser pthreads, then open
+`http://localhost:8000`:
+
+```bash
+mise run wasm:serve
+```
+
+Select a locally owned Android OBB or enter a direct OBB URL in the browser. The
+file is loaded into browser memory and is never copied into the source tree or
+build output.
 
 ## Contributing
 
@@ -83,7 +105,7 @@ See the [documentation index](doc/main.md).
 
 | Directory | Fuzzy % | Funcs % | Data % |
 |---|---|---|---|
-| `(root)` | 57.3% | 16.7% | 0.0% |
+| `(root)` | 57.0% | 16.7% | 0.0% |
 | `MechInputTouch` | 5.0% | 0.0% | 0.9% |
 | `editor` | 2.6% | 0.0% | - |
 | `gameapi` | 6.9% | 1.4% | 94.8% |
@@ -106,6 +128,6 @@ See the [documentation index](doc/main.md).
 | `legoapi/render` | 4.3% | 3.0% | 95.6% |
 | `legoapi/world` | 20.1% | 28.2% | 0.1% |
 | `legogame` | 6.1% | 5.3% | 81.2% |
-| `nu2api` | 30.3% | 20.7% | 9.3% |
+| `nu2api` | 30.3% | 20.9% | 9.3% |
 
 <!-- matching-table-end -->

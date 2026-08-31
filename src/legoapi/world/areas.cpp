@@ -30,7 +30,7 @@ extern void ClearTakeOverObjectSys(void);
 extern void Door_Reset(void);
 extern void ResetMinikitCounter(void);
 extern "C" void *NuFParCreate(const char *);
-extern "C" i32 NuFParDestroy(void *);
+extern "C" void NuFParDestroy(void *);
 extern "C" i32 NuFParGetLine(void *);
 extern "C" i32 NuFParGetWord(void *);
 

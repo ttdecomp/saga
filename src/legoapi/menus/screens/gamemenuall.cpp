@@ -1176,7 +1176,8 @@ extern "C" {
     void MenuInCriticalMemoryCard(void) {
     }
 
-    void MenuInMemoryCard(void) {
+    i32 MenuInMemoryCard(void) {
+        return 0;
     }
 
     void MenuInMemoryCardLoad(void) {

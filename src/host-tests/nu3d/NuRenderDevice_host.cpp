@@ -8,6 +8,9 @@
 #include "nu2api/nuandroid/ios_graphics.h"
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
+#ifdef __EMSCRIPTEN__
+#include <emscripten/html5_webgl.h>
+#endif
 #include <pthread.h>
 #include <string.h>
 
@@ -15,6 +18,7 @@ static EGLContext g_hostPresentCtx = EGL_NO_CONTEXT;
 EGLSurface g_hostPbufferReadback = EGL_NO_SURFACE;
 EGLContext g_hostContextReadback = EGL_NO_CONTEXT;
 extern bool g_hostOffscreenRendering;
+extern u32 g_activeAttributes;
 
 namespace {
     struct PresentResources {
@@ -56,6 +60,11 @@ namespace {
         glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
     }
     void DrawFullscreenTexturedQuad(const PresentResources &res, GLuint texture) {
+        for (u32 attribute = 0, mask = g_activeAttributes; mask != 0; ++attribute, mask >>= 1) {
+            if ((mask & 1) != 0)
+                glDisableVertexAttribArray(attribute);
+        }
+        g_activeAttributes = 0;
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glDisable(GL_BLEND);
         glDisable(GL_DEPTH_TEST);
@@ -89,26 +98,45 @@ void NuRenderDevice::SwapBuffers() {
     extern GLuint g_earlyColorTexture;
     EGLContext present_ctx = (g_hostPresentCtx != EGL_NO_CONTEXT) ? g_hostPresentCtx : this->contexts[3];
     bool have_context = false;
+#ifdef __EMSCRIPTEN__
+    const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE webgl_context = reinterpret_cast<uintptr_t>(present_ctx);
+    if (webgl_context != 0) {
+        have_context = emscripten_webgl_make_context_current(webgl_context) == EMSCRIPTEN_RESULT_SUCCESS;
+    }
+#else
     if (this->egl_display != EGL_NO_DISPLAY && this->pbuffers[3] != EGL_NO_SURFACE && present_ctx != EGL_NO_CONTEXT) {
         have_context = eglMakeCurrent(this->egl_display, this->pbuffers[3], this->pbuffers[3], present_ctx);
         if (!have_context)
             eglGetError();
     }
+#endif
     if (have_context && g_earlyColorTexture != 0 && glIsTexture(g_earlyColorTexture)) {
         static PresentResources s_present{};
         EnsurePresentResources(s_present);
+#ifdef __EMSCRIPTEN__
+        i32 surf_w = this->width;
+        i32 surf_h = this->height;
+        emscripten_webgl_get_drawing_buffer_size(webgl_context, &surf_w, &surf_h);
+#else
         EGLint surf_w = 0, surf_h = 0;
         eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_WIDTH, &surf_w);
         eglQuerySurface(this->egl_display, this->pbuffers[3], EGL_HEIGHT, &surf_h);
+#endif
         if (surf_w > 0 && surf_h > 0)
             glViewport(0, 0, surf_w, surf_h);
         DrawFullscreenTexturedQuad(s_present, g_earlyColorTexture);
     }
+#ifdef __EMSCRIPTEN__
+    if (have_context) {
+        emscripten_webgl_commit_frame();
+    }
+#else
     if (this->egl_display != EGL_NO_DISPLAY && this->pbuffers[3] != EGL_NO_SURFACE) {
         if (!have_context)
             eglMakeCurrent(this->egl_display, this->pbuffers[3], this->pbuffers[3], present_ctx);
         eglSwapBuffers(this->egl_display, this->pbuffers[3]);
     }
+#endif
 }
 
 i32 HostReadbackPixels(u32 max_w, u32 max_h, u8 *rgba) {
@@ -118,7 +146,13 @@ i32 HostReadbackPixels(u32 max_w, u32 max_h, u8 *rgba) {
         LOG_WARN("HostReadback: early tex %u backing %d x %d", g_earlyColorTexture, g_backingWidth, g_backingHeight);
         return 0;
     }
-    // Try dedicated readback pbuffer/context; fall back to any valid context/pbuffer if unavailable.
+#ifdef __EMSCRIPTEN__
+    const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE read_ctx = reinterpret_cast<uintptr_t>(g_hostPresentCtx);
+    if (read_ctx == 0 || emscripten_webgl_make_context_current(read_ctx) != EMSCRIPTEN_RESULT_SUCCESS) {
+        LOG_WARN("HostReadback: could not activate WebGL context");
+        return 0;
+    }
+#else
     EGLDisplay display = eglGetCurrentDisplay();
     EGLSurface read_surf = g_hostPbufferReadback;
     EGLContext read_ctx = g_hostContextReadback;
@@ -132,6 +166,7 @@ i32 HostReadbackPixels(u32 max_w, u32 max_h, u8 *rgba) {
         LOG_WARN("HostReadback: eglMakeCurrent failed %d", eglGetError());
         return 0;
     }
+#endif
     const u32 copy_w = static_cast<u32>(g_backingWidth) < max_w ? static_cast<u32>(g_backingWidth) : max_w;
     const u32 copy_h = static_cast<u32>(g_backingHeight) < max_h ? static_cast<u32>(g_backingHeight) : max_h;
     GLuint read_fbo = 0;
@@ -153,6 +188,55 @@ i32 HostReadbackPixels(u32 max_w, u32 max_h, u8 *rgba) {
 }
 
 void NuRenderDevice::InitialiseOpenGLContext(ANativeWindow *window_) {
+#ifdef __EMSCRIPTEN__
+    (void)window_;
+    pthread_mutex_lock(&this->mutex);
+    if (!this->context_valid) {
+        EmscriptenWebGLContextAttributes attributes;
+        emscripten_webgl_init_context_attributes(&attributes);
+        attributes.alpha = false;
+        attributes.depth = true;
+        attributes.stencil = false;
+        attributes.antialias = true;
+        attributes.majorVersion = 1;
+        attributes.minorVersion = 0;
+        attributes.explicitSwapControl = true;
+        attributes.proxyContextToMainThread = EMSCRIPTEN_WEBGL_CONTEXT_PROXY_ALWAYS;
+        attributes.renderViaOffscreenBackBuffer = true;
+
+        const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context = emscripten_webgl_create_context("#canvas", &attributes);
+        if (context == 0 || emscripten_webgl_make_context_current(context) != EMSCRIPTEN_RESULT_SUCCESS) {
+            LOG_ERR("failed to create WebGL context");
+            pthread_mutex_unlock(&this->mutex);
+            return;
+        }
+
+        EGLContext stored_context = reinterpret_cast<EGLContext>(context);
+        EGLSurface stored_surface = reinterpret_cast<EGLSurface>(static_cast<uintptr_t>(1));
+        for (i32 i = 0; i < 4; ++i) {
+            this->contexts[i] = stored_context;
+            this->pbuffers[i] = stored_surface;
+        }
+        this->egl_display = reinterpret_cast<EGLDisplay>(static_cast<uintptr_t>(1));
+        g_hostPresentCtx = stored_context;
+        g_hostContextReadback = stored_context;
+        g_hostPbufferReadback = stored_surface;
+
+        i32 width = 0;
+        i32 height = 0;
+        emscripten_webgl_get_drawing_buffer_size(context, &width, &height);
+        this->width = width;
+        this->height = height;
+        DetermineBackBufferResolution(width, height);
+        g_backingWidth = this->backing_width;
+        g_backingHeight = this->backing_height;
+        nurndr_pixel_width = width;
+        nurndr_pixel_height = height;
+        this->context_valid = true;
+        emscripten_webgl_make_context_current(0);
+    }
+    pthread_mutex_unlock(&this->mutex);
+#else
     EGLNativeWindowType window = reinterpret_cast<EGLNativeWindowType>(window_);
     pthread_mutex_lock(&this->mutex);
     this->egl_display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
@@ -215,6 +299,7 @@ void NuRenderDevice::InitialiseOpenGLContext(ANativeWindow *window_) {
         eglGetError();
     }
     pthread_mutex_unlock(&this->mutex);
+#endif
 }
 
 extern thread_local i32 s_criticalDepth;

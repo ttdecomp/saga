@@ -310,7 +310,8 @@ extern "C" {
         DebrisSetup2(p1, p2, p1, p2, p3, p4, 0x20, p5, p6);
     }
 
-    void FindGameDebris(void) {
+    i16 FindGameDebris(void *, char *) {
+        return -1;
     }
 
     // LookupDebrisEffectPageIgnore @0x355d30. Search the requested page first,

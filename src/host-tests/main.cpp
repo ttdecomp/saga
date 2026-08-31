@@ -40,6 +40,14 @@ i32 main(i32 argc, char **argv) {
         }
     }
 
+#ifdef __EMSCRIPTEN__
+    char *wasm_argv[] = {argv[0], const_cast<char *>("window"), nullptr};
+    if (argc < 2) {
+        argc = 2;
+        argv = wasm_argv;
+    }
+#endif
+
     if (argc < 2) {
         printf("Usage: %s <test>\n", argv[0]);
         printf("Available tests:\n");

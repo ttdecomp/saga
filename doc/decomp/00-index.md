@@ -81,10 +81,8 @@ Things about this compiler that differ from mainstream GCC expectations — all 
 ## 6. Workflow in one screen
 
 ```bash
-# build + match + report (pre-commit does this automatically)
-cmake -B build && cmake --build build -j
-./gonk/target/release/gonk split            # carve original → build/split/<source path>.o
-objdiff-cli report generate -o report.json  # compare recompiled vs split
+# build + match + report (prek does this automatically)
+mise run match
 python3 scripts/objdiffdiff.py report.json report_old.json   # human diff vs last CI report
 python3 scripts/check_symbols.py            # symbol-surface gate (exit 1/2)
 ```
@@ -104,7 +102,7 @@ in `objdiff.json`; do not use the non-recursive `build/split/*.o` glob.
 | `objdiff.json` | generated objdiff config: currently 466 units, scratch = `ndk-r8e-gcc-4.7` |
 | `scripts/check_symbols.py`, `scripts/objdiffdiff.py` | gates + report diff (docstrings = semantics) |
 | `scripts/symbols_extra_baseline.txt` | extra-symbol baseline (144) |
-| `.githooks/pre-commit` | the full pipeline |
+| `mise.toml`, `prek.toml` | the full pipeline and Git-hook configuration |
 | `src/decomp.h` | LOG/UNIMPLEMENTED (host-only), `SAGA_NOMATCH`, undefined/byte/dword |
 | `src/nu2api/nucore/common.h`, `src/nu2api/nucore/fixed_width.h` | type system (i32/u32…, `abi_long`, `variptr_u`) |
 | `res/libTTapp.so` | the original target |

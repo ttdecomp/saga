@@ -20,7 +20,7 @@
 extern "C" {
     void *NuTimeBarCreateSet(i32);
     void _NuTimeBarSlotBegin(void *, i32, char const *);
-    void _NuTimeBarSlotEnd(void *, i32);
+    u32 _NuTimeBarSlotEnd(void *, i32);
 }
 
 // Written by ThingManager's ctor (original global @0x124f2e0, .bss).

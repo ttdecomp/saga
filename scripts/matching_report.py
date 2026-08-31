@@ -16,6 +16,7 @@ Usage:
 import argparse
 import json
 import os
+import re
 import sys
 from collections import defaultdict
 
@@ -147,7 +148,19 @@ SECTION_START = "<!-- matching-table-start -->"
 SECTION_END = "<!-- matching-table-end -->"
 
 
-def _update_readme(path, table_lines):
+def _badge_color(progress):
+    if progress >= 90:
+        return "brightgreen"
+    if progress >= 70:
+        return "green"
+    if progress >= 50:
+        return "yellow"
+    if progress >= 30:
+        return "orange"
+    return "red"
+
+
+def _update_readme(path, table_lines, progress):
     """Insert the table into README, replacing the marked section if present."""
     section = "\n".join([
         SECTION_START,
@@ -170,6 +183,10 @@ def _update_readme(path, table_lines):
         content = content[:start] + section + content[end + len(SECTION_END):]
     else:
         content = content.rstrip("\n") + "\n\n" + section
+    badge = "https://img.shields.io/badge/matching-%.2f%%25-%s" % (
+        progress, _badge_color(progress))
+    content = re.sub(
+        r"https://img\.shields\.io/badge/matching-[^)]*", badge, content)
     with open(path, "w") as f:
         f.write(content)
 
@@ -240,7 +257,8 @@ def main():
     if not args.no_readme:
         readme = args.readme or os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "..", "README.md")
-        _update_readme(readme, _render_table(table))
+        progress = _fuzzy(report.get("measures", {}).get("fuzzy_match_percent"))
+        _update_readme(readme, _render_table(table), progress)
 
 
 if __name__ == "__main__":

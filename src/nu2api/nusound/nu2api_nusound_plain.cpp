@@ -17,7 +17,7 @@ extern "C" {
     }
     void SoundStopMusic(void) {
     }
-    void SoundUpdate(void) {
+    void SoundUpdate(float) {
     }
     void edanimSoundDestroy(void) {
     }

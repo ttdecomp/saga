@@ -330,10 +330,10 @@ extern "C" {
     void RndrStateSetReflection(void) {
     }
 
-    void RndrStateUpdate(void) {
+    void RndrStateUpdate(void *, NUMTL *, nudisplaylistitem_s *) {
     }
 
-    void RndrStateUpdateFx(void) {
+    void RndrStateUpdateFx(void *, nudisplaylistitem_s *) {
     }
 
     void SetAiRndrCullDistance(void) {

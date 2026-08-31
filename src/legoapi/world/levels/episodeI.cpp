@@ -55,8 +55,16 @@ extern struct LEVFLAGBYTES_s LevFlag;
 extern "C" {
     // AIPAthFindPathCnx is called with a different arity here than in
     // episodeII (both byte-matched), so it stays local rather than in a header.
+#ifdef __EMSCRIPTEN__
+    void *AIPAthFindPathCnx(AISYS_s *, i32, char *, void *, void *);
+#else
     void *AIPAthFindPathCnx(AISYS_s *, i32, char *, void *); // original name keeps the typo
+#endif
 }
+
+#ifdef __EMSCRIPTEN__
+#define AIPAthFindPathCnx(ai_sys, flags, name, buffer) AIPAthFindPathCnx(ai_sys, flags, name, buffer, NULL)
+#endif
 
 // --- Cross-file entry points (C++ linkage) ---------------------------------
 

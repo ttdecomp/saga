@@ -711,7 +711,8 @@ void PlayersDropInOut() {
 void PlayerItem_GotAmmo(PLAYERITEM_s *) {
 }
 
-void Players_AveragePos(nuvec_s *, SOCKPOSITION_s *) {
+i32 Players_AveragePos(nuvec_s *, SOCKPOSITION_s *) {
+    return 0;
 }
 
 i32 Players_BothActive() {

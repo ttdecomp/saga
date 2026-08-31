@@ -240,7 +240,7 @@ extern "C" {
     void rtlDynamicSetType(void) {
     }
 
-    void rtlFrameUpdate(void) {
+    void rtlFrameUpdate(f32) {
     }
 
     void rtlFree(void) {
@@ -261,7 +261,7 @@ extern "C" {
     void rtlGetFogSet(void) {
     }
 
-    void rtlInitDynamic(void) {
+    void rtlInitDynamic(VARIPTR *, VARIPTR, i32) {
     }
 
     rtlset *rtlLoadSet(char *path, VARIPTR *buffer, i32 buffer_end) {
@@ -285,7 +285,7 @@ extern "C" {
         return set;
     }
 
-    void rtlProcessLights(void) {
+    void rtlProcessLights(void *, f32) {
     }
 
     void rtlReset(void) {
