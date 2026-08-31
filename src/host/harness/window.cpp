@@ -415,10 +415,24 @@ i32 host_run_window(const HostWindowOptions &options) {
             }
             if (event.type == SDL_EVENT_QUIT) {
                 quit_requested = true;
+#ifdef __EMSCRIPTEN__
+            } else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+                HostInputTouch(static_cast<i32>(event.button.x), static_cast<i32>(event.button.y), host_window_width,
+                               host_window_height);
+            } else if (event.type == SDL_EVENT_FINGER_DOWN) {
+                HostInputTouch(static_cast<i32>(event.tfinger.x * host_window_width),
+                               static_cast<i32>(event.tfinger.y * host_window_height), host_window_width,
+                               host_window_height);
+#endif
             } else if (event.type == SDL_EVENT_KEY_DOWN) {
                 u32 button = 0;
                 if (event.key.key == SDLK_RETURN || event.key.key == SDLK_SPACE) {
+#ifdef __EMSCRIPTEN__
+                    HostInputTap(0, GAMEPAD_START | GAMEPAD_JUMP);
+                    continue;
+#else
                     button = event.key.key == SDLK_RETURN ? GAMEPAD_START | GAMEPAD_JUMP : GAMEPAD_JUMP;
+#endif
                 } else if (event.key.key == SDLK_UP || event.key.key == SDLK_W) {
                     button = GAMEPAD_DUP;
                 } else if (event.key.key == SDLK_DOWN || event.key.key == SDLK_S) {
@@ -437,9 +451,13 @@ i32 host_run_window(const HostWindowOptions &options) {
             } else if (event.type == SDL_EVENT_KEY_UP) {
                 u32 button = 0;
                 if (event.key.key == SDLK_RETURN) {
+#ifndef __EMSCRIPTEN__
                     button = GAMEPAD_START | GAMEPAD_JUMP;
+#endif
                 } else if (event.key.key == SDLK_SPACE) {
+#ifndef __EMSCRIPTEN__
                     button = GAMEPAD_JUMP;
+#endif
                 } else if (event.key.key == SDLK_UP || event.key.key == SDLK_W) {
                     button = GAMEPAD_DUP;
                 } else if (event.key.key == SDLK_DOWN || event.key.key == SDLK_S) {

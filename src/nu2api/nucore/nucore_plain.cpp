@@ -863,8 +863,14 @@ extern "C" {
     i32 NuIOS_IsSmallScreen(void) {
         return 0;
     }
+#ifdef __EMSCRIPTEN__
+    i32 NuIOS_IsWidescreen(void) {
+        return 1;
+    }
+#else
     void NuIOS_IsWidescreen(void) {
     }
+#endif
     void NuIOS_RecordFlurryEvent(char *) {
     }
     void NuIOS_ShowAchievements(void) {

@@ -1,6 +1,11 @@
 #include "nu2api/nucore/common.h"
 
 #include "host/platform/graphics.hpp"
+#ifdef __EMSCRIPTEN__
+#include "nu2api/nu3d/NuRenderDevice.h"
+#include "nu2api/nu3d/android/nutex_ios_ex.h"
+#include "nu2api/nuandroid/ios_graphics.h"
+#endif
 
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
@@ -13,6 +18,42 @@
 
 #if !defined(_WIN32) && !defined(__EMSCRIPTEN__)
 #include <dlfcn.h>
+#endif
+
+#ifdef __EMSCRIPTEN__
+void NuIOS_AllocateSystemFramebuffers(void) {
+    BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nuandroid/ios_graphics.cpp", 106);
+
+    memset(g_lastBound2DTexIds, 0, sizeof(g_lastBound2DTexIds));
+    memset(g_lastBoundCubeTexIds, 0, sizeof(g_lastBoundCubeTexIds));
+
+    glGenFramebuffers(1, &g_earlyColorFramebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, g_earlyColorFramebuffer);
+
+    glGenTextures(1, &g_earlyColorTexture);
+    glBindTexture(GL_TEXTURE_2D, g_earlyColorTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, g_backingWidth, g_backingHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_earlyColorTexture, 0);
+
+    GLuint depth_buffer = 0;
+    glGenRenderbuffers(1, &depth_buffer);
+    glBindRenderbuffer(GL_RENDERBUFFER, depth_buffer);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, g_backingWidth, g_backingHeight);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+    g_defaultFramebuffer = 0;
+    g_currentFramebuffer = g_earlyColorFramebuffer;
+
+    EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nuandroid/ios_graphics.cpp", 260);
+}
 #endif
 
 // Frame capture belongs at the external EGL boundary. It must not replace the

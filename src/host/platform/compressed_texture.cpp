@@ -401,6 +401,54 @@ static void host_etc1_decode_block(const u8 *blk, u8 out[16][3]) {
     }
 }
 
+#ifdef __EMSCRIPTEN__
+extern "C" void HostWasmUploadCompressedTexture(GLenum target, GLint level, GLenum internal_format, GLsizei width,
+                                                GLsizei height, GLint border, GLsizei image_size, const void *data) {
+    if (internal_format == 0x8d64) {
+        const usize block_width = (static_cast<usize>(width) + 3) / 4;
+        const usize block_height = (static_cast<usize>(height) + 3) / 4;
+        const usize required_size = block_width * block_height * 8;
+        if (data == nullptr || image_size < 0 || static_cast<usize>(image_size) < required_size) {
+            return;
+        }
+
+        std::vector<u8> rgba(static_cast<usize>(width) * static_cast<usize>(height) * 4);
+        const u8 *source = static_cast<const u8 *>(data);
+        for (usize by = 0; by < block_height; ++by) {
+            for (usize bx = 0; bx < block_width; ++bx) {
+                u8 decoded[16][3];
+                host_etc1_decode_block(source + (by * block_width + bx) * 8, decoded);
+                for (i32 y = 0; y < 4; ++y) {
+                    for (i32 x = 0; x < 4; ++x) {
+                        const usize dst_x = bx * 4 + static_cast<usize>(x);
+                        const usize dst_y = by * 4 + static_cast<usize>(y);
+                        if (dst_x >= static_cast<usize>(width) || dst_y >= static_cast<usize>(height)) {
+                            continue;
+                        }
+                        u8 *pixel = rgba.data() + (dst_y * static_cast<usize>(width) + dst_x) * 4;
+                        pixel[0] = decoded[y * 4 + x][0];
+                        pixel[1] = decoded[y * 4 + x][1];
+                        pixel[2] = decoded[y * 4 + x][2];
+                        pixel[3] = 0xff;
+                    }
+                }
+            }
+        }
+        glTexImage2D(target, level, GL_RGBA, width, height, border, GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
+        return;
+    }
+
+    if (internal_format == 0x8c00 || internal_format == 0x8c02) {
+        std::vector<u8> rgba(static_cast<usize>(width) * static_cast<usize>(height) * 4);
+        host_pvr_decode_4bpp(static_cast<const u8 *>(data), static_cast<usize>(image_size), width, height, rgba.data());
+        glTexImage2D(target, level, GL_RGBA, width, height, border, GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
+        return;
+    }
+
+    glCompressedTexImage2D(target, level, internal_format, width, height, border, image_size, data);
+}
+#endif
+
 #if !defined(_WIN32) && !defined(__EMSCRIPTEN__)
 #include <dlfcn.h>
 

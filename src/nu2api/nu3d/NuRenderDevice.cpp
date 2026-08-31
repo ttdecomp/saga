@@ -40,6 +40,8 @@ thread_local i32 gt_glContextIndex = -1;
 i32 g_nextGLContextIndex;
 
 #ifdef __EMSCRIPTEN__
+extern u32 g_activeAttributes;
+
 namespace {
     struct WasmPresentResources {
         GLuint program = 0;
@@ -93,6 +95,12 @@ namespace {
         static WasmPresentResources resources;
         wasm_create_present_resources(resources);
 
+        for (u32 attribute = 0, mask = g_activeAttributes; mask != 0; ++attribute, mask >>= 1) {
+            if ((mask & 1) != 0) {
+                glDisableVertexAttribArray(attribute);
+            }
+        }
+        g_activeAttributes = 0;
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, width, height);
         glDisable(GL_BLEND);
@@ -392,21 +400,23 @@ void NuRenderDevice::SwapBuffers() {
         return;
     }
 
-    g_renderDevice.BeginCriticalSection("none", -1);
 #ifdef __EMSCRIPTEN__
     const EMSCRIPTEN_WEBGL_CONTEXT_HANDLE context = reinterpret_cast<uintptr_t>(this->contexts[3]);
-    i32 width = static_cast<i32>(this->width);
-    i32 height = static_cast<i32>(this->height);
-    emscripten_webgl_get_drawing_buffer_size(context, &width, &height);
-    if (g_earlyColorTexture != 0 && glIsTexture(g_earlyColorTexture)) {
-        wasm_present_texture(g_earlyColorTexture, width, height);
+    if (context != 0 && emscripten_webgl_make_context_current(context) == EMSCRIPTEN_RESULT_SUCCESS) {
+        i32 width = static_cast<i32>(this->width);
+        i32 height = static_cast<i32>(this->height);
+        emscripten_webgl_get_drawing_buffer_size(context, &width, &height);
+        if (g_earlyColorTexture != 0 && glIsTexture(g_earlyColorTexture)) {
+            wasm_present_texture(g_earlyColorTexture, width, height);
+        }
+        emscripten_webgl_commit_frame();
     }
-    emscripten_webgl_commit_frame();
 #else
+    g_renderDevice.BeginCriticalSection("none", -1);
     eglSwapBuffers(this->egl_display, this->pbuffers[3]);
-#endif
     g_renderDevice.EndCriticalSection("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/NuRenderDevice_gles2.cpp",
                                       0x485);
+#endif
 }
 
 void NuRenderDevice::OnWindowCreated(ANativeWindow *window) {
@@ -493,7 +503,7 @@ void NuRenderDevice::InitialiseOpenGLContext(ANativeWindow *window_) {
         attributes.depth = true;
         attributes.stencil = false;
         attributes.antialias = true;
-        attributes.majorVersion = 1;
+        attributes.majorVersion = 2;
         attributes.minorVersion = 0;
         attributes.explicitSwapControl = true;
         attributes.proxyContextToMainThread = EMSCRIPTEN_WEBGL_CONTEXT_PROXY_ALWAYS;

@@ -366,8 +366,12 @@ static void NuIOS_BindVertexAttributesInternal(isize dataAddr, usize baseVertex,
                 glEnableVertexAttribArray(loc);
             }
             const VertexAttribRecord *rec = reinterpret_cast<const VertexAttribRecord *>(recordsBase + loc * 6);
-            glVertexAttribPointer(loc, (GLint)rec->comp_count, (GLenum)rec->gl_type, (GLboolean)rec->normalized,
-                                  (GLsizei)rec->stride,
+#ifdef __EMSCRIPTEN__
+            const GLenum type = rec->gl_type == 0x8d61 ? 0x140b : static_cast<GLenum>(rec->gl_type);
+#else
+            const GLenum type = static_cast<GLenum>(rec->gl_type);
+#endif
+            glVertexAttribPointer(loc, (GLint)rec->comp_count, type, (GLboolean)rec->normalized, (GLsizei)rec->stride,
                                   (const void *)(dataAddr + rec->byte_offset + baseVertex * rec->stride));
         }
 
