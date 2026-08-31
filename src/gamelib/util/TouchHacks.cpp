@@ -1,9 +1,11 @@
 #include "gamelib_util_types.h"
 
+#include "globals.h"
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/numath/nufloat.h"
 
 NUCOLOUR3 flashCol = {2.0f, 2.0f, 2.0f};
+extern i32 BonusArea;
 
 void TouchHacks::AiPlayerTakeDamageOnKillRescue(GameObject_s &) {
 }
@@ -99,16 +101,25 @@ nucolour3_s *TouchHacks::GetFlashColour() {
     return &flashCol;
 }
 
-void TouchHacks::GetIncomingPartRange() {
+f32 TouchHacks::GetIncomingPartRange() {
+    return 16.0f;
 }
 
-void TouchHacks::GetLoseStudsDieValue() {
+i32 TouchHacks::GetLoseStudsDieValue() {
+    return BonusArea != 0 ? 10000 : 1000;
 }
 
-void TouchHacks::GetLoseStudsFallValue() {
+i32 TouchHacks::GetLoseStudsFallValue() {
+    return 0;
 }
 
-void TouchHacks::InParty(GameObject_s &) {
+bool TouchHacks::InParty(GameObject_s &object) {
+    for (i32 index = 0; index < 8; ++index) {
+        if (Player[index] == &object) {
+            return true;
+        }
+    }
+    return false;
 }
 
 void TouchHacks::PlaySmartBombBuildupEffects(GameObject_s &, float, float) {
@@ -133,7 +144,21 @@ void TouchHacks::ShouldKeepWeaponOut(GameObject_s &) {
 void TouchHacks::ShouldPutWeaponAway(GameObject_s &) {
 }
 
-void TouchHacks::SolveRoot(float, float, float, float &, float &) {
+bool TouchHacks::SolveRoot(float a, float b, float c, float &root1, float &root2) {
+    if (a == 0.0f) {
+        return false;
+    }
+
+    const f32 discriminant = b * b - 4.0f * a * c;
+    if (discriminant < 0.0f) {
+        return false;
+    }
+
+    const f32 square_root = NuFsqrt(discriminant);
+    const f32 denominator = a + a;
+    root1 = (-b - square_root) / denominator;
+    root2 = (square_root - b) / denominator;
+    return true;
 }
 
 void TouchHacks::TriggerVehicleSmartBomb(GameObject_s &) {

@@ -1313,11 +1313,16 @@ void TerrainPlayer(GameObject_s *object) {
         return;
     }
 
-    // Common ordinary-character floor/contact response.  Position integration
-    // has already happened in UpdateGameObjects, as it does in the target;
-    // this path retains the target's shadow probe convention needed by normal
-    // hub characters.
+    // The target's ordinary playable-character path integrates here.  The
+    // separate APIOBJECT_MOTION_FLAG_AI_CONTROLLED branch in
+    // UpdateGameObjects performs the corresponding update for AI creatures.
     APIOBJECT &api = object->apiobj;
+    api.position.x += api.velocity.x * FRAMETIME;
+    api.position.y += api.velocity.y * FRAMETIME;
+    api.position.z += api.velocity.z * FRAMETIME;
+
+    // Resolve the proposed position against the floor and refresh contact
+    // state before dispatching the character-specific movement callback.
     const u8 previous_contact = api.field_0x27d;
     api.field_0x27d = 0;
     api.supporting_platform_id = -1;

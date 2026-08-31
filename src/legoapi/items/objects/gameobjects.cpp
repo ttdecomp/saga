@@ -838,7 +838,9 @@ void GameObjectOrigin(GameObject_s *object) {
     object->ai.terrain_origin = object->apiobj.collision_origin;
 }
 
-void Game_IgnoreInput() {
+i32 Game_IgnoreInput() {
+    extern i32 newgamecam;
+    return newgamecam != 0;
 }
 
 void GameAI_TotalScore() {
@@ -1515,7 +1517,30 @@ void TakeOverCode(GameObject_s *, i32) {
 void InitExtraList() {
 }
 
-GameObject_s *FindGameObject(i32, u32, i32, i32, i32) {
+GameObject_s *FindGameObject(i32 character_id, u32 required_flags, i32 alive_only, i32 vehicle_only,
+                             i32 non_level_only) {
+    for (i32 index = 0; index < HIGHGAMEOBJECT; ++index) {
+        GameObject_s *object = &Obj[index];
+        if ((object->apiobj.field_0x1f8 & APIOBJECT_FLAG_IN_USE) == 0) {
+            continue;
+        }
+        if (vehicle_only != 0 && (object->apiobj.field_0x1f8 & 0x1000) == 0) {
+            continue;
+        }
+        if (required_flags != 0 && (object->apiobj.field_0x1f4 & required_flags) != required_flags) {
+            continue;
+        }
+        if (character_id != -1 && object->id != character_id) {
+            continue;
+        }
+        if (alive_only != 0 && object->apiobj.field_0x287 != 0) {
+            continue;
+        }
+        if (non_level_only != 0 && object->field_0x107c != -1) {
+            continue;
+        }
+        return object;
+    }
     return NULL;
 }
 

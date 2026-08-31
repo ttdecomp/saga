@@ -304,10 +304,10 @@ struct TouchHacks {
     static void CleanupAllMechObjectInterfaces(WORLDINFO_s *);
     void FindBombTarget(GameObject_s &);
     static nucolour3_s *GetFlashColour();
-    void GetIncomingPartRange();
-    void GetLoseStudsDieValue();
-    void GetLoseStudsFallValue();
-    void InParty(GameObject_s &);
+    float GetIncomingPartRange();
+    i32 GetLoseStudsDieValue();
+    i32 GetLoseStudsFallValue();
+    bool InParty(GameObject_s &);
     void PlaySmartBombBuildupEffects(GameObject_s &, float, float);
     void ShouldAutoGrabDragBomb(GameObject_s &);
     void ShouldBlock(GameObject_s &);
@@ -315,7 +315,7 @@ struct TouchHacks {
     static bool ShouldFlash(float);
     void ShouldKeepWeaponOut(GameObject_s &);
     void ShouldPutWeaponAway(GameObject_s &);
-    void SolveRoot(float, float, float, float &, float &);
+    bool SolveRoot(float, float, float, float &, float &);
     void TriggerVehicleSmartBomb(GameObject_s &);
 };
 struct V2SessionManager {

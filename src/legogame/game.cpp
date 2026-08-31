@@ -13,6 +13,7 @@
 #include "legoapi/world/area.h"
 #include "legoapi/core/config/cheat.h"
 #include "legoapi/items/base/collection.h"
+#include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/menus/core/text.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/levels/episode.h"
@@ -43,6 +44,7 @@ void InitClimbObjectSys(WORLDINFO_s *world);
 void GizmoPushBlockInitAndReset(WORLDINFO_s *world, void *progress);
 extern NUFPCOMJMP LevelConfigKeywords_BeforeLoad[];
 extern NUFPCOMJMP LevelConfigKeywords_AfterLoad;
+extern i32 (*GamePads_IgnoreInputFn)(void);
 
 u16 MakeSaveHash(void) {
     return Game.completion;
@@ -650,7 +652,7 @@ void InitGameAfterConfig(void) {
     //  GizSpinnerGDeb_Fail._0_2_ = 0x57;
     //  GizSpinnerGDeb_Fail._2_2_ = 1;
     //  GizSpinnerGDeb_Fail._4_2_ = 0x58;
-    //  GamePads_IgnoreInputFn = Game_IgnoreInput;
+    GamePads_IgnoreInputFn = Game_IgnoreInput;
     //  Door_GoThrough_ExtraCodeFn = GoThroughDoor_ExtraCode;
     //  GizmoBlowup_TransformDrawFn = GizmoBlowup_TransformDraw_Game;
     //  LEGOASCII_UP = ASCII_UP;

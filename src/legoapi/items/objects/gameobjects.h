@@ -33,6 +33,7 @@ extern GAMEFOG_STATE GameFog;
 void *GameBufferAlloc(VARIPTR *buf, VARIPTR *buf_end, i32 size);
 
 GameObject_s *FindGameObject(i32 id, u32 type, i32 a3, i32 a4, i32 a5);
+i32 Game_IgnoreInput();
 GameObject_s *GetNamedGameObject(AISYS_s *aisys, char *name);
 APIOBJECT_s *GameAPIOBJECTFromObjID(u8 object_id);
 i32 GameDrawCharacterModel(CHARACTERMODEL_s *model, ANIMPACKET_s *animation, NUMTX *matrix, NUMTX *secondary_matrix,
