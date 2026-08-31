@@ -45,7 +45,8 @@ void CoinsGoToMainTotal() {
 
 void InitPanel(i32) {
     const f32 panel_fov = pNuCam->fov / 0.75f;
+    const f32 aspect_ratio = NuIOS_GetAspectRatio();
     const f32 divisor = (1.0f - panel_fov) * 0.22f + 2.545f;
-    PANEL3DMULX = NuIOS_GetAspectRatio() * panel_fov / divisor;
+    PANEL3DMULX = aspect_ratio * panel_fov / divisor;
     PANEL3DMULY = panel_fov / divisor;
 }

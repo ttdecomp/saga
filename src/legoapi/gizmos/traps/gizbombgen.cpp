@@ -45,7 +45,7 @@ static void GizmoBombGen_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static i32 GizmoBombGen_GetPos(GIZMO *gizmo) {
+static NUVEC *GizmoBombGen_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
     return {};
 }

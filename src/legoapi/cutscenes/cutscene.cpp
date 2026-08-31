@@ -194,8 +194,8 @@ void CharScenes_LevelLoad(WORLDINFO *world) {
 }
 
 // --- Extern "C" block: functions with confirmed C linkage in original libTTapp.so ---
-extern "C" void *NuAnimData2FixPtrs(void *, i32, i32, i32);
-extern "C" StateAnim *StateAnimFixPtrs(StateAnim *, i32);
+extern "C" void *NuAnimData2FixPtrs(void *, isize, isize, i32);
+extern "C" StateAnim *StateAnimFixPtrs(StateAnim *, isize);
 extern "C" i32 StateAnimEvaluate(StateAnim *, u8 *, u8 *, f32);
 extern "C" i32 LookupDebrisEffectPage(char *, i32);
 extern "C" i32 LookupDebrisEffectPageOnly(char *, i32);
@@ -203,15 +203,15 @@ extern "C" {
     extern i32 NuGCutDebFixUp_SearchAllPages;
     extern NUGCUTLOCATORFNENTRY_s *locatorfns;
     extern i32 (*LookupLocatorVfxFn)(char *);
-    extern i32 (*NuCutSceneSFXFixUp)(i32);
+    extern i32 (*NuCutSceneSFXFixUp)(usize);
     extern void (*NuCutSceneFindCharacters)(NUGCUTSCENE_s *);
 }
 void NuGCutRigidCalcMtx(NUGCUTRIGID_s *, f32, numtx_s *);
 
 static instNUGCUTSCENE_s *active_cutscene_instances;
 
-static void NuGCutSceneFixPtrs_Title(NUGCUTSCENE_s *cutscene, i32 anim_delta) {
-    i32 data_delta = cutscene->string_delta;
+static void NuGCutSceneFixPtrs_Title(NUGCUTSCENE_s *cutscene, isize anim_delta) {
+    isize data_delta = cutscene->string_delta;
     if (cutscene->strings != NULL) {
         cutscene->strings = reinterpret_cast<char *>(reinterpret_cast<u8 *>(cutscene->strings) + data_delta);
     }
@@ -266,7 +266,7 @@ extern "C" {
     i32 NuGCutDebFixUp_SearchAllPages = 0;
     NUGCUTLOCATORFNENTRY_s *locatorfns = NULL;
     i32 (*LookupLocatorVfxFn)(char *) = NULL;
-    i32 (*NuCutSceneSFXFixUp)(i32) = NULL;
+    i32 (*NuCutSceneSFXFixUp)(usize) = NULL;
     void (*NuCutSceneFindCharacters)(NUGCUTSCENE_s *) = NULL;
 
     NUGCUTSCENE_s *NuGCutSceneLoad(char *name, VARIPTR *buf, VARIPTR *buf_end, i32 flags) {
@@ -277,8 +277,8 @@ extern "C" {
         if (bytes == 0) {
             return NULL;
         }
-        i32 anim_delta = static_cast<i32>(reinterpret_cast<usize>(cutscene) - cutscene->relocation_delta);
-        cutscene->string_delta = static_cast<i32>(reinterpret_cast<usize>(cutscene) - cutscene->string_delta);
+        isize anim_delta = static_cast<isize>(reinterpret_cast<usize>(cutscene)) - cutscene->relocation_delta;
+        cutscene->string_delta = static_cast<isize>(reinterpret_cast<usize>(cutscene)) - cutscene->string_delta;
         cutscene->relocation_delta = anim_delta;
         cutscene->loaded_size = bytes;
         NuGCutSceneFixPtrs_Title(cutscene, anim_delta);
@@ -302,10 +302,9 @@ extern "C" {
                     rigid->scene = special.scene;
                     rigid->special_object = special.display_special != NULL ? special.display_special : special.special;
                 }
-                if (rigid->locator_count != 0 && cutscene->locator_system != NULL &&
-                    rigid->serialized_locator_index < 0xff) {
-                    rigid->locator_index = static_cast<u8>(rigid->serialized_locator_index);
-                    rigid->locator = &cutscene->locator_system->locators[rigid->locator_index];
+                if (rigid->locator_count != 0 && cutscene->locator_system != NULL && rigid->locator < 0xff) {
+                    rigid->locator_index = static_cast<u8>(rigid->locator);
+                    rigid->locator = reinterpret_cast<usize>(&cutscene->locator_system->locators[rigid->locator_index]);
                 } else {
                     rigid->locator_index = 0xff;
                 }
@@ -344,8 +343,7 @@ extern "C" {
                 }
                 type->function_index = static_cast<u16>(LookupLocatorVfxFn(type->name));
             } else if ((type->flags & 4) != 0 && NuCutSceneSFXFixUp != NULL && type->name != NULL) {
-                type->function_index =
-                    static_cast<u16>(NuCutSceneSFXFixUp(static_cast<i32>(reinterpret_cast<usize>(type->name))));
+                type->function_index = static_cast<u16>(NuCutSceneSFXFixUp(reinterpret_cast<usize>(type->name)));
                 if (static_cast<i16>(type->function_index) != -1) {
                     cutscene->flags |= 4;
                 }

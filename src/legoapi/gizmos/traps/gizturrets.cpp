@@ -1,16 +1,36 @@
 #include "legoapi/gizmos/traps/gizturrets.h"
 
 #include "decomp.h"
+#include "legoapi/characters/motion/gameanim.h"
+#include "legoapi/items/objects/gameobjects.h"
+#include "legoapi/legoapi_types.h"
+#include "legoapi/world/world.h"
+#include "legoapi/world/level.h"
+#include "nu2api/nucore/nustring.h"
 
 i32 turret_gizmotype_id = -1;
 
 static i32 GizTurrets_GetMaxGizmos(void *turret) {
-    UNIMPLEMENTED();
-    return {};
+    WORLDINFO *world = static_cast<WORLDINFO *>(turret);
+    if (world == NULL) {
+        return 0;
+    }
+    return world->current_level->max_turrets;
 }
 
-static void GizTurrets_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
-    UNIMPLEMENTED();
+static void GizTurrets_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *, void *data) {
+    GIZTURRETSYS_s *turret_sys = static_cast<GIZTURRETSYS_s *>(data);
+    if (turret_sys != NULL) {
+        if (turret_sys->count != 0) {
+            i32 i = 0;
+            do {
+                if (NuStrLen(turret_sys->turrets[i].name) != 0) {
+                    AddGizmo(gizmo_sys, type_id, NULL, &turret_sys->turrets[i]);
+                }
+                ++i;
+            } while (turret_sys->count > i);
+        }
+    }
 }
 
 static void GizTurrets_Update(void *, void *, float) {
@@ -22,8 +42,11 @@ static void GizTurrets_Draw(void *, void *, float) {
 }
 
 static char *GizmoTurret_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    if (gizmo != NULL) {
+        GIZTURRET_s *turret = static_cast<GIZTURRET_s *>(gizmo->object);
+        return turret->name;
+    }
+    return NULL;
 }
 
 static i32 GizmoTurret_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -54,9 +77,14 @@ static void GizmoTurret_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static i32 GizmoTurret_GetPos(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+static NUVEC *GizmoTurret_GetPos(GIZMO *gizmo) {
+    if (gizmo != NULL) {
+        GIZTURRET_s *turret = static_cast<GIZTURRET_s *>(gizmo->object);
+        if (turret != NULL) {
+            return &turret->position;
+        }
+    }
+    return NULL;
 }
 
 static i32 GizTurrets_BoltHitPlat(void *, void *, BOLT *, unsigned char *) {
@@ -93,9 +121,23 @@ static void GizTurrets_Reset(void *, void *, void *) {
     UNIMPLEMENTED();
 }
 
-static void *GizTurrets_ReserveBufferSpace(void *) {
-    UNIMPLEMENTED();
-    return {};
+static void *GizTurrets_ReserveBufferSpace(void *world_ptr) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    GIZTURRETSYS_s *turret_sys = static_cast<GIZTURRETSYS_s *>(
+        GameBufferAlloc(&world->giz_buffer, &world->unknown_0108, sizeof(GIZTURRETSYS_s)));
+
+    turret_sys->capacity = world->current_level->max_turrets;
+    turret_sys->turrets = static_cast<GIZTURRET_s *>(
+        GameBufferAlloc(&world->giz_buffer, &world->unknown_0108, turret_sys->capacity * sizeof(GIZTURRET_s)));
+    turret_sys->anim_pool =
+        GameAnimSet_CreateObjectPool(&world->giz_buffer, &world->unknown_0108, 4, turret_sys->capacity * 2);
+
+    for (i32 i = 0; i < turret_sys->capacity; ++i) {
+        turret_sys->turrets[i].anim_set =
+            GameAnimSet_Create(&world->giz_buffer, &world->unknown_0108, turret_sys->anim_pool, world->game_anim_sys);
+    }
+    world->giz_turret_sys = turret_sys;
+    return turret_sys;
 }
 
 static i32 GizTurrets_Load(void *, void *) {

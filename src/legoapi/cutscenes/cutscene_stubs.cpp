@@ -90,13 +90,14 @@ extern "C" {
     void instNuGCutSceneEnable(void) {
     }
 
-    void instNuGCutSceneEnd(void) {
+    void instNuGCutSceneEnd(instNUGCUTSCENE_s *) {
     }
 
     void instNuGCutSceneFind(void) {
     }
 
-    void instNuGCutSceneIsFinished(void) {
+    i32 instNuGCutSceneIsFinished(instNUGCUTSCENE_s *) {
+        return 0;
     }
 
     void instNuGCutSceneJumpToEnd(void) {

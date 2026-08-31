@@ -5,7 +5,12 @@ if(POLICY CMP0135)
 endif()
 
 option(BUILD_FOR_HOST "Build for host system" OFF)
+option(BUILD_FOR_HOST64 "Build a native 64-bit host executable" OFF)
 option(HOST_ENABLE_ASAN "Enable AddressSanitizer in non-Windows host builds" ON)
+
+if(BUILD_FOR_HOST64)
+    set(BUILD_FOR_HOST ON)
+endif()
 
 include("${CMAKE_SOURCE_DIR}/cmake/ndk.cmake")
 
@@ -40,21 +45,33 @@ add_custom_target(check_host_boundary ALL
     COMMENT "Checking host/shared source boundary"
 )
 
+if(BUILD_FOR_HOST64)
+    add_custom_target(check_host64_safety ALL
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/check_host64_safety.py
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMENT "Checking host64 pointer safety"
+    )
+endif()
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 include("${CMAKE_SOURCE_DIR}/cmake/ogg-vorbis.cmake")
 include("${CMAKE_SOURCE_DIR}/cmake/squish.cmake")
 
-if (BUILD_FOR_HOST)  
+if (BUILD_FOR_HOST)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-stack-protector -msse2")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-stack-protector -msse2")
 
-    if (NOT CMAKE_HOST_WIN32 AND HOST_ENABLE_ASAN)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -march=i686 -fsanitize=address")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32 -march=i686 -fsanitize=address")
-    elseif(NOT CMAKE_HOST_WIN32)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -march=i686")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32 -march=i686")
+    if(NOT CMAKE_HOST_WIN32)
+        if(NOT BUILD_FOR_HOST64)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -march=i686")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32 -march=i686")
+        endif()
+
+        if(HOST_ENABLE_ASAN)
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
+            set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
+        endif()
     endif()
 else()
     message(STATUS "Using Android NDK toolchain: ${NDK_TOOLCHAIN}")
@@ -160,6 +177,9 @@ if (BUILD_FOR_HOST)
 
     add_executable(saga ${SAGA_SOURCE_FILES})
     add_dependencies(saga check_host_boundary)
+    if(BUILD_FOR_HOST64)
+        add_dependencies(saga check_host64_safety)
+    endif()
     
     include(src/host.cmake)
 else()

@@ -15,7 +15,7 @@ static jint DetachCurrentThread(JavaVM *vm) {
 static jint GetEnv(JavaVM *vm, void **env, jint version) {
     *env = NULL;
 
-    return JNI_OK;
+    return JNI_ERR;
 }
 
 struct JNIInvokeInterface stub = {
@@ -33,6 +33,8 @@ struct JNIInvokeInterface stub = {
 JavaVM g_javaVM = {
     .functions = &stub,
 };
+
+jclass g_activityClass;
 
 extern "C" {
 

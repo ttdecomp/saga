@@ -27,7 +27,7 @@ extern "C" {
 void BackDrop_Draw(f32 alpha, i32 flags);
 
 void FinishLoop(i32 frames) {
-    if (FinishLoop_On == 0) {
+    if (!FinishLoop_On) {
         return;
     }
 
@@ -35,7 +35,7 @@ void FinishLoop(i32 frames) {
         pNuCam->mtx = numtx_identity;
         NuCameraSet(pNuCam);
 
-        while (frames-- > 0) {
+        do {
             NuFrameBegin();
             NuRndrBeginScene(-1);
             NuRndrClear(0xb00, 0, 1.0f);
@@ -44,23 +44,29 @@ void FinishLoop(i32 frames) {
             edGraEnableTerrainSwap();
             NuFrameEnd();
             edGraDisableTerrainSwap();
-        }
+        } while (--frames > 0);
         finishloop_backdroponly = 0;
         return;
     }
 
-    while (frames-- > 0) {
-        NuFrameBegin();
-        if (FadeSys.pending_type == -1) {
+    if (FadeSys.pending_type == FADE_TYPE_NONE) {
+        do {
+            NuFrameBegin();
             NuRndrBeginScene(-1);
             NuRndrClear(0xb00, 0, 1.0f);
             NuRndrEndScene();
-        } else {
+            edGraEnableTerrainSwap();
+            NuFrameEnd();
+            edGraDisableTerrainSwap();
+        } while (--frames > 0);
+    } else {
+        do {
+            NuFrameBegin();
             FadeSys.Draw();
-        }
-        edGraEnableTerrainSwap();
-        NuFrameEnd();
-        edGraDisableTerrainSwap();
+            edGraEnableTerrainSwap();
+            NuFrameEnd();
+            edGraDisableTerrainSwap();
+        } while (--frames > 0);
     }
 }
 

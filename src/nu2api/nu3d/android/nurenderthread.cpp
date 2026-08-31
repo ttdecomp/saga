@@ -30,7 +30,7 @@ pthread_t g_renderThread;
 // Original file-static double buffers (bss 0x119db.. / 0x119fd..).
 static nudisplayscene_s sceneParameters_safe[16];
 static i32 sceneParametersCount_safe;
-static i32 dynamicLights_safe[64];
+static void *dynamicLights_safe[64];
 static i32 dynamicLightsCount_safe;
 
 // Special-vertex offset table copied for the render thread every frame.
@@ -62,19 +62,13 @@ f32 g_renderContext_projection[16];
 f32 g_renderContext_world[16];
 f32 g_renderContext_position[4];
 
-// original 0x2b3620 — dynamic light slot enabled flag lives at light+0x7bc.
-extern "C" i32 NuDynamicLightIsEnabled(i32 light) {
-    struct Light {
-        u8 pad[0x7bc];
-        i32 enabled;
-    };
-    auto *l = (Light *)(uintptr_t)light; // NOLINT
-    return l->enabled != 0;
+extern "C" i32 NuDynamicLightIsEnabled(void *light) {
+    return light != NULL;
 }
 extern "C" void NuShaderManagerSetfv(i32 id, const f32 *values);
 NUNATIVETEX *NuTexGetNative(i32 tex_id);
 void NuIOS_CopyBackbufferToTexture(NUNATIVETEX *tex, bool depth);
-extern "C" i32 NuDynamicLightIsEnabled(i32 light);
+extern "C" i32 NuDynamicLightIsEnabled(void *light);
 void NuDisplayListDrawRenderScene(i32 render_scene_id);
 extern "C" void NuDisplayListDraw2D(void);
 i32 global_frame_count = 0;
@@ -140,7 +134,7 @@ extern "C" void NuRenderThreadPrepareRender(void) {
         sceneParameters_safe[i] = sceneParameters[i];
 
         if (sceneParameters[i].unknown_38 != 0) {
-            i32 light = sceneParameters[i].unknown_3c;
+            void *light = sceneParameters[i].unknown_3c;
             if (NuDynamicLightIsEnabled(light)) {
                 bool found = false;
                 for (i32 j = 0; j < dynamicLightsCount_safe; j++) {

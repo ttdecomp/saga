@@ -49,7 +49,7 @@ static void Plug_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static i32 Plug_GetPos(GIZMO *gizmo) {
+static NUVEC *Plug_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
     return {};
 }

@@ -11,6 +11,14 @@ typedef struct SOCKROT {
     u16 y;
 } SOCKROT;
 
+enum SOCK_FLAGS : u16 {
+    SOCK_FLAG_MISSING_C_OR_D = 0x0001,
+    // Two-player pullback follows the camera/target line in XZ only.
+    SOCK_FLAG_TWO_PLAYER_PLANAR_PULLBACK = 0x0400,
+    // Two-player pullback is driven by vertical rather than spatial separation.
+    SOCK_FLAG_TWO_PLAYER_VERTICAL_SEPARATION = 0x4000,
+};
+
 typedef struct SOCKLOCATION_s {
     u8 unknown_00;
     i8 sock;
@@ -93,7 +101,7 @@ typedef struct SOCK {
     NUVEC max;                     // 0x4c — max of the A/B(/C/D) rail points
     NUVEC center;                  // 0x58 — midpoint of min and max
     f32 extent;                    // 0x64 — half of the smaller of the x/z extents
-    u16 flags;                     // 0x68 — bit 0: missing C or D rail (length mismatch)
+    u16 flags;                     // 0x68 — SOCK_FLAGS
     u8 unknown_6a;                 // 0x6a
     u8 unknown_6b;                 // 0x6b
     u8 unknown_6c;                 // 0x6c

@@ -1,11 +1,16 @@
 #include "legoapi/world/levels/episode.h"
 
 #include "globals.h"
+#include "legoapi/legoapi_types.h"
 #include "legoapi/world/area.h"
+#include "legoapi/world/mission.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufpar.h"
 
 EPISODEDATA *EDataList = NULL;
+
+extern TerrainQuery_s *TerI;
+extern u8 TerrainHitInfo[4];
 
 u32 Episode_FindAreaFromFlags(EPISODEDATA *ep, u32 flags, u32 want) {
     for (i32 i = 0; i < (i32)ep->area_count; i++) {
@@ -204,7 +209,10 @@ void InitSuperStory(i32) {
 }
 
 i32 InStory() {
-    return 0;
+    if (FreePlay != 0 || ChallengeMode != 0 || Mission_Active(NULL) != NULL || Arcade != 0) {
+        return 0;
+    }
+    return 1;
 }
 
 // ===========================================================================
@@ -225,6 +233,24 @@ void TrooperShoot(WORLDINFO_s *, minitrooperteam_s *, minisnowtrooper_s *, u16 *
 }
 
 void NewTerrStoreAnyInfo() {
+    TerrainQuery_s *query = TerI;
+    TERRAIN_SHAPE *surface = query->surface;
+    if (surface == NULL || query->terrain_group_index == -1) {
+        return;
+    }
+
+    if (surface->material[0] != 0) {
+        TerrainHitInfo[0] = surface->material[0];
+    }
+    if (surface->material[1] != 0) {
+        TerrainHitInfo[1] = surface->material[1];
+    }
+    if (surface->flags != 0) {
+        TerrainHitInfo[2] = surface->flags;
+    }
+    if (surface->normal_flags != 0) {
+        TerrainHitInfo[3] = surface->normal_flags;
+    }
 }
 
 void SetBobaRocketTarget(MechObjectInterface *) {

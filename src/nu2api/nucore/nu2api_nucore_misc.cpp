@@ -423,8 +423,8 @@ void NuGCutLocatorCalcMtx_3(NUGCUTLOCATOR_s *locator, numtx_s *mtx, float frame)
 void __attribute__((weak)) NuIOSDLSkinMtxCallback(void *data) {
     i32 *packet = static_cast<i32 *>(data);
     const i32 matrix_count = *packet++;
-    const i32 shader = NuShaderManagerGetCurrentShader();
-    if (shader != 0) {
+    NUSHADEROBJECT *shader = NuShaderManagerGetCurrentShader();
+    if (shader != NULL) {
         NuShaderObjectSetElementsfv(shader, 0x5a, 0, matrix_count * 4, reinterpret_cast<const f32 *>(packet));
     }
 }
@@ -598,7 +598,8 @@ void NuHGobjEvalAnimBlend2Root_3(nugscn_s *scene, ani3_animheader_s *animation_a
 void NuIOSDLVertexGroupsCallback(void *) {
 }
 
-void NuIOS_CanMakeInAppPurchases() {
+i32 NuIOS_CanMakeInAppPurchases() {
+    return 0;
 }
 
 void NuIOS_RestoreInAppPurchases() {
@@ -656,7 +657,8 @@ void NuIOS_PurchaseInAppProductByNum(i32) {
 void NuIOSDLDeferredTransformCallback(void *) {
 }
 
-void NuIOS_AreInAppPurchasesAvailable() {
+i32 NuIOS_AreInAppPurchasesAvailable() {
+    return 0;
 }
 
 GLuint NuIOS_CreateGLTexFromPVRInMemory(void *data, i32 *out_width, i32 *out_height) {

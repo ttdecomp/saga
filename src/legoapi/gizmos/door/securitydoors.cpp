@@ -52,7 +52,7 @@ static void SecurityDoor_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static i32 SecurityDoor_GetPos(GIZMO *gizmo) {
+static NUVEC *SecurityDoor_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
     return {};
 }

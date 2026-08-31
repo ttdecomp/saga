@@ -296,20 +296,6 @@ static void Titles_Draw(WORLDINFO *) {
     }
 }
 
-// Keyword tables for generic level configuration keywords.
-// These are combined with game-specific keyword tables by LevelConfig_BeforeLoad
-// and LevelConfig_AfterLoad via NuFParPushCom2.
-// Both tables exist in the original binary (defined in a separate compilation unit)
-// and are terminated by {NULL, NULL}.
-// TODO: Populate with actual keyword entries once extracted from the binary.
-static NUFPCOMJMP LevelConfig_BeforeLoad_GenericKeywords[] = {
-    {NULL, NULL},
-};
-
-static NUFPCOMJMP LevelConfig_AfterLoad_GenericKeywords[] = {
-    {NULL, NULL},
-};
-
 i32 Text_StripComments(char *text, char *dest, i32 param) {
     char *start = text;
     char *end = text + NuStrLen(text);
@@ -2182,9 +2168,9 @@ void Level_Update(WORLDINFO *world) {
         }
     }
 
-    if (*(i32 *)AreaGlobals == 0) {
+    if (AreaGlobals.values.field_0x00 == 0) {
         if (Cheats_CheckFlags(0x2000) != 0) {
-            *(i32 *)AreaGlobals = 1;
+            AreaGlobals.values.field_0x00 = 1;
         }
     }
 }
@@ -2286,39 +2272,6 @@ void GoToNewLevel(i32 levelIdx) {
     NewLData = &LDataList[levelIdx];
     if (waiting_for_level != -1) {
         waiting_for_new_level = 1;
-    }
-}
-
-void LevelConfig_BeforeLoad(LEVELDATA *level, char *buffer, nufpcomjmp_s *keywords) {
-    NUFPAR *fp = NuFParCreateMem("levelbeforeload", buffer, 0xffff);
-    if (fp != NULL) {
-        levelconfig_ldata = level;
-        NuFParPushCom2(fp, LevelConfig_BeforeLoad_GenericKeywords, keywords);
-        while (NuFParGetLine(fp) != 0) {
-            if (NuFParGetWord(fp) != 0) {
-                NuFParInterpretWord(fp);
-            }
-        }
-        NuFParDestroy(fp);
-    }
-}
-
-void LevelConfig_AfterLoad(LEVELDATA *level, char *buffer, nufpcomjmp_s *keywords) {
-    NUFPAR *fp = NuFParCreateMem("levelafterload", buffer, 0xffff);
-    if (fp != NULL) {
-        levelconfig_ldata = level;
-        NuFParPushCom2(fp, LevelConfig_AfterLoad_GenericKeywords, keywords);
-        while (NuFParGetLine(fp) != 0) {
-            if (NuFParGetWord(fp) != 0) {
-                NuFParInterpretWord(fp);
-            }
-        }
-        NuFParDestroy(fp);
-        if (level->blob_shadow_fade_far < level->blob_shadow_fade_near) {
-            level->blob_shadow_fade_near = level->blob_shadow_fade_far;
-        }
-        level->field91_0x118 = level->data_display.unknown_14;
-        level->flags |= LEVEL_CONFIG_LOADED;
     }
 }
 

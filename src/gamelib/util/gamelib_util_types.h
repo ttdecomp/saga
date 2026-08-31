@@ -37,6 +37,7 @@ struct NetStats;
 struct NetTransporter;
 struct NetworkObject;
 struct NetworkObjectManager;
+struct nucolour3_s;
 struct NuFileDeviceAndroidOBBType;
 struct ReplicatorData;
 struct TouchHacks;
@@ -267,6 +268,8 @@ struct NetworkObjectManager {
 };
 struct TouchHacks {
     struct TintStack {
+        float ambient[3];
+
         TintStack();
         ~TintStack();
     };
@@ -300,7 +303,7 @@ struct TouchHacks {
     void CheckJumpForLandingSpot(GameObject_s &, float);
     static void CleanupAllMechObjectInterfaces(WORLDINFO_s *);
     void FindBombTarget(GameObject_s &);
-    void GetFlashColour();
+    static nucolour3_s *GetFlashColour();
     void GetIncomingPartRange();
     void GetLoseStudsDieValue();
     void GetLoseStudsFallValue();
@@ -309,7 +312,7 @@ struct TouchHacks {
     void ShouldAutoGrabDragBomb(GameObject_s &);
     void ShouldBlock(GameObject_s &);
     void ShouldDeflectBolt(GameObject_s &, BOLT_s &);
-    void ShouldFlash(float);
+    static bool ShouldFlash(float);
     void ShouldKeepWeaponOut(GameObject_s &);
     void ShouldPutWeaponAway(GameObject_s &);
     void SolveRoot(float, float, float, float &, float &);

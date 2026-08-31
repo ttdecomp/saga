@@ -7,7 +7,7 @@
 #include "nu2api/nucore/nuvideo.h"
 
 typedef struct nuapi_s {
-    i32 field0_0x0;
+    i32 language;
     i32 video_mode;
     NUVIDEO_SWAPMODE video_swap_mode;
     i32 video_aspect;
@@ -42,12 +42,9 @@ typedef struct nuapi_s {
     char field62_0x76;
     char field63_0x77;
     NUWIND *wind;
-    char field65_0x7c;
-    char field66_0x7d;
-    char field67_0x7e;
-    char field68_0x7f;
+    i32 reversible_characters;
     i32 loading_hgobj;
-    i32 force_hgobj_visibility;
+    i32 force_shadows_on_characters;
     i32 disable_os_menu_freeze;
     f32 video_brightness;
 } NUAPI;
@@ -59,10 +56,12 @@ enum {
     NUAPI_SETUP_HOSTFS = 0x04,
     NUAPI_SETUP_CDDVDMODE = 0x05,
     NUAPI_SETUP_STREAMSIZE = 0x08,
+    NUAPI_SETUP_AUDIO = 0x0a,
     NUAPI_SETUP_PAD0 = 0x0e,
     NUAPI_SETUP_PAD1 = 0x0f,
     NUAPI_SETUP_VIDEOMODE = 0x12,
     NUAPI_SETUP_GLASSRPLANE = 0x15,
+    NUAPI_SETUP_AUDIO_DISABLED = 0x1c,
     NUAPI_SETUP_RESOLUTION = 0x21,
     NUAPI_SETUP_SWAPMODE = 0x22,
     NUAPI_SETUP_0x46 = 0x46,
@@ -87,6 +86,8 @@ extern "C" {
     void NudxFw_D3DBeginCriticalSection(void);
     void NudxFw_D3DEndCriticalSection(void);
     void NuFrameBegin(void);
+    i32 NuLanguageGet(void);
+    void NuLanguageSet(i32 language);
 #ifdef __cplusplus
 }
 #endif

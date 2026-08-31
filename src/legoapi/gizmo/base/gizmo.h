@@ -23,6 +23,11 @@ typedef struct GIZMOSYS_s {
     u8 flags;
 } GIZMOSYS;
 
+enum GIZMOSYS_FLAGS {
+    GIZMOSYS_FLAG_ERROR_LOG_OVERFLOW = 1 << 0,
+    GIZMOSYS_FLAG_LOADING = 1 << 2,
+};
+
 typedef struct BOLT_s BOLT; // defined here for now, TODO: move to its own file
 
 typedef i32 (*GIZMOGETMAXGIZMOSFN)(void *);
@@ -42,7 +47,7 @@ typedef void (*GIZMOSTOREPROGRESSFN)(void *, void *, void *);
 typedef void (*GIZMORESETFN)(void *, void *, void *);
 typedef void *(*GIZMORESERVEBUFFERSPACEFN)(void *);
 typedef i32 (*GIZMOLOADFN)(void *, void *);
-typedef i32 (*GIZMOGETPOSFN)(GIZMO *gizmo);
+typedef NUVEC *(*GIZMOGETPOSFN)(GIZMO *gizmo);
 typedef i32 (*GIZMOBOLTHITPLATFN)(void *, void *, BOLT *, unsigned char *);
 typedef i32 *(*GIZMOGETBESTBOLTTARGETFN)(GIZMOSET *, float *, NUVEC *, NUVEC *, void *, NUVEC *, NUVEC *, float, float,
                                          i32, i32, i32);
@@ -51,7 +56,7 @@ typedef i32 (*GIZMOBOLTHITFN)(void *, void *, void *, NUVEC *, i32, float, NUVEC
 typedef void (*GIZMOPOSTLOADFN)(void *, void *);
 typedef void (*GIZMOADDLEVELSFXFN)(void *, void *, i32 *, i32 *, i32);
 typedef i32 (*GIZMOGETVISIBILITYFN)(GIZMO *);
-typedef void (*GIZMOUSINGSPECIALFN)(GIZMO **, void *, i32, char *);
+typedef i32 (*GIZMOUSINGSPECIALFN)(GIZMO **, void *, i32, char *);
 typedef void (*GIZMOPANELDRAWFN)(void *, void *, float);
 typedef void (*GIZMOEARLYUPDATEFN)(void *, void *, float delta_time);
 
@@ -112,6 +117,8 @@ typedef struct GIZMOTYPES_s {
 } GIZMOTYPES;
 
 extern ADDGIZMOTYPE Default_ADDGIZMOTYPE;
+extern GIZMOTYPES *gizmotypes;
+extern i32 gizmoerrorlogsize;
 
 #ifdef __cplusplus
 
@@ -120,6 +127,10 @@ void RegisterGizmoTypes(VARIPTR *buffer, VARIPTR *buffer_end, REGISTERGIZMOTYPEF
                         i32 unknown);
 void RegisterGizmoTypes_LSW(VARIPTR *buffer, VARIPTR *buffer_end);
 GIZMO *AddGizmo(GIZMOSYS *gizmo_sys, i32 type_id, char *name, void *object);
+i32 GizmoFileReadName(char *name);
+i32 GizmoIsNameUnique(GIZMOSYS *gizmo_sys, char *name);
+i32 GizmoNameUsesPrefix(char *name, char *prefix);
+i32 GizmoGetUniqueName(GIZMOSYS *gizmo_sys, char *prefix, char *name, char *result, i32 result_size);
 i32 GizmoGetTypeIDByName(GIZMOSYS *gizmo_sys, char *name);
 void GizmoSetVisibility(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 visibility, i32 unknown);
 i32 GizmoGetVisibility(GIZMOSYS *gizmo_sys, GIZMO *gizmo);
@@ -130,6 +141,7 @@ void GizmoSysEarlyUpdate(GIZMOSYS *gizmo_sys, void *world_info, float delta_time
 void GizmoSysLateUpdate(GIZMOSYS *gizmo_sys, void *world_info, float delta_time);
 void GizmoSysDraw(GIZMOSYS *gizmo_sys, void *world_info, float delta_time);
 void GizmoSysPanelDraw(GIZMOSYS *gizmo_sys, void *world_info, float delta_time);
+void GizmoSysReset(GIZMOSYS *gizmo_sys, void *world_info, i32 progress_index);
 i32 GizmoSys_BoltHitPlat(GIZMOSYS *gizmo_sys, void *world_info, BOLT *bolt, unsigned char *unknown);
 i32 ResetGizmoType(GIZMOSYS *gizmo_sys, i32 type_id, char *name);
 void GizmoSysClearLevelProgress(void *unknown, i32 type_id);
@@ -146,7 +158,12 @@ extern "C" {
 struct WORLDINFO_s;
 struct GIZAIMESSAGESYS_s;
 struct GIZAIMESSAGE_s;
+struct nugscn_s;
+struct nuhspecial_s;
 GIZMO *GizmoFindByName(GIZMOSYS *gizmo_sys, i32 type_id, char *name);
+i32 Gizmo_FindNuSpecial(nugscn_s *scene, nuhspecial_s *special, char *name, i32 flags, GIZMOSYS *gizmo_sys,
+                        char *prefix, char *suffix);
+NUVEC *GizmoGetPos(GIZMOSYS *gizmo_sys, GIZMO *gizmo);
 void InitPaintPuzzle(WORLDINFO_s *world);
 void ResetPaintPuzzle(WORLDINFO_s *world);
 GIZAIMESSAGE_s *CheckGizAIMessage(GIZAIMESSAGESYS_s *, char const *, GIZAIMESSAGE_s *);

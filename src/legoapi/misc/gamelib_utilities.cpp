@@ -1,6 +1,19 @@
 #include "legoapi/legoapi_types.h"
 #include "globals.h"
 
+struct SoundGroup {
+    i16 first_sample;
+    i16 sample_count;
+    i16 field_0x4;
+    i16 field_0x6;
+};
+
+SoundGroup g_groups[128];
+i16 g_groupBuffer[512];
+i32 g_lenGroupBuffer;
+
+DECOMP_ASSERT(sizeof(SoundGroup) == 8, "SoundGroup size");
+
 void GroupBuffer_InGroup(i32, i32) {
 }
 
@@ -19,13 +32,15 @@ void GroupBuffer_AddToGroup(i32, i32) {
 void GroupBuffer_RemoveGroup(i32) {
 }
 
-void GroupBuffer_GetNumInGroup(i32) {
+i32 GroupBuffer_GetNumInGroup(i32 group_id) {
+    return g_groups[group_id].sample_count;
 }
 
 void GroupBuffer_RemoveFromGroup(i32, i32) {
 }
 
-void GroupBuffer_GetSampleByIndex(i32, i32) {
+i32 GroupBuffer_GetSampleByIndex(i32 group_id, i32 sample_index) {
+    return g_groupBuffer[g_groups[group_id].first_sample + sample_index];
 }
 
 extern "C" {

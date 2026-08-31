@@ -11,6 +11,7 @@
 #include "nu2api/nufile/nufpar.h"
 #include "nu2api/nufile/nufilepak.h"
 #include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nu3d/numtl.h"
 
 #include <string.h>
 struct numtx_s;
@@ -31,6 +32,8 @@ struct EDCREATURE_s;
 struct APIOBJECT_s;
 
 extern "C" {
+    NUMTL *APITrans_Mtl[2];
+
     i16 id_WEIRDO1 = -1;
     i16 id_WEIRDO2 = -1;
     i16 id_BATMAN = -1;
@@ -654,7 +657,7 @@ CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR 
         bufferStart->void_ptr = (void *)ALIGN((usize)bufferStart->void_ptr, 4);
         if (0 < count2) {
             if (dataList != NULL) {
-                *dataList = (gamecharacterdata_s *)bufferStart->void_ptr;
+                *dataList = (GAMECHARACTERDATA_s *)bufferStart->void_ptr;
             }
             for (j = 0; j < i; j = j + 1) {
                 characterdata[j].field11_0x24 = bufferStart->void_ptr;
@@ -695,49 +698,6 @@ CharacterObjectInterface::~CharacterObjectInterface() {
 
 static __used__ void NewCharacterIdle(GameObject_s *, i32) {
 }
-static __used__ char *LevelCharacterName(u8) {
-    return nullptr;
-}
-static __used__ i32 LevelCharacterTypeID(char *) {
-    return 0;
-}
-static __used__ i32 LevelCharacterGlobalID(u8) {
-    return 0;
-}
-
-// Static character/global-character and gameplay helpers. Stubbed to satisfy
-// the symbol baseline.
-
-static __used__ char *GlobalCharacterName(int) {
-    return nullptr;
-}
-
-static __used__ void *GlobalCharacterHGobj(int) {
-    return nullptr;
-}
-
-static __used__ void GlobalCharacterRender(nuvec_s *, i16, int, int, EDCREATURE_s *) {
-}
-
-static __used__ int GlobalCharacterTypeID(char *) {
-    return 0;
-}
-
-static __used__ float GetViewRange(int) {
-    return 0;
-}
-
-static __used__ float GetHearDistance(int) {
-    return 0;
-}
-
-static __used__ float GetMaxViewHeight(int) {
-    return 0;
-}
-
-static __used__ float GetMinViewHeight(int) {
-    return 0;
-}
 
 static __used__ bool IsWearingBackPack_Game(GameObject_s *) {
     return false;
@@ -754,10 +714,6 @@ static __used__ int GameAudio_CheckReverb_LSW() {
 }
 
 static __used__ int GameAudio_OverrideFootStep_LSW(GameObject_s *, int) {
-    return 0;
-}
-
-static __used__ float GetCharacterGoalSpeed(APIOBJECT_s *) {
     return 0;
 }
 
@@ -1294,42 +1250,31 @@ extern "C" {
     }
 
     void APITransparentInit(void) {
-    }
+        APITrans_Mtl[0] = NuMtlCreate3D(1);
+        APITrans_Mtl[0]->attribs.unknown_1_1_2 = 1;
+        APITrans_Mtl[0]->attribs.unknown_1_4_8 = 1;
+        APITrans_Mtl[0]->diffuse_color.r = 0.0f;
+        APITrans_Mtl[0]->diffuse_color.g = 0.0f;
+        APITrans_Mtl[0]->diffuse_color.b = 0.0f;
+        APITrans_Mtl[0]->opacity = 1.0f;
+        APITrans_Mtl[0]->attribs.alpha_mode = 2;
+        APITrans_Mtl[0]->attribs.z_mode = 0;
+        APITrans_Mtl[0]->attribs.alpha_ref = 0;
+        APITrans_Mtl[0]->sort_pri = 0x24;
+        NuMtlUpdate(APITrans_Mtl[0]);
 
-    void InitFn_GetCharacterGoalSpeedFn(void) {
-    }
-
-    void InitFn_GetHearDistance(void) {
-    }
-
-    void InitFn_GetViewRange(void) {
-    }
-
-    void InitFn_GlobalCharacterHGobj(void) {
-    }
-
-    void InitFn_GlobalCharacterName(void) {
-    }
-
-    void InitFn_GlobalCharacterRender(void) {
-    }
-
-    void InitFn_GlobalCharacterTypeID(void) {
-    }
-
-    void InitFn_GlobalGetMaxViewHeight(void) {
-    }
-
-    void InitFn_GlobalGetMinViewHeight(void) {
-    }
-
-    void InitFn_LevelCharacterGlobalID(void) {
-    }
-
-    void InitFn_LevelCharacterName(void) {
-    }
-
-    void InitFn_LevelCharacterTypeID(void) {
+        APITrans_Mtl[1] = NuMtlCreate3D(1);
+        APITrans_Mtl[1]->attribs.unknown_1_1_2 = 1;
+        APITrans_Mtl[1]->attribs.unknown_1_4_8 = 1;
+        APITrans_Mtl[1]->diffuse_color.r = 0.0f;
+        APITrans_Mtl[1]->diffuse_color.g = 0.0f;
+        APITrans_Mtl[1]->diffuse_color.b = 0.0f;
+        APITrans_Mtl[1]->opacity = 1.0f;
+        APITrans_Mtl[1]->attribs.alpha_mode = 2;
+        APITrans_Mtl[1]->attribs.z_mode = 1;
+        APITrans_Mtl[1]->attribs.alpha_ref = 0;
+        APITrans_Mtl[1]->sort_pri = 0x24;
+        NuMtlUpdate(APITrans_Mtl[1]);
     }
 
 } // extern "C"

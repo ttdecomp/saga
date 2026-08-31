@@ -3,7 +3,11 @@
 #include <stdarg.h>
 #include "decomp.h"
 #include "globals.h"
+#include "gameapi/ai/aisys/aisys.h"
+#include "legoapi/gizmo/base/gizmo.h"
+#include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/render/core/render.h"
 #include "legoapi/world/level.h"
 #include "nu2api/nu3d/nudlist.h"
 #include "nu2api/nu3d/numtl.h"
@@ -40,6 +44,11 @@ void ResetRippleSet(ripple_set_s *);
 void Grabber_Reset(WORLDINFO_s *);
 void Faders_Reset(WORLDINFO_s *);
 void InitGameMode(void);
+void GameAnimSys_ReStoreProgress(GAMEANIMSYS_s *system, i32 progress_index);
+void ResetForceBack(void);
+void ClearAICreatures(void);
+void ReStoreStatusTakeOverObjectSys(i32 restore_progress);
+void InitPlayerAI(GameObject_s *object);
 extern GAMECAMERA_s *GameCam;
 extern ripple_set_s *ripples;
 extern "C" void ResetParts(void);
@@ -82,7 +91,7 @@ void RndrTexQuad3D(VuMtx const &, i32, numtl_s *) {
 }
 
 void CheckResetBits() {
-    if ((ResetBits & 0x20) != 0 && WORLD->current_level->area_level_index != -1) {
+    if ((ResetBits & RESETBIT_CLEAR_LEVEL_PROGRESS) != 0 && WORLD->current_level->area_level_index != -1) {
         ClearLevelProgress(WORLD->current_level->area_level_index, WORLD);
     }
 
@@ -99,7 +108,7 @@ void CheckResetBits() {
     CutScenes_Reset(WORLD);
 
     if (NOSOUND == 0) {
-        if ((ResetBits & 0x40) == 0) {
+        if ((ResetBits & RESETBIT_USE_CUSTOMISER_SETUP) == 0) {
             InitGameMode();
         } else {
             Customiser_SetUpCharacterData(CharacterCustomiser);
@@ -128,6 +137,39 @@ void CheckResetBits() {
     ResetRippleSet(ripples);
     Grabber_Reset(WORLD);
     Faders_Reset(WORLD);
+
+    const i32 progress_index = WORLD->current_level->area_level_index;
+    if ((ResetBits & RESETBIT_CLEAR_LEVEL_PROGRESS) != 0) {
+        GizmoSysClearLevelProgress(WORLD, progress_index);
+    }
+
+    GameAnimSys_ReStoreProgress(WORLD->game_anim_sys, progress_index);
+    GizmoSysReset(WORLD->gizmo_sys, WORLD, progress_index);
+
+    if ((ResetBits & RESETBIT_REINITIALISE_LEVEL) != 0) {
+        DrawBossHitPoints(NULL);
+        ResetForceBack();
+        ClearAICreatures();
+        GameAISysReset(WORLD->ai_sys);
+        ReStoreStatusTakeOverObjectSys(1);
+        AIScriptInitConditions(WORLD->ai_sys);
+
+        for (i32 player_index = 0; player_index < 8; ++player_index) {
+            if (Player[player_index] != NULL) {
+                InitPlayerAI(Player[player_index]);
+            }
+        }
+    } else {
+        ReStoreStatusTakeOverObjectSys(0);
+    }
+
+    if (WORLD->current_level->reset_fn != NULL) {
+        WORLD->current_level->reset_fn(WORLD);
+    }
+
+    // Reset requests are edge-triggered. Leaving the bits set would rebuild the
+    // level's AI and gizmo state again on every frame through Batman().
+    ResetBits = 0;
 }
 
 void DebrisTimeSlip(i32) {

@@ -9,7 +9,7 @@ struct nunativegscene_s;
 struct SHOPINPUT;
 
 typedef void (*PREPARINGSPECIALMOVEFN)(AIPACKET_s *, APIOBJECT_s *, i32);
-typedef void (*MIDSPECIALMOVEFN)(AISYS_s *, AIPACKET_s *, APIOBJECT_s *);
+typedef i32 (*MIDSPECIALMOVEFN)(AISYS_s *, AIPACKET_s *, APIOBJECT_s *);
 typedef void (*HUBCALLBACK)(WORLDINFO_s *);
 
 extern "C" void InitFn_PreparingForSpecialMove(PREPARINGSPECIALMOVEFN);
@@ -43,7 +43,8 @@ extern void LSW_Hub_UpdateAI(WORLDINFO_s *);
 static void StarWars_PreparingForSpecialMove(AIPACKET_s *, APIOBJECT_s *, i32) {
 }
 
-static void StarWars_MidSpecialMove(AISYS_s *, AIPACKET_s *, APIOBJECT_s *) {
+static i32 StarWars_MidSpecialMove(AISYS_s *, AIPACKET_s *, APIOBJECT_s *) {
+    return 0;
 }
 
 void StarWars_PrepareJump(AIPACKET_s *, APIOBJECT_s *, i32) {

@@ -146,6 +146,13 @@ _ZL6dradfgiiiiPfS_S_S_S_S_
 _ZL8downheapi
 _ZL9count_leni
 
+# Local game helpers whose reconstructed bodies are present, but GCC 4.7
+# optimizes away the standalone symbol. MoveAnim_Manage is fully inlined into
+# its game-animation callers; the terrain predicate is emitted as the
+# equivalent `.part` clone.
+_ZL15MoveAnim_ManageP12GameObject_sfii
+_ZL35GizObstacle_SatisfyingTerrainChecksP13GIZOBSTACLE_sP12GameObject_s
+
 # glibc symbols
 sprintf
 strstr

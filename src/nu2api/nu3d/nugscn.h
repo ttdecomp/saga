@@ -6,14 +6,24 @@
 
 struct nunativetex_s;
 struct nudldlistscene_s;
+struct nuinstanim_s;
+struct numtx_s;
+typedef struct nuanimdata_s nuanimdata_s;
+
+typedef struct nuanimendlookup_s {
+    u16 field_0x00;
+    u16 end_frame;
+    u8 field_0x04[8];
+} nuanimendlookup_s;
+DECOMP_ASSERT(sizeof(nuanimendlookup_s) == 0xc, "nuanimendlookup_s ABI");
 
 typedef struct nuvideoresheader_s {
     u16 nvertex_buffers;
     u16 pad_02;
-    u32 *vertex_buffers;
+    usize *vertex_buffers;
     u16 nindex_buffers;
     u16 pad_0a;
-    u32 *index_buffers;
+    usize *index_buffers;
     u16 ntextures;
     u16 pad_12;
     u32 *textures;
@@ -36,7 +46,7 @@ struct nudisplayscene_s {
     u32 unknown_28;      // 0x28
     u8 pad2c[0x0c];      // 0x2c-0x37
     u32 unknown_38;      // 0x38
-    u32 unknown_3c;      // 0x3c
+    void *unknown_3c;    // dynamic light
     i32 unknown_40;      // 0x40
     u32 unknown_44;      // 0x44
     u32 unknown_48;      // 0x48
@@ -98,13 +108,16 @@ typedef struct nugscn_s {
     struct nugspline_s *splines;
     undefined pad_38[8];
     struct nugscn_s **additional_scenes;
-    undefined pad_44[0x20];
+    undefined pad_44[8];
+    struct nuinstanim_s *instance_animations;    // 0x4c, 0x60-byte entries
+    struct numtx_s *instance_animation_matrices; // 0x50, 0x40-byte entries
+    nuanimdata_s **instance_animation_data;      // 0x54
+    undefined pad_58[0x0c];
     void *texture_anims;
     undefined pad_68[4];
-    undefined4 field84_0x6c;
-    undefined4 field88_0x70;
-    i32 max_portals;
-    NUPORTAL *portals;
+    i32 max_portals;   // 0x6c
+    NUPORTAL *portals; // 0x70, 0x20-byte entries
+    undefined pad_74[8];
     undefined field100_0x7c;
     undefined field101_0x7d;
     undefined field102_0x7e;
@@ -452,10 +465,7 @@ typedef struct nugscn_s {
     undefined field447_0x1dd;
     undefined field448_0x1de;
     undefined field449_0x1df;
-    undefined field450_0x1e0;
-    undefined field451_0x1e1;
-    undefined field452_0x1e2;
-    undefined field453_0x1e3;
+    nuanimendlookup_s *animation_end_frames; // 0x1e0
     undefined field454_0x1e4;
     undefined field455_0x1e5;
     undefined field456_0x1e6;
@@ -477,6 +487,13 @@ typedef struct nugscn_s {
     undefined field472_0x1f6;
     undefined field473_0x1f7;
 } NUGSCN;
+
+DECOMP_ASSERT(offsetof(NUGSCN, instance_animations) == 0x4c, "NUGSCN instance animation array offset");
+DECOMP_ASSERT(offsetof(NUGSCN, instance_animation_matrices) == 0x50, "NUGSCN instance animation matrix array offset");
+DECOMP_ASSERT(offsetof(NUGSCN, instance_animation_data) == 0x54, "NUGSCN instance animation data offset");
+DECOMP_ASSERT(offsetof(NUGSCN, max_portals) == 0x6c, "NUGSCN portal-count offset");
+DECOMP_ASSERT(offsetof(NUGSCN, portals) == 0x70, "NUGSCN portal-array offset");
+DECOMP_ASSERT(offsetof(NUGSCN, animation_end_frames) == 0x1e0, "NUGSCN animation end-frame table offset");
 
 #ifdef __cplusplus
 i32 NuGScnReadTexturesPS(i32 file, VARIPTR *buf, VARIPTR buf_end);

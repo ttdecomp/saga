@@ -225,7 +225,8 @@ extern "C" {
         }
         DisplayListGenerateTransforms(reinterpret_cast<nudisplayscene_s *>(scene));
 
-        if ((scene->pad_76[0] & 1) == 0 && noscenespecials == 0 && scene->nspecials > 0) {
+        if ((scene->instance_visibility_enabled & NUDL_SCENE_INSTANCE_VISIBILITY_ENABLED) == 0 &&
+            noscenespecials == 0 && scene->nspecials > 0) {
             NUGSCN temporary_scene = {};
             NUGSCN *gscene = scene->gscene;
             if (gscene == NULL) {
@@ -278,11 +279,14 @@ static void NuIOSBindVAO(u32 vao_handle) {
     }
 }
 
-static u32 UploadDataToGLBuffer(NUFILE file, u32 size, GLenum target, GLuint *gl_buf, VARIPTR *buf, VARIPTR buf_end) {
+static u32 UploadDataToGLBuffer(NUFILE file, u32 size, GLenum target, usize *buffer_handle, VARIPTR *buf,
+                                VARIPTR buf_end) {
+    GLuint gl_buf = 0;
     BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nugscn_android.c", 0x56);
-    glGenBuffers(1, gl_buf);
+    glGenBuffers(1, &gl_buf);
+    *buffer_handle = gl_buf;
     NuIOSBindVAO(0);
-    glBindBuffer(target, *gl_buf);
+    glBindBuffer(target, gl_buf);
     glBufferData(target, size, 0, GL_STATIC_DRAW);
     EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nugscn_android.c", 0x5d);
 
@@ -301,7 +305,7 @@ static u32 UploadDataToGLBuffer(NUFILE file, u32 size, GLenum target, GLuint *gl
 
         BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nu3d/android/nugscn_android.c", 0x73);
         NuIOSBindVAO(0);
-        glBindBuffer(target, *gl_buf);
+        glBindBuffer(target, gl_buf);
         if (chunk_size == size) {
             glBufferData(target, chunk_size, buf->void_ptr, GL_STATIC_DRAW);
         } else {
@@ -327,8 +331,7 @@ i32 NuGScnUploadGfxDataFromFilePS(VARIPTR *buf, VARIPTR buf_end, i32 file) {
     bytes_read += NuGScnReadTexturesPS(file, buf, buf_end);
 
     bytes_read += NuFileRead(file, &g_VideoResHeader.nvertex_buffers, sizeof(g_VideoResHeader.nvertex_buffers));
-    g_VideoResHeader.vertex_buffers = buf->u32_ptr;
-    buf->u32_ptr += g_VideoResHeader.nvertex_buffers;
+    g_VideoResHeader.vertex_buffers = BUFFER_ALLOC_ARRAY(buf, g_VideoResHeader.nvertex_buffers, usize);
     for (u32 i = 0; i < g_VideoResHeader.nvertex_buffers; ++i) {
         u32 size = 0;
         bytes_read += NuFileRead(file, &size, sizeof(size));
@@ -342,7 +345,7 @@ i32 NuGScnUploadGfxDataFromFilePS(VARIPTR *buf, VARIPTR buf_end, i32 file) {
         if (keep_in_memory != 0) {
             g_VideoResHeader.vertex_buffers[i] = buf->addr;
             buf->addr += size;
-            bytes_read += NuFileRead(file, (void *)g_VideoResHeader.vertex_buffers[i], size);
+            bytes_read += NuFileRead(file, reinterpret_cast<void *>(g_VideoResHeader.vertex_buffers[i]), size);
         } else {
             u32 largest =
                 UploadDataToGLBuffer(file, size, GL_ARRAY_BUFFER, &g_VideoResHeader.vertex_buffers[i], buf, buf_end);
@@ -352,8 +355,7 @@ i32 NuGScnUploadGfxDataFromFilePS(VARIPTR *buf, VARIPTR buf_end, i32 file) {
     }
 
     bytes_read += NuFileRead(file, &g_VideoResHeader.nindex_buffers, sizeof(g_VideoResHeader.nindex_buffers));
-    g_VideoResHeader.index_buffers = buf->u32_ptr;
-    buf->u32_ptr += g_VideoResHeader.nindex_buffers;
+    g_VideoResHeader.index_buffers = BUFFER_ALLOC_ARRAY(buf, g_VideoResHeader.nindex_buffers, usize);
     for (u32 i = 0; i < g_VideoResHeader.nindex_buffers; ++i) {
         u32 size = 0;
         bytes_read += NuFileRead(file, &size, sizeof(size));
@@ -440,7 +442,7 @@ extern "C" {
     nuhgobj_s *NuGHGRead(char *path, VARIPTR *buf, VARIPTR buf_end) {
         nuapi.loading_hgobj = 1;
         nuhgobj_s *object = reinterpret_cast<nuhgobj_s *>(NuReadGraphicsData(buf, &buf_end, path, NULL));
-        if (object != NULL && nuapi.force_hgobj_visibility != 0 && object->display_list != NULL) {
+        if (object != NULL && nuapi.force_shadows_on_characters != 0 && object->display_list != NULL) {
             for (i32 i = 0; i < object->display_list->nspecials; ++i) {
                 object->display_list->visibility_flags[i] |= 0x20;
             }
@@ -1247,12 +1249,12 @@ static __used__ void PreWarmGeomsAndBakeVAOs(nudisplayscene_s *raw_scene, nunati
             u8 vertex_flags = reinterpret_cast<u8 *>(&g_boundMaterial->shader_desc.vtx_desc)[2];
             if ((vertex_flags & 0x10) == 0) {
                 if ((vertex_flags & 0x20) == 0) {
-                    NuIOS_SetVertexFormat((u32)(usize)g_boundMaterial->vertex_decl);
+                    NuIOS_SetVertexFormat(reinterpret_cast<usize>(g_boundMaterial->vertex_decl));
                 } else {
-                    g_boundVertexFormat = (u32)(usize)g_nuFaceOnVertexFormat;
+                    g_boundVertexFormat = reinterpret_cast<usize>(g_nuFaceOnVertexFormat);
                 }
             } else {
-                g_boundVertexFormat = (u32)(usize)g_nuDebrisVertexFormat;
+                g_boundVertexFormat = reinterpret_cast<usize>(g_nuDebrisVertexFormat);
             }
             NuIOSDLPreWarmGeomCallback(item->next);
         }
@@ -1263,31 +1265,37 @@ extern "C" void NuGScnFixupPS(NUGSCN *scene) {
     struct NativeScene {
         u16 nvertex_buffers;
         u16 pad_02;
-        u32 *vertex_buffers;
+        usize *vertex_buffers;
         u16 nindex_buffers;
         u16 pad_0a;
-        u32 *index_buffers;
-        u8 **geometries;
+        usize *index_buffers;
+        NUDISPLAYLISTGEOM **geometries;
         i32 ngeometries;
-        u8 **vertex_streams;
+        struct NativeVertexStream **vertex_streams;
         i32 nvertex_streams;
+    };
+
+    struct NativeVertexStream {
+        u32 unknown_00;
+        u32 unknown_04;
+        usize vertex_buffer;
     };
 
     NativeScene *native_scene = reinterpret_cast<NativeScene *>(scene->field437_0x1d0);
     i32 dynamic_indices[64];
     i32 ndynamic = 0;
     for (i32 i = 0; i < native_scene->ngeometries; ++i) {
-        u8 *geometry = native_scene->geometries[i];
-        i32 vertex_index = *reinterpret_cast<i32 *>(geometry + 0x20);
-        i32 index_index = *reinterpret_cast<i32 *>(geometry + 0x24);
-        *reinterpret_cast<u32 *>(geometry + 0x20) = g_VideoResHeader.index_buffers[vertex_index];
-        *reinterpret_cast<u32 *>(geometry + 0x24) = g_VideoResHeader.vertex_buffers[index_index];
-        if (*reinterpret_cast<u32 *>(geometry + 0x24) == 0) {
-            *reinterpret_cast<u32 *>(geometry + 0x04) = 0;
-            *reinterpret_cast<u32 *>(geometry + 0x18) = 0;
+        NUDISPLAYLISTGEOM *geometry = native_scene->geometries[i];
+        i32 vertex_index = static_cast<i32>(geometry->index_buffer);
+        i32 index_index = static_cast<i32>(geometry->vertex_buffer);
+        geometry->index_buffer = static_cast<u32>(g_VideoResHeader.index_buffers[vertex_index]);
+        geometry->vertex_buffer = g_VideoResHeader.vertex_buffers[index_index];
+        if (geometry->vertex_buffer == 0) {
+            geometry->index_count = 0;
+            geometry->vertex_count = 0;
         }
-        if (*reinterpret_cast<u32 *>(geometry + 0x28) == 0) {
-            *reinterpret_cast<u32 *>(geometry + 0x30) = 0;
+        if (geometry->immediate == 0) {
+            geometry->vertex_format = 0;
         } else {
             dynamic_indices[ndynamic++] = index_index;
         }
@@ -1296,15 +1304,16 @@ extern "C" void NuGScnFixupPS(NUGSCN *scene) {
         g_VideoResHeader.vertex_buffers[dynamic_indices[i]] = 0;
     }
     for (i32 i = 0; i < native_scene->nvertex_streams; ++i) {
-        u8 *stream = native_scene->vertex_streams[i];
-        i32 index = *reinterpret_cast<i32 *>(stream + 8);
-        *reinterpret_cast<u32 *>(stream + 8) = g_VideoResHeader.vertex_buffers[index];
+        NativeVertexStream *stream = native_scene->vertex_streams[i];
+        i32 index = static_cast<i32>(stream->vertex_buffer);
+        stream->vertex_buffer = g_VideoResHeader.vertex_buffers[index];
     }
     native_scene->nvertex_buffers = g_VideoResHeader.nvertex_buffers;
     native_scene->nindex_buffers = g_VideoResHeader.nindex_buffers;
     memcpy(native_scene->vertex_buffers, g_VideoResHeader.vertex_buffers,
-           g_VideoResHeader.nvertex_buffers * sizeof(u32));
-    memcpy(native_scene->index_buffers, g_VideoResHeader.index_buffers, g_VideoResHeader.nindex_buffers * sizeof(u32));
+           g_VideoResHeader.nvertex_buffers * sizeof(*native_scene->vertex_buffers));
+    memcpy(native_scene->index_buffers, g_VideoResHeader.index_buffers,
+           g_VideoResHeader.nindex_buffers * sizeof(*native_scene->index_buffers));
 
     for (i32 i = 0; i < scene->nummtl; ++i) {
         NuMtlUpdate(scene->mtls[i]);
@@ -1320,7 +1329,6 @@ extern "C" void NuGScnFixupPS(NUGSCN *scene) {
 extern "C" {
     void NuRndrGradClear(i32 a, i32 b, i32 c, f32 d);
     void NuRndrClear(u32 flags, u32 colour, f32 alpha);
-    void NuSpecialGetMtx(nuhspecial_s *hs, NUMTX *out);
 }
 extern i32 qrand(void);
 

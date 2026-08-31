@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gameapi/ai/aisys/aipath.h"
 #include "legoapi/items/base/apiobject.h"
 #include "nu2api/nu3d/nugscn.h"
 #include "nu2api/nu3d/nuspline.h"
@@ -41,7 +42,7 @@ typedef struct AICONDITION_s {
     NULISTLNK list_node;
     f32 param_val;
     char type;
-    unsigned char param_idx;
+    i8 param_idx;
     u16 bool_and : 1;
     u16 keep_blocked : 1;
     u16 is_param_idx_valid : 1;
@@ -54,6 +55,15 @@ typedef struct AICONDITION_s {
     AISTATE *next_state;
     struct AICONDITION_s *param_cond;
 } AICONDITION;
+
+enum AICONDITION_COMPARISON {
+    AICONDITION_EQUAL = 0,
+    AICONDITION_LESS_THAN = 1,
+    AICONDITION_GREATER_THAN = 2,
+    AICONDITION_LESS_THAN_OR_EQUAL = 3,
+    AICONDITION_GREATER_THAN_OR_EQUAL = 4,
+    AICONDITION_NOT_EQUAL = 5,
+};
 
 typedef struct AIACTIONMACRO_s {
     NULISTLNK list_node;
@@ -93,18 +103,46 @@ typedef struct AISCRIPT_s {
 } AISCRIPT;
 
 typedef struct AIPATHCNX_s {
-    i32 node_a;
-    i32 node_b;
-    i32 previous_node_a;
-    i32 previous_node_b;
-    u8 direction_a;
-    u8 direction_b;
-    i16 flags;
-    i16 game_flags;
-    u16 padding_0x16;
-    f32 width;
-    f32 cost;
-    u32 padding_0x20;
+    union {
+        u32 traversal_flags[2];
+        struct {
+            u32 node_a;
+            u32 node_b;
+        };
+    };
+    union {
+        u32 original_traversal_flags[2];
+        struct {
+            u32 previous_node_a;
+            u32 previous_node_b;
+        };
+    };
+    union {
+        u8 node_indices[2];
+        struct {
+            u8 direction_a;
+            u8 direction_b;
+        };
+    };
+    union {
+        i16 rotation;
+        i16 flags;
+    };
+    union {
+        u16 route_mask;
+        i16 game_flags;
+    };
+    u8 open;
+    u8 last_search_checksum;
+    union {
+        f32 distance;
+        f32 width;
+    };
+    union {
+        f32 horizontal_distance;
+        f32 cost;
+    };
+    f32 max_horizontal_distance;
 } AIPATHCNX;
 
 typedef struct AIROUTE_s {
@@ -124,7 +162,7 @@ typedef struct AIPATHNODE_s {
     u8 connection_count;
     u8 flags;
     u8 has_special;
-    u8 traversal_flags;
+    u8 runtime_flags;
     i16 path_flags;
     u8 connection_type;
     u8 padding_0x2f;
@@ -132,8 +170,14 @@ typedef struct AIPATHNODE_s {
     u8 padding_0x31[3];
     AIPATHCNX **connections;
     u8 padding_0x38[8];
-    void *special;
-    u8 padding_0x44[8];
+    union {
+        u8 special_handle[0xc];
+        struct {
+            void *special_scene;
+            void *special;
+            void *display_special;
+        };
+    };
     NUVEC special_position;
     i16 value_0x58;
     i16 value_0x5a;
@@ -170,7 +214,13 @@ typedef struct AIPATH_s {
     u16 connection_count;
     u8 route_count;
     u8 index;
-    u8 padding_0x16[0x64];
+    u8 padding_0x16[2];
+    // Per-frame path bookkeeping. Dynamic special nodes are updated once per
+    // bit, while characters mark the node volume they currently occupy.
+    u8 updated_node_bits[0x40];
+    u8 inside_node_bits[0x20];
+    u8 search_checksum;
+    u8 search_reset_node;
     u8 special_route_count;
     u8 padding_0x7b;
     AIPATHNODE *nodes;
@@ -178,8 +228,18 @@ typedef struct AIPATH_s {
     u8 **route_matrix;
     AIPATHROUTE *routes;
     AIPATHNODELINK *special_routes;
-    u8 padding_0x90[0x18];
+    NUVEC bounds_min;
+    NUVEC bounds_max;
 } AIPATH;
+
+enum AIPATH_CONNECTION_FLAGS : u32 {
+    // Recomputed when either endpoint is attached to a moving special.
+    AIPATH_CONNECTION_FLAG_DYNAMIC_TOO_LONG = 0x08000000u,
+    AIPATH_CONNECTION_FLAG_SPECIAL_UNAVAILABLE = 0x10000000u,
+    // Endpoint flags with these high bits require the packet's route to be
+    // selected again instead of accepting the connection directly.
+    AIPATH_CONNECTION_FLAG_RESELECT_ROUTE = 0x98000000u,
+};
 
 typedef struct AIPATHSYS_s {
     u8 path_count;
@@ -189,23 +249,6 @@ typedef struct AIPATHSYS_s {
     AIPATH *active_path;
     AIPATHSPECIALROUTE *special_routes;
 } AIPATHSYS;
-
-typedef struct AIPATHINFO_s {
-    AIPATH *path;
-    AIPATHCNX *connection;
-    u8 direction;
-
-    u16 game_flags;
-    u16 next_check;
-
-    u16 unknown_flag_1 : 1;
-    u16 unknown_flag_2 : 1;
-    u16 unknown_flag_4 : 1;
-    u16 unknown_flag_8 : 1;
-
-    f32 dist;
-    f32 width;
-} AIPATHINFO;
 
 typedef struct AILOCATOR_s {
     char name[0x10];
@@ -233,13 +276,33 @@ typedef struct AILOCATORSET_s {
 
 typedef struct AIAREA_s {
     char name[0x10];
-    f32 min_x;
-    f32 min_y;
-    f32 min_z;
-    f32 max_x;
-    f32 max_y;
-    f32 max_z;
-    i16 flags;
+    union {
+        NUVEC position;
+        struct {
+            // Legacy loader aliases retained while the AI file parser is
+            // reconstructed.  These three values are the area's origin.
+            f32 min_x;
+            f32 min_y;
+            f32 min_z;
+        };
+    };
+    union {
+        struct {
+            f32 half_width;
+            f32 height;
+            f32 half_depth;
+        };
+        struct {
+            // Legacy loader aliases for the three local-space extents.
+            f32 max_x;
+            f32 max_y;
+            f32 max_z;
+        };
+    };
+    union {
+        i16 rotation;
+        i16 flags;
+    };
     u8 padding_0x2a;
     u8 game_flags;
     u8 padding_0x2c[8];
@@ -411,11 +474,17 @@ struct AIANTINODE_s {
     f32 width;
     f32 max_height;
     f32 min_height;
-    void *special;
-    u8 padding_0x24[8];
+    union {
+        u8 special_handle[0xc];
+        struct {
+            void *special_scene;
+            void *special;
+            void *display_special;
+        };
+    };
     NUVEC special_position;
     i32 flags;
-    u8 padding_0x3c[4];
+    i32 rotation_offset;
     f32 base_radius;
     f32 base_height;
     u8 enabled;
@@ -424,6 +493,11 @@ struct AIANTINODE_s {
     u8 has_special;
     u8 special_type;
     u8 padding_0x4d[7];
+};
+
+enum AIPATHNODE_RUNTIME_FLAGS : u8 {
+    AIPATHNODE_RUNTIME_POSITION_CHANGED = 0x02,
+    AIPATHNODE_RUNTIME_SPECIAL_UNAVAILABLE = 0x04,
 };
 
 typedef struct AISYS_s {
@@ -475,10 +549,16 @@ DECOMP_ASSERT(sizeof(AILOCATOR) == 0x3c, "AILOCATOR size");
 DECOMP_ASSERT(sizeof(AILOCATORSET) == 0x1c, "AILOCATORSET size");
 DECOMP_ASSERT(sizeof(AIPATHCNX) == 0x24, "AIPATHCNX size");
 DECOMP_ASSERT(sizeof(AIPATHNODE) == 0x5c, "AIPATHNODE size");
+DECOMP_ASSERT(offsetof(AIPATHNODE, runtime_flags) == 0x2b, "AIPATHNODE runtime flags offset");
+DECOMP_ASSERT(offsetof(AIPATHNODE, special_handle) == 0x40, "AIPATHNODE special handle offset");
 DECOMP_ASSERT(sizeof(AIPATHROUTE) == 0x28, "AIPATHROUTE size");
 DECOMP_ASSERT(sizeof(AIPATH) == 0xa8, "AIPATH size");
+DECOMP_ASSERT(offsetof(AIPATH, updated_node_bits) == 0x18, "AIPATH updated-node bits offset");
+DECOMP_ASSERT(offsetof(AIPATH, inside_node_bits) == 0x58, "AIPATH occupied-node bits offset");
 DECOMP_ASSERT(sizeof(AIPATHSYS) == 0x10, "AIPATHSYS size");
 DECOMP_ASSERT(sizeof(AIANTINODE) == 0x54, "AIANTINODE size");
+DECOMP_ASSERT(offsetof(AIANTINODE, special_handle) == 0x20, "AIANTINODE special handle offset");
+DECOMP_ASSERT(offsetof(AIANTINODE, rotation_offset) == 0x3c, "AIANTINODE rotation offset");
 DECOMP_ASSERT(offsetof(AICREATURE, type) == 0x4e, "AICREATURE type offset");
 DECOMP_ASSERT(offsetof(AICREATURE, count) == 0x50, "AICREATURE count offset");
 DECOMP_ASSERT(offsetof(AICREATURE, active_mask) == 0x58, "AICREATURE active-mask offset");
@@ -515,9 +595,21 @@ typedef struct AISCRIPTCONDITIONDEF_s {
 
 typedef i32 GAMEPARAMTOFLOAT(AIPACKET *, AISCRIPTPROCESS *, char *, f32 *);
 typedef i32 AICHARACTERTYPEID(char *name);
-typedef u8 AISPECIALROUTECHARACTERTYPEID(char *name);
+// Character lookups return -1 when no entry exists.  This must remain a
+// signed integer callback: the level-character lookup is also installed as
+// the default special-route lookup during game AI initialisation.
+typedef i32 AISPECIALROUTECHARACTERTYPEID(char *name);
 typedef f32 AICHARACTERDISTANCE(i32 character_type);
 typedef void GAMEAILOAD(AISYS *system, i32 version, NUGSCN *scene, VARIPTR *buf, VARIPTR *buf_end);
+typedef i32 AIACTIONPARSESPEED(char *name, u8 *speed);
+typedef void SCRIPTPROCESSFIRSTTIMEACTION(AISYS *, AIPACKET *, AISCRIPTPROCESS *);
+typedef u32 AIBIGJUMPTODESTINATION(APIOBJECT *object, NUVEC *destination);
+typedef u32 AIRESPAWNONPATH(APIOBJECT *object);
+typedef void AICLEARCREATURES(void);
+typedef APIOBJECT *APIOBJECTFROMOBJID(u8 object_id);
+typedef i32 AIFINDALTERNATIVESPECIALOBJECT(AISYS *system, struct nuhspecial_s *special);
+typedef APIOBJECT *AIGETNAMEDAPIOBJECT(AISYS *system, char *name);
+typedef NUVEC *AIGETCREATUREORIGIN(AISYS *system, AIPACKET *packet);
 
 #ifdef __cplusplus
 extern "C" {
@@ -541,7 +633,27 @@ extern "C" {
     extern AICHARACTERDISTANCE *GetMaxViewHeightFn;
     extern AICHARACTERDISTANCE *GetMinViewHeightFn;
     extern GAMEAILOAD *GameAILoadFn;
+    extern AIACTIONPARSESPEED *AIActionParseSpeedFn;
+    extern SCRIPTPROCESSFIRSTTIMEACTION *ScriptProcessFirstTimeActionFn;
+    extern AIBIGJUMPTODESTINATION *AIBigJumpToDestinationFn;
+    extern AIRESPAWNONPATH *AIRespawnOnPathFn;
+    extern AICLEARCREATURES *ClearAICreaturesFn;
+    extern APIOBJECTFROMOBJID *APIOBJECTFromObjIDFn;
+    extern AIFINDALTERNATIVESPECIALOBJECT *FindAlternativeSpecialObjectFn;
+    extern AIGETNAMEDAPIOBJECT *GetNamedAPIObjectFn;
+    extern AIGETCREATUREORIGIN *GetAICreatureOriginFn;
     extern char *AiLevelPathName;
+
+    void InitFn_AIActionParseSpeed(AIACTIONPARSESPEED *function);
+    void InitFn_AIBigJumpToDestination(AIBIGJUMPTODESTINATION *function);
+    void InitFn_AIRespawnOnPath(AIRESPAWNONPATH *function);
+    void InitFn_ScriptProcessFirstTimeAction(SCRIPTPROCESSFIRSTTIMEACTION *function);
+    void InitFn_APIOBJECTFromObjIDFn(APIOBJECTFROMOBJID *function);
+    void InitFn_ClearAICreatures(AICLEARCREATURES *function);
+    void InitFn_FindAlternativeSpecialObjectFn(AIFINDALTERNATIVESPECIALOBJECT *function);
+    void InitFn_GameAILoad(GAMEAILOAD *function);
+    void InitFn_GetAICreatureOrigin(AIGETCREATUREORIGIN *function);
+    void InitFn_GetNamedAPIObject(AIGETNAMEDAPIOBJECT *function);
 
     void AIScriptLoadAll(char *path, VARIPTR *buf, VARIPTR *buf_end, AISYS *sys);
     void AIScriptLoadAllPakFile(void *pak, char *path, VARIPTR *buf, VARIPTR *buf_end, AISYS *sys);
@@ -568,6 +680,19 @@ extern "C" {
 
     f32 AIParamToFloat(AISCRIPTPROCESS *processor, char *param);
     f32 AIParamToFloatEx(AIPACKET *packet, AISCRIPTPROCESS *processor, char *param);
+
+    AIPATH *AISysFindPath(AISYS *system, char *name);
+    void AISysCharacterSetPath(AIPACKET *packet, AIPATH *path);
+    void AISysCharacterSetPathCnx(AIPACKET *packet, NUVEC *position, AIPATHCNX *connection, i32 direction);
+    void AISysGetCharacterPathPos(AISYS *system, APIOBJECT *object, AIPACKET *packet, i32 checks, i32 ground);
+    void AISysUpdateCharacterPathPos(AISYS *system, APIOBJECT *object, AIPACKET *packet, i32 checks, f32 elapsed);
+    void AISysCharacterMovement(AISYS *system, AIPACKET *packet, APIOBJECT *object, i32 checks);
+    void AISysProcessCharacter(AISYS *system, APIOBJECT *object, AIPACKET *packet, i32 checks, f32 elapsed,
+                               i32 use_three_dimensions, i32 process_ai);
+    void AISysProcess(AISYS *system, APIOBJECT *player_1, APIOBJECT *player_2);
+    void AIMoveInstruction(AIPACKET *packet, NUVEC *destination, f32 stopping_distance, AIPATHINFO *path_info, i32 mode,
+                           f32 movement_parameter);
+    void AIScriptProcess(AISYS *system, APIOBJECT *object, AIPACKET *packet, AISCRIPTPROCESS *processor, f32 elapsed);
 #ifdef __cplusplus
 }
 #endif

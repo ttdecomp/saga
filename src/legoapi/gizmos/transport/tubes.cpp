@@ -51,7 +51,7 @@ static void Tube_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static i32 Tube_GetPos(GIZMO *gizmo) {
+static NUVEC *Tube_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
     return {};
 }

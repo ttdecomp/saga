@@ -1,5 +1,10 @@
 #include "gamelib_util_types.h"
 
+#include "nu2api/nu3d/nurndr.h"
+#include "nu2api/numath/nufloat.h"
+
+NUCOLOUR3 flashCol = {2.0f, 2.0f, 2.0f};
+
 void TouchHacks::AiPlayerTakeDamageOnKillRescue(GameObject_s &) {
 }
 
@@ -90,7 +95,8 @@ void TouchHacks::CleanupAllMechObjectInterfaces(WORLDINFO_s *) {
 void TouchHacks::FindBombTarget(GameObject_s &) {
 }
 
-void TouchHacks::GetFlashColour() {
+nucolour3_s *TouchHacks::GetFlashColour() {
+    return &flashCol;
 }
 
 void TouchHacks::GetIncomingPartRange() {
@@ -117,7 +123,8 @@ void TouchHacks::ShouldBlock(GameObject_s &) {
 void TouchHacks::ShouldDeflectBolt(GameObject_s &, BOLT_s &) {
 }
 
-void TouchHacks::ShouldFlash(float) {
+bool TouchHacks::ShouldFlash(float timer) {
+    return timer > 0.0f && NuFmod(timer, 0.3f) < 0.15f;
 }
 
 void TouchHacks::ShouldKeepWeaponOut(GameObject_s &) {

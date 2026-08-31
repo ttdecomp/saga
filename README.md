@@ -1,4 +1,4 @@
-![Progress](https://img.shields.io/badge/matching-11.19%25-red)
+![Progress](https://img.shields.io/badge/matching-13.11%25-red)
 [![Discord](https://img.shields.io/discord/1467775700894224555?color=%235865F2&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/2HJuMtzA7q)
 
 |                 | Target (Android x86)                                                                                                                                                                                  | Host                                                                                                                                                                                  |
@@ -31,9 +31,10 @@ The Android x86 build uses the NDK r8e toolchain and targets the original
 Android platform. It is the matching build; its output is not a host-runnable
 game executable.
 
-A host build uses the configured host C/C++ compiler. On non-Windows systems it
-builds 32-bit i686 code with AddressSanitizer and is used for testing and
-development.
+A host build uses the configured host C/C++ compiler and is used for testing
+and development. The default host target builds 32-bit i686 code on non-Windows
+systems; a separate host64 target builds native 64-bit code. Both enable
+AddressSanitizer by default on non-Windows systems.
 
 
 ### Android x86 build
@@ -53,6 +54,16 @@ cmake --build build-host
 
 # executable
 ./build-host/saga
+```
+
+### 64-bit host build
+
+```bash
+cmake -B build-host64 -DBUILD_FOR_HOST64=ON
+cmake --build build-host64
+
+# executable
+./build-host64/saga
 ```
 
 ## Contributing
@@ -83,29 +94,29 @@ See the [documentation index](doc/main.md).
 
 | Directory | Fuzzy % | Funcs % | Data % |
 |---|---|---|---|
-| `(root)` | 57.3% | 16.7% | 0.0% |
-| `MechInputTouch` | 5.0% | 0.0% | 0.9% |
+| `(root)` | 61.3% | 50.0% | 0.0% |
+| `MechInputTouch` | 5.0% | 0.0% | 5.1% |
 | `editor` | 2.6% | 0.0% | - |
 | `gameapi` | 7.1% | 1.5% | 94.8% |
-| `gameframework` | 68.5% | 11.8% | 100.0% |
-| `gamelib` | 5.6% | 0.9% | 5.0% |
+| `gameframework` | 76.4% | 23.5% | 100.0% |
+| `gamelib` | 5.9% | 0.8% | 11.6% |
 | `java` | 10.7% | 0.0% | 0.0% |
-| `legoapi` | 8.3% | 6.8% | 30.9% |
-| `legoapi/actions` | 1.7% | 0.5% | 3.2% |
-| `legoapi/ai` | 3.9% | 0.0% | 89.2% |
-| `legoapi/audio` | 4.9% | 5.8% | 98.1% |
-| `legoapi/characters` | 7.2% | 2.7% | 36.1% |
-| `legoapi/core` | 16.2% | 5.1% | 97.8% |
-| `legoapi/cutscenes` | 4.5% | 0.0% | 93.8% |
-| `legoapi/gizmo` | 4.9% | 4.7% | 0.4% |
-| `legoapi/gizmos` | 12.4% | 4.9% | 100.0% |
-| `legoapi/items` | 3.2% | 0.2% | 6.7% |
-| `legoapi/menus` | 9.7% | 10.7% | 18.1% |
-| `legoapi/misc` | 4.6% | 1.0% | - |
-| `legoapi/props` | 17.8% | 5.5% | 59.7% |
-| `legoapi/render` | 5.4% | 4.5% | 95.6% |
-| `legoapi/world` | 21.1% | 28.7% | 0.2% |
-| `legogame` | 6.1% | 5.3% | 81.2% |
-| `nu2api` | 31.4% | 24.0% | 9.3% |
+| `legoapi` | 11.5% | 12.1% | 31.6% |
+| `legoapi/actions` | 5.8% | 1.4% | 62.3% |
+| `legoapi/ai` | 10.0% | 1.1% | 88.5% |
+| `legoapi/audio` | 5.1% | 6.6% | 88.7% |
+| `legoapi/characters` | 10.1% | 6.9% | 36.1% |
+| `legoapi/core` | 20.8% | 12.4% | 97.8% |
+| `legoapi/cutscenes` | 6.1% | 2.3% | 95.5% |
+| `legoapi/gizmo` | 9.3% | 9.1% | 32.9% |
+| `legoapi/gizmos` | 21.5% | 15.0% | 98.0% |
+| `legoapi/items` | 6.3% | 13.9% | 4.0% |
+| `legoapi/menus` | 10.5% | 12.6% | 21.1% |
+| `legoapi/misc` | 5.0% | 2.0% | 100.0% |
+| `legoapi/props` | 22.7% | 9.9% | 58.8% |
+| `legoapi/render` | 8.9% | 11.2% | 95.1% |
+| `legoapi/world` | 21.7% | 29.8% | 1.3% |
+| `legogame` | 48.0% | 43.8% | 85.4% |
+| `nu2api` | 32.0% | 25.1% | 9.3% |
 
 <!-- matching-table-end -->

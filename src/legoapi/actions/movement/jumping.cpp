@@ -10,7 +10,8 @@ struct SHOPINPUT;
 void BigJumpCode(GameObject_s *) {
 }
 
-void UseFallAnim(GameObject_s *) {
+bool UseFallAnim(GameObject_s *) {
+    return false;
 }
 
 void StartBigJump(GameObject_s *, nuvec_s *, i32, float, float, i32, signed char) {

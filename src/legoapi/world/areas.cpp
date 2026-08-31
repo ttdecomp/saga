@@ -1,12 +1,14 @@
 
 #include <string.h>
 #include "globals.h"
+#include "legoapi/characters/core/character.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/area.h"
 #include "legoapi/world/areas.h"
 #include "legoapi/world/mission.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nucore/nustring.h"
+#include "nu2api/nufile/nufpar.h"
 
 i32 openlevels = 0;
 
@@ -29,10 +31,6 @@ extern void NewAreaMusicChanges(void);
 extern void ClearTakeOverObjectSys(void);
 extern void Door_Reset(void);
 extern void ResetMinikitCounter(void);
-extern "C" void *NuFParCreate(const char *);
-extern "C" i32 NuFParDestroy(void *);
-extern "C" i32 NuFParGetLine(void *);
-extern "C" i32 NuFParGetWord(void *);
 
 void Areas_OpenAll(i32 mode) {
     i32 i;
@@ -112,7 +110,7 @@ void Area_Configure(i32 area, i32 param, EXTRAMODEL *models, i16 *s) {
     }
     if (area != -1) {
         char path[256];
-        void *fp;
+        NUFPAR *fp;
         i32 count = 0;
         i32 in_area = 0;
         char area_buf[0x1e8];
@@ -125,11 +123,11 @@ void Area_Configure(i32 area, i32 param, EXTRAMODEL *models, i16 *s) {
         if (fp != NULL) {
             while (NuFParGetLine(fp) != 0) {
                 NuFParGetWord(fp);
-                if (*(char **)((char *)fp + 0x510) == NULL) {
+                if (fp->word_buf[0] == '\0') {
                     continue;
                 }
                 if (in_area) {
-                    if (NuStrICmp(*(char **)((char *)fp + 0x510), "area_end") == 0) {
+                    if (NuStrICmp(fp->word_buf, "area_end") == 0) {
                         in_area = 0;
                         if (*(i16 *)(area_buf + 0x1e0) != 0) {
                             count++;
@@ -137,7 +135,7 @@ void Area_Configure(i32 area, i32 param, EXTRAMODEL *models, i16 *s) {
                         continue;
                     }
                 } else {
-                    if (NuStrICmp(*(char **)((char *)fp + 0x510), "area_start") == 0) {
+                    if (NuStrICmp(fp->word_buf, "area_start") == 0) {
                         if (count <= 9) {
                             *(i16 *)(area_buf + 0x1e0) = 0;
                             *(u8 *)(area_buf + 0x1e7) &= 0xfe;
@@ -240,7 +238,67 @@ void Areas_CompleteAllBuildUps(AREASAVE_s *save) {
     }
 }
 
-void Areas_ConfigureResidents(variptr_u *, variptr_u *) {
+void Areas_ConfigureResidents(VARIPTR *buffer, VARIPTR *) {
+    if (ADataList == NULL) {
+        return;
+    }
+
+    buffer->addr = ALIGN(buffer->addr, 4);
+    AREADATA *area = ADataList;
+    for (i32 area_index = 0; area_index < AREACOUNT; ++area_index, ++area) {
+        area->hub_player_ids = NULL;
+
+        if ((area->flags & AREAFLAG_ENDING_AREA) != 0) {
+            continue;
+        }
+
+        char path[0x100];
+        NuStrCpy(path, "levels\\");
+        NuStrCat(path, area->dir);
+        NuStrCat(path, "\\");
+        NuStrCat(path, area->file);
+        NuStrCat(path, ".txt");
+
+        NUFPAR *parser = NuFParCreate(path);
+        if (parser == NULL) {
+            continue;
+        }
+
+        i32 resident_count = 0;
+        while (NuFParGetLine(parser) != 0) {
+            if (NuFParGetWord(parser) == 0) {
+                continue;
+            }
+            if (NuStrICmp(parser->word_buf, "character") != 0) {
+                continue;
+            }
+            if (NuFParGetWord(parser) == 0) {
+                continue;
+            }
+            i32 character_id = CharIDFromName(parser->word_buf);
+            if (character_id == -1) {
+                continue;
+            }
+            if (NuFParGetWord(parser) == 0) {
+                continue;
+            }
+            if (NuStrICmp(parser->word_buf, "resident") != 0) {
+                continue;
+            }
+
+            if (area->hub_player_ids == NULL) {
+                area->hub_player_ids = buffer->i16_ptr;
+            }
+            area->hub_player_ids[resident_count++] = static_cast<i16>(character_id);
+        }
+        NuFParDestroy(parser);
+
+        if (resident_count != 0) {
+            area->hub_player_ids[resident_count] = -1;
+            buffer->i16_ptr = &area->hub_player_ids[resident_count + 1];
+        }
+    }
+    buffer->addr = ALIGN(buffer->addr, 4);
 }
 
 void NewArea() {
@@ -275,20 +333,20 @@ have_jump:
         *(u8 *)(*(char **)((char *)WORLD + 0x130) + 0x2800) |= 1;
     }
     SuperCounters_Reset(Area);
-    *(i32 *)((char *)AreaGlobals + 0x10) = 0;
+    AreaGlobals.values.field_0x10 = 0;
     if (Area == -1) {
         area_ep = 0;
     } else {
         area_ep = *(u8 *)((char *)&Game + 0x7831 + Area * 12);
     }
-    *(u8 *)((char *)AreaGlobals + 0xc) = area_ep;
-    *(u8 *)((char *)AreaGlobals + 0x14) = area_ep;
+    AreaGlobals.bytes[0x0c] = area_ep;
+    AreaGlobals.bytes[0x14] = area_ep;
     Door_UseCutCam = 0;
-    *(i32 *)((char *)AreaGlobals + 0x0) = 0;
-    *(i32 *)((char *)AreaGlobals + 0x1c) = 0;
-    *(i32 *)((char *)AreaGlobals + 0x8) = 0;
-    *(i32 *)((char *)AreaGlobals + 0x18) = 0;
-    *(i32 *)((char *)AreaGlobals + 0x24) = 0;
+    AreaGlobals.values.field_0x00 = 0;
+    AreaGlobals.values.field_0x1c = 0;
+    AreaGlobals.values.field_0x08 = 0;
+    AreaGlobals.values.field_0x18 = 0;
+    AreaGlobals.values.field_0x24 = 0;
     BuildUpTotal = 0;
     BuildUpDone = 0;
     if (*(void **)((char *)WORLD + 0x12c) == HOTHBATTLE_ADATA) {

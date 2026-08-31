@@ -33,6 +33,7 @@ extern "C" NUGCUTLOCATORFNENTRY_s *locatorfns;
 #include <string.h>
 
 #include "decomp.h"
+#include "java/java.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nucore/nuanim3.h"
 #include "nu2api/nucore/nuapi.h"
@@ -59,7 +60,7 @@ extern "C" {
     u8 CutSceneBoundingBoxTrackRoot = 0;
 }
 
-extern "C" void ANI_FixUpAddrs(ani3_animheader_s *, i32);
+extern "C" void ANI_FixUpAddrs(ani3_animheader_s *, isize);
 extern "C" void ANI_Ani3ExtractAllNodeCurves(ani3_animheader_s *, f32, f32 *, i32, char *);
 
 namespace {
@@ -72,6 +73,7 @@ namespace {
     struct NuPlainLegacySpecialLayout {
         u8 pad_00[0x40];
         u8 *instance;
+        char *name;
         u32 flags;
     };
 
@@ -82,16 +84,37 @@ namespace {
         f32 min_w;
         NUVEC max;
         f32 max_w;
-        u8 pad_a0[0x10];
+        NUVEC center;
+        f32 radius;
         NUCLIPOBJECT *clip_objects;
         char *name;
         u32 flags;
         f32 *clip_range;
         i32 instance_ix;
-        NUMTX *draw_mtx_ptr;
+        nuinstanim_s *instance_animation;
         i16 wind_speed;
         i16 wind_scale;
         u32 pad_cc;
+    };
+
+    struct NuPlainLegacySceneLayout {
+        u8 pad_00[0x18];
+        void **objects;
+    };
+
+    struct NuPlainLegacyInstanceBoundsLayout {
+        u8 pad_00[0x40];
+        i16 object_index;
+    };
+
+    struct NuPlainLegacyObjectBoundsLayout {
+        u8 pad_00[0x0c];
+        NUVEC minimum;
+        NUVEC maximum;
+        NUVEC center;
+        f32 radius;
+        u8 pad_34[4];
+        NuPlainLegacyObjectBoundsLayout *next;
     };
 
     static i32 nuspecial_clip_state = -1;
@@ -654,8 +677,6 @@ extern "C" {
     }
     void NuDisplayListSetFxParam(void) {
     }
-    void NuDisplayListUpdateSpecial(void) {
-    }
 
     // ---------------------------------------------------------------------------
     // Scene / render-scene
@@ -781,12 +802,6 @@ extern "C" {
     }
     void NuIOS_FreeMemoryForSuspend(void) {
     }
-    f32 NuIOS_GetAspectRatio(void) {
-        if (nuapi.screen_width > 0 && nuapi.screen_height > 0) {
-            return (f32)nuapi.screen_width / (f32)nuapi.screen_height;
-        }
-        return 16.0f / 9.0f;
-    }
     // Locale string filled by the platform layer (Java nativeSetLanguage on
     // device; LANG environment on host) and cached result index.
     char g_language[16] = {0}; // original bss @0x66f440
@@ -863,9 +878,18 @@ extern "C" {
     i32 NuIOS_IsSmallScreen(void) {
         return 0;
     }
-    void NuIOS_IsWidescreen(void) {
-    }
-    void NuIOS_RecordFlurryEvent(char *) {
+    void NuIOS_RecordFlurryEvent(char *event_name) {
+        JNIEnv *env = NULL;
+        if (g_javaVM.functions->GetEnv(&g_javaVM, (void **)&env, JNI_VERSION_1_6) < 0) {
+            return;
+        }
+
+        jclass activity_class = g_activityClass;
+        jstring event = env->functions->NewStringUTF(env, event_name);
+        jmethodID method =
+            env->functions->GetStaticMethodID(env, activity_class, "FlurryEvent", "(Ljava/lang/String;)V");
+        env->CallStaticVoidMethod(activity_class, method, event);
+        env->functions->DeleteLocalRef(env, event);
     }
     void NuIOS_ShowAchievements(void) {
     }
@@ -1161,7 +1185,7 @@ extern "C" {
     }
     void NuAnimCurveSetDestroy(void) {
     }
-    void NuAnimData2CalcMatrix(void) {
+    void NuAnimData2CalcMatrix(nuanimdata_s *, i32, f32, numtx_s *) {
     }
     void NuAnimData2CalcTime(nuanimdata2_s *anim, f32 frame, nuanimtime_s *time) {
         u32 magic = *reinterpret_cast<u32 *>(anim);
@@ -1211,38 +1235,47 @@ extern "C" {
         time->time_byte = static_cast<u32>((byte_frame >> 3) & 0xff);
         time->time_mask = (1u << ((chunk_frame & 7) + 1)) - 1u;
     }
-    void *NuAnimData2FixPtrs(void *data, i32 delta, i32 external_delta, i32) {
+    void *NuAnimData2FixPtrs(void *data, isize delta, isize external_delta, i32) {
         extern void buildBitCountTable(void);
         buildBitCountTable();
 
         if (data == NULL) {
             return NULL;
         }
-        i32 *anim = reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(data) + delta);
-        if (static_cast<u32>(anim[0]) + 0xbeb1b6ccU < 2) {
+        nuanimdata2_s *anim = reinterpret_cast<nuanimdata2_s *>(reinterpret_cast<u8 *>(data) + delta);
+        if (*reinterpret_cast<u32 *>(&anim->duration) + 0xbeb1b6ccU < 2) {
             ANI_FixUpAddrs(reinterpret_cast<ani3_animheader_s *>(anim),
-                           external_delta == 0 ? static_cast<i32>(reinterpret_cast<usize>(anim)) : delta);
+                           external_delta == 0 ? static_cast<isize>(reinterpret_cast<usize>(anim)) : delta);
             return anim;
         }
 
-        for (i32 field = 3; field <= 5; ++field) {
-            if (anim[field] != 0) {
-                anim[field] += delta;
-            }
+        if (anim->curves != NULL) {
+            anim->curves = reinterpret_cast<nuanimcurve2_s *>(reinterpret_cast<u8 *>(anim->curves) + delta);
         }
-        i32 curve_count = *reinterpret_cast<i16 *>(reinterpret_cast<u8 *>(anim) + 6) * static_cast<i16>(anim[1]);
-        i32 *curves = reinterpret_cast<i32 *>(anim[3]);
-        char *curve_types = reinterpret_cast<char *>(anim[4]);
+        if (anim->curve_types != NULL) {
+            anim->curve_types = reinterpret_cast<u8 *>(anim->curve_types) + delta;
+        }
+        if (anim->node_flags != NULL) {
+            anim->node_flags = reinterpret_cast<u8 *>(anim->node_flags) + delta;
+        }
+        i32 curve_count = static_cast<i32>(anim->curve_count) * static_cast<i32>(anim->node_count);
         for (i32 i = 0; i < curve_count; ++i) {
-            if (curve_types[i] != 0) {
-                if (curves[i] != 0) {
-                    curves[i] += delta;
+            if (anim->curve_types[i] != 0) {
+                nuanimcurvedata_s *curve = anim->curves[i].data.curvedata;
+                if (curve != NULL) {
+                    curve = reinterpret_cast<nuanimcurvedata_s *>(reinterpret_cast<u8 *>(curve) + delta);
+                    anim->curves[i].data.curvedata = curve;
+                } else {
+                    continue;
                 }
-                i32 *curve = reinterpret_cast<i32 *>(curves[i]);
-                for (i32 field = 0; field < 3; ++field) {
-                    if (curve[field] != 0) {
-                        curve[field] += delta;
-                    }
+                if (curve->key_mask != NULL) {
+                    curve->key_mask = reinterpret_cast<u32 *>(reinterpret_cast<u8 *>(curve->key_mask) + delta);
+                }
+                if (curve->key_offsets != NULL) {
+                    curve->key_offsets = reinterpret_cast<u16 *>(reinterpret_cast<u8 *>(curve->key_offsets) + delta);
+                }
+                if (curve->key_data != NULL) {
+                    curve->key_data = reinterpret_cast<u8 *>(curve->key_data) + delta;
                 }
             }
         }
@@ -1256,16 +1289,14 @@ extern "C" {
 
         if (header[0] == 0x414e4933 || header[0] == 0x414e4934) {
             ANI_FixUpAddrs(reinterpret_cast<ani3_animheader_s *>(header),
-                           static_cast<i32>(reinterpret_cast<usize>(header)));
+                           static_cast<isize>(reinterpret_cast<usize>(header)));
             return header;
         }
 
         header[0] = static_cast<u32>(file_size);
-        header[2] = static_cast<u32>(reinterpret_cast<usize>(NuAnimData2FixPtrs(
-            reinterpret_cast<void *>(header[2]),
-            static_cast<i32>(reinterpret_cast<usize>(header) - static_cast<usize>(header[1])), 0, 0)));
-        header[1] = static_cast<u32>(reinterpret_cast<usize>(header));
-        return reinterpret_cast<void *>(header[2]);
+        const isize relocation_delta =
+            static_cast<isize>(reinterpret_cast<usize>(header)) - static_cast<isize>(header[1]);
+        return NuAnimData2FixPtrs(reinterpret_cast<void *>(static_cast<usize>(header[2])), relocation_delta, 0, 0);
     }
 
     void *NuAnimData2LoadBuffEx(char *path, VARIPTR *buf, VARIPTR *buf_end, void **result) {
@@ -1322,10 +1353,6 @@ extern "C" {
     void NuAnimDataLoadBuff(void) {
     }
     void NuAnimDataRead(void) {
-    }
-    void NuAnimEndFrame(void) {
-    }
-    void NuAnimEndFrameOld(void) {
     }
     void NuAnimGetAnimLOD(void) {
     }
@@ -1838,7 +1865,9 @@ extern "C" {
     }
     void NuLightFogPal(void) {
     }
-    void NuLightFogX(void) {
+    void NuLightFogX(f32 near_distance, f32 far_distance, u32 colour, f32, f32, i32, f32 density) {
+        NuRndrStateSetFogEnabled(1);
+        NuRndrStateSetFogState(near_distance, far_distance, colour, density);
     }
     void NuLightInit(void) {
     }
@@ -1850,13 +1879,14 @@ extern "C" {
     }
     void NuLightSpeedBlurScale(void) {
     }
-    void NuLightSpotFadeSet(void) {
+    void NuLightSpotFadeSet(u32) {
     }
     void NuLgtArcLaser(void) {
     }
     void NuLgtLaser(void) {
     }
-    void NuLgtLaserDraw(void) {
+    void NuLgtLaserDraw(i32 paused) {
+        (void)paused;
     }
     void NuLgtSetArcMat(void) {
     }
@@ -1993,7 +2023,7 @@ extern "C" {
     }
     void NuSpecialBurstDrawAt(void) {
     }
-    void NuSpecialClear(void) {
+    void NuSpecialClear(void *) {
     }
     void NuSpecialClearShadowClipTestResults(void) {
         nuspecial_shadow_light_have_clip_results = 0;
@@ -2047,13 +2077,6 @@ extern "C" {
     }
     void NuSpecialDrawWith(void) {
     }
-    i32 NuSpecialExistsFn(void *special) {
-        if (special == NULL) {
-            return 0;
-        }
-        NuPlainSpecialHandleLayout *handle = reinterpret_cast<NuPlainSpecialHandleLayout *>(special);
-        return handle->special != NULL || handle->display_special != NULL;
-    }
     void NuSpecialFindMulti(void) {
     }
     void NuSpecialFindMultiWC(void) {
@@ -2064,9 +2087,28 @@ extern "C" {
     }
     void NuSpecialGetActiveShadowLights(void) {
     }
-    void NuSpecialGetAnimEndFrame(void) {
-    }
-    void NuSpecialGetBounds(void) {
+    void NuSpecialGetBounds(void *special, NUVEC *minimum, NUVEC *maximum) {
+        NuPlainSpecialHandleLayout *handle = reinterpret_cast<NuPlainSpecialHandleLayout *>(special);
+        if (handle->special == NULL) {
+            NuPlainDisplaySpecialLayout *display = static_cast<NuPlainDisplaySpecialLayout *>(handle->display_special);
+            if (display != NULL) {
+                *minimum = display->min;
+                *maximum = display->max;
+            }
+            return;
+        }
+
+        NuPlainLegacySceneLayout *scene = reinterpret_cast<NuPlainLegacySceneLayout *>(handle->scene);
+        NuPlainLegacySpecialLayout *legacy = static_cast<NuPlainLegacySpecialLayout *>(handle->special);
+        NuPlainLegacyInstanceBoundsLayout *instance =
+            reinterpret_cast<NuPlainLegacyInstanceBoundsLayout *>(legacy->instance);
+        NuPlainLegacyObjectBoundsLayout *object =
+            static_cast<NuPlainLegacyObjectBoundsLayout *>(scene->objects[instance->object_index]);
+        while (object->next != NULL) {
+            object = object->next;
+        }
+        *minimum = object->minimum;
+        *maximum = object->maximum;
     }
     void NuSpecialGetCollision(void) {
     }
@@ -2080,33 +2122,47 @@ extern "C" {
         }
         NuPlainDisplaySpecialLayout *display = static_cast<NuPlainDisplaySpecialLayout *>(handle->display_special);
         if (display != NULL) {
-            usize draw_mtx = reinterpret_cast<usize>(display->draw_mtx_ptr);
+            usize draw_mtx = reinterpret_cast<usize>(display->instance_animation);
             if (draw_mtx != 0 && draw_mtx != static_cast<usize>(-1)) {
-                return display->draw_mtx_ptr;
+                return reinterpret_cast<NUMTX *>(display->instance_animation);
             }
             return &display->draw_mtx;
         }
         return NULL;
     }
-    void NuSpecialGetDrawPos(void) {
+    NUVEC *NuSpecialGetDrawPos(void *special) {
+        NuPlainSpecialHandleLayout *handle = reinterpret_cast<NuPlainSpecialHandleLayout *>(special);
+        NuPlainDisplaySpecialLayout *display = static_cast<NuPlainDisplaySpecialLayout *>(handle->display_special);
+        if (display != NULL) {
+            usize instance_animation = reinterpret_cast<usize>(display->instance_animation);
+            NUMTX *matrix = instance_animation != 0 && instance_animation != static_cast<usize>(-1)
+                                ? reinterpret_cast<NUMTX *>(display->instance_animation)
+                                : &display->draw_mtx;
+            return NUMTX_GET_ROW_VEC(matrix, 3);
+        }
+
+        NuPlainLegacySpecialLayout *legacy = static_cast<NuPlainLegacySpecialLayout *>(handle->special);
+        if (legacy == NULL || legacy->instance == NULL) {
+            return NULL;
+        }
+        NUMTX *instance = reinterpret_cast<NUMTX *>(legacy->instance);
+        NUMTX *draw_mtx = *reinterpret_cast<NUMTX **>(legacy->instance + 0x48);
+        return NUMTX_GET_ROW_VEC(draw_mtx != NULL ? draw_mtx : instance, 3);
     }
     void NuSpecialGetFirst(void) {
-    }
-    void NuSpecialGetInstAnim(void) {
-    }
-    void NuSpecialGetInstanceMtx(void) {
     }
     void NuSpecialGetInstanceix(void) {
     }
     void NuSpecialGetMtl(void) {
     }
-    void NuSpecialGetMtx(void) {
-    }
-    void NuSpecialGetName(void) {
+    NUMTX *NuSpecialGetMtx(void *special) {
+        NuPlainSpecialHandleLayout *handle = reinterpret_cast<NuPlainSpecialHandleLayout *>(special);
+        if (handle->display_special != NULL) {
+            return static_cast<NUMTX *>(handle->display_special);
+        }
+        return static_cast<NUMTX *>(handle->special);
     }
     void NuSpecialGetNext(void) {
-    }
-    void NuSpecialGetNoVisiTestFn(void) {
     }
     void NuSpecialGetNumSpecials(void) {
     }
@@ -2116,23 +2172,27 @@ extern "C" {
     }
     void NuSpecialGetPos(void) {
     }
-    void NuSpecialGetRadius(void) {
+    void NuSpecialGetRadius(void *special, NUVEC *position, f32 *radius) {
+        NuPlainSpecialHandleLayout *handle = reinterpret_cast<NuPlainSpecialHandleLayout *>(special);
+        if (handle->special == NULL) {
+            NuPlainDisplaySpecialLayout *display = static_cast<NuPlainDisplaySpecialLayout *>(handle->display_special);
+            *position = display->center;
+            *radius = display->radius;
+            return;
+        }
+
+        NuPlainLegacySceneLayout *scene = reinterpret_cast<NuPlainLegacySceneLayout *>(handle->scene);
+        NuPlainLegacySpecialLayout *legacy = static_cast<NuPlainLegacySpecialLayout *>(handle->special);
+        NuPlainLegacyInstanceBoundsLayout *instance =
+            reinterpret_cast<NuPlainLegacyInstanceBoundsLayout *>(legacy->instance);
+        NuPlainLegacyObjectBoundsLayout *object =
+            static_cast<NuPlainLegacyObjectBoundsLayout *>(scene->objects[instance->object_index]);
+        *position = object->center;
+        *radius = object->radius;
     }
     void NuSpecialGetShadowClipTestResult(void) {
     }
     void NuSpecialGetShadowLight(void) {
-    }
-    i32 NuSpecialGetVisibilityFn(void *special) {
-        NuPlainSpecialHandleLayout *handle = reinterpret_cast<NuPlainSpecialHandleLayout *>(special);
-        if (handle == NULL || handle->scene == NULL) {
-            return 0;
-        }
-        NuPlainLegacySpecialLayout *legacy = static_cast<NuPlainLegacySpecialLayout *>(handle->special);
-        if (legacy != NULL) {
-            return legacy->instance != NULL ? legacy->instance[0x44] & 1 : 0;
-        }
-        NuPlainDisplaySpecialLayout *display = static_cast<NuPlainDisplaySpecialLayout *>(handle->display_special);
-        return display != NULL ? (display->flags >> 1) & 1 : 0;
     }
     i32 NuSpecialHasActiveShadowLights(void) {
         return nuspecial_shadow_light_count > 0;
@@ -2184,56 +2244,11 @@ extern "C" {
     }
     void NuSpecialSetMtx(void) {
     }
-    void NuSpecialSetNoVisiTest(void) {
-    }
     void NuSpecialSetOnScreen(void) {
     }
     void NuSpecialSetRenderPlane(void) {
     }
-    void NuSpecialSetVisibility(void *special, i32 visible) {
-        if (special == NULL) {
-            return;
-        }
-        NuPlainSpecialHandleLayout *handle = reinterpret_cast<NuPlainSpecialHandleLayout *>(special);
-        if (handle->scene == NULL) {
-            return;
-        }
-
-        NuPlainLegacySpecialLayout *legacy = static_cast<NuPlainLegacySpecialLayout *>(handle->special);
-        if (legacy != NULL) {
-            if (legacy->instance != NULL) {
-                legacy->instance[0x44] = static_cast<u8>((legacy->instance[0x44] & ~1U) | (visible & 1));
-            }
-            if (visible != 0) {
-                legacy->flags |= 0x200;
-            } else {
-                legacy->flags &= ~0x200U;
-            }
-            return;
-        }
-
-        NuPlainDisplaySpecialLayout *display = static_cast<NuPlainDisplaySpecialLayout *>(handle->display_special);
-        if (display == NULL) {
-            return;
-        }
-        if (visible != 0) {
-            display->flags |= 0x202;
-        } else {
-            display->flags &= ~0x202U;
-        }
-
-        NUDLDLISTSCENE *scene = reinterpret_cast<NUDLDLISTSCENE *>(handle->scene->display_list);
-        if ((reinterpret_cast<u8 *>(scene)[0x76] & 1) != 0) {
-            if (visible != 0) {
-                scene->visibility_flags[display->instance_ix] |= 1;
-            } else {
-                scene->visibility_flags[display->instance_ix] &= ~1;
-            }
-        }
-    }
     void NuSpecialTestAnim(void) {
-    }
-    void NuSpecialUpdate(void) {
     }
     void NuSpecialVertexOffsets(void) {
     }
@@ -2254,9 +2269,6 @@ extern "C" {
     }
     void NuWaterRender(void) {
     }
-    void NuWaterSpeed(void) {
-    }
-
     // ---------------------------------------------------------------------------
     // Light / wind / particles / debris
     // ---------------------------------------------------------------------------
@@ -2452,12 +2464,12 @@ extern "C" {
     }
     void NuHGobjEvalDwaBlend2(void) {
     }
-    void NuHGobjForceShadowsOnCharacters(i32 v) {
-        (void)v;
+    i32 NuHGobjForceShadowsOnCharacters(i32 enabled) {
+        i32 previous = nuapi.force_shadows_on_characters;
+        nuapi.force_shadows_on_characters = enabled;
+        return previous;
     }
     void NuHGobjFromVideoMem(void) {
-    }
-    void NuHGobjGetLayerIndex(void) {
     }
     nuhgobjpoi_s *NuHGobjGetPOI(nuhgobj_s *object, i32 index) {
         const u8 mapped_index = static_cast<u8>(index);
@@ -2482,8 +2494,10 @@ extern "C" {
     }
     void NuHGobjRestrictEvaluation(void) {
     }
-    void NuHGobjReversibleCharacters(i32 v) {
-        (void)v;
+    i32 NuHGobjReversibleCharacters(i32 enabled) {
+        i32 previous = nuapi.reversible_characters;
+        nuapi.reversible_characters = enabled;
+        return previous;
     }
     void NuHGobjRndr(void) {
     }
@@ -2678,7 +2692,7 @@ extern "C" {
     }
     void NuPad_Interface_ResetAllTouches(void) {
     }
-    void NuPad_Interface_TouchScreenInput(void) {
+    void NuPad_Interface_TouchScreenInput(i32, i32, i32, i32, i32, i32, i32, i32) {
     }
     void NuPs2ApplyDeadZone(void) {
     }
@@ -2705,9 +2719,8 @@ extern "C" {
     }
     void NuPortalRoomClipTestAll(void) {
     }
-    void NuPortalSetActive(void) {
-    }
-    void NuPortalWhichRoom(void) {
+    i32 NuPortalWhichRoom(NUGSCN *, NUVEC *) {
+        return -1;
     }
     void NuVisiBoxTree(void) {
     }
@@ -2845,7 +2858,23 @@ extern "C" {
     }
     void NuStrLwrW(void) {
     }
-    void NuStrNCat(void) {
+    i32 NuStrNCat(char *str, const char *ext, i32 n) {
+        while (*str != '\0') {
+            ++str;
+        }
+
+        i32 copied = 0;
+        if (ext != NULL) {
+            do {
+                if (n == 0) {
+                    break;
+                }
+                *str++ = *ext;
+                ++copied;
+                --n;
+            } while (*ext++ != '\0');
+        }
+        return copied;
     }
     void NuStrNCatW(void) {
     }
@@ -2886,11 +2915,6 @@ extern "C" {
     void NuFParPushComCTX2(void) {
     }
     void NuFParSetPos(void) {
-    }
-    void NuLanguageGet(void) {
-    }
-    void NuLanguageSet(i32 language) {
-        Text_Language = language;
     }
     void NuQTAddElement(void) {
     }
@@ -2985,8 +3009,6 @@ extern "C" {
     void *NuTimeBarCreateSet(i32) {
         return NULL;
     }
-    void NuTimeBarCreateSetEx(void) {
-    }
     void NuTimeBarCreateSetEx2(void) {
     }
     void NuTimeBarDestroySet(void) {
@@ -2996,8 +3018,6 @@ extern "C" {
     void NuTimeBarIndicateGpuFrameOut(void) {
     }
     void NuTimeBarInit(void) {
-    }
-    void NuTimeBarInitEx(void) {
     }
     void NuTimeBarResetPeaks(void) {
     }
@@ -3059,7 +3079,7 @@ extern "C" {
     }
     void NuSetGetHGObjFromIndxFn(void) {
     }
-    void NuSetPadDemoEndButtons(void) {
+    void NuSetPadDemoEndButtons(u32) {
     }
     void NuSetupVideoModeParams(void) {
     }

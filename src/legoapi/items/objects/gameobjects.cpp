@@ -1,20 +1,27 @@
 #include "legoapi/items/objects/gameobjects.h"
 #include "decomp.h"
+#include "gameapi/ai/aisys/aisys.h"
 #include "gameapi/gui/apimenu.h"
 #include "globals.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
 #include "legoapi/characters/motion.h"
+#include "legoapi/characters/motion/gameanim.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/core/players.h"
+#include "legoapi/props/doors/door.h"
 #include "legoapi/world/area.h"
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/core/input/timer.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/numusic/sfx.h"
+#include "nu2api/nuandroid/ios_graphics.h"
+#include "nu2api/nu3d/nuspecial.h"
+#include "nu2api/nucore/nustring.h"
 
+#include <stdio.h>
 #include <string.h>
 
 // NuCore profiling timebars (nucore_plain.cpp): NuTimeBarCreateSet returns a
@@ -23,7 +30,7 @@ extern "C" {
     void *NuTimeBarCreateSet(i32);
     void _NuTimeBarSlotBegin(void *, i32, char const *);
     void _NuTimeBarSlotEnd(void *, i32);
-    void AddToAIGroup(AIGROUP_s *group, GameObject_s *object);
+    void AddToAIGroup(AIGROUP_s *group, APIOBJECT_s *object);
     extern NUVEC plr_lastpos;
 }
 
@@ -34,9 +41,11 @@ void legoSetMusicVolume(float);
 void MovePlayer(GameObject_s *object);
 void AnimatePlayer(GameObject_s *object);
 void TerrainPlayer(GameObject_s *object);
+void KeepOnScreen(GameObject_s *object);
 void SetPlayer();
 void InitPlayerAI(GameObject_s *object);
 void ResetPlayerMoves(GameObject_s *object);
+void SnapCreaturePos(GameObject_s *object, NUVEC *position, i32 angle, AIPATHINFO_s *path_info, i32 set_on_surface);
 void GetTopBot(GameObject_s *object);
 void ResetRumble(RUMBLEPACKET *packet);
 void ResetLights(NUVEC *position, rtldata_s *data, void *set);
@@ -44,8 +53,430 @@ void InitSurfaceInfo(GameObject_s *object);
 void SetObjOnSurface(GameObject_s *object, i32 mode);
 void PortalGameObject(GameObject_s *object, i32 enable, i32 immediate, i16 portal, nugscn_s *scene);
 void Arcade_GetMode(u32 *mode);
+void StarWars_GameAISysInit();
+void GameAISysSetGame();
+void ClearAICreatures();
+APIOBJECT *GameAPIOBJECTFromObjID(u8 object_id);
+i32 EquivalentObject_Find(WORLDINFO_s *world, nuhspecial_s *special);
+void AIPathCnxControlSysReset(AIPATHCNXCONTROLSYS_s *system);
+void AIPathCnxHelperSysReset(WORLDINFO_s *world, AIPATHCNXHELPERSYS_s *system);
+void InitAICreatures(AISYS_s *system);
+void ResetAICreatures(AISYS_s *system);
+void LevelScriptReStoreProgress(WORLDINFO_s *world, LEVELSCRIPTPROCESS_s *process);
+void GizmoSysAddGizmos(GIZMOSYS_s *gizmo_sys, GIZFLOW_s *giz_flow, void *world);
 
-void GameShadow(GameObject_s *, nuvec_s *, float, i32) {
+extern i32 LEGO_AIPATHCNX_BLOCKAGE;
+
+extern "C" i32 AISysSetLevelPath(AISYS_s *system, char *path_name);
+
+extern "C" void NuLightFogX(f32 start, f32 end, u32 colour, f32 unused_start, f32 unused_end, i32 high_quality,
+                            f32 density);
+
+GAMEFOG_STATE GameFog = {};
+
+static i32 GameFogSnap;
+static i32 GameFogSet;
+static f32 GameFogDuration;
+static f32 GameFogTime;
+
+enum AI_ACTION_SPEED_MODE : u8 {
+    AI_ACTION_SPEED_LEGO = 0,
+    AI_ACTION_SPEED_RUN = 1,
+    AI_ACTION_SPEED_WALK = 2,
+};
+
+enum SCRIPT_ERROR_LEVEL : u32 {
+    SCRIPT_ERROR_LEVEL_NONE = 0,
+    SCRIPT_ERROR_LEVEL_WARNING = 1,
+    SCRIPT_ERROR_LEVEL_STRICT = 2,
+    SCRIPT_ERROR_LEVEL_COUNT = 3,
+};
+
+enum AI_DEFAULTS : u8 {
+    AI_DEFAULT_ACTIVATE_DIFFICULTY = 1,
+};
+
+enum AI_OBJECT_ROUTE_STATE : u8 {
+    AI_OBJECT_ROUTE_STATE_SCRIPT_VISIBLE = 3,
+};
+
+enum CHARACTER_AI_MODEL_FLAGS : u32 {
+    CHARACTER_AI_MODEL_FLAG_SNAP_ON_BIG_JUMP = 0x00200000,
+    CHARACTER_AI_MODEL_FLAG_DISABLE_RESPAWN = 0x00400000,
+};
+
+enum AI_GAME_OBJECT_TYPE : u8 {
+    AI_GAME_OBJECT_TYPE_VEHICLE = 0x2b,
+};
+
+enum GAME_OBJECT_AI_UPDATE_FLAGS : u8 {
+    GAME_OBJECT_AI_UPDATE_PROCESS = 0x08,
+    GAME_OBJECT_AI_UPDATE_ELIGIBLE = 0x10,
+};
+
+static const f32 AI_RESPAWN_DELAY = 2.0f;
+
+extern "C" {
+    // Game-specific script registries are still populated incrementally as
+    // their action and condition callbacks are reconstructed.  The null
+    // terminators keep registration safe in the meantime.
+    AIACTIONDEF lego_aiactiondefs[] = {{NULL, NULL, 0, 0, 0}};
+    AICONDITIONDEF lego_aiconditiondefs[] = {{NULL, NULL, NULL}};
+
+    f32 default_path_heighttol = 0.2f;
+    u8 default_activate_difficulty = AI_DEFAULT_ACTIVATE_DIFFICULTY;
+    u8 default_min_n_respawns;
+    u8 default_max_n_respawns;
+    f32 default_min_t_respawn;
+    f32 default_max_t_respawn;
+
+    CHARACTERNAMEFN *LevelCharacterNameFn;
+    CHARACTERNAMEFN *SpecialRouteCharacterNameFn;
+    CHARACTERGLOBALIDFN *LevelCharacterGlobalIDFn;
+    GLOBALCHARACTERNAMEFN *GlobalCharacterNameFn;
+    CHARACTERHGOBJFN *GlobalCharacterHGobjFn;
+    CHARACTERRENDERFN *GlobalCharacterRenderFn;
+    CHARACTERGOALSPEEDFN *GetCharacterGoalSpeedFn;
+    CHARACTERTYPEIDFN *LevelCharacterTypeIDFn;
+
+    AICHARACTERTYPEID *GlobalCharacterTypeIDFn;
+    AISPECIALROUTECHARACTERTYPEID *SpecialRouteCharacterTypeIDFn;
+    AICHARACTERDISTANCE *GetViewRangeFn;
+    AICHARACTERDISTANCE *GetHearDistanceFn;
+    AICHARACTERDISTANCE *GetMaxViewHeightFn;
+    AICHARACTERDISTANCE *GetMinViewHeightFn;
+    GAMEAILOAD *GameAILoadFn;
+    AIACTIONPARSESPEED *AIActionParseSpeedFn;
+    AIBIGJUMPTODESTINATION *AIBigJumpToDestinationFn;
+    AIRESPAWNONPATH *AIRespawnOnPathFn;
+    AICLEARCREATURES *ClearAICreaturesFn;
+    APIOBJECTFROMOBJID *APIOBJECTFromObjIDFn;
+    AIFINDALTERNATIVESPECIALOBJECT *FindAlternativeSpecialObjectFn;
+    AIGETNAMEDAPIOBJECT *GetNamedAPIObjectFn;
+    AIGETCREATUREORIGIN *GetAICreatureOriginFn;
+}
+
+static SCRIPT_ERROR_LEVEL ScriptErrorLevel;
+
+// The special-route list reserves the first ten ids for suit characters.  The
+// remaining ids enumerate the current story list while omitting variants that
+// are represented by those dedicated routes.
+static const char *skip_chars[] = {"Batman", "Robin", "Glide_Pack", NULL};
+
+static char *LevelCharacterName(u8 character_index) {
+    if (character_index == 0xff || CurrentStoryCList == NULL) {
+        return NULL;
+    }
+
+    const i16 character_type = CurrentStoryCList[character_index].model_id;
+    if (character_type == -1) {
+        return NULL;
+    }
+    return apicharsys->char_data[character_type].file;
+}
+
+static i32 LevelCharacterGlobalID(u8 character_index) {
+    if (character_index == 0xff || CurrentStoryCList == NULL) {
+        return -1;
+    }
+    return CurrentStoryCList[character_index].model_id;
+}
+
+static char *GlobalCharacterName(i32 character_type) {
+    if (character_type == -1 || character_type >= apicharsys->character_count) {
+        return NULL;
+    }
+    return apicharsys->char_data[character_type].file;
+}
+
+static void *GlobalCharacterHGobj(i32 character_type) {
+    if (character_type == -1) {
+        return NULL;
+    }
+
+    const i16 model_index = apicharsys->playermodelids[character_type];
+    if (model_index == -1) {
+        return NULL;
+    }
+    return apicharsys->models[model_index].hierarchy;
+}
+
+static f32 GetViewRange(i32 character_type) {
+    if (character_type == -1) {
+        return 0.0f;
+    }
+    return static_cast<GAMECHARACTERDATA *>(apicharsys->char_data[character_type].field11_0x24)->viewdistance;
+}
+
+static f32 GetHearDistance(i32 character_type) {
+    if (character_type == -1) {
+        return 0.0f;
+    }
+    return static_cast<GAMECHARACTERDATA *>(apicharsys->char_data[character_type].field11_0x24)->heardistance;
+}
+
+static f32 GetMaxViewHeight(i32 character_type) {
+    if (character_type == -1) {
+        return 0.0f;
+    }
+    return static_cast<GAMECHARACTERDATA *>(apicharsys->char_data[character_type].field11_0x24)->maxviewheight;
+}
+
+static f32 GetMinViewHeight(i32 character_type) {
+    if (character_type == -1) {
+        return 0.0f;
+    }
+    return static_cast<GAMECHARACTERDATA *>(apicharsys->char_data[character_type].field11_0x24)->minviewheight;
+}
+
+static NUVEC *GetAICreatureOrigin(AISYS *, AIPACKET *) {
+    return NULL;
+}
+
+static APIOBJECT *GetNamedAPIObject(AISYS *, char *) {
+    return NULL;
+}
+
+static i32 GlobalCharacterTypeID(char *name) {
+    for (i32 character_type = 0; character_type < apicharsys->character_count; ++character_type) {
+        if (NuStrICmp(name, apicharsys->char_data[character_type].file) == 0) {
+            return character_type;
+        }
+    }
+    return -1;
+}
+
+static i32 GameFindAlternativeSpecialObject(AISYS *, nuhspecial_s *special) {
+    return EquivalentObject_Find(WorldInfo_CurrentlyActive(), special);
+}
+
+static void GameAILoad(AISYS *, i32, NUGSCN *, VARIPTR *, VARIPTR *) {
+}
+
+static void GlobalCharacterRender(NUVEC *, i16, i32, i32, EDCREATURE_s *) {
+}
+
+static f32 GetCharacterGoalSpeed(APIOBJECT *object) {
+    if (object == NULL || object->ai == NULL) {
+        return 0.0f;
+    }
+
+    switch (object->ai->goal_speed_mode) {
+        case AI_ACTION_SPEED_LEGO:
+            return static_cast<GAMECHARACTERDATA *>(object->character_data->field11_0x24)->movement_speed * FRAMETIME;
+        case AI_ACTION_SPEED_RUN:
+            return static_cast<GAMECHARACTERDATA *>(object->character_data->field11_0x24)->field_0x18 * FRAMETIME;
+        case AI_ACTION_SPEED_WALK:
+            return static_cast<GAMECHARACTERDATA *>(object->character_data->field11_0x24)->field_0x14 * FRAMETIME;
+        default:
+            return 0.0f;
+    }
+}
+
+static i32 GameAIActionParseSpeed(char *name, u8 *speed) {
+    if (NuStrICmp(name, "LEGO") == 0) {
+        *speed = AI_ACTION_SPEED_LEGO;
+        return 1;
+    }
+    if (NuStrICmp(name, "RUN") == 0) {
+        *speed = AI_ACTION_SPEED_RUN;
+        return 1;
+    }
+    if (NuStrICmp(name, "WALK") == 0) {
+        *speed = AI_ACTION_SPEED_WALK;
+        return 1;
+    }
+    return 0;
+}
+
+static char *SpecialRouteCharacterName(u8 route_id) {
+    if (route_id == 0xff) {
+        return NULL;
+    }
+    if (route_id < 10) {
+        return Suit[route_id].suit_character_name;
+    }
+
+    i32 skipped_count = 0;
+    for (i32 route_index = 0; route_index < 64;) {
+        const i32 list_index = route_index + skipped_count;
+        const i16 character_type = CurrentStoryCList[list_index].model_id;
+        if (character_type == -1 || list_index > 63) {
+            return NULL;
+        }
+
+        char *name = apicharsys->char_data[character_type].file;
+        bool skip = false;
+        for (const char **skip_name = &skip_chars[1]; *skip_name != NULL; ++skip_name) {
+            if (NuStrICmp(name, *skip_name) == 0) {
+                skip = true;
+                break;
+            }
+        }
+        if (skip) {
+            ++skipped_count;
+            continue;
+        }
+        if (route_index + 10 == route_id) {
+            return name;
+        }
+        ++route_index;
+    }
+    return NULL;
+}
+
+static i32 LevelCharacterTypeID(char *name) {
+    if (NuStrICmp(name, "Everyone") == 0) {
+        return 0x40;
+    }
+    if (CurrentStoryCList == NULL) {
+        return -1;
+    }
+
+    i32 character_index = 0;
+    i16 character_type = CurrentStoryCList[character_index].model_id;
+    if (character_type == -1) {
+        return -1;
+    }
+
+    while (true) {
+        if (NuStrICmp(name, apicharsys->char_data[character_type].file) == 0) {
+            return character_index;
+        }
+
+        ++character_index;
+        character_type = CurrentStoryCList[character_index].model_id;
+        if (character_type == -1) {
+            return -1;
+        }
+        if (character_index == 64) {
+            return -1;
+        }
+    }
+}
+
+static u32 AIBigJumpToDestination(APIOBJECT *object, NUVEC *destination) {
+    if (destination == NULL || object == NULL || object->objptr == NULL || object->field_0x287 != 0 ||
+        object->objptr->field_0x7a5 == AI_GAME_OBJECT_TYPE_VEHICLE) {
+        return 1;
+    }
+
+    GameObject_s *game_object = object->objptr;
+    if (game_object->field_0xcc0 != NULL) {
+        SnapCreaturePos(game_object, destination, 0, NULL, 0);
+    } else if ((object->character_data->model_flags & CHARACTER_AI_MODEL_FLAG_SNAP_ON_BIG_JUMP) != 0) {
+        object->start_position = *destination;
+        object->position = *destination;
+        object->velocity = v000;
+        ResetPlayerMoves(game_object);
+        object->respawn_timer = 0.0f;
+    } else {
+        StartBigJump(game_object, destination, 0, 0.5f, 1.0f, 0, 0);
+    }
+
+    return 1;
+}
+
+static u32 AIRespawnOnPath(APIOBJECT *object) {
+    if (object->field_0x287 != 0 || (object->ai->path_info.flags & AI_RESPAWN_FLAG_DISABLED) != 0 ||
+        (object->flags_high & APIOBJECT_HIGH_FLAG_RESPAWN_ENABLED) == 0) {
+        return 0;
+    }
+
+    const u32 model_flags = object->character_data->model_flags;
+    if ((model_flags & CHARACTER_AI_MODEL_FLAG_DISABLE_RESPAWN) != 0) {
+        return 0;
+    }
+
+    GameObject_s *game_object = object->objptr;
+    if (game_object->field_0x7a5 == AI_GAME_OBJECT_TYPE_VEHICLE || game_object->field_0xcc0 != NULL) {
+        return 0;
+    }
+
+    if (object->respawn_timer > AI_RESPAWN_DELAY) {
+        if ((model_flags & CHARACTER_AI_MODEL_FLAG_SNAP_ON_BIG_JUMP) != 0) {
+            object->start_position = object->respawn_position;
+            object->position = object->respawn_position;
+            object->velocity = v000;
+            ResetPlayerMoves(game_object);
+            object->respawn_timer = 0.0f;
+        } else {
+            StartBigJump(game_object, &object->respawn_position, 0, 0.5f, 1.0f, 0, 0);
+        }
+    }
+
+    return 0;
+}
+
+static i32 SpecialRouteCharacterTypeID(char *name) {
+    if (NuStrICmp(name, "Everyone") == 0) {
+        return 0x40;
+    }
+
+    for (i32 suit_index = 0; suit_index < 10; ++suit_index) {
+        if (NuStrICmp(name, Suit[suit_index].suit_character_name) == 0) {
+            return suit_index;
+        }
+    }
+
+    if (CurrentStoryCList == NULL) {
+        return -1;
+    }
+    i32 skipped_count = 0;
+    for (i32 route_index = 0; route_index < 64;) {
+        const i32 list_index = route_index + skipped_count;
+        const i16 character_type = CurrentStoryCList[list_index].model_id;
+        if (character_type == -1 || list_index > 63) {
+            return -1;
+        }
+
+        char *character_name = apicharsys->char_data[character_type].file;
+        bool skip = false;
+        for (const char **skip_name = &skip_chars[1]; *skip_name != NULL; ++skip_name) {
+            if (NuStrICmp(character_name, *skip_name) == 0) {
+                skip = true;
+                break;
+            }
+        }
+        if (skip) {
+            ++skipped_count;
+            continue;
+        }
+        if (NuStrICmp(name, character_name) == 0) {
+            return route_index + 10;
+        }
+        ++route_index;
+    }
+    return -1;
+}
+
+extern "C" {
+    f32 NewShadowEx(NUVEC *position, i32 handle, f32 height_above, f32 height_below, i32 terrain_mask);
+    void PlatOnOff(i32 platform_id, i32 enabled);
+}
+extern i32 TimingBarSet;
+extern i32 SHADOWCALLS;
+
+f32 GameShadow(GameObject_s *object, nuvec_s *position, f32 probe_height, i32 terrain_mask) {
+    i32 object_platform_id = -1;
+    if (object != NULL && object->field_0x107c != -1) {
+        object_platform_id = object->field_0x107c;
+        PlatOnOff(object_platform_id, 0);
+    }
+
+    if (TimingBarSet == 2) {
+        TBOPENFN("Ter", 2);
+    }
+    const f32 shadow_height = NewShadowEx(position, 0, probe_height, probe_height, terrain_mask);
+    ++SHADOWCALLS;
+    if (TimingBarSet == 2) {
+        TBCLOSEFN("Ter", 2);
+    }
+
+    if (object_platform_id != -1) {
+        PlatOnOff(object_platform_id, 1);
+    }
+    return shadow_height;
 }
 
 extern f32 MainRenderTime;
@@ -78,24 +509,248 @@ void GameTiming(WORLDINFO_s *, float *game_time) {
 }
 
 void GameFog_Set() {
+    if (NuIOS_IsLowEndDevice()) {
+        NuLightFogX(GameFog.low_quality_start, GameFog.low_quality_end, GameFog.colour, 0.0f, 0.0f, 0, 0.0f);
+        return;
+    }
+
+    NuLightFogX(GameFog.high_quality_start, GameFog.high_quality_end, GameFog.colour, 0.0f, 0.0f, 1,
+                GameFog.high_quality_density);
 }
 
 void GameRayCast(nuvec_s *, nuvec_s *, float, i32) {
 }
 
 void GameAIProcess() {
+    if (WORLD == NULL || WORLD->ai_sys == NULL || Obj == NULL) {
+        return;
+    }
+
+    APIOBJECT *first_player = player != NULL ? &player->apiobj : NULL;
+    APIOBJECT *second_player = player2 != NULL ? &player2->apiobj : NULL;
+    AISysProcess(WORLD->ai_sys, first_player, second_player);
+
+    for (i32 index = 0; index < HIGHGAMEOBJECT; ++index) {
+        GameObject_s *object = &Obj[index];
+        const u16 character_flags = APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_CHARACTER;
+        if ((object->apiobj.field_0x1f8 & character_flags) != character_flags || object->apiobj.field_0x287 != 0) {
+            continue;
+        }
+
+        i32 ground_checks = object->apiobj.field_0x27d != 0;
+        if (ground_checks == 0 && object->apiobj.character_data != NULL) {
+            ground_checks = (object->apiobj.character_data->model_flags >> 13) & 1;
+        }
+
+        const i32 process_ai = (object->field_0xf00 & GAME_OBJECT_AI_UPDATE_PROCESS) != 0;
+        AISysProcessCharacter(WORLD->ai_sys, &object->apiobj, &object->ai, ground_checks, object->ai_elapsed_time, 0,
+                              process_ai);
+    }
+}
+
+extern "C" {
+    void InitFn_LevelCharacterTypeID(CHARACTERTYPEIDFN *function) {
+        LevelCharacterTypeIDFn = function;
+        SpecialRouteCharacterTypeIDFn = function;
+    }
+
+    void InitFn_SpecialRouteCharacterTypeID(CHARACTERTYPEIDFN *function) {
+        SpecialRouteCharacterTypeIDFn = function;
+    }
+
+    void InitFn_LevelCharacterName(CHARACTERNAMEFN *function) {
+        LevelCharacterNameFn = function;
+        SpecialRouteCharacterNameFn = function;
+    }
+
+    void InitFn_SpecialRouteCharacterName(CHARACTERNAMEFN *function) {
+        SpecialRouteCharacterNameFn = function;
+    }
+
+    void InitFn_LevelCharacterGlobalID(CHARACTERGLOBALIDFN *function) {
+        LevelCharacterGlobalIDFn = function;
+    }
+
+    void InitFn_GlobalCharacterTypeID(CHARACTERTYPEIDFN *function) {
+        GlobalCharacterTypeIDFn = function;
+    }
+
+    void InitFn_GlobalCharacterName(GLOBALCHARACTERNAMEFN *function) {
+        GlobalCharacterNameFn = function;
+    }
+
+    void InitFn_GlobalCharacterRender(CHARACTERRENDERFN *function) {
+        GlobalCharacterRenderFn = function;
+    }
+
+    void InitFn_GlobalCharacterHGobj(CHARACTERHGOBJFN *function) {
+        GlobalCharacterHGobjFn = function;
+    }
+
+    void InitFn_ClearAICreatures(AICLEARCREATURES *function) {
+        ClearAICreaturesFn = function;
+    }
+
+    void InitFn_GetCharacterGoalSpeedFn(CHARACTERGOALSPEEDFN *function) {
+        GetCharacterGoalSpeedFn = function;
+    }
+
+    void InitFn_GetViewRange(CHARACTERDISTANCEFN *function) {
+        GetViewRangeFn = function;
+    }
+
+    void InitFn_GetHearDistance(CHARACTERDISTANCEFN *function) {
+        GetHearDistanceFn = function;
+    }
+
+    void InitFn_GlobalGetMaxViewHeight(CHARACTERDISTANCEFN *function) {
+        GetMaxViewHeightFn = function;
+    }
+
+    void InitFn_GlobalGetMinViewHeight(CHARACTERDISTANCEFN *function) {
+        GetMinViewHeightFn = function;
+    }
+
+    void InitFn_GameAILoad(GAMEAILOAD *function) {
+        GameAILoadFn = function;
+    }
+
+    void InitFn_AIActionParseSpeed(AIACTIONPARSESPEED *function) {
+        AIActionParseSpeedFn = function;
+    }
+
+    void InitFn_AIRespawnOnPath(AIRESPAWNONPATH *function) {
+        AIRespawnOnPathFn = function;
+    }
+
+    void InitFn_AIBigJumpToDestination(AIBIGJUMPTODESTINATION *function) {
+        AIBigJumpToDestinationFn = function;
+    }
+
+    void InitFn_FindAlternativeSpecialObjectFn(AIFINDALTERNATIVESPECIALOBJECT *function) {
+        FindAlternativeSpecialObjectFn = function;
+    }
+
+    void InitFn_APIOBJECTFromObjIDFn(APIOBJECTFROMOBJID *function) {
+        APIOBJECTFromObjIDFn = function;
+    }
+
+    void InitFn_GetNamedAPIObject(AIGETNAMEDAPIOBJECT *function) {
+        GetNamedAPIObjectFn = function;
+    }
+
+    void InitFn_GetAICreatureOrigin(AIGETCREATUREORIGIN *function) {
+        GetAICreatureOriginFn = function;
+    }
+
+    void SetScriptErrorLevel(SCRIPT_ERROR_LEVEL level) {
+        if (level < SCRIPT_ERROR_LEVEL_COUNT) {
+            ScriptErrorLevel = level;
+        }
+    }
 }
 
 void GameAISysInit() {
+    RegisterAIScriptActions(lego_aiactiondefs);
+    RegisterAIScriptConditions(lego_aiconditiondefs);
+    InitFn_LevelCharacterTypeID(LevelCharacterTypeID);
+    InitFn_SpecialRouteCharacterTypeID(SpecialRouteCharacterTypeID);
+    InitFn_LevelCharacterName(LevelCharacterName);
+    InitFn_SpecialRouteCharacterName(SpecialRouteCharacterName);
+    InitFn_LevelCharacterGlobalID(LevelCharacterGlobalID);
+    InitFn_GlobalCharacterTypeID(GlobalCharacterTypeID);
+    InitFn_GlobalCharacterName(GlobalCharacterName);
+    InitFn_GlobalCharacterRender(GlobalCharacterRender);
+    InitFn_GlobalCharacterHGobj(GlobalCharacterHGobj);
+    InitFn_ClearAICreatures(ClearAICreatures);
+    InitFn_GetCharacterGoalSpeedFn(GetCharacterGoalSpeed);
+    InitFn_GetViewRange(GetViewRange);
+    InitFn_GetHearDistance(GetHearDistance);
+    InitFn_GlobalGetMaxViewHeight(GetMaxViewHeight);
+    InitFn_GlobalGetMinViewHeight(GetMinViewHeight);
+    InitFn_GameAILoad(GameAILoad);
+    InitFn_AIActionParseSpeed(GameAIActionParseSpeed);
+    InitFn_AIRespawnOnPath(AIRespawnOnPath);
+    InitFn_AIBigJumpToDestination(AIBigJumpToDestination);
+    InitFn_FindAlternativeSpecialObjectFn(GameFindAlternativeSpecialObject);
+    InitFn_APIOBJECTFromObjIDFn(GameAPIOBJECTFromObjID);
+    InitFn_GetNamedAPIObject(GetNamedAPIObject);
+    InitFn_GetAICreatureOrigin(GetAICreatureOrigin);
+
+    default_path_heighttol = 0.2f;
+    default_activate_difficulty = AI_DEFAULT_ACTIVATE_DIFFICULTY;
+    default_min_n_respawns = 0;
+    default_max_n_respawns = 0;
+    default_min_t_respawn = 0.0f;
+    default_max_t_respawn = 0.0f;
+
+    SetScriptErrorLevel(SCRIPT_ERROR_LEVEL_WARNING);
+    GameAISysSetGame();
 }
 
 void GameFog_Reset() {
+    GameFogSnap = 1;
+    GameFogDuration = 0.0f;
+    GameFogSet = 0;
+    GameFogTime = 0.0f;
 }
 
 void Game_KillPart(PART_s *, i32) {
 }
 
-void GameAISysReset(AISYS_s *) {
+void GameAISysReset(AISYS_s *system) {
+    if (system == NULL) {
+        return;
+    }
+
+    AISysSetLevelPath(system, NULL);
+
+    WORLD->processor_count = 0;
+    for (i32 script_index = 0; script_index < 32; ++script_index) {
+        char script_name[16];
+        if (script_index != 0) {
+            sprintf(script_name, "Level%d", script_index);
+        } else {
+            sprintf(script_name, "Level");
+        }
+
+        if (AIScriptFind(WORLD->ai_sys, script_name, 0, 1, 0) == NULL) {
+            continue;
+        }
+
+        AIScriptProcessorInit(system, NULL, &WORLD->processors[WORLD->processor_count].processor, NULL, script_name,
+                              NULL, 0, NULL, NULL);
+        NuStrCpy(WORLD->processors[WORLD->processor_count].name, script_name);
+        LevelScriptReStoreProgress(WORLD, &WORLD->processors[WORLD->processor_count]);
+        ++WORLD->processor_count;
+    }
+
+    AIPATHSYS *path_system = system->path_sys;
+    if (path_system != NULL) {
+        for (i32 path_index = 0; path_index < path_system->path_count; ++path_index) {
+            AIPATH *path = path_system->paths[path_index];
+            AIPATHCNX *connection = path->connections;
+            for (i32 connection_index = 0; connection_index < path->connection_count;
+                 ++connection_index, ++connection) {
+                connection->node_a = connection->previous_node_a;
+                connection->node_b = connection->previous_node_b;
+
+                if (LEGO_AIPATHCNX_BLOCKAGE != 0) {
+                    connection->node_a &= ~LEGO_AIPATHCNX_BLOCKAGE;
+                    connection->node_b &= ~LEGO_AIPATHCNX_BLOCKAGE;
+                }
+            }
+        }
+    }
+
+    AIPathCnxControlSysReset(WORLD->ai_path_cnx_control_sys);
+    AIPathCnxHelperSysReset(WORLD, WORLD->ai_path_cnx_helper_sys);
+    InitAICreatures(system);
+    ResetAICreatures(system);
+
+    if (WORLD->processor_count != 0) {
+        GizmoSysAddGizmos(WORLD->gizmo_sys, WORLD->giz_flow, WORLD);
+    }
 }
 
 void GameAttackInit() {
@@ -103,6 +758,7 @@ void GameAttackInit() {
 
 extern "C" void MenuRegisterSoundFX(i32 move, i32 select, i32 back, i32 no_entry);
 i32 GameAudio_GetSfxId(i32 sfx);
+void GameAudio_PlaySfxById(i32 sfx_id, nuvec_s *position, i32 flags, i32 volume);
 
 static GAMEAUDIO *GameAudio;
 
@@ -137,6 +793,8 @@ void Game_AutoSaving() {
 }
 
 void GameAISysSetGame() {
+    AIPathCnxHelperSysInitFn = NULL;
+    StarWars_GameAISysInit();
 }
 
 void GameAudio_AddSfx(i32, i32 *, i32 *, i32) {
@@ -149,9 +807,9 @@ void GameObjectOrigin(GameObject_s *object) {
     const f32 frame_time = FRAMETIME;
     const f32 vertical_offset = (object->field_0xffc + object->field_0x1000) * object->apiobj.field_0xa8 * 0.5f;
     const NUVEC center = {
-        object->apiobj.position.x + object->apiobj.previous_velocity_x * frame_time,
-        object->apiobj.position.y + object->apiobj.previous_velocity_y * frame_time + vertical_offset,
-        object->apiobj.position.z + object->apiobj.previous_velocity_z * frame_time,
+        object->apiobj.position.x + object->apiobj.previous_velocity.x * frame_time,
+        object->apiobj.position.y + object->apiobj.previous_velocity.y * frame_time + vertical_offset,
+        object->apiobj.position.z + object->apiobj.previous_velocity.z * frame_time,
     };
 
     object->apiobj.pos_x = center.x;
@@ -175,7 +833,7 @@ void GameObjectOrigin(GameObject_s *object) {
     object->apiobj.lower_position.z = center.z;
     object->apiobj.collision_origin.x = center.x;
     object->apiobj.collision_origin.y =
-        object->apiobj.collision_min.y + object->apiobj.previous_velocity_y * frame_time;
+        object->apiobj.collision_min.y + object->apiobj.previous_velocity.y * frame_time;
     object->apiobj.collision_origin.z = center.z;
     object->ai.terrain_origin = object->apiobj.collision_origin;
 }
@@ -186,7 +844,10 @@ void Game_IgnoreInput() {
 void GameAI_TotalScore() {
 }
 
-void GameAudio_PlaySfx(i32, nuvec_s *, i32, i32) {
+void GameAudio_PlaySfx(i32 sfx, nuvec_s *position, i32 flags, i32 volume) {
+    if ((u32)sfx < 0x55) {
+        GameAudio_PlaySfxById(GameAudio->sfx_ids[sfx], position, flags, volume);
+    }
 }
 
 void GameDrawMenuEntry(MENU_s *menu, char *text) {
@@ -197,7 +858,111 @@ void GameDrawMenuEntry(MENU_s *menu, char *text) {
     DrawMenuEntryEx(menu, text, static_cast<u8>(MenuA));
 }
 
-void GameAnimSys_Update(GAMEANIMSYS_s *) {
+void GameAnimSys_Update(GAMEANIMSYS_s *system) {
+    if (system == NULL) {
+        return;
+    }
+
+    GAMEANIMSET_s *set = reinterpret_cast<GAMEANIMSET_s *>(NuLinkedListGetHead(&system->active_sets));
+    while (set != NULL) {
+        GAMEANIMSET_s *next_set =
+            reinterpret_cast<GAMEANIMSET_s *>(NuLinkedListGetNext(&system->active_sets, &set->links));
+
+        const u8 was_no_visibility_test = set->flags & GAMEANIMSET_FLAG_NO_VISIBILITY_TEST;
+        set->flags &= ~GAMEANIMSET_FLAG_NO_VISIBILITY_TEST;
+
+        if ((set->flags & GAMEANIMSET_FLAG_STOP_REQUESTED) != 0) {
+            set->flags &= ~(GAMEANIMSET_FLAG_NO_VISIBILITY_TEST | GAMEANIMSET_FLAG_STOP_REQUESTED);
+            GameAnimSet_RemoveFromSystemList(set);
+            set = next_set;
+            continue;
+        }
+
+        set->state = GAMEANIMSET_STATE_AT_START;
+        i32 all_playing_forward = 1;
+        i32 all_at_start = 1;
+        i32 all_at_end = 1;
+        i32 any_special_no_visibility_test = 0;
+
+        GAMEANIMOBJ_s *object = set->objects;
+        while (object != NULL) {
+            if (NuSpecialGetNoVisiTestFn(&object->special) != 0) {
+                any_special_no_visibility_test = 1;
+            }
+
+            if (object->instance_animation != NULL) {
+                const f32 direction = object->start_frame > object->end_frame ? -1.0f : 1.0f;
+                const f32 previous_frame = object->instance_animation->ltime;
+
+                if (previous_frame * direction >= object->end_frame * direction) {
+                    if (object->instance_animation->tfactor * direction < 0.0f) {
+                        object->instance_animation->ltime = object->end_frame;
+                    } else if (object->instance_animation->repeating != 0) {
+                        object->instance_animation->ltime = previous_frame - object->end_frame + object->start_frame;
+                    } else {
+                        object->instance_animation->ltime = object->end_frame;
+                        object->instance_animation->playing = 0;
+                    }
+                } else if (previous_frame * direction <= object->start_frame * direction) {
+                    if (object->instance_animation->tfactor * direction > 0.0f) {
+                        object->instance_animation->ltime = object->start_frame;
+                    } else if (object->instance_animation->repeating != 0) {
+                        object->instance_animation->ltime = object->end_frame - (object->start_frame - previous_frame);
+                    } else {
+                        object->instance_animation->ltime = object->start_frame;
+                        object->instance_animation->playing = 0;
+                    }
+                }
+
+                if (previous_frame != object->instance_animation->ltime) {
+                    EvalAnim2(&object->special, object->instance_animation->ltime);
+                }
+
+                if (object->instance_animation->playing != 0) {
+                    set->flags |= GAMEANIMSET_FLAG_NO_VISIBILITY_TEST;
+                    if (object->instance_animation->tfactor * direction < 0.0f) {
+                        all_playing_forward = 0;
+                    }
+                }
+
+                const f32 directed_frame = object->instance_animation->ltime * direction;
+                if (directed_frame > object->start_frame * direction) {
+                    all_at_start = 0;
+                }
+                if (directed_frame < object->end_frame * direction) {
+                    all_at_end = 0;
+                }
+            }
+            object = object->next;
+        }
+
+        if ((set->flags & GAMEANIMSET_FLAG_NO_VISIBILITY_TEST) != any_special_no_visibility_test) {
+            object = set->objects;
+            while (object != NULL) {
+                NuSpecialSetNoVisiTest(&object->special, set->flags & GAMEANIMSET_FLAG_NO_VISIBILITY_TEST);
+                object = object->next;
+            }
+        }
+
+        if ((set->flags & GAMEANIMSET_FLAG_NO_VISIBILITY_TEST) != 0) {
+            set->state =
+                all_playing_forward != 0 ? GAMEANIMSET_STATE_ACTIVE_FORWARD : GAMEANIMSET_STATE_ACTIVE_BACKWARD;
+        } else {
+            if (all_at_end != 0) {
+                set->state = GAMEANIMSET_STATE_AT_END;
+            } else if (all_at_start == 0) {
+                set->state = GAMEANIMSET_STATE_BETWEEN_ENDPOINTS;
+            }
+            if (was_no_visibility_test != 0) {
+                set->flags |= GAMEANIMSET_FLAG_STOP_REQUESTED;
+            }
+        }
+
+        if ((set->flags & (GAMEANIMSET_FLAG_NO_VISIBILITY_TEST | GAMEANIMSET_FLAG_STOP_REQUESTED)) == 0) {
+            GameAnimSet_RemoveFromSystemList(set);
+        }
+        set = next_set;
+    }
 }
 
 i32 GameAudio_GetSfxId(i32 sfx) {
@@ -266,7 +1031,24 @@ void GameAudio_PlaySfxById(i32, nuvec_s *, i32, i32) {
 void Game_GotAllGoldBricks() {
 }
 
-void GameAPIOBJECTFromObjID(unsigned char) {
+APIOBJECT *GameAPIOBJECTFromObjID(u8 object_id) {
+    if (object_id >= HIGHGAMEOBJECT) {
+        return NULL;
+    }
+
+    GameObject_s *object = &Obj[object_id];
+    if ((object->apiobj.flags_low & APIOBJECT_FLAG_IN_USE) == 0) {
+        return NULL;
+    }
+
+    if ((object->apiobj.flags_high & APIOBJECT_HIGH_FLAG_PLAYER_CHARACTER) == 0 &&
+        object->ai.reset_mode != AI_OBJECT_ROUTE_STATE_SCRIPT_VISIBLE) {
+        return NULL;
+    }
+    if (object->apiobj.field_0x287 != 0 && object->field_0x101c <= 0.0f) {
+        return NULL;
+    }
+    return &object->apiobj;
 }
 
 i32 GameDrawCharacterModel(CHARACTERMODEL_s *model, ANIMPACKET_s *animation, NUMTX *matrix, NUMTX *secondary_matrix,
@@ -442,8 +1224,8 @@ void ThingManager::ExitLevelThings(ThingLevelData *) {
 }
 
 // ThingManager::ProcessThings @0x425460. Pass 1 always runs
-// ProcessEvenWhenPaused (skip flag 0x20); then, per ThingProcessData.paused,
-// either Process (skip 0x10) or ProcessOnlyWhenPaused (skip 0x40). The count
+// ProcessEvenWhenPaused first; then, per ThingProcessData.paused, either
+// Process or ProcessOnlyWhenPaused. Each pass has its own opt-out flag. The count
 // is re-read every iteration because thing Process calls may add things.
 // Profiling: things with a non-NULL profiling handle are bracketed with
 // NuTimeBarSlotBegin/End (stubbed no-ops on this build).
@@ -455,7 +1237,7 @@ void ThingManager::ProcessThings(ThingProcessData *data) {
     }
     for (i32 i = 0; i < this->count; i++) {
         BaseThing *thing = this->things[i];
-        if (thing == NULL || (thing->flags & 0x20)) {
+        if (thing == NULL || (thing->flags & THING_FLAG_SKIP_PROCESS_EVEN_WHEN_PAUSED)) {
             continue;
         }
         if (thing->profiling_0xc != NULL) {
@@ -473,7 +1255,7 @@ void ThingManager::ProcessThings(ThingProcessData *data) {
         }
         for (i32 i = 0; i < this->count; i++) {
             BaseThing *thing = this->things[i];
-            if (thing == NULL || (thing->flags & 0x40)) {
+            if (thing == NULL || (thing->flags & THING_FLAG_SKIP_PROCESS_ONLY_WHEN_PAUSED)) {
                 continue;
             }
             if (thing->profiling_0xc != NULL) {
@@ -491,7 +1273,7 @@ void ThingManager::ProcessThings(ThingProcessData *data) {
         }
         for (i32 i = 0; i < this->count; i++) {
             BaseThing *thing = this->things[i];
-            if (thing == NULL || (thing->flags & 0x10)) {
+            if (thing == NULL || (thing->flags & THING_FLAG_SKIP_PROCESS)) {
                 continue;
             }
             if (thing->profiling_0xc != NULL) {
@@ -512,7 +1294,7 @@ void ThingManager::RemoveDependanciesThings(ThingRemoveData *) {
 void ThingManager::RemoveTemporaryThings() {
 }
 
-// ThingManager::RenderThings @0x425390. Single pass over Render (skip 0x80),
+// ThingManager::RenderThings @0x425390. Single pass over Render,
 // bracketed with timebar slot 1 ("Rnd").
 void ThingManager::RenderThings(ThingRenderData *data) {
     static const char *name = "Rnd"; // timebar slot name @0x5734df
@@ -522,7 +1304,7 @@ void ThingManager::RenderThings(ThingRenderData *data) {
     }
     for (i32 i = 0; i < this->count; i++) {
         BaseThing *thing = this->things[i];
-        if (thing == NULL || (thing->flags & 0x80)) {
+        if (thing == NULL || (thing->flags & THING_FLAG_SKIP_RENDER)) {
             continue;
         }
         if (thing->profiling_0xc != NULL) {
@@ -540,25 +1322,23 @@ void ThingManager::ResetThings(ThingResetData *) {
 }
 
 // ThingManager::ThingManager @0x425870. Stores the manager in theThingManager
-// and carves the thing-pointer array (max_things * 4 bytes) from the
+// and carves the thing-pointer array from the
 // theMemoryManager linear pool. On allocation failure the array is NULL — the
 // manager then simply never accepts things (AddThing's count < max check).
 ThingManager::ThingManager(i32 max_things) {
-    u8 *mm = theMemoryManager;
-    u32 *cursor = *reinterpret_cast<u32 **>(mm + 0x8);
-    u32 *endp = *reinterpret_cast<u32 **>(mm + 0xc);
-    u32 need = (u32)max_things * 4;
+    const usize need = static_cast<usize>(max_things) * sizeof(*things);
 
-    u32 array = 0;
-    if ((u32)(*endp - *cursor) > need) {
-        array = (*cursor + 0xf) & ~0xfu;
-        *cursor = array + need;
-        memset(reinterpret_cast<void *>(array), 0, need);
-        *reinterpret_cast<u32 *>(mm + 0x14) += need;
-        *reinterpret_cast<u32 *>(mm + 0x18) -= need;
-        *reinterpret_cast<u32 *>(mm + 0x10) = *cursor;
+    BaseThing **array = NULL;
+    if (*theMemoryManager.end_cell - *theMemoryManager.cursor_cell > need) {
+        const usize aligned = ALIGN(*theMemoryManager.cursor_cell, 0x10);
+        *theMemoryManager.cursor_cell = aligned + need;
+        array = reinterpret_cast<BaseThing **>(aligned);
+        memset(array, 0, need);
+        theMemoryManager.allocated += need;
+        theMemoryManager.remaining -= need;
+        theMemoryManager.high_water = *theMemoryManager.cursor_cell;
     }
-    this->things = reinterpret_cast<BaseThing **>(array);
+    this->things = array;
     this->max_things = max_things;
     // Profiling sets are a deferred subsystem; the handle is only ever passed
     // to the NuTimeBarSlotBegin/End stubs, so NULL behaves like the original
@@ -685,10 +1465,6 @@ BaseThing::BaseThing() {
 // defaults); RemoveDependancies returns 1, the rest are no-ops. GetName holds
 // a 0 slot in the original base vtable (pure) — see basething.h.
 BaseThing::~BaseThing() {
-}
-
-char const *BaseThing::GetName() {
-    return NULL;
 }
 
 i32 BaseThing::RemoveDependancies(ThingRemoveData *) {
@@ -829,11 +1605,35 @@ void UpdateGameObjects(WORLDINFO_s *world) {
 
     SetPlayer();
 
+    // AI updates are scheduled before the object/player movement passes. The
+    // elapsed value is accumulated until an object becomes eligible for its
+    // next script and path update.
+    for (i32 i = 0; i < HIGHGAMEOBJECT; ++i) {
+        GameObject_s *object = &Obj[i];
+        const u16 character_flags = APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_CHARACTER;
+        if ((object->apiobj.field_0x1f8 & character_flags) != character_flags) {
+            continue;
+        }
+
+        if ((object->field_0xf00 & GAME_OBJECT_AI_UPDATE_PROCESS) != 0) {
+            object->ai_elapsed_time = 0.0f;
+        } else {
+            object->ai_elapsed_time += FRAMETIME;
+        }
+
+        if (object->apiobj.field_0x287 == 0) {
+            object->field_0xf00 |= GAME_OBJECT_AI_UPDATE_ELIGIBLE | GAME_OBJECT_AI_UPDATE_PROCESS;
+        }
+    }
+
+    GameAIProcess();
+
     // The original has separate object and player passes. Ordinary hub
     // players reach this player pass with no movement override or spline.
     for (i32 i = 0; i < 8; ++i) {
         GameObject_s *object = Player[i];
-        if (object == NULL || (object->apiobj.field_0x1f8 & 0x1001) != 0x1001) {
+        const u16 player_flags = APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_PLAYER_CHARACTER;
+        if (object == NULL || (object->apiobj.field_0x1f8 & player_flags) != player_flags) {
             continue;
         }
         if (object->move_override != NULL) {
@@ -848,24 +1648,29 @@ void UpdateGameObjects(WORLDINFO_s *world) {
     // position and updating contact state.
     for (i32 i = 0; i < HIGHGAMEOBJECT; ++i) {
         GameObject_s *object = &Obj[i];
-        if ((object->apiobj.field_0x1f8 & 0x1001) != 0x1001 || (object->apiobj.field_0x1f4 & 0x400) == 0) {
+        const u16 player_flags = APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_PLAYER_CHARACTER;
+        if ((object->apiobj.field_0x1f8 & player_flags) != player_flags ||
+            (object->apiobj.field_0x1f4 & APIOBJECT_MOTION_FLAG_AI_CONTROLLED) == 0) {
             continue;
         }
 
         PreResetCode(object);
         PostResetCode(object);
-        object->apiobj.position.x += object->apiobj.field_0x68 * FRAMETIME;
+        object->apiobj.position.x += object->apiobj.velocity.x * FRAMETIME;
         object->apiobj.position.y += object->vertical_velocity * FRAMETIME;
-        object->apiobj.position.z += object->apiobj.field_0x70 * FRAMETIME;
+        object->apiobj.position.z += object->apiobj.velocity.z * FRAMETIME;
     }
 
     for (i32 i = 0; i < 8; ++i) {
         GameObject_s *object = Player[i];
-        if (object == NULL || (object->apiobj.field_0x1f8 & 0x1001) != 0x1001) {
+        const u16 player_flags = APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_PLAYER_CHARACTER;
+        if (object == NULL || (object->apiobj.field_0x1f8 & player_flags) != player_flags) {
             continue;
         }
 
         TerrainPlayer(object);
+        KeepOnScreen(object);
+        Doors_Check(world, object);
         object->field_0x10c8 = object->apiobj.position.x;
         object->field_0x10cc = object->apiobj.position.y;
         object->field_0x10d0 = object->apiobj.position.z;
@@ -900,7 +1705,7 @@ GameObject_s *AddDynamicCreature(i32 model, nuvec_s *position, i32 angle, char *
         return NULL;
     }
 
-    object->apiobj.field_0x1f4 |= 0x400;
+    object->apiobj.field_0x1f4 |= APIOBJECT_MOTION_FLAG_AI_CONTROLLED;
     const u32 model_flags = apicharsys->char_data[model].model_flags;
     if ((model_flags & 0x200) != 0) {
         object->apiobj.field_0x1f4 |= 0x404;
@@ -940,7 +1745,7 @@ GameObject_s *AddDynamicCreature(i32 model, nuvec_s *position, i32 angle, char *
         object->apiobj.movement_facing_angle = static_cast<u16>(angle);
         object->apiobj.field_0x276 = static_cast<u16>(angle);
         if (group != NULL) {
-            AddToAIGroup(group, object);
+            AddToAIGroup(group, &object->apiobj);
         }
     }
 
@@ -957,16 +1762,10 @@ GameObject_s *AddDynamicCreature(i32 model, nuvec_s *position, i32 angle, char *
     object->apiobj.pos_x = object->apiobj.position.x;
     object->apiobj.pos_y = object->apiobj.position.y;
     object->apiobj.pos_z = object->apiobj.position.z;
-    object->apiobj.start_position[0] = object->apiobj.position.x;
-    object->apiobj.start_position[1] = object->apiobj.position.y;
-    object->apiobj.start_position[2] = object->apiobj.position.z;
-    object->apiobj.initial_position[0] = object->apiobj.position.x;
-    object->apiobj.initial_position[1] = object->apiobj.position.y;
-    object->apiobj.initial_position[2] = object->apiobj.position.z;
+    object->apiobj.start_position = object->apiobj.position;
+    object->apiobj.initial_position = object->apiobj.position;
     plr_lastpos = object->apiobj.position;
-    object->apiobj.field_0x68 = v000.x;
-    object->apiobj.field_0x6c = v000.y;
-    object->apiobj.field_0x70 = v000.z;
+    object->apiobj.velocity = v000;
 
     GetTopBot(object);
     GameObjectDimensions(object);
@@ -999,7 +1798,7 @@ GameObject_s *AddDynamicCreature(i32 model, nuvec_s *position, i32 angle, char *
     object->apiobj.field_0x287 = 0;
     object->field_0x7a5 = 0xff;
     object->apiobj.field_0x285 = 0;
-    memset(object->ai.reset_state, 0, sizeof(object->ai.reset_state));
+    memset(&object->ai.path_info, 0, sizeof(object->ai.path_info));
     object->ai.field_0x124 = -1;
     object->ai.field_0x138 = 0xff;
     object->ai.field_0x139 = 0;
@@ -1033,7 +1832,8 @@ void TakeOverGameObject2(GameObject_s *, GameObject_s *, i32) {
 void DeactivateGameObject(GameObject_s *) {
 }
 
-void EquivalentObject_Find(WORLDINFO_s *, nuhspecial_s *) {
+i32 EquivalentObject_Find(WORLDINFO_s *, nuhspecial_s *) {
+    return 0;
 }
 
 void FindNearestGameObject(nuvec_s *, GameObject_s *, u32, float, float, i32, i32, i32, float *, i32,

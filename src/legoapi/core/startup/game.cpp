@@ -6,6 +6,7 @@
 #include "gameapi/gui/apimenu.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/core/input/gamepads.h"
+#include "legoapi/core/input/qrand.h"
 #include "legoapi/items/base/apiobject.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/area.h"
@@ -35,6 +36,7 @@ extern void ReCalculateCompletionPoints(void);
 extern i16 id_DEFAULTCHARACTER[2];
 extern volatile u8 LSW_HintConditions[4];
 extern "C" i32 NewMode;
+extern "C" i32 Paused;
 
 namespace {
 
@@ -45,25 +47,9 @@ namespace {
 
 } // namespace
 
-struct AREAGAMEMODESTATE {
-    i32 field_0x00;
-    i32 field_0x04;
-    i32 field_0x08;
-    i32 field_0x0c;
-    i32 field_0x10;
-    i32 field_0x14;
-    i32 field_0x18;
-    i32 field_0x1c;
-    i32 field_0x20;
-    i32 field_0x24;
-    i32 field_0x28;
-    i32 field_0x2c;
-    i32 field_0x30;
-};
-
-DECOMP_ASSERT(sizeof(AREAGAMEMODESTATE) == 0x34, "AREAGAMEMODESTATE size");
-
 void ClearPause() {
+    Paused = 0;
+    NetPaused = 0;
 }
 
 void ResumeGame(i32, i32) {
@@ -74,10 +60,37 @@ void InitGameMode() {
         MenuReset();
     }
 
-    for (GameObject_s *player : Player) {
-        if (player != NULL && (player->field_0xeff & 1) == 0) {
-            ResetPlayer(player, 1, NULL, 1);
-        }
+    GameObject_s *player = Player[0];
+    if (player != NULL && (player->field_0xeff & 1) == 0) {
+        ResetPlayer(player, 1, NULL, 1);
+    }
+    player = Player[1];
+    if (player != NULL && (player->field_0xeff & 1) == 0) {
+        ResetPlayer(player, 1, NULL, 1);
+    }
+    player = Player[2];
+    if (player != NULL && (player->field_0xeff & 1) == 0) {
+        ResetPlayer(player, 1, NULL, 1);
+    }
+    player = Player[3];
+    if (player != NULL && (player->field_0xeff & 1) == 0) {
+        ResetPlayer(player, 1, NULL, 1);
+    }
+    player = Player[4];
+    if (player != NULL && (player->field_0xeff & 1) == 0) {
+        ResetPlayer(player, 1, NULL, 1);
+    }
+    player = Player[5];
+    if (player != NULL && (player->field_0xeff & 1) == 0) {
+        ResetPlayer(player, 1, NULL, 1);
+    }
+    player = Player[6];
+    if (player != NULL && (player->field_0xeff & 1) == 0) {
+        ResetPlayer(player, 1, NULL, 1);
+    }
+    player = Player[7];
+    if (player != NULL && (player->field_0xeff & 1) == 0) {
+        ResetPlayer(player, 1, NULL, 1);
     }
 
     f32 remember_speed = GetVehicleAreaRememberSpeed();
@@ -87,15 +100,32 @@ void InitGameMode() {
     AveragePlayerCurrentSpeedMul();
     SetPlayer();
 
-    AREAGAMEMODESTATE *area_state = reinterpret_cast<AREAGAMEMODESTATE *>(AreaGlobals);
-    area_state->field_0x14 = area_state->field_0x0c;
-    area_state->field_0x20 = area_state->field_0x1c;
+    AREA_GLOBAL_VALUES &area_state = AreaGlobals.values;
+    area_state.field_0x14 = WORLD->area != NULL ? area_state.field_0x0c : 0;
+    area_state.field_0x20 = area_state.field_0x1c;
     NewLData = NULL;
     NewMode = 0;
 
-    for (i32 i = 0; i < HIGHGAMEOBJECT; i++) {
-        GameObject_s *object = &Obj[i];
-        if ((object->apiobj.field_0x1f8 & 0x1001) == 0x1001) {
+    if (Player[0] != NULL && Player[0]->coinpacket != NULL) {
+        GIZMO_PICKUP_TYPE *pickup_type = &GizmoPickupType[GetRandomCoinType()];
+        Player[0]->coinpacket->lastcoin = pickup_type->first_model_id;
+        if (pickup_type->random_model_count != 0) {
+            Player[0]->coinpacket->lastcoin += qrand() / (0xffff / pickup_type->random_model_count + 1);
+        }
+    }
+
+    if (Player[1] != NULL && Player[1]->coinpacket != NULL) {
+        GIZMO_PICKUP_TYPE *pickup_type = &GizmoPickupType[GetRandomCoinType()];
+        Player[1]->coinpacket->lastcoin = pickup_type->first_model_id;
+        if (pickup_type->random_model_count != 0) {
+            Player[1]->coinpacket->lastcoin += qrand() / (0xffff / pickup_type->random_model_count + 1);
+        }
+    }
+
+    GameObject_s *object = Obj;
+    const u16 player_object_flags = APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_PLAYER_CHARACTER;
+    for (i32 object_index = 0; object_index < HIGHGAMEOBJECT; ++object_index, ++object) {
+        if ((object->apiobj.field_0x1f8 & player_object_flags) == player_object_flags) {
             object->field_0xefc |= 0x80;
         }
     }

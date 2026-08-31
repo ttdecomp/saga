@@ -168,5 +168,6 @@ void Cheat_SetOnOffBitfield(i32 *onoffs, i32 count) {
     }
 }
 
-void FreePlayUnlocked() {
+bool FreePlayUnlocked() {
+    return true;
 }

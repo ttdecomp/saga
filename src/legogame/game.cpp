@@ -1,5 +1,9 @@
 #include "legogame/game.h"
 
+#include <string.h>
+
+#include "MechInputTouch/MechInputTouch_types.h"
+#include "gameapi/gui/apimenu.h"
 #include "gameframework/saveload.h"
 #include "globals.h"
 #include "legoapi/legoapi_types.h"
@@ -9,14 +13,36 @@
 #include "legoapi/world/area.h"
 #include "legoapi/core/config/cheat.h"
 #include "legoapi/items/base/collection.h"
+#include "legoapi/menus/core/text.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/levels/episode.h"
 #include "nu2api/nucore/nustring.h"
+#include "nu2api/nucore/nuapi.h"
 #include "nu2api/nucore/nuvideo.h"
+#include "nu2api/nufile/nufpar.h"
 
 extern "C" i32 NuIOS_IsSmallScreen(void);
+extern "C" void PlaySfxById(i32 sfx_id, nuvec_s *position);
+extern "C" void SetAPIObjPlaySfxByIdFn(void (*play_sfx)(i32, nuvec_s *));
+extern "C" void SetAnimBlendMode(i32 mode);
 f32 GameSetSoundVolume(OPTIONSSAVE_s *);
 f32 GameSetMusicVolume(OPTIONSSAVE_s *);
+void GameAudio_Reset(void);
+void GameRegisterGizActions(void);
+void InitPartTable(char **names);
+void ResetSeeds(void);
+void GizSpinners_InitTerrain(WORLDINFO_s *world);
+void Signals_InitTerrain(WORLDINFO_s *world);
+void Attractos_InitTerrain(WORLDINFO_s *world);
+void SecurityDoors_InitTerrain(WORLDINFO_s *world);
+void Levers_InitTerrain(WORLDINFO_s *world);
+void GizPanel_InitTerrain(WORLDINFO_s *world);
+void HatMachines_InitTerrain(WORLDINFO_s *world);
+void GizmoBlowupsFinalSetup(WORLDINFO_s *world);
+void InitClimbObjectSys(WORLDINFO_s *world);
+void GizmoPushBlockInitAndReset(WORLDINFO_s *world, void *progress);
+extern NUFPCOMJMP LevelConfigKeywords_BeforeLoad[];
+extern NUFPCOMJMP LevelConfigKeywords_AfterLoad;
 
 u16 MakeSaveHash(void) {
     return Game.completion;
@@ -128,16 +154,18 @@ static GAMEAUDIO GameAudio_LSW = {
 };
 
 void InitGameBeforeConfig(void) {
-    if (PAL == 0) {
-        NuStrCpy(prodcode, "BASLUS-21409");
-        FRAMETIME = 0.016666668;
-    } else {
+    f32 frame_time;
+    if (PAL != 0) {
         NuStrCpy(prodcode, "BESLES-54221");
-        FRAMETIME = 0.02;
+        frame_time = 0.02f;
+    } else {
+        NuStrCpy(prodcode, "BASLUS-21409");
+        frame_time = 0.016666668f;
     }
-    DEFAULTFPS = 1.0 / FRAMETIME;
-    DEFAULTFRAMETIME = 0.016666668;
-    MAXFRAMETIME = 0.1;
+    FRAMETIME = frame_time;
+    DEFAULTFPS = 1.0f / frame_time;
+    DEFAULTFRAMETIME = 0.016666668f;
+    MAXFRAMETIME = 0.1f;
     permbuffer_ptr = permbuffer_base;
     permbuffer_end = superbuffer_end;
 
@@ -146,45 +174,75 @@ void InitGameBeforeConfig(void) {
     SaveSystemInitialise(3, (void *)MakeSaveHash, &Game, sizeof(GAMESAVE_s), 1, DrawAutoSaveIcon, &SuperOptions,
                          sizeof(SuperOptions));
 
+    Game_OptionsSave = &Game.options_save;
+    Game_LevelSave = Game.level_save;
+    Game_AreaSave = Game.area_save;
+    Game_EpisodeSave = Game.episode_save;
+    Game_CharacterSave = Game.character_save;
+    Game_CompletionSave = &Game.completion;
+    Game_MissionSave = &Game.mission_save;
+
+    ResetSeeds();
+    ResetTimer(&GlobalTimer, 0.0f);
+    ResetTimer(&OverallGamePlayTimer, 0.0f);
+    SetAnimBlendMode(2);
+    SetAPIObjPlaySfxByIdFn(PlaySfxById);
+    NuSetPadDemoEndButtons(GAMEPAD_SKIP);
+
     // Original option defaults.  OPTIONSSAVE occupies Game[0x4..0x10]; the
     // final brightness byte at 0xc was previously misplaced outside the type.
+    const i32 aspect = NuVideoGetAspect();
     Game.options_save.field0_0x0 = 1;
     Game.options_save.field1_0x1 = 1;
     Game.options_save.field2_0x2 = 0;
-    Game.options_save.field3_0x3 = 10;
     Game.options_save.field4_0x4 = 10;
-    Game.options_save.field5_0x5 = 10;
-    Game.options_save.field6_0x6 = 1;
+    Game.options_save.field3_0x3 = 10;
     Game.options_save.field7_0x7 = 0;
     Game.options_save.field8_0x8 = 0;
-    const i32 aspect = NuVideoGetAspect();
-    Game.options_save.field11_0xb = aspect != 0 && aspect != 3;
+    Game.options_save.field5_0x5 = 10;
+    Game.options_save.field6_0x6 = 1;
+    const bool standard_aspect = aspect == 0 || aspect == 3;
+    Game.options_save.field11_0xb = !standard_aspect;
     Game.options_save.field12_0xc = 10;
 
     // Persistent touch/control options are initialized before any save data is
     // loaded.  In particular, byte 0x14 is the original music-enable gate.
     SuperOptions.field0_0x0 = -1;
+    SuperOptions.field8_0x15 = -1;
     SuperOptions.touch_controls = 1;
     SuperOptions.field2_0x3 = 1;
     if (NuIOS_IsSmallScreen() == 0) {
-        SuperOptions.left_control_x = -0.72f;
-        SuperOptions.left_control_y = -0.65f;
-        SuperOptions.right_control_x = 0.77f;
-        SuperOptions.right_control_y = -0.62f;
+        SuperOptions.left_control_x = MechInputTouchVirtualConsoleController::s_defaultDPadPosX;
+        SuperOptions.left_control_y = MechInputTouchVirtualConsoleController::s_defaultDPadPosY;
+        SuperOptions.right_control_x = MechInputTouchVirtualConsoleController::s_defaultButtonsPosX;
+        SuperOptions.right_control_y = MechInputTouchVirtualConsoleController::s_defaultButtonsPosY;
     } else {
-        SuperOptions.left_control_x = -0.62f;
-        SuperOptions.left_control_y = -0.49f;
-        SuperOptions.right_control_x = 0.62f;
-        SuperOptions.right_control_y = -0.49f;
+        SuperOptions.left_control_x = MechInputTouchVirtualConsoleController::s_defaultDPadPosX_SmallScreen;
+        SuperOptions.left_control_y = MechInputTouchVirtualConsoleController::s_defaultDPadPosY_SmallScreen;
+        SuperOptions.right_control_x = MechInputTouchVirtualConsoleController::s_defaultButtonsPosX_SmallScreen;
+        SuperOptions.right_control_y = MechInputTouchVirtualConsoleController::s_defaultButtonsPosY_SmallScreen;
     }
     SuperOptions.music_enabled = 1;
-    SuperOptions.field8_0x15 = -1;
 
     GameSetSoundVolume(&Game.options_save);
     GameSetMusicVolume(&Game.options_save);
+    Text_GameSetLanguageFn = Text_SetLanguage_Game;
 
-    Game_AreaSave = reinterpret_cast<AREASAVE_s *>(reinterpret_cast<u8 *>(&Game) + 0x782c);
-    Game_CharacterSave = reinterpret_cast<u8 *>(&Game) + 0x7d04;
+    if (Text_Language != 13) {
+        if (Text_Language != 0 && PAL != 0) {
+            Text_SetLanguage(NuLanguageGet());
+        }
+    }
+
+    GameRegisterGizActions();
+    WorldInfo_Reset(&WorldInfo[0], -1);
+    WorldInfo_Reset(&WorldInfo[1], -1);
+    memset(ZeroRTL, 0, sizeof(ZeroRTL));
+    memset(GameCam, 0, sizeof(*GameCam));
+    InitPartTable(partdebris_name);
+    GameAudio_Reset();
+    MENUTEXTSCALE *= 1.2f;
+    MENUDY *= 1.5f;
 }
 
 void InitGameAfterConfig(void) {
@@ -356,8 +414,7 @@ void InitGameAfterConfig(void) {
         } while (i < areaId);
     }
 
-    //  Level_RegisterGameConfigKeywords((nufpcomjmp_s *)LevelConfigKeywords_BeforeLoad,
-    //  &LevelConfigKeywords_AfterLoad);
+    Level_RegisterGameConfigKeywords(LevelConfigKeywords_BeforeLoad, &LevelConfigKeywords_AfterLoad);
     //  Suits_Init();
 
     Collection_Configure("chars\\collection.txt", &permbuffer_ptr, &permbuffer_end);
@@ -528,8 +585,8 @@ void InitGameAfterConfig(void) {
     //  LEGOCONTEXT_GLIDE = 0x4f;
     //  LEGOCONTEXT_BLOCK = 0xc;
     //  LEGOCONTEXT_HOLD = 0x18;
-    //  LEGOCONTEXT_DROPIN = 0x23;
-    //  LEGOCONTEXT_DOOMED = 0x2b;
+    LEGOCONTEXT_DROPIN = 0x23;
+    LEGOCONTEXT_DOOMED = 0x2b;
     //  LEGOCONTEXT_LEDGETERRAIN = 0x55;
     //  LEGOCONTEXT_CLIMB = 0x43;
     //  LEGOCONTEXT_HANG = 0x4e;
@@ -702,14 +759,14 @@ void NewAreaMusicChanges(void) {
 }
 
 void Game_WorldInfo_InitLast(WORLDINFO *world) {
-    // GizSpinners_InitTerrain(world);
-    // Signals_InitTerrain(world);
-    // Attractos_InitTerrain(world);
-    // SecurityDoors_InitTerrain(world);
-    // Levers_InitTerrain(world);
-    // GizPanel_InitTerrain(world);
-    // HatMachines_InitTerrain(world);
-    // GizmoBlowupsFinalSetup(world);
-    // InitClimbObjectSys(world);
-    // GizmoPushBlockInitAndReset(world, NULL);
+    GizSpinners_InitTerrain(world);
+    Signals_InitTerrain(world);
+    Attractos_InitTerrain(world);
+    SecurityDoors_InitTerrain(world);
+    Levers_InitTerrain(world);
+    GizPanel_InitTerrain(world);
+    HatMachines_InitTerrain(world);
+    GizmoBlowupsFinalSetup(world);
+    InitClimbObjectSys(world);
+    GizmoPushBlockInitAndReset(world, NULL);
 }

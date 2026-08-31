@@ -5,14 +5,15 @@
 #include "decomp.h"
 #include "nu2api/nu3d/android/nuvertexformat_android.h"
 #include "nu2api/nu3d/nurndr.h"
+#include "nu2api/nu3d/nushader.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nufile/nufile.h"
 
 // Shader manager API (transcribed in nushadermanager_plain.cpp).
 extern "C" void *NuShaderManagerRetrieveShader(NUSHADERMTLDESC *desc, void *mtl);
 extern "C" void *NuShaderManagerRetrieveShaderVariant(NUSHADERMTLDESC *desc, void *mtl, i32 variant);
-extern "C" i32 NuShaderManagerGetShaderById(i32 id);
-extern "C" void NuShaderManagerReleaseShader(i32 shader);
+extern "C" NUSHADEROBJECT *NuShaderManagerGetShaderById(i32 id);
+extern "C" void NuShaderManagerReleaseShader(NUSHADEROBJECT *shader);
 
 static i32 max_materials;
 static NUMTL *material_list;

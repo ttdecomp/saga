@@ -212,15 +212,13 @@ extern "C" void NuDisplayListAddLightState(nudisplaylistitem_s *item, void * /*m
 // Executor
 // ──────────────────────────────────────────────────────────────────────────────
 
-extern "C" void NuDisplayListExecute(nudisplaylistitem_s *item, u32 table_base) {
-    // `table_base` points at the entry for type 0x80, so entry for type t
-    // is at table_base + t*4 - 0x200.
+extern "C" void NuDisplayListExecute(nudisplaylistitem_s *item, const nudl_handler_fn *item_table) {
+    // `item_table` points at the entry for type 0x80.
     for (;;) {
         // Walk the linear run until a NEXT links elsewhere.
         while (item->id != kItemId_Next) {
             if (item->id == kItemId_Call) {
-                auto handler = *reinterpret_cast<nudl_handler_fn *>(static_cast<usize>(table_base) +
-                                                                    static_cast<u32>(item->type) * 4u - 0x200u);
+                auto handler = item_table[static_cast<u32>(item->type) - kItemType_Mtl];
                 if (handler) {
                     handler(item->next);
                 }
@@ -235,7 +233,7 @@ extern "C" void NuDisplayListExecute(nudisplaylistitem_s *item, u32 table_base) 
 }
 
 extern "C" void NuDisplayListDrawItems(nudisplaylistitem_s *items) {
-    NuDisplayListExecute(items, static_cast<u32>(reinterpret_cast<usize>(s_current_table)));
+    NuDisplayListExecute(items, s_current_table);
 }
 
 extern "C" void NuDisplayListSetItemTable(i32 which) {
@@ -1129,6 +1127,8 @@ extern "C" void NuDisplayListSwapBuffersEndFrame(void) {
                 // No local state or no clipping — copy geometry if needed.
                 if (dl->mtl_last != dl->first) {
                     copyMaterialGeometry(dl, dl->first, sc);
+                } else {
+                    linkSceneGeometry(dl);
                 }
                 last_local = nullptr;
             } else {

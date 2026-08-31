@@ -35,7 +35,7 @@ extern LEVELDATA *PLATFORM_LDATA;
 extern char *debris_name[147];
 
 // Gizmo subsystem (defined in gizmo_sys.cpp, used by world.cpp)
-extern void *MiniKitCollection;
+extern COLLECTION_s MiniKitCollection;
 
 // Cutscene subsystem (defined in cutscene.cpp, used by world.cpp)
 extern i32 CUTCAM;
@@ -108,7 +108,7 @@ void InitSpecialSfx(WORLDINFO *world);
 void LoadSpecialSfxFile(WORLDINFO *world);
 
 // --- gizmo_sys.cpp — gizmo / minikit / collection ---
-void *CreateGizmoSys(void *world, VARIPTR *buf, VARIPTR *buf_end);
+GIZMOSYS_s *CreateGizmoSys(void *world, VARIPTR *buf, VARIPTR *buf_end);
 void LoadGizmoSys(GIZMOSYS_s *gizmo_sys, void *world, char *config_file);
 void LoadEditorSplines(char *path, VARIPTR *buf, VARIPTR *buf_end);
 void GizmoBlowupResetNameTable(void);
@@ -169,14 +169,14 @@ void GizForceSFX_Configure(WORLDINFO *world, char *config);
 void RippleEffects_Configure(WORLDINFO *world, char *config);
 void PortalDoors_Configure(WORLDINFO *world, char *config);
 void LoadLights(WORLDINFO *world, char *path);
-void *GameAnimSys_Create(VARIPTR *buf, VARIPTR *buf_end);
+GAMEANIMSYS_s *GameAnimSys_Create(VARIPTR *buf, VARIPTR *buf_end);
 void *GameAntnode_CreateSys(WORLDINFO *world, VARIPTR *buf, VARIPTR *buf_end, i32 count);
 extern "C" {
     void SockSys_Configure(void *sock_sys, char *config, i32 param, void *buf, void *buf_end, void *gscn);
     void rtlResetDynamic(void);
-    void SetPartRTLSet(i32 rtl_set);
-    i32 rtlFindByUserId(i32 rtl_set, i32 user_id);
-    void rtlGetDirection(i32 rtl_set, i32 id, void **out);
+    void SetPartRTLSet(usize rtl_set);
+    i32 rtlFindByUserId(usize rtl_set, i32 user_id);
+    void rtlGetDirection(usize rtl_set, i32 id, void **out);
     void NewMenu(i32 menu_id, i32 menu_y, i32 param3);
 }
 

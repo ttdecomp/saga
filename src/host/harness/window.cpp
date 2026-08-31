@@ -156,8 +156,7 @@ namespace {
     static HostScriptedPlaySnapshot host_scripted_play_snapshot() {
         HostScriptedPlaySnapshot snapshot;
         snapshot.player_position = Player[0]->apiobj.position;
-        snapshot.player_velocity = {Player[0]->apiobj.field_0x68, Player[0]->apiobj.field_0x6c,
-                                    Player[0]->apiobj.field_0x70};
+        snapshot.player_velocity = Player[0]->apiobj.velocity;
         snapshot.player_yrot = Player[0]->yrot;
         snapshot.player_flags = Player[0]->apiobj.field_0x1f8;
         snapshot.player_motion_flags = Player[0]->apiobj.field_0x1f4;
@@ -475,8 +474,15 @@ i32 host_run_window(const HostWindowOptions &options) {
             }
 
             if (scripted_stage == HostScriptedInputStage::title && menu_id == 0 &&
-                elapsed_ticks >= host_scripted_title_input_ms) {
+                elapsed_ticks >= host_scripted_title_input_ms &&
+                elapsed_ticks >= scripted_stage_ticks + host_scripted_menu_settle_ms) {
+                // A tap is consumed by the platform input update that observes
+                // it.  Keep trying at the normal menu cadence until the title
+                // menu has actually accepted START; asynchronous loading can
+                // otherwise make a single wall-clock tap arrive too early.
                 HostInputTap(0, GAMEPAD_START | GAMEPAD_JUMP);
+                scripted_stage_ticks = elapsed_ticks;
+            } else if (scripted_stage == HostScriptedInputStage::title && menu_id == 1) {
                 scripted_stage = HostScriptedInputStage::new_or_load;
                 scripted_stage_ticks = elapsed_ticks;
             } else if (scripted_stage == HostScriptedInputStage::new_or_load && menu_id == 1 &&
@@ -802,14 +808,15 @@ i32 host_run_window(const HostWindowOptions &options) {
                                             ? static_cast<NUDLDLISTSCENE *>(handle->scene->display_list)
                                             : nullptr;
                 NUCLIPOBJECT *clip_object = special != nullptr ? special->clip_objects : nullptr;
-                LOG_INFO("scripted player special: part=%d visibility=%p rigid=(array=%p,count=%d) "
+                LOG_INFO("scripted player special: part=%d name=%s rigid=(array=%p,count=%d) "
                          "smooth=%p alternate=(rigid=%p,count=%d,smooth=%p) handle=(scene=%p,legacy=%p,display=%p) "
                          "display=(name=%s,flags=0x%x,instance=%d,clip=%p,range=%p,bounds=(%.3f,%.3f,%.3f)-"
                          "(%.3f,%.3f,%.3f)) scene=(display=%p,items=%d,clip=%d,mtls=%u,specials=%d,flags=0x%x) "
                          "clip-object=(materials=%d,ids=%p,indices=%p)",
-                         render_indices[0], part.visibility, part.rigid_specials, rigid_count, part.smooth_skin_special,
-                         part.alternate_rigid_specials, alternate_rigid_count, part.alternate_smooth_skin_special,
-                         handle != nullptr ? handle->scene : nullptr, handle != nullptr ? handle->special : nullptr,
+                         render_indices[0], part.name != nullptr ? part.name : "-", part.rigid_specials, rigid_count,
+                         part.smooth_skin_special, part.alternate_rigid_specials, alternate_rigid_count,
+                         part.alternate_smooth_skin_special, handle != nullptr ? handle->scene : nullptr,
+                         handle != nullptr ? handle->special : nullptr,
                          handle != nullptr ? handle->display_special : nullptr,
                          special != nullptr && special->name != nullptr ? special->name : "-",
                          special != nullptr ? special->flags : 0, special != nullptr ? special->instance_ix : -1,

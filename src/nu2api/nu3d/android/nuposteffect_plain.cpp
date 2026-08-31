@@ -54,25 +54,16 @@ i32 g_effectFlags;     // bss — see masks above
 i32 g_effectsRan;      // bss — set by the (untranscribed) effect dispatch
 i32 g_lastFrameEffect; // bss — last dispatched effect id
 
-// ── Filter objects ───────────────────────────────────────────────────────────
-// On device these are heap-allocated C++ objects with a vtable.  On host they
-// are never created, so every dispatch is a null-check.  The handles are kept
-// as void* (rather than a typed struct) because the original stores them as
-// 32-bit pointers and the host may be 64-bit — the offsets below are byte
-// offsets into the 32-bit layout.
+struct NuPostEffectFilter {
+    void (*end)();
+    i32 light_count;
+    void *lights[64];
+};
 
-static void *s_deferredFilter; // +0x54 lightCount, +0x58 lightIds[]; vtable+0x20 = End
-static void *s_mainFilter;
-static void *s_motionFilter;
-static void *s_motionAccumFilter;
-
-// Byte offsets into the filter object as laid out by the original 32-bit
-// compiler.  Kept as constants so the transcribed AddDynamicLight / End
-// remain greppable against the original.
-static constexpr usize kFilterOffset_LightCount = 0x54;
-static constexpr usize kFilterOffset_Lights = 0x58;
-static constexpr usize kFilterVTableOffset_End = 0x20;                       // byte offset
-static constexpr usize kFilterVTableIndex_End = kFilterVTableOffset_End / 4; // vtable[8] in original 32-bit layout
+static NuPostEffectFilter *s_deferredFilter;
+static NuPostEffectFilter *s_mainFilter;
+static NuPostEffectFilter *s_motionFilter;
+static NuPostEffectFilter *s_motionAccumFilter;
 
 // Proxy surface descriptors that the original deferred pass populates with
 // the G-buffer bindings.  On host they are reset to an identity descriptor
@@ -83,41 +74,37 @@ static constexpr usize kFilterVTableIndex_End = kFilterVTableOffset_End / 4; // 
 //   [1] = buffer kind: 0 colour, 1 normal, 2 velocity, 4 depth
 //   [8] = 1  (enabled)
 //   [9] = 0  (mip / reserved)
-static i32 s_proxyColorBuffer[12];
-static i32 s_proxyNormalBuffer[12];
-static i32 s_proxyVelocityBuffer[12];
-static i32 s_proxyDepthBuffer[12];
+struct NuProxyBuffer {
+    i32 origin;
+    i32 kind;
+    bool enabled;
+    i32 mip;
+};
+
+static NuProxyBuffer s_proxyColorBuffer;
+static NuProxyBuffer s_proxyNormalBuffer;
+static NuProxyBuffer s_proxyVelocityBuffer;
+static NuProxyBuffer s_proxyDepthBuffer;
 
 static constexpr i32 kProxyKind_Color = 0;
 static constexpr i32 kProxyKind_Normal = 1;
 static constexpr i32 kProxyKind_Velocity = 2;
 static constexpr i32 kProxyKind_Depth = 4;
 
-static inline void ResetProxyBuffer(i32 *proxy, i32 kind) {
-    proxy[0] = 0;
-    proxy[1] = kind;
-    proxy[8] = 1;
-    proxy[9] = 0;
+static inline void ResetProxyBuffer(NuProxyBuffer *proxy, i32 kind) {
+    proxy->origin = 0;
+    proxy->kind = kind;
+    proxy->enabled = true;
+    proxy->mip = 0;
 }
 
-static inline void FilterEnd(void *filter) {
+static inline void FilterEnd(NuPostEffectFilter *filter) {
     if (filter == nullptr) {
         return;
     }
-    // Original: (*(void(**)(void))(*(i32*)filter + 0x20))();
-    // i.e. vtable[8]().
-    void **vtable = *reinterpret_cast<void ***>(filter);
-    using EndFn = void (*)();
-    auto *fn = reinterpret_cast<EndFn>(vtable[kFilterVTableIndex_End]);
-    fn();
-}
-
-static inline i32 &FilterLightCount(void *filter) {
-    return *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(filter) + kFilterOffset_LightCount);
-}
-
-static inline i32 *FilterLights(void *filter) {
-    return reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(filter) + kFilterOffset_Lights);
+    if (filter->end != NULL) {
+        filter->end();
+    }
 }
 
 // ── Post-effect API ─────────────────────────────────────────────────────────
@@ -137,13 +124,13 @@ extern "C" void NuPostEffectReset(void) {
 // original 0x2abc40 — feeds a dynamic light handle into the deferred filter's
 // light list.  The handle is an opaque light pointer; the original checks
 // *(i32*)(light+0x7bc) != 0 before calling (see nurenderthread.cpp).
-extern "C" void NuPostEffectAddDynamicLight(i32 light) {
+extern "C" void NuPostEffectAddDynamicLight(void *light) {
     if (s_deferredFilter == nullptr) {
         return;
     }
-    i32 count = FilterLightCount(s_deferredFilter);
-    FilterLights(s_deferredFilter)[count] = light;
-    FilterLightCount(s_deferredFilter) = count + 1;
+    i32 count = s_deferredFilter->light_count;
+    s_deferredFilter->lights[count] = light;
+    s_deferredFilter->light_count = count + 1;
 }
 
 // original 0x2ab8d0 — end-of-frame dispatch.  On device this invokes the
@@ -156,10 +143,10 @@ extern "C" void NuPostEffectEnd(void) {
     FilterEnd(s_motionFilter);
     FilterEnd(s_motionAccumFilter);
 
-    ResetProxyBuffer(s_proxyColorBuffer, kProxyKind_Color);
-    ResetProxyBuffer(s_proxyNormalBuffer, kProxyKind_Normal);
-    ResetProxyBuffer(s_proxyVelocityBuffer, kProxyKind_Velocity);
-    ResetProxyBuffer(s_proxyDepthBuffer, kProxyKind_Depth);
+    ResetProxyBuffer(&s_proxyColorBuffer, kProxyKind_Color);
+    ResetProxyBuffer(&s_proxyNormalBuffer, kProxyKind_Normal);
+    ResetProxyBuffer(&s_proxyVelocityBuffer, kProxyKind_Velocity);
+    ResetProxyBuffer(&s_proxyDepthBuffer, kProxyKind_Depth);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

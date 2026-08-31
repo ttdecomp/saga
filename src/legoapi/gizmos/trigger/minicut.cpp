@@ -35,13 +35,14 @@ void GizMiniCut_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static i32 GizMiniCut_GetPos(GIZMO *gizmo) {
+static NUVEC *GizMiniCut_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
     return {};
 }
 
-static void GizMiniCut_UsingSpecial(GIZMO **, void *, i32, char *) {
+static i32 GizMiniCut_UsingSpecial(GIZMO **, void *, i32, char *) {
     UNIMPLEMENTED();
+    return 0;
 }
 
 void GizMiniCut_Reset(void *, void *, void *) {

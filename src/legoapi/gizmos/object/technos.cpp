@@ -6,6 +6,10 @@ struct TECHNOPROGRESS {
     i32 state[2];
 };
 
+TECHNO_CONFIG TechnoSys = {
+    0.2f, 0x55, 0x2c, -1, -1, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 0.0f}, 0x2d, 0x2e,
+};
+
 i32 techno_gizmotype_id = -1;
 
 static i32 Technos_GetMaxGizmos(void *techno) {
@@ -57,7 +61,7 @@ static void Techno_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static i32 Techno_GetPos(GIZMO *gizmo) {
+static NUVEC *Techno_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
     return {};
 }

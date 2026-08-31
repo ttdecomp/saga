@@ -7,6 +7,8 @@
 
 struct GIZFORCESYS_s;
 struct GIZOBSTACLESYS_s;
+struct GIZBUILDITSYS_s;
+struct GIZMOPICKUPSYS_s;
 
 struct AREADATA_s;
 struct LEVEL_PROGRESS_s;
@@ -30,11 +32,13 @@ struct MechAutoJumpManager;
 struct DOOR_s;
 struct GIZOBSTACLESYS_s;
 struct GIZTURRETSYS_s;
+struct GIZMOBLOWUPTYPE_s;
 struct GRABBER_s;
 struct PULSESYS_s;
 struct LEVER_s;
 struct GAMEANTINODESYS_s;
 struct GIZBOMBGENSYS_s;
+struct GIZSPECIALSYS_s;
 struct TRAFFICANIMSYS_s;
 struct GIZTIMER_s;
 struct TIMER_s;
@@ -55,6 +59,20 @@ typedef struct MINIKIT {
     char filler[0x14];
     i32 field_0x18;
 } MINIKIT;
+
+// A configured scene animation that opens or closes one portal.  The first
+// three pointers are the engine's 0x0c-byte special handle; keeping the
+// fields explicit here avoids coupling WORLDINFO's ABI header to legoapi_types.h.
+typedef struct PORTALDOOR_s {
+    NUGSCN *scene;
+    void *special;
+    void *display_special;
+    u16 flags;
+    u8 portal_id;
+    u8 padding_0f;
+} PORTALDOOR;
+
+DECOMP_ASSERT(sizeof(PORTALDOOR) == 0x10, "PORTALDOOR size");
 
 // Layout matches the original WORLDINFO_s (0x51b0 = 20912 bytes).
 // Field offsets verified against the original binary disassembly.
@@ -138,22 +156,32 @@ typedef struct WORLDINFO_s {
     i32 door_count;                     // 0x46a0
     DOOR_s *start_door;                 // 0x46a4
     GIZOBSTACLESYS_s *giz_obstacle_sys; // 0x46a8
-    GIZTURRETSYS_s *giz_turret_sys;     // 0x46ac
+    GIZBUILDITSYS_s *giz_buildit_sys;   // 0x46ac
     GIZFORCESYS_s *giz_force_sys;       // 0x46b0
-    char filler7[0x46f0 - 0x46b4];      // 0x46b4 .. 0x46f0
+    char filler7a[0x46bc - 0x46b4];     // 0x46b4 .. 0x46bc
+    GIZTURRETSYS_s *giz_turret_sys;     // 0x46bc
+    char filler7b[0x46f0 - 0x46c0];     // 0x46c0 .. 0x46f0
 
     GRABBER_s *grabber; // 0x46f0
 
-    char filler8[0x5054 - 0x46f4];
+    char filler8[0x504c - 0x46f4];
 
-    PULSESYS_s *pulses_sys; // 0x5058
+    PORTALDOOR *portal_doors; // 0x504c
+    i32 portal_door_count;    // 0x5050
 
-    char filler9[0x505c - 0x5058];
+    PULSESYS_s *pulses_sys; // 0x5054
 
-    LEVER_s *levers;
-    i32 nlevers;
+    char filler9[0x506c - 0x5058];
 
-    char filler10[0x50cc - 0x5064];
+    LEVER_s *levers; // 0x506c
+    i32 nlevers;     // 0x5070
+
+    char filler10[0x50bc - 0x5074];
+    GIZMOPICKUPSYS_s *gizmo_pickup_sys; // 0x50bc
+
+    i32 gizmo_blowup_type_count;           // 0x50c0
+    i32 gizmo_blowup_count;                // 0x50c4
+    GIZMOBLOWUPTYPE_s *gizmo_blowup_types; // 0x50c8
 
     struct GIZTIMER_s *giz_timers;
     i32 giz_timers_count;
@@ -170,7 +198,9 @@ typedef struct WORLDINFO_s {
 
     GIZBOMBGENSYS_s *giz_bombgen_sys;
 
-    char filler14a[0x5120 - 0x50ec];
+    char filler14a[0x510c - 0x50ec];
+    GIZSPECIALSYS_s *giz_special_sys; // 0x510c
+    char filler14c[0x5120 - 0x5110];
 
     void *podrace; // 0x5120  per-level PodRace state block
 
@@ -180,6 +210,16 @@ typedef struct WORLDINFO_s {
 
     char filler15[0x51b0 - 0x5170];
 } WORLDINFO;
+
+DECOMP_ASSERT(offsetof(WORLDINFO, gizmo_blowup_type_count) == 0x50c0, "WORLDINFO blowup type count offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, gizmo_blowup_types) == 0x50c8, "WORLDINFO blowup types offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, portal_doors) == 0x504c, "WORLDINFO portal-door array offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, portal_door_count) == 0x5050, "WORLDINFO portal-door count offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, pulses_sys) == 0x5054, "WORLDINFO pulse system offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, levers) == 0x506c, "WORLDINFO lever array offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, nlevers) == 0x5070, "WORLDINFO lever count offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, gizmo_pickup_sys) == 0x50bc, "WORLDINFO pickup system offset");
+DECOMP_ASSERT(sizeof(WORLDINFO) == 0x51b0, "WORLDINFO ABI");
 
 extern void (*WorldInfo_InitMenuFn)(WORLDINFO *, i32 *, i32 *);
 extern void (*WorldInfo_InitLastFn)(WORLDINFO *);

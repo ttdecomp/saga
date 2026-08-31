@@ -31,7 +31,7 @@ struct APICHARACTERMODELLIST_s {
     i16 count;
 };
 
-enum {
+enum AREA_FLAGS {
     AREAFLAG_NONE = 0x0,
     AREAFLAG_SINGLE_BUFFER = 0x8,
     AREAFLAG_MINIKIT = 0x10,

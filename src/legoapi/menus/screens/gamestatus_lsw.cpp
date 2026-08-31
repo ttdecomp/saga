@@ -1,5 +1,7 @@
 #include "decomp.h"
+#include "globals.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/core/input/qrand.h"
 #include "nu2api/nu3d/nutex.h"
 
 struct AIROW_s;
@@ -7,7 +9,15 @@ struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
 
+extern "C" i32 NewMode;
+extern "C" i32 reset_load;
+
+u16 hub_iconang[4] = {};
+static f32 hub_icontime[4] = {};
+
 void NewGameMode() {
+    NewMode = 1;
+    reset_load = 1;
 }
 
 void UpdateStats() {
@@ -29,6 +39,14 @@ void Prompt_LSW_Draw(STATUS_STAGE_s *, STATUSPACKET_s *, i32) {
 }
 
 void ResetIconWibble() {
+    hub_iconang[0] = static_cast<u16>(qrand());
+    hub_icontime[0] = 0.0f;
+    hub_iconang[1] = static_cast<u16>(qrand());
+    hub_icontime[1] = 0.0f;
+    hub_iconang[2] = static_cast<u16>(qrand());
+    hub_icontime[2] = 0.0f;
+    hub_iconang[3] = static_cast<u16>(qrand());
+    hub_icontime[3] = 0.0f;
 }
 
 void Save_LSW_Update(STATUS_STAGE_s *, STATUSPACKET_s *, float) {

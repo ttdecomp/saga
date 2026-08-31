@@ -8,7 +8,7 @@ extern "C" {
     extern debinftype **debtab;
     extern i32 EDPP_MAX_TYPES;
     extern i32 edpp_types_used;
-    extern i32 edpp_page_scene[8];
+    extern usize edpp_page_scene[8];
     extern i32 edpp_page_used[8];
     extern i32 DEBPAGE_GENERAL;
     extern i32 DEBPAGE_CHARACTER;
@@ -63,9 +63,9 @@ extern "C" {
     }
     void edanimRegisterCubeDumpInfo(void) {
     }
-    void edanimStartPage(void) {
+    void edanimStartPage(i32) {
     }
-    void edanimStopPage(void) {
+    void edanimStopPage(i32) {
     }
     void edanimUpdateObjects(void) {
     }
@@ -187,7 +187,7 @@ extern "C" {
     }
     void edgraSetup(void) {
     }
-    void edgraStopPage(i32) {
+    void edgraStopPage(i8) {
     }
     void edmainActivate(void) {
     }
@@ -233,7 +233,8 @@ extern "C" {
     }
     void edpartRegisterPointerToGameCharLocation(void) {
     }
-    void edpartStopPage(void) {
+    void edpartStopPage(i8 page) {
+        (void)page;
     }
     void edppClearPage(void) {
     }
@@ -253,7 +254,8 @@ extern "C" {
     // character (5) pages only contain effect-type records; instance records
     // are read by the page-1/0 branches in the original and are deliberately
     // not entered here.
-    i32 edppLoadPage(char *path, i32 flag, i32 flags) {
+    i32 edppLoadPage(char *path, i32 flag, usize scene) {
+        (void)scene;
         u8 category;
         i32 page_index;
         if (flag == 0) {
@@ -282,7 +284,7 @@ extern "C" {
         }
 
         edpp_page_used[page_index] = 1;
-        edpp_page_scene[page_index] = flags;
+        edpp_page_scene[page_index] = scene;
 
         i32 requested = EdFileReadInt();
         i32 available = EDPP_MAX_TYPES - edpp_types_used;
@@ -328,7 +330,7 @@ extern "C" {
     }
     void edppSetSaveName(void) {
     }
-    void edppStopPage(void) {
+    void edppStopPage(i32) {
     }
     void edqrand(void) {
     }

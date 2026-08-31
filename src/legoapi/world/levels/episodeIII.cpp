@@ -165,8 +165,8 @@ void KashyyykB_Init(WORLDINFO_s *) {
 void KashyyykC_Init(WORLDINFO_s *world) {
     GIZFORCE_s *f = GizForces_FindForce(world, "kashyyyk_boss");
     if (f != NULL) {
-        if (f->field_0x44 == 3.0f)
-            f->field_0x44 = 20.0f;
+        if (f->force_strength == 3.0f)
+            f->force_strength = 20.0f;
         f->strength_0x6c = 1.0f;
     }
 }

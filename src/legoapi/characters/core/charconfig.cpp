@@ -49,8 +49,47 @@ static void ConfigureCharacterIcon(CHARACTERDATA &character, NUFPAR *parser, i32
     }
 }
 
+static bool ConfigureLayerMask(NUFPAR *parser, u32 &mask) {
+    mask = 0;
+    bool configured = false;
+    while (NuFParGetWord(parser) != 0) {
+        const i32 layer = NuAToI(parser->word_buf);
+        if (static_cast<u32>(layer) <= 31) {
+            mask |= 1u << layer;
+            configured = true;
+        }
+    }
+    return configured;
+}
+
+static void ConfigureCharacterLayers(GAMECHARACTERDATA &data, NUFPAR *parser) {
+    if (NuStrICmp(parser->word_buf, "layers_special") == 0) {
+        if (ConfigureLayerMask(parser, data.layer_mask_special)) {
+            data.layer_mask = data.layer_mask_special;
+            data.layer_mask_medium = data.layer_mask_special;
+            data.layer_mask_low = data.layer_mask_special;
+            data.layer_mask_dead = data.layer_mask_special;
+        }
+    } else if (NuStrICmp(parser->word_buf, "layers_high") == 0) {
+        if (ConfigureLayerMask(parser, data.layer_mask)) {
+            data.layer_mask_medium = data.layer_mask;
+            data.layer_mask_low = data.layer_mask;
+        }
+    } else if (NuStrICmp(parser->word_buf, "layers_medium") == 0) {
+        if (ConfigureLayerMask(parser, data.layer_mask_medium)) {
+            data.layer_mask_low = data.layer_mask_medium;
+        }
+    } else if (NuStrICmp(parser->word_buf, "layers_low") == 0) {
+        ConfigureLayerMask(parser, data.layer_mask_low);
+    } else if (NuStrICmp(parser->word_buf, "layers_dead") == 0) {
+        ConfigureLayerMask(parser, data.layer_mask_dead);
+    } else if (NuStrICmp(parser->word_buf, "ride_layersoff") == 0) {
+        ConfigureLayerMask(parser, data.ride_layers_off);
+    }
+}
+
 void CharConfig_ConfigureAll(i32 permanent, nufpcomjmp_s *) {
-    if (CDataList == NULL || CHARCOUNT <= 0) {
+    if (CDataList == NULL || GCDataList == NULL || CHARCOUNT <= 0) {
         return;
     }
 
@@ -72,6 +111,7 @@ void CharConfig_ConfigureAll(i32 permanent, nufpcomjmp_s *) {
             if (NuFParGetWord(parser) == 0) {
                 continue;
             }
+            ConfigureCharacterLayers(GCDataList[character_id], parser);
             if (NuStrICmp(parser->word_buf, "icon") == 0) {
                 ConfigureCharacterIcon(character, parser, permanent);
             }

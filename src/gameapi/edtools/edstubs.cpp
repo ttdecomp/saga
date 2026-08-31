@@ -32,7 +32,7 @@ extern "C" {
         (void)page;
     }
 
-    void edpartStartPage(i32 page) {
+    void edpartStartPage(i8 page) {
         (void)page;
     }
 
@@ -40,7 +40,7 @@ extern "C" {
         (void)page;
     }
 
-    void edgraStartPage(i32 page) {
+    void edgraStartPage(i8 page) {
         (void)page;
     }
 

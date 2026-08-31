@@ -2,7 +2,10 @@
 
 #include "batman.h"
 #include "globals.h"
-#include "nu2api/nusound/nusound_system.hpp"
+#include "legoapi/render/fx.h"
+#include "nu2api/nusound/nusound_android.hpp"
+
+#include <string.h>
 
 // Local statics owned by this TU (original symbols _ZL8frameout,
 // _ZL14frameout_count, _ZL19NuSoundAppTerminatev).
@@ -16,16 +19,11 @@ namespace {
 // NuSoundSystem::Shutdown() is the original callback target
 static void NuSoundAppTerminate(void);
 
-// The uber-shader blob and the trailer playlist are this TU's .data statics.
-// They are defined before NuMain so the compiler emits them (in reverse
-// definition order) after NuMain's pastFrameTimes, matching the original
-// .data layout [pastFrameTimes, Trailer, uberShader2].
 char uberShader2[] = {
 #include <uberShader2.array>
 };
 
-// Trailer videos played after the intro. The original initializer holds
-// pointers to "demointro" and an empty string, then NULL.
+// Trailer videos played after the intro.
 char *Trailer[3] = {"demointro", "", NULL};
 
 SAGA_NOMATCH __attribute__((weak)) i32 main(i32 argc, char **argv) {
@@ -33,11 +31,7 @@ SAGA_NOMATCH __attribute__((weak)) i32 main(i32 argc, char **argv) {
     return 0;
 }
 
-// NuMain is per-function optimized in the original build: the -O0 TU's other
-// functions (NuDisplayListGetBuffer etc.) are byte-identical at -O0, but NuMain
-// shows -O2 codegen (fused virtual calls, cmov, maxss/minss, realigned stack).
-// The original source carries __attribute__((optimize("O2"))) on NuMain.
-extern "C" __attribute__((optimize("O2"))) i32 NuMain(i32 argc, char **argv) {
+extern "C" i32 NuMain(i32 argc, char **argv) {
     static i32 frameCount = 0;
     static f32 pastFrameTimes[8] = {-1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f};
 
@@ -47,36 +41,28 @@ extern "C" __attribute__((optimize("O2"))) i32 NuMain(i32 argc, char **argv) {
     AREADATA *afterArea;
     nucamera_s *cam;
     char c;
-    GIZAIMESSAGESYS_s *gizMsgSys;
-    GIZAIMESSAGE_s *gizMsg;
-    GIZAIMESSAGE_s *gizMsg2;
-    nupad_s *pad0;
-    nupad_s *pad1;
+    GIZAIMESSAGESYS_s *messageSystem;
+    GIZAIMESSAGE_s *gizMessage;
+    GIZAIMESSAGE_s *missionModeMessage;
     nupad_s *rumblePad0;
     nupad_s *rumblePad1;
     u32 pauseFlag;
     LEVELDATA_s *level;
-    byte episode0;
-    byte episode1;
+    i32 currentEpisodeIndex;
+    i32 previousEpisodeIndex;
     i32 i;
-    i32 nFrames;
-    i32 maxFrameIdx;
-    i32 maxFrameCount;
+    i32 averagedFrameCount;
+    i32 longestFrameIndex;
+    i32 shortestFrameIndex;
     byte panelOpts;
-    GameObject_s **playerSlot;
-    byte freePlaySet;
-    f32 freePlay;
-    f32 t0;
-    f32 t1;
+    f32 frameTimeAccumulator;
+    f32 shortestFrameTime;
     f32 savedFrametime;
     u32 pausedRender;
-    i32 fadeType;
-    nupad_s *pads0;
-    nupad_s *pads1;
+    FADETYPE fadeType;
+    nupad_s *pads[2];
     ThingProcessData framePacket;
-    // Original: one contiguous 16-aligned array of 8 (drives the stack
-    // realignment in the prologue: GCC emits `and esp,-16` for it).
-    NUVEC *windObjs[8] __attribute__((aligned(16)));
+    NUVEC *windObjs[8];
 
     NuSoundAppTerminateCallback = NuSoundAppTerminate;
     NuCommandLine(&argc, &argv);
@@ -84,11 +70,8 @@ extern "C" __attribute__((optimize("O2"))) i32 NuMain(i32 argc, char **argv) {
     WorldInfo_InitOnce();
     InitOnce(argc, argv);
     TriggerExtraDataLoad();
-    // The shipped binary passes 34 here even though GameMenuInfo contains 33
-    // entries (menu id 28 is absent). Its final memcpy iteration therefore
-    // reads the unrelated data immediately after the table. Only register the
-    // real menu descriptors; the accidental entry has no valid callbacks.
-    MenuInitialise(GameMenuInfo, 33, LANGUAGECOUNT, DrawSaveSlots, 1, 0);
+    constexpr i32 game_menu_count = sizeof(GameMenuInfo) / sizeof(GameMenuInfo[0]);
+    MenuInitialise(GameMenuInfo, game_menu_count, LANGUAGECOUNT, DrawSaveSlots, 1, 0);
     MenuReset();
     edGraInitTerrainSwapProtection();
     NuHGobjReversibleCharacters(1);
@@ -125,13 +108,13 @@ extern "C" __attribute__((optimize("O2"))) i32 NuMain(i32 argc, char **argv) {
         Level = 0;
         i = 0;
     } else {
-        i = Level * 0x144;
+        i = Level * sizeof(LEVELDATA_s);
     }
     last_area = -1;
-    Area = (int)((LEVELDATA_s *)((char *)LDataList + i))->area_index;
+    Area = reinterpret_cast<LEVELDATA_s *>(reinterpret_cast<char *>(LDataList) + i)->area_index;
     LastAData = NULL;
 
-    if ((Area == 0xffffffff) || ((ADataList[Area].flags & AREAFLAG_BONUS_AREA) == 0)) {
+    if ((Area == -1) || ((ADataList[Area].flags & AREAFLAG_BONUS_AREA) == 0)) {
         if ((1 < GAMEDEMO) || ((GAMEDEMO != 0) && (FreePlay != 0))) {
             FreePlay = 1;
             GAMEDEMO = 2;
@@ -169,79 +152,83 @@ restart_level:
     GameAISysSetGame();
     GizmoSysSetGame();
 
-    episode0 = 0xff;
+    currentEpisodeIndex = -1;
     highallocaddr = 0;
     if (Area != -1) {
-        episode0 = ADataList[Area].episode_index;
+        currentEpisodeIndex = static_cast<i8>(ADataList[Area].episode_index);
     }
-    episode1 = 0xff;
+    previousEpisodeIndex = -1;
     if (last_area != -1) {
-        episode1 = ADataList[last_area].episode_index;
+        previousEpisodeIndex = static_cast<i8>(ADataList[last_area].episode_index);
     }
 
     if (Area == -1) {
         SuperStory = 0;
     } else {
-        if ((episode0 == 0xff) || ((episode0 != episode1) && (episode1 != 0xff))) {
+        if (currentEpisodeIndex == -1) {
             SuperStory = 0;
+        } else if (currentEpisodeIndex != previousEpisodeIndex) {
+            if (previousEpisodeIndex != -1) {
+                SuperStory = 0;
+            }
         }
         if (Area != last_area) {
-            gizMsgSys = NULL;
+            messageSystem = NULL;
             if (gizaimessagesys != NULL) {
                 ResetGizAIMessageSys(gizaimessagesys);
-                gizMsgSys = gizaimessagesys;
+                messageSystem = gizaimessagesys;
             }
             goto giz_freeplay;
         }
     }
 
-    gizMsgSys = gizaimessagesys;
-    if ((reset_area != 0) && (gizMsgSys = NULL, gizaimessagesys != NULL)) {
+    messageSystem = gizaimessagesys;
+    // A reset invalidates the local view even when no message system exists.
+    if ((reset_area != 0) && (messageSystem = NULL, gizaimessagesys != NULL)) {
         ClearGizAIMessageSys(gizaimessagesys);
-        gizMsgSys = gizaimessagesys;
+        messageSystem = gizaimessagesys;
     }
 
 giz_freeplay:
-    gizMsg = CheckGizAIMessage(gizMsgSys, "FreePlay", NULL);
-    if (gizMsg != NULL) {
-        gizMsg->mode = 1;
-        gizMsg->mode_args = 0;
-        gizMsg->flags |= 1;
-        gizMsg->value = (f32)FreePlay;
-        gizMsg->flag = 2;
+    gizMessage = CheckGizAIMessage(messageSystem, "FreePlay", NULL);
+    if (gizMessage != NULL) {
+        gizMessage->output_values[0] = 1;
+        gizMessage->output_values[1] = 0;
+        gizMessage->flags |= GIZAIMESSAGE_FLAG_ADD_GIZMO;
+        gizMessage->value = (f32)FreePlay;
+        gizMessage->output_count = 2;
     }
 
-    gizMsg2 = CheckGizAIMessage(gizaimessagesys, "MissionMode", NULL);
-    if (gizMsg2 != NULL) {
+    missionModeMessage = CheckGizAIMessage(gizaimessagesys, "MissionMode", NULL);
+    if (missionModeMessage != NULL) {
         if ((MissionSys != NULL) && (MissionSys->field8_0x1d != 0)) {
-            gizMsg2->value = 1.0f;
+            missionModeMessage->value = 1.0f;
         }
-        gizMsg2->flags |= 1;
-        gizMsg2->mode = 1;
-        gizMsg2->mode_args = 0;
-        gizMsg2->flag = 2;
+        missionModeMessage->flags |= GIZAIMESSAGE_FLAG_ADD_GIZMO;
+        missionModeMessage->output_values[0] = 1;
+        missionModeMessage->output_values[1] = 0;
+        missionModeMessage->output_count = 2;
     }
 
-    gizMsg = CheckGizAIMessage(gizaimessagesys, "ChallengeMode", NULL);
-    if (gizMsg != NULL) {
+    gizMessage = CheckGizAIMessage(gizaimessagesys, "ChallengeMode", NULL);
+    if (gizMessage != NULL) {
         if (ChallengeMode != 0) {
-            gizMsg->value = 1.0f;
+            gizMessage->value = 1.0f;
         }
-        gizMsg->flags |= 1;
-        gizMsg->mode = 1;
-        gizMsg->mode_args = 0;
-        gizMsg->flag = 2;
+        gizMessage->flags |= GIZAIMESSAGE_FLAG_ADD_GIZMO;
+        gizMessage->output_values[0] = 1;
+        gizMessage->output_values[1] = 0;
+        gizMessage->output_count = 2;
     }
 
-    if (((Area == -1) || (ADataList[Area].episode_index == 0xff)) || ((ADataList[Area].flags & 0x14) != 0x10)) {
+    if (((Area == -1) || (static_cast<i8>(ADataList[Area].episode_index) == -1)) ||
+        ((ADataList[Area].flags & (AREAFLAG_MINIKIT | AREAFLAG_BONUS_AREA)) != AREAFLAG_MINIKIT)) {
         ChallengeMode = 0;
         Mission_Clear(NULL);
     }
 
     ResetCharacterBuffer(0);
-    for (i = 0; i < 8; i++) {
-        Player[i] = NULL;
-    }
+    memset(Player, 0, sizeof(Player));
 
     if ((PlayTrailer != -1) && (characterbuffer_ptr.void_ptr == characterbuffer_base.void_ptr)) {
         Movie_Play(Trailer[PlayTrailer * 3], &characterbuffer_ptr, &characterbuffer_end, DEFAULTFRAMETIME, NULL,
@@ -302,9 +289,9 @@ giz_freeplay:
         }
         Parts_Start(WORLD);
 
-        if (((NOSOUND == 0) && (ClearPause(), NOSOUND == 0)) && (FadeSys.pending_type == -1)) {
-            fadeType = 2;
-            FadeSys.SetFade((FADETYPE &)fadeType, 0);
+        if (((NOSOUND == 0) && (ClearPause(), NOSOUND == 0)) && (FadeSys.pending_type == FADE_TYPE_NONE)) {
+            fadeType.type = FADE_TYPE_STILL_WIPE;
+            FadeSys.SetFade(fadeType, 0);
         }
         FadeSys.SetStage(1);
 
@@ -335,7 +322,7 @@ giz_freeplay:
         FRAMETIME = DEFAULTFRAMETIME;
 
         if (reset_load != 0) {
-            other_level = 0xffffffff;
+            other_level = -1;
             waiting_for_level = -1;
             gone_through_door_to_new_level = 0;
             waiting_for_new_level = 0;
@@ -356,14 +343,14 @@ giz_freeplay:
             i = GetMenuID();
             panelOpts = TempOptions.field11_0xb;
             if (i != 4) {
-                panelOpts = *(byte *)((char *)&Game.options_save + 0xb);
+                panelOpts = Game.options_save.field11_0xb;
             }
             InitPanel((u32)panelOpts);
 
             savedFrametime = FRAMETIME;
 
             if (((waiting_for_level == -1) || (gone_through_door_to_new_level == 0)) && (screendump == 0)) {
-                if ((((ChallengeMode == 1) && (9 < *(i32 *)((char *)AreaGlobals + 0x20))) &&
+                if ((((ChallengeMode == 1) && (9 < AreaGlobals.values.field_0x20)) &&
                      ((WORLD->current_level != HUB_LDATA) &&
                       ((MiniCutCam == 0) && (i = CutScene_PlayingOrRequested(NULL), i == 0)))) &&
                     (FadeSys.fade == 0.0f)) {
@@ -394,13 +381,14 @@ giz_freeplay:
 
                 AddCoinDelay[0] = 0;
                 AddCoinDelay[1] = 0;
-                other_level_override = 0xffffffff;
+                other_level_override = -1;
                 Shadow_SetMode();
                 GizmoPickups_SetOnOff();
                 DoInput(WORLD);
 
                 if (((memcard_autosaveenabled != 0) && (memcard_autosavedisabled != 0)) &&
-                    (((world == NULL) || ((world->area == NULL) || ((world->area->flags & 2) == 0))) &&
+                    (((world == NULL) ||
+                      ((world->area == NULL) || ((world->area->flags & AREAFLAG_ENDING_AREA) == 0))) &&
                      (NewMode == 0))) {
                     if (((((NewLData == NULL) && (FadeSys.fade == 0.0f)) && (editor_active == 0)) &&
                          ((GamePads_IgnoreInputFn == NULL) || (i = (*GamePads_IgnoreInputFn)(), i == 0))) &&
@@ -426,11 +414,11 @@ giz_freeplay:
                     }
                 }
 
-                pads0 = GamePad[0].pad;
-                pads1 = GamePad[1].pad;
+                pads[0] = GamePad[0].pad;
+                pads[1] = GamePad[1].pad;
                 framePacket.t = FRAMETIME;
                 framePacket.paused = Paused;
-                framePacket.pads = &pads0;
+                framePacket.pads = pads;
                 framePacket.flags = 2;
                 ((ThingManager *)theGameThings)->ProcessThings(&framePacket);
 
@@ -458,38 +446,14 @@ giz_freeplay:
                     ProcessMusicChanges(world->current_level, &Game.options_save);
                 }
 
-                windObjs[0] = NULL;
-                if (Player[0] != NULL) {
-                    windObjs[0] = (NUVEC *)&Player[0]->apiobj.field_0x19c;
-                }
-                windObjs[1] = NULL;
-                if (Player[1] != NULL) {
-                    windObjs[1] = (NUVEC *)&Player[1]->apiobj.field_0x19c;
-                }
-                windObjs[2] = NULL;
-                if (Player[2] != NULL) {
-                    windObjs[2] = (NUVEC *)&Player[2]->apiobj.field_0x19c;
-                }
-                windObjs[3] = NULL;
-                if (Player[3] != NULL) {
-                    windObjs[3] = (NUVEC *)&Player[3]->apiobj.field_0x19c;
-                }
-                windObjs[4] = NULL;
-                if (Player[4] != NULL) {
-                    windObjs[4] = (NUVEC *)&Player[4]->apiobj.field_0x19c;
-                }
-                windObjs[5] = NULL;
-                if (Player[5] != NULL) {
-                    windObjs[5] = (NUVEC *)&Player[5]->apiobj.field_0x19c;
-                }
-                windObjs[6] = NULL;
-                if (Player[6] != NULL) {
-                    windObjs[6] = (NUVEC *)&Player[6]->apiobj.field_0x19c;
-                }
-                windObjs[7] = NULL;
-                if (Player[7] != NULL) {
-                    windObjs[7] = (NUVEC *)&Player[7]->apiobj.field_0x19c;
-                }
+                windObjs[0] = Player[0] != NULL ? (NUVEC *)&Player[0]->apiobj.field_0x19c : NULL;
+                windObjs[1] = Player[1] != NULL ? (NUVEC *)&Player[1]->apiobj.field_0x19c : NULL;
+                windObjs[2] = Player[2] != NULL ? (NUVEC *)&Player[2]->apiobj.field_0x19c : NULL;
+                windObjs[3] = Player[3] != NULL ? (NUVEC *)&Player[3]->apiobj.field_0x19c : NULL;
+                windObjs[4] = Player[4] != NULL ? (NUVEC *)&Player[4]->apiobj.field_0x19c : NULL;
+                windObjs[5] = Player[5] != NULL ? (NUVEC *)&Player[5]->apiobj.field_0x19c : NULL;
+                windObjs[6] = Player[6] != NULL ? (NUVEC *)&Player[6]->apiobj.field_0x19c : NULL;
+                windObjs[7] = Player[7] != NULL ? (NUVEC *)&Player[7]->apiobj.field_0x19c : NULL;
 
                 if (((Paused == 0) || (screendump != 0)) || ((c = IsGrabbingScreen(), c != 0))) {
                     NuRndrGlobalFrameCountPause(0);
@@ -630,8 +594,8 @@ giz_freeplay:
                         }
 
                         UpdateExplosions();
-                        Tag_UpdateTransfers(*(i32 *)(*(i32 *)((char *)world->debris_sys + 8) + 0x30c),
-                                            *(i32 *)(*(i32 *)((char *)world->debris_sys + 8) + 0x320), 0xb4);
+                        Tag_UpdateTransfers(world->debris_sys->entries[39].effect,
+                                            world->debris_sys->entries[40].effect, 0xb4);
                         UpdateRepeatSfx();
                         GizmoSysLateUpdate(world->gizmo_sys, world, FRAMETIME);
                         UpdateRadios();
@@ -710,22 +674,7 @@ giz_freeplay:
                     NuRndrGlobalFrameCountPause(1);
                     cam = pNuCam;
                     gameCam = GameCam;
-                    cam->mtx.m00 = *(f32 *)((char *)gameCam + 0xb8);
-                    cam->mtx.m01 = *(f32 *)((char *)gameCam + 0xbc);
-                    cam->mtx.m02 = *(f32 *)((char *)gameCam + 0xc0);
-                    cam->mtx.m03 = *(f32 *)((char *)gameCam + 0xc4);
-                    cam->mtx.m10 = *(f32 *)((char *)gameCam + 0xc8);
-                    cam->mtx.m11 = *(f32 *)((char *)gameCam + 0xcc);
-                    cam->mtx.m12 = *(f32 *)((char *)gameCam + 0xd0);
-                    cam->mtx.m13 = *(f32 *)((char *)gameCam + 0xd4);
-                    cam->mtx.m20 = *(f32 *)((char *)gameCam + 0xd8);
-                    cam->mtx.m21 = *(f32 *)((char *)gameCam + 0xdc);
-                    cam->mtx.m22 = *(f32 *)((char *)gameCam + 0xe0);
-                    cam->mtx.m23 = *(f32 *)((char *)gameCam + 0xe4);
-                    cam->mtx.m30 = *(f32 *)((char *)gameCam + 0xe8);
-                    cam->mtx.m31 = *(f32 *)((char *)gameCam + 0xec);
-                    cam->mtx.m32 = *(f32 *)((char *)gameCam + 0xf0);
-                    cam->mtx.m33 = *(f32 *)((char *)gameCam + 0xf4);
+                    cam->mtx = gameCam->render_mtx;
                     NuCameraSet(cam);
                     UpdateGameMenu(GamePad, 1);
                     if (Player[0] != NULL) {
@@ -759,7 +708,7 @@ giz_freeplay:
                 if (((NewMode != 0) || (NewLData != NULL)) && (FadeSys.fade == 0.0f)) {
                     if (((world->current_level == NULL) || ((world->current_level->flags & LEVEL_STATUS) == 0)) ||
                         (HUB_LDATA == NULL)) {
-                        if (FadeSys.pending_type == -1) {
+                        if (FadeSys.pending_type == FADE_TYPE_NONE) {
                         level_fade_set:
                             level = WORLD->current_level;
                         level_fade_common:
@@ -768,7 +717,7 @@ giz_freeplay:
                                     goto level_fade_newl;
                                 }
                             level_fade_2:
-                                fadeType = 2;
+                                fadeType.type = FADE_TYPE_STILL_WIPE;
                             } else {
                                 if (NewLData == NULL) {
                                     goto level_fade_2;
@@ -778,7 +727,7 @@ giz_freeplay:
                                     i = (i32)(char)NewLData->area_index;
                                 level_fade_nl:
                                     if ((i == WORLD->level_sub_id) ||
-                                        ((SuperStory != 0) && ((WORLD->area->flags & 2) == 0))) {
+                                        ((SuperStory != 0) && ((WORLD->area->flags & AREAFLAG_ENDING_AREA) == 0))) {
                                         goto level_fade_2;
                                     }
                                 } else {
@@ -789,16 +738,17 @@ giz_freeplay:
                                             goto level_fade_newl;
                                         }
                                         i = (i32)(char)NewLData->area_index;
-                                        if (((level->flags & LEVEL_STATUS) != 0) && ((ADataList[i].flags & 2) != 0)) {
+                                        if (((level->flags & LEVEL_STATUS) != 0) &&
+                                            ((ADataList[i].flags & AREAFLAG_ENDING_AREA) != 0)) {
                                             goto level_fade_1;
                                         }
                                         goto level_fade_nl;
                                     }
                                 }
                             level_fade_1:
-                                fadeType = 1;
+                                fadeType.type = FADE_TYPE_WIPE;
                             }
-                            FadeSys.SetFade((FADETYPE &)fadeType, 0);
+                            FadeSys.SetFade(fadeType, 0);
                             goto level_fade_stage2;
                         }
                         if (NewLData != NULL) {
@@ -807,7 +757,7 @@ giz_freeplay:
                     } else {
                         if (HUB_LDATA == NewLData) {
                         level_fade_hub:
-                            if (FadeSys.pending_type == -1) {
+                            if (FadeSys.pending_type == FADE_TYPE_NONE) {
                                 goto level_fade_set;
                             }
                         level_fade_common2:
@@ -817,15 +767,16 @@ giz_freeplay:
                             }
                         } else {
                             if (NewLData != NULL) {
-                                if ((NewLData->area_index != 0xff) &&
-                                    ((ADataList[(char)NewLData->area_index].flags & 2) == 0)) {
+                                const i32 nextAreaIndex = NewLData->area_index;
+                                if ((nextAreaIndex != -1) &&
+                                    ((ADataList[nextAreaIndex].flags & AREAFLAG_ENDING_AREA) == 0)) {
                                     FadeSys.fade = 1.0f;
                                     FinishLoop_On = 0;
                                     goto level_fade_done;
                                 }
                                 goto level_fade_hub;
                             }
-                            if (FadeSys.pending_type != -1) {
+                            if (FadeSys.pending_type != FADE_TYPE_NONE) {
                                 goto level_fade_stage2;
                             }
                             level = WORLD->current_level;
@@ -853,7 +804,7 @@ giz_freeplay:
             i = GetMenuID();
             panelOpts = TempOptions.field11_0xb;
             if (i != 4) {
-                panelOpts = *(byte *)((char *)&Game.options_save + 0xb);
+                panelOpts = Game.options_save.field11_0xb;
             }
             WidescreenCode((u32)panelOpts);
             UpdateBackgroundMusic();
@@ -864,7 +815,7 @@ giz_freeplay:
             }
 
             world = WORLD;
-            if ((pause_rndr_on == 0) || (FadeSys.pending_type == 1)) {
+            if ((pause_rndr_on == 0) || (FadeSys.pending_type == FADE_TYPE_WIPE)) {
                 if (MainRenderTime <= 0.0f) {
                     NoRender();
                 } else {
@@ -944,7 +895,7 @@ giz_freeplay:
                         pauseFlag = pausedRender;
                     }
 
-                    if (*(char *)(*(i32 *)&world->lev_objs + 0x1e) == 0) {
+                    if (world->lev_objs[1].active == 0) {
                     draw_world:
                         if (CUTSTOPGAME == 0) {
                             if (TimingBarSet == 5) {
@@ -969,7 +920,7 @@ giz_freeplay:
                             NuBridgeDraw(0);
                         }
                     } else if ((CUTSTOPGAME == 0) || (CUTDRAWWORLD != 0)) {
-                        DrawParallax((nuhspecial_s *)(*(i32 *)&world->lev_objs + 0x10));
+                        DrawParallax(&world->lev_objs[1].special);
                         goto draw_world;
                     }
 
@@ -986,7 +937,7 @@ giz_freeplay:
                     level = world->current_level;
                     if ((((level == TITLES_LDATA) || ((level->flags & LEVEL_STATUS) != 0)) ||
                          (level == CREDITS_LDATA)) ||
-                        ((level == STATUS_LDATA) && ((StatusPacket.status_flags & 4) != 0))) {
+                        ((level == STATUS_LDATA) && ((StatusPacket.status_flags & STATUS_FLAG_DRAW_BACKDROP) != 0))) {
                         BackDrop_Draw(1.0f, 0);
                     }
 
@@ -1070,7 +1021,7 @@ giz_freeplay:
                 TBCLOSEFN("DrwCd", 5);
             }
 
-            g_val += 0.002f;
+            g_val += 0.002;
             CutScenes_End();
 
             frameout_count[1] = nuvideo_global_vbcnt >> 0x1f;
@@ -1079,9 +1030,7 @@ giz_freeplay:
             if (0 <= i) {
                 frameout = i;
             }
-            if (peak_poly_count <= nurndr_tritot_this_frame) {
-                peak_poly_count = nurndr_tritot_this_frame;
-            }
+            peak_poly_count = peak_poly_count <= nurndr_tritot_this_frame ? nurndr_tritot_this_frame : peak_poly_count;
             poly_count = nurndr_tritot_this_frame;
             frameout_count[0] = nuvideo_global_vbcnt;
 
@@ -1115,89 +1064,86 @@ giz_freeplay:
             savedFrametime = FRAMETIME;
             pastFrameTimes[frameCount % 5] = FRAMETIME;
 
-            t0 = pastFrameTimes[0];
-            t1 = pastFrameTimes[0];
-            if (t0 < -1.0f) {
-                t0 = -1.0f;
-            }
-            if (999.0f <= t1) {
-                t1 = 999.0f;
-            }
-            nFrames = -1;
-            maxFrameIdx = -1;
-            if (-1.0f < pastFrameTimes[0]) {
-                nFrames = 0;
-            }
-            if (999.0f > pastFrameTimes[0]) {
-                maxFrameIdx = 0;
-            }
+            longestFrameIndex = -1;
+            shortestFrameIndex = -1;
+            frameTimeAccumulator = -1.0f;
+            shortestFrameTime = 999.0f;
 
-            if (t0 < pastFrameTimes[1]) {
-                nFrames = 1;
-                t0 = pastFrameTimes[1];
+            if (frameTimeAccumulator < pastFrameTimes[0]) {
+                longestFrameIndex = 0;
             }
-            if (pastFrameTimes[1] < t1) {
-                maxFrameIdx = 1;
-                t1 = pastFrameTimes[1];
+            if (pastFrameTimes[0] < shortestFrameTime) {
+                shortestFrameIndex = 0;
             }
+            frameTimeAccumulator = MAX(pastFrameTimes[0], frameTimeAccumulator);
+            shortestFrameTime = MIN(pastFrameTimes[0], shortestFrameTime);
 
-            if (t0 < pastFrameTimes[2]) {
-                nFrames = 2;
-                t0 = pastFrameTimes[2];
+            if (frameTimeAccumulator < pastFrameTimes[1]) {
+                longestFrameIndex = 1;
             }
-            if (pastFrameTimes[2] < t1) {
-                maxFrameIdx = 2;
-                t1 = pastFrameTimes[2];
+            if (pastFrameTimes[1] < shortestFrameTime) {
+                shortestFrameIndex = 1;
             }
+            frameTimeAccumulator = MAX(pastFrameTimes[1], frameTimeAccumulator);
+            shortestFrameTime = MIN(pastFrameTimes[1], shortestFrameTime);
 
-            if (t0 < pastFrameTimes[3]) {
-                nFrames = 3;
-                t0 = pastFrameTimes[3];
+            if (frameTimeAccumulator < pastFrameTimes[2]) {
+                longestFrameIndex = 2;
             }
-            if (pastFrameTimes[3] < t1) {
-                maxFrameIdx = 3;
-                t1 = pastFrameTimes[3];
+            if (pastFrameTimes[2] < shortestFrameTime) {
+                shortestFrameIndex = 2;
             }
+            frameTimeAccumulator = MAX(pastFrameTimes[2], frameTimeAccumulator);
+            shortestFrameTime = MIN(pastFrameTimes[2], shortestFrameTime);
 
-            if (t0 < pastFrameTimes[4]) {
-                nFrames = 4;
-                t0 = pastFrameTimes[4];
+            if (frameTimeAccumulator < pastFrameTimes[3]) {
+                longestFrameIndex = 3;
             }
-            if (pastFrameTimes[4] < t1) {
-                maxFrameIdx = 4;
-                t1 = pastFrameTimes[4];
+            if (pastFrameTimes[3] < shortestFrameTime) {
+                shortestFrameIndex = 3;
             }
+            frameTimeAccumulator = MAX(pastFrameTimes[3], frameTimeAccumulator);
+            shortestFrameTime = MIN(pastFrameTimes[3], shortestFrameTime);
 
-            if (((maxFrameIdx == 0) || (nFrames == 0)) || (pastFrameTimes[0] < 0.0f)) {
-                t0 = 0.0f;
-                maxFrameCount = 0;
+            if (frameTimeAccumulator < pastFrameTimes[4]) {
+                longestFrameIndex = 4;
+            }
+            if (pastFrameTimes[4] < shortestFrameTime) {
+                shortestFrameIndex = 4;
+            }
+            frameTimeAccumulator = MAX(pastFrameTimes[4], frameTimeAccumulator);
+            shortestFrameTime = MIN(pastFrameTimes[4], shortestFrameTime);
+
+            if (((shortestFrameIndex == 0) || (longestFrameIndex == 0)) || (pastFrameTimes[0] < 0.0f)) {
+                frameTimeAccumulator = 0.0f;
+                averagedFrameCount = 0;
             } else {
-                t0 = pastFrameTimes[0];
-                maxFrameCount = 1;
+                frameTimeAccumulator = pastFrameTimes[0];
+                averagedFrameCount = 1;
             }
 
-            if (((maxFrameIdx != 1) && (nFrames != 1)) && (0.0f <= pastFrameTimes[1])) {
-                t0 += pastFrameTimes[1];
-                maxFrameCount += 1;
+            if (((shortestFrameIndex != 1) && (longestFrameIndex != 1)) && (0.0f <= pastFrameTimes[1])) {
+                frameTimeAccumulator += pastFrameTimes[1];
+                averagedFrameCount += 1;
             }
-            if (((maxFrameIdx != 2) && (nFrames != 2)) && (0.0f <= pastFrameTimes[2])) {
-                t0 += pastFrameTimes[2];
-                maxFrameCount += 1;
+            if (((shortestFrameIndex != 2) && (longestFrameIndex != 2)) && (0.0f <= pastFrameTimes[2])) {
+                frameTimeAccumulator += pastFrameTimes[2];
+                averagedFrameCount += 1;
             }
-            if (((maxFrameIdx != 3) && (nFrames != 3)) && (0.0f <= pastFrameTimes[3])) {
-                t0 += pastFrameTimes[3];
-                maxFrameCount += 1;
+            if (((shortestFrameIndex != 3) && (longestFrameIndex != 3)) && (0.0f <= pastFrameTimes[3])) {
+                frameTimeAccumulator += pastFrameTimes[3];
+                averagedFrameCount += 1;
             }
 
-            if (((maxFrameIdx == 4) || (nFrames == 4)) || (pastFrameTimes[4] < 0.0f)) {
-                if (maxFrameCount != 0) {
+            if (((shortestFrameIndex == 4) || (longestFrameIndex == 4)) || (pastFrameTimes[4] < 0.0f)) {
+                if (averagedFrameCount != 0) {
                     goto frametime_avg;
                 }
             } else {
-                t0 += pastFrameTimes[4];
-                maxFrameCount += 1;
+                frameTimeAccumulator += pastFrameTimes[4];
+                averagedFrameCount += 1;
             frametime_avg:
-                savedFrametime = t0 / (f32)maxFrameCount;
+                savedFrametime = frameTimeAccumulator / (f32)averagedFrameCount;
                 FRAMETIME = savedFrametime;
             }
 
@@ -1365,7 +1311,7 @@ after_sound:
         NextArea_FreePlay = 0;
         FreePlay = 0;
     } else {
-        if ((ADataList[Area].flags & 4) != 0) {
+        if ((ADataList[Area].flags & AREAFLAG_BONUS_AREA) != 0) {
             NextArea_FreePlay = 1;
             FreePlay = 1;
         }
@@ -1459,7 +1405,5 @@ after_status:
 }
 
 static void NuSoundAppTerminate(void) {
-    if (NuSoundSystem::s_staticInstance != NULL) {
-        NuSoundSystem::s_staticInstance->Shutdown();
-    }
+    NuSound.Shutdown();
 }

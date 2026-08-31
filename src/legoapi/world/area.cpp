@@ -45,14 +45,63 @@ extern APICHARACTERMODELLIST_s Area_StoryModelList[52];
 extern APICHARACTERMODELLIST_s FreePlayModelList[52];
 extern APICHARACTERMODELLIST_s Hub_ModelList[8];
 extern i32 Area_PlayerModelCount;
-extern void *CurrentCList;
-extern void *CurrentStoryCList;
 extern CUSTOMISER *CharacterCustomiser;
 extern i32 makefreeplaymodellist;
 extern i32 BonusArea;
 extern AREADATA *ANEWHOPE_ADATA;
 extern AREADATA *PODSPRINT_ADATA;
+extern AREADATA *PODRACE_ADATA;
 extern AREADATA *BONUS_GUNSHIP_ADATA;
+extern AREADATA *NEGOTIATIONS_ADATA;
+extern AREADATA *GUNGAN_ADATA;
+extern AREADATA *RESCUE_ADATA;
+extern AREADATA *RETAKE_ADATA;
+extern AREADATA *MAUL_ADATA;
+extern AREADATA *BOUNTYHUNTERPURSUIT_ADATA;
+extern AREADATA *FACTORY_ADATA;
+extern AREADATA *JEDI_ADATA;
+extern AREADATA *GUNSHIP_ADATA;
+extern AREADATA *DOOKU_ADATA;
+extern AREADATA *DOGFIGHT_ADATA;
+extern AREADATA *BATTLEOVERCORUSCANT_ADATA;
+extern AREADATA *CRUISER_ADATA;
+extern AREADATA *GRIEVOUS_ADATA;
+extern AREADATA *KASHYYYK_ADATA;
+extern AREADATA *TEMPLE_ADATA;
+extern AREADATA *VADER_ADATA;
+extern AREADATA *BLOCKADERUNNER_ADATA;
+extern AREADATA *TATOOINE_ADATA;
+extern AREADATA *MOSEISLEY_ADATA;
+extern AREADATA *DEATHSTARRESCUE_ADATA;
+extern AREADATA *DEATHSTARESCAPE_ADATA;
+extern AREADATA *DEATHSTARBATTLE_ADATA;
+extern AREADATA *HOTHESCAPE_ADATA;
+extern AREADATA *ASTEROIDCHASE_ADATA;
+extern AREADATA *DAGOBAH_ADATA;
+extern AREADATA *CLOUDCITYTRAP_ADATA;
+extern AREADATA *CLOUDCITYESCAPE_ADATA;
+extern AREADATA *JABBASPALACE_ADATA;
+extern AREADATA *SARLACCPIT_ADATA;
+extern AREADATA *SPEEDERCHASE_ADATA;
+extern AREADATA *ENDORBATTLE_ADATA;
+extern AREADATA *DEATHSTARBATTLE2_ADATA;
+extern AREADATA *EMPERORFIGHT_ADATA;
+extern AREADATA *E1CHARACTER_ADATA;
+extern AREADATA *E2CHARACTER_ADATA;
+extern AREADATA *E3CHARACTER_ADATA;
+extern AREADATA *E4CHARACTER_ADATA;
+extern AREADATA *E5CHARACTER_ADATA;
+extern AREADATA *E6CHARACTER_ADATA;
+extern AREADATA *E1VEHICLE_ADATA;
+extern AREADATA *E2VEHICLE_ADATA;
+extern AREADATA *E3VEHICLE_ADATA;
+extern AREADATA *E4VEHICLE_ADATA;
+extern AREADATA *E5VEHICLE_ADATA;
+extern AREADATA *E6VEHICLE_ADATA;
+extern AREADATA *ANAKINSFLIGHT_ADATA;
+extern AREADATA *LEGOCITY_ADATA;
+extern AREADATA *NEWTOWN_ADATA;
+extern AREADATA *JIMTEST_ADATA;
 extern i32 CHARPAK;
 extern i32 apiloadcharactermodels_nopakfile;
 extern i32 CharacterDataLoad;
@@ -127,12 +176,70 @@ static f32 LoadWait;
 
 static AREAFIXUP AreaFixUp_LSW[] = {
     {"map", &HUB_ADATA},
+    {"negotiations", &NEGOTIATIONS_ADATA},
+    {"Gungan", &GUNGAN_ADATA},
+    {"PalaceRescue", &RESCUE_ADATA},
+    {"podsprint", &PODSPRINT_ADATA},
+    {"RetakePalace", &RETAKE_ADATA},
+    {"Maul", &MAUL_ADATA},
+    {"pursuit", &BOUNTYHUNTERPURSUIT_ADATA},
+    {"Kamino", &KAMINO_ADATA},
+    {"Factory", &FACTORY_ADATA},
+    {"Jedi", &JEDI_ADATA},
+    {"gunship", &GUNSHIP_ADATA},
+    {"Dooku", &DOOKU_ADATA},
+    {"Dogfight", &DOGFIGHT_ADATA},
+    {"Dogfight", &BATTLEOVERCORUSCANT_ADATA},
+    {"Cruiser", &CRUISER_ADATA},
+    {"Grievous", &GRIEVOUS_ADATA},
+    {"Kashyyyk", &KASHYYYK_ADATA},
+    {"Temple", &TEMPLE_ADATA},
+    {"Vader", &VADER_ADATA},
+    {"BlockadeRunner", &BLOCKADERUNNER_ADATA},
+    {"tatooine", &TATOOINE_ADATA},
+    {"moseisley", &MOSEISLEY_ADATA},
+    {"DeathStarRescue", &DEATHSTARRESCUE_ADATA},
+    {"DeathStarEscape", &DEATHSTARESCAPE_ADATA},
+    {"DeathStarBattle", &DEATHSTARBATTLE_ADATA},
+    {"HothBattle", &HOTHBATTLE_ADATA},
+    {"HothEscape", &HOTHESCAPE_ADATA},
+    {"AsteroidChase", &ASTEROIDCHASE_ADATA},
+    {"Dagobah", &DAGOBAH_ADATA},
+    {"CloudCityTrap", &CLOUDCITYTRAP_ADATA},
+    {"CloudCityEscape", &CLOUDCITYESCAPE_ADATA},
+    {"JabbasPalace", &JABBASPALACE_ADATA},
+    {"SarlaccPit", &SARLACCPIT_ADATA},
+    {"SpeederChase", &SPEEDERCHASE_ADATA},
+    {"EndorBattle", &ENDORBATTLE_ADATA},
+    {"DeathStar2Battle", &DEATHSTARBATTLE2_ADATA},
+    {"emperorfight", &EMPERORFIGHT_ADATA},
+    {"E1CharacterBonus", &E1CHARACTER_ADATA},
+    {"E2CharacterBonus", &E2CHARACTER_ADATA},
+    {"E3CharacterBonus", &E3CHARACTER_ADATA},
+    {"E4CharacterBonus", &E4CHARACTER_ADATA},
+    {"E5CharacterBonus", &E5CHARACTER_ADATA},
+    {"E6CharacterBonus", &E6CHARACTER_ADATA},
+    {"E1VehicleBonus", &E1VEHICLE_ADATA},
+    {"E2VehicleBonus", &E2VEHICLE_ADATA},
+    {"E3VehicleBonus", &E3VEHICLE_ADATA},
+    {"E4VehicleBonus", &E4VEHICLE_ADATA},
+    {"E5VehicleBonus", &E5VEHICLE_ADATA},
+    {"E6VehicleBonus", &E6VEHICLE_ADATA},
+    {"PodRace", &PODRACE_ADATA},
+    {"AnakinsFlight", &ANAKINSFLIGHT_ADATA},
+    {"Bonus_Gunship", &BONUS_GUNSHIP_ADATA},
+    {"ANewHope", &ANEWHOPE_ADATA},
+    {"Bonus2", &LEGOCITY_ADATA},
+    {"Bonus", &NEWTOWN_ADATA},
+    {"LostTemple", &LOSTTEMPLE_ADATA},
     {"senate", &SENATE_ADATA},
     {"utapau", &UTAPAU_ADATA},
     {"hoth", &HOTH_ADATA},
     {"nb_dagobah", &BONUSDAGOBAH_ADATA},
     {"nb_kamino", &BONUSKAMINO_ADATA},
     {"nb_kashyyyk", &BONUSKASHYYYK_ADATA},
+    {"JimTest", &JIMTEST_ADATA},
+    {"Vehicles", &VEHICLES_ADATA},
     {NULL, NULL},
 };
 
@@ -579,7 +686,7 @@ void LoadAreaCharacters() {
         VehicleArea = 0;
         BonusArea = 0;
     }
-    reinterpret_cast<i32 *>(AreaGlobals)[1] = VehicleArea != 0 && BonusArea == 0;
+    AreaGlobals.values.field_0x04 = VehicleArea != 0 && BonusArea == 0;
     loadareacharacters_loadedlevel = 0;
     AreaDataLoaded = 0;
     loadareadata_loadlevel = 0;
@@ -847,7 +954,7 @@ load_type_done:
                     LoadWait = 0.0f;
                 }
             } else if (LoadWait <= 0.0f) {
-                FADETYPE wipe = {2};
+                FADETYPE wipe = {FADE_TYPE_STILL_WIPE};
                 FadeSys.SetFade(wipe, 0);
                 NeedScreenGrab(1);
                 GrabStillScreen();

@@ -24,6 +24,15 @@ void NuPortalSetActiveDirect(NUPORTAL *portal, i32 active) {
     }
 }
 
+void NuPortalSetActive(NUGSCN *scene, i32 portal_id, i32 active) {
+    for (i32 index = 0; index < scene->max_portals; ++index) {
+        NUPORTAL *portal = &scene->portals[index];
+        if (portal->id == portal_id) {
+            NuPortalSetActiveDirect(portal, active);
+        }
+    }
+}
+
 void NuPortalMaxDepth(struct nugscn_s *scene, i32 depth) {
     scene->portal_depth = depth;
 }

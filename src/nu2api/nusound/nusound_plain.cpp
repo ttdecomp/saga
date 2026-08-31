@@ -134,7 +134,8 @@ extern "C" {
     }
     void NuSound3SetMonoIopBufferSize(void) {
     }
-    void NuSound3SetReverb(void) {
+    i32 NuSound3SetReverb(i32) {
+        return 0;
     }
     void NuSound3SetReverbVol(void) {
     }

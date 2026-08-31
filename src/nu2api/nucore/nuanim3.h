@@ -7,6 +7,13 @@
 
 struct ani3_animheader_s;
 struct nuanimbuff_s;
+struct nuanimdata_s;
+struct numtx_s;
+
+enum ANI3_MAGIC : u32 {
+    ANI3_MAGIC_VERSION_4 = 0x414e4934,
+    ANI3_MAGIC_VERSION_5 = 0x414e4935,
+};
 
 struct ani3_scalemin_s {
     float scale;
@@ -46,6 +53,9 @@ extern "C" {
     void *NuAnimData2LoadBuffEx(char *path, VARIPTR *buf, VARIPTR *buf_end, void **result);
     void *NuAnimData2LoadBuff(char *path, VARIPTR *buf, VARIPTR *buf_end);
     void *NuAnimData2LoadBuffFromPAK(void *data, i32 file_size);
+    void NuAnimData2CalcMatrix(struct nuanimdata_s *animation, i32 node, f32 frame, struct numtx_s *matrix);
+    f32 NuAnimEndFrame(void *animation);
+    f32 NuAnimEndFrameOld(void *animation);
     void ANI_Ani3ExtractAllNodeCurves(ani3_animheader_s *anim, f32 frame, f32 *values, i32 node, char *curve_mask);
     void ANI_SimpleAni3PlayerV4Joint(ani3_animheader_s *anim, f32 frame, nuanimbuff_s *buffer, i32 first_joint,
                                      i32 joint_count);
@@ -76,7 +86,8 @@ struct ani3_animheader_s {
     u8 constant_index;
     u16 field_12;
     u16 next_block;
-    u8 pad_16[6];
+    u16 declared_end_frame;
+    u8 pad_18[4];
     float minimum;
     float scale;
     ani3_scalemin_s *scale_min;

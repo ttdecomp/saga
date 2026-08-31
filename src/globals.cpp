@@ -3,6 +3,7 @@
 #include "globals.h"
 #include "legoapi/core/input/timer.h"
 #include "legoapi/characters/core/character.h"
+#include "legoapi/items/base/collection.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/area.h"
 #include "legoapi/world/levels/levels.h"
@@ -54,12 +55,17 @@ const char *theEmptyString = "";
 // ------------------------------------------------------------------------
 i32 EPISODECOUNT = 0;
 i32 AREACOUNT = 0;
+AREADATA_s *LOSTTEMPLE_ADATA = NULL;
 
 // ------------------------------------------------------------------------
 // Game save state
 // ------------------------------------------------------------------------
 GAMESAVE_s Game = {0};
 GAMESAVE_s BackupGame = {0};
+u8 *Game_LevelSave = NULL;
+EPISODESAVE_s *Game_EpisodeSave = NULL;
+u16 *Game_CompletionSave = NULL;
+MISSIONSAVE *Game_MissionSave = NULL;
 
 // ------------------------------------------------------------------------
 // Character customiser
@@ -115,6 +121,13 @@ i32 LevMusicOtherAmbient = 0;
 NUCAMERA *pNuCam = NULL;
 static GAMECAMERA_s GameCamera;
 GAMECAMERA_s *GameCam = &GameCamera;
+u32 ZeroRTL[0x51] = {};
+char *partdebris_name[64] = {
+    "TRAINING_P",   "PART_MOUSE", "PART_BLACK_3", "DRAG_PART_1", "SMALL_PART_2", "RAT_PART",
+    "BOULDER_PART", "POPCORN",    "PART_THROW",   "ENG_POP",     "DOOKU_PART",   "MAUL_P_1",
+    "MAUL_P_2",     "MAUL_P_3",   "SPEAR_HIT",    "RED_BRICK",   "POD_ROCK",
+};
+u32 GAMEPAD_SKIP = GAMEPAD_BUTTON_START | GAMEPAD_BUTTON_JUMP | GAMEPAD_BUTTON_TAG;
 
 // ------------------------------------------------------------------------
 // Platform & device info
@@ -139,6 +152,9 @@ i32 disable_narrow_socks = 0;
 i32 script_spline_selected = 0;
 f32 character_farclip = 0.0f;
 f32 CutBorderScale = 0.0f;
+i32 LEGOCAMMODE_DOORCUT = -1;
+i32 LEGOCAMMODE_OBSTACLE = -1;
+i32 ObstacleCamBorders = 0;
 i32 texanimbits = 0;
 
 // ------------------------------------------------------------------------
@@ -151,7 +167,8 @@ NUGSCN *vehicle_scene = NULL;
 // ------------------------------------------------------------------------
 f32 DoubleScoreTime = 0.0f;
 TIMER GameTimer;
-u8 AreaGlobals[0x34] = {0};
+TIMER OverallGamePlayTimer;
+AREA_GLOBALS AreaGlobals = {};
 i32 HIGHGAMEOBJECT = 0;
 GameObject_s *Obj = NULL;
 f32 AreaPickupGravity = 0.0f;
@@ -174,7 +191,11 @@ i32 LSW2 = 0;
 i32 Arcade = 0;
 i32 BuildUpTotal = 0;
 i32 BuildUpDone = 0;
-void *Door_Last = NULL;
+DOOR_s *Door_Last = NULL;
+void (*Door_GoThrough_ExtraCodeFn)(WORLDINFO_s *, DOOR_s *) = NULL;
+i32 gone_through_door_to_new_mode = 0;
+CUTINFO *newmode_cutinfo = NULL;
+DOOR_s *setlastdoor_last = NULL;
 i32 LevelChange = 0;
 i32 BombGenerator_PlayerBomb[2] = {0};
 i32 BonusArea = 0;
@@ -194,6 +215,13 @@ u8 object_switches[0x80] = {0};
 GIZFORCE_s *force_array[4] = {0};
 GameObject_s *ObiWan = NULL;
 GameObject_s **game_objects = NULL;
+i32 LedgeTerrain_On = 0;
+i32 Grapples_Available = 1;
+i32 SuperCarry_Bash = 0;
+i32 SuperCarry_Jump = 0;
+f32 PUNCHGAP = 0.3f;
+f32 PUNCHCHARGAP = 0.6f;
+i32 HINTS_ON = 1;
 
 // ------------------------------------------------------------------------
 // Character preview / free-play model lists
@@ -222,16 +250,19 @@ i32 FreePlayBonusCount = 0;
 CHARCAT_s *CharCategory = NULL;
 i32 CHARCATEGORYCOUNT = 0;
 EXTRAMODEL ExtraModelList[1] = {{0}};
-VEHICLECOLLECTION_s VehicleCollection = {0};
+COLLECTION_s CharacterCollection = {};
+COLLECTION_s VehicleCollection = {};
+COLLECTION_s MiniKitCollection = {};
 ARCADEITEM_s ArcadeItem = {0};
 ARCADE_MODE_s Arcade_Mode[1] = {{0}};
 GAME_CUSTOMISER_s *Game_Customiser = NULL;
 AREASAVE_s *Game_AreaSave = NULL;
 u8 *Game_CharacterSave = NULL;
-void *CurrentCList = NULL;
-void *CurrentStoryCList = NULL;
+APICHARACTERMODELLIST_s *CurrentCList = NULL;
+APICHARACTERMODELLIST_s *CurrentStoryCList = NULL;
 i32 CharacterDataLoad = 0;
 i32 makefreeplaymodellist = 0;
+i32 hub_freeplaysource = 0;
 i16 id_DEFAULTCHARACTER[2] = {-1, -1};
 i16 tBATMANSUIT = 0;
 i16 tSHADOWSUIT = 0;
@@ -274,10 +305,58 @@ i32 LEGOOBJ_ICON_QUESTION = -1;
 // Level / area data pointers (LDATA / ADATA)
 // ------------------------------------------------------------------------
 LEVELDATA *ANAKINSFLIGHTB_LDATA = NULL;
+AREADATA *ANAKINSFLIGHT_ADATA = NULL;
 AREADATA *ANEWHOPE_ADATA = NULL;
+AREADATA *ASTEROIDCHASE_ADATA = NULL;
+AREADATA *BATTLEOVERCORUSCANT_ADATA = NULL;
+AREADATA *BLOCKADERUNNER_ADATA = NULL;
 AREADATA *BONUSKASHYYYK_ADATA = NULL;
 AREADATA *BONUSKAMINO_ADATA = NULL;
 AREADATA *BONUSDAGOBAH_ADATA = NULL;
+AREADATA *BOUNTYHUNTERPURSUIT_ADATA = NULL;
+AREADATA *CLOUDCITYESCAPE_ADATA = NULL;
+AREADATA *CLOUDCITYTRAP_ADATA = NULL;
+AREADATA *CRUISER_ADATA = NULL;
+AREADATA *DAGOBAH_ADATA = NULL;
+AREADATA *DEATHSTARBATTLE_ADATA = NULL;
+AREADATA *DEATHSTARBATTLE2_ADATA = NULL;
+AREADATA *DEATHSTARESCAPE_ADATA = NULL;
+AREADATA *DEATHSTARRESCUE_ADATA = NULL;
+AREADATA *DOGFIGHT_ADATA = NULL;
+AREADATA *E1CHARACTER_ADATA = NULL;
+AREADATA *E2CHARACTER_ADATA = NULL;
+AREADATA *E3CHARACTER_ADATA = NULL;
+AREADATA *E4CHARACTER_ADATA = NULL;
+AREADATA *E5CHARACTER_ADATA = NULL;
+AREADATA *E6CHARACTER_ADATA = NULL;
+AREADATA *E1VEHICLE_ADATA = NULL;
+AREADATA *E2VEHICLE_ADATA = NULL;
+AREADATA *E3VEHICLE_ADATA = NULL;
+AREADATA *E4VEHICLE_ADATA = NULL;
+AREADATA *E5VEHICLE_ADATA = NULL;
+AREADATA *E6VEHICLE_ADATA = NULL;
+AREADATA *EMPERORFIGHT_ADATA = NULL;
+AREADATA *ENDORBATTLE_ADATA = NULL;
+AREADATA *FACTORY_ADATA = NULL;
+AREADATA *GRIEVOUS_ADATA = NULL;
+AREADATA *GUNGAN_ADATA = NULL;
+AREADATA *GUNSHIP_ADATA = NULL;
+AREADATA *HOTHESCAPE_ADATA = NULL;
+AREADATA *JABBASPALACE_ADATA = NULL;
+AREADATA *JIMTEST_ADATA = NULL;
+AREADATA *KASHYYYK_ADATA = NULL;
+AREADATA *LEGOCITY_ADATA = NULL;
+AREADATA *MAUL_ADATA = NULL;
+AREADATA *MOSEISLEY_ADATA = NULL;
+AREADATA *NEGOTIATIONS_ADATA = NULL;
+AREADATA *NEWTOWN_ADATA = NULL;
+AREADATA *RESCUE_ADATA = NULL;
+AREADATA *RETAKE_ADATA = NULL;
+AREADATA *SARLACCPIT_ADATA = NULL;
+AREADATA *SPEEDERCHASE_ADATA = NULL;
+AREADATA *TATOOINE_ADATA = NULL;
+AREADATA *TEMPLE_ADATA = NULL;
+AREADATA *VADER_ADATA = NULL;
 LEVELDATA *ASTEROIDCHASEA_LDATA = NULL;
 LEVELDATA *ASTEROIDCHASEB_LDATA = NULL;
 LEVELDATA *ASTEROIDCHASEC_LDATA = NULL;
@@ -517,13 +596,13 @@ i32 LevForce = 0;
 i32 LevSfxId[4] = {0};
 i32 LevelCodeSpline[8] = {0};
 GIZFORCE_s *LevGizForce[4] = {0};
-i32 LevAIPathNode[4] = {0};
+void *LevAIPathNode[4] = {0};
 i32 LevBoltIgnorePlatIds[2] = {0};
 i32 LevPlatID[2] = {0};
 u64 LevHSpecialExists = 0;
 i32 LevPathCnxDir = 0;
 i32 LevDeaths = 0;
-i32 LevLock[4] = {0};
+u8 LevLock[5] = {0};
 i32 LevSafePlatID[2] = {0};
 
 // ------------------------------------------------------------------------
@@ -944,7 +1023,7 @@ LEVELSPLINE SplTab[26] = {
 u8 LSW_CharCategory[0x78];  // LSW character-category table
 u8 Cheat[0x5a0];            // cheat table
 u8 CharVariants_Game[0x5c]; // in-game character-variant table
-u8 theMemoryManager[0x248]; // inline memory-manager block
+MemoryManager theMemoryManager;
 #include "legoapi/menus/core/lsw_text_data.inc"
 TEXTCRAWL_s TextCrawl_LSW = {&tCHAPTER, &tVEHICLEBONUS, &tCHARACTERBONUS, 3};
 
@@ -981,8 +1060,8 @@ i32 IntroText_TextID = -1;
 i32 LANGUAGECOUNT = 6;
 // Original .data @0x667ce0: default language list, entries of {language, 0}
 // (8 bytes per entry); Text_LanguageList points at it (@0x667d30).
-LANGLISTENTRY Text_LanguageList_Default[6] = {{1, 0}, {2, 0}, {4, 0}, {5, 0}, {3, 0}, {8, 0}};
-LANGLISTENTRY *Text_LanguageList = Text_LanguageList_Default;
+LANGUAGEDATA Text_LanguageList_Default[6] = {{1, 0}, {2, 0}, {4, 0}, {5, 0}, {3, 0}, {8, 0}};
+LANGUAGEDATA *Text_LanguageList = Text_LanguageList_Default;
 // Original .data @0x667ca0/@0x667ca4.
 f32 INTROTEXT_Y = 0.175f;
 f32 INTROTEXT_SCALE = 0.79f;
@@ -1018,6 +1097,8 @@ u8 MENUEXITG = 0xbf;
 u8 MENUEXITB;
 i32 pause_i_pad;
 i32 MiniCutCam = 0;
+i32 LEGOCONTEXT_DROPIN = -1;
+i32 LEGOCONTEXT_DOOMED = -1;
 i32 LEGOSPL_SPLIT = 0;
 GAMECUTSCENES_s game_cutscenes;
 float MiscTime = 0.0f;
@@ -1121,3 +1202,10 @@ i32 LEGO_AIPATHCNX_JUMP_NOW = 0;
 i32 LEGO_AIPATHCNX_DONT_JUMP_NOW = 0;
 i32 mechAutoJumpFlags = 0;
 i32 mechAutoJumpCantReachFlags = 0;
+
+// Shared symbols recovered from the original global data surface.
+i32 NetPaused = 0;
+f32 mtl_animation_speed_scale = 1.0f;
+u16 script_mask = 0xffff;
+i32 (*GizObstacle_CheckExcludeFlagsFn)(GIZOBSTACLE_s *, GameObject_s *) = NULL;
+void (*AIPathCnxHelperSysInitFn)(WORLDINFO_s *) = NULL;

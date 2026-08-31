@@ -12,7 +12,29 @@
 void Minicam_InitSystem(void);
 void GameCam_ResetLookRot(GAMECAMERA_s *camera);
 
-void GameCam_Blend(GAMECAMERA_s *, float, float, i32) {
+void GameCam_Blend(GAMECAMERA_s *camera, f32 duration, f32 curve, i32 mode) {
+    if (camera == NULL) {
+        camera = GameCam;
+    }
+    if (duration <= 0.0f || camera->mode == -1) {
+        return;
+    }
+
+    camera->blend_start_pitch = camera->desired_pitch;
+    camera->blend_start_yaw = camera->desired_yaw;
+    camera->blend_start_roll = camera->desired_roll;
+    camera->blend_mode = mode < 1 ? 1 : 2;
+    camera->previous_camera_mode = camera->previous_mode;
+
+    camera->blend_start_position = camera->desired_position;
+    camera->blend_end_position = camera->desired_position;
+    camera->blend_start_target = camera->target;
+    camera->blend_end_target = camera->target;
+
+    camera->reset_blend = 1;
+    camera->blend_time = 0.0f;
+    camera->blend_duration = duration;
+    camera->blend_curve = curve;
 }
 
 void GameCam_Reset(GAMECAMERA_s *camera) {
@@ -31,8 +53,8 @@ void GameCam_Reset(GAMECAMERA_s *camera) {
     camera->mode = -1;
     camera->field_0x1d8 = 0.0f;
     camera->field_0x1dc = 1.0f;
-    camera->field_0x1c0 = 0.0f;
-    camera->field_0x1bc = 0.0f;
+    camera->blend_duration = 0.0f;
+    camera->blend_time = 0.0f;
     camera->position_seek = static_cast<f32>(static_cast<u8>(WORLD->current_level->cam_pos_seek));
     camera->field_0x1b8 = 0.0f;
     camera->field_0x1ec = 0.0f;

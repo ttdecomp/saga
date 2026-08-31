@@ -5,8 +5,10 @@
 #include "legoapi/gizmo/base/gizmo.h"
 #include "legoapi/gizmo/base/GizObstacleObjectInterface.h"
 #include "legoapi/gizmos/object/gizobstacles.h"
+#include "legoapi/items/base/collection.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/menus/screens/store.h"
+#include "legoapi/menus/screens/gamemenuall.h"
 #include "legoapi/props/doors/door.h"
 #include "legoapi/world/area.h"
 #include "legoapi/world/levels/episode.h"
@@ -39,6 +41,11 @@ extern void Door_GoThrough(WORLDINFO_s *, DOOR_s *, i32);
 extern STOREPACK StorePack[11];
 extern GameObject_s *FindGameObject(i32, u32, i32, i32, i32);
 extern void Store_RootPackCustodian(i32, GameObject_s *);
+extern void NeedScreenGrab(i32);
+extern void BackDrop_ResetColours();
+extern f32 MainRenderTargetTime;
+extern void ResetIconWibble();
+extern void MakeFreePlayModelList(i32 first_model, i32 second_model, i32 area, i32 level, i32 include_bonus);
 
 // These two arrays are generic level-loader state rather than hub-owned state.
 extern u64 LevHSpecialExists;
@@ -70,13 +77,56 @@ f32 statstime = 0.0f;
 f32 cointotaltime = 0.0f;
 f32 goldbricktime = 0.0f;
 u8 hub_custodians_finished_loading = 0;
+i32 hub_freeplay_area = 0;
+i32 freeplaymode = 0;
+i32 freeplay_selected[2] = {};
+f32 uprepeattime[2] = {};
+f32 rightrepeattime[2] = {};
+f32 downrepeattime[2] = {};
+f32 leftrepeattime[2] = {};
+u8 uprepeatcount[2] = {};
+u8 rightrepeatcount[2] = {};
+u8 downrepeatcount[2] = {};
+u8 leftrepeatcount[2] = {};
+u8 hub_makefreeplaylist_addotherid = 0;
 
 static i32 buildits_reset = 0;
 static GIZMO *hub_minikitviewer_gizmo = NULL;
 static NUGSPLINE *hub_minikitviewer_camspl = NULL;
+static f32 freeplaytime = 0.0f;
+static f32 freeplayduration = 0.0f;
+static i32 fpcount = 0;
+static APICHARACTERMODELLIST_s fplist[341] = {};
 
 void Hub_ClearStats();
 void Hub_UpdateMiniKits(WORLDINFO_s *);
+void Hub_InitFreePlaySelect(i32, i32, i32);
+static void Hub_MakeFreePlayList(i32 first_model, i32 second_model);
+
+enum HUB_DOOR_MENU_ID {
+    HUB_DOOR_MENU_STANDARD = 15,
+    HUB_DOOR_MENU_BONUS = 16,
+    HUB_DOOR_MENU_VEHICLE = 17,
+    HUB_DOOR_MENU_EPISODE_BONUS = 18,
+};
+
+enum HUB_VEHICLE_COLLECTION_MASK : u32 {
+    HUB_VEHICLE_COLLECTION_ALLOWED = 0x04002000,
+    HUB_VEHICLE_COLLECTION_REQUIRED = 0x00002000,
+};
+
+enum HUB_FREEPLAY_MODEL_FLAGS : u32 {
+    HUB_FREEPLAY_MODEL_VEHICLE = 0x00002000,
+    HUB_FREEPLAY_MODEL_MINIKIT = 0x04000000,
+};
+
+enum HUB_AUDIO_EVENT {
+    HUB_AUDIO_EVENT_OPEN_DOOR_MENU = 0x2d,
+};
+
+enum {
+    HUB_VEHICLE_ID_CAPACITY = 346,
+};
 
 struct HUBAREAINFO_s {
     const char *area_name;
@@ -319,9 +369,6 @@ void Hub_Update(WORLDINFO_s *world) {
     ResetForceBack();
 }
 
-void Hub_Outside() {
-}
-
 void Hub_DrawPanel(WORLDINFO_s *) {
 }
 
@@ -377,10 +424,8 @@ void Hub_ResetPanel() {
     hub_minikitarea_time = 0.0f;
 }
 
-void HubShopUnlocked() {
-}
-
-void Hub_CurrentArea() {
+bool HubShopUnlocked() {
+    return true;
 }
 
 i32 Hub_BonusBuildIt(GIZBUILDIT_s *buildit) {
@@ -428,13 +473,54 @@ void Hub_UpdateMiniKits(WORLDINFO_s *) {
 void Hub_LockUnlockDoors(WORLDINFO_s *) {
 }
 
-void Hub_ActivateDoorMenu(LEVELDATA_s **) {
+void Hub_ActivateDoorMenu(LEVELDATA_s **level) {
+    if ((*level)->area_index == -1) {
+        return;
+    }
+
+    const i32 area = last_hub_area;
+    if (area != (*level)->area_index) {
+        *level = NULL;
+        return;
+    }
+
+    MakeMenuPacket();
+    hub_new_level = ADataList[area].levels[0];
+    *level = NULL;
+    hub_episode_time = 0.0f;
+    hub_area_time = 0.0f;
+    MainRenderTargetTime = 0.0f;
+    NeedScreenGrab(1);
+    BackDrop_ResetColours();
+
+    i32 menu_id;
+    if (area != -1 && (ADataList[area].flags & AREAFLAG_BONUS_AREA) != 0) {
+        menu_id = HUB_DOOR_MENU_BONUS;
+        if (ADataList[area].episode_index != -1) {
+            menu_id = HUB_DOOR_MENU_EPISODE_BONUS;
+        }
+    } else if (VEHICLES_ADATA != NULL && area == VEHICLES_ADATA->index) {
+        i16 vehicle_ids[HUB_VEHICLE_ID_CAPACITY];
+        i32 vehicle_count;
+        Collection_GetIDList(&VehicleCollection, HUB_VEHICLE_COLLECTION_ALLOWED, HUB_VEHICLE_COLLECTION_REQUIRED,
+                             vehicle_ids, &vehicle_count, NULL, 0);
+        menu_id = HUB_DOOR_MENU_VEHICLE;
+        hub_freeplaysource = -1;
+        Hub_InitFreePlaySelect(area, vehicle_count, -1);
+    } else {
+        menu_id = HUB_DOOR_MENU_STANDARD;
+        if (LOSTTEMPLE_ADATA != NULL && area == LOSTTEMPLE_ADATA->index) {
+            menu_id = HUB_DOOR_MENU_EPISODE_BONUS;
+        }
+    }
+
+    GameAudio_PlaySfx(HUB_AUDIO_EVENT_OPEN_DOOR_MENU, NULL, 0, 0);
+    Hint_CancelCurrent();
+    NewMenu(menu_id, -1, -1);
 }
 
-void HubCustomiserUnlocked() {
-}
-
-void Hub_GetRandomCharType() {
+bool HubCustomiserUnlocked() {
+    return true;
 }
 
 void Hub_DrawFreePlaySelect() {
@@ -443,10 +529,63 @@ void Hub_DrawFreePlaySelect() {
 void Hub_DrawImportantBrick(i32, float, float, float, i32, i32) {
 }
 
-void Hub_InitFreePlaySelect(i32, i32, i32) {
+void Hub_InitFreePlaySelect(i32 area, i32 first_model, i32 second_model) {
+    COLLECTION_s *collection = GetFreePlayCollection(area);
+    if (collection == &VehicleCollection) {
+        if (first_model == -1) {
+            first_model = VehicleCollection.list[0].id;
+        }
+        if (second_model == -1) {
+            second_model = VehicleCollection.list[1].id;
+        }
+
+        Hub_MakeFreePlayList(first_model, second_model);
+        if (first_model != -1) {
+            MenuPacket.player_model[0] = static_cast<i16>(first_model);
+            MenuPacket.player_model[1] = static_cast<i16>(second_model);
+        } else {
+            MenuPacket.player_model[0] = Player[0] != NULL ? Player[0]->id : -1;
+            MenuPacket.player_model[1] = Player[1] != NULL ? Player[1]->id : -1;
+        }
+    } else if (collection == &MiniKitCollection) {
+        if (first_model == -1) {
+            first_model = MiniKitCollection.list[0].id;
+        }
+        if (second_model == -1) {
+            second_model = MiniKitCollection.list[1].id;
+        }
+
+        Hub_MakeFreePlayList(first_model, second_model);
+        if (first_model != -1 && second_model != -1) {
+            MenuPacket.player_model[0] = static_cast<i16>(first_model);
+            MenuPacket.player_model[1] = static_cast<i16>(second_model);
+        } else {
+            MenuPacket.player_model[0] = Player[0] != NULL ? Player[0]->id : -1;
+            MenuPacket.player_model[1] = Player[1] != NULL ? Player[1]->id : -1;
+        }
+    } else {
+        Hub_MakeFreePlayList(-1, -1);
+        MenuPacket.player_model[0] = Player[0] != NULL ? Player[0]->id : -1;
+        MenuPacket.player_model[1] = Player[1] != NULL ? Player[1]->id : -1;
+    }
+
+    freeplaytime = 0.0f;
+    freeplaymode = 0;
+    freeplayduration = 1.0f;
+    freeplay_selected[0] = 0;
+    freeplay_selected[1] = 0;
+    for (i32 player_index = 0; player_index < 2; ++player_index) {
+        uprepeattime[player_index] = 0.0f;
+        downrepeattime[player_index] = 0.0f;
+        leftrepeattime[player_index] = 0.0f;
+        rightrepeattime[player_index] = 0.0f;
+    }
+    ResetIconWibble();
+    hub_freeplay_area = area;
 }
 
-void HubMinikitViewerUnlocked() {
+bool HubMinikitViewerUnlocked() {
+    return true;
 }
 
 void Hub_UpdateFreePlaySelect() {
@@ -562,11 +701,11 @@ void Hub_Load(WORLDINFO_s *world, variptr_u *, variptr_u *) {
 
 static void Hub_SetDoorState(GIZMO *door, nuhspecial_s *lock, i32 open) {
     if (door != NULL && door->object != NULL) {
-        u8 *flags = reinterpret_cast<u8 *>(door->object) + 0xa0;
+        GIZOBSTACLE_s *obstacle = static_cast<GIZOBSTACLE_s *>(door->object);
         if (open != 0) {
-            *flags &= static_cast<u8>(~8);
+            obstacle->runtime_flags &= static_cast<u8>(~GIZOBSTACLE_RUNTIME_FLAG_BLOCKED);
         } else {
-            *flags |= 8;
+            obstacle->runtime_flags |= GIZOBSTACLE_RUNTIME_FLAG_BLOCKED;
         }
     }
     NuSpecialSetVisibility(lock, open != 0);
@@ -623,7 +762,54 @@ static __used__ void Hub_DrawArcadeStats(float) {
 static __used__ void Hub_DrawMiniKitCount(float, float, int, int, float) {
 }
 
-static __used__ void Hub_MakeFreePlayList(int, int) {
+static void Hub_MakeFreePlayList(i32 first_model, i32 second_model) {
+    fpcount = 0;
+    const i32 area = LDataList[hub_new_level].area_index;
+
+    if (hub_makefreeplaylist_addotherid != 0) {
+        const i32 other_player = PlayerID[1];
+        if (second_model == -1 && other_player != -1 && other_player != PlayerID[0] && other_player != first_model) {
+            second_model = other_player;
+        }
+        hub_makefreeplaylist_addotherid = 0;
+    }
+
+    MakeFreePlayModelList(first_model, second_model, area, -1, 1);
+    if ((ADataList[area].flags & (AREAFLAG_VEHICLE_AREA | AREAFLAG_BONUS_AREA)) ==
+        (AREAFLAG_VEHICLE_AREA | AREAFLAG_BONUS_AREA)) {
+        for (i32 index = 0; index < FreePlayModelCount; ++index) {
+            const i32 model = FreePlayModelList[index].model_id;
+            if ((CDataList[model].model_flags & HUB_FREEPLAY_MODEL_MINIKIT) == 0 ||
+                InCollectList_Index(model, MiniKitCollection.list, MiniKitCollection.count_y) == -1 ||
+                PlayerList[0] == model || PlayerList[1] == model || Collection_Got(model) == 0) {
+                continue;
+            }
+            fplist[fpcount++] = FreePlayModelList[index];
+        }
+    } else {
+        const i32 selectable_count = FreePlayResidentCount + FreePlayBonusCount;
+        for (i32 index = 2; index < selectable_count + 2 && FreePlayModelList[index].model_id != -1; ++index) {
+            const i32 model = FreePlayModelList[index].model_id;
+            const bool is_vehicle = (CDataList[model].model_flags & HUB_FREEPLAY_MODEL_VEHICLE) != 0;
+            const bool area_uses_vehicles = area != -1 && (ADataList[area].flags & AREAFLAG_VEHICLE_AREA) != 0;
+            if ((area == -1 || is_vehicle == area_uses_vehicles) && Collection_Got(model) != 0) {
+                fplist[fpcount++] = FreePlayModelList[index];
+            }
+        }
+    }
+
+    fplist[fpcount].model_id = -1;
+    if (fpcount > 3) {
+        for (i32 shuffle = 0; shuffle < 64; ++shuffle) {
+            const i32 first_offset = qrand() / (0xffff / (fpcount - 2) + 1);
+            const i32 first_index = first_offset + 2;
+            const i32 second_offset = qrand() / (0xffff / (fpcount - 3) + 1);
+            const i32 second_index = (second_offset + first_offset) % (fpcount - 2) + 2;
+            const APICHARACTERMODELLIST_s saved = fplist[first_index];
+            fplist[first_index] = fplist[second_index];
+            fplist[second_index] = saved;
+        }
+    }
 }
 
 static __used__ void Hub_UpdateSelectMode() {
@@ -636,9 +822,6 @@ static __used__ void Hub_DrawSelectModeMenu(int, float) {
 }
 
 static __used__ void Hub_DrawSuperBonusStats(AREADATA_s *, float) {
-}
-
-static __used__ void Hub_MakeListCharactersAvailable(i16 *) {
 }
 
 void WipeBackToHub() {

@@ -186,11 +186,13 @@ void NuVecRotateZ(NUVEC *v, NUVEC *v0, NUANG a) {
     v->z = v0->z;
 }
 
-f32 NuVecRotateYValZ(NUVEC *v0, NUANG a) {
+void NuVecRotateYValZ(NUVEC *v, f32 magnitude, NUANG a) {
     f32 fVar1 = NU_COS_LUT(a);
     f32 fVar2 = NU_SIN_LUT(a);
 
-    return v0->z * fVar1 - v0->x * fVar2;
+    v->x = magnitude * fVar2;
+    v->y = 0.0f;
+    v->z = magnitude * fVar1;
 }
 
 void NuVecSurfaceNormal(NUVEC *v, NUVEC *v0, NUVEC *v1, NUVEC *v2) {

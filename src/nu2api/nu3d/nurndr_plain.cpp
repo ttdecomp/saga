@@ -36,8 +36,12 @@
 #include "nu2api/nu3d/nuvport.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nu3d/nushader.h"
 #include "nu2api/nucore/nuapi.h"
 #include "nu2api/nuandroid/ios_graphics.h"
+
+extern "C" void NuLgtLaserDraw(i32 paused);
+void NuLgtArcLaserDraw(i32 paused);
 
 // ---------------------------------------------------------------------------
 // Scene state — mirrors original BSS layout
@@ -123,8 +127,8 @@ static_assert(sizeof(PrimStreamHeader) == 0x10, "PrimStreamHeader must be 0x10")
 
 extern "C" {
     i32 NuDisplayListAddRenderScene(void);
-    i32 NuDynamicLightIsEnabled(i32);
-    void NuDynamicLightAddRenderScene(i32, i32, i32);
+    i32 NuDynamicLightIsEnabled(void *);
+    void NuDynamicLightAddRenderScene(void *, i32, i32);
     void RndrStateSetConstAlphaTint(i32 alpha_enabled, i32 tint_enabled, f32 alpha, const NUCOLOUR3 *tint, NUMTL *mtl);
     void DisplayListUpdateRenderState(void *list, void *state);
     void NuDisplayListLinkMtl(nudisplaylist_s *list, NUMTL *mtl);
@@ -138,7 +142,7 @@ extern "C" {
     void NuRndrSwapStreamBuffers(void);
     void NuRenderThreadPrepareRender(void);
     void NuRenderThreadStartRender(void);
-    void NuShaderManagerBindShader(i32 shader);
+    void NuShaderManagerBindShader(NUSHADEROBJECT *shader);
     void NuDisplayListCheckBuffer(void);
     void NuDisplayListResetBuffer(void);
     void NuRenderThreadLock(void);
@@ -268,7 +272,7 @@ extern "C" i32 NuRndrBeginScene(i32 /*begin_flags*/) {
     return 1;
 }
 
-extern "C" i32 NuRndrBeginSceneEx(i32 begin_flags) {
+extern "C" i32 NuRndrBeginSceneEx(i32 begin_flags, i32, i32) {
     return NuRndrBeginScene(begin_flags);
 }
 
@@ -284,10 +288,6 @@ extern "C" void NuRndrClear(i32 clear_flags, i32 bg_colour, f32 alpha) {
     scene->bg_colour = bg_colour;
     NuVpGetPosition2(&scene->vp_x, &scene->vp_y);
     NuVpGetSize2(&scene->vp_w, &scene->vp_h);
-}
-
-extern "C" void NuRndrGradClear(i32 a, i32 b, i32 /*c*/, f32 d) {
-    NuRndrClear(a, b, d);
 }
 
 extern "C" void NuRndrEndScene(void) {
@@ -316,7 +316,7 @@ extern "C" void NuRndrEndScene(void) {
     }
 }
 
-extern "C" void NuRndrEndSceneEx(void) {
+extern "C" void NuRndrEndSceneEx(i32) {
     NuRndrEndScene();
 }
 
@@ -405,11 +405,15 @@ extern "C" void NuGScnToVideoMem(void) {
 }
 
 // Material
+static u32 mtl_animation_mask = 0x00ffffff;
+
 extern "C" void NuMtlAnimate(void) {
 }
-extern "C" void NuMtlAnimateSetMask(void) {
+extern "C" void NuMtlAnimateSetMask(i32 mask) {
+    mtl_animation_mask = mask;
 }
-extern "C" void NuMtlAnimateSetSpeedScale(void) {
+extern "C" void NuMtlAnimateSetSpeedScale(f32 speed_scale) {
+    mtl_animation_speed_scale = speed_scale;
 }
 extern "C" void NuMtlAnimateShaderMtlTextures(void) {
 }
@@ -484,13 +488,19 @@ extern "C" void NuRndrEndShadowReceiveRender(void) {
 }
 extern "C" void NuRndrFootPrints(void) {
 }
-extern "C" void NuRndrFx(void) {
+extern "C" void NuRndrFx(i32 paused, void *) {
+    if (NuRndrBeginSceneEx(-1, -2, 0) != 0) {
+        NuLgtLaserDraw(paused);
+        NuLgtArcLaserDraw(paused);
+        NuRndrEndSceneEx(0);
+    }
 }
 extern "C" void NuRndrGetCullDebug(void) {
 }
 extern "C" void NuRndrGlobalFrameCount(void) {
 }
-extern "C" void NuRndrGlobalFrameCountPause(void) {
+extern "C" void NuRndrGlobalFrameCountPause(i32 paused) {
+    global_frame_count_paused = paused;
 }
 
 // NuRndrRect2di and NuRndrGradRect2di write the attributes for the current
@@ -594,8 +604,6 @@ extern "C" void NuRndrLine2di(void) {
 extern "C" void NuRndrLine3d(void) {
 }
 extern "C" void NuRndrLine3dDbg(void) {
-}
-extern "C" void NuRndrLine3dDbgFlush(void) {
 }
 extern "C" void NuRndrLineRect2di(void) {
 }
@@ -765,8 +773,6 @@ extern "C" void NuRndrShadowDirCol(void) {
 }
 extern "C" void NuRndrShadowInit(u8 *) {
 }
-extern "C" void NuRndrShadowOnOff(void) {
-}
 extern "C" void NuRndrSolidTri(void) {
 }
 extern "C" void NuRndrSphere(void) {
@@ -784,10 +790,6 @@ extern "C" void NuRndrStartShadowReceiveRender(void) {
 extern "C" void NuRndrStateGetFogEnabled(void) {
 }
 extern "C" void NuRndrStateInit(void) {
-}
-extern "C" void NuRndrStateSetFogEnabled(void) {
-}
-extern "C" void NuRndrStateSetFogState(void) {
 }
 extern "C" void NuRndrStateSetSpecularLight(void) {
 }

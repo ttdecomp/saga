@@ -15,6 +15,8 @@ struct SHOPINPUT;
 
 extern "C" void *AISysBufferAlloc(VARIPTR *cursor, VARIPTR *buf_end, u32 size);
 
+static char *gizaimessage_prefix = "msg_";
+
 void ResetGizAIMessageSys(GIZAIMESSAGESYS_s *sys);
 
 float GetGizAIMessage(GIZAIMESSAGESYS_s *sys, char const *name, GIZAIMESSAGE_s *out) {
@@ -64,13 +66,13 @@ GIZAIMESSAGE_s *CheckGizAIMessage(GIZAIMESSAGESYS_s *sys, char const *name, GIZA
     }
 
     char local[0x20];
-    if (NuStrIStr((char *)name, (char *)"msg_") != NULL) {
+    if (NuStrIStr((char *)name, gizaimessage_prefix) != NULL) {
         strcpy(local, name);
     } else {
-        if ((i32)strlen(name) + (i32)strlen("msg_") > 0x1e) {
+        if (NuStrLen(name) + NuStrLen(gizaimessage_prefix) > 0x1e) {
             return NULL;
         }
-        sprintf(local, "%s%s", "msg_", name);
+        sprintf(local, "%s%s", gizaimessage_prefix, name);
     }
 
     for (NULISTLNK *node = NuLinkedListGetHead(&sys->active_list); node != NULL;

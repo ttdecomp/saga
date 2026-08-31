@@ -1,6 +1,7 @@
 #include "legoapi/core/input/gamepads.h"
 #include "globals.h"
 #include "legoapi/characters/core/players.h"
+#include "legoapi/characters/motion.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/props/system/socksys.h"
 #include "legoapi/world/level.h"
@@ -21,7 +22,19 @@ GAMEPAD_s GamePad[64];
 // Original bss @0x127a4e0.
 i32 readpads_always = 0;
 
-__attribute__((optimize("O2"))) void GamePads_Init() {
+// Two frames of direction history for each local player.  MovePlayer shifts
+// these before accepting the new input; GamePad_Rotate then reports a stable
+// angular velocity only when both consecutive turns agree.
+f32 PadOldSpeed2[2] = {};
+f32 PadOldSpeed[2] = {};
+u16 PadOldAngle2[2] = {};
+u16 PadOldAngle[2] = {};
+
+static i32 RotationDistance(i32 difference) {
+    return difference < 0 ? -difference : difference;
+}
+
+void GamePads_Init() {
     Game_NuPad[0] = NuPadOpen(0, 0);
     Game_NuPad[1] = NuPadOpen(1, 0);
 
@@ -32,10 +45,39 @@ __attribute__((optimize("O2"))) void GamePads_Init() {
     GamePad[1].pad = Game_NuPad[1];
 }
 
-void GamePad_Rotate(GameObject_s *) {
+f32 GamePad_Rotate(GameObject_s *object) {
+    i32 player_index;
+    if (Player[0] == object) {
+        player_index = 0;
+    } else if (Player[1] == object) {
+        player_index = 1;
+    } else {
+        return 0.0f;
+    }
+
+    GAMEPAD_s *pad = object->pad_gamepad;
+    if (pad == NULL || pad->input_magnitude == 0.0f || PadOldSpeed[player_index] == 0.0f ||
+        PadOldSpeed2[player_index] == 0.0f) {
+        return 0.0f;
+    }
+
+    const i32 current_delta = RotDiff(PadOldAngle[player_index], pad->input_angle);
+    const i32 previous_delta = RotDiff(PadOldAngle2[player_index], PadOldAngle[player_index]);
+    const bool turning_clockwise = current_delta > 0 && previous_delta > 0;
+    const bool turning_counter_clockwise = current_delta < 0 && previous_delta < 0;
+    if ((!turning_clockwise && !turning_counter_clockwise) || RotationDistance(current_delta) >= 0x2000 ||
+        RotationDistance(previous_delta) >= 0x2000) {
+        return 0.0f;
+    }
+    return (static_cast<f32>(current_delta) / 65536.0f) / FRAMETIME;
 }
 
-void GamePad_Waggle(GAMEPAD_s *) {
+i32 GamePad_Waggle(GAMEPAD_s *pad) {
+    if (pad->input_magnitude != 0.0f &&
+        RotationDistance(RotDiff(pad->previous_input_angle, pad->input_angle)) > 0x2000) {
+        return 1;
+    }
+    return (pad->input_magnitude != 0.0f) != (pad->previous_input_magnitude != 0.0f);
 }
 
 GAMEPAD_s *GamePad_Allocate() {
@@ -54,8 +96,7 @@ void GamePads_NetHost() {
 void GamePads_NetReset(i32) {
 }
 
-__attribute__((optimize("O2,omit-frame-pointer,no-reorder-blocks"))) u16 GamePad_InputAngle(GameObject_s *object,
-                                                                                            GAMEPAD_s *pad) {
+u16 GamePad_InputAngle(GameObject_s *object, GAMEPAD_s *pad) {
     if (static_cast<i8>(object->apiobj.field_0x1f8) >= 0 || object->field_0x661 == 0xff) {
         goto camera_relative;
     }
@@ -168,7 +209,7 @@ void NoPad(i32, i32) {
 void NewBuzz(nupad_s *, float, i32) {
 }
 
-__attribute__((optimize("O2"))) i32 ReadPad(i32 port) {
+i32 ReadPad(i32 port) {
     GAMEPAD_s *gamepad = &GamePad[port];
     NUPAD *pad = gamepad->pad;
     WORLDINFO_s *world = WorldInfo_CurrentlyActive();

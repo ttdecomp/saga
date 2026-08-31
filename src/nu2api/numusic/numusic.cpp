@@ -562,7 +562,7 @@ i32 NuMusic::Voice::Play() {
     }
 
     i32 key_status = NuSound3StreamKeyStatus(this->stream_index);
-    if (key_status != 0) {
+    if (key_status != NUSOUND_STEREO_STREAM_INACTIVE) {
         if (this->status == VOICE_STATUS_STOPPED) {
             NuSound3ResumeStereoStream(this->stream_index);
             SetStatusFn(VOICE_STATUS_PLAYING, 0x1e3);
@@ -1044,15 +1044,14 @@ void NuMusic::Process(f32 delta) {
         Voice *voice = &this->voices[vi];
         Track *track = this->voices[vi].tracks[this->voices[vi].track_index];
 
-        // Reconcile the voice status with the stream's key status:
-        // 0 = nothing queued, 1 = loaded, 2 = finished.
+        // Reconcile the music voice with the underlying stream state.
         i32 key_status = NuSound3StreamKeyStatus(voice->stream_index);
-        if (key_status == 0) {
+        if (key_status == NUSOUND_STEREO_STREAM_INACTIVE) {
             NuSound3StopStereoStream(voice->stream_index);
             voice->SetStatusFn(VOICE_STATUS_READY, 0x1e0);
-        } else if (key_status == 2) {
+        } else if (key_status == NUSOUND_STEREO_STREAM_FINISHED) {
             voice->SetStatusFn(VOICE_STATUS_ENDED, 0x1e1);
-        } else if (key_status == 1) {
+        } else if (key_status == NUSOUND_STEREO_STREAM_PLAYING) {
             voice->SetStatusFn(VOICE_STATUS_PLAYING_LOADED, 0x1e2);
         }
 
@@ -1137,7 +1136,7 @@ i32 GamePlayMusic(LEVELDATA_s *level, i32 check, OPTIONSSAVE_s *options) {
     if (NOMUSIC != 0) {
         last_currentmusicpair_quiet = CurrentMusicPair_Quiet;
         MusicOther = 0;
-        return (i32)(usize)&NOMUSIC; // original quirk: the error code is NOMUSIC's address
+        return NOMUSIC;
     }
 
     i32 music_other = 0;

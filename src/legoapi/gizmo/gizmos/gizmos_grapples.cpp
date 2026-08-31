@@ -10,7 +10,8 @@ void Grapple_MoveCode(GameObject_s *) {
 void Grapple_Occupied(GRAPPLE_s *, GameObject_s *, AIPATHCNX_s *) {
 }
 
-void Grapple_LookAtPos(GameObject_s *, nuvec_s *) {
+i32 Grapple_LookAtPos(GameObject_s *, nuvec_s *) {
+    return 0;
 }
 
 void Grapple_AddDynamic(void *, i32) {

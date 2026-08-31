@@ -72,7 +72,7 @@ GameObject_s *AddGameObject(i32 id) {
     object->apiobj.field_0x280 = 0xff;
     object->apiobj.field_0x281 = 0xff;
     object->field_0x1086 = 2;
-    object->apiobj.field_0x1f8 |= 0x1001;
+    object->apiobj.field_0x1f8 |= 0x1000 | APIOBJECT_FLAG_IN_USE;
     object->field_0x1054 = 1;
     object->apiobj.field_0x1e4 = object_index < 32 ? 1u << object_index : 0;
     object->apiobj.field_0x1e8 = object_index < 32 ? 0 : 1u << (object_index - 32);
@@ -80,12 +80,12 @@ GameObject_s *AddGameObject(i32 id) {
     object->field_0x1004 = 1.0f;
     object->field_0x1020 = 2000000.0f;
     object->apiobj.field_0x218 = 2000000.0f;
-    object->apiobj.field_0x21c = 2000000.0f;
+    object->apiobj.water_height = 2000000.0f;
     object->apiobj.field_0x220 = 2000000.0f;
 
     HIGHGAMEOBJECT = 0;
     for (i32 i = 0; i < 64; i++) {
-        if ((Obj[i].apiobj.field_0x1f8 & 1) != 0) {
+        if ((Obj[i].apiobj.field_0x1f8 & APIOBJECT_FLAG_IN_USE) != 0) {
             HIGHGAMEOBJECT = i + 1;
         }
     }
@@ -145,12 +145,8 @@ i32 InitCreature(GameObject_s *obj, i32 id, i32 param) {
     obj->ai.field_0x134 = 0xff;
     SetGameObjectCharacterData(obj);
 
-    obj->apiobj.start_position[0] = start_position->x;
-    obj->apiobj.start_position[1] = start_position->y;
-    obj->apiobj.start_position[2] = start_position->z;
-    obj->apiobj.initial_position[0] = start_position->x;
-    obj->apiobj.initial_position[1] = start_position->y;
-    obj->apiobj.initial_position[2] = start_position->z;
+    obj->apiobj.start_position = *start_position;
+    obj->apiobj.initial_position = *start_position;
     obj->apiobj.position = *start_position;
     obj->apiobj.pos_x = start_position->x;
     obj->apiobj.pos_y = start_position->y;

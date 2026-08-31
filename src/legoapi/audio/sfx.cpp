@@ -9,7 +9,6 @@ struct SoundTable;
 
 extern "C" {
     u16 GlobalSfxBits[100];
-    u16 SfxBits[100];
 }
 
 void NuSound3CreateVoice(nuvec_s *position, i32 sample_index, f32 volume_bits, f32 pitch, i32 falloff_near,
@@ -186,9 +185,6 @@ extern "C" {
     }
 
     void SOUND_SFXRequest_Table(void) {
-    }
-
-    void SetAPIObjPlaySfxByIdFn(void) {
     }
 
     void SetAudioFadeLevel(void) {

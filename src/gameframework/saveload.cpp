@@ -183,32 +183,6 @@ i32 ChecksumSaveData(void *buffer, i32 size) {
     return sum;
 }
 
-bool TriggerExtraDataSave(void) {
-    memmove(memcard_extra_savedatabuffer, memcard_extra_savedata, memcard_extra_savedatasize);
-
-    i32 checksum = ChecksumSaveData(memcard_extra_savedatabuffer, memcard_extra_savedatasize);
-    *(i32 *)((char *)memcard_extra_savedatabuffer + memcard_extra_savedatasize) = checksum;
-
-    i32 save_error = saveloadSaveSlot(SAVESLOTS, memcard_extra_savedatabuffer, memcard_extra_savedatasize + 4);
-    return save_error != 0;
-}
-
-i32 TriggerExtraDataLoad(void) {
-    void *buffer = memcard_extra_savedatabuffer;
-
-    if (saveloadLoadSlot(SAVESLOTS, buffer, memcard_extra_savedatasize + 4) != 0) {
-        i32 checksum = *(i32 *)((usize)buffer + memcard_extra_savedatasize);
-        i32 correct = ChecksumSaveData(buffer, memcard_extra_savedatasize);
-        LOG_DEBUG("checksum=%08X, correct=%08X", checksum, correct);
-        if (correct == checksum) {
-            memmove(memcard_extra_savedata, buffer, memcard_extra_savedatasize);
-            return 1;
-        }
-    }
-
-    return 0;
-}
-
 void createslotfolder(i32 slot) {
     char *path = slotfolder(slot);
 

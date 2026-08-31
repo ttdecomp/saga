@@ -341,13 +341,13 @@ extern "C" {
     void rtlResetDynamic(void) {
     }
 
-    i32 rtlFindByUserId(i32 rtl_set, i32 user_id) {
+    i32 rtlFindByUserId(usize rtl_set, i32 user_id) {
         (void)rtl_set;
         (void)user_id;
         return -1;
     }
 
-    void rtlGetDirection(i32 rtl_set, i32 id, void **out) {
+    void rtlGetDirection(usize rtl_set, i32 id, void **out) {
         (void)rtl_set;
         (void)id;
         (void)out;

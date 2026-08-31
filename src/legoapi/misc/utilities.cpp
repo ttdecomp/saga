@@ -58,7 +58,8 @@ void TerCrossProduct(nuvec_s *, nuvec_s *) {
 void DistanceToLineXZ(nuvec_s *, nuvec_s *, nuvec_s *) {
 }
 
-void MatrixReflection(numtx_s *, i32, float, float, numtx_s *) {
+i32 MatrixReflection(numtx_s *, i32, float, float, numtx_s *) {
+    return 0;
 }
 
 void OnOrOutsidePlane(nuvec_s *, nuvec_s *, nuvec_s *) {
@@ -142,7 +143,14 @@ void I64ToX(char *, i64) {
 void XToI64(char *) {
 }
 
-void RotDiff(u16, u16) {
+i32 RotDiff(u16 current, u16 target) {
+    i32 difference = static_cast<u32>(target) - static_cast<u32>(current);
+    if (difference > 0x8000) {
+        difference -= 0x10000;
+    } else if (difference < -0x8000) {
+        difference += 0x10000;
+    }
+    return difference;
 }
 
 void memmove(void *, void const *, i32) {
@@ -152,9 +160,6 @@ void rawClip(VuVec const *, VuVec *, i32, VuVec const &) {
 }
 
 void getqseed() {
-}
-
-void RotateVec(nuvec_s *, nuvec_s *) {
 }
 
 void clampBias(float) {

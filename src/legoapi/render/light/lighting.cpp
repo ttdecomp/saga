@@ -48,7 +48,10 @@ rtldata_s lev_rtldata;
 extern "C" {
     void rtlApplySetScale(void *, rtldata_s *, NUVEC *, NUMTX *, i32, f32);
     void rtlSetLights(rtldata_s *);
+    void NuLightSpotFadeSet(u32);
 }
+
+static constexpr u32 kNeutralSpotLightFade = 0x80808080u;
 
 void SetLevelLights(void *set, float) {
     rtlApplySetScale(set, &lev_rtldata, reinterpret_cast<NUVEC *>(&global_camera.mtx.m30), NULL, 0x10, 1.0f);
@@ -65,6 +68,7 @@ void LightSabreDebris(GameObject_s *) {
 }
 
 void SetSpotLightMode() {
+    NuLightSpotFadeSet(kNeutralSpotLightFade);
 }
 
 void SetCreatureLights(APIOBJECT_s *object) {

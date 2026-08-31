@@ -206,9 +206,13 @@ extern "C" {
     i32 NuPadGetMaxGamePads(void);
 
     void NuPadRecordStart(void);
+    void NuSetPadDemoEndButtons(u32 buttons);
 
     void NuPad_Interface_InputManagerInitialise(void);
     void NuPad_Interface_InputManagerUpdate(f32 unknown);
+    void NuPad_Interface_ResetAllTouches(void);
+    void NuPad_Interface_TouchScreenInput(i32 touch_id, i32 x, i32 y, i32 pressure, i32 is_down, i32 is_up, i32 is_move,
+                                          i32 is_cancelled);
 
     u32 NuPad_Interface_NuPadRead(i32 port, u8 *analog_left_x, u8 *analog_left_y, u8 *analog_right_x,
                                   u8 *analog_right_y, u8 *analog_l1, u8 *analog_l2, u8 *analog_r1, u8 *analog_r2,

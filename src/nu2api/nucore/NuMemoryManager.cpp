@@ -15,8 +15,8 @@
 #define ALLOC_MASK 0x78000000
 #define BLOCK_SIZE_MASK ~ALLOC_MASK
 #define BLOCK_SIZE(header_val) ((header_val) & BLOCK_SIZE_MASK) * 4
-#define END_TAG(block, size) (u32 *)((usize)block + size - 4)
-#define END_TAG_HI(block, size) (u32 *)((usize)block + size - 8)
+#define END_TAG(block, size) (usize *)((usize)block + size - 4)
+#define END_TAG_HI(block, size) (usize *)((usize)block + size - 8)
 
 #define STRANDED_DUMP_SUFFIX "_stranded.txt"
 
@@ -268,6 +268,9 @@ void *NuMemoryManager::_TryBlockAlloc(u32 size, u32 alignment, u32 flags, const 
     }
     if (suffix_size != 0) {
         FreeHeader *suffix = (FreeHeader *)(allocated_begin + allocated_size);
+        LOG_WARN(
+            "NuMemoryManager::_TryBlockAlloc: Splitting block %p into %p and %p (size=%zu, prefix=%u, suffix=%u)\n",
+            fragment, allocated, suffix, allocated_size, prefix_size, suffix_size);
         suffix->block_header.value = suffix_size / 4;
         *END_TAG(suffix, suffix_size) = suffix->block_header.value;
         suffix->next = NULL;
@@ -285,7 +288,7 @@ void NuMemoryManager::ConvertToUsedBlock(FreeHeader *header, u32 alignment, u32 
     u32 align_mask;
     u32 header_value;
     u32 aligned;
-    u32 *end_tag;
+    usize *end_tag;
     u32 manager_idx;
 
     align_mask = -(CountLeadingZeros(alignment >> 2) << 0x1b);
@@ -316,7 +319,7 @@ void NuMemoryManager::ConvertToUsedBlock(FreeHeader *header, u32 alignment, u32 
         debug->name = name;
         debug->category = category;
         debug->flags.alloc_flags = flags;
-        debug->flags.ctx_id = *(char *)this->cur_ctx->id;
+        debug->flags.ctx_id = static_cast<u16>(this->cur_ctx->id);
         debug->flags.unknown = debug->flags.ctx_id;
 
         this->stats.bytes_alloc_by_category[category] += BLOCK_SIZE(header->block_header.value);
@@ -334,7 +337,7 @@ void *NuMemoryManager::ClearUsedBlock(Header *header, u32 flags) {
     u32 size;
     void *ptr;
     u32 size_minus_header;
-    u32 *end_tag;
+    usize *end_tag;
     u32 tag_value;
     u32 manager_idx;
     u32 available_size;
@@ -410,7 +413,7 @@ void NuMemoryManager::BlockFree(void *ptr, u32 flags) {
     // at latest.
     while (true) {
         Header *header;
-        u32 *end_tag;
+        usize *end_tag;
         u32 tag_value;
         u32 manager_idx;
 
@@ -516,7 +519,7 @@ inline void NuMemoryManager::MergeBlocks(Header *left, Header *right, const char
     u32 alloc_value;
     u32 new_value;
     u32 combined_no_hi_bit;
-    u32 *end_tag;
+    usize *end_tag;
 
     ValidateBlockEndTags(right, caller);
 

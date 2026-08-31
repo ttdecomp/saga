@@ -1,6 +1,7 @@
 #include "decomp.h"
 #include "globals.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/characters/motion.h"
 #include "legoapi/menus/core/text.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/numtl.h"
@@ -29,7 +30,7 @@ void InitAlphaList() {
 void GetAspectRatio() {
 }
 
-u8 ScreenGrabNeeded;
+static u8 ScreenGrabNeeded;
 i32 pause_rt;
 NUMTL *pause_rndr_mtl;
 extern i32 pause_rndr_on;
@@ -47,12 +48,9 @@ extern f32 CameraZoom;
 extern "C" f32 NuIOS_GetAspectRatio(void);
 
 void WidescreenCode(i32) {
-    f32 aspect = NuIOS_GetAspectRatio();
-    pNuCam->aspect = 1.0f / aspect;
-    aspect = NuIOS_GetAspectRatio();
-    pNuCam->fov = (1.0f / aspect + 0.75f) * 0.5f * (1.0f / CameraZoom);
-    aspect = NuIOS_GetAspectRatio();
-    SmartTextSetWidescreen(1.3333334f / aspect, 1.0f);
+    pNuCam->aspect = 1.0f / NuIOS_GetAspectRatio();
+    pNuCam->fov = (1.0f / NuIOS_GetAspectRatio() + 0.75f) * 0.5f * (1.0f / CameraZoom);
+    SmartTextSetWidescreen(1.3333334f / NuIOS_GetAspectRatio(), 1.0f);
 }
 
 void GrabStillScreen() {
@@ -116,6 +114,15 @@ void ScreenDumpAviEnd() {
 }
 
 void UpdateCutBorders() {
+    f32 target_scale = 1.0f;
+
+    if (CUTSTOPGAME == 0 && (LEGOCAMMODE_DOORCUT == -1 || GameCam->mode != LEGOCAMMODE_DOORCUT)) {
+        if (LEGOCAMMODE_OBSTACLE == -1 || GameCam->mode != LEGOCAMMODE_OBSTACLE || ObstacleCamBorders == 0) {
+            target_scale = 0.0f;
+        }
+    }
+
+    CutBorderScale = SeekLinearF(CutBorderScale, target_scale, FRAMETIME * 2.0f);
 }
 
 void HandleStillRender() {

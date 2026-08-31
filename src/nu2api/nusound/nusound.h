@@ -26,6 +26,12 @@ typedef enum {
     NUSOUNDPLAYTOK_LOOPTYPE = 11,
 } NUSOUNDPLAYTOK;
 
+typedef enum {
+    NUSOUND_STEREO_STREAM_INACTIVE = 0,
+    NUSOUND_STEREO_STREAM_PLAYING = 1,
+    NUSOUND_STEREO_STREAM_FINISHED = 2,
+} NUSOUND_STEREO_STREAM_STATUS;
+
 #ifdef __cplusplus
 
 NUSOUND_FILENAME_INFO *ConfigureMusic(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd);
@@ -42,10 +48,9 @@ extern "C" {
     i32 NuSound3LoadingSfx(void);
 
     // Stereo-stream control used by the NuMusic player. Streams live in slots
-    // 0/1 (one per music voice). StreamKeyStatus reports 0 = nothing queued,
-    // 1 = loaded, 2 = finished.
+    // 0/1 (one per music voice); both status queries use the enum above.
     void NuSound3Update(void);
-    i32 NuSound3GetStereoStreamStatus(void);
+    i32 NuSound3GetStereoStreamStatus(i32 stream_index);
 
     void NuSound3StopStereoStream(i32 stream_index);
     void NuSound3PauseStereoStream(i32 stream_index);

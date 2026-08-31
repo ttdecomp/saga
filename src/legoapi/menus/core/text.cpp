@@ -17,7 +17,9 @@ extern "C" {
     unsigned char *NuUTF8CharFromUnicode(unsigned char *text, u16 character);
     VUFNT *LoadGameFont(char *, char *, i32, variptr_u *, variptr_u *);
     VUFNT *LoadButtonFont(char *, char *, variptr_u *, variptr_u *, i32);
+    void NuLanguageSet(i32 language);
 }
+void (*Text_GameSetLanguageFn)(i32);
 char *Text_GetLanguagePath(i32 language);
 void Text_LoadAndFixUpStrings(unsigned char *filename, unsigned char **buffer, char **table, i32 count);
 void IntroText_SetTextID(i32 id);
@@ -161,7 +163,20 @@ void Text_LoadStrings(variptr_u *buf, variptr_u *) {
     IntroText_SetTextID(tALONGTIMEAGO);
     buf->addr = ALIGN(reinterpret_cast<usize>(string_buffer), 4);
 }
-void Text_SetLanguage(i32) {
+void Text_SetLanguage(i32 language) {
+    if (language == -1) {
+        language = Text_Language;
+    } else {
+        if (language == 0) {
+            language = 1;
+        }
+        Text_Language = language;
+    }
+
+    NuLanguageSet(language);
+    if (Text_GameSetLanguageFn != NULL) {
+        Text_GameSetLanguageFn(Text_Language);
+    }
 }
 void *Text_IsFontLoaded() {
     return QFont2D;
@@ -248,9 +263,47 @@ void Text_InitStringTable(i32 count, variptr_u *buf, variptr_u *) {
     memset(Text_StringBits, 0, flags_size);
     buf->addr += flags_size;
 }
-void Text_InitLanguageList(LANGUAGEDATA *) {
+void Text_InitLanguageList(LANGUAGEDATA *language_list) {
+    if (language_list != NULL) {
+        Text_LanguageList = language_list;
+    }
+
+    LANGUAGECOUNT = 0;
+    while (Text_LanguageList[LANGUAGECOUNT].language != -1) {
+        ++LANGUAGECOUNT;
+    }
 }
-void Text_SetLanguage_Game(i32) {
+void Text_SetLanguage_Game(i32 language) {
+    switch (language) {
+        case 0:
+            INTROTEXT_Y = 0.0f;
+            INTROTEXT_SCALE = 1.8f;
+            break;
+        case 2:
+            INTROTEXT_Y = 0.115f;
+            INTROTEXT_SCALE = 0.5f;
+            break;
+        case 3:
+            INTROTEXT_Y = 0.14f;
+            INTROTEXT_SCALE = 0.61f;
+            break;
+        case 4:
+            INTROTEXT_Y = 0.13f;
+            INTROTEXT_SCALE = 0.575f;
+            break;
+        case 5:
+            INTROTEXT_Y = 0.17f;
+            INTROTEXT_SCALE = 0.76f;
+            break;
+        case 8:
+            INTROTEXT_Y = 0.15f;
+            INTROTEXT_SCALE = 0.67f;
+            break;
+        default:
+            INTROTEXT_Y = 0.175f;
+            INTROTEXT_SCALE = 0.79f;
+            break;
+    }
 }
 void Text3DStringEncodeFont(unsigned char *src, u16 *dst, void *font) {
     static unsigned char missing_character[] = "\xe2\x96\xa1";

@@ -48,8 +48,9 @@ extern "C" {
 // that KaminoC_Init clears via memset of the enclosing disco struct, which is
 // why readers cannot be constant-folded.
 static u8 kaminodisco;
-static i32 dooku_c;        // _ZL7dooku_c
-static i32 dooku_state[4]; // dooku level state (hit counters / node)
+static GIZAIMESSAGE_s *dooku_c; // _ZL7dooku_c
+static GIZAIMESSAGE_s *dooku_hits;
+static nuhspecial_s *dooku_node;
 
 // kamino_e level state block and hud scene object.
 struct kamino_e_state_s {
@@ -57,11 +58,11 @@ struct kamino_e_state_s {
     f32 field_0x28; // 0x28
 };
 static struct kamino_e_state_s *kamino_e_state;
-static void *kamino_e_special;   // kamino_e named scene object
-static i32 pursuit_state[0x20];  // bounty-hunter pursuit state
-static i16 gunship_bolts[2];     // gun-ship bolt type ids
-static u8 gunship_flags[0xa];    // gun-ship weapon-select flags
-static void *gunship_weapons[4]; // gun-ship gizmo weapons
+static void *kamino_e_special;    // kamino_e named scene object
+static void *pursuit_state[0x20]; // bounty-hunter pursuit state
+static i16 gunship_bolts[2];      // gun-ship bolt type ids
+static u8 gunship_flags[0xa];     // gun-ship weapon-select flags
+static void *gunship_weapons[4];  // gun-ship gizmo weapons
 
 // Episode 2 level handlers, in the game's Episode_II progression:
 // pursuit (coruscant bounty-hunter) / kamino / factory (geonosis droid
@@ -101,7 +102,7 @@ void BountyHunterPursuitD_Init(WORLDINFO_s *) {
 void BountyHunterPursuitA_Reset(WORLDINFO_s *world) {
     pursuit_state[0] = 0;
     pursuit_state[1] = 0;
-    pursuit_state[0] = (i32)(usize)GetNamedGameObject(world->ai_sys, "pursuit_a");
+    pursuit_state[0] = GetNamedGameObject(world->ai_sys, "pursuit_a");
     GIZMOBLOWUP_s *b;
     if ((b = GizmoBlowUp_FindByName(world, "za1")) != NULL)
         b->field_0x9f |= 0x20;
@@ -122,26 +123,26 @@ void BountyHunterPursuitB_Reset(WORLDINFO_s *world) {
     LevGizmo[3] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitb_4");
     LevGizmo[4] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitb_5");
     LevGizmo[5] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitb_6");
-    pursuit_state[0] = (i32)(usize)GetNamedGameObject(world->ai_sys, "pursuitb_exit");
+    pursuit_state[0] = GetNamedGameObject(world->ai_sys, "pursuitb_exit");
 }
 
 void BountyHunterPursuitC_Reset(WORLDINFO_s *) {
 }
 
 void BountyHunterPursuitD_Reset(WORLDINFO_s *world) {
-    pursuit_state[0] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_1");
-    pursuit_state[1] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_2");
-    pursuit_state[2] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_3");
-    pursuit_state[3] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_4");
-    pursuit_state[4] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_5");
-    pursuit_state[5] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_6");
-    pursuit_state[6] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_7");
-    pursuit_state[7] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_8");
-    pursuit_state[8] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_9");
-    pursuit_state[9] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_10");
-    pursuit_state[10] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_11");
-    pursuit_state[11] = (i32)(usize)GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_12");
-    pursuit_state[12] = (i32)(usize)GetNamedGameObject(world->ai_sys, "pursuitd_last");
+    pursuit_state[0] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_1");
+    pursuit_state[1] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_2");
+    pursuit_state[2] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_3");
+    pursuit_state[3] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_4");
+    pursuit_state[4] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_5");
+    pursuit_state[5] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_6");
+    pursuit_state[6] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_7");
+    pursuit_state[7] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_8");
+    pursuit_state[8] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_9");
+    pursuit_state[9] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_10");
+    pursuit_state[10] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_11");
+    pursuit_state[11] = GizmoFindByName(world->gizmo_sys, blowup_gizmotype_id, "pursuitd_12");
+    pursuit_state[12] = GetNamedGameObject(world->ai_sys, "pursuitd_last");
 }
 
 void BountyHunterPursuitA_Update(WORLDINFO_s *) {
@@ -307,24 +308,25 @@ void NbKaminoA_Init(WORLDINFO_s *world) {
 void FactoryB_Init(WORLDINFO_s *world) {
     factoryb_netpacket = SetLevelHack(0x4);
     InitPaintPuzzle(world);
-    GIZOBSTACLE_s *conv[9] = {0};
-    conv[1] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv1");
-    conv[2] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv2");
-    conv[3] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv3");
-    conv[4] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv4");
-    conv[5] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv5");
-    conv[6] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv6");
-    conv[7] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv7");
-    conv[8] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv8");
-    for (i32 i = 1; i <= 8; i++) {
-        if (conv[i] != NULL)
-            conv[i]->field_0xdc = 0;
+    LevGizObst[0] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv1");
+    LevGizObst[1] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv2");
+    LevGizObst[2] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv3");
+    LevGizObst[3] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv4");
+    LevGizObst[4] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv5");
+    LevGizObst[5] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv6");
+    LevGizObst[6] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv7");
+    LevGizObst[7] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv8");
+    for (i32 i = 0; i < 8; i++) {
+        if (LevGizObst[i] != NULL) {
+            LevGizObst[i]->mode = 3;
+            LevGizObst[i]->state = 0;
+        }
     }
 }
 
 void FactoryB_Reset(WORLDINFO_s *world) {
     ResetPaintPuzzle(world);
-    factoryb_cut = (CUTINFO *)NewCutScene(NULL, world->cutscene_sys, "fb_cut", 0);
+    factoryb_cut = NewCutScene(NULL, world->cutscene_sys, "fb_cut", 0);
     if (factoryb_cut != NULL) {
         CUTSCENEDATA_s *scene = (CUTSCENEDATA_s *)factoryb_cut->scene;
         if (scene != NULL) {
@@ -555,13 +557,13 @@ void DookuC_Init(WORLDINFO_s *world) {
     LevGizForce[1] = GizForce_FindByName(world->giz_force_sys, "dooku1");
     LevGizForce[2] = GizForce_FindByName(world->giz_force_sys, "dooku2");
     void *path1 = AIPathFindNode(world->ai_sys, "path1", 0);
-    LevAIPathNode[0] = (i32)(usize)path1;
+    LevAIPathNode[0] = path1;
     void *path2 = AIPathFindNode(world->ai_sys, "path2", 0);
-    LevAIPathNode[1] = (i32)(usize)path2;
+    LevAIPathNode[1] = path2;
     void *path3 = AIPathFindNode(world->ai_sys, "path3", 0);
-    LevAIPathNode[2] = (i32)(usize)path3;
+    LevAIPathNode[2] = path3;
     void *path4 = AIPathFindNode(world->ai_sys, "path4", 0);
-    LevAIPathNode[3] = (i32)(usize)path4;
+    LevAIPathNode[3] = path4;
     char buf[0x40];
     LevPathCnx[0] = AIPAthFindPathCnx(world->ai_sys, 0, path1, path2, buf);
     LevPathCnx[1] = AIPAthFindPathCnx(world->ai_sys, 0, path2, path3, buf);
@@ -572,15 +574,13 @@ void DookuC_Init(WORLDINFO_s *world) {
 
 void DookuC_Reset(WORLDINFO_s *world) {
     dooku_c = 0;
-    dooku_state[0] = 0;
-    dooku_state[1] = 0;
-    dooku_state[2] = 0;
-    dooku_state[3] = 0;
+    dooku_hits = NULL;
+    dooku_node = NULL;
     if (netclient == 0) {
-        dooku_c = (i32)(usize)SetGizAIMessage(gizaimessagesys, "dooku_total", 0.0f, NULL);
-        dooku_state[0] = (i32)(usize)CheckGizAIMessage(gizaimessagesys, "dooku_hits", NULL);
+        dooku_c = SetGizAIMessage(gizaimessagesys, "dooku_total", 0.0f, NULL);
+        dooku_hits = CheckGizAIMessage(gizaimessagesys, "dooku_hits", NULL);
     }
-    NuSpecialFind(world->current_gscn, (void **)&dooku_state[1], "dooku_node", 1);
+    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&dooku_node), "dooku_node", 1);
 }
 
 void DookuC_Update(WORLDINFO_s *world) {
@@ -591,7 +591,7 @@ void DookuC_Update(WORLDINFO_s *world) {
             KillBossNewLevel((i32)(i16)id_COUNTDOOKU, 0, 0.0f, DOOKUOUTRO_LDATA->idx);
         }
     }
-    DrawForceBackEffect((nuhspecial_s *)dooku_state[1]);
+    DrawForceBackEffect(dooku_node);
 }
 
 void DookuC_DrawPanel(WORLDINFO_s *) {

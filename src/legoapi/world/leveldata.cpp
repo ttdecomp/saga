@@ -14,11 +14,11 @@ void ClearLevData() {
     LevFlag[1] = 0;
     LevFlag[2] = 0;
     LevFlag[3] = 0;
-    memset(LevHSpecial, 0, sizeof(LevHSpecial));
     LevSfxFlag[0] = 0;
     LevSfxFlag[1] = 0;
     LevSfxFlag[2] = 0;
     LevSfxFlag[3] = 0;
+    memset(LevHSpecial, 0, sizeof(LevHSpecial));
     memset(dynamic_antinodes, 0, 0x1500);
     memset(LevInstAnim, 0, sizeof(LevInstAnim));
     LevArea[0] = 0;
@@ -31,12 +31,12 @@ void ClearLevData() {
     memset(LevGamePart, 0, sizeof(LevGamePart));
     memset(LevAIMessage, 0, sizeof(LevAIMessage));
     LevelLocator = 0;
-    memset(LevGizObst, 0, sizeof(LevGizObst));
     LevBlowUp[0] = 0;
     LevBlowUp[1] = 0;
     LevBlowUp[2] = 0;
     LevBlowUp[3] = 0;
     LevBlowUp[4] = 0;
+    memset(LevGizObst, 0, sizeof(LevGizObst));
     memset(LevGizmo, 0, sizeof(LevGizmo));
     LevSfxId[0] = 0;
     LevSfxId[1] = 0;
@@ -57,12 +57,12 @@ void ClearLevData() {
     LevPlatID[1] = -1;
     LevPathCnxDir = 0;
     LevDeaths = 0;
-    LevLock[0] = 0;
-    LevLock[1] = 0;
-    LevLock[2] = 0;
     LevLock[3] = 0;
-    LevSafePlatID[0] = -1;
+    LevLock[2] = 0;
+    LevLock[1] = 0;
+    LevLock[0] = 0;
     LevSafePlatID[1] = -1;
+    LevSafePlatID[0] = -1;
 }
 
 void *SetLevelHack(i32 size) {

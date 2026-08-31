@@ -4,6 +4,8 @@
 #include "nu2api/nu3d/numtl.h"
 #include "nu2api/nu3d/nudlist.h"
 #include "nu2api/nu3d/nurndrstat.h"
+#include "gameapi/edtools/edstubs.h"
+#include "legoapi/world/world.h"
 
 struct AIROW_s;
 struct nuqthdr_s;
@@ -11,6 +13,13 @@ struct nunativegscene_s;
 struct SHOPINPUT;
 
 extern NUGLOBALRNDRSTATE render_state;
+extern "C" {
+    extern i32 DEBPAGE_AREA;
+    extern i32 DEBPAGE_CHARACTER;
+    extern i32 DEBPAGE_GENERAL;
+    void DebFreeAllCreatedEffects(void);
+    void DebrisSetRenderGroup(i32 group);
+}
 
 void OctreeRndr(unsigned char *, nuoctreenode_s *, i32) {
 }
@@ -18,10 +27,36 @@ void OctreeRndr(unsigned char *, nuoctreenode_s *, i32) {
 void AddCameraRain(WORLDINFO_s *, i32) {
 }
 
-void Particles_Stop(WORLDINFO_s *) {
+void Particles_Stop(WORLDINFO_s *world) {
+    if (world->page_anim != -1) {
+        edanimStopPage(world->page_anim);
+    }
+    if (world->page_pp != -1) {
+        edppStopPage((i8)world->page_pp);
+    }
+    if (DEBPAGE_CHARACTER != -1) {
+        edppStopPage((i8)DEBPAGE_CHARACTER);
+    }
+    if (DEBPAGE_GENERAL != -1) {
+        edppStopPage((i8)DEBPAGE_GENERAL);
+    }
+    if (DEBPAGE_AREA != -1) {
+        edppStopPage((i8)DEBPAGE_AREA);
+    }
+    DebFreeAllCreatedEffects();
 }
 
-void Particles_Start(WORLDINFO_s *) {
+void Particles_Start(WORLDINFO_s *world) {
+    if (DEBPAGE_AREA != -1) {
+        edppStartPage((i8)DEBPAGE_AREA);
+    }
+    if (world->page_pp != -1) {
+        edppStartPage((i8)world->page_pp);
+    }
+    DebrisSetRenderGroup(1);
+    if (world->page_anim >= 0) {
+        edanimStartPage(world->page_anim);
+    }
 }
 
 void Particles_DumpAreaPage() {

@@ -52,7 +52,7 @@ static void Signal_SetGizmoVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static i32 Signal_GetPos(GIZMO *gizmo) {
+static NUVEC *Signal_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
     return {};
 }

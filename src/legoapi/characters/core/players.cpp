@@ -10,6 +10,7 @@ struct HINT_s;
 #include "legoapi/world/area.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/core/config/cheat.h"
+#include "legoapi/items/base/collection.h"
 #include "legoapi/world/levels/episode.h"
 #include "legoapi/world/level.h"
 #include "legoapi/characters/core/players.h"
@@ -440,7 +441,7 @@ void PreResetCode(GameObject_s *obj) {
         *(u32 *)&b[0xd0c] = 0;
         *(u16 *)&b[0x4a] = 0xffff;
         *(u32 *)&b[0xd7c] = 0;
-        if ((*(u32 *)(*(u32 *)&b[0x54] + 4) & 0x8040) == 0) {
+        if ((obj->apiobj.character_data->model_flags & 0x8040) == 0) {
             b[0xe31] = 0;
         }
 
@@ -469,12 +470,12 @@ void PreResetCode(GameObject_s *obj) {
             }
 
             if (b[0x7a5] == 0 &&
-                sPreReset1048Scale * *(f32 *)(*(u32 *)(*(u32 *)&b[0x54] + 0x24) + 0x30) > *(f32 *)&b[0x76c]) {
+                sPreReset1048Scale * obj->apiobj.character_data->player_config->reset_scale > *(f32 *)&b[0x76c]) {
                 goto finish_dfd;
             }
 
             {
-                f32 f28v = *(f32 *)(*(u32 *)&b[0xc94] + 0x28);
+                f32 f28v = obj->pad_gamepad->input_magnitude;
                 if (f28v > 0.0f) {
                     if ((al & 2) != 0) {
                         goto finish_dfd;
@@ -544,7 +545,7 @@ void PreResetCode(GameObject_s *obj) {
             GameObjectNearFloor(obj, 1.0f, (f32 *)&b[0xda0]);
             *(f32 *)&b[0xdb8] = GetHoverPosY(obj);
             {
-                u8 v = *(u8 *)(*(u32 *)(*(u32 *)&b[0x54] + 0x24) + 0x117);
+                u8 v = obj->apiobj.character_data->player_config->variant;
                 if (v != 0xff) {
                     if (b[0x27c] == 0xff) {
                         b[0xe42] = v;
@@ -554,7 +555,7 @@ void PreResetCode(GameObject_s *obj) {
                         } else if (b[0x27c] != 0xff && Player_HasPurpleForce(obj) != 0) {
                             b[0xe42] = 0x03;
                         } else {
-                            b[0xe42] = *(u8 *)(*(u32 *)(*(u32 *)&b[0x54] + 0x24) + 0x117);
+                            b[0xe42] = obj->apiobj.character_data->player_config->variant;
                         }
                     }
                 } else {
@@ -564,7 +565,7 @@ void PreResetCode(GameObject_s *obj) {
                 {
                     u32 mask = GAMEPAD_ACTION;
                     f32 xmm0 = *(f32 *)&b[0xde4];
-                    if ((*(u32 *)(*(u32 *)&b[0xc94] + 4) & mask) != 0) {
+                    if ((obj->pad_gamepad->buttons_held & mask) != 0) {
                         *(f32 *)&b[0xde4] = xmm0 + FRAMETIME;
                     } else {
                         if (xmm0 > 0.0f && sPreResetD18Scale > xmm0) {
@@ -617,8 +618,6 @@ void SetHitPoints(GameObject_s *obj, i32 hp) {
         obj->current_hp = obj->hitpoints;
     }
 }
-
-extern i32 Collection_Got(i32 id);
 
 void RememberPlayerIDs(i32 a, i32 b, i32 c) __attribute__((force_align_arg_pointer));
 void RememberPlayerIDs(i32 a, i32 b, i32 c) {
@@ -749,7 +748,8 @@ void PlayerItemType_Find(i32) {
 void Player_ClearContext(GameObject_s *, i32) {
 }
 
-void Player_HasFastBuild(GameObject_s *) {
+i32 Player_HasFastBuild(GameObject_s *player) {
+    return Cheats_CheckFlags(0x4000) != 0 || (player != NULL && player->field_0xdec > 0.0f);
 }
 
 void PlayerItemTypes_Init(PLAYERITEMTYPE_s *) {
@@ -838,12 +838,8 @@ namespace {
         obj->apiobj.pos_y = position.y;
         obj->apiobj.pos_z = position.z;
 
-        obj->apiobj.start_position[0] = position.x;
-        obj->apiobj.start_position[1] = position.y;
-        obj->apiobj.start_position[2] = position.z;
-        obj->apiobj.initial_position[0] = position.x;
-        obj->apiobj.initial_position[1] = position.y;
-        obj->apiobj.initial_position[2] = position.z;
+        obj->apiobj.start_position = position;
+        obj->apiobj.initial_position = position;
 
         plr_lastpos = position;
     }
@@ -872,9 +868,7 @@ void ResetPlayer(GameObject_s *obj, i32 reset_moves, nuvec_s *position, i32 snap
         ResetPlayerMoves(obj);
         SyncPlayerSpawnPosition(obj);
 
-        obj->apiobj.field_0x68 = v000.x;
-        obj->apiobj.field_0x6c = v000.y;
-        obj->apiobj.field_0x70 = v000.z;
+        obj->apiobj.velocity = v000;
         obj->reset_velocity = v000;
 
         GetTopBot(obj);
@@ -1070,7 +1064,36 @@ void ActivePlayerInRange(nuvec_s *, float, float *) {
 void GetOtherActivePlayer(GameObject_s *) {
 }
 
-void FindNearestPlayerToVec(nuvec_s *, GameObject_s **, float &, bool, u32) {
+bool FindNearestPlayerToVec(nuvec_s *position, GameObject_s **nearest_player, float &distance_squared,
+                            bool require_character_flags, u32 character_flags) {
+    *nearest_player = NULL;
+    distance_squared = 0.0f;
+
+    for (i32 index = 0; index < 8; ++index) {
+        GameObject_s *candidate = Player[index];
+        if (candidate == NULL || static_cast<i8>(candidate->apiobj.flags_low) >= 0) {
+            continue;
+        }
+
+        const f32 candidate_distance = NuVecDistSqr(&candidate->apiobj.position, position, NULL);
+        if (*nearest_player != NULL && candidate_distance >= distance_squared) {
+            continue;
+        }
+
+        if (require_character_flags) {
+            CHARACTERDATA *character = candidate->apiobj.character_data;
+            GAMECHARACTERDATA *game_character =
+                character == NULL ? NULL : static_cast<GAMECHARACTERDATA *>(character->field11_0x24);
+            if (game_character == NULL || (game_character->flags_090 & character_flags) == 0) {
+                continue;
+            }
+        }
+
+        distance_squared = candidate_distance;
+        *nearest_player = candidate;
+    }
+
+    return *nearest_player != NULL;
 }
 
 void SetPlayerGroupPosition(float, float, float) {

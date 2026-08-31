@@ -180,7 +180,8 @@ extern "C" {
     void NuVecRotateY(NUVEC *v, NUVEC *v0, NUANG a);
     void NuVecRotateX(NUVEC *v, NUVEC *v0, NUANG a);
     void NuVecRotateZ(NUVEC *v, NUVEC *v0, NUANG a);
-    f32 NuVecRotateYValZ(NUVEC *v0, NUANG a);
+    /// @brief Builds a horizontal vector of the given magnitude and Y rotation.
+    void NuVecRotateYValZ(NUVEC *v, f32 magnitude, NUANG a);
 
     /// @relatesalso nuvec_s
     /// @brief Computes the surface normal of a triangle.

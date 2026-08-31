@@ -731,16 +731,40 @@ extern "C" {
             }
         }
 
-        f32 pullback = player_count == 1 ? single_player_pullback : two_player_pullback;
-        if (pullback != 0.0f) {
+        if (player_count == 1 && single_player_pullback != 0.0f) {
             NUVEC direction;
             f32 distance = NuVecDist(camera_target, camera_position, &direction);
             if (distance > 1.0f) {
                 NuVecNorm(&direction, &direction);
-                if (distance - pullback < 1.0f) {
-                    pullback = distance - 1.0f;
+                if (distance - single_player_pullback < 1.0f) {
+                    single_player_pullback = distance - 1.0f;
                 }
-                NuVecAddScale(camera_position, camera_position, &direction, pullback);
+                NuVecAddScale(camera_position, camera_position, &direction, single_player_pullback);
+            }
+        } else if (player_count == 2 && two_player_pullback != 0.0f) {
+            const SOCK *active_socket = &sock_sys->sock[camera_socket_position->location.sock];
+            const bool planar = (active_socket->flags & SOCK_FLAG_TWO_PLAYER_PLANAR_PULLBACK) != 0;
+            const f32 player_separation =
+                (active_socket->flags & SOCK_FLAG_TWO_PLAYER_VERTICAL_SEPARATION) != 0
+                    ? NuFabs(player_camera_positions[0].y - player_camera_positions[1].y)
+                    : (planar ? NuVecXZDist(&player_camera_positions[0], &player_camera_positions[1], NULL)
+                              : NuVecDist(&player_camera_positions[0], &player_camera_positions[1], NULL));
+
+            NUVEC direction;
+            const f32 camera_distance = planar ? NuVecXZDist(camera_target, camera_position, &direction)
+                                               : NuVecDist(camera_target, camera_position, &direction);
+            if (camera_distance > 0.0f) {
+                NuVecNorm(&direction, &direction);
+                f32 offset = -two_player_pullback * player_separation;
+                if (camera_distance - offset < 1.0f) {
+                    offset = camera_distance - 1.0f;
+                }
+                if (planar) {
+                    camera_position->x += direction.x * offset;
+                    camera_position->z += direction.z * offset;
+                } else {
+                    NuVecAddScale(camera_position, camera_position, &direction, offset);
+                }
             }
         }
         return 1;

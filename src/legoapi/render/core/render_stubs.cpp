@@ -198,7 +198,7 @@ extern "C" {
     void DisplayListUpdateRenderStateShadow(void) {
     }
 
-    void DisplayListUpdateSpecialTransformPS(void) {
+    void DisplayListUpdateSpecialTransformPS(nuhspecial_s *, NUMTX *) {
     }
 
     void DisplaySceneRndrSpecials(void) {

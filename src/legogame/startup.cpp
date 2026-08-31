@@ -293,27 +293,19 @@ static void LoadPermData(BGPROCINFO *proc) {
 
     // ------------------------------------------------------------------
     // Tiny bump allocator embedded in `theMemoryManager`.
-    //
-    // Original inlines this at the call site — a 0x200-byte bump region
-    // carved from the *next* 0x200 bytes of the permanent buffer, with a
-    // handful of housekeeping words stored in the global `theMemoryManager`
-    // blob (0x248 bytes).  Offsets below match the original layout.
     // ------------------------------------------------------------------
     {
-        u8 *mm = theMemoryManager;
-        *reinterpret_cast<u8 **>(mm + 0x8) = mm; // self pointer
-        *reinterpret_cast<u32 *>(mm + 0x14) = 0;
-
-        const u32 aligned_base = (static_cast<u32>(permbuffer_ptr.addr) + 0xf) & ~0xfu;
-        *reinterpret_cast<u32 *>(mm + 0x0) = aligned_base;
-        *reinterpret_cast<u32 *>(mm + 0x4) = aligned_base + kSmallHeapSize;
+        MemoryManager &manager = theMemoryManager;
+        const usize aligned_base = ALIGN(permbuffer_ptr.addr, 0x10);
+        manager.cursor = aligned_base;
+        manager.end = aligned_base + kSmallHeapSize;
+        manager.cursor_cell = &manager.cursor;
+        manager.end_cell = &manager.end;
+        manager.high_water = aligned_base;
+        manager.allocated = 0;
+        manager.remaining = kSmallHeapSize;
+        memset(manager.free_lists, 0, sizeof(manager.free_lists));
         permbuffer_ptr.addr = aligned_base + kSmallHeapSize;
-
-        *reinterpret_cast<u32 *>(mm + 0x18) = static_cast<u32>(kSmallHeapSize);
-        // Stored as u32 truncation of a host pointer — explicit via usize.
-        *reinterpret_cast<u32 *>(mm + 0xc) = static_cast<u32>(reinterpret_cast<usize>(mm + 4));
-        *reinterpret_cast<u32 *>(mm + 0x10) = 0;
-        memset(mm + 0x1c, 0, 0x22c);
     }
 
     CreateThingManager();
@@ -678,23 +670,23 @@ void LoadPerm(void) {
 // bump buffers. This is what gives each WORLDINFO its buffer_start /
 // giz_buffer / buffer_end cursors that WorldInfo_Reset restores.
 void EndPerm(void) {
-    u32 aligned = (u32)((permbuffer_ptr.addr + 3) & ~3);
+    usize aligned = ALIGN(permbuffer_ptr.addr, 4);
     permbuffer_end.addr = aligned;
     permbuffer_size = (i32)(aligned - permbuffer_base.addr);
 
     characterbuffer_ptr.addr = aligned;
     characterbuffer_base.addr = aligned;
-    u32 world_start = aligned + (u32)CHARACTERBUFFERSIZE;
+    usize world_start = aligned + static_cast<usize>(CHARACTERBUFFERSIZE);
     characterbuffer_end.addr = world_start;
     superbuffer_ptr.addr = world_start;
     superbuffer_base.addr = world_start;
 
-    u32 half = (u32)(superbuffer_end.addr - world_start) >> 1;
+    usize half = (superbuffer_end.addr - world_start) >> 1;
     WorldInfo[0].giz_buffer.addr = world_start;
-    WorldInfo[0].buffer_start = (void *)world_start;
+    WorldInfo[0].buffer_start = reinterpret_cast<void *>(world_start);
     WorldInfo[0].unknown_0108.addr = world_start + half;
     WorldInfo[1].giz_buffer.addr = world_start + half;
-    WorldInfo[1].buffer_start = (void *)(world_start + half);
+    WorldInfo[1].buffer_start = reinterpret_cast<void *>(world_start + half);
     WorldInfo[1].unknown_0108.addr = superbuffer_end.addr;
-    editbuffer_end.addr = superbuffer_end.addr - (u32)EDITBUFFERENDSIZE;
+    editbuffer_end.addr = superbuffer_end.addr - static_cast<usize>(EDITBUFFERENDSIZE);
 }

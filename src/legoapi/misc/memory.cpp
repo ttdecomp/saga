@@ -4,12 +4,8 @@
 
 // MemoryManager::AllocPool @0x425740.
 //
-// The manager block (theMemoryManager, 0x248 bytes) is laid out by the
-// LoadPermData inline bump-allocator init:
-//   0x00 linear-pool cursor cell   0x04 linear-pool end cell
-//   0x08 -> cursor cell            0x0c -> end cell
-//   0x10 high-water cursor         0x14 bytes handed out
-//   0x18 bytes remaining           0x1c.. per-size-class free lists
+// The manager is initialized by LoadPermData. Its pointer-bearing fields use
+// native pointer width while retaining the original layout in the 32-bit build.
 // Pools are 32-byte classes; a freed block is pushed on its class list and
 // recycled by the pop path below (memset of the requested size only), while a
 // fresh carve rounds up to the full 32-byte block and updates the counters.
@@ -21,8 +17,7 @@ void *MemoryManager::AllocPool(u32 size, i32 zero) {
         size_class = (i32)(size - 1) >> 5;
     }
 
-    u8 *mm = reinterpret_cast<u8 *>(this);
-    void **free_head = reinterpret_cast<void **>(mm + 0xc + (size_class + 4) * 4);
+    void **free_head = &free_lists[size_class];
     void *item = *free_head;
     if (item != NULL) {
         *free_head = *reinterpret_cast<void **>(item);
@@ -32,20 +27,18 @@ void *MemoryManager::AllocPool(u32 size, i32 zero) {
         return item;
     }
 
-    u32 block = (u32)(size_class + 1) << 5;
-    u32 *cursor = *reinterpret_cast<u32 **>(mm + 0x8);
-    u32 *endp = *reinterpret_cast<u32 **>(mm + 0xc);
-    if ((u32)(*endp - *cursor) <= block) {
+    const usize block = static_cast<usize>(size_class + 1) << 5;
+    if (*end_cell - *cursor_cell <= block) {
         return NULL;
     }
-    u32 aligned = (*cursor + 0xf) & ~0xfu;
-    *cursor = aligned;
+    const usize aligned = ALIGN(*cursor_cell, 0x10);
+    *cursor_cell = aligned;
     item = reinterpret_cast<void *>(aligned);
-    *cursor = aligned + block;
+    *cursor_cell = aligned + block;
     memset(item, 0, block);
-    *reinterpret_cast<u32 *>(mm + 0x14) += block;
-    *reinterpret_cast<u32 *>(mm + 0x18) -= block;
-    *reinterpret_cast<u32 *>(mm + 0x10) = *cursor;
+    allocated += block;
+    remaining -= block;
+    high_water = *cursor_cell;
     return item;
 }
 
@@ -59,8 +52,7 @@ void MemoryManager::FreePool(void *item, u32 size) {
         size_class = (i32)(size - 1) >> 5;
     }
 
-    u8 *mm = reinterpret_cast<u8 *>(this);
-    void **free_head = reinterpret_cast<void **>(mm + 0xc + (size_class + 4) * 4);
+    void **free_head = &free_lists[size_class];
     *reinterpret_cast<void **>(item) = *free_head;
     *free_head = item;
 }

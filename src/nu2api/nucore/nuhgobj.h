@@ -31,7 +31,7 @@ struct nuhgobjjointoverride_s {
 };
 
 struct nuhgobjrender_s {
-    u8 *visibility;
+    char *name;
     void **rigid_specials;
     void *smooth_skin_special;
     void **alternate_rigid_specials;
@@ -70,10 +70,11 @@ DECOMP_ASSERT(sizeof(nuhgobj_s) == 0x1c4, "nuhgobj_s size");
 #ifdef __cplusplus
 extern "C" {
 #endif
-    void NuHGobjReversibleCharacters(i32 v);
-    void NuHGobjForceShadowsOnCharacters(i32 v);
+    i32 NuHGobjReversibleCharacters(i32 enabled);
+    i32 NuHGobjForceShadowsOnCharacters(i32 enabled);
     nuhgobj_s *NuGHGRead(char *path, VARIPTR *buf, VARIPTR buf_end);
     nuhgobjpoi_s *NuHGobjGetPOI(nuhgobj_s *object, i32 index);
+    i32 NuHGobjGetLayerIndex(char *name, nuhgobj_s *object);
     void NuHGobjEval(nuhgobj_s *object, i32 override_count, nuhgobjjointoverride_s *overrides, NUMTX *matrices);
     void NuHGobjEvalAnim2(nuhgobj_s *object, ani3_animheader_s *animation, f32 time, i32 override_count,
                           NUJOINTANIM_s *overrides, NUMTX *matrices);

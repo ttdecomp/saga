@@ -105,9 +105,8 @@ void NuShaderObjectCreate(NUSHADEROBJECT *shader) {
 
 // Original 0x30ba90. Parameter metadata is populated by the GLSL semantic
 // probe; the low nibble selects scalar/vector/matrix upload behaviour.
-extern "C" void NuShaderObjectSetElementsfv(i32 shader_object, i32 semantic, i32 first_element, i32 count,
+extern "C" void NuShaderObjectSetElementsfv(NUSHADEROBJECT *shader, i32 semantic, i32 first_element, i32 count,
                                             const f32 *values) {
-    NUSHADEROBJECT *shader = reinterpret_cast<NUSHADEROBJECT *>(static_cast<uintptr_t>(shader_object));
     GLSLParameter &parameter = shader->parameters[semantic];
     if (parameter.location < 0) {
         return;
@@ -152,7 +151,7 @@ void NuShaderObjectDestroy(NUSHADEROBJECT *shader) {
 }
 
 void NuShaderObjectBaseInit(NUSHADEROBJECTBASE *shader, NUSHADEROBJECTKEY *key, i32 unk) {
-    shader->key = (usize) * (NUSHADEROBJECTKEY **)key; // it only matches if you do this noop cast/dereference
+    memcpy(&shader->key, key, sizeof(shader->key));
     shader->field0 = unk;
 }
 

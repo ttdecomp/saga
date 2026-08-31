@@ -13,6 +13,8 @@ extern i32 g_backingHeight;
 extern "C" {
 #endif
     i32 NuIOS_IsLowEndDevice(void);
+    f32 NuIOS_GetAspectRatio(void);
+    i32 NuIOS_IsWidescreen(void);
 
     char *NuIOS_GetDocumentsPath(void);
     char *NuIOS_GetAppBundlePath(void);

@@ -58,7 +58,7 @@ i32 Blowup_GetVisibility(GIZMO *gizmo) {
     return {};
 }
 
-static i32 GizmoBlowup_GetPos(GIZMO *gizmo) {
+static NUVEC *GizmoBlowup_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
     return {};
 }

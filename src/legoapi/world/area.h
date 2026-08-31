@@ -20,7 +20,7 @@ typedef struct AREADATA_s {
     byte field30_0x7f;
     i32 field31_0x80;
     u16 challenge_trial_time;
-    byte episode_index;
+    i8 episode_index;
     byte area_index;
     i16 area_music;
     i16 minikit_id;
@@ -31,6 +31,9 @@ typedef struct AREADATA_s {
     byte field41_0x97;
     i16 *hub_player_ids; // 0x98, optional extra hub characters terminated by -1
 } AREADATA;
+DECOMP_ASSERT(sizeof(AREADATA) == 0x9c, "AREADATA ABI");
+DECOMP_ASSERT(offsetof(AREADATA, episode_index) == 0x86, "AREADATA episode index offset");
+DECOMP_ASSERT(offsetof(AREADATA, area_index) == 0x87, "AREADATA area index offset");
 
 #ifdef __cplusplus
 extern "C" {

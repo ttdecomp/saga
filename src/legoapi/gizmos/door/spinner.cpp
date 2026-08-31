@@ -52,13 +52,14 @@ void GizSpinner_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static i32 GizSpinner_GetPos(GIZMO *gizmo) {
+static NUVEC *GizSpinner_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
     return {};
 }
 
-void GizSpinner_UsingSpecial(GIZMO **, void *, i32, char *) {
+i32 GizSpinner_UsingSpecial(GIZMO **, void *, i32, char *) {
     UNIMPLEMENTED();
+    return 0;
 }
 
 static i32 GizSpinner_BoltHitPlat(void *, void *, BOLT *, unsigned char *) {

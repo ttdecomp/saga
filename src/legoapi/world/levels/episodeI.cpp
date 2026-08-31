@@ -1193,18 +1193,18 @@ void PodSprintA_Reset(WORLDINFO_s *world) {
         GameObject_s *p = player;
         if (p != NULL && (p->apiobj.field_0x1f8 & 0x1000)) {
             p->field_0xdc8 = 1.0f;
-            p->apiobj.field_0x68 = 0.0f;
-            p->apiobj.field_0x6c = 0.0f;
-            p->apiobj.field_0x70 = ((PLAYERSUBOBJ2_s *)((PLAYERSUBOBJ_s *)p->apiobj.character_data)->field_0x24)->value;
-            NuVecRotateY((NUVEC *)&p->apiobj.field_0x68, (NUVEC *)&p->apiobj.field_0x68, p->apiobj.field_0x276);
+            p->apiobj.velocity.x = 0.0f;
+            p->apiobj.velocity.y = 0.0f;
+            p->apiobj.velocity.z = ((PLAYERSUBOBJ2_s *)((PLAYERSUBOBJ_s *)p->apiobj.character_data)->field_0x24)->value;
+            NuVecRotateY(&p->apiobj.velocity, &p->apiobj.velocity, p->apiobj.field_0x276);
         } else if (player2 != NULL && (player2->apiobj.field_0x1f8 & 0x1000)) {
             GameObject_s *p2 = player2;
             p2->field_0xdc8 = 1.0f;
-            p2->apiobj.field_0x68 = 0.0f;
-            p2->apiobj.field_0x6c = 0.0f;
-            p2->apiobj.field_0x70 =
+            p2->apiobj.velocity.x = 0.0f;
+            p2->apiobj.velocity.y = 0.0f;
+            p2->apiobj.velocity.z =
                 ((PLAYERSUBOBJ2_s *)((PLAYERSUBOBJ_s *)p2->apiobj.character_data)->field_0x24)->value;
-            NuVecRotateY((NUVEC *)&p2->apiobj.field_0x68, (NUVEC *)&p2->apiobj.field_0x68, p2->apiobj.field_0x276);
+            NuVecRotateY(&p2->apiobj.velocity, &p2->apiobj.velocity, p2->apiobj.field_0x276);
         }
         void *cs = game_cutscenes.cutscene;
         if (cs != NULL) {
@@ -1255,14 +1255,14 @@ speed_section:
             ps->speed -= FRAMETIME;
         if (Player[0] != NULL) {
             Player[0]->field_0xdc8 = 0.0f;
-            Player[0]->apiobj.field_0x70 = 0.0f;
-            Player[0]->apiobj.field_0x68 = 0.0f;
+            Player[0]->apiobj.velocity.z = 0.0f;
+            Player[0]->apiobj.velocity.x = 0.0f;
             Player[0]->field_0xee0 = ps->speed <= 0.0f ? 1000000000.0f : 0.0f;
         }
         if (Player[1] != NULL) {
             Player[1]->field_0xdc8 = 0.0f;
-            Player[1]->apiobj.field_0x70 = 0.0f;
-            Player[1]->apiobj.field_0x68 = 0.0f;
+            Player[1]->apiobj.velocity.z = 0.0f;
+            Player[1]->apiobj.velocity.x = 0.0f;
             Player[1]->field_0xee0 = ps->speed <= 0.0f ? 1000000000.0f : 0.0f;
             if (v < 2.9f && (i32)v != (i32)ps->speed)
                 PlaySfx("Pod_Race_Light", NULL);
@@ -1529,7 +1529,7 @@ void RetakeE_Init(WORLDINFO_s *world) {
 
     obs = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle3");
     if (obs != NULL) {
-        n = (GIZOBSTACLENODE_s *)((GIZOBSTACLENODE_s *)obs->field_0x34)->field_0x18;
+        n = (GIZOBSTACLENODE_s *)((GIZOBSTACLENODE_s *)obs->anim_set)->field_0x18;
         while (n != NULL) {
             pos = NuSpecialGetPos(n->special);
             pos->z -= 0.75f;
@@ -1543,7 +1543,7 @@ void RetakeE_Init(WORLDINFO_s *world) {
 
     obs = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle12");
     if (obs != NULL) {
-        n = (GIZOBSTACLENODE_s *)((GIZOBSTACLENODE_s *)obs->field_0x34)->field_0x18;
+        n = (GIZOBSTACLENODE_s *)((GIZOBSTACLENODE_s *)obs->anim_set)->field_0x18;
         while (n != NULL) {
             pos = NuSpecialGetPos(n->special);
             pos->z += 0.75f;
@@ -1559,7 +1559,7 @@ void RetakeE_Init(WORLDINFO_s *world) {
 
     obs = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle11");
     if (obs != NULL) {
-        n = (GIZOBSTACLENODE_s *)((GIZOBSTACLENODE_s *)obs->field_0x34)->field_0x18;
+        n = (GIZOBSTACLENODE_s *)((GIZOBSTACLENODE_s *)obs->anim_set)->field_0x18;
         while (n != NULL) {
             obs->field_0x1c = pos->x; // stale pos on purpose (matches original)
             obs->field_0x20 = pos->y;
@@ -1571,7 +1571,7 @@ void RetakeE_Init(WORLDINFO_s *world) {
 
     obs = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle13");
     if (obs != NULL) {
-        n = (GIZOBSTACLENODE_s *)((GIZOBSTACLENODE_s *)obs->field_0x34)->field_0x18;
+        n = (GIZOBSTACLENODE_s *)((GIZOBSTACLENODE_s *)obs->anim_set)->field_0x18;
         while (n != NULL) {
             obs->field_0x1c = pos->x; // stale pos on purpose (matches original)
             obs->field_0x20 = pos->y;
@@ -1622,10 +1622,10 @@ void RetakeG_Update(WORLDINFO_s *world) {
     }
     GIZFORCE_s *g0 = LevGizForce[0];
     GIZFORCE_s *g1 = LevGizForce[1];
-    if (g0 != NULL && g0->field_0x40 != NULL && g1 != NULL && g1->field_0x40 != NULL) {
+    if (g0 != NULL && g0->group != NULL && g1 != NULL && g1->group != NULL) {
         for (i32 i = 0; i < 6; i++) {
             GIZFORCE_s *obj = (i < 3) ? g0 : g1;
-            GIZFORCEOBJ_s *obj40 = (GIZFORCEOBJ_s *)obj->field_0x40;
+            GIZFORCEOBJ_s *obj40 = (GIZFORCEOBJ_s *)obj->group;
             PATHCNXDATA_s *cnx = (PATHCNXDATA_s *)LevPathCnx[i];
             if (cnx != NULL) {
                 if (obj40->flags & 4) {
