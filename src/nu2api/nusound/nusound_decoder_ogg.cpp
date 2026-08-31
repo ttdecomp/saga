@@ -14,9 +14,9 @@
 NuSoundDecoderOGG::NuSoundDecoderOGG(char const *name, NuSoundSource *wrapped) : NuSoundDecoder(name, wrapped) {
     this->field_0xec = 0;
     this->field_0xf0 = &this->field_0xf0;
-    this->field_0xf4 = (u8 *)this + 0xe8;
+    this->field_0xf4 = static_cast<NuSoundBufferCallback *>(this);
     this->field_0xf8 = 0;
-    this->field_0xfc = (u8 *)this + 0xe8;
+    this->field_0xfc = static_cast<NuSoundBufferCallback *>(this);
     this->field_0x100 = &this->field_0xf0;
     this->field_0x104 = 0;
     this->field_0x108 = 0;

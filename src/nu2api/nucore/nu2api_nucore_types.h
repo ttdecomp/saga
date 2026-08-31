@@ -28,7 +28,7 @@
 #include "nu2api/nucore/NuVoiceAndroid.h"
 #include "nu2api/nucore/nugcutscene.h"
 
-struct NUAPPLICATIONSTATUS;
+enum NUAPPLICATIONSTATUS : i32;
 struct NUGCUTCHAR_s;
 struct NUGCUTLOCATOR_s;
 struct NUGCUTRIGID_s;
@@ -115,7 +115,7 @@ struct nuvec4_s;
 struct nuvec_s;
 struct rndrstream_s;
 
-struct NUAPPLICATIONSTATUS;
+enum NUAPPLICATIONSTATUS : i32;
 struct NUGCUTCHAR_s;
 struct NUGCUTSCENE_s;
 struct NUJOINTANIM_s {};

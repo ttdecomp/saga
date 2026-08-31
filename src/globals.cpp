@@ -1061,6 +1061,8 @@ i32 noscenespecials = 0;
 LANGUAGEDATA Game_LanguageList[7] = {{1, 0}, {2, 0}, {4, 0}, {5, 0}, {3, 0}, {8, 0}, {-1, 0}};
 OPTIONSSAVE *Game_OptionsSave = NULL;
 i32 (*GamePads_IgnoreInputFn)(void) = NULL;
+// Original bss @0x127bd00. Selected by ReadPad's successful normal path.
+struct nupad_s *pActivePad = NULL;
 i32 g_introState = 1;
 i32 gone_through_door_to_new_level = 0;
 f32 g_val = 0.0f;

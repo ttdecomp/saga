@@ -9,6 +9,7 @@
 #include "nu2api/nu3d/numtl.h"
 #include "nu2api/nu3d/nurndrstat.h"
 #include "nu2api/nu3d/nutex.h"
+#include "nu2api/nufile/nufile.h"
 #include "legoapi/world/world.h"
 
 void CutScenes_Reset(WORLDINFO_s *);
@@ -284,9 +285,8 @@ static void *nudl_html_file;      // original file-handle pointer
 
 void NuHtmlFlush(i32 force) {
     if (nudl_html_cursor > nudl_html_buf || force) {
-        // HOST-ONLY: the original hands the buffer to NuFileWriteString on a
-        // debug dump file; that API is not decompiled yet, so emit to stdout.
-        fwrite(nudl_html_buf, 1, (usize)(nudl_html_cursor - nudl_html_buf), stdout);
+        *nudl_html_cursor = '\0';
+        NuFileWriteString(static_cast<NUFILE>(reinterpret_cast<usize>(nudl_html_file)), nudl_html_buf);
         nudl_html_cursor = nudl_html_buf;
         nudl_html_end = nudl_html_buf + sizeof(nudl_html_buf);
     }

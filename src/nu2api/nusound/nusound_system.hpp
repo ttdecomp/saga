@@ -198,8 +198,13 @@ class NuSoundSystem {
     NuSoundClock clock;
     bool initialised;
 
-    // OpenSL ES handles (set by InitAudioDevice; a host override only has to
-    // provide what these point at).
+    // The original class contains additional intrusive lists and bookkeeping
+    // between the update gate at +0x108 and the fields reconstructed above.
+    // Keep their storage in the target object even before their types are
+    // known, so the OpenSL handles retain their observed ABI offsets.
+    u8 unknown_before_device_handles[0xae];
+
+    // OpenSL ES handles at +0x10c/+0x110/+0x114 in the target object.
     void *engine_object; // SL engine object (realize / GetInterface / destroy)
     void *audio_engine;  // SLEngineItf (CreateAudioPlayer / CreateOutputMix)
     void *output_mix;    // output mix object
@@ -234,12 +239,20 @@ class NuSoundSystem {
         u32 scratch_size;
 
         virtual bool AllocatePage(NuMemoryManager *manager, u32 size, u32 _unknown) {
-            UNIMPLEMENTED("g_handler::AllocatePage");
-            return {};
+            (void)size;
+            (void)_unknown;
+            if (scratch == NULL) {
+                return false;
+            }
+            manager->AddPage(scratch, scratch_size, false);
+            scratch = NULL;
+            return true;
         }
         virtual bool ReleasePage(NuMemoryManager *manager, void *ptr, u32 _unknown) {
-            UNIMPLEMENTED("g_handler::ReleasePage");
-            return {};
+            (void)manager;
+            (void)ptr;
+            (void)_unknown;
+            return false;
         }
     } g_handler;
 

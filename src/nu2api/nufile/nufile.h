@@ -276,6 +276,7 @@ extern "C" {
     NUFILE NuFileOpenDF(char *filepath, NUFILEMODE mode, NUDATHDR *header, i32 _unused);
     i32 NuFileRead(NUFILE file, void *buf, i32 size);
     i32 NuFileWrite(NUFILE file, void *data, i32 size);
+    void NuFileWriteString(NUFILE file, const char *text);
     NUFILE_DEVICE *NuFileGetDeviceFromPath(char *path);
     i64 NuFileOpenSize(NUFILE file);
     i64 NuFileSeek(NUFILE file, i64 offset, NUFILESEEK seekMode);

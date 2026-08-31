@@ -34,6 +34,8 @@ struct PLAYERPACKET_s;
 struct SOCKPOSITION_s;
 struct TouchHolder;
 
+void CheckForPlayersTurnedOff();
+
 extern NUVEC plr_lastpos;
 
 extern void GetTopBot(GameObject_s *obj);
@@ -725,7 +727,9 @@ NUVEC *Player_StartPos(GameObject_s *obj) {
     return PlayerStart[index].pos != NULL ? PlayerStart[index].pos : PlayerStart[0].pos;
 }
 
-void PlayersDropInOut() {
+i32 PlayersDropInOut() {
+    CheckForPlayersTurnedOff();
+    return 0;
 }
 
 void PlayerItem_GotAmmo(PLAYERITEM_s *) {
