@@ -346,7 +346,7 @@ extern "C" __attribute__((weak)) i32 NuRndrSwapScreen(void) {
     // (nativeSetSurface / nativeOnPause flip NUAPPLICATIONSTATUS).
     for (;;) {
         NuApplicationState *state = NuCore::GetApplicationState();
-        if (state->GetStatus().status != 1) {
+        if (state->GetStatus() != 1) {
             break;
         }
         g_isBlockedInSwapScreen = 1;
@@ -745,7 +745,8 @@ extern "C" i32 NuRndrSetDirectionalLightsPS(const NUVEC *dir0, const NUCOLOUR3 *
     render_state.state.lights_id++;
     return 1;
 }
-extern "C" void NuRndrSetFxMtx(void) {
+extern "C" i32 NuRndrSetFxMtx(NUMTX *) {
+    return 1;
 }
 extern "C" void NuRndrSetGlobalMinMipLevel(void) {
 }
@@ -754,7 +755,7 @@ extern "C" void NuRndrSetGlobalMipMapBias(void) {
 extern "C" void NuRndrSetParticleRotation(NUMTX *rotation) {
     NuRndr_DebrisRotMtxPtr = rotation;
 }
-extern "C" void NuRndrSetSpecularLightPS(void) {
+extern "C" void NuRndrSetSpecularLightPS(const NUVEC *, const NUCOLOUR4 *) {
 }
 extern "C" void NuRndrSetWind(void) {
 }

@@ -1,7 +1,9 @@
 #pragma once
 
 #include "nu2api/nucore/common.h"
+#include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nuvec.h"
+#include "decomp_assert.h"
 
 // Forward declarations shared with sibling headers.
 struct numtl_s;
@@ -25,6 +27,37 @@ typedef struct nudisplaylistitem_s {
     void *next;
     u32 p[2];
 } NUDISPLAYLISTITEM;
+
+// Geometry packet referenced by the 0x82/0x98 display-list items.  Smooth
+// skins reuse the ordinary geometry packet, optionally replacing
+// dynamic_vertex_data with a deformed copy before the packet is submitted.
+typedef struct nudisplaylistgeom_s {
+    i32 primitive_type;              // 0x00
+    i32 index_count;                 // 0x04
+    u16 vertex_stride;               // 0x08
+    u8 joint_indices[8];             // 0x0a, 0xff-terminated skin palette
+    u16 reserved_12;                 // 0x12
+    i32 base_vertex;                 // 0x14
+    i32 vertex_count;                // 0x18
+    i32 first_index;                 // 0x1c
+    u32 index_buffer;                // 0x20
+    u32 vertex_buffer;               // 0x24
+    i32 immediate;                   // 0x28
+    NUVEC **deformer_vertex_offsets; // 0x2c, one xyz delta array per shape
+    u32 vertex_format;               // 0x30
+    void *dynamic_vertex_data;       // 0x34
+} NUDISPLAYLISTGEOM;
+
+// The first word is retained by the renderer's allocation API; weights used
+// by DisplayListCreateSkinTransformPS start at +0x4.
+typedef struct deformerweightsarray_s {
+    i32 count;
+    f32 weights[1];
+} DEFORMERWEIGHTSARRAY;
+
+DECOMP_ASSERT(sizeof(NUDISPLAYLISTGEOM) == 0x38, "display-list geometry packet size");
+DECOMP_ASSERT(offsetof(NUDISPLAYLISTGEOM, joint_indices) == 0x0a, "geometry skin palette offset");
+DECOMP_ASSERT(offsetof(NUDISPLAYLISTGEOM, dynamic_vertex_data) == 0x34, "geometry dynamic vertex data offset");
 
 // ---------------------------------------------------------------------------
 // Per-material display list state (original type `nudisplaylist_s`, 68 bytes;
@@ -276,6 +309,10 @@ extern "C" {
     static void DisplayListLinkDynamicMtls(void);
     void DisplayListSwapBuffersPS(void);
     void DisplayListSetAlphaPS(nudisplaylistitem_s *prev_item, nudisplaylistitem_s *item, f32 alpha);
+    void DisplayListSetShadowCasterFlagPS(nudisplaylistitem_s *first_item, nudisplaylistitem_s *last_item, i32 enabled);
+    void *DisplayListCreateSkinTransformPS(VARIPTR *buffer, NUMTX *skin_matrices,
+                                           DEFORMERWEIGHTSARRAY *deformer_weights, NUDISPLAYLISTGEOM *geometry,
+                                           NUDISPLAYLISTGEOM **render_geometry);
     void NuDisplayListAddClut(nudisplaylistitem_s *item, i32 clut_id);
     void NuDisplayListAddTexture(nudisplaylistitem_s *item, i32 tex_id);
     void NuDisplayListAddMaterialState(nudisplaylistitem_s *item, void *mtl);

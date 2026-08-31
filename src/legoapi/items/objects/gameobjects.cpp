@@ -6,12 +6,14 @@
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
 #include "legoapi/characters/motion.h"
+#include "legoapi/characters/core/character.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/world/area.h"
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/core/input/timer.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/nutrig.h"
+#include "nu2api/numusic/sfx.h"
 
 #include <string.h>
 
@@ -21,12 +23,27 @@ extern "C" {
     void *NuTimeBarCreateSet(i32);
     void _NuTimeBarSlotBegin(void *, i32, char const *);
     u32 _NuTimeBarSlotEnd(void *, i32);
+    void AddToAIGroup(AIGROUP_s *group, GameObject_s *object);
+    extern NUVEC plr_lastpos;
 }
 
 // Written by ThingManager's ctor (original global @0x124f2e0, .bss).
 extern void *theThingManager;
 
 void legoSetMusicVolume(float);
+void MovePlayer(GameObject_s *object);
+void AnimatePlayer(GameObject_s *object);
+void TerrainPlayer(GameObject_s *object);
+void SetPlayer();
+void InitPlayerAI(GameObject_s *object);
+void ResetPlayerMoves(GameObject_s *object);
+void GetTopBot(GameObject_s *object);
+void ResetRumble(RUMBLEPACKET *packet);
+void ResetLights(NUVEC *position, rtldata_s *data, void *set);
+void InitSurfaceInfo(GameObject_s *object);
+void SetObjOnSurface(GameObject_s *object, i32 mode);
+void PortalGameObject(GameObject_s *object, i32 enable, i32 immediate, i16 portal, nugscn_s *scene);
+void Arcade_GetMode(u32 *mode);
 
 void GameShadow(GameObject_s *, nuvec_s *, float, i32) {
 }
@@ -84,7 +101,19 @@ void GameAISysReset(AISYS_s *) {
 void GameAttackInit() {
 }
 
-void GameAudio_Init(GAMEAUDIO *) {
+extern "C" void MenuRegisterSoundFX(i32 move, i32 select, i32 back, i32 no_entry);
+i32 GameAudio_GetSfxId(i32 sfx);
+
+static GAMEAUDIO *GameAudio;
+
+void GameAudio_Init(GAMEAUDIO *audio) {
+    GameAudio = audio;
+    for (i32 i = 0; i < 0x55; ++i) {
+        audio->sfx_ids[i] = static_cast<i16>(GetSfxId(audio->sfx_names[i]));
+    }
+
+    MenuRegisterSoundFX(GameAudio_GetSfxId(0x2f), GameAudio_GetSfxId(0x30), GameAudio_GetSfxId(0x31),
+                        GameAudio_GetSfxId(0x32));
 }
 
 void GameFog_Update(WORLDINFO_s *) {
@@ -113,7 +142,42 @@ void GameAISysSetGame() {
 void GameAudio_AddSfx(i32, i32 *, i32 *, i32) {
 }
 
-void GameObjectOrigin(GameObject_s *) {
+void GameObjectOrigin(GameObject_s *object) {
+    // Common non-model-origin path at 0x46ec68 (Ghidra 0x47ec68).
+    object->apiobj.field_0x1f4 &= ~0x100u;
+
+    const f32 frame_time = FRAMETIME;
+    const f32 vertical_offset = (object->field_0xffc + object->field_0x1000) * object->apiobj.field_0xa8 * 0.5f;
+    const NUVEC center = {
+        object->apiobj.position.x + object->apiobj.previous_velocity_x * frame_time,
+        object->apiobj.position.y + object->apiobj.previous_velocity_y * frame_time + vertical_offset,
+        object->apiobj.position.z + object->apiobj.previous_velocity_z * frame_time,
+    };
+
+    object->apiobj.pos_x = center.x;
+    object->apiobj.pos_y = center.y;
+    object->apiobj.pos_z = center.z;
+
+    const f32 radius = object->apiobj.field_0x1dc;
+    const f32 half_height = object->apiobj.field_0x1e0;
+    object->apiobj.collision_min.x = center.x - radius;
+    object->apiobj.collision_min.y = center.y - half_height;
+    object->apiobj.collision_min.z = center.z - radius;
+    object->apiobj.collision_max.x = center.x + radius;
+    object->apiobj.collision_max.y = center.y + half_height;
+    object->apiobj.collision_max.z = center.z + radius;
+
+    object->apiobj.upper_position.x = center.x;
+    object->apiobj.upper_position.y = object->apiobj.collision_max.y;
+    object->apiobj.upper_position.z = center.z;
+    object->apiobj.lower_position.x = center.x;
+    object->apiobj.lower_position.y = object->apiobj.collision_min.y;
+    object->apiobj.lower_position.z = center.z;
+    object->apiobj.collision_origin.x = center.x;
+    object->apiobj.collision_origin.y =
+        object->apiobj.collision_min.y + object->apiobj.previous_velocity_y * frame_time;
+    object->apiobj.collision_origin.z = center.z;
+    object->ai.terrain_origin = object->apiobj.collision_origin;
 }
 
 void Game_IgnoreInput() {
@@ -136,7 +200,10 @@ void GameDrawMenuEntry(MENU_s *menu, char *text) {
 void GameAnimSys_Update(GAMEANIMSYS_s *) {
 }
 
-i32 GameAudio_GetSfxId(i32) {
+i32 GameAudio_GetSfxId(i32 sfx) {
+    if (static_cast<u32>(sfx) <= 0x54) {
+        return GameAudio->sfx_ids[sfx];
+    }
     return -1;
 }
 
@@ -176,7 +243,12 @@ void GameObjectSetCanUse(GameObject_s *, void *, unsigned char, unsigned char, f
 void GameObjOwnsAnyCables(GameObject_s *) {
 }
 
-void GameObjectDimensions(GameObject_s *) {
+void GameObjectDimensionsExtra_LSW(GameObject_s *object);
+
+void GameObjectDimensions(GameObject_s *object) {
+    object->apiobj.field_0x1dc = object->apiobj.collision_radius;
+    object->apiobj.field_0x1e0 = object->apiobj.collision_height;
+    GameObjectDimensionsExtra_LSW(object);
 }
 
 void GameObjectUsingLever(GameObject_s *, LEVER_s *) {
@@ -683,7 +755,13 @@ void TakeOver2GetIn(GameObject_s *, GameObject_s *) {
 void PowerUp_AddPart(nuvec_s *, nuvec_s *, float, float) {
 }
 
-void ScaleGameObject(GameObject_s *) {
+void ScaleGameObject(GameObject_s *object) {
+    const f32 scale = object->apiobj.field_0xa8;
+    CHARACTERDATA *character = object->apiobj.character_data;
+    object->apiobj.scaled_radius = character->field13_0x2c * scale;
+    object->apiobj.collision_radius = object->field_0x1008 * scale;
+    object->apiobj.collision_height = object->apiobj.collision_radius * object->collision_height_scale;
+    object->apiobj.scaled_height = (character->field16_0x38 - character->field15_0x34) * object->field_0x1004;
 }
 
 void DestroySnakeBody(GameObject_s *obj);
@@ -744,12 +822,202 @@ void PowerUp_GetPanelY(i32) {
 void PowerUp_Particles(WORLDINFO_s *, nuvec_s *) {
 }
 
-void UpdateGameObjects(WORLDINFO_s *) {
+void UpdateGameObjects(WORLDINFO_s *world) {
+    if (world == NULL || Obj == NULL) {
+        return;
+    }
+
+    SetPlayer();
+
+    // The original has separate object and player passes. Ordinary hub
+    // players reach this player pass with no movement override or spline.
+    for (i32 i = 0; i < 8; ++i) {
+        GameObject_s *object = Player[i];
+        if (object == NULL || (object->apiobj.field_0x1f8 & 0x1001) != 0x1001) {
+            continue;
+        }
+        if (object->move_override != NULL) {
+            object->move_override(object);
+        } else {
+            MovePlayer(object);
+        }
+    }
+
+    // Integrate the same ordinary active-object path as the original. The
+    // terrain pass below is responsible for correcting the proposed player
+    // position and updating contact state.
+    for (i32 i = 0; i < HIGHGAMEOBJECT; ++i) {
+        GameObject_s *object = &Obj[i];
+        if ((object->apiobj.field_0x1f8 & 0x1001) != 0x1001 || (object->apiobj.field_0x1f4 & 0x400) == 0) {
+            continue;
+        }
+
+        PreResetCode(object);
+        PostResetCode(object);
+        object->apiobj.position.x += object->apiobj.field_0x68 * FRAMETIME;
+        object->apiobj.position.y += object->vertical_velocity * FRAMETIME;
+        object->apiobj.position.z += object->apiobj.field_0x70 * FRAMETIME;
+    }
+
+    for (i32 i = 0; i < 8; ++i) {
+        GameObject_s *object = Player[i];
+        if (object == NULL || (object->apiobj.field_0x1f8 & 0x1001) != 0x1001) {
+            continue;
+        }
+
+        TerrainPlayer(object);
+        object->field_0x10c8 = object->apiobj.position.x;
+        object->field_0x10cc = object->apiobj.position.y;
+        object->field_0x10d0 = object->apiobj.position.z;
+        AnimatePlayer(object);
+    }
 }
 
-GameObject_s *AddDynamicCreature(i32, nuvec_s *, i32, char *, AIPATHINFO_s *, AIGROUP_s *, i32, nugspline_s *,
-                                 nuvec_s *, i32, i32) {
-    return NULL;
+GameObject_s *AddDynamicCreature(i32 model, nuvec_s *position, i32 angle, char *script_name, AIPATHINFO_s *path_info,
+                                 AIGROUP_s *group, i32 set_on_surface, nugspline_s *spline, nuvec_s *spline_offset,
+                                 i32 spline_mode, i32 creature_set) {
+    const bool has_no_spline = spline == NULL;
+    if (position == NULL && spline == NULL) {
+        return NULL;
+    }
+
+    if (NOAICREATURES != 0 && model != id_DRAGBOMB && (GCDataList[model].flags_090 & 0x40) == 0) {
+        return NULL;
+    }
+
+    u32 arcade_mode = 0;
+    Arcade_GetMode(&arcade_mode);
+    if ((arcade_mode & 0x10) != 0) {
+        return NULL;
+    }
+
+    if (static_cast<u32>(model) >= 0x154 || apicharsys->playermodelids[model] == -1) {
+        return NULL;
+    }
+
+    GameObject_s *object = AddCreature(model, 0);
+    if (object == NULL) {
+        return NULL;
+    }
+
+    object->apiobj.field_0x1f4 |= 0x400;
+    const u32 model_flags = apicharsys->char_data[model].model_flags;
+    if ((model_flags & 0x200) != 0) {
+        object->apiobj.field_0x1f4 |= 0x404;
+    } else if ((model_flags & 0x400) != 0) {
+        object->apiobj.field_0x1f4 |= 0x401;
+    }
+    object->field_0x1050 |= (model_flags & 0x1000) != 0 ? 5 : 1;
+
+    GAMECHARACTERDATA &game_character = GCDataList[model];
+    object->apiobj.viewdistance = game_character.viewdistance;
+    object->apiobj.heardistance = game_character.heardistance;
+    object->apiobj.maxviewheight = game_character.maxviewheight;
+    object->apiobj.minviewheight = game_character.minviewheight;
+    object->field_0xef9 &= static_cast<u8>(~8u);
+    object->ai.field_0xe0 = 0x4e6e6b28;
+    object->ai.field_0xf0 = 0x4e6e6b28;
+    object->field_0xef8 &= static_cast<u8>(~1u);
+    object->ai.field_0x1e5 &= static_cast<u8>(~0x50u);
+    object->apiobj.field387_0x2a0 = 0;
+    object->apiobj.field388_0x2a4 = 0;
+    object->field_0xebc = 0;
+    object->field_0xec0 = 0;
+    object->field_0xecc = 0;
+    object->field_0xed0 = 0;
+    object->field_0xed8 = 0;
+    object->ai.nearest_opponent = NULL;
+    object->ai.nearest_opponent_metric = 0.0f;
+    object->ai.field_0xdc = 0;
+    object->ai.field_0xec = 0;
+    object->ai.opponent = NULL;
+    object->ai.antinode_timer = 0.0f;
+    InitPlayerAI(object);
+
+    if (position != NULL) {
+        object->apiobj.position = *position;
+        object->apiobj.facing_angle = static_cast<u16>(angle);
+        object->apiobj.movement_facing_angle = static_cast<u16>(angle);
+        object->apiobj.field_0x276 = static_cast<u16>(angle);
+        if (group != NULL) {
+            AddToAIGroup(group, object);
+        }
+    }
+
+    // The spline-position branch continues through InitSplinePosition and
+    // PointAlongSpline in the original. Keep the recovered parameters named
+    // until that complete path is reconstructed rather than inventing a host
+    // approximation here.
+    (void)script_name;
+    (void)path_info;
+    (void)spline_offset;
+    (void)spline_mode;
+
+    ResetPlayerMoves(object);
+    object->apiobj.pos_x = object->apiobj.position.x;
+    object->apiobj.pos_y = object->apiobj.position.y;
+    object->apiobj.pos_z = object->apiobj.position.z;
+    object->apiobj.start_position[0] = object->apiobj.position.x;
+    object->apiobj.start_position[1] = object->apiobj.position.y;
+    object->apiobj.start_position[2] = object->apiobj.position.z;
+    object->apiobj.initial_position[0] = object->apiobj.position.x;
+    object->apiobj.initial_position[1] = object->apiobj.position.y;
+    object->apiobj.initial_position[2] = object->apiobj.position.z;
+    plr_lastpos = object->apiobj.position;
+    object->apiobj.field_0x68 = v000.x;
+    object->apiobj.field_0x6c = v000.y;
+    object->apiobj.field_0x70 = v000.z;
+
+    GetTopBot(object);
+    GameObjectDimensions(object);
+    ResetRumble(&object->pad_gamepad->rumble_packet);
+    ResetLights(&object->apiobj.position, &object->light_data, WORLD->rtl_set);
+
+    object->sock_location_flags = 0;
+    object->field_0x661 = 0xff;
+    object->sock_segment = -1;
+    object->facing_direction.x = NU_SIN_LUT(angle);
+    object->facing_direction.y = 0.0f;
+    object->facing_direction.z = NU_COS_LUT(angle);
+    object->apiobj.model_draw_result = 1;
+    object->use_model_origin = 0;
+    object->apiobj.field_0x288 = 0;
+    object->field_0xefe &= ~4u;
+
+    if (has_no_spline) {
+        InitSurfaceInfo(object);
+        if (set_on_surface != 0) {
+            SetObjOnSurface(object, 0);
+        }
+    } else {
+        PortalGameObject(object, 1, 1, -1, WORLD->current_gscn);
+    }
+
+    object->apiobj.field_0x1f4 &= ~0x100u;
+    object->apiobj.field_0x1f8 &= static_cast<u16>(~4u);
+    object->field_0x1004 = 1.0f;
+    object->apiobj.field_0x287 = 0;
+    object->field_0x7a5 = 0xff;
+    object->apiobj.field_0x285 = 0;
+    memset(object->ai.reset_state, 0, sizeof(object->ai.reset_state));
+    object->ai.field_0x124 = -1;
+    object->ai.field_0x138 = 0xff;
+    object->ai.field_0x139 = 0;
+    object->apiobj.field_0x214 = 2000000.0f;
+    PreResetCode(object);
+    PostResetCode(object);
+    GameObjectOrigin(object);
+    object->apiobj.previous_position[0] = object->apiobj.position.x;
+    object->apiobj.previous_position[1] = object->apiobj.position.y;
+    object->apiobj.previous_position[2] = object->apiobj.position.z;
+    object->field_0x10c8 = object->apiobj.position.x;
+    object->field_0x10cc = object->apiobj.position.y;
+    object->field_0x10d0 = object->apiobj.position.z;
+    if (static_cast<u32>(creature_set - 1) < 16) {
+        object->ai.creature_set = static_cast<u8>(creature_set);
+        ++aicreature_sets_alive[creature_set - 1];
+    }
+    return object;
 }
 
 GameObject_s *GetNamedGameObject(AISYS_s *, char *) {

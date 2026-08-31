@@ -37,6 +37,7 @@ struct rtlidata_s;
 
 extern NuVertexFormatPS *g_nuFaceOnVertexFormat;
 extern NuVertexFormatPS *g_nuDebrisVertexFormat;
+extern i32 VehicleArea;
 
 void DisplayListGenerateTransforms(nudisplayscene_s *scene);
 void DrawGameObjectsDraw(i32 pass);
@@ -671,20 +672,29 @@ void DrawRippleSet(ripple_set_s *) {
 }
 
 void DrawSaveSlots(MENU_s *menu, float y) {
-    static const f32 slot_x[3] = {-0.5f, 0.0f, 0.5f};
-    const bool slot_row_selected = menu->selected_row == menu->first_row;
+    DrawGameState(-0.5f, y, menu->selected_row == menu->first_row && menu->selected_column == 0, 0);
+    menu->item_width[2] = text3d_width;
+    menu->item_column[2] = 0;
+    menu->item_y[2] = y;
+    menu->item_x[2] = -0.5f;
+    menu->item_height[2] = text3d_height * 2.0f;
+    menu->item_row[2] = 0;
 
-    for (i32 slot = 0; slot < 3; ++slot) {
-        DrawGameState(slot_x[slot], y, slot_row_selected && menu->selected_column == slot, slot);
+    DrawGameState(0.0f, y, menu->selected_row == menu->first_row && menu->selected_column == 1, 1);
+    menu->item_width[3] = text3d_width;
+    menu->item_column[3] = 1;
+    menu->item_y[3] = y;
+    menu->item_x[3] = 0.0f;
+    menu->item_height[3] = text3d_height * 2.0f;
+    menu->item_row[3] = 0;
 
-        const i32 item = slot + 2;
-        menu->item_x[item] = slot_x[slot];
-        menu->item_y[item] = y;
-        menu->item_width[item] = text3d_width;
-        menu->item_height[item] = text3d_height * 2.0f;
-        menu->item_column[item] = slot;
-        menu->item_row[item] = 0;
-    }
+    DrawGameState(0.5f, y, menu->selected_row == menu->first_row && menu->selected_column == 2, 2);
+    menu->item_column[4] = 2;
+    menu->item_y[4] = y;
+    menu->item_row[4] = 0;
+    menu->item_width[4] = text3d_width;
+    menu->item_x[4] = 0.5f;
+    menu->item_height[4] = text3d_height * 2.0f;
 }
 
 void DrawShopPanel() {
@@ -753,7 +763,7 @@ void Draw3DObjectMtx(WORLDINFO_s *world, i32 object_index, numtx_s *mtx) {
 
 void DrawGameObjects() {
     const f32 saved_far_clip = global_camera.unknown_64;
-    const f32 object_far_clip = -999.0f;
+    const f32 object_far_clip = VehicleArea != 0 ? 50.0f : 20.0f;
     if (object_far_clip <= global_camera.unknown_64) {
         global_camera.unknown_64 = object_far_clip;
     }
@@ -1095,6 +1105,46 @@ void DrawPlayerIconPrompts(i32, i32, float, i32, i32, i32, i32, i32, i32, float,
 }
 
 void DrawGameObjectsProcess() {
+    for (i32 index = 0; index < HIGHGAMEOBJECT; ++index) {
+        GameObject_s *object = &Obj[index];
+
+        // Mode 2 is the ordinary character path selected by InitCreature.
+        // Other transform modes have distinct vehicle and attachment logic
+        // and must not be approximated with this matrix.
+        if ((object->apiobj.field_0x1f8 & 0x1001) != 0x1001 || object->field_0x1086 != 2 ||
+            object->field_0x7a5 == 0x23 || object->field_0x7a5 == 0x24) {
+            continue;
+        }
+
+        object->apiobj.field_0x1f4 |= 0x800;
+        const u8 previous_draw_pending = object->apiobj.field_0x288 & 1;
+        object->apiobj.field_0x288 = 0;
+        object->field_0xe23 = static_cast<u8>((object->field_0xe23 & ~8) | (previous_draw_pending << 3));
+        object->field_0xe24 &= ~8;
+
+        // DropInOutScale returns exactly 1.0 for ordinary characters (states
+        // other than 0x23/0x24), so their common scale is field_0xa8.
+        const f32 uniform_scale = object->apiobj.field_0xa8;
+        if (uniform_scale == 0.0f) {
+            object->apiobj.model_draw_result = 0;
+            continue;
+        }
+
+        NUVEC scale = {uniform_scale, uniform_scale, uniform_scale};
+        NUMTX matrix;
+        NuMtxSetScale(&matrix, &scale);
+        NuMtxPreRotateY(&matrix, object->apiobj.field_0x276);
+
+        NUVEC position = object->apiobj.position;
+        NuMtxTranslate(&matrix, &position);
+        object->apiobj.field_0xb8 = matrix;
+
+        // The original sets the skip bit at the start of processing and
+        // toggles it off once a non-degenerate render matrix is available.
+        object->apiobj.field_0x1f4 ^= 0x800;
+        object->field_0xefe &= ~2;
+        object->field_0x1088 = 0;
+    }
 }
 
 void DrawMeleeTargetsNumber(i16 *, unsigned char *, i32, unsigned char, nuhspecial_s *) {

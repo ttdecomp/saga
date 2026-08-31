@@ -248,11 +248,13 @@ NDK g++, followed by an undefined-symbol scan and relocation dump:
   `-fno-stack-protector`, `-msse2`, `-m32 -march=i686`, `-fsanitize=address`
   (from `CMakeLists.txt` + `src/host.cmake`); still `-O0` everywhere (0/470 have `-O`) and
   still passes `-DANDROID`.
-- deps via pkg-config (`src/host.cmake`): `vorbis vorbisfile sdl3` (+ `glesv2 egl` on Linux,
-  `angleproject` on Windows; `libsquish` is **commented out** in the list).
-- TU set differs: host adds eight files under `src/host-tests/` and removes the
-  two Android texture TUs. The target instead adds those two Android TUs plus
-  `src/nu2api/nuandroid/ios_graphics.cpp`. Compare the two generated JSON files
-  for the current exact set.
+- deps via pkg-config (`src/host.cmake`): `vorbis vorbisfile sdl3 libsquish`
+  (+ `glesv2 egl` on Linux, `angleproject` on Windows). A locally built bundled
+  32-bit squish archive is preferred when present.
+- TU set differs only at true executable/platform seams: host adds
+  `src/host/harness/` and `src/host/platform/`, selects the host input backend,
+  and lets the host C++ runtime own global `new`/`delete` so driver allocations
+  are not interposed. Portable renderer, texture, allocator, and audio TUs are
+  shared. Compare the generated JSON files for the current exact set.
 - `HOST_BUILD` gates all of `src/decomp.h` (LOG/UNIMPLEMENTED) — the only user of
   `__FILENAME__`.

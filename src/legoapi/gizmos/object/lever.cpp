@@ -2,6 +2,12 @@
 
 #include "decomp.h"
 
+struct LEVERPROGRESS {
+    i32 state;
+    i32 goodie_state;
+    i32 baddie_state;
+};
+
 i32 lever_gizmotype_id = -1;
 
 static i32 Levers_GetMaxGizmos(void *lever) {
@@ -69,8 +75,15 @@ static void *Levers_AllocateProgressData(VARIPTR *, VARIPTR *) {
     return {};
 }
 
-static void Levers_ClearProgress(void *, void *) {
-    UNIMPLEMENTED();
+static void Levers_ClearProgress(void *, void *progress_data) {
+    LEVERPROGRESS *progress = (LEVERPROGRESS *)progress_data;
+    if (progress == NULL) {
+        return;
+    }
+
+    progress->state = 0;
+    progress->goodie_state = -1;
+    progress->baddie_state = -1;
 }
 
 static void Levers_StoreProgress(void *, void *, void *) {

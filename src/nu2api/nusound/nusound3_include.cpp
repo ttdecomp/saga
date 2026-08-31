@@ -22,6 +22,7 @@
 
 #include <new>
 #include <stdarg.h>
+#include <string.h>
 
 // Stereo stream slot (0x10 bytes in the original):
 //   +0x0 stream            the streaming sample playing in this slot
@@ -118,15 +119,66 @@ static NuSoundBuffer g_NuSoundStreamBuffers[4];
 
 static NuSoundStreamer *g_NuSoundStreamer = NULL;
 
-static i32 g_NuSoundLoadBits = 0;
+__attribute__((visibility("hidden"))) u16 *g_NuSoundLoadBits asm("_ZL17g_NuSoundLoadBits") = NULL;
+__attribute__((visibility("hidden"))) u16 *g_NuSoundLoadBitsCache asm("_ZL22g_NuSoundLoadBitsCache") = NULL;
+__attribute__((visibility("hidden"))) i32 g_NuSoundNumLoadBitShorts asm("_ZL25g_NuSoundNumLoadBitShorts") = 0;
 static NuThread *g_NuSoundLoadThread = NULL;
 static pthread_mutex_t g_NuSoundLoadCriticalSection = PTHREAD_MUTEX_INITIALIZER;
 
 void NuSound3SampleLoadThread(void *arg) {
-    do {
-    } while (g_NuSoundLoadBits == 0);
+    (void)arg;
 
-    if (g_NuSoundSamples.length != 0) {
+    while (true) {
+        pthread_mutex_lock(&g_NuSoundLoadTrigger.mutex);
+        while (!g_NuSoundLoadTrigger.a) {
+            pthread_cond_wait(&g_NuSoundLoadTrigger.cond, &g_NuSoundLoadTrigger.mutex);
+        }
+        g_NuSoundLoadTrigger.a = g_NuSoundLoadTrigger.b;
+        pthread_mutex_unlock(&g_NuSoundLoadTrigger.mutex);
+
+        if (g_NuSoundLoadBits == NULL) {
+            continue;
+        }
+
+        pthread_mutex_lock(&g_NuSoundLoadCriticalSection);
+
+        for (u32 i = 0; i < g_NuSoundSamples.length; i++) {
+            nusound_filename_info_s &info = g_NuSoundSamples.data[i];
+            if (info.index <= 0xfff) {
+                continue;
+            }
+
+            u16 request = g_NuSoundLoadBits[i >> 4] & static_cast<u16>(1 << (i & 0xf));
+            NuSoundSample *sample = reinterpret_cast<NuSoundSample *>(info.sample);
+            NuSoundSample::LoadState load_state = sample->GetLoadState();
+            sample->GetLastErrorState();
+
+            if (request == 0 && load_state != NuSoundSample::LoadState::NOT_LOADED && sample != NULL &&
+                sample->field_0x18 == 0) {
+                sample->Release();
+                sample->Unload();
+            }
+        }
+
+        for (u32 i = 0; i < g_NuSoundSamples.length; i++) {
+            nusound_filename_info_s &info = g_NuSoundSamples.data[i];
+            if (info.index <= 0xfff) {
+                continue;
+            }
+
+            u16 request = g_NuSoundLoadBits[i >> 4] & static_cast<u16>(1 << (i & 0xf));
+            NuSoundSample *sample = reinterpret_cast<NuSoundSample *>(info.sample);
+            NuSoundSample::LoadState load_state = sample->GetLoadState();
+            NuSoundSample::ErrorState error = sample->GetLastErrorState();
+
+            if (request != 0 && error != NuSoundSample::ErrorState::FILE_NOT_FOUND &&
+                load_state == NuSoundSample::LoadState::NOT_LOADED && sample != NULL) {
+                sample->Reference();
+                sample->Load(NULL, 0, NULL);
+            }
+        }
+
+        pthread_mutex_unlock(&g_NuSoundLoadCriticalSection);
     }
 }
 
@@ -387,13 +439,19 @@ void NuSound3ResumeStereoStream(i32 stream_index) {
 // voice gets stolen first when the budget is exhausted.
 void NuSound3CreateVoice(nuvec_s *pos, i32 index, f32 volume, f32 pitch, i32 falloff_a, i32 falloff_b, f32 pan,
                          bool has_3d) {
-    if (NuSound.GetNumAvailableOutputDevices() < 1 || g_NuSoundSamples.length <= index) {
+    if (NuSound.GetNumAvailableOutputDevices() < 1 || index < 0 || g_NuSoundSamples.length <= index) {
+        LOG_INFO("NuSound3 rejected one-shot sample=%d devices=%d samples=%d", index,
+                 NuSound.GetNumAvailableOutputDevices(), g_NuSoundSamples.length);
         return;
     }
 
     NuSoundSource *source = g_NuSoundSamples.data[index].sample;
     NuSoundSample *sample = (NuSoundSample *)source;
-    if (sample == NULL || sample->GetLoadState() != NuSoundSample::LoadState::TWO || sample->GetResourceCount() < 1) {
+    if (sample == NULL || sample->GetLoadState() != NuSoundSample::LoadState::LOADED ||
+        sample->GetResourceCount() < 1) {
+        LOG_INFO("NuSound3 rejected unloaded one-shot sample=%d source=%p state=%d resources=%d", index,
+                 static_cast<void *>(sample), sample != NULL ? static_cast<i32>(sample->GetLoadState()) : -1,
+                 sample != NULL ? sample->GetResourceCount() : -1);
         return;
     }
 
@@ -439,6 +497,7 @@ void NuSound3CreateVoice(nuvec_s *pos, i32 index, f32 volume, f32 pitch, i32 fal
     NuEListNode<NuSound3Voice> *node = new NuEListNode<NuSound3Voice>();
     node->data = voice;
     StreamListPushBack(&g_NuSoundVoicesPendingPlayback, node);
+    LOG_INFO("NuSound3 queued one-shot sample=%d pending=%d", index, g_NuSoundVoicesPendingPlayback.length);
 }
 
 void NuSound3Update(void) {
@@ -576,12 +635,24 @@ void NuSound3Update(void) {
         }
     }
 
-    // (e) Sample-load kick: poke the load trigger when the bit pattern the
-    // streaming threads wait on changes.
-    static i32 last_load_bits = 0;
-    if (g_NuSoundLoadBits != last_load_bits) {
-        last_load_bits = g_NuSoundLoadBits;
-        pthread_cond_signal(&g_NuSoundLoadTrigger.cond);
+    // (e) Wake the sample loader when the registered request table changes.
+    for (i32 i = 0; i < g_NuSoundNumLoadBitShorts; i++) {
+        if (g_NuSoundLoadBitsCache[i] != g_NuSoundLoadBits[i]) {
+            memmove(g_NuSoundLoadBitsCache, g_NuSoundLoadBits,
+                    static_cast<usize>(g_NuSoundNumLoadBitShorts) * sizeof(u16));
+
+            pthread_mutex_lock(&g_NuSoundLoadTrigger.mutex);
+            if (!g_NuSoundLoadTrigger.a) {
+                bool broadcast = g_NuSoundLoadTrigger.b;
+                g_NuSoundLoadTrigger.a = true;
+                if (broadcast) {
+                    pthread_cond_broadcast(&g_NuSoundLoadTrigger.cond);
+                } else {
+                    pthread_cond_signal(&g_NuSoundLoadTrigger.cond);
+                }
+            }
+            pthread_mutex_unlock(&g_NuSoundLoadTrigger.mutex);
+        }
     }
 
     NuSound.Update(NuTimeGetFrameTime());

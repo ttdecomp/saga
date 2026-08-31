@@ -1,5 +1,7 @@
 #include "legoapi/legoapi_types.h"
 
+u8 LSW_HintConditions[4];
+
 void Hint_Reset() {
 }
 

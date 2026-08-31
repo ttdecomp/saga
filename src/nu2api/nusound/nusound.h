@@ -11,7 +11,9 @@ typedef struct nusound_filename_info_s {
     i32 index;
     i32 field3_0xc;
     u32 field1_0x4;
+    u32 field5_0x14;
     struct NuSoundStreamingSample *sample;
+    u32 field7_0x1c;
 } NUSOUND_FILENAME_INFO;
 
 typedef enum {
@@ -35,7 +37,9 @@ extern "C" {
 
     void NuSound3Init(i32 zero);
     void NuSound3SetSampleTable(NUSOUND_FILENAME_INFO *info, VARIPTR *buffer_start, VARIPTR buffer_end);
+    void NuSound3SetRequestTable(u16 *request_bits, i32 short_count);
     void NuSound3SetLoopHoldTime(float t);
+    i32 NuSound3LoadingSfx(void);
 
     // Stereo-stream control used by the NuMusic player. Streams live in slots
     // 0/1 (one per music voice). StreamKeyStatus reports 0 = nothing queued,

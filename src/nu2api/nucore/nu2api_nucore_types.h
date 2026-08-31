@@ -28,7 +28,7 @@
 #include "nu2api/nucore/NuVoiceAndroid.h"
 #include "nu2api/nucore/nugcutscene.h"
 
-struct NUAPPLICATIONSTATUS;
+enum NUAPPLICATIONSTATUS : i32;
 struct NUGCUTCHAR_s;
 struct NUGCUTLOCATOR_s;
 struct NUGCUTRIGID_s;
@@ -115,7 +115,7 @@ struct nuvec4_s;
 struct nuvec_s;
 struct rndrstream_s;
 
-struct NUAPPLICATIONSTATUS;
+enum NUAPPLICATIONSTATUS : i32;
 struct NUGCUTCHAR_s;
 struct NUGCUTSCENE_s;
 struct NUJOINTANIM_s {};
@@ -242,7 +242,7 @@ struct NuMemoryManager {
     void GetBlockAlignment(void *);
     void GetBlockDebugBackTrace(void *, void **);
     void GetBlockDebugContext(void *);
-    void GetBlockSize(void *);
+    u32 GetBlockSize(void *);
     void GetCategoryAllocatedBytes(u16);
     void GetCurrentContextID() const;
     void GetCurrentContextName() const;

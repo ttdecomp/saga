@@ -47,11 +47,13 @@ static constexpr u8 kItemType_Link = 0x8d;
 extern VARIPTR rndrstream_end;
 extern VARIPTR rndrstream_free;
 
-extern "C" VARIPTR *display_list_buffer = nullptr;
-extern "C" VARIPTR *display_list_buffer_end = nullptr;
+extern "C" {
+    VARIPTR *display_list_buffer = nullptr;
+    VARIPTR *display_list_buffer_end = nullptr;
 
-// Manager lives in original bss @0x11a0080 (0x604 bytes).
-extern "C" NUDLIST_MANAGER global_dlist_manager = {0};
+    // Manager lives in original bss @0x11a0080 (0x604 bytes).
+    NUDLIST_MANAGER global_dlist_manager = {0};
+}
 
 // Scratch backing for the 2D list's item cursor so AddItem is safe before
 // NuDisplayListInit has run (host safety net).

@@ -24,6 +24,9 @@ typedef struct nucolour4_s {
     f32 a;
 } NUCOLOUR4;
 
+extern i32 g_backingWidth;
+extern i32 g_backingHeight;
+
 #ifdef __cplusplus
 
 void NuRndrStreamInit(i32 stream_buffer_size, VARIPTR *buffer);
@@ -33,13 +36,16 @@ extern "C" {
     extern i32 nurndr_pixel_width;
     extern i32 nurndr_pixel_height;
 
-    extern i32 g_backingWidth;
-    extern i32 g_backingHeight;
-
     void NuRndrInitEx(i32 stream_buffer_size, VARIPTR *buffer);
 
     i32 NuRndrSetViewMtx(NUMTX *vpcs_mtx, NUMTX *viewport_vpc_mtx, NUMTX *scissor_vpc_mtx);
     void NuRndrStateUpdateCameraState(void);
+
+    i32 NuRndrSetAmbientLightPS(const NUCOLOUR3 *colour);
+    i32 NuRndrSetDirectionalLightsPS(const NUVEC *dir0, const NUCOLOUR3 *colour0, const NUVEC *dir1,
+                                     const NUCOLOUR3 *colour1, const NUVEC *dir2, const NUCOLOUR3 *colour2);
+    i32 NuRndrSetFxMtx(NUMTX *matrix);
+    void NuRndrSetSpecularLightPS(const NUVEC *direction, const NUCOLOUR4 *intensity);
 
     void FaceYDirStream(i32 y_angle);
 #ifdef __cplusplus

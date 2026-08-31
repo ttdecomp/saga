@@ -7,6 +7,7 @@
 #include "globals.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/characters/core/character.h"
+#include "legoapi/characters/core/players.h"
 #include "legoapi/world/level.h"
 #include "legoapi/menus/core/text.h"
 #include "legoapi/render/core/render.h"
@@ -24,12 +25,18 @@ struct SHOPINPUT;
 extern "C" void NewMenu(i32 menu_id, i32 menu_y, i32 param3);
 extern "C" void BackupMenu(void);
 extern "C" void BackupMenuNoFn(void);
-extern "C" i32 TestForController(void);
-extern "C" void PlaySfxById(i32 sfx_id, i32 flags);
+extern "C" bool TestForController(void);
+extern "C" void PlaySfxById(i32 sfx_id, nuvec_s *position);
+extern "C" void NuIOS_RecordFlurryEvent(char *event_name);
+extern "C" void DrawMenuButtonPrompts(i32 confirm_prompt, i32 cancel_prompt, i32 enabled, u8 red, u8 green, u8 blue,
+                                      u8 alpha);
+extern "C" void DrawMenuButtonPromptsEx(i32 confirm_prompt, i32 cancel_prompt, i32 flags, i32 enabled, u8 red, u8 green,
+                                        u8 blue, u8 alpha);
 i32 GameAudio_GetSfxId(i32 sfx);
 extern i32 SAVESLOTS;
 extern i32 MenuSFX;
 extern i32 MENUSFX_MENUSELECT;
+extern i32 MENUSFX_MENUBACK;
 extern i32 MENUSFX_MENUNOENTRY;
 extern i32 MENUSFX_MENUMOVE;
 extern void (*drawslotsfn)(MENU *, f32);
@@ -63,6 +70,8 @@ extern i16 tON;
 extern i16 tOFF;
 extern i16 tACCEPT;
 extern i16 tBACK;
+extern i16 tCONTINUE;
+extern i16 tCANCEL;
 extern OPTIONSSAVE TempOptions;
 extern i32 GAMEDEMO;
 extern i32 menu_flash;
@@ -74,6 +83,12 @@ void RestoreOptions(void);
 f32 GameSetSoundVolume(OPTIONSSAVE *options);
 f32 GameSetMusicVolume(OPTIONSSAVE *options);
 void SfxCheckMusicOnOff(OPTIONSSAVE *options);
+void NewGame(void);
+void NuIOS_RestoreInAppPurchases(void);
+extern i32 startnewgame;
+extern i32 startnewgame_initiated;
+extern f32 newgamecamtime;
+extern i32 newgamecam;
 extern "C" u8 MENUNORMALR;
 extern "C" u8 MENUNORMALG;
 extern "C" u8 MENUNORMALB;
@@ -111,10 +126,29 @@ i32 SAVESIZE = 50;
 extern i32 memcard_autosave;
 extern i32 memcard_autosaveenabled;
 extern i32 memcard_autosavedisabled;
+extern i32 header_r;
+extern i32 header_g;
+extern i32 header_b;
+extern i32 MenuDisableHeaders;
+
+static i32 lastslot;
+static i32 slideleft;
+static i32 slideright;
+
+char *extrasavetext;
+f32 extrasavealpha = 1.0f;
+u8 RAP_WARNING_B = 0xff;
+u8 RAP_WARNING_G;
+u8 RAP_WARNING_R = 0xff;
+
+static i32 g_enableButtonPrompts = 1;
 
 void MenuDrawLoad(MENU_s *menu) {
-    strcpy(MenuHeader, apitxt_LOADGAME);
-    if (drawslotsfn != NULL) {
+    NuStrCpy(MenuHeader, apitxt_LOADGAME);
+    header_r = MENUHEADERR;
+    header_g = MENUHEADERG;
+    header_b = MENUHEADERB;
+    if (drawslotsfn != NULL && MenuAlpha > 0.2f && MenuStopDraw == 0) {
         drawslotsfn(menu, 0.0f);
     }
     ++menu->draw_item;
@@ -122,11 +156,19 @@ void MenuDrawLoad(MENU_s *menu) {
 }
 
 void MenuDrawSave(MENU_s *menu) {
-    strcpy(MenuHeader, apitxt_SAVEGAME);
-    if (drawslotsfn != NULL) {
-        drawslotsfn(menu, 0.0f);
+    NuStrCpy(MenuHeader, apitxt_SAVEGAME);
+    header_r = MENUHEADERR;
+    header_g = MENUHEADERG;
+    header_b = MENUHEADERB;
+    if (drawslotsfn != NULL && MenuAlpha > 0.2f && MenuStopDraw == 0) {
+        drawslotsfn(menu, extrasavetext != NULL ? 0.1f : 0.0f);
     }
     ++menu->draw_item;
+
+    if (extrasavetext != NULL) {
+        SmartTextEx(extrasavetext, 0.0f, -0.25f, 1.0f, 0.5f, 0.5f, 0.5f, 0, RAP_WARNING_R, RAP_WARNING_G, RAP_WARNING_B,
+                    1.9f, 4, NULL, 0, static_cast<i32>(static_cast<f32>(MenuA) * extrasavealpha));
+    }
     if (Menu_DisableCancel == 0) {
         Draw_CANCEL(menu);
     }
@@ -149,15 +191,26 @@ void MenuDrawStore(MENU_s *) {
 
 void MenuEnterLoad(MENU_s *menu) {
     memcard_cardchanged = 0;
+    i32 last_column = SAVESLOTS - 1;
+    if (SAVESLOTS > 6) {
+        last_column = memcard_slotsused - 1;
+    }
     menu->state = 2;
-    menu->last_column = static_cast<i16>(SAVESLOTS - 1);
+    menu->last_column = static_cast<i16>(last_column);
     menu->last_row = 1;
+    lastslot = 0;
+    slideleft = 0;
+    slideright = 0;
     Menu_InLoadFlow = 1;
     Menu_LastFlow = 3;
     MenuLoadOccurred = 0;
     MenuLoadStarted = 0;
 
-    if (saveload_savepresent == 0) {
+    if (saveload_filecorrupt != 0) {
+        NewMenu(1020, -1, -1);
+    } else if (saveload_cardtype != 2) {
+        NewMenu(1004, -1, -1);
+    } else if (saveload_savepresent == 0 || saveload_cardformatted == 0) {
         NewMenu(1005, -1, -1);
     }
 }
@@ -169,9 +222,24 @@ void MenuEnterSave(MENU_s *menu) {
     Menu_InSaveFlow = 1;
     Menu_LastFlow = 2;
 
-    menu->last_column = static_cast<i16>(SAVESLOTS - 1);
+    if (SAVESLOTS <= 6) {
+        menu->last_column = static_cast<i16>(SAVESLOTS - 1);
+    } else {
+        menu->last_column = static_cast<i16>(memcard_slotsused);
+        if (SAVESLOTS == memcard_slotsused || saveload_freespace < SAVESIZE_ADDITIONAL) {
+            --menu->last_column;
+        }
+    }
     menu->state = 2;
     menu->last_row = 1;
+    lastslot = 0;
+    slideleft = 0;
+    slideright = 0;
+
+    NuStrCpy(MenuHeader, apitxt_SAVEGAME);
+    header_r = MENUHEADERR;
+    header_g = MENUHEADERG;
+    header_b = MENUHEADERB;
 
     if (saveload_cardtype != 2) {
         NewMenu(1002, -1, -1);
@@ -179,10 +247,10 @@ void MenuEnterSave(MENU_s *menu) {
         NewMenu(1020, -1, -1);
     } else if (saveload_cardformatted == 0) {
         NewMenu(1006, 1, -1);
-    } else if (memcard_autosave == 0 && saveload_freespace < SAVESIZE) {
+    } else if (saveload_savepresent == 0 && saveload_freespace < SAVESIZE) {
         NewMenu(1003, -1, -1);
     } else if (Menu_InHeaderSave != 0) {
-        saveload_autosave = -1;
+        memcard_slot = -1;
         NewMenu(1008, 1, -1);
     }
 }
@@ -229,45 +297,49 @@ void MenuDrawSaving(MENU_s *) {
 }
 
 void MenuUpdateLoad(MENU_s *menu) {
-    if (memcard_cardchanged != 0) {
+    if (memcard_cardchanged != 0 || saveload_cardtype != 2) {
         MenuEnterLoad(menu);
         return;
     }
 
-    if (menu->confirm_pressed == 0) {
-        return;
-    }
+    if (menu->confirm_pressed != 0) {
+        MenuSFX = MENUSFX_MENUSELECT;
+        if (menu->selected_row == 0) {
+            memcard_slot = menu->selected_column - menu->first_column;
+            if (saveload_slotused[memcard_slot] == 0) {
+                MenuSFX = MENUSFX_MENUNOENTRY;
+                return;
+            }
 
-    MenuSFX = MENUSFX_MENUSELECT;
-    if (menu->selected_row != menu->first_row) {
+            MenuStartLoad();
+            NewMenu(1014, 0, -1);
+            return;
+        }
+
         if (menu->selected_row == menu->last_row) {
             BackupMenu();
         }
         return;
     }
 
-    memcard_slot = menu->selected_column - menu->first_column;
-    if (memcard_slot < 0 || memcard_slot >= SAVESLOTS || saveload_slotused[memcard_slot] == 0) {
-        MenuSFX = MENUSFX_MENUNOENTRY;
-        return;
+    if (menu->cancel_pressed != 0) {
+        BackupMenu();
+        MenuSFX = MENUSFX_MENUSELECT;
     }
-
-    MenuStartLoad();
-    NewMenu(1014, 0, -1);
 }
 
 void MenuUpdateSave(MENU_s *menu) {
+    MenuInfo[menu->menu].wrap = Menu_DisableCancel == 0;
+
     if (memcard_cardchanged != 0 || saveload_cardtype != 2) {
         MenuEnterSave(menu);
     }
 
     if (menu->confirm_pressed != 0) {
         MenuSFX = MENUSFX_MENUSELECT;
-        if (menu->selected_row == menu->first_row) {
+        if (menu->selected_row == 0) {
             const i32 slot = menu->selected_column - menu->first_column;
-            if (slot < 0 || slot >= SAVESLOTS) {
-                MenuSFX = MENUSFX_MENUNOENTRY;
-            } else if (saveload_slotused[slot] != 0) {
+            if (saveload_slotused[slot] != 0) {
                 memcard_slot = slot;
                 NewMenu(1008, 1, -1);
             } else if (saveload_freespace < SAVESIZE_ADDITIONAL) {
@@ -312,10 +384,10 @@ void IconScenes_Dump() {
 }
 
 void IconScenes_Init(char *path, variptr_u *buf, variptr_u *) {
-    buf->addr = ALIGN(buf->addr, 4);
-    IconScene = reinterpret_cast<NUGSCN **>(buf->void_ptr);
-    buf->addr += static_cast<usize>(CHARCOUNT) * sizeof(*IconScene);
-    memset(IconScene, 0, static_cast<usize>(CHARCOUNT) * sizeof(*IconScene));
+    const usize table_size = static_cast<usize>(CHARCOUNT) * sizeof(*IconScene);
+    IconScene = reinterpret_cast<NUGSCN **>(ALIGN(buf->addr, 4));
+    buf->addr = reinterpret_cast<usize>(IconScene) + table_size;
+    memset(IconScene, 0, table_size);
 
     if (path != NULL && NuStrLen(path) <= 0x3f) {
         NuStrCpy(IconPath, path);
@@ -661,9 +733,16 @@ void MenuDrawLoadConfirm(MENU_s *menu) {
 
 void MenuDrawSaveConfirm(MENU_s *menu) {
     NuStrCpy(MenuHeader, apitxt_SAVEGAME);
-    MenuSmartTextEx(Menu_Overwriteflag != 0 ? apitxt_CONFIRMOVERWRITE : apitxt_CONFIRMSAVE, 0.0f,
-                    Menu_Overwriteflag != 0 ? 0.0f : -0.3f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 3,
-                    MENUNORMALR, MENUNORMALG, MENUNORMALB, 1.6f, 3, NULL, 0, MenuA);
+    header_r = MENUHEADERR;
+    header_g = MENUHEADERG;
+    header_b = MENUHEADERB;
+    if (Menu_Overwriteflag != 0) {
+        MenuSmartTextEx(apitxt_CONFIRMOVERWRITE, 0.0f, 0.0f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0,
+                        MENUNORMALR, MENUNORMALG, MENUNORMALB, 1.6f, 3, NULL, 0, MenuA);
+    } else {
+        MenuSmartTextEx(apitxt_CONFIRMSAVE, 0.0f, -0.3f, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0,
+                        MENUNORMALR, MENUNORMALG, MENUNORMALB, 1.6f, 3, NULL, 0, MenuA);
+    }
 
     menu->draw_y = MENUBOTY - MENUDY;
     DrawMenuEntry(menu, apitxt_YES);
@@ -831,7 +910,10 @@ void MenuDrawNotEnoughSpace(MENU_s *) {
     Draw_SPACENEEDED();
 }
 
-void MenuDrawRestoreNewGame(MENU_s *) {
+void MenuDrawRestoreNewGame(MENU_s *menu) {
+    menu->draw_y = -0.25f;
+    GameDrawMenuEntry(menu, TTab[tCONTINUE]);
+    GameDrawMenuEntry(menu, TTab[tCANCEL]);
 }
 
 void MenuDrawSelectControls(MENU_s *menu) {
@@ -894,7 +976,52 @@ void MenuUpdateAutoSaveCancel(MENU_s *) {
 void MenuUpdateNotEnoughSpace(MENU_s *) {
 }
 
-void MenuUpdateRestoreNewGame(MENU_s *) {
+void MenuUpdateRestoreNewGame(MENU_s *menu) {
+    const i32 initiated = startnewgame_initiated;
+    startnewgame = 0;
+
+    if (initiated != 0 || saveload_autosave != -1) {
+        startnewgame_initiated = 0;
+        startnewgame = 0;
+        const i32 save_occurred = MenuSaveOccurred;
+        NewGame();
+        MenuSaveOccurred = save_occurred;
+        NewLData = NEWGAME_LDATA;
+        UsePlayerList = 2;
+        newgamecam = 1;
+        newgamecamtime = 0.0f;
+        return;
+    }
+
+    if (menu->confirm_pressed == 0) {
+        return;
+    }
+
+    if (menu->selected_item == 0) {
+        MenuSFX = GameAudio_GetSfxId(0x30);
+        NuIOS_RecordFlurryEvent("mainmenu_restore");
+        NuIOS_RestoreInAppPurchases();
+        NewMenu(22, -1, -1);
+    } else if (menu->selected_item == 1) {
+        MenuSFX = GameAudio_GetSfxId(0x30);
+        if (PlayerProgress[0].active == 0 && PlayerProgress[1].active == 0) {
+            PlayerProgress[0].active = 1;
+        }
+        NewMenu(1000, -1, -1);
+    } else if (menu->selected_item == 2) {
+        BackupMenu();
+    }
+
+    if (startnewgame != 0) {
+        startnewgame = 0;
+        const i32 save_occurred = MenuSaveOccurred;
+        NewGame();
+        MenuSaveOccurred = save_occurred;
+        NewLData = NEWGAME_LDATA;
+        UsePlayerList = 2;
+        newgamecam = 1;
+        newgamecamtime = 0.0f;
+    }
 }
 
 void MenuUpdateSelectControls(MENU_s *menu) {
@@ -956,6 +1083,8 @@ extern "C" {
     f32 menu_pulsate;
     f32 menu_pulsate_speed;
     i32 menu_pulsate_angle;
+    void (*headerdrawfn)(void) = DrawMenuHeader;
+    void (*predrawfn)(MENU *) = NULL;
 
     static u8 MenuColourLerp(u8 first, u8 second, f32 amount) {
         return static_cast<u8>(
@@ -1019,95 +1148,156 @@ extern "C" {
     }
 
     void DrawMenu(i32 paused) {
+        if (memcard_autosavestarted != 0 || memcard_autosavepostdelay > 0.0f || memcard_autosavepredelay > 0.0f) {
+            if (memcard_drawasiconfn != NULL) {
+                memcard_drawasiconfn();
+            }
+            return;
+        }
+
         MENU *menu = &GameMenu[GameMenuLevel];
         i16 menu_index = menu->menu;
         if (menu_index == -1)
             return;
 
         MenuValidated = 1;
-        VUFNT *font = SmartTextFont != NULL ? SmartTextFont : QFont2D;
-        f32 saved_baseline = font != NULL ? font->baseline : 0.0f;
-        f32 saved_button_baseline = QFont2DButtons != NULL ? QFont2DButtons->baseline : 0.0f;
-        if (font != NULL)
-            font->baseline = 0.0f;
-        if (QFont2DButtons != NULL)
+        f32 saved_button_baseline;
+        f32 saved_baseline;
+        if (SmartTextFont != NULL) {
+            saved_baseline = SmartTextFont->baseline;
+            SmartTextFont->baseline = 0.0f;
+        } else if (QFont2D != NULL) {
+            saved_baseline = QFont2D->baseline;
+            QFont2D->baseline = 0.0f;
+        } else {
+            saved_baseline = 0.0f;
+        }
+
+        if (QFont2DButtons != NULL) {
+            saved_button_baseline = QFont2DButtons->baseline;
             QFont2DButtons->baseline = 0.0f;
+        } else {
+            saved_button_baseline = 0.0f;
+        }
 
         MenuHeader[0] = '\0';
         menu->draw_item = menu->first_row;
         menu->item_scale = 1.0f;
         menu->draw_x = 0.0f;
-        menu->centre_offset = static_cast<f32>(menu->last_row - menu->first_row) * MENUDY * -0.5f;
+        menu->centre_offset = static_cast<f32>(menu->last_row - menu->first_row) * MENUDY * 0.5f;
         menu->draw_y = -menu->centre_offset;
         menu->draw_z = 1.0f;
         menu->field_a0 = 0.0f;
         menu->paused = paused;
+        if (predrawfn != NULL) {
+            predrawfn(menu);
+            menu_index = menu->menu;
+        }
         if (MenuInfo[menu_index].draw_fn != NULL)
             MenuInfo[menu_index].draw_fn(menu);
-        if (MenuHeader[0] != '\0')
-            DrawMenuHeader();
+        if (headerdrawfn != NULL)
+            headerdrawfn();
+        if (MenuAlpha >= 0.5f && g_enableButtonPrompts != 0) {
+            const MENUFNINFO &info = MenuInfo[menu->menu];
+            DrawMenuButtonPrompts(info.confirm_prompt, info.cancel_prompt, 1, MENUNORMALR, MENUNORMALG, MENUNORMALB,
+                                  static_cast<u8>(MenuA));
+        }
 
-        if (font != NULL)
-            font->baseline = saved_baseline;
-        if (QFont2DButtons != NULL)
+        if (SmartTextFont != NULL) {
+            SmartTextFont->baseline = saved_baseline;
+        } else if (QFont2D != NULL) {
+            QFont2D->baseline = saved_baseline;
+        }
+        if (QFont2DButtons != NULL) {
             QFont2DButtons->baseline = saved_button_baseline;
+        }
     }
 
     void DrawMenuBottomMessage(void) {
     }
 
-    void DrawMenuButtonPrompts(void) {
+    void DrawMenuButtonPrompts(i32 confirm_prompt, i32 cancel_prompt, i32 enabled, u8 red, u8 green, u8 blue,
+                               u8 alpha) {
+        DrawMenuButtonPromptsEx(confirm_prompt, cancel_prompt, 0, enabled, red, green, blue, alpha);
     }
 
-    void DrawMenuButtonPromptsEx(void) {
+    void DrawMenuButtonPromptsEx(i32, i32, i32, i32, u8, u8, u8, u8) {
     }
 
     void DrawMenuEntry(MENU *menu, char *text) {
-        DrawMenuEntryEx(menu, text, MenuA);
+        DrawMenuEntryEx(menu, text, static_cast<u8>(MenuA));
     }
 
     void DrawMenuEntryEx(MENU *menu, char *text, i32 alpha) {
-        const f32 scale = menu->item_scale_x == 0.0f ? MENUTEXTSCALE : menu->item_scale_x * dme_sy;
-        const f32 spacing = menu->item_spacing == 0.0f ? MENUDY : menu->item_spacing * dme_sy;
-        const u32 draw_alpha = static_cast<u8>(alpha) <= 128 ? static_cast<u8>(alpha) : 128;
+        i32 draw_alpha = -128;
+        f32 scale = menu->item_scale_x;
+        if (static_cast<u8>(alpha) <= 128) {
+            draw_alpha = alpha;
+        }
+        if (scale == 0.0f) {
+            scale = MENUTEXTSCALE;
+        }
+        f32 spacing = menu->item_spacing;
+        const f32 y_scale = dme_sy;
+        scale *= y_scale;
+        if (spacing == 0.0f) {
+            spacing = MENUDY;
+        }
+        spacing *= y_scale;
         u8 red;
         u8 green;
         u8 blue;
 
-        if (menu->draw_item == menu->selected_row && TestForController() != 0) {
-            if (menu_pulsate > 0.0f) {
-                red = MenuColourLerp(MENUFLASH0R, MENUFLASH1R, menu_pulsate);
-                green = MenuColourLerp(MENUFLASH0G, MENUFLASH1G, menu_pulsate);
-                blue = MenuColourLerp(MENUFLASH0B, MENUFLASH1B, menu_pulsate);
-            } else if (menu_flash != 0) {
-                red = MENUFLASH0R;
-                green = MENUFLASH0G;
-                blue = MENUFLASH0B;
-            } else {
-                red = MENUFLASH1R;
-                green = MENUFLASH1G;
-                blue = MENUFLASH1B;
-            }
-        } else if (dme_rgb != 0) {
-            red = dme_r;
-            green = dme_g;
-            blue = dme_b;
-        } else if (menu_pulse > 0.0f) {
-            red = MenuColourLerp(MENUFLASH0R, MENUNORMALR, menu_pulse);
-            green = MenuColourLerp(MENUFLASH0G, MENUNORMALG, menu_pulse);
-            blue = MenuColourLerp(MENUFLASH0B, MENUNORMALB, menu_pulse);
-        } else {
-            red = MENUENTRYR;
-            green = MENUENTRYG;
-            blue = MENUENTRYB;
+        if (menu->item_offsets != NULL) {
+            Text3DEx2(text, menu->draw_x + menu->item_offsets[0] * menu->item_offset_scale,
+                      menu->draw_y + menu->item_offsets[1] * menu->item_offset_scale, menu->draw_z, scale * dme_sx,
+                      scale, scale, static_cast<u8>(dme_align), 0, 0, 0, static_cast<u8>(draw_alpha) >> 2);
         }
 
         if (menu->draw_item >= menu->first_row && menu->draw_item <= menu->last_row) {
+            if (menu->draw_item == menu->selected_row && TestForController() != 0) {
+                if (TestForController() == 0) {
+                    if (menu_pulse > 0.0f) {
+                        red = MenuColourLerp(MENUFLASH0R, MENUNORMALR, menu_pulse);
+                        green = MenuColourLerp(MENUFLASH0G, MENUNORMALG, menu_pulse);
+                        blue = MenuColourLerp(MENUFLASH0B, MENUNORMALB, menu_pulse);
+                    } else {
+                        red = MENUENTRYR;
+                        green = MENUENTRYG;
+                        blue = MENUENTRYB;
+                    }
+                } else if (menu_pulsate > 0.0f) {
+                    red = MenuColourLerp(MENUFLASH0R, MENUFLASH1R, menu_pulsate);
+                    green = MenuColourLerp(MENUFLASH0G, MENUFLASH1G, menu_pulsate);
+                    blue = MenuColourLerp(MENUFLASH0B, MENUFLASH1B, menu_pulsate);
+                } else if (menu_flash != 0) {
+                    red = MENUFLASH0R;
+                    green = MENUFLASH0G;
+                    blue = MENUFLASH0B;
+                } else {
+                    red = MENUFLASH1R;
+                    green = MENUFLASH1G;
+                    blue = MENUFLASH1B;
+                }
+            } else if (dme_rgb != 0) {
+                red = dme_r;
+                green = dme_g;
+                blue = dme_b;
+            } else if (menu_pulse > 0.0f) {
+                red = MenuColourLerp(MENUFLASH0R, MENUNORMALR, menu_pulse);
+                green = MenuColourLerp(MENUFLASH0G, MENUNORMALG, menu_pulse);
+                blue = MenuColourLerp(MENUFLASH0B, MENUNORMALB, menu_pulse);
+            } else {
+                red = MENUENTRYR;
+                green = MENUENTRYG;
+                blue = MENUENTRYB;
+            }
+
             if (menu->item_offsets != NULL) {
                 Text3DEx(text, menu->draw_x, menu->draw_y, menu->draw_z, scale * dme_sx, scale, scale,
                          static_cast<u8>(dme_align), red, green, blue, draw_alpha);
             } else {
-                dme_rgb = 1;
+                smarttextex_drawmessagebox = 1;
                 MenuSmartTextEx(text, menu->draw_x, menu->draw_y, menu->draw_z, scale * dme_sx, scale, scale,
                                 static_cast<u32>(dme_align), red, green, blue, MENUENTRYEXWIDTH, 1, NULL, 0,
                                 draw_alpha);
@@ -1130,8 +1320,11 @@ extern "C" {
     }
 
     void DrawMenuHeader(void) {
-        MenuSmartTextEx(MenuHeader, 0.0f, MENUTOPY, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0, MENUHEADERR,
-                        MENUHEADERG, MENUHEADERB, 1.2f, 1, NULL, 0, MenuA);
+        if (MenuDisableHeaders == 0) {
+            MenuSmartTextEx(MenuHeader, 0.0f, MENUTOPY, 1.0f, MENUTEXTSCALE, MENUTEXTSCALE, MENUTEXTSCALE, 0,
+                            static_cast<u8>(header_r), static_cast<u8>(header_g), static_cast<u8>(header_b), 1.2f, 1,
+                            NULL, 0, MenuA);
+        }
     }
 
     void DrawMenuHeaderMessage(void) {
@@ -1186,7 +1379,11 @@ extern "C" {
     void MenuInMemoryCardWarning(void) {
     }
 
-    void MenuRegisterSoundFX(void) {
+    void MenuRegisterSoundFX(i32 move, i32 select, i32 back, i32 no_entry) {
+        MENUSFX_MENUMOVE = move;
+        MENUSFX_MENUSELECT = select;
+        MENUSFX_MENUBACK = back;
+        MENUSFX_MENUNOENTRY = no_entry;
     }
 
     void MenuRememberCursor(MENU *menu) {
@@ -1241,10 +1438,12 @@ extern "C" {
         MENUFLASH1B = flash1_b;
     }
 
-    void MenuSetHeaderDrawFn(void) {
+    void MenuSetHeaderDrawFn(void (*draw_fn)(void)) {
+        headerdrawfn = draw_fn;
     }
 
-    void MenuSetPreDrawFn(void) {
+    void MenuSetPreDrawFn(void (*draw_fn)(MENU *)) {
+        predrawfn = draw_fn;
     }
 
     void MenuSetPulsateSpeed(f32 speed) {
@@ -1302,7 +1501,7 @@ extern "C" {
         } else {
             menu_pulsate = 0.0f;
         }
-        if (menu_pulse_speed > 0.0f && TestForController() != 0) {
+        if (menu_pulse_speed > 0.0f && TestForController() == 0) {
             menu_pulse_angle += static_cast<i32>(elapsed * 65536.0f * menu_pulse_speed);
             menu_pulse = (NuTrigTable[(menu_pulse_angle >> 1) & 0x7fff] - 0.75f) * 4.0f;
         } else {
@@ -1323,7 +1522,7 @@ extern "C" {
         if ((primary_pressed & directions) != 0)
             pressed = primary_pressed;
 
-        if (MenuAlpha < 1.0f) {
+        if (MenuAlpha < 0.5f) {
             held = 0;
             pressed = 0;
         }

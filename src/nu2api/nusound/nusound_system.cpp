@@ -33,23 +33,6 @@ i32 NuSoundSystem::sOutputConfig = 0;
 
 NuMemoryManager *NuSoundSystem::sScratchMemMgr = NULL;
 
-static struct : NuMemoryManager::IEventHandler {
-    u32 unknown;
-    void *scratch;
-    u32 scratch_size;
-
-    virtual bool AllocatePage(NuMemoryManager *manager, u32 size, u32 _unknown) {
-        UNIMPLEMENTED("g_handler::AllocatePage");
-        return {};
-    }
-    virtual bool ReleasePage(NuMemoryManager *manager, void *ptr, u32 _unknown) {
-        UNIMPLEMENTED("g_handler::ReleasePage");
-        return {};
-    }
-} g_handler;
-
-static NuMemoryManager *sScratchMemMgr;
-
 void NuSoundInitDefaultRoutingTables(void) {
     LOG_WARN("NuSoundInitDefaultRoutingTables is not implemented");
 }
@@ -119,9 +102,6 @@ NuSoundSystem::NuSoundSystem() {
     this->voice_count = 0;
     // libTTapp.so ctor (0x319552): the update gate field63_0x108 starts at 1.
     this->initialised = true;
-    this->engine_object = NULL;
-    this->audio_engine = NULL;
-    this->output_mix = NULL;
     // this->field63_0x108 = 1;
     s_staticInstance = this;
 }
@@ -197,9 +177,7 @@ u32 NuSoundSystem::FreeMemory(MemoryDiscipline disc, usize address, u32 size) {
             }
             break;
         case MemoryDiscipline::SCRATCH:
-            // The original accounts NuMemoryManager::GetBlockSize(ptr); the
-            // host _TryBlockAlloc has no block header, so the accounting uses
-            // the size the alloc was charged.
+            freed = sScratchMemMgr->GetBlockSize((void *)address);
             sScratchMemMgr->BlockFree((void *)address, 0);
             break;
         default:
@@ -365,7 +343,8 @@ NuSoundSystem::FileType NuSoundSystem::DetermineFileType(const char *path) {
 }
 
 void NuSoundSystem::ReleaseFileLoader(NuSoundLoader *loader) {
-    UNIMPLEMENTED();
+    loader->~NuSoundLoader();
+    FreeMemory(MemoryDiscipline::SCRATCH, reinterpret_cast<usize>(loader), 0);
 }
 
 NuSoundSystem::~NuSoundSystem() {
@@ -415,12 +394,8 @@ NuSoundDecoder *NuSoundSystem::CreateDecoder(NuSoundSource *source) {
 
     NuSoundStreamDesc *desc = source->GetStreamDesc();
     if (desc != NULL && desc->GetEncodedDataFormat() == NuSoundStreamDesc::DataFormat::THREE) {
-        u32 decoder_size = 0x13c;
-#ifdef HOST_BUILD
-        decoder_size = sizeof(NuSoundDecoderOGG);
-#endif
         NuSoundDecoderOGG *decoder = (NuSoundDecoderOGG *)this->_AllocMemory(
-            NuSoundSystem::MemoryDiscipline::SCRATCH, decoder_size, 4,
+            NuSoundSystem::MemoryDiscipline::SCRATCH, sizeof(NuSoundDecoderOGG), 4,
             "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound_system.cpp:436");
 
         if (decoder != NULL) {
@@ -531,8 +506,8 @@ void NuSoundSystem::ReleaseCrossfadeCurve(u32) {
 }
 
 void NuSoundSystem::ReleaseDecoder(NuSoundDecoder *decoder) {
-    (void)decoder;
-    UNIMPLEMENTED("NuSoundSystem::ReleaseDecoder");
+    decoder->~NuSoundDecoder();
+    FreeMemory(MemoryDiscipline::SCRATCH, reinterpret_cast<usize>(decoder), 0);
 }
 
 void NuSoundSystem::ReleaseEffect(NuSoundEffect *) {

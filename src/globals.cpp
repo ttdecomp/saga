@@ -126,6 +126,8 @@ i32 g_isLowestEndDevice = 0;
 i32 g_isLowEndDevice = 0;
 i32 g_isMidRangeDevice = 0;
 i32 g_lowEndLevelBehaviour = 0;
+i32 NOAICREATURES = 0;
+u8 aicreature_sets_alive[16] = {};
 
 // ------------------------------------------------------------------------
 // Render / compatibility options
@@ -136,6 +138,7 @@ i32 Reflections_On = 1;
 i32 disable_narrow_socks = 0;
 i32 script_spline_selected = 0;
 f32 character_farclip = 0.0f;
+f32 CutBorderScale = 0.0f;
 i32 texanimbits = 0;
 
 // ------------------------------------------------------------------------
@@ -230,6 +233,16 @@ void *CurrentStoryCList = NULL;
 i32 CharacterDataLoad = 0;
 i32 makefreeplaymodellist = 0;
 i16 id_DEFAULTCHARACTER[2] = {-1, -1};
+i16 tBATMANSUIT = 0;
+i16 tSHADOWSUIT = 0;
+i16 tGLIDESUIT = 0;
+i16 tDEMOLITIONSUIT = 0;
+i16 tSONARSUIT = 0;
+i16 tROBINSUIT = 0;
+i16 tWATERSUIT = 0;
+i16 tTECHNOLOGYSUIT = 0;
+i16 tMAGNETSUIT = 0;
+i16 tATTRACTSUIT = 0;
 i32 CHARPAK = 0;
 i32 apiloadcharactermodels_nopakfile = 0;
 
@@ -262,6 +275,9 @@ i32 LEGOOBJ_ICON_QUESTION = -1;
 // ------------------------------------------------------------------------
 LEVELDATA *ANAKINSFLIGHTB_LDATA = NULL;
 AREADATA *ANEWHOPE_ADATA = NULL;
+AREADATA *BONUSKASHYYYK_ADATA = NULL;
+AREADATA *BONUSKAMINO_ADATA = NULL;
+AREADATA *BONUSDAGOBAH_ADATA = NULL;
 LEVELDATA *ASTEROIDCHASEA_LDATA = NULL;
 LEVELDATA *ASTEROIDCHASEB_LDATA = NULL;
 LEVELDATA *ASTEROIDCHASEC_LDATA = NULL;
@@ -343,6 +359,7 @@ LEVELDATA *HOTHBATTLED_LDATA = NULL;
 LEVELDATA *HOTHBATTLEE_LDATA = NULL;
 LEVELDATA *HOTHBATTLEOUTRO_LDATA = NULL;
 AREADATA *HOTHBATTLE_ADATA = NULL;
+AREADATA *HOTH_ADATA = NULL;
 LEVELDATA *HOTHESCAPEA_LDATA = NULL;
 LEVELDATA *HOTHESCAPEB_LDATA = NULL;
 LEVELDATA *HOTHESCAPEC_LDATA = NULL;
@@ -407,12 +424,14 @@ LEVELDATA *SARLACCPITA_LDATA = NULL;
 LEVELDATA *SARLACCPITB_LDATA = NULL;
 LEVELDATA *SARLACCPITC_LDATA = NULL;
 LEVELDATA *SENATEA_LDATA = NULL;
+AREADATA *SENATE_ADATA = NULL;
 LEVELDATA *SPEEDERCHASEA_LDATA = NULL;
 LEVELDATA *STATUS_LDATA = NULL;
 LEVELDATA *TATOOINEA_LDATA = NULL;
 LEVELDATA *TATOOINEC_LDATA = NULL;
 LEVELDATA *TATOOINED_LDATA = NULL;
 LEVELDATA *TATOOINEE_LDATA = NULL;
+AREADATA *UTAPAU_ADATA = NULL;
 LEVELDATA *TEMPLEA_LDATA = NULL;
 LEVELDATA *TEMPLEB_LDATA = NULL;
 LEVELDATA *TEMPLEC_LDATA = NULL;
@@ -478,6 +497,8 @@ i32 newgame_menudrawoff = 0;
 i32 netnewgame = 0;
 i32 MenuLoadOccurred = 0;
 i32 MenuSaveOccurred = 0;
+i32 Tag_DoneFirst = 0;
+i32 Tag_DoneAny = 0;
 i32 LevSfxFlag[4] = {0};
 u8 dynamic_antinodes[0x1500] = {0};
 i32 LevInstAnim[12] = {0};
@@ -487,8 +508,9 @@ void *LevPathCnx[16] = {0};
 i32 LevGameObject[8] = {0};
 i32 LevGamePart[8] = {0};
 i32 LevAIMessage[8] = {0};
+GIZBUILDIT_s *LevBuildIt[4] = {};
 i32 LevelLocator = 0;
-void *LevGizObst[8] = {0};
+GIZOBSTACLE_s *LevGizObst[8] = {0};
 i32 LevBlowUp[5] = {0};
 GIZMO *LevGizmo[12] = {0};
 i32 LevForce = 0;
@@ -498,6 +520,7 @@ GIZFORCE_s *LevGizForce[4] = {0};
 i32 LevAIPathNode[4] = {0};
 i32 LevBoltIgnorePlatIds[2] = {0};
 i32 LevPlatID[2] = {0};
+u64 LevHSpecialExists = 0;
 i32 LevPathCnxDir = 0;
 i32 LevDeaths = 0;
 i32 LevLock[4] = {0};
@@ -923,6 +946,7 @@ u8 Cheat[0x5a0];            // cheat table
 u8 CharVariants_Game[0x5c]; // in-game character-variant table
 u8 theMemoryManager[0x248]; // inline memory-manager block
 #include "legoapi/menus/core/lsw_text_data.inc"
+TEXTCRAWL_s TextCrawl_LSW = {&tCHAPTER, &tVEHICLEBONUS, &tCHARACTERBONUS, 3};
 
 void *ActionInfo = NULL;      // bound to &self+0x38 table at runtime
 char *ExtraActionData = NULL; // "run1" pool pointer at runtime
@@ -1037,6 +1061,8 @@ i32 noscenespecials = 0;
 LANGUAGEDATA Game_LanguageList[7] = {{1, 0}, {2, 0}, {4, 0}, {5, 0}, {3, 0}, {8, 0}, {-1, 0}};
 OPTIONSSAVE *Game_OptionsSave = NULL;
 i32 (*GamePads_IgnoreInputFn)(void) = NULL;
+// Original bss @0x127bd00. Selected by ReadPad's successful normal path.
+struct nupad_s *pActivePad = NULL;
 i32 g_introState = 1;
 i32 gone_through_door_to_new_level = 0;
 f32 g_val = 0.0f;
@@ -1078,3 +1104,20 @@ i32 TERRAINCALLS = 0;
 f32 tieoffsfxwait = 0.0f;
 f32 tieonsfxwait = 0.0f;
 i32 waiting_for_character = -1;
+
+i32 LEGO_AIPATHCNX_JUMP = 0;
+i32 LEGO_AIPATHCNX_DOUBLE_JUMP = 0;
+i32 LEGO_AIPATHCNX_HIGH_JUMP = 0;
+i32 LEGO_AIPATHCNX_R2D2GLIDE = 0;
+i32 LEGO_AIPATHCNX_FORGOODIES = 0;
+i32 LEGO_AIPATHCNX_FORBADDIES = 0;
+i32 LEGO_AIPATHCNX_BLOCKAGE = 0;
+i32 LEGO_AIPATHCNX_DONTTOGGLE = 0;
+i32 LEGO_AIPATHCNX_FULLTERRAIN = 0;
+i32 LEGO_AIPATHCNX_BIGJUMP = 0;
+i32 LEGO_AIPATHCNX_REQUIRESPERMISSION = 0;
+i32 LEGO_AIPATHCNX_NO_DESTINATION_CHECK = 0;
+i32 LEGO_AIPATHCNX_JUMP_NOW = 0;
+i32 LEGO_AIPATHCNX_DONT_JUMP_NOW = 0;
+i32 mechAutoJumpFlags = 0;
+i32 mechAutoJumpCantReachFlags = 0;

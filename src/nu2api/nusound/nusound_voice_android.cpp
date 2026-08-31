@@ -15,21 +15,12 @@
 
 #include "nu2api/nucore/nucore.hpp"
 #include "nu2api/nusound/nusound_android.hpp"
+#include "nu2api/nusound/opensles_abi.hpp"
 #include "nu2api/nusound/nusound_streamer.hpp"
 
 #include <math.h>
 
 namespace {
-
-    // The OpenSL interface ids are opaque tokens here; they are only handed to
-    // GetInterface / CreateAudioPlayer, never dereferenced. (Kept internal so the
-    // binary surface stays identical to the original's.)
-    const void *SL_IID_PLAY = (const void *)0x00010001;
-    const void *SL_IID_ANDROIDSIMPLEBUFFERQUEUE = (const void *)0x00010002;
-    const void *SL_IID_VOLUME = (const void *)0x00010003;
-    const void *SL_IID_ENGINE = (const void *)0x00010004;
-    const void *SL_IID_ENGINECAPABILITIES = (const void *)0x00010005;
-    const void *SL_IID_ENVIRONMENTALREVERB = (const void *)0x00010006;
 
     // OpenSL interface vtable slots as used by libTTapp.so.
     typedef u32 (*ObjectRealizeFn)(void *, u32);

@@ -37,7 +37,6 @@ class NuSoundLoader {
     NuSoundStreamDesc *desc;
     NuSoundOutOfMemCallback *oom;
     const char *path;
-    u32 flags;
 
   public:
     NuSoundLoader();
@@ -84,10 +83,16 @@ struct FileHeaderWAV {
 // identical, so these sources never need a decoder.
 class NuSoundHeaderWAV : public NuSoundStreamDesc {
   public:
+    u16 format_id;
+    u16 num_channels;
+    u32 sample_rate;
+    u32 samples_per_second;
+    u16 block_size;
+    u16 bits_per_channel;
+    u16 extended_data_size;
+    u16 extended_data;
+    u64 encoded_length_bytes;
     u64 data_position; // absolute file offset of the data chunk
-
-    NuSoundHeaderWAV() : data_position(0) {
-    }
 
     DataFormat GetDecodedDataFormat() const override {
         return DataFormat::ZERO;
@@ -99,13 +104,13 @@ class NuSoundHeaderWAV : public NuSoundStreamDesc {
         return this->encoded_length_bytes;
     }
     u64 GetDecodedLengthBytes() const override {
-        return this->decoded_length_bytes;
+        return this->encoded_length_bytes;
     }
     u64 GetLengthSamples() const override {
         return GetEncodedLengthBytes() / ((GetBitsPerChannel() + 7) / 8);
     }
-    double GetLengthSeconds() const override {
-        return (double)GetLengthSamples() / (double)GetSampleRate();
+    f32 GetLengthSeconds() const override {
+        return (f32)GetLengthSamples() / (f32)GetSampleRate();
     }
     u64 GetDataOffset() const override {
         return this->data_position;
@@ -132,7 +137,7 @@ class NuSoundHeaderWAV : public NuSoundStreamDesc {
         return this->extended_data_size;
     }
     void *GetExtendedData() const override {
-        return this->extended_data;
+        return (void *)&this->extended_data;
     }
 };
 
@@ -147,13 +152,10 @@ class NuSoundLoaderWAV : public NuSoundLoader {
     // Per-request entry for the RIFF chunk walker: the expected chunk ids
     // (fmt / data), the reader callbacks and the found chunk infos + state.
     struct ChunkReadRequest {
-        u32 format_id;
-        u32 data_id;
-        u32 pad_0x8;
-        ChunkInfo chunk_info[2];
+        u32 chunk_id;
+        ChunkInfo chunk_info;
         u32 state;
-        void (*chunk_reader)(i32 file, NuSoundStreamDesc *desc, const ChunkInfo &info, NuSoundLoaderWAV *loader);
-        void (*data_reader)(i32 file, NuSoundStreamDesc *desc, const ChunkInfo &info, NuSoundLoaderWAV *loader);
+        void (*reader)(i32 file, NuSoundStreamDesc *desc, const ChunkInfo &info, NuSoundLoaderWAV *loader);
     };
 
     NuSoundLoaderWAV();

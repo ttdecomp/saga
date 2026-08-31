@@ -3,12 +3,14 @@
 
 #include <stdlib.h>
 
+#include "MechInputTouch/MechInputTouch_types.h"
 #include "globals.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/core/config/cheat.h"
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/core/input/timer.h"
+#include "legoapi/menus/core/text.h"
 #include "legoapi/render/core/render.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/mission.h"
@@ -64,10 +66,21 @@ extern i32 last_area;
 extern i32 BGLOAD;
 extern i32 LOADEROFF;
 extern i32 new_level_from_menu;
+extern i32 SuperStory;
+extern i32 GAMEDEMO;
 extern i32 textcrawlactive;
 extern i32 readpads_always;
 extern i32 loadareacharacters_loadedlevel;
+extern i32 waiting_for_character;
+extern GAMEPAD_s GamePad[64];
 extern f32 MainRenderTime;
+extern f32 backdrop_top_r;
+extern f32 backdrop_top_g;
+extern f32 backdrop_top_b;
+extern f32 backdrop_bot_r;
+extern f32 backdrop_bot_g;
+extern f32 backdrop_bot_b;
+extern OPTIONSSAVE *Game_OptionsSave;
 extern FadeSystem FadeSys;
 extern void *theGameThings;
 
@@ -89,12 +102,15 @@ extern void BackDrop_UpdateColours(i32);
 extern void BackDrop_Draw(f32, i32);
 extern void NeedScreenGrab(i32);
 extern void GrabStillScreen(void);
+extern i16 tTOUCHTOSTART;
 extern "C" void NuRndrGradClear(i32, i32, i32, f32);
 extern "C" i32 NuRndrBeginScene(i32);
 extern "C" void NuRndrEndScene(void);
 extern "C" f32 NuFrameEnd(void);
 extern "C" void edGraEnableTerrainSwap(void);
 extern "C" void edGraDisableTerrainSwap(void);
+extern "C" i32 NuKeyboard_db(i32);
+extern "C" i32 NuSound3LoadingSfx(void);
 extern void Particles_LoadAreaPage(char *);
 extern "C" {
     extern void APIResetCharacterRemap(void);
@@ -103,9 +119,20 @@ extern "C" {
 
 AREADATA *ADataList = NULL;
 AREADATA *HUB_ADATA = NULL;
+i32 loadareacharacters_no_backdrop_reset = 0;
+
+static f32 LoadTime;
+static f32 LOADWAITTIME;
+static f32 LoadWait;
 
 static AREAFIXUP AreaFixUp_LSW[] = {
     {"map", &HUB_ADATA},
+    {"senate", &SENATE_ADATA},
+    {"utapau", &UTAPAU_ADATA},
+    {"hoth", &HOTH_ADATA},
+    {"nb_dagobah", &BONUSDAGOBAH_ADATA},
+    {"nb_kamino", &BONUSKAMINO_ADATA},
+    {"nb_kashyyyk", &BONUSKASHYYYK_ADATA},
     {NULL, NULL},
 };
 
@@ -537,54 +564,159 @@ void LoadAreaCharacters() {
     }
 
     if (Area != -1) {
-        VehicleArea = (ADataList[Area].flags & AREAFLAG_VEHICLE_AREA) != 0;
-        BonusArea = (ADataList[Area].flags & AREAFLAG_BONUS_AREA) != 0;
+        const u16 area_flags = ADataList[Area].flags;
+        if ((area_flags & AREAFLAG_VEHICLE_AREA) != 0) {
+            VehicleArea = 1;
+        } else {
+            VehicleArea = 0;
+        }
+        if ((area_flags & AREAFLAG_BONUS_AREA) != 0) {
+            BonusArea = 1;
+        } else {
+            BonusArea = 0;
+        }
     } else {
         VehicleArea = 0;
         BonusArea = 0;
     }
-
-    reinterpret_cast<i32 *>(AreaGlobals)[1] = VehicleArea;
+    reinterpret_cast<i32 *>(AreaGlobals)[1] = VehicleArea != 0 && BonusArea == 0;
     loadareacharacters_loadedlevel = 0;
     AreaDataLoaded = 0;
     loadareadata_loadlevel = 0;
     CharacterDataLoad = 0;
     ResetTimer(&GameTimer, 0.0f);
+
+    i32 load_type;
+    if (Area != -1 && Area != last_area && (ADataList[Area].flags & AREAFLAG_ENDING_AREA) == 0 &&
+        new_level_from_menu == 0) {
+        if (HUB_ADATA != NULL && last_area == HUB_ADATA->index) {
+            load_type = 2;
+            goto load_type_done;
+        }
+        if (netnewgame != 0) {
+            load_type = 2;
+            goto load_type_done;
+        }
+        if (GAMEDEMO != 0 && (LastLData == TITLES_LDATA || LastLData == STATUS_LDATA)) {
+            load_type = 2;
+            goto load_type_done;
+        }
+    }
+
+    if (SuperStory != 0 && (ADataList[Area].flags & AREAFLAG_ENDING_AREA) != 0) {
+        load_type = 1;
+        goto load_type_done;
+    } else if (last_area != -1 && LastLData != NULL && (LastLData->flags & 0x400) != 0 &&
+               ADataList[Area].flags != AREAFLAG_ENDING_AREA && HUB_ADATA != NULL && Area != HUB_ADATA->index) {
+        load_type = 2;
+        goto load_type_done;
+    }
+    load_type = 0;
+
+load_type_done:
+    const i32 reload_same_area = Area != -1 && Area == last_area;
     netnewgame = 0;
 
-    if (LOADEROFF != 0 || BGLOAD == 0) {
+    if (reload_same_area || LOADEROFF != 0 || BGLOAD == 0) {
         LoadAreaData(NULL);
         MainRenderTime = 1.0f;
         return;
     }
 
     textcrawlactive = 1;
+    MechSystems::Get()->HookUpClickToPressStart();
     pNuCam->mtx = numtx_identity;
     NuCameraSet(pNuCam);
 
-    f32 load_time = 0.0f;
-    f32 load_wait = 0.1f;
+    LoadTime = 0.0f;
+    LOADWAITTIME = load_type == 2 ? 1.0f : 0.1f;
+    LoadWait = LOADWAITTIME;
+    CutBorderScale = 1.0f;
     FRAMETIME = DEFAULTFRAMETIME;
     const f32 music_volume = GameSetMusicVolume(&Game.options_save);
-    BackDrop_ResetColours();
+    if (loadareacharacters_no_backdrop_reset == 0) {
+        BackDrop_ResetColours();
+    }
+    TextCrawl_Init(&TextCrawl_LSW, Area, 1);
     loadareadata_loadlevel = 1;
     WorldInfo_ReArrangeBuffers(Area, last_area);
     SetBackgroundMusic(1);
+
+    if (load_type == 2 && SuperOptions.music_enabled != 0 && NOSOUND == 0 && NOMUSIC == 0) {
+        static const char *crawl_music[] = {
+            "Ep1_TextCrawl", "Ep2_TextCrawl", "Ep3_TextCrawl",  "Ep4_TextCrawl",
+            "Ep5_TextCrawl", "Ep6_TextCrawl", "Ep1_EndCredits", "Ep2_EndCredits",
+        };
+        const i32 episode = Area == -1 ? -1 : static_cast<i8>(ADataList[Area].episode_index);
+        if (Arcade == 0 && episode != -1) {
+            const i32 handle = music_man.GetTrackHandle(TRACK_CLASS_QUIET, crawl_music[episode]);
+            music_man.SelectTrackByHandle(TRACK_CLASS_QUIET, handle);
+            if (music_man.GetTrackHandle(TRACK_CLASS_QUIET, NULL) != -1) {
+                music_man.PlayTrack(TRACK_CLASS_QUIET);
+            }
+        } else {
+            GamePlayMusic(TITLES_LDATA, 0, &Game.options_save);
+        }
+    }
     bgPostRequest(LoadAreaData, NULL, NULL, 0);
 
-    i32 icon_stage = 0;
+    i32 icon_stage = HUB_ADATA != NULL && HUB_ADATA->index == Area ? 0 : 2;
     f32 icon_time = 0.0f;
-    const bool show_hub_character_icons = HUB_ADATA != NULL && HUB_ADATA->index == Area;
-    bool loading_screen_active = true;
-    bool wipe_started = false;
+    // The loader starts in the character-load phase on every route.  The first
+    // loop pass clears it immediately for non-hub areas; hub loads keep it set
+    // until UpdateCharacterLoad has drained the pending request.
+    bool character_load_active = true;
+    i32 skip_text_scroll = 0;
+    i32 draw_touch_prompt = 0;
+    f32 touch_prompt_time = 0.0f;
 
-    while (!wipe_started) {
+    while (true) {
+        if (HUB_ADATA != NULL && HUB_ADATA->index == Area && character_load_active && AreaDataLoaded != 0 &&
+            waiting_for_character == -1) {
+            static i32 lastLoadedCharacter = -1;
+            if (hub_character_ready != -1) {
+                lastLoadedCharacter = hub_character_ready;
+                hub_character_ready = -1;
+            }
+            UpdateCharacterLoad();
+            if (waiting_for_character == -1) {
+                hub_character_ready = lastLoadedCharacter;
+                character_load_active = false;
+                if (load_type == 2) {
+                    skip_text_scroll = 1;
+                    draw_touch_prompt = 0;
+                    MechSystems::SkipTextScroll = 0;
+                }
+            }
+        } else if (HUB_ADATA == NULL || HUB_ADATA->index != Area) {
+            character_load_active = false;
+        }
+
         NuFrameBegin();
         NuCameraSet(&global_camera);
         readpads_always = 1;
         ReadPads();
         UpdateTimer(&GlobalTimer);
-        load_time += FRAMETIME;
+        Game.field30_0x7c2c += FRAMETIME;
+        LoadTime += FRAMETIME;
+
+        if (load_type == 2 && LoadWait == LOADWAITTIME && LoadTime < 45.0f && !skip_text_scroll) {
+            if (NuSound3LoadingSfx() == 0 || LoadTime >= 20.0f) {
+                const u32 skip_buttons = GAMEPAD_JUMP | GAMEPAD_START | GAMEPAD_SPECIAL | GAMEPAD_ACTION | GAMEPAD_TAG;
+                if (HUB_ADATA != NULL && HUB_ADATA->index == Area) {
+                    skip_text_scroll = true;
+                    draw_touch_prompt = false;
+                } else if (((GamePad[0].buttons_pressed | GamePad[1].buttons_pressed) & skip_buttons) != 0 ||
+                           NuKeyboard_db(1) != 0 || MechSystems::SkipTextScroll != 0) {
+                    skip_text_scroll = true;
+                    draw_touch_prompt = false;
+                    MechSystems::SkipTextScroll = 0;
+                } else {
+                    draw_touch_prompt = true;
+                    touch_prompt_time += FRAMETIME;
+                }
+            }
+        }
 
         if (icon_stage == 0 &&
             (CharacterDataLoad == 2 || (CharacterDataLoad != 0 && APICharacterLoaded(PlayerID[0]) != NULL &&
@@ -602,91 +734,136 @@ void LoadAreaCharacters() {
                 icon_stage = 2;
             }
         }
+        if (load_type == 2) {
+            icon_stage = 2;
+        }
 
         BackDrop_Update(FRAMETIME);
         BackDrop_UpdateColours(1);
 
-        legoSetMusicVolume((load_wait / 0.1f) * music_volume);
+        legoSetMusicVolume((LoadWait / LOADWAITTIME) * music_volume);
         if (NOSOUND == 0) {
             NuSound3Update();
             music_man.Process(FRAMETIME);
         }
 
         NuRndrBeginScene(-1);
-        NuRndrGradClear(0xf00, static_cast<i32>(0x80000000u), static_cast<i32>(0x80000000u), 1.0f);
-        BackDrop_Draw(load_time < 0.5f ? load_time * 2.0f : 1.0f, 1);
+        if (HUB_ADATA != NULL && HUB_ADATA->index == Area) {
+            const u32 top_colour = 0x80000000u | (static_cast<u32>(backdrop_top_b) & 0xff) << 16 |
+                                   (static_cast<u32>(backdrop_top_g) & 0xff) << 8 |
+                                   (static_cast<u32>(backdrop_top_r) & 0xff);
+            const u32 bottom_colour = 0x80000000u | (static_cast<u32>(backdrop_bot_b) & 0xff) << 16 |
+                                      (static_cast<u32>(backdrop_bot_g) & 0xff) << 8 |
+                                      (static_cast<u32>(backdrop_bot_r) & 0xff);
+            NuRndrGradClear(0xf00, static_cast<i32>(top_colour), static_cast<i32>(bottom_colour), 1.0f);
+        } else {
+            NuRndrGradClear(0xf00, static_cast<i32>(0x80000000u), static_cast<i32>(0x80000000u), 1.0f);
+        }
+        const f32 backdrop_alpha =
+            loadareacharacters_no_backdrop_reset == 0 && LoadTime < 0.5f ? LoadTime * 2.0f : 1.0f;
+        BackDrop_Draw(backdrop_alpha, 1);
 
-        if (icon_stage == 1 && show_hub_character_icons && icon_time > 0.0f) {
-            const f32 wobble =
-                NuTrigTable[(static_cast<i32>(NuFmod(load_time, 1.0f) * 65536.0f) >> 1) & 0x7fff] * 0.15f;
-
-            if (icon_time < 3.7f) {
-                f32 alpha = 1.0f;
-                f32 x = -0.106875f;
-                if (icon_time < 0.6f) {
-                    const f32 progress = icon_time / 0.6f;
-                    const i32 angle = static_cast<i32>(progress * 16384.0f);
-                    x = -(NuTrigTable[(angle >> 1) & 0x7fff] * -0.3f + 0.406875f);
-                    alpha = progress;
-                } else if (icon_time >= 3.1f) {
-                    alpha = 1.0f - (icon_time - 3.1f) / 0.6f;
-                }
-                drawcharicon_find = 1;
-                DrawCharIcon(PlayerID[0], x, 0.16625f, 0.0f, 0.35f, 0xa6, alpha, (0.85f + wobble) * alpha, 1, NULL);
+        if (load_type == 2) {
+            f32 crawl_alpha = 1.0f;
+            if (AreaDataLoaded != 0 && !character_load_active && LoadWait >= 0.1f) {
+                crawl_alpha = (LoadWait - 0.1f) / (LOADWAITTIME - 0.1f);
             }
+            if (crawl_alpha < 0.0f) {
+                crawl_alpha = 0.0f;
+            }
+            TextCrawl_Draw(FRAMETIME, 0, crawl_alpha, NULL);
+            SetQFont2D();
+
+            if (draw_touch_prompt) {
+                const f32 prompt_wave =
+                    NuTrigTable[((static_cast<i32>(NuFmod(touch_prompt_time, 1.0f) * 65536.0f) + 0x4000) >> 1) &
+                                0x7fff];
+                const i32 prompt_alpha = static_cast<i32>(32.0f - prompt_wave * 32.0f);
+                Text3DEx(TTab[tTOUCHTOSTART], 0.0f, 0.745f, 1.0f, 0.4f, 0.4f, 0.4f, 0, 255, 255, 255, prompt_alpha);
+            }
+        }
+
+        if (LoadWait == LOADWAITTIME && HUB_ADATA != NULL && HUB_ADATA->index == Area && CharacterDataLoad != 0 &&
+            icon_time > 0.0f && icon_time < 3.7f) {
+            const f32 wobble = NuTrigTable[(static_cast<i32>(NuFmod(LoadTime, 1.0f) * 65536.0f) >> 1) & 0x7fff] * 0.15f;
+            const bool widescreen = Game_OptionsSave != NULL && Game_OptionsSave->field11_0xb != 0;
+            const f32 icon_x = widescreen ? 0.106875f : 0.1425f;
+            const f32 icon_travel = widescreen ? 0.406875f : 0.4425f;
+            const f32 icon_scale = widescreen ? 0.35f : 0.4f;
+
+            f32 alpha = 1.0f;
+            f32 x = -icon_x;
+            if (icon_time < 0.6f) {
+                const f32 progress = icon_time / 0.6f;
+                const i32 angle = static_cast<i32>(progress * 16384.0f);
+                x = -(NuTrigTable[(angle >> 1) & 0x7fff] * -0.3f + icon_travel);
+                alpha = progress;
+            } else if (icon_time >= 3.1f) {
+                alpha = 1.0f - (icon_time - 3.1f) / 0.6f;
+            }
+            drawcharicon_find = 1;
+            DrawCharIcon(PlayerID[0], x, 0.16625f, 0.0f, icon_scale, 0xa6, alpha, (0.85f + wobble) * alpha, 1, NULL);
 
             const f32 second_time = icon_time - 0.25f;
             if (second_time > 0.0f && second_time < 3.7f) {
                 f32 alpha = 1.0f;
-                f32 x = 0.106875f;
+                f32 x = icon_x;
                 if (second_time < 0.6f) {
                     const f32 progress = second_time / 0.6f;
                     const i32 angle = static_cast<i32>(progress * 16384.0f);
-                    x = NuTrigTable[(angle >> 1) & 0x7fff] * -0.3f + 0.406875f;
+                    x = NuTrigTable[(angle >> 1) & 0x7fff] * -0.3f + icon_travel;
                     alpha = progress;
                 } else if (second_time >= 3.1f) {
                     alpha = 1.0f - (second_time - 3.1f) / 0.6f;
                 }
                 drawcharicon_find = 1;
-                DrawCharIcon(PlayerID[1], x, -0.16625f, 0.0f, 0.35f, 0xa5, alpha, (0.85f - wobble) * alpha, 1, NULL);
+                DrawCharIcon(PlayerID[1], x, -0.16625f, 0.0f, icon_scale, 0xa5, alpha, (0.85f - wobble) * alpha, 1,
+                             NULL);
             }
+        }
+
+        if (HUB_ADATA == NULL || HUB_ADATA->index != Area) {
+            NuRndrEndScene();
+            FadeSys.Update();
+            FadeSys.Draw();
+            NuRndrBeginScene(-1);
         }
 
         if (theGameThings != NULL) {
             static_cast<ThingManager *>(theGameThings)->RenderThings(NULL);
         }
         NuRndrEndScene();
-        FadeSys.Update();
-        FadeSys.Draw();
 
         edGraEnableTerrainSwap();
         FRAMETIME = NuFrameEnd();
         edGraDisableTerrainSwap();
 
-        if (AreaDataLoaded != 0 && (!show_hub_character_icons || icon_stage == 2)) {
-            if (load_wait > 0.0f) {
-                load_wait -= FRAMETIME;
-                if (load_wait < 0.0f) {
-                    load_wait = 0.0f;
+        if (AreaDataLoaded != 0 && !character_load_active &&
+            ((HUB_ADATA == NULL || HUB_ADATA->index != Area) || icon_stage == 2)) {
+            const bool hold_text_crawl = load_type == 2 && LoadTime < 45.0f && !skip_text_scroll;
+            if (LoadWait > 0.0f && !hold_text_crawl) {
+                LoadWait -= FRAMETIME;
+                if (LoadWait < 0.0f) {
+                    LoadWait = 0.0f;
                 }
-            } else if (loading_screen_active) {
-                loading_screen_active = false;
-            } else {
+            } else if (LoadWait <= 0.0f) {
                 FADETYPE wipe = {2};
                 FadeSys.SetFade(wipe, 0);
                 NeedScreenGrab(1);
                 GrabStillScreen();
-                wipe_started = true;
+                break;
             }
         }
     }
 
+    CutBorderScale = 0.0f;
     MainRenderTime = 1.0f;
     music_man.StopAll(0);
     MusicClearAll();
     SoundKillAll();
     legoSetMusicVolume(music_volume);
     textcrawlactive = 0;
+    MechSystems::Get()->UnhookClickToPressStart();
     if (loadareadata_loadlevel != 0) {
         loadareadata_loadlevel = 0;
         loadareacharacters_loadedlevel = 1;

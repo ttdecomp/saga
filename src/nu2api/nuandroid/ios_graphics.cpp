@@ -2,6 +2,7 @@
 
 #include <GLES2/gl2.h>
 #include <pthread.h>
+#include <sched.h>
 #include <string.h>
 #include <time.h>
 
@@ -88,8 +89,27 @@ char *NuIOS_GetAppBundlePath(void) {
     return s_bundlePath;
 }
 
-u32 __attribute__((weak)) NuIOS_YieldThread(void) {
-    UNIMPLEMENTED();
+i32 g_bgloadAsFastAsPossibleHack;
+extern "C" i32 NuIOS_IsMidRangeDevice(void);
+
+u32 NuIOS_YieldThread(void) {
+    static u32 count;
+
+    u32 frequency;
+    if (NuIOS_IsLowEndDevice()) {
+        if (g_bgloadAsFastAsPossibleHack == 0) {
+            return sched_yield();
+        }
+        frequency = 8;
+    } else if (NuIOS_IsMidRangeDevice()) {
+        frequency = g_bgloadAsFastAsPossibleHack != 0 ? 8 : 2;
+    } else {
+        frequency = g_bgloadAsFastAsPossibleHack != 0 ? 4 : 2;
+    }
+
+    if (++count % frequency == 0) {
+        return sched_yield();
+    }
     return 0;
 }
 

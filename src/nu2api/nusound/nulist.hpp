@@ -23,6 +23,10 @@ class NuListNodeBase {
         return this->next;
     }
 
+    NuListNodeBase *GetPrev() const {
+        return this->prev;
+    }
+
     void Remove() {
         if (prev != NULL) {
             prev->next = next;
@@ -56,25 +60,26 @@ template <typename T> class NuList {
     }
 
     ~NuList() {
-        while (head != tail) {
-            Remove(head);
+        while (Head() != tail) {
+            Remove(Head());
         }
     }
 
     void Append(NuListNode<T> *node) {
         NuListNodeBase *tail = this->tail;
+        NuListNodeBase *last = tail->GetPrev();
         tail->SetPrev(node);
 
         node->SetNext(tail);
-        node->SetPrev(head);
+        node->SetPrev(last);
 
-        head->SetNext(node);
+        last->SetNext(node);
 
         length++;
     }
 
     NuListNodeBase *Head() const {
-        return this->head;
+        return this->head->GetNext();
     }
 
     NuListNodeBase *Tail() const {

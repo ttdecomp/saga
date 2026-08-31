@@ -333,6 +333,7 @@ struct MechObjectInterface {
 // (RemoveDependancies/EnterLevel(ThingLevelData)/ExitLevel(ThingLevelData)/
 //  Effects keep the BaseThing slots).
 struct MechSystems : BaseThing {
+    static u8 SkipTextScroll;
     static MechSystems *Get();
     virtual ~MechSystems();
     char const *GetName() override;

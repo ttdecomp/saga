@@ -43,7 +43,8 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(vorbis)
 
-target_link_libraries(saga PRIVATE SDL3::SDL3 vorbisfile vorbis Ogg::ogg)
+add_squish()
+target_link_libraries(saga PRIVATE SDL3::SDL3 vorbisfile vorbis Ogg::ogg custom_squish)
 target_compile_definitions(saga PRIVATE HOST_BUILD)
 target_compile_options(saga PRIVATE -pthread)
 set(SAGA_WASM_SHELL "${CMAKE_CURRENT_SOURCE_DIR}/src/host-wasm-shell.html")

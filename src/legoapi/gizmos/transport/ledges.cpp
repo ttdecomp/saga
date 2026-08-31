@@ -2,6 +2,10 @@
 
 #include "decomp.h"
 
+struct LEDGEPROGRESS {
+    i32 state[8];
+};
+
 static i32 Ledges_GetMaxGizmos(void *ledge) {
     UNIMPLEMENTED();
     return {};
@@ -48,8 +52,15 @@ static void *Ledges_AllocateProgressData(VARIPTR *, VARIPTR *) {
     return {};
 }
 
-static void Ledges_ClearProgress(void *, void *) {
-    UNIMPLEMENTED();
+static void Ledges_ClearProgress(void *, void *progress_data) {
+    LEDGEPROGRESS *progress = (LEDGEPROGRESS *)progress_data;
+    if (progress == NULL) {
+        return;
+    }
+
+    for (i32 i = 0; i < 8; i++) {
+        progress->state[i] = -1;
+    }
 }
 
 static void Ledges_StoreProgress(void *, void *, void *) {

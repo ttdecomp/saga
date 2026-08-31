@@ -24,7 +24,7 @@ void NuSoundLoaderOGG::OGGFileCallbacks::SetFile(NUFILE file) {
     this->file = file;
 }
 
-NuSoundLoaderOGG::NuSoundLoaderOGG() {
+NuSoundLoaderOGG::NuSoundLoaderOGG() : buffer(NULL) {
 }
 
 NuSoundStreamDesc *NuSoundLoaderOGG::CreateHeader() {
@@ -33,7 +33,7 @@ NuSoundStreamDesc *NuSoundLoaderOGG::CreateHeader() {
         "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound_loader_ogg.cpp:280");
 
     if (header != NULL) {
-        new (header) NuSoundHeaderOGG();
+        new (header) NuSoundHeaderOGG;
     }
 
     return header;
@@ -42,13 +42,15 @@ NuSoundStreamDesc *NuSoundLoaderOGG::CreateHeader() {
 bool NuSoundLoaderOGG::SeekPCMSample(u64 index) {
     NuIOS_IsLowEndDevice();
 
-    i32 ret = ov_pcm_seek(&desc->ogg_file, index);
+    NuSoundHeaderOGG *header = (NuSoundHeaderOGG *)desc;
+    i32 ret = ov_pcm_seek(&header->ogg_file, index);
     return ret == 0;
 }
 
 bool NuSoundLoaderOGG::SeekTime(f64 seconds) {
     NuIOS_IsLowEndDevice();
-    i32 iVar2 = ov_time_seek(&desc->ogg_file, seconds);
+    NuSoundHeaderOGG *header = (NuSoundHeaderOGG *)desc;
+    i32 iVar2 = ov_time_seek(&header->ogg_file, seconds);
     return iVar2 == 0;
 }
 
@@ -83,17 +85,29 @@ long NuSoundLoaderOGG::OggCallbackTell(void *callbacks) { // NOLINT(google-runti
 }
 
 bool NuSoundLoaderOGG::SeekRawData(u64 position) {
-    return NuFileSeek(file, (i64)position, NUFILE_SEEK_START) != 0;
+    u64 data_offset = this->desc->GetDataOffset();
+    return NuFileSeek(file, data_offset + position, NUFILE_SEEK_START) != 0;
 }
 
 i32 NuSoundLoaderOGG::OpenFileForStreaming(const char *path, bool flag) {
-    (void)flag;
+    if (!flag) {
+        return NuSoundLoader::OpenFileForStreaming(path, flag);
+    }
     this->file = NuFileOpen((char *)path, NUFILE_READ);
-    return this->file != 0;
+    return this->file == 0 ? 2 : 1;
 }
 
 void NuSoundLoaderOGG::Close() {
-    NuSoundLoader::CloseStream();
+    if (this->desc != NULL) {
+        NuIOS_IsLowEndDevice();
+        NuSoundHeaderOGG *header = (NuSoundHeaderOGG *)this->desc;
+        ov_clear(&header->ogg_file);
+    }
+    if (this->file != 0) {
+        NuFileClose(this->file);
+    }
+    FreeMemoryBuffer();
+    this->file = 0;
 }
 
 usize NuSoundLoaderOGG::OggCallbackRead(void *dest, usize count, usize size, void *callbacks_) {
@@ -103,7 +117,8 @@ usize NuSoundLoaderOGG::OggCallbackRead(void *dest, usize count, usize size, voi
 i32 NuSoundLoaderOGG::ReadHeader(NuSoundStreamDesc *desc) {
     NuIOS_IsLowEndDevice();
 
-    OggVorbis_File *ogg_file = &desc->ogg_file;
+    NuSoundHeaderOGG *header = (NuSoundHeaderOGG *)desc;
+    OggVorbis_File *ogg_file = &header->ogg_file;
 
     file_callbacks.SetFile(file);
 
@@ -125,13 +140,21 @@ i32 NuSoundLoaderOGG::ReadHeader(NuSoundStreamDesc *desc) {
         if (info != NULL) {
             channels = info->channels;
             u16 rate = info->rate;
-            desc->sample_rate = rate;
-            desc->bits_per_channel = 16;
-            desc->format_id = -2;
-            desc->num_channels = channels;
-            desc->block_size = channels * 2;
-            desc->samples_per_second = rate * channels * 2;
-            desc->extended_data_size = 0x16;
+            header->sample_rate = rate;
+            header->bits_per_channel = 16;
+            header->format_id = -2;
+            header->num_channels = channels;
+            header->block_size = channels * 2;
+            header->samples_per_second = rate * channels * 2;
+            header->extended_data_size = 0x16;
+            *(u16 *)&header->extended_data[0] = 0x10;
+            if (channels > 0) {
+                u32 channel_mask = 0;
+                for (u32 channel = 0; channel < (u32)channels; channel++) {
+                    channel_mask |= 1 << channel;
+                }
+                *(u32 *)&header->extended_data[2] = channel_mask;
+            }
 
             // header->extended_data[0] = 0x10;
             // if (channels > 0) {
@@ -145,16 +168,16 @@ i32 NuSoundLoaderOGG::ReadHeader(NuSoundStreamDesc *desc) {
             //     *(u32 *)((header->parent).extended_data + 1) = uVar2;
             // }
 
-            desc->file_size = NuFileOpenSize(file);
+            header->encoded_length_bytes = NuFileOpenSize(file);
 
             u32 total = ov_pcm_total(ogg_file, -1);
-            desc->decoded_length_bytes = desc->block_size * total;
+            header->decoded_length_bytes = header->block_size * total;
 
             u32 pcm_total = ov_pcm_total(ogg_file, -1);
-            desc->length_samples = pcm_total;
+            header->length_samples = pcm_total;
 
             double time_total = ov_time_total(ogg_file, -1);
-            desc->length_seconds = (float)time_total;
+            header->length_seconds = (float)time_total;
 
             return 1;
         }
@@ -163,10 +186,15 @@ i32 NuSoundLoaderOGG::ReadHeader(NuSoundStreamDesc *desc) {
 
         FreeMemoryBuffer();
     }
+
+    return 3;
 }
 
 void NuSoundLoaderOGG::FreeMemoryBuffer() {
-    NU_FREE(buffer);
+    if (buffer != NULL) {
+        NU_FREE(buffer);
+        buffer = NULL;
+    }
 }
 
 NuSoundStreamDesc::DataFormat NuSoundHeaderOGG::GetDecodedDataFormat() const {
@@ -181,7 +209,7 @@ u64 NuSoundHeaderOGG::GetLengthSamples() const {
     return length_samples;
 }
 
-double NuSoundHeaderOGG::GetLengthSeconds() const {
+f32 NuSoundHeaderOGG::GetLengthSeconds() const {
     return length_seconds;
 }
 
@@ -226,5 +254,5 @@ u16 NuSoundHeaderOGG::GetExtendedDataSize() const {
 }
 
 void *NuSoundHeaderOGG::GetExtendedData() const {
-    return extended_data;
+    return (void *)extended_data;
 }

@@ -92,6 +92,8 @@ NuSoundVoice::NuSoundVoice(NuSoundSource *sound_source, bool loop) {
 }
 
 NuSoundVoice::~NuSoundVoice() {
+    this->sound_source->VoiceRelease();
+    this->sound_source->Unlock();
 }
 
 // ---------------------------------------------------------------------------

@@ -18,14 +18,16 @@ class NuSoundSample : public NuSoundSource {
     };
     enum class ErrorState {
         NONE = 0,
+        FILE_NOT_FOUND = 1,
+        OUT_OF_MEMORY = 2,
+        UNSUPPORTED = 3,
     };
 
   protected:
-    NuSoundBuffer buffer;
-    NuSoundSystem::FileType file_type;
-
     i32 field1_0x20;
     i32 field2_0x24;
+    NuSoundBuffer buffer;
+    NuSoundSystem::FileType file_type;
 
   public:
     NuSoundSample *next;
@@ -62,7 +64,7 @@ class NuSoundSample : public NuSoundSource {
     virtual bool IsLocked() const;
     void Lock();
     void Unlock();
-    void Unload();
+    i32 Unload();
 
     // NuSoundSource overrides (the original dispatched through the source
     // vtable; Play() calls RequestBuffer to obtain its initial buffers).

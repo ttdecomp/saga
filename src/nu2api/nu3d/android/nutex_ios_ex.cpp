@@ -153,8 +153,28 @@ GLuint NuIOS_CreateGLTexFromFile(const char *filename) {
 }
 
 GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, i32 *width, i32 *height, bool is_pvrtc) {
-    UNIMPLEMENTED();
-    return {};
+    const i32 platform = NuPlatform::Get()->GetCurrentPlatform();
+    if (is_pvrtc) {
+        const GLuint texture = NuIOS_CreateGLTexFromPVRInMemory(data, width, height);
+        if (texture != 0) {
+            return texture;
+        }
+    } else if (platform <= ANDROID_ETC1_PLATFORM) {
+        u32 platform_bit = 1;
+        platform_bit <<= platform;
+        if ((platform_bit & 0x1a00) != 0) {
+            const GLuint texture = NuIOS_CreateGLTexFromMemoryDDS(data, width, height);
+            if (texture != 0) {
+                return texture;
+            }
+        } else if ((platform_bit & 0x0500) != 0) {
+            const GLuint texture = NuIOS_CreateGLTexFromPVRInMemory(data, width, height);
+            if (texture != 0) {
+                return texture;
+            }
+        }
+    }
+    return loadDefaultTexture(0, 0, 0x20, GL_TEXTURE_2D, GL_TEXTURE_2D);
 }
 
 GLuint loadDefaultTexture(GLuint texture, GLint level, GLsizei size, GLenum texture_type, GLenum target) {
@@ -623,7 +643,7 @@ i32 GetMipOffset(i32 width, i32 height, NUTEXFORMAT format, i32 depth, bool isCu
         depth = 1;
     }
 
-    isAuto = targetMip < 0 || targetSlice < 0;
+    isAuto = targetMip < 0 && targetSlice < 0;
 
     if (isAuto != 0) {
         sliceLimit = 5;
@@ -641,11 +661,12 @@ i32 GetMipOffset(i32 width, i32 height, NUTEXFORMAT format, i32 depth, bool isCu
     i32 bytesPerBlockOrPixel;
     i32 blockWidth;
 
-    if (format < 119) {
-        isCompressed = FormatIsCompressedTable[format];
-        minBlocks = FormatMinBlocksYTable[format];
-        bytesPerBlockOrPixel = FormatBytesPerElementTable[format];
-        blockWidth = FormatBlockWidthTable[format];
+    if (format > 0 && format < 119) {
+        const i32 formatIndex = format - 1;
+        isCompressed = FormatIsCompressedTable[formatIndex];
+        minBlocks = FormatMinBlocksYTable[formatIndex];
+        bytesPerBlockOrPixel = FormatBytesPerElementTable[formatIndex];
+        blockWidth = FormatBlockWidthTable[formatIndex];
     } else {
         isCompressed = false;
         minBlocks = 1;
@@ -715,8 +736,9 @@ i32 GetMipOffset(i32 width, i32 height, NUTEXFORMAT format, i32 depth, bool isCu
 void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, bool isCubemap, i32 mips,
                      NUTEXFORMAT format, u32 &glFormat, u32 &glInternalFormat, u32 glType, bool isCompressed) {
     u32 faceTarget = GL_TEXTURE_CUBE_MAP_POSITIVE_X;
+    const i32 faceCount = isCubemap ? 6 : 1;
 
-    for (i32 loopCounter; loopCounter < isCubemap ? 6 : 1; faceTarget++) {
+    for (i32 loopCounter = 0; loopCounter < faceCount; ++loopCounter, ++faceTarget) {
         if (mips != 0) {
             u32 texTarget = GL_TEXTURE_2D;
             if (isCubemap) {
@@ -816,8 +838,6 @@ void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, 
                 }
             }
         }
-
-        loopCounter = faceTarget - (GL_TEXTURE_CUBE_MAP_POSITIVE_X - 1);
     }
 
     if (!isCompressed) {

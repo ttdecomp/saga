@@ -19,7 +19,7 @@ typedef struct AREADATA_s {
     byte cheat;
     byte field30_0x7f;
     i32 field31_0x80;
-    i16 challenge_trial_time;
+    u16 challenge_trial_time;
     byte episode_index;
     byte area_index;
     i16 area_music;
@@ -38,6 +38,7 @@ extern "C" {
     extern AREADATA *ADataList;
     extern AREADATA *HUB_ADATA;
     extern i32 Area;
+    extern i32 loadareacharacters_no_backdrop_reset;
 #ifdef __cplusplus
 }
 

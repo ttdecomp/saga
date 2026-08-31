@@ -7,6 +7,12 @@ struct AIGROUP_s;
 struct AIROW_s;
 struct nufpar_s;
 
+typedef void (*PREPARINGSPECIALMOVEFN)(AIPACKET_s *, APIOBJECT_s *, i32);
+typedef void (*MIDSPECIALMOVEFN)(AISYS_s *, AIPACKET_s *, APIOBJECT_s *);
+
+PREPARINGSPECIALMOVEFN PreparingForSpecialMoveFn = NULL;
+MIDSPECIALMOVEFN MidSpecialMoveFn = NULL;
+
 static __used__ void StarWars_PrepareHatch(AIPACKET_s *, APIOBJECT_s *, i32) {
 }
 
@@ -51,10 +57,12 @@ static __used__ void RowMoveTowards(AIGROUP_s *, AIROW_s *, AIROW_s *, APIOBJECT
 
 extern "C" {
 
-    void InitFn_MidSpecialMove(void) {
+    void InitFn_MidSpecialMove(MIDSPECIALMOVEFN function) {
+        MidSpecialMoveFn = function;
     }
 
-    void InitFn_PreparingForSpecialMove(void) {
+    void InitFn_PreparingForSpecialMove(PREPARINGSPECIALMOVEFN function) {
+        PreparingForSpecialMoveFn = function;
     }
 
 } // extern "C"

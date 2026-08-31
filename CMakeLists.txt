@@ -27,6 +27,19 @@ endif()
 
 project(saga)
 
+if(CMAKE_VERSION VERSION_LESS 3.12)
+    find_package(PythonInterp REQUIRED)
+    set(Python3_EXECUTABLE ${PYTHON_EXECUTABLE})
+else()
+    find_package(Python3 REQUIRED COMPONENTS Interpreter)
+endif()
+
+add_custom_target(check_host_boundary ALL
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/check_host_boundary.py
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    COMMENT "Checking host/shared source boundary"
+)
+
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
 include("${CMAKE_SOURCE_DIR}/cmake/ogg-vorbis.cmake")
@@ -122,28 +135,38 @@ file(GLOB_RECURSE SAGA_SOURCE_FILES CONFIGURE_DEPENDS
 
 # add platform-specific source files and build rules
 if (BUILD_FOR_HOST)
-    # The host-tests/nuios/ files provide the platform glue for the host; do
-    # not also compile the Android originals (they would duplicate symbols and
-    # pull in Android-only dependencies such as libsquish).
+    # Input is a true platform backend. All other reconstructed Android source
+    # files stay in the host build so the harness exercises the same engine
+    # implementation as the target build.
     list(REMOVE_ITEM SAGA_SOURCE_FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/android/nutex_android.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/android/nutex_ios_ex.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/android/NuInputDevice_android.cpp
+        # An executable-level operator new/delete override is safe on the
+        # monolithic Android target, but interposes allocations made inside
+        # host C++ graphics/audio drivers. Let the host C++ runtime own global
+        # allocation; explicit NuMemory allocations still use the shared
+        # reconstructed manager.
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nucore/nunew.cpp
     )
 
     list(APPEND SAGA_SOURCE_FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/main.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/input/host_input.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/nutex_host.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/nutex_ios_ex.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/ios_graphics_host.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nuios/screen_host.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nucore/NuMemoryManager_host.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nusound/opensl_host.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nu3d/NuRenderDevice_host.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/host-tests/nu3d/nudlist_host.cpp
+        # Command-line harness. These files may inspect the game, but never
+        # provide symbols consumed by reconstructed game/engine code.
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/harness/main.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/harness/audio.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/harness/load.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/harness/window.cpp
+
+        # Minimal host platform boundary: one selected input backend and
+        # external API/filesystem adapters only.
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/platform/input.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/platform/compressed_texture.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/platform/documents.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/platform/egl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/platform/opensl.cpp
     )
 
     add_executable(saga ${SAGA_SOURCE_FILES})
+    add_dependencies(saga check_host_boundary)
 
     if(EMSCRIPTEN)
         set_target_properties(saga PROPERTIES OUTPUT_NAME index)
@@ -158,13 +181,19 @@ else()
     )
 
     add_executable(saga ${SAGA_SOURCE_FILES})
+    add_dependencies(saga check_host_boundary)
 
     include(src/target.cmake)
 endif()
 
 # set common compile options and definitions
 target_include_directories(saga PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
-target_compile_options(saga PRIVATE -fno-exceptions -fno-rtti -Wno-write-strings -DANDROID)
+target_compile_options(saga PRIVATE
+    -fno-exceptions
+    -Wno-write-strings
+    -DANDROID
+    $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
+)
 if(CMAKE_HOST_WIN32 AND NOT EMSCRIPTEN)
     set_target_properties(saga PROPERTIES ENABLE_EXPORTS TRUE)
     if(NOT BUILD_FOR_HOST)

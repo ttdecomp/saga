@@ -2,14 +2,13 @@
 
 #include "nu2api/nusound/nusound_system.hpp"
 
-// The Android NuSoundSystem: OpenSL ES device plumbing. InitAudioDevice /
-// ShutdownAudioDevice / UpdateAudioDevice are the hardware boundary — on the
-// Android target they stay as recorded; the HOST build replaces Init/Shutdown
-// with the same call flow over the fake OpenSL object model in
-// host-tests/nusound/opensl_host.cpp, which writes the mixed PCM to the real
-// host device through SDL3. Every other function here is decompiled
-// faithfully.
+// The Android NuSoundSystem: shared OpenSL ES device plumbing. The host exports
+// the same imported C ABI from its SDL-backed platform adapter.
 struct NuSoundAndroid : public NuSoundSystem {
+
+    void *mix_volume;
+    void *mix_reverb;
+    u32 reverb_properties[7];
 
     NuSoundAndroid();
     bool InitAudioDevice() override;

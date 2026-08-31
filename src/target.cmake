@@ -5,6 +5,11 @@ set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/ai/aisys/ais
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/edtools/edfile.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/gui/apimenu.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/menus/core/text.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/menus/screens/gamemenuall.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/menus/screens/menus.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/core/startup/game.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render/core/render.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gamelib/NewTerrain.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 
@@ -17,6 +22,8 @@ set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmo/base/g
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/world/level.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/core/input/qrand.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/characters/core/players.cpp PROPERTIES COMPILE_OPTIONS "-O2")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/characters/core/characters.cpp PROPERTIES COMPILE_OPTIONS "-O2")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai/game/creature.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/core/config/cheats.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/base/collection.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/props/doors/door.cpp PROPERTIES COMPILE_OPTIONS "-O3")
@@ -81,6 +88,8 @@ set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/trans
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/transport/tubes.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/gizmos/door/zipups.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/core/config/cheat.cpp PROPERTIES COMPILE_OPTIONS "-O3;-fPIE")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/characters/motion/camera.cpp PROPERTIES COMPILE_OPTIONS "-O2")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/render/light/lighting.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/NuRenderDevice.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nuscreen.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nu3d/nugscn.cpp PROPERTIES COMPILE_OPTIONS "-O3")
@@ -128,14 +137,22 @@ set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/tmclie
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nufile/android/nufile_android.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numusic/numusic.cpp PROPERTIES COMPILE_OPTIONS "-O2")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/numusic/sfx.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/audio/sfx.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/audio/audio.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nuplatform/nuplatform.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_loader.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_loader_ogg.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_loader_wav.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_decoder.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_sample.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_source.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_decoder_ogg.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound3_include.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_plain.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_buffer.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_streamer.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_memorymanager.cpp PROPERTIES COMPILE_OPTIONS "-O3")
@@ -148,4 +165,4 @@ add_ogg_vorbis()
 add_squish()
 target_link_libraries(saga PRIVATE custom_ogg_vorbis)
 target_link_libraries(saga PRIVATE custom_squish)
-target_link_libraries(saga PRIVATE GLESv2 EGL)
+target_link_libraries(saga PRIVATE GLESv2 EGL OpenSLES)

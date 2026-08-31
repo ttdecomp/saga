@@ -524,10 +524,12 @@ static __used__ void LocatorFunction_Blaster(instNUGCUTSCENE_s *, NUGCUTLOCATORS
     }
 }
 
-extern "C" __attribute__((weak)) NUGCUTLOCATORFNENTRY_s cutscene_locatorfns[] = {
-    {"blaster", 0, 0, 0, LocatorFunction_Blaster},
-    {NULL, 0, 0, 0, NULL},
-};
+extern "C" {
+    __attribute__((weak)) NUGCUTLOCATORFNENTRY_s cutscene_locatorfns[] = {
+        {"blaster", 0, 0, 0, LocatorFunction_Blaster},
+        {NULL, 0, 0, 0, NULL},
+    };
+}
 
 static __used__ void instNuGCutRigidSysEnd(instNUGCUTSCENE_s *, float) {
 }

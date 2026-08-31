@@ -44,6 +44,7 @@ void LevelObjects_InitForGame(LEVELOBJECT *tab, VARIPTR *buf, VARIPTR *buf_end, 
     LEVELOBJECT *entry;
 
     ExtraLevelObject_NameTableIndex = 0;
+    LEVELOBJECTMAX = max;
     ObjTabList = tab;
 
     // Walk the table from the start until the 0xff terminator, tracking
@@ -70,7 +71,7 @@ void LevelObjects_InitForGame(LEVELOBJECT *tab, VARIPTR *buf, VARIPTR *buf_end, 
     if (name_table_size > 0) {
         ExtraLevelObject_NameTable = (char *)buf->u8_ptr;
         ExtraLevelObject_NameTableSize = name_table_size;
-        buf->u32_ptr += name_table_size;
+        buf->addr += name_table_size;
     }
 }
 

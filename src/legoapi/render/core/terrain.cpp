@@ -161,7 +161,11 @@ void LoadPartFile(WORLDINFO *world) {
 }
 void ScanTerrId(void *) {
 }
-void UnderWater(GameObject_s *) {
+i32 UnderWater(GameObject_s *object) {
+    if ((object->apiobj.field_0x27f & static_cast<u8>(~8u)) != 1) {
+        return 0;
+    }
+    return object->apiobj.field_0x218 >= object->apiobj.pos_y;
 }
 void ScanTerrain(i32, i32, i32) {
 }

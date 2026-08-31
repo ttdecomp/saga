@@ -1,6 +1,7 @@
 #include "decomp.h"
 #include "legoapi/items/base/apiobject.h"
 #include "legoapi/legoapi_types.h"
+#include "nu2api/numath/nufloat.h"
 
 #include <string.h>
 
@@ -68,7 +69,22 @@ extern "C" {
     void APIObjectLOSChecks(void) {
     }
 
-    void APIObjectVelocities(void) {
+    void APIObjectVelocities(GameObject_s *object) {
+        APIOBJECT &api = object->apiobj;
+        if (api.field_0x68 == 0.0f && api.field_0x70 == 0.0f) {
+            api.horizontal_velocity_magnitude = 0.0f;
+            api.velocity_magnitude = NuFabs(api.field_0x6c);
+            return;
+        }
+
+        const f32 horizontal_squared = api.field_0x68 * api.field_0x68 + api.field_0x70 * api.field_0x70;
+        api.horizontal_velocity_magnitude = NuFsqrt(horizontal_squared);
+
+        if (api.field_0x6c == 0.0f) {
+            api.velocity_magnitude = api.horizontal_velocity_magnitude;
+        } else {
+            api.velocity_magnitude = NuFsqrt(horizontal_squared + api.field_0x6c * api.field_0x6c);
+        }
     }
 
     void AddCollisionSphere(void) {

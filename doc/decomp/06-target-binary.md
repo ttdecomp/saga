@@ -181,6 +181,21 @@ rel.ro symbols** (474 rows in `readelf -sW` because each is listed in both `.dyn
 `ShaderManagerTemplate::shininessFactor`, `MechHintUIButton::PulseAgainTime` guard) live in
 `.data`, not rel.ro.
 
+### Recover initialized registries from the ELF
+
+Do not recreate a named initialized pointer table from the call sites, or keep only the
+entries needed by the current host utility. The unstripped ELF usually preserves the table's
+address and size, every pointed-to local function symbol, and its strings. Recover the exact
+entry order and flags from the original bytes, then express that complete initializer in the
+owning source file. This matters because parsers commonly persist a table index in loaded
+data; a shortened registry can parse successfully while dispatching the wrong function.
+
+For example, `readelf -sW res/libTTapp.so` reports `lego_aiactiondefs` as a 2,508-byte
+object and `lego_aiconditiondefs` as a 2,136-byte object. Their 12-byte entries can be read
+from `.data`; the name and function pointers resolve through `nm -an`, without guessing.
+Use ELF virtual addresses for the local file and add `0x10000` only when inspecting the same
+objects in Ghidra.
+
 ## 6. Ghidra project state (project `LegoDecompilation`, program `Android (x86) libTTapp.so`)
 
 | property | value |

@@ -1,5 +1,8 @@
 #include "decomp.h"
+#include "legoapi/characters/core/players.h"
+#include "legoapi/core/input/gamepads.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/world/world.h"
 #include "nu2api/nu3d/nutex.h"
 
 struct AIROW_s;
@@ -83,7 +86,18 @@ void GetNativeTextureFormatName(NUTEXFORMAT) {
 void CatIToX(char *, i32) {
 }
 
-__attribute__((weak)) void DoInput(WORLDINFO_s *) {
+void DoInput(WORLDINFO_s *world) {
+    if (world == NULL) {
+        world = WorldInfo_CurrentlyActive();
+    }
+
+    // This is the common prefix of the original function and the complete
+    // title/menu path: refresh both game-facing pad packets, then process the
+    // player drop-in state. The remaining original tail only handles in-level
+    // pause/resume and disconnected-pad cases.
+    ReadPad(0);
+    ReadPad(1);
+    PlayersDropInOut();
 }
 
 void CatI64ToX(char *, i64) {

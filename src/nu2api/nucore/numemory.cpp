@@ -259,7 +259,24 @@ void NuMemoryManager::GetBlockDebugBackTrace(void *, void **) {
 void NuMemoryManager::GetBlockDebugContext(void *) {
 }
 
-void NuMemoryManager::GetBlockSize(void *) {
+__attribute__((weak)) u32 NuMemoryManager::GetBlockSize(void *ptr) {
+    ValidateAddress(ptr, __FUNCTION__);
+
+    Header *header = (Header *)((usize)ptr - m_headerSize);
+    ValidateBlockIsAllocated(header, __FUNCTION__);
+    ValidateBlockEndTags(header, __FUNCTION__);
+
+    u32 total_size = (header->value & 0x87ffffff) * 4;
+    u32 payload_size = total_size - m_headerSize;
+    u32 *end_tag = (u32 *)((usize)header + total_size - 4);
+    u32 manager_index = *end_tag >> 27;
+    if (manager_index == 0x1f) {
+        manager_index = *(end_tag - 1);
+    } else {
+        manager_index--;
+    }
+
+    return payload_size - (manager_index > 0x1d ? 8 : 4);
 }
 
 void NuMemoryManager::GetCategoryAllocatedBytes(u16) {

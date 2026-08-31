@@ -13,6 +13,7 @@ struct HINT_s;
 #include "legoapi/world/levels/episode.h"
 #include "legoapi/world/level.h"
 #include "legoapi/characters/core/players.h"
+#include "legoapi/legoapi_types.h"
 #include "legoapi/props/doors/door.h"
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/props/system/socksys.h"
@@ -32,6 +33,27 @@ struct PLAYERITEMTYPE_s;
 struct PLAYERPACKET_s;
 struct SOCKPOSITION_s;
 struct TouchHolder;
+
+void CheckForPlayersTurnedOff();
+
+extern NUVEC plr_lastpos;
+
+extern void GetTopBot(GameObject_s *obj);
+extern void GameObjectDimensions(GameObject_s *obj);
+extern void GameObjectOrigin(GameObject_s *obj);
+extern void ResetRumble(RUMBLEPACKET *packet);
+extern void ResetLights(NUVEC *position, rtldata_s *data, void *set);
+extern void CurrentStart(GameObject_s *obj, i32 mode, i32 start);
+extern void InitSurfaceInfo(GameObject_s *obj);
+extern void SetObjOnSurface(GameObject_s *obj, i32 mode);
+extern void GizForce_ResetLOS(GameObject_s *obj);
+extern void PortalGameObject(GameObject_s *obj, i32 enable, i32 immediate, i16 portal, nugscn_s *scene);
+
+extern "C" void ResetMiniAnimPacket(void *packet, i32 animation);
+extern "C" void ComplexSockAngles(SOCKPOSITION *position);
+
+void ResetPlayerAI(GameObject_s *obj);
+void ResetPlayerMoves(GameObject_s *obj);
 
 void Players_Init(void) {
     memset(Player, 0, sizeof(Player));
@@ -705,7 +727,9 @@ NUVEC *Player_StartPos(GameObject_s *obj) {
     return PlayerStart[index].pos != NULL ? PlayerStart[index].pos : PlayerStart[0].pos;
 }
 
-void PlayersDropInOut() {
+i32 PlayersDropInOut() {
+    CheckForPlayersTurnedOff();
+    return 0;
 }
 
 void PlayerItem_GotAmmo(PLAYERITEM_s *) {
@@ -804,7 +828,156 @@ static __used__ void PlayerButton_UpdateHint(HINT_s *) {
 void KillPlayer(GameObject_s *, i32, i32, nuvec_s *) {
 }
 
-void ResetPlayer(GameObject_s *, i32, nuvec_s *, i32) {
+namespace {
+
+    constexpr f32 kInvalidSurfaceHeight = 2000000.0f;
+
+    void SyncPlayerSpawnPosition(GameObject_s *obj) {
+        const NUVEC &position = obj->apiobj.position;
+
+        obj->apiobj.pos_x = position.x;
+        obj->apiobj.pos_y = position.y;
+        obj->apiobj.pos_z = position.z;
+
+        obj->apiobj.start_position[0] = position.x;
+        obj->apiobj.start_position[1] = position.y;
+        obj->apiobj.start_position[2] = position.z;
+        obj->apiobj.initial_position[0] = position.x;
+        obj->apiobj.initial_position[1] = position.y;
+        obj->apiobj.initial_position[2] = position.z;
+
+        plr_lastpos = position;
+    }
+
+} // namespace
+
+void ResetPlayer(GameObject_s *obj, i32 reset_moves, nuvec_s *position, i32 snap_to_surface) {
+    if (obj == NULL) {
+        return;
+    }
+
+    const bool restore_hitpoints = obj->apiobj.field_0x27c != -1 && obj->field_0x7a5 == 0x2b;
+
+    if (reset_moves != 0) {
+        if (position == NULL) {
+            position = Player_StartPos(obj);
+        }
+        if (position != NULL) {
+            obj->apiobj.position = *position;
+        }
+
+        if (obj->apiobj.field_0x27c != -1) {
+            obj->field_0xf00 |= 0x40;
+        }
+
+        ResetPlayerMoves(obj);
+        SyncPlayerSpawnPosition(obj);
+
+        obj->apiobj.field_0x68 = v000.x;
+        obj->apiobj.field_0x6c = v000.y;
+        obj->apiobj.field_0x70 = v000.z;
+        obj->reset_velocity = v000;
+
+        GetTopBot(obj);
+        GameObjectDimensions(obj);
+        obj->field_0xe23 &= static_cast<u8>(~8u);
+        obj->use_model_origin = 0;
+        obj->apiobj.field_0x288 = 0;
+        GameObjectOrigin(obj);
+
+        ResetRumble(&obj->pad_gamepad->rumble_packet);
+        ResetLights(&obj->apiobj.position, &obj->light_data, WORLD->rtl_set);
+        ResetMiniAnimPacket(obj->mini_anim_packet, -1);
+
+        obj->sock_position.location.sock = -1;
+        obj->sock_position.location.segment = -1;
+        if (WORLD->sock_sys != NULL) {
+            ComplexSockPosition(WORLD->sock_sys, &obj->apiobj.position, -1, -1, &obj->sock_position);
+            ComplexSockAngles(&obj->sock_position);
+        }
+
+        u8 player_index = static_cast<u8>(obj->apiobj.field_0x27c);
+        if (player_index > 7) {
+            player_index = obj->apiobj.field_0x289;
+        }
+        player_index &= 7;
+
+        const u16 facing = static_cast<u16>(PlayerStart[player_index].angle);
+        obj->apiobj.pitch_angle = 0;
+        obj->apiobj.roll_angle = 0;
+        obj->apiobj.facing_angle = facing;
+        obj->apiobj.movement_facing_angle = facing;
+        obj->apiobj.field_0x276 = facing;
+        NuVecRotateY(&obj->facing_direction, &v001, facing);
+
+        obj->field_0xc34 = 0x3f800000;
+        obj->field_0xc38 = 0.0f;
+        CurrentStart(obj, 0, 1);
+        obj->field_0xe23 &= static_cast<u8>(~8u);
+        obj->field_0xefe &= static_cast<u8>(~4u);
+        obj->field_0xeff &= static_cast<u8>(~2u);
+        obj->apiobj.model_draw_result = 1;
+        obj->use_model_origin = 0;
+        obj->apiobj.field_0x288 = 0;
+        obj->field_0x1084 = 0;
+
+        InitSurfaceInfo(obj);
+        f32 surface_y = GetHoverPosY(obj);
+        if (snap_to_surface == 0 || (obj->apiobj.character_data->model_flags & 0x2000) != 0) {
+            if (surface_y != kInvalidSurfaceHeight) {
+                obj->apiobj.position.y = surface_y;
+                SyncPlayerSpawnPosition(obj);
+            }
+        } else {
+            SetObjOnSurface(obj, 0);
+        }
+
+        GizForce_ResetLOS(obj);
+        PortalGameObject(obj, 1, 1, -1, WORLD->current_gscn);
+
+        if ((ResetBits & 2) != 0 || obj->apiobj.field_0x287 != 0 || restore_hitpoints) {
+            SetHitPoints(obj, DEFAULT_PLAYERHITPOINTS);
+            obj->field_0xe38 = 4;
+        }
+        if ((ResetBits & 8) != 0) {
+            const i32 progress_index = static_cast<i8>(obj->apiobj.field_0x27c);
+            if (progress_index >= 0 && progress_index < 8) {
+                if (PlayerProgress[progress_index].field_0xb != 0) {
+                    obj->field_0xe31 = 1;
+                }
+                obj->field_0xe38 = PlayerProgress[progress_index].field_0x9;
+            }
+        }
+
+        ResetPlayerAI(obj);
+        obj->apiobj.previous_position[0] = obj->apiobj.position.x;
+        obj->apiobj.previous_position[1] = obj->apiobj.position.y;
+        obj->apiobj.previous_position[2] = obj->apiobj.position.z;
+        obj->field_0x10c8 = obj->apiobj.position.x;
+        obj->field_0x10cc = obj->apiobj.position.y;
+        obj->field_0x10d0 = obj->apiobj.position.z;
+        obj->field_0xdc8 = 0.0f;
+    } else {
+        obj->field_0xdc8 = 0.0f;
+    }
+
+    obj->field_0x1004 = 1.0f;
+    obj->field_0x101c = 0.0f;
+    obj->field_0xda8 = 0.0f;
+    obj->field_0xd78 = 1.0f;
+    obj->apiobj.field_0x214 = kInvalidSurfaceHeight;
+    obj->field_0xdbc = 0.0f;
+    obj->field_0xf1c = 0.0f;
+    obj->field_0xc54 = -1.0f;
+    obj->field_0xde0 = 0.0f;
+    obj->apiobj.field_0x287 = 0;
+    obj->field_0xe36 = 0;
+    obj->apiobj.field_0x285 = 0;
+    obj->apiobj.field_0x1f8 &= 0xfa83;
+    obj->apiobj.field_0x1fa &= static_cast<u8>(~2u);
+    obj->apiobj.field_0x1f4 &= ~0x100u;
+    obj->field_0xefc |= 0x80;
+    obj->field_0xe21 |= 0x80;
 }
 
 void ResetPlayerAI(GameObject_s *) {
@@ -917,4 +1090,18 @@ void AveragePlayerCurrentSpeedMul() {
 }
 
 void SetPlayer() {
+    if (Player[0] != NULL && static_cast<i8>(Player[0]->apiobj.field_0x1f8) < 0) {
+        player = Player[0];
+        if (Player[1] != NULL && static_cast<i8>(Player[1]->apiobj.field_0x1f8) < 0) {
+            player2 = Player[1];
+            return;
+        }
+    } else if (Player[1] != NULL && static_cast<i8>(Player[1]->apiobj.field_0x1f8) < 0) {
+        player = Player[1];
+    } else {
+        player = NULL;
+        return;
+    }
+
+    player2 = NULL;
 }

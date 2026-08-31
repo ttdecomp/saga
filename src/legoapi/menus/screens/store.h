@@ -3,6 +3,7 @@
 #include <stddef.h>
 
 #include "decomp.h"
+#include "nu2api/numath/nuvec.h"
 
 struct storepack_s {
     char *name;
@@ -22,10 +23,7 @@ struct storepack_s {
     u8 field14_0x11;
     u8 field15_0x12;
     u8 field16_0x13;
-    u8 field17_0x14;
-    u8 field18_0x15;
-    u8 field19_0x16;
-    u8 field20_0x17;
+    char *custodian_locator_set; // 0x14
     u8 field21_0x18;
     u8 field22_0x19;
     u8 field23_0x1a;
@@ -34,25 +32,15 @@ struct storepack_s {
     u8 field26_0x1d;
     u8 field27_0x1e;
     u8 field28_0x1f;
-    i16 *id;
-    u8 field30_0x24;
-    u8 field31_0x25;
-    u8 field32_0x26;
-    u8 field33_0x27;
-    u8 field34_0x28;
-    u8 field35_0x29;
-    u8 field36_0x2a;
-    u8 field37_0x2b;
-    u8 field38_0x2c;
-    u8 field39_0x2d;
-    u8 field40_0x2e;
-    u8 field41_0x2f;
-    u8 field42_0x30;
-    u8 field43_0x31;
-    u8 field44_0x32;
+    i16 *id;                  // 0x20
+    NUVEC custodian_position; // 0x24
+    u16 custodian_angle;      // 0x30
+    u8 field44_0x32;          // 0x32, camera socket or 0xff
     u8 field45_0x33;
 };
+DECOMP_ASSERT(sizeof(storepack_s) == 0x34, "STOREPACK size");
 typedef struct storepack_s STOREPACK;
+extern STOREPACK StorePack[11];
 
 typedef struct COLLECTID {
     i16 id;
@@ -66,3 +54,4 @@ typedef struct COLLECTID {
 } COLLECTID;
 
 i32 Store_FindPack(i32 id, char *name);
+i32 Store_IsPackUnlocked(i32 pack);

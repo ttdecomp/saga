@@ -1,4 +1,5 @@
 #!/bin/sh
+# Build a contact sheet from host harness framebuffer captures.
 set -eu
 out=${1:-.work/capture/montage.png}
 shift || true

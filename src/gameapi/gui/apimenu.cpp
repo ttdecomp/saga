@@ -19,6 +19,8 @@
 #include "nu2api/nu3d/numtl.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nucore/nustring.h"
+#include "nu2api/nucore/nupad.h"
+#include "nu2api/nucore/nuvideo.h"
 #include "nu2api/numusic/numusic.h"
 #include "nu2api/numath/nutrig.h"
 
@@ -56,9 +58,13 @@ extern "C" void NewMenu(i32 menu_id, i32 menu_y, i32 param3);
 extern "C" void BackupMenu(void);
 extern "C" void NuPadSetStatus(i32 port, i32 status);
 extern "C" void NuIOS_RecordFlurryEvent(char *event_name);
+extern "C" i32 NuIOS_IsWidescreen(void);
 f32 GameGetMusicVolume(OPTIONSSAVE_s *options);
+f32 GameSetSoundVolume(OPTIONSSAVE_s *options);
 i32 GameAudio_GetSfxId(i32 sfx);
 void legoSetMusicVolume(f32 volume);
+void Hint_LoadAllGameState(void);
+void NuIOS_RestoreInAppPurchases(void);
 void NewGame(void);
 void MenuDrawNewGame(MENU *menu);
 void MenuEnterNewGame(MENU *menu);
@@ -215,6 +221,7 @@ MENU GameMenu[10];
 
 i32 MenuSFX = -1;
 i32 MENUSFX_MENUMOVE = -1;
+i32 MENUSFX_MENUBACK = -1;
 i32 MENUSFX_MENUNOENTRY = -1;
 i32 MENUSFX_MENUSELECT = -1;
 i32 GameMenuLevel = -1;
@@ -236,7 +243,8 @@ extern i16 tCONTROLS;
 extern i16 tCONTROLLERCONNECTED;
 extern i16 tTOUCH;
 extern i16 tCONSOLE;
-extern "C" i32 TestForController();
+extern "C" bool TestForController();
+extern volatile u8 LSW_HintConditions[4];
 extern "C" void SmartTextEx(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u32 alignment,
                             u8 red, u8 green, u8 blue, f32 max_width, i32 max_lines, void *message_box,
                             i32 suppress_draw, u32 alpha);
@@ -308,9 +316,10 @@ i32 MenusUsed = RESERVED_MENUS_COUNT;
 i32 MenuLanguages = 1;
 char MenuHeader[64];
 
-static i32 header_r;
-static i32 header_g;
-static i32 header_b;
+i32 header_r;
+i32 header_g;
+i32 header_b;
+i32 MenuDisableHeaders;
 
 u8 MENUHEADERR = 0;
 u8 MENUHEADERG = 0x7f;
@@ -525,8 +534,7 @@ void MenuLoadTechnicalStrings(char *filepath, char *language, VARIPTR *buf, VARI
 static __used__ void MenuDrawShop(MENU *) {
 }
 static __used__ void MenuDrawTitles(MENU *) {
-    if (GameTimer.time_elapsed >= 3.0f && GameTimer.time_elapsed_mod_seconds < 0.666f && TTab != NULL &&
-        TTab[tTOUCHTOSTART] != NULL) {
+    if (GameTimer.time_elapsed >= 3.0f && GameTimer.time_elapsed_mod_seconds < 0.666f) {
         SmartTextEx(TTab[tTOUCHTOSTART], 0.0f, (pNuCam->fov / pNuCam->aspect) * -0.5f, 1.0f, MENUTEXTSCALE,
                     MENUTEXTSCALE, MENUTEXTSCALE, 0, 255, 255, 255, 1.7f, 1, NULL, 0,
                     static_cast<i32>(static_cast<f32>(MenuA) * newgamealpha));
@@ -612,49 +620,61 @@ static i32 UpdateTitleSequence(MENU *menu) {
     return 1;
 }
 static __used__ void MenuUpdateTitles(MENU *menu) {
-    if (UpdateTitleSequence(menu) != 0 || GameTimer.time_elapsed < 4.0f || GameTimer.time_elapsed < 3.0f) {
+    if (UpdateTitleSequence(menu) != 0) {
         return;
     }
-
-    if (menu->start_pressed == 0 && MechInputTouchMenuController::AnyTouchesThisFrame <= 0) {
+    if (GameTimer.time_elapsed < 4.0f) {
         return;
     }
+    if (GameTimer.time_elapsed >= 3.0f) {
+        if (menu->start_pressed == 0 && MechInputTouchMenuController::AnyTouchesThisFrame <= 0) {
+            return;
+        }
 
-    MechInputTouchMenuController::AnyTouchesThisFrame = 0;
-    NuPadSetStatus(0, 1);
-    NewMenu(1, saveload_savepresent != 0, -1);
-    MenuSFX = GameAudio_GetSfxId(0x30);
-    NuIOS_RecordFlurryEvent("loadscreen_startgame");
+        MechInputTouchMenuController::AnyTouchesThisFrame = 0;
+        NuPadSetStatus(0, 1);
+        NewMenu(1, saveload_savepresent != 0, -1);
+        MenuSFX = GameAudio_GetSfxId(0x30);
+        NuIOS_RecordFlurryEvent("loadscreen_startgame");
+    }
 }
 
 void MenuDrawNewGame(MENU *menu) {
+    const i32 menu_a = MenuA;
+    const f32 menu_fade = newgamealpha;
     if (MenuLoadOccurred != 0 || newgame_menudrawoff != 0) {
         return;
     }
 
-    menu->draw_y = -0.5f - menu->centre_offset;
-    f32 title_alpha = 0.0f;
-    if (GameTimer.time_elapsed >= 4.0f) {
-        title_alpha = 1.0f;
-    } else if (GameTimer.time_elapsed >= 3.5f) {
-        const i32 angle = static_cast<i32>((GameTimer.time_elapsed - 3.5f) * 16384.0f);
+    f32 title_alpha;
+    if (GameTimer.time_elapsed < 3.5f) {
+        title_alpha = 0.0f;
+    } else if (GameTimer.time_elapsed < 4.0f) {
+        const i32 angle = static_cast<i32>((GameTimer.time_elapsed - 3.5f) * 16384.0f * 2.0f) >> 1;
         title_alpha = NuTrigTable[angle & 0x7fff];
+    } else {
+        title_alpha = 1.0f;
     }
-    const i32 menu_alpha = static_cast<i32>(static_cast<f32>(MenuA) * newgamealpha);
+
+    menu->draw_y = -0.5f - menu->centre_offset;
+    const i32 menu_alpha = static_cast<i32>(static_cast<f32>(menu_a) * menu_fade);
     const i32 alpha = static_cast<i32>(static_cast<f32>(menu_alpha) * title_alpha);
-    if (TTab != NULL) {
-        DrawMenuEntryEx(menu, TTab[tNEWGAME], alpha);
-        DrawMenuEntryEx(menu, TTab[tLOADGAME], alpha);
-        if (TestForController() != 0) {
-            DrawMenuEntryEx(menu, TTab[tCONTROLLERCONNECTED], alpha / 2);
+    DrawMenuEntryEx(menu, TTab[tNEWGAME], static_cast<u8>(alpha));
+    DrawMenuEntryEx(menu, TTab[tLOADGAME], static_cast<u8>(alpha));
+    if (TestForController()) {
+        DrawMenuEntryEx(menu, TTab[tCONTROLLERCONNECTED], static_cast<u8>(alpha / 2));
+    } else {
+        char controls[64];
+        NuStrCpy(controls, TTab[tCONTROLS]);
+        NuStrCat(controls, ": ");
+        char *control_text;
+        if (MechInputTouchSystem::s_baseControlMode != 0) {
+            control_text = TTab[tTOUCH];
         } else {
-            char controls[64];
-            NuStrCpy(controls, TTab[tCONTROLS]);
-            NuStrCat(controls, ": ");
-            const i16 control_text = MechInputTouchSystem::s_baseControlMode == 0 ? tCONSOLE : tTOUCH;
-            NuStrCat(controls, TTab[control_text] != NULL ? TTab[control_text] : "?");
-            DrawMenuEntryEx(menu, controls, alpha);
+            control_text = TTab[tCONSOLE];
         }
+        NuStrCat(controls, control_text != NULL ? control_text : "?");
+        DrawMenuEntryEx(menu, controls, static_cast<u8>(alpha));
     }
 }
 
@@ -663,11 +683,13 @@ void MenuEnterNewGame(MENU *menu) {
     if (MenuLoadOccurred == 0 && startnewgame_initiated == 0 && startnewgame == 0) {
         saveload_autosave = -1;
     }
-    MenuLoadOccurred = 0;
-    MenuSaveOccurred = 0;
+    MenuLoadOccurred = MenuSaveOccurred = 0;
 }
 
 void MenuExitNewGame(MENU *) {
+    if (PlayerProgress[0].active == 0 && PlayerProgress[1].active == 0) {
+        PlayerProgress[0].active = 1;
+    }
 }
 
 void MenuUpdateNewGame(MENU *menu) {
@@ -676,10 +698,26 @@ void MenuUpdateNewGame(MENU *menu) {
         return;
     }
 
+    Game.options_save.field11_0xb = static_cast<u8>(NuIOS_IsWidescreen());
+
     if (MenuLoadOccurred != 0) {
         MenuLoadOccurred = 0;
         NewLData = LOADGAME_LDATA;
         UsePlayerList = 2;
+        GameSetSoundVolume(&Game.options_save);
+        legoSetMusicVolume(SuperOptions.music_enabled != 0 ? GameGetMusicVolume(&TempOptions) : 0.0f);
+        Hint_LoadAllGameState();
+        u8 hint_conditions = LSW_HintConditions[0];
+        hint_conditions |= 7;
+        LSW_HintConditions[0] = hint_conditions;
+        newgamealpha = 0.0f;
+
+        u8 brightness = Game.options_save.field12_0xc;
+        if (brightness > 20) {
+            Game.options_save.field12_0xc = 10;
+            brightness = 10;
+        }
+        NuVideoSetBrightness(static_cast<f32>(brightness) / 10.0f);
         return;
     }
 
@@ -687,6 +725,25 @@ void MenuUpdateNewGame(MENU *menu) {
         return;
     }
 
+    if ((GamePad[0].unknown_04 & GAMEPAD_START) != 0) {
+        NuPadSetStatus(GamePad[0].pad->port, 1);
+    }
+    if (static_cast<u8>(GamePad[0].unknown_24) == 0 || GamePad[0].pad->is_valid == 0) {
+        PlayerProgress[0].active = 0;
+    } else if (g_nupadMapping[0].is_active != 0) {
+        PlayerProgress[0].active = 1;
+    }
+
+    if ((GamePad[1].unknown_04 & GAMEPAD_START) != 0) {
+        NuPadSetStatus(GamePad[1].pad->port, 1);
+    }
+    if (static_cast<u8>(GamePad[1].unknown_24) == 0 || GamePad[1].pad->is_valid == 0) {
+        PlayerProgress[1].active = 0;
+    } else if (g_nupadMapping[1].is_active != 0) {
+        PlayerProgress[1].active = 1;
+    }
+
+    startnewgame = 0;
     if (startnewgame_initiated != 0 || saveload_autosave != -1) {
         startnewgame_initiated = 0;
         startnewgame = 0;
@@ -704,31 +761,56 @@ void MenuUpdateNewGame(MENU *menu) {
         return;
     }
 
-    if (menu->selected_item == 0) {
-        MenuSFX = GameAudio_GetSfxId(0x30);
-        if (PlayerProgress[0].active == 0 && PlayerProgress[1].active == 0) {
-            PlayerProgress[0].active = 1;
-        }
-        if (TestForController() != 0) {
-            NewMenu(1000, -1, -1);
-        } else {
-            NewMenu(33, -1, -1);
-        }
-        NuIOS_RecordFlurryEvent("newgame");
-    } else if (menu->selected_item == 1) {
-        MenuSFX = GameAudio_GetSfxId(0x30);
-        NewMenu(1012, -1, -1);
-        NuIOS_RecordFlurryEvent("loadgame");
-    } else if (menu->selected_item == 2) {
-        if (TestForController() != 0) {
-            MenuSFX = GameAudio_GetSfxId(0x32);
-            return;
-        }
+    switch (menu->selected_item) {
+        case 0:
+            MenuSFX = GameAudio_GetSfxId(0x30);
+            if (PlayerProgress[0].active == 0 && PlayerProgress[1].active == 0) {
+                PlayerProgress[0].active = 1;
+            }
+            if (TestForController()) {
+                NewMenu(1000, -1, -1);
+            } else {
+                NewMenu(33, -1, -1);
+            }
+            NuIOS_RecordFlurryEvent("mainmenu_newgame");
+            break;
 
-        MenuSFX = GameAudio_GetSfxId(0x30);
-        SuperOptions.touch_controls = SuperOptions.touch_controls == 0;
-        MechSystems::Get()->input_touch_system.control_mode = SuperOptions.touch_controls != 0 ? 2 : 1;
-        TriggerExtraDataSave();
+        case 1:
+            MenuSFX = GameAudio_GetSfxId(0x30);
+            NewMenu(1012, -1, -1);
+            NuIOS_RecordFlurryEvent("mainmenu_loadgame");
+            break;
+
+        case 2:
+            if (TestForController()) {
+                MenuSFX = GameAudio_GetSfxId(0x32);
+            } else {
+                MenuSFX = GameAudio_GetSfxId(0x30);
+                ++SuperOptions.touch_controls;
+                if (SuperOptions.touch_controls > 1) {
+                    SuperOptions.touch_controls = 0;
+                }
+                MenuSFX = GameAudio_GetSfxId(0x30);
+                MechSystems::Get()->input_touch_system.control_mode = SuperOptions.touch_controls != 0 ? 2 : 1;
+                TriggerExtraDataSave();
+            }
+            break;
+
+        case 3:
+            NuIOS_RecordFlurryEvent("mainmenu_restore");
+            NuIOS_RestoreInAppPurchases();
+            NewMenu(22, -1, -1);
+            break;
+    }
+
+    if (startnewgame != 0) {
+        const i32 save_occurred = MenuSaveOccurred;
+        NewGame();
+        MenuSaveOccurred = save_occurred;
+        NewLData = NEWGAME_LDATA;
+        UsePlayerList = 2;
+        newgamecam = 1;
+        newgamecamtime = 0.0f;
     }
 }
 static __used__ void MenuDrawMiniKit(MENU *) {

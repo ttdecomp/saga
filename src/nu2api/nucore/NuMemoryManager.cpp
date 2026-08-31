@@ -182,14 +182,103 @@ void *NuMemoryManager::_BlockAlloc(u32 size, u32 alignment, u32 flags, const cha
     return ptr;
 }
 
-__attribute__((weak)) void *NuMemoryManager::_TryBlockAlloc(u32 size, u32 alignment, u32 flags, const char *name,
-                                                            u16 category) {
-    (void)size;
-    (void)alignment;
-    (void)flags;
-    (void)name;
-    (void)category;
-    return nullptr;
+void *NuMemoryManager::_TryBlockAlloc(u32 size, u32 alignment, u32 flags, const char *name, u16 category) {
+    ValidateAllocAlignment(alignment);
+    ValidateAllocSize(size);
+
+    alignment = MAX(alignment, 4);
+    const u32 requested_size = CalculateBlockSize(size);
+    const u32 minimum_fragment_size = m_headerSize + sizeof(FreeHeader);
+
+    pthread_mutex_lock(&this->mutex);
+
+    FreeHeader *fragment = NULL;
+    Header *allocated = NULL;
+    u32 allocated_size = 0;
+
+    // The original uses the small/large availability maps to reach the same
+    // bins quickly. Scanning the bin chains keeps the allocator semantics
+    // straightforward while those search optimisations are reconstructed.
+    for (u32 bin = 0; bin < 256 && allocated == NULL; ++bin) {
+        for (FreeHeader *candidate = this->small_bins[bin].next; candidate != NULL; candidate = candidate->next) {
+            const usize begin = (usize)candidate;
+            const usize end = begin + BLOCK_SIZE(candidate->block_header.value);
+            usize user = ALIGN(begin + m_headerSize, alignment);
+            usize header_address = user - m_headerSize;
+            u32 prefix_size = header_address - begin;
+            if (prefix_size != 0 && prefix_size < minimum_fragment_size) {
+                user = ALIGN(begin + m_headerSize + minimum_fragment_size, alignment);
+                header_address = user - m_headerSize;
+                prefix_size = header_address - begin;
+            }
+            if (header_address + requested_size <= end) {
+                fragment = candidate;
+                allocated = (Header *)header_address;
+                allocated_size = requested_size;
+                break;
+            }
+        }
+    }
+    for (u32 bin = 0; bin < 22 && allocated == NULL; ++bin) {
+        for (FreeHeader *candidate = this->large_bins[bin].next; candidate != NULL; candidate = candidate->next) {
+            const usize begin = (usize)candidate;
+            const usize end = begin + BLOCK_SIZE(candidate->block_header.value);
+            usize user = ALIGN(begin + m_headerSize, alignment);
+            usize header_address = user - m_headerSize;
+            u32 prefix_size = header_address - begin;
+            if (prefix_size != 0 && prefix_size < minimum_fragment_size) {
+                user = ALIGN(begin + m_headerSize + minimum_fragment_size, alignment);
+                header_address = user - m_headerSize;
+            }
+            if (header_address + requested_size <= end) {
+                fragment = candidate;
+                allocated = (Header *)header_address;
+                allocated_size = requested_size;
+                break;
+            }
+        }
+    }
+
+    if (allocated == NULL) {
+        pthread_mutex_unlock(&this->mutex);
+        if (this->event_handler == NULL ||
+            !this->event_handler->AllocatePage(this, requested_size + 0x4000, 0x1fffffff)) {
+            return NULL;
+        }
+        return _TryBlockAlloc(size, alignment, flags, name, category);
+    }
+
+    const usize fragment_begin = (usize)fragment;
+    const usize fragment_end = fragment_begin + BLOCK_SIZE(fragment->block_header.value);
+    const usize allocated_begin = (usize)allocated;
+    const u32 prefix_size = allocated_begin - fragment_begin;
+    u32 suffix_size = fragment_end - (allocated_begin + allocated_size);
+
+    BinUnlink(fragment);
+
+    if (prefix_size != 0) {
+        fragment->block_header.value = prefix_size / 4;
+        *END_TAG(fragment, prefix_size) = fragment->block_header.value;
+        BinLink(fragment, true);
+    }
+
+    if (suffix_size != 0 && suffix_size < minimum_fragment_size) {
+        allocated_size += suffix_size;
+        suffix_size = 0;
+    }
+    if (suffix_size != 0) {
+        FreeHeader *suffix = (FreeHeader *)(allocated_begin + allocated_size);
+        suffix->block_header.value = suffix_size / 4;
+        *END_TAG(suffix, suffix_size) = suffix->block_header.value;
+        suffix->next = NULL;
+        suffix->prev = NULL;
+        BinLink(suffix, true);
+    }
+
+    allocated->value = allocated_size / 4;
+    ConvertToUsedBlock((FreeHeader *)allocated, alignment, flags, name, category);
+    pthread_mutex_unlock(&this->mutex);
+    return ClearUsedBlock(allocated, flags);
 }
 
 void NuMemoryManager::ConvertToUsedBlock(FreeHeader *header, u32 alignment, u32 flags, const char *name, u16 category) {
@@ -307,7 +396,7 @@ void NuMemoryManager::SetZombie() {
     this->is_zombie = true;
 }
 
-__attribute__((weak)) void NuMemoryManager::BlockFree(void *ptr, u32 flags) {
+void NuMemoryManager::BlockFree(void *ptr, u32 flags) {
 
     NuMemoryManager *manager;
 
@@ -363,23 +452,23 @@ __attribute__((weak)) void NuMemoryManager::BlockFree(void *ptr, u32 flags) {
                 manager->stats.bytes_alloc_by_category[((DebugHeader *)header)->category] -= BLOCK_SIZE(header->value);
             }
 
-            // See if we can combine this block with the one to the right.
-            // It seems like a big assumption that there's a valid block to the
-            // right in memory, but that seems to be what they assume.
             right = (Header *)((usize)header + BLOCK_SIZE(header->value));
             if ((right->value & ALLOC_MASK) == 0) {
-                manager->MergeBlocks(header, right, "BlockFree[R]");
+                manager->ValidateBlockEndTags(right, "BlockFree[R]");
+                manager->BinUnlink((FreeHeader *)right);
+                header->value = (BLOCK_SIZE(header->value) + BLOCK_SIZE(right->value)) / 4;
+                *END_TAG(header, BLOCK_SIZE(header->value)) = header->value;
             }
 
             final = (FreeHeader *)header;
 
-            // See if we can combine this block with the one to the left.
-            // Again, it seems like a big assumption, but the assumption is
-            // made.
             left_end = *(u32 *)((usize)header - 4);
             if ((left_end & HEADER_MGR_HI_MASK) == 0) {
                 final = (FreeHeader *)((usize)header - BLOCK_SIZE(left_end));
-                manager->MergeBlocks(&final->block_header, header, "BlockFree[L]");
+                manager->ValidateBlockEndTags(&final->block_header, "BlockFree[L]");
+                manager->BinUnlink(final);
+                final->block_header.value = (BLOCK_SIZE(final->block_header.value) + BLOCK_SIZE(header->value)) / 4;
+                *END_TAG(final, BLOCK_SIZE(final->block_header.value)) = final->block_header.value;
             }
 
             manager->BinLink(final, false);
@@ -393,21 +482,33 @@ __attribute__((weak)) void NuMemoryManager::BlockFree(void *ptr, u32 flags) {
             }
 
             pthread_mutex_unlock(&manager->mutex);
+            return;
         } else {
             manager = m_memoryManagers[manager_idx];
         }
     }
 }
 
-__attribute__((weak)) void *NuMemoryManager::_BlockReAlloc(void *ptr, u32 size, u32 alignment, u32 flags,
-                                                           const char *name, u16 category) {
-    (void)ptr;
-    (void)size;
-    (void)alignment;
-    (void)flags;
-    (void)name;
-    (void)category;
-    return nullptr;
+void *NuMemoryManager::_BlockReAlloc(void *ptr, u32 size, u32 alignment, u32 flags, const char *name, u16 category) {
+    if (ptr == NULL) {
+        return _BlockAlloc(size, alignment, flags, name, category);
+    }
+    if (size == 0) {
+        BlockFree(ptr, flags);
+        return NULL;
+    }
+
+    const u32 old_size = GetBlockSize(ptr);
+    if (size <= old_size) {
+        return ptr;
+    }
+
+    void *replacement = _TryBlockAlloc(size, alignment, flags, name, category);
+    if (replacement != NULL) {
+        memcpy(replacement, ptr, old_size);
+        BlockFree(ptr, flags);
+    }
+    return replacement;
 }
 
 inline void NuMemoryManager::MergeBlocks(Header *left, Header *right, const char *caller) {
@@ -442,13 +543,41 @@ inline void NuMemoryManager::MergeBlocks(Header *left, Header *right, const char
 }
 
 void NuMemoryManager::AddPage(void *ptr, u32 size, bool _unknown) {
-    Page *page;
-
-    page = (Page *)ALIGN((usize)ptr, 0x4);
-
+    Page *page = (Page *)ALIGN((usize)ptr, 4);
+    const usize allocation_end = ((usize)ptr + size) & ~(usize)3;
     memset(page, 0, sizeof(Page));
 
-    page->end = 0;
+    page->original_ptr = ptr;
+    page->size = size;
+    page->first_header = (Header *)((usize)page + 0x20);
+    page->end = (u32 *)(allocation_end - 4);
+    page->is_external = _unknown;
+
+    // Allocated zero-sized fence blocks prevent coalescing beyond the page.
+    Header *left_fence = (Header *)((usize)page + sizeof(Page));
+    left_fence->value = 0x08000000;
+    Header *right_fence = (Header *)(allocation_end - 4);
+    right_fence->value = 0x08000000;
+
+    FreeHeader *free_block = (FreeHeader *)page->first_header;
+    const u32 free_size = (usize)right_fence - (usize)free_block;
+    free_block->block_header.value = free_size / 4;
+    free_block->next = NULL;
+    free_block->prev = NULL;
+    *END_TAG(free_block, free_size) = free_block->block_header.value;
+
+    this->stats.unknown_00 += free_size;
+
+    pthread_mutex_lock(&this->mutex);
+    BinLink(free_block, true);
+
+    page->next = this->pages;
+    page->prev = NULL;
+    if (page->next != NULL) {
+        page->next->prev = page;
+    }
+    this->pages = page;
+    pthread_mutex_unlock(&this->mutex);
 }
 
 void NuMemoryManager::SetBlockDebugCategory(void *ptr, u16 category) {

@@ -932,9 +932,11 @@ extern "C" void NuShaderObjectGLSLSetupMaterial(i32 program, struct numtl_s *mtl
 }
 
 // GL uniform dispatch table — matches the original .data at 0x65e0b8.
-extern "C" void (*g_glConstantSetterTable[4])(u32 loc, i32 count, const void *vals) = {
-    reinterpret_cast<void (*)(u32, i32, const void *)>(nu2api::glUniform1fv),
-    reinterpret_cast<void (*)(u32, i32, const void *)>(nu2api::glUniform2fv),
-    reinterpret_cast<void (*)(u32, i32, const void *)>(nu2api::glUniform3fv),
-    reinterpret_cast<void (*)(u32, i32, const void *)>(nu2api::glUniform4fv),
-};
+extern "C" {
+    void (*g_glConstantSetterTable[4])(u32 loc, i32 count, const void *vals) = {
+        reinterpret_cast<void (*)(u32, i32, const void *)>(nu2api::glUniform1fv),
+        reinterpret_cast<void (*)(u32, i32, const void *)>(nu2api::glUniform2fv),
+        reinterpret_cast<void (*)(u32, i32, const void *)>(nu2api::glUniform3fv),
+        reinterpret_cast<void (*)(u32, i32, const void *)>(nu2api::glUniform4fv),
+    };
+}

@@ -108,7 +108,7 @@ void StoreLevelProgressFn(WORLDINFO_s *, LEVEL_PROGRESS_s *, i32) {
 }
 
 i32 Store_IsPackUnlocked(i32) {
-    return 0;
+    return 1;
 }
 
 void Store_IsPackAvailable(i32, char *) {
