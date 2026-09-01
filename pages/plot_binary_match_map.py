@@ -1508,8 +1508,8 @@ def main():
     parser.add_argument(
         "-o",
         "--output",
-        default="pages/binary_match_map.html",
-        help="output HTML (default: pages/binary_match_map.html)",
+        default="pages/index.html",
+        help="output HTML (default: pages/index.html)",
     )
     parser.add_argument(
         "--bytes-per-cell",
