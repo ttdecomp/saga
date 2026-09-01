@@ -1,0 +1,75 @@
+name: Deploy static content to Pages
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install requirements
+        run: >
+          sudo apt-get -y update &&
+          sudo apt-get install clang-tidy python3
+
+      - name: Install CMake 4.x
+        uses: lukka/get-cmake@latest
+
+      - name: Cache Android NDK
+        uses: actions/cache@v4
+        with:
+          path: ndk
+          key: android-ndk-r8e
+
+      - name: Cache built libraries
+        uses: actions/cache@v4
+        with:
+          path: libs
+          key: libs-${{ hashFiles('**/CMakeLists.txt') }}
+
+      - name: Configure CMake
+        run: cmake -B build .
+
+      - name: Build
+        run: cmake --build build --verbose
+
+      - name: Create plot page
+        run: python3 scripts/plot_binary_match_map.py
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "binary_match_map.html"
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
