@@ -31,42 +31,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install requirements
-        run: >
-          sudo apt-get -y update &&
-          sudo apt-get install clang-tidy python3
-
-      - name: Install CMake 4.x
-        uses: lukka/get-cmake@latest
-
-      - name: Cache Android NDK
-        uses: actions/cache@v4
-        with:
-          path: ndk
-          key: android-ndk-r8e
-
-      - name: Cache built libraries
-        uses: actions/cache@v4
-        with:
-          path: libs
-          key: libs-${{ hashFiles('**/CMakeLists.txt') }}
-
-      - name: Configure CMake
-        run: cmake -B build .
-
-      - name: Build
-        run: cmake --build build --verbose
-
-      - name: Create plot page
-        run: python3 scripts/plot_binary_match_map.py
-
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: "binary_match_map.html"
+          path: "pages/binary_match_map.html"
 
       - name: Deploy to GitHub Pages
         id: deployment

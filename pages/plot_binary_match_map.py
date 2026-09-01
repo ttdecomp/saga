@@ -15,7 +15,6 @@ import math
 import struct
 import sys
 
-
 SHF_ALLOC = 0x2
 SHF_EXECINSTR = 0x4
 SHF_WRITE = 0x1
@@ -56,23 +55,26 @@ def read_elf32(path):
     for index in range(section_count):
         offset = section_offset + index * section_entry_size
         fields = section_struct.unpack_from(data, offset)
-        sections.append({
-            "index": index,
-            "name_offset": fields[0],
-            "type": fields[1],
-            "flags": fields[2],
-            "address": fields[3],
-            "offset": fields[4],
-            "size": fields[5],
-            "link": fields[6],
-            "info": fields[7],
-            "alignment": fields[8],
-            "entry_size": fields[9],
-        })
+        sections.append(
+            {
+                "index": index,
+                "name_offset": fields[0],
+                "type": fields[1],
+                "flags": fields[2],
+                "address": fields[3],
+                "offset": fields[4],
+                "size": fields[5],
+                "link": fields[6],
+                "info": fields[7],
+                "alignment": fields[8],
+                "entry_size": fields[9],
+            }
+        )
 
     names_section = sections[section_names_index]
-    names = data[names_section["offset"]:
-                 names_section["offset"] + names_section["size"]]
+    names = data[
+        names_section["offset"] : names_section["offset"] + names_section["size"]
+    ]
     for section in sections:
         section["name"] = _cstring(names, section["name_offset"])
 
@@ -80,24 +82,30 @@ def read_elf32(path):
     symbol_struct = struct.Struct(byte_order + "IIIBBH")
     for symbol_table in (s for s in sections if s["type"] == SHT_SYMTAB):
         strings_section = sections[symbol_table["link"]]
-        strings = data[strings_section["offset"]:
-                       strings_section["offset"] + strings_section["size"]]
+        strings = data[
+            strings_section["offset"] : strings_section["offset"]
+            + strings_section["size"]
+        ]
         entry_size = symbol_table["entry_size"] or symbol_struct.size
-        for offset in range(symbol_table["offset"],
-                            symbol_table["offset"] + symbol_table["size"],
-                            entry_size):
+        for offset in range(
+            symbol_table["offset"],
+            symbol_table["offset"] + symbol_table["size"],
+            entry_size,
+        ):
             fields = symbol_struct.unpack_from(data, offset)
             section_index = fields[5]
             if not fields[0] or not fields[2] or section_index >= len(sections):
                 continue
-            symbols.append({
-                "name": _cstring(strings, fields[0]),
-                "address": fields[1],
-                "size": fields[2],
-                "type": fields[3] & 0x0f,
-                "binding": fields[3] >> 4,
-                "section_index": section_index,
-            })
+            symbols.append(
+                {
+                    "name": _cstring(strings, fields[0]),
+                    "address": fields[1],
+                    "size": fields[2],
+                    "type": fields[3] & 0x0F,
+                    "binding": fields[3] >> 4,
+                    "section_index": section_index,
+                }
+            )
 
     return sections, symbols
 
@@ -112,9 +120,9 @@ def report_function_details(report):
             except (TypeError, ValueError):
                 continue
             display_name = function.get("metadata", {}).get(
-                "demangled_name", function["name"])
-            details[function["name"]].append(
-                (score, unit["name"], display_name))
+                "demangled_name", function["name"]
+            )
+            details[function["name"]].append((score, unit["name"], display_name))
     # A target symbol can be repeated in multiple gonk units. If any unit pairs
     # it successfully, that is the useful score for its unique original range.
     scores = {}
@@ -122,7 +130,8 @@ def report_function_details(report):
     names = {}
     for name, candidates in details.items():
         score, unit, display_name = max(
-            candidates, key=lambda item: (item[0], item[1] != "remaining"))
+            candidates, key=lambda item: (item[0], item[1] != "remaining")
+        )
         scores[name] = score
         units[name] = unit
         names[name] = display_name
@@ -152,11 +161,13 @@ def build_unit_spans(text_section, functions, units):
     for start, end, unit in sorted(ranges):
         if clusters and start < clusters[-1][1]:
             cluster_start, cluster_end, owners = clusters[-1]
-            clusters[-1] = (cluster_start, max(cluster_end, end),
-                            owners | ({unit} if unit is not None else set()))
+            clusters[-1] = (
+                cluster_start,
+                max(cluster_end, end),
+                owners | ({unit} if unit is not None else set()),
+            )
         else:
-            clusters.append((start, end,
-                             {unit} if unit is not None else set()))
+            clusters.append((start, end, {unit} if unit is not None else set()))
 
     spans = []
     current = None
@@ -179,11 +190,23 @@ def build_unit_spans(text_section, functions, units):
     return spans
 
 
-def build_payload(sections, text_section, functions, scores, units, names,
-                  unit_spans, row_bytes, cell_bytes):
+def build_payload(
+    sections,
+    text_section,
+    functions,
+    scores,
+    units,
+    names,
+    unit_spans,
+    row_bytes,
+    cell_bytes,
+):
     """Create compact JSON-ready data for the browser visualization."""
-    allocated = [section for section in sections
-                 if section["flags"] & SHF_ALLOC and section["size"]]
+    allocated = [
+        section
+        for section in sections
+        if section["flags"] & SHF_ALLOC and section["size"]
+    ]
     unit_names = sorted(set(units.values()))
     unit_ids = {name: index for index, name in enumerate(unit_names)}
     name_counts = Counter(function["name"] for function in functions)
@@ -199,15 +222,17 @@ def build_payload(sections, text_section, functions, scores, units, names,
         raw_name = function["name"]
         ambiguous = name_counts[raw_name] > 1
         unit = units.get(raw_name)
-        function_data.append({
-            "a": start - text_start,
-            "s": end - start,
-            "n": names.get(raw_name, raw_name),
-            "r": raw_name,
-            "u": -1 if ambiguous else unit_ids.get(unit, -1),
-            "p": None if raw_name not in scores else round(scores[raw_name], 4),
-            "x": ambiguous,
-        })
+        function_data.append(
+            {
+                "a": start - text_start,
+                "s": end - start,
+                "n": names.get(raw_name, raw_name),
+                "r": raw_name,
+                "u": -1 if ambiguous else unit_ids.get(unit, -1),
+                "p": None if raw_name not in scores else round(scores[raw_name], 4),
+                "x": ambiguous,
+            }
+        )
 
     section_data = []
     for section in allocated:
@@ -219,12 +244,19 @@ def build_payload(sections, text_section, functions, scores, units, names,
             kind = "write"
         else:
             kind = "read"
-        section_data.append({"n": section["name"], "a": section["address"],
-                             "s": section["size"], "k": kind})
+        section_data.append(
+            {
+                "n": section["name"],
+                "a": section["address"],
+                "s": section["size"],
+                "k": kind,
+            }
+        )
 
-    span_data = [{"a": start - text_start, "s": end - start,
-                  "u": unit_ids[unit]}
-                 for unit, start, end in unit_spans]
+    span_data = [
+        {"a": start - text_start, "s": end - start, "u": unit_ids[unit]}
+        for unit, start, end in unit_spans
+    ]
     return {
         "sections": section_data,
         "textStart": text_start,
@@ -238,7 +270,7 @@ def build_payload(sections, text_section, functions, scores, units, names,
     }
 
 
-HTML_TEMPLATE = r'''<!doctype html>
+HTML_TEMPLATE = r"""<!doctype html>
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="utf-8">
@@ -1452,7 +1484,7 @@ updateViewportIndicator(d3.zoomIdentity, 0);
 </script>
 </body>
 </html>
-'''
+"""
 
 
 def render_html(payload):
@@ -1462,17 +1494,35 @@ def render_html(payload):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("report", nargs="?", default="report.json",
-                        help="objdiff report (default: report.json)")
-    parser.add_argument("--binary", default="res/libTTapp.so",
-                        help="original ELF binary (default: res/libTTapp.so)")
-    parser.add_argument("-o", "--output", default="binary_match_map.html",
-                        help="output HTML (default: binary_match_map.html)")
-    parser.add_argument("--bytes-per-cell", type=int, default=512,
-                        help="address bytes represented by a cell (default: 512)")
-    parser.add_argument("--columns", type=int, default=256,
-                        help="fallback cells per row before viewport sizing "
-                             "(default: 256)")
+    parser.add_argument(
+        "report",
+        nargs="?",
+        default="report.json",
+        help="objdiff report (default: report.json)",
+    )
+    parser.add_argument(
+        "--binary",
+        default="res/libTTapp.so",
+        help="original ELF binary (default: res/libTTapp.so)",
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        default="pages/binary_match_map.html",
+        help="output HTML (default: pages/binary_match_map.html)",
+    )
+    parser.add_argument(
+        "--bytes-per-cell",
+        type=int,
+        default=512,
+        help="address bytes represented by a cell (default: 512)",
+    )
+    parser.add_argument(
+        "--columns",
+        type=int,
+        default=256,
+        help="fallback cells per row before viewport sizing " "(default: 256)",
+    )
     args = parser.parse_args()
 
     if args.bytes_per_cell < 1 or args.columns < 1:
@@ -1486,21 +1536,33 @@ def main():
         print(f"error: {error}", file=sys.stderr)
         return 1
 
-    text_section = next((section for section in sections
-                         if section["name"] == ".text"), None)
+    text_section = next(
+        (section for section in sections if section["name"] == ".text"), None
+    )
     if text_section is None:
         print(f"error: no .text section in {args.binary}", file=sys.stderr)
         return 1
 
-    functions = [symbol for symbol in symbols
-                 if symbol["type"] == STT_FUNC
-                 and symbol["section_index"] == text_section["index"]]
+    functions = [
+        symbol
+        for symbol in symbols
+        if symbol["type"] == STT_FUNC
+        and symbol["section_index"] == text_section["index"]
+    ]
     scores, units, names = report_function_details(report)
     unit_spans = build_unit_spans(text_section, functions, units)
     row_bytes = args.columns * args.bytes_per_cell
-    payload = build_payload(sections, text_section, functions, scores, units,
-                            names, unit_spans, row_bytes,
-                            args.bytes_per_cell)
+    payload = build_payload(
+        sections,
+        text_section,
+        functions,
+        scores,
+        units,
+        names,
+        unit_spans,
+        row_bytes,
+        args.bytes_per_cell,
+    )
     try:
         with open(args.output, "w", encoding="utf-8") as output_file:
             output_file.write(render_html(payload))
@@ -1509,14 +1571,19 @@ def main():
         return 1
 
     duplicate_names = Counter(function["name"] for function in functions)
-    ambiguous_functions = sum(1 for function in functions
-                              if duplicate_names[function["name"]] > 1)
-    scored_functions = sum(1 for function in functions
-                           if duplicate_names[function["name"]] == 1
-                           and function["name"] in scores)
-    print(f"Mapped {scored_functions} scored and {ambiguous_functions} ambiguous "
-          f".text symbols with {len(unit_spans)} unit spans across "
-          f"responsive viewport-fitted rows to {args.output}")
+    ambiguous_functions = sum(
+        1 for function in functions if duplicate_names[function["name"]] > 1
+    )
+    scored_functions = sum(
+        1
+        for function in functions
+        if duplicate_names[function["name"]] == 1 and function["name"] in scores
+    )
+    print(
+        f"Mapped {scored_functions} scored and {ambiguous_functions} ambiguous "
+        f".text symbols with {len(unit_spans)} unit spans across "
+        f"responsive viewport-fitted rows to {args.output}"
+    )
     return 0
 
 
