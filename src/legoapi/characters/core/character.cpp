@@ -91,6 +91,7 @@ extern "C" {
     i16 id_WOMPRAT = -1;
     i16 id_WAMPA = -1;
     i16 id_HANINCARBONITE = -1;
+    i16 id_YODA = -1;
     i16 id_YODAGHOST = -1;
     i16 id_MOSEISLEYCITIZEN = -1;
     i16 id_CANTINAALIEN = -1;
@@ -300,6 +301,7 @@ extern "C" {
         {"womprat", &id_WOMPRAT},
         {"wampa", &id_WAMPA},
         {"hanincarbonite", &id_HANINCARBONITE},
+        {"yoda", &id_YODA},
         {"yoda_ghost", &id_YODAGHOST},
         {"moseisleycitizen", &id_MOSEISLEYCITIZEN},
         {"cantinaaliens", &id_CANTINAALIEN},
@@ -1038,6 +1040,10 @@ extern "C" {
         }
         drawcharactermodel_locatorsupdated = 1;
 
+        if (object != NULL && apicharsys != NULL && apicharsys->set_creature_lights != NULL) {
+            apicharsys->set_creature_lights(&object->apiobj);
+        }
+
         i32 result = 0;
         if (!evaluate_only) {
             const i32 render_flags = object == NULL || (object->apiobj.field_0x1f4 & 0x200) == 0;
@@ -1090,6 +1096,15 @@ extern "C" {
             NuStrCat(directory, character.dir);
             NuStrCat(directory, "\\");
 
+            char directory_pack_path[0x100];
+            char model_pack_path[0x100];
+            NuStrCpy(directory_pack_path, directory);
+            NuStrCat(directory_pack_path, character.dir);
+            NuStrCat(directory_pack_path, ".fpk");
+            NuStrCpy(model_pack_path, directory);
+            NuStrCat(model_pack_path, character.file);
+            NuStrCat(model_pack_path, ".fpk");
+
             APICHARACTERMODEL *model;
             bool model_loaded = false;
             if (apicharsys->playermodelids[model_id] != -1) {
@@ -1099,17 +1114,9 @@ extern "C" {
                 APICharacterModelReset(model);
 
                 char hierarchy_path[0x200];
-                char directory_pack_path[0x100];
-                char model_pack_path[0x100];
                 NuStrCpy(hierarchy_path, directory);
                 NuStrCat(hierarchy_path, character.file);
                 NuStrCat(hierarchy_path, ".ghg");
-                NuStrCpy(directory_pack_path, directory);
-                NuStrCat(directory_pack_path, character.dir);
-                NuStrCat(directory_pack_path, ".fpk");
-                NuStrCpy(model_pack_path, directory);
-                NuStrCat(model_pack_path, character.file);
-                NuStrCat(model_pack_path, ".fpk");
 
                 model->hierarchy = NuGHGRead(hierarchy_path, buf, buf_end);
                 if (model->hierarchy == NULL) {
@@ -1120,105 +1127,105 @@ extern "C" {
                     model->points_of_interest[poi] = NuHGobjGetPOI(model->hierarchy, poi);
                 }
                 model_loaded = true;
+            }
 
-                CHARACTERANIM_s *animations = area_models != 0 && list->count != 0 ? character.animations : NULL;
-                void *pak = NULL;
-                if (apiloadcharactermodels_nopakfile == 0) {
-                    pak = NuFilePakLoad(directory_pack_path, buf, buf_end, 0x10);
-                    if (pak == NULL) {
-                        pak = NuFilePakLoad(model_pack_path, buf, buf_end, 0x10);
+            CHARACTERANIM_s *animations = area_models != 0 && list->count != 0 ? character.animations : NULL;
+            void *pak = NULL;
+            if (apiloadcharactermodels_nopakfile == 0) {
+                pak = NuFilePakLoad(directory_pack_path, buf, buf_end, 0x10);
+                if (pak == NULL) {
+                    pak = NuFilePakLoad(model_pack_path, buf, buf_end, 0x10);
+                }
+            }
+
+            if (pak != NULL) {
+                for (CHARACTERANIM_s *animation = animations; animation != NULL && animation->name != NULL;
+                     ++animation) {
+                    if (!ShouldLoadAnimation(*animation, area_animation)) {
+                        continue;
+                    }
+                    char animation_path[0x200];
+                    if ((animation->flags & 4) != 0 && model->model_data_b[animation->animation_id] == NULL) {
+                        GetAnimationPath(animation_path, directory, animation, ".an3");
+                        i32 item = NuFilePakGetItem(pak, animation_path);
+                        if (item != 0) {
+                            NuFilePakSetItemRequired(pak, item, 1);
+                        }
+                    }
+                    if ((animation->flags & 8) != 0 && model->model_data_c[animation->animation_id] == NULL) {
+                        GetAnimationPath(animation_path, directory, animation, ".bsa");
+                        i32 item = NuFilePakGetItem(pak, animation_path);
+                        if (item != 0) {
+                            NuFilePakSetItemRequired(pak, item, 1);
+                        }
                     }
                 }
 
-                if (pak != NULL) {
-                    for (CHARACTERANIM_s *animation = animations; animation != NULL && animation->name != NULL;
-                         ++animation) {
-                        if (!ShouldLoadAnimation(*animation, area_animation)) {
-                            continue;
-                        }
-                        char animation_path[0x200];
-                        if ((animation->flags & 4) != 0 && model->model_data_b[animation->animation_id] == NULL) {
-                            GetAnimationPath(animation_path, directory, animation, ".an3");
-                            i32 item = NuFilePakGetItem(pak, animation_path);
-                            if (item != 0) {
-                                NuFilePakSetItemRequired(pak, item, 1);
+                buf->addr -= NuFilePakCondense(pak);
+                for (CHARACTERANIM_s *animation = animations; animation != NULL && animation->name != NULL;
+                     ++animation) {
+                    if (!ShouldLoadAnimation(*animation, area_animation)) {
+                        continue;
+                    }
+                    char animation_path[0x200];
+                    if ((animation->flags & 4) != 0 && model->model_data_b[animation->animation_id] == NULL) {
+                        GetAnimationPath(animation_path, directory, animation, ".an3");
+                        i32 item = NuFilePakGetItem(pak, animation_path);
+                        void *data;
+                        i32 size;
+                        if (item != 0 && NuFilePakGetItemInfo(pak, item, &data, &size) != 0) {
+                            const bool pointer_block = static_cast<i32 *>(data)[1] > static_cast<i32>(0x414e4934);
+                            ani3_animheader_s *joint_animation = reinterpret_cast<ani3_animheader_s *>(
+                                pointer_block ? static_cast<u8 *>(data) + 4 : data);
+                            if ((joint_animation->field_12 & 0xff) == 0) {
+                                if (pointer_block) {
+                                    NuPtrBlockFix(data);
+                                } else {
+                                    NuAnimData2Fixup(size, &data);
+                                }
+                                joint_animation->field_12 |= 1;
                             }
-                        }
-                        if ((animation->flags & 8) != 0 && model->model_data_c[animation->animation_id] == NULL) {
-                            GetAnimationPath(animation_path, directory, animation, ".bsa");
-                            i32 item = NuFilePakGetItem(pak, animation_path);
-                            if (item != 0) {
-                                NuFilePakSetItemRequired(pak, item, 1);
-                            }
+                            model->model_data_b[animation->animation_id] = joint_animation;
+                            model->model_data_a[animation->animation_id] = animation;
                         }
                     }
-
-                    buf->addr -= NuFilePakCondense(pak);
-                    for (CHARACTERANIM_s *animation = animations; animation != NULL && animation->name != NULL;
-                         ++animation) {
-                        if (!ShouldLoadAnimation(*animation, area_animation)) {
-                            continue;
-                        }
-                        char animation_path[0x200];
-                        if ((animation->flags & 4) != 0 && model->model_data_b[animation->animation_id] == NULL) {
-                            GetAnimationPath(animation_path, directory, animation, ".an3");
-                            i32 item = NuFilePakGetItem(pak, animation_path);
-                            void *data;
-                            i32 size;
-                            if (item != 0 && NuFilePakGetItemInfo(pak, item, &data, &size) != 0) {
-                                const bool pointer_block = static_cast<i32 *>(data)[1] > static_cast<i32>(0x414e4934);
-                                ani3_animheader_s *joint_animation = reinterpret_cast<ani3_animheader_s *>(
-                                    pointer_block ? static_cast<u8 *>(data) + 4 : data);
-                                if ((joint_animation->field_12 & 0xff) == 0) {
-                                    if (pointer_block) {
-                                        NuPtrBlockFix(data);
-                                    } else {
-                                        NuAnimData2Fixup(size, &data);
-                                    }
-                                    joint_animation->field_12 |= 1;
-                                }
-                                model->model_data_b[animation->animation_id] = joint_animation;
-                                model->model_data_a[animation->animation_id] = animation;
-                            }
-                        }
-                        if ((animation->flags & 8) != 0 && model->model_data_c[animation->animation_id] == NULL) {
-                            GetAnimationPath(animation_path, directory, animation, ".bsa");
-                            i32 item = NuFilePakGetItem(pak, animation_path);
-                            void *data;
-                            i32 size;
-                            if (item != 0 && NuFilePakGetItemInfo(pak, item, &data, &size) != 0) {
-                                model->model_data_c[animation->animation_id] =
-                                    LoadAnimFromPAK(animation_path, area_animation, data, size);
-                                if (model->model_data_c[animation->animation_id] != NULL) {
-                                    model->model_data_a[animation->animation_id] = animation;
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    for (CHARACTERANIM_s *animation = animations; animation != NULL && animation->name != NULL;
-                         ++animation) {
-                        if (!ShouldLoadAnimation(*animation, area_animation)) {
-                            continue;
-                        }
-                        char animation_path[0x200];
-                        if ((animation->flags & 4) != 0 && model->model_data_b[animation->animation_id] == NULL) {
-                            GetAnimationPath(animation_path, directory, animation, ".an3");
-                            if (NuFileExists(animation_path) != 0) {
-                                model->model_data_b[animation->animation_id] =
-                                    LoadAnim(animation_path, area_animation, buf, buf_end);
-                            }
-                            if (model->model_data_b[animation->animation_id] != NULL) {
-                                model->model_data_a[animation->animation_id] = animation;
-                            }
-                        }
-                        if ((animation->flags & 8) != 0 && model->model_data_c[animation->animation_id] == NULL) {
-                            GetAnimationPath(animation_path, directory, animation, ".bsa");
+                    if ((animation->flags & 8) != 0 && model->model_data_c[animation->animation_id] == NULL) {
+                        GetAnimationPath(animation_path, directory, animation, ".bsa");
+                        i32 item = NuFilePakGetItem(pak, animation_path);
+                        void *data;
+                        i32 size;
+                        if (item != 0 && NuFilePakGetItemInfo(pak, item, &data, &size) != 0) {
                             model->model_data_c[animation->animation_id] =
-                                LoadAnim(animation_path, area_animation, buf, buf_end);
+                                LoadAnimFromPAK(animation_path, area_animation, data, size);
                             if (model->model_data_c[animation->animation_id] != NULL) {
                                 model->model_data_a[animation->animation_id] = animation;
                             }
+                        }
+                    }
+                }
+            } else {
+                for (CHARACTERANIM_s *animation = animations; animation != NULL && animation->name != NULL;
+                     ++animation) {
+                    if (!ShouldLoadAnimation(*animation, area_animation)) {
+                        continue;
+                    }
+                    char animation_path[0x200];
+                    if ((animation->flags & 4) != 0 && model->model_data_b[animation->animation_id] == NULL) {
+                        GetAnimationPath(animation_path, directory, animation, ".an3");
+                        if (NuFileExists(animation_path) != 0) {
+                            model->model_data_b[animation->animation_id] =
+                                LoadAnim(animation_path, area_animation, buf, buf_end);
+                        }
+                        if (model->model_data_b[animation->animation_id] != NULL) {
+                            model->model_data_a[animation->animation_id] = animation;
+                        }
+                    }
+                    if ((animation->flags & 8) != 0 && model->model_data_c[animation->animation_id] == NULL) {
+                        GetAnimationPath(animation_path, directory, animation, ".bsa");
+                        model->model_data_c[animation->animation_id] =
+                            LoadAnim(animation_path, area_animation, buf, buf_end);
+                        if (model->model_data_c[animation->animation_id] != NULL) {
+                            model->model_data_a[animation->animation_id] = animation;
                         }
                     }
                 }

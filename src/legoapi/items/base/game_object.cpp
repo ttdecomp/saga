@@ -188,21 +188,21 @@ i32 InitCreature(GameObject_s *obj, i32 id, i32 param) {
     if (id == id_MOSEISLEYCITIZEN) {
         SetLayers_MOSEISLEYCITIZEN(&obj->field_0x1054);
     } else if (id == id_CANTINAALIEN) {
-        static const u8 head_layers[3] = {0, 31, 0};
-        static const u8 body_layers[3] = {0, 15, 63};
-        static const u8 leg_layers[3] = {0, 31, 0};
+        static const u8 head_layers[3] = {0, 3, 6};
+        static const u8 body_layers[3] = {1, 4, 7};
+        static const u8 leg_layers[3] = {2, 5, 8};
         obj->field_0x1054 = LayerBit(head_layers[qrand() / 0x5556]) | LayerBit(body_layers[qrand() / 0x5556]) |
                             LayerBit(leg_layers[qrand() / 0x5556]);
     } else if (id == id_CLOUDCITYCITIZEN) {
-        static const u8 head_layers[3] = {1, 24, 46};
-        static const u8 body_layers[3] = {0, 31, 0};
-        static const u8 leg_layers[3] = {2, 16, 62};
+        static const u8 head_layers[3] = {1, 5, 7};
+        static const u8 body_layers[3] = {2, 3, 6};
+        static const u8 leg_layers[3] = {0, 4, 8};
         obj->field_0x1054 = LayerBit(head_layers[qrand() / 0x5556]) | LayerBit(body_layers[qrand() / 0x5556]) |
                             LayerBit(leg_layers[qrand() / 0x5556]);
         obj->field_0xf01 = static_cast<u8>((obj->field_0xf01 & ~8u) | (((obj->field_0x1054 >> 7) & 1) << 3));
-    } else if (id == id_GEONOSIAN) {
-        SetLayers_BOB(obj);
     } else if (id == id_BOB) {
+        SetLayers_BOB(obj);
+    } else if (id == id_GEONOSIAN) {
         obj->field_0xefd = static_cast<u8>((obj->field_0xefd & ~2u) | ((qrand() <= 0x7fff) ? 2 : 0));
     }
 
@@ -257,7 +257,19 @@ static __used__ void TrenchKilledCallback(GameObject_s *) {
 static __used__ void SetLayers_BOB(GameObject_s *) {
 }
 
-static void SetLayers_MOSEISLEYCITIZEN(u32 *) {
+static void SetLayers_MOSEISLEYCITIZEN(u32 *layers) {
+    static const u8 hat_layers[5] = {0, 0, 0, 7, 14};
+    static const u8 head_layers[5] = {20, 20, 8, 8, 4};
+    static const u8 body_layers[3] = {3, 9, 19};
+    static const u8 arm_layers[3] = {1, 12, 15};
+    static const u8 hand_layers[3] = {2, 13, 16};
+    static const u8 waist_layers[3] = {6, 10, 17};
+    static const u8 leg_layers[3] = {5, 11, 18};
+
+    *layers = LayerBit(hat_layers[qrand() / 0x3334]) | LayerBit(head_layers[qrand() / 0x3334]) |
+              LayerBit(body_layers[qrand() / 0x5556]) | LayerBit(arm_layers[qrand() / 0x5556]) |
+              LayerBit(hand_layers[qrand() / 0x5556]) | LayerBit(waist_layers[qrand() / 0x5556]) |
+              LayerBit(leg_layers[qrand() / 0x5556]);
 }
 
 static __used__ void Tag_NoHiddenIcon(GameObject_s *) {

@@ -43,6 +43,7 @@ extern GameObject_s *FindGameObject(i32, u32, i32, i32, i32);
 extern void Store_RootPackCustodian(i32, GameObject_s *);
 extern void NeedScreenGrab(i32);
 extern void BackDrop_ResetColours();
+extern void NewGameMode();
 extern f32 MainRenderTargetTime;
 extern void ResetIconWibble();
 extern void MakeFreePlayModelList(i32 first_model, i32 second_model, i32 area, i32 level, i32 include_bonus);
@@ -825,10 +826,11 @@ static __used__ void Hub_DrawSuperBonusStats(AREADATA_s *, float) {
 }
 
 void WipeBackToHub() {
-}
-
-void Condition_InHubArea(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *) {
-}
-
-void Condition_InHubAreaInit(AISYS_s *, char *, AISCRIPT_s *) {
+    NewMenu(-1, -1, -1);
+    ResetTimer(&JoinInTimer, 0.0f);
+    NuStrCpy(Door_ExitName, Door_Last->name);
+    StartDoorPositions();
+    NewGameMode();
+    bonusmodearcade = 0;
+    HubMainRenderTimeHack = 1;
 }

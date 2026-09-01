@@ -116,6 +116,7 @@ extern "C" {
     void NuMtxPreScaleU(NUMTX *m, f32 s);
     NUVEC NuMtxGetScale(NUMTX *m);
     void NuMtxPreScale(NUMTX *m, NUVEC *s);
+    void NuMtxPreScaleVU0(NUMTX *m, NUVEC *s);
     void NuMtxPreScaleX(NUMTX *m, f32 ScaleX);
     void NuMtxRotateX(NUMTX *m, NUANG a);
     void NuMtxPreRotateX(NUMTX *m, NUANG a);
@@ -160,10 +161,13 @@ extern "C" {
     void NuMtxGetFrustumD3D(NUMTX *mtx, f32 *l, f32 *r, f32 *b, f32 *t, f32 *n, f32 *f);
     void NuMtxGetFrustumBlend(NUMTX *mtx, f32 *l, f32 *r, f32 *b, f32 *t, f32 *n, f32 *f);
     void NuMtxSetRotateXYZ(NUMTX *m, NUANGVEC *a);
+    void NuMtxSetRotateXYZVU0(NUMTX *m, NUANGVEC *a);
     void NuMtxMul(NUMTX *m, NUMTX *m0, NUMTX *m1);
     void NuMtxMulH(NUMTX *m, NUMTX *m0, NUMTX *m1);
     void NuMtxMulR(NUMTX *m, NUMTX *m0, NUMTX *m1);
+    void NuMtxMulRVU0(NUMTX *result, NUMTX *left, NUMTX *right);
     void NuMtxMulVU0(NUMTX *result, NUMTX *left, NUMTX *right);
+    void NuMtxScaleVU0(NUMTX *matrix, NUVEC *scale);
     void NuMtxInvRSS(NUMTX *inv, NUMTX *T);
     void NuMtxInvRSSH(NUMTX *inv, NUMTX *T);
     void NuMtxInvH(NUMTX *mi, NUMTX *m0);

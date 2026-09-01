@@ -316,7 +316,10 @@ void NuFadeSetFxCodeMtls(nugeom_s *, unsigned char *) {
 void NuInitHardwareFirst(i32, variptr_u *, i32 *, i32) {
 }
 
-void NuPortalSetOverride(nuvec_s *) {
+extern NUVEC *override_campos;
+
+void NuPortalSetOverride(NUVEC *position) {
+    override_campos = position;
 }
 
 void NuSpecialGetAnimPos(nuhspecial_s *) {
@@ -528,7 +531,10 @@ void NuIOS_GetPurchaseResult() {
 void NuLightMotionBlurEffect(i32, float) {
 }
 
-void NuPortalEnableDebugDraw(i32) {
+extern i32 draw_portals;
+
+void NuPortalEnableDebugDraw(i32 enabled) {
+    draw_portals = enabled;
 }
 
 void NuTimeGetMicrosecondsPS(u32 *, u32 *) {
@@ -580,8 +586,8 @@ void NuIOS_PurchaseInAppProduct(char *) {
 
 // Original @0x2ce760.
 void NuHGobjEvalAnimBlend2Root_3(nugscn_s *scene, ani3_animheader_s *animation_a, f32 time_a,
-                                 ani3_animheader_s *animation_b, f32 time_b, f32 blend, i32, NUJOINTANIM_s *,
-                                 NUMTX *matrices, NUHGOBJROOTFN root_fn, void *root_data) {
+                                 ani3_animheader_s *animation_b, f32 time_b, f32 blend, i32 override_count,
+                                 NUJOINTANIM_s *overrides, NUMTX *matrices, NUHGOBJROOTFN root_fn, void *root_data) {
     nuhgobj_s *object = reinterpret_cast<nuhgobj_s *>(scene);
     nuanimbuff_s buffer;
     NUVEC root_a = {0.0f, 0.0f, 0.0f};
@@ -591,6 +597,9 @@ void NuHGobjEvalAnimBlend2Root_3(nugscn_s *scene, ani3_animheader_s *animation_a
     NuAnimBuffCreateScratch(&buffer);
     NuAnimBuffAccumulate_3(&buffer, animation_a, time_a, 1, 0.0f, 0, object, &root_a);
     NuAnimBuffAccumulate_3(&buffer, animation_b, time_b, 0, blend, 0, object, &root_b);
+    if (override_count != 0 && JointProcAnimFn != NULL) {
+        JointProcAnimFn(&buffer, object, override_count, overrides);
+    }
     NuAnimBuffEvaluate_3(&buffer, object, matrices, animation_a, root_fn, &root_translation, root_data);
     NuAnimBuffDestroyScratch(&buffer);
 }

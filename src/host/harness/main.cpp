@@ -52,6 +52,10 @@ namespace {
         printf("  --script-input         Exercise the new-game menu flow\n");
         printf("  --script-load          Exercise the load-game menu flow\n");
         printf("  --script-play          Exercise the new-game flow and player movement\n");
+        printf("  --script-action        Exercise the new-game flow and one player saber action\n");
+        printf("  --script-pause         Exercise scripted play, then open and resume the pause menu\n");
+        printf("  --camera-orbit         Rotate camera yaw 360 degrees over 10 seconds in the Cantina\n");
+        printf("  --camera-free          Free camera: numpad 8/5/4/6 rotate; hold Shift to move\n");
         printf("  --offscreen            Create a hidden, non-focusable window\n");
         printf("  --mute                 Use SDL's dummy audio driver\n");
         printf("  --script-tail-ms <ms>  Wait after scripted input completes (default: 8000)\n");
@@ -122,6 +126,22 @@ namespace {
             } else if (strcmp(argument, "--script-play") == 0) {
                 options.script_input = true;
                 options.script_play = true;
+            } else if (strcmp(argument, "--script-action") == 0) {
+                options.script_input = true;
+                options.script_play = true;
+                options.script_action = true;
+            } else if (strcmp(argument, "--script-pause") == 0) {
+                options.script_input = true;
+                options.script_play = true;
+                options.script_pause = true;
+            } else if (strcmp(argument, "--camera-orbit") == 0) {
+                options.script_input = true;
+                options.script_play = true;
+                options.camera_orbit = true;
+            } else if (strcmp(argument, "--camera-free") == 0) {
+                options.script_input = true;
+                options.script_play = true;
+                options.camera_free = true;
             } else if (strcmp(argument, "--offscreen") == 0) {
                 options.offscreen = true;
             } else if (strcmp(argument, "--mute") == 0) {
@@ -143,6 +163,10 @@ namespace {
                 host_print_window_usage(program);
                 return false;
             }
+        }
+        if (options.camera_orbit && options.camera_free) {
+            fprintf(stderr, "--camera-orbit and --camera-free cannot be used together\n");
+            return false;
         }
         return true;
     }

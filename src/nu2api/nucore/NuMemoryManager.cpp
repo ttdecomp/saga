@@ -268,9 +268,6 @@ void *NuMemoryManager::_TryBlockAlloc(u32 size, u32 alignment, u32 flags, const 
     }
     if (suffix_size != 0) {
         FreeHeader *suffix = (FreeHeader *)(allocated_begin + allocated_size);
-        LOG_WARN(
-            "NuMemoryManager::_TryBlockAlloc: Splitting block %p into %p and %p (size=%zu, prefix=%u, suffix=%u)\n",
-            fragment, allocated, suffix, allocated_size, prefix_size, suffix_size);
         suffix->block_header.value = suffix_size / 4;
         *END_TAG(suffix, suffix_size) = suffix->block_header.value;
         suffix->next = NULL;

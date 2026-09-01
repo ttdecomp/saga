@@ -21,6 +21,7 @@
 #include <time.h>
 
 #include "globals.h"
+#include "legoapi/gizmo/base/gizactions.h"
 #include "MechInputTouch/MechInputTouch_types.h"
 #include "gameframework/saveload.h"
 #include "legoapi/characters/core/character.h"
@@ -73,9 +74,8 @@ extern "C" {
     void NewMenu(i32 menu_id, i32 menu_y, i32 param3);
     void edGraEnableTerrainSwap(void);
     void edGraDisableTerrainSwap(void);
-    void SetActionInfo(void *action_info, void *extra_action_data);
+    void SetActionInfo(ACTIONINFO_s *action_info, EXTRAACTIONDATA_s *extra_action_data);
     void SetProceduralAnimationFn(void *fn);
-    void NuAnimBuffProceduralAnimation(void);
     void DrawMenu(i32 menu_id);
     extern i32 GameMenuLevel;
 }

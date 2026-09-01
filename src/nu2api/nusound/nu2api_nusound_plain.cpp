@@ -3,32 +3,6 @@
 #include "nu2api/numusic/sfx.h"
 #include "nu2api/nusound/nusound.h"
 
-enum MusicPlaybackState : i16 {
-    MUSIC_PLAYBACK_STOPPED = 0,
-};
-
-struct MusicPlayback {
-    MusicPlaybackState state;
-    i16 requested_track;
-    i16 primary_stream;
-    i16 current_track;
-    i16 transition_frames;
-    i16 queued_track;
-    i16 secondary_stream;
-    i16 resume_frames;
-    bool pause_requested;
-    bool restore_requested;
-    bool field_0x12;
-    bool field_0x13;
-    void *track_data;
-    f32 transition;
-    u16 update_delay;
-    i16 resume_track;
-    void *context;
-};
-
-DECOMP_ASSERT(sizeof(MusicPlayback) == 0x24, "MusicPlayback size");
-
 typedef void (*SoundBitCallback)(i32 sound_id);
 
 i32 GroupBuffer_GetNumInGroup(i32 group_id);

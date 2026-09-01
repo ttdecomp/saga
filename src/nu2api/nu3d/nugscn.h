@@ -8,12 +8,14 @@ struct nunativetex_s;
 struct nudldlistscene_s;
 struct nuinstanim_s;
 struct numtx_s;
+struct NUFRUSTRUM;
 typedef struct nuanimdata_s nuanimdata_s;
 
 typedef struct nuanimendlookup_s {
-    u16 field_0x00;
+    u16 count;
     u16 end_frame;
-    u8 field_0x04[8];
+    f32 *times;
+    u8 *values;
 } nuanimendlookup_s;
 DECOMP_ASSERT(sizeof(nuanimendlookup_s) == 0xc, "nuanimendlookup_s ABI");
 
@@ -107,138 +109,27 @@ typedef struct nugscn_s {
     i32 numsplines;
     struct nugspline_s *splines;
     undefined pad_38[8];
-    struct nugscn_s **additional_scenes;
-    undefined pad_44[8];
+    struct nugscn_s **additional_scenes;         // 0x40
+    i32 rendered_additional_scene_count;         // 0x44
+    i16 num_instance_animations;                 // 0x48
+    i16 num_instance_animation_data;             // 0x4a
     struct nuinstanim_s *instance_animations;    // 0x4c, 0x60-byte entries
     struct numtx_s *instance_animation_matrices; // 0x50, 0x40-byte entries
     nuanimdata_s **instance_animation_data;      // 0x54
     undefined pad_58[0x0c];
     void *texture_anims;
     undefined pad_68[4];
-    i32 max_portals;   // 0x6c
+    u32 max_portals;   // 0x6c
     NUPORTAL *portals; // 0x70, 0x20-byte entries
-    undefined pad_74[8];
-    undefined field100_0x7c;
-    undefined field101_0x7d;
-    undefined field102_0x7e;
-    undefined field103_0x7f;
-    undefined field104_0x80;
-    undefined field105_0x81;
-    undefined field106_0x82;
-    undefined field107_0x83;
-    undefined field108_0x84;
-    undefined field109_0x85;
-    undefined field110_0x86;
-    undefined field111_0x87;
-    undefined field112_0x88;
-    undefined field113_0x89;
-    undefined field114_0x8a;
-    undefined field115_0x8b;
-    undefined field116_0x8c;
-    undefined field117_0x8d;
-    undefined field118_0x8e;
-    undefined field119_0x8f;
-    undefined field120_0x90;
-    undefined field121_0x91;
-    undefined field122_0x92;
-    undefined field123_0x93;
-    undefined field124_0x94;
-    undefined field125_0x95;
-    undefined field126_0x96;
-    undefined field127_0x97;
-    undefined field128_0x98;
-    undefined field129_0x99;
-    undefined field130_0x9a;
-    undefined field131_0x9b;
-    undefined field132_0x9c;
-    undefined field133_0x9d;
-    undefined field134_0x9e;
-    undefined field135_0x9f;
-    undefined field136_0xa0;
-    undefined field137_0xa1;
-    undefined field138_0xa2;
-    undefined field139_0xa3;
-    undefined field140_0xa4;
-    undefined field141_0xa5;
-    undefined field142_0xa6;
-    undefined field143_0xa7;
-    undefined field144_0xa8;
-    undefined field145_0xa9;
-    undefined field146_0xaa;
-    undefined field147_0xab;
-    undefined field148_0xac;
-    undefined field149_0xad;
-    undefined field150_0xae;
-    undefined field151_0xaf;
-    undefined field152_0xb0;
-    undefined field153_0xb1;
-    undefined field154_0xb2;
-    undefined field155_0xb3;
-    undefined field156_0xb4;
-    undefined field157_0xb5;
-    undefined field158_0xb6;
-    undefined field159_0xb7;
-    undefined field160_0xb8;
-    undefined field161_0xb9;
-    undefined field162_0xba;
-    undefined field163_0xbb;
-    undefined field164_0xbc;
-    undefined field165_0xbd;
-    undefined field166_0xbe;
-    undefined field167_0xbf;
-    undefined field168_0xc0;
-    undefined field169_0xc1;
-    undefined field170_0xc2;
-    undefined field171_0xc3;
-    undefined field172_0xc4;
-    undefined field173_0xc5;
-    undefined field174_0xc6;
-    undefined field175_0xc7;
-    undefined field176_0xc8;
-    undefined field177_0xc9;
-    undefined field178_0xca;
-    undefined field179_0xcb;
-    undefined field180_0xcc;
-    undefined field181_0xcd;
-    undefined field182_0xce;
-    undefined field183_0xcf;
-    undefined field184_0xd0;
-    undefined field185_0xd1;
-    undefined field186_0xd2;
-    undefined field187_0xd3;
-    undefined field188_0xd4;
-    undefined field189_0xd5;
-    undefined field190_0xd6;
-    undefined field191_0xd7;
-    undefined field192_0xd8;
-    undefined field193_0xd9;
-    undefined field194_0xda;
-    undefined field195_0xdb;
-    undefined field196_0xdc;
-    undefined field197_0xdd;
-    undefined field198_0xde;
-    undefined field199_0xdf;
-    undefined field200_0xe0;
-    undefined field201_0xe1;
-    undefined field202_0xe2;
-    undefined field203_0xe3;
-    i32 portal_depth;
-    undefined field208_0xe8;
-    undefined field209_0xe9;
-    undefined field210_0xea;
-    undefined field211_0xeb;
-    undefined field212_0xec;
-    undefined field213_0xed;
-    undefined field214_0xee;
-    undefined field215_0xef;
-    undefined field216_0xf0;
-    undefined field217_0xf1;
-    undefined field218_0xf2;
-    undefined field219_0xf3;
-    undefined field220_0xf4;
-    undefined field221_0xf5;
-    undefined field222_0xf6;
-    undefined field223_0xf7;
+    i32 num_rooms;     // 0x74
+    NUROOM *rooms;     // 0x78, 0x18-byte entries
+    undefined pad_7c[0x20];
+    struct NUFRUSTRUM *portal_frusta[16]; // 0x9c, traversal work list
+    i32 num_portal_frusta;                // 0xdc
+    i32 camera_room;                      // 0xe0
+    i32 portal_depth;                     // 0xe4, maximum recursive depth
+    undefined pad_e8[0x0c];
+    void *portal_visibility_data; // 0xf4, required by portal traversal
     undefined field224_0xf8;
     undefined field225_0xf9;
     undefined field226_0xfa;
@@ -264,50 +155,8 @@ typedef struct nugscn_s {
     undefined field246_0x10e;
     undefined field247_0x10f;
     struct nudldlistscene_s *display_list;
-    undefined field249_0x114;
-    undefined field250_0x115;
-    undefined field251_0x116;
-    undefined field252_0x117;
-    undefined field253_0x118;
-    undefined field254_0x119;
-    undefined field255_0x11a;
-    undefined field256_0x11b;
-    undefined field257_0x11c;
-    undefined field258_0x11d;
-    undefined field259_0x11e;
-    undefined field260_0x11f;
-    undefined field261_0x120;
-    undefined field262_0x121;
-    undefined field263_0x122;
-    undefined field264_0x123;
-    undefined field265_0x124;
-    undefined field266_0x125;
-    undefined field267_0x126;
-    undefined field268_0x127;
-    undefined field269_0x128;
-    undefined field270_0x129;
-    undefined field271_0x12a;
-    undefined field272_0x12b;
-    undefined field273_0x12c;
-    undefined field274_0x12d;
-    undefined field275_0x12e;
-    undefined field276_0x12f;
-    undefined field277_0x130;
-    undefined field278_0x131;
-    undefined field279_0x132;
-    undefined field280_0x133;
-    undefined field281_0x134;
-    undefined field282_0x135;
-    undefined field283_0x136;
-    undefined field284_0x137;
-    undefined field285_0x138;
-    undefined field286_0x139;
-    undefined field287_0x13a;
-    undefined field288_0x13b;
-    undefined field289_0x13c;
-    undefined field290_0x13d;
-    undefined field291_0x13e;
-    undefined field292_0x13f;
+    undefined pad_114[0x28];
+    u8 *instance_visibility_flags; // 0x13c, shared portal-visibility result buffer
     undefined field293_0x140;
     undefined field294_0x141;
     undefined field295_0x142;
@@ -489,10 +338,21 @@ typedef struct nugscn_s {
 } NUGSCN;
 
 DECOMP_ASSERT(offsetof(NUGSCN, instance_animations) == 0x4c, "NUGSCN instance animation array offset");
+DECOMP_ASSERT(offsetof(NUGSCN, num_instance_animations) == 0x48, "NUGSCN instance animation count offset");
+DECOMP_ASSERT(offsetof(NUGSCN, num_instance_animation_data) == 0x4a, "NUGSCN instance animation-data count offset");
 DECOMP_ASSERT(offsetof(NUGSCN, instance_animation_matrices) == 0x50, "NUGSCN instance animation matrix array offset");
 DECOMP_ASSERT(offsetof(NUGSCN, instance_animation_data) == 0x54, "NUGSCN instance animation data offset");
 DECOMP_ASSERT(offsetof(NUGSCN, max_portals) == 0x6c, "NUGSCN portal-count offset");
 DECOMP_ASSERT(offsetof(NUGSCN, portals) == 0x70, "NUGSCN portal-array offset");
+DECOMP_ASSERT(offsetof(NUGSCN, num_rooms) == 0x74, "NUGSCN room-count offset");
+DECOMP_ASSERT(offsetof(NUGSCN, rooms) == 0x78, "NUGSCN room-array offset");
+DECOMP_ASSERT(offsetof(NUGSCN, portal_frusta) == 0x9c, "NUGSCN portal-frustum array offset");
+DECOMP_ASSERT(offsetof(NUGSCN, num_portal_frusta) == 0xdc, "NUGSCN portal-frustum count offset");
+DECOMP_ASSERT(offsetof(NUGSCN, camera_room) == 0xe0, "NUGSCN camera-room offset");
+DECOMP_ASSERT(offsetof(NUGSCN, portal_depth) == 0xe4, "NUGSCN portal-depth offset");
+DECOMP_ASSERT(offsetof(NUGSCN, portal_visibility_data) == 0xf4, "NUGSCN portal-visibility data offset");
+DECOMP_ASSERT(offsetof(NUGSCN, display_list) == 0x110, "NUGSCN display-list offset");
+DECOMP_ASSERT(offsetof(NUGSCN, instance_visibility_flags) == 0x13c, "NUGSCN portal-visibility buffer offset");
 DECOMP_ASSERT(offsetof(NUGSCN, animation_end_frames) == 0x1e0, "NUGSCN animation end-frame table offset");
 
 #ifdef __cplusplus
@@ -503,12 +363,14 @@ void NuGScnFixupTIDs(NUGSCN *scene);
 void NuGScnRestoreTIDs(NUGSCN *scene);
 
 extern "C" {
+    void NuGScnRndr(NUGSCN *scene);
 #endif
 
     void NuGScnRndr3(NUGSCN *scene);
     NUGSCN *NuGScnRead(VARIPTR *buf, VARIPTR buf_end, char *path);
     void NuGScnRemove(NUGSCN *scene);
     void NuGScnFixupPS(NUGSCN *scene);
+    void NuGScnFixupTIDsPS(NUGSCN *scene);
     // The trailing flags argument is passed as 1 by every caller in the
     // original binary; the original implementation never reads it.
     i32 NuSpecialFind(NUGSCN *scene, void **dest, char *name, i32 flags);

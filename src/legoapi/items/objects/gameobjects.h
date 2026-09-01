@@ -10,6 +10,7 @@
 // only need a declaration.
 
 struct GameObject_s;
+struct CABLE_s;
 struct AISYS_s;
 struct WORLDINFO_s;
 
@@ -33,6 +34,8 @@ extern GAMEFOG_STATE GameFog;
 void *GameBufferAlloc(VARIPTR *buf, VARIPTR *buf_end, i32 size);
 
 GameObject_s *FindGameObject(i32 id, u32 type, i32 a3, i32 a4, i32 a5);
+CABLE_s *CreateCable(GameObject_s *source, GameObject_s *target, i32 flags);
+void KillGameObject(GameObject_s *object, i32 reason, i32 flags);
 i32 Game_IgnoreInput();
 GameObject_s *GetNamedGameObject(AISYS_s *aisys, char *name);
 APIOBJECT_s *GameAPIOBJECTFromObjID(u8 object_id);
@@ -44,6 +47,7 @@ void GameAISysInit();
 void GameAISysReset(struct AISYS_s *aisys);
 void GameAnimSys_Update(GAMEANIMSYS_s *system);
 void GameAudio_SetActionMusicTimes(f32 fade_in_time, f32 fade_out_time);
+i32 GameAudio_GetPlrSfxBits(void *object);
 
 // Original returns exit status; code in NuMain checks it.
 i32 Game_Exit(i32 last_area);

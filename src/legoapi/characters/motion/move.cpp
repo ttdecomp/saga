@@ -27,6 +27,7 @@ void GameObjectOrigin(GameObject_s *object);
 i32 Grapple_LookAtPos(GameObject_s *object, NUVEC *position);
 NUVEC *Technos_TgtPos(TECHNO_s *techno);
 void GameCam_UpdateLookRot(GAMECAMERA_s *camera);
+void MakePlayPlanes(GAMECAMERA_s *camera);
 u16 SeekRot(u16 current, u16 target, f32 rate);
 void SeekVec(NUVEC *result, NUVEC *current, NUVEC *target, f32 rate);
 void ShoveSystemCheckGameObject(GameObject_s *object);
@@ -65,6 +66,7 @@ void WeaponOutCode(GameObject_s *object);
 void WeaponInCode(GameObject_s *object);
 void WeaponScalingCode(GameObject_s *object);
 void HoldCode(GameObject_s *object);
+void SetWeaponOut(GameObject_s *object);
 void HeadMovement(GameObject_s *object);
 void CloakMovement(GameObject_s *object);
 void HairMovement(GameObject_s *object);
@@ -73,15 +75,19 @@ extern f32 newgamecamtime;
 extern FadeSystem FadeSys;
 i32 GetMenuID(void);
 
+// Multiplies the ordinary camera's per-frame position blend.  The original
+// keeps this as writable camera state (default 1.0), rather than folding it
+// into the socket seek rate.
+f32 CamStopBlend = 1.0f;
+
 extern "C" {
     extern i16 id_BODYGUARD;
     extern i16 id_GRIEVOUS;
 }
 
-enum CHARACTER_CONTEXT : i8 {
-    CHARACTER_CONTEXT_JUMP = 0,
-    CHARACTER_CONTEXT_BUILD_IT = 0x2d,
-    CHARACTER_CONTEXT_NONE = -1,
+enum JEDI_ACTION : i16 {
+    JEDI_ACTION_COMBO_1_1 = 46,
+    JEDI_ACTION_COMBO_2_1 = 53,
 };
 
 static GAMECHARACTERDATA *GetGameCharacterData(GameObject_s *object) {
@@ -178,14 +184,23 @@ void MovePlayer(GameObject_s *object) {
                 pad->input_state = 2;
             }
         }
+    } else if (!accepts_player_input) {
+        const f32 delta_x = object->ai.movement_position.x - api.position.x;
+        const f32 delta_z = object->ai.movement_position.z - api.position.z;
+        const f32 distance = NuFsqrt(delta_x * delta_x + delta_z * delta_z);
+        if (distance > 0.0f) {
+            input_x = delta_x / distance;
+            input_z = delta_z / distance;
+        }
+        pad->input_state = 1;
     } else {
         pad->input_state = 1;
     }
 
     ShiftPadDirectionHistory(object, pad);
     const f32 stick_magnitude = NuFsqrt(input_x * input_x + input_z * input_z);
-    pad->input_direction_x = input_x;
     pad->input_direction_z = input_z;
+    pad->input_direction_x = input_x;
     pad->input_magnitude = 0.0f;
     if (stick_magnitude >= 0.2f) {
         if (stick_magnitude < 0.5f && (game_character->flags_090 & 0x08) == 0) {
@@ -196,7 +211,28 @@ void MovePlayer(GameObject_s *object) {
             pad->input_magnitude = game_character->run_speed;
         }
         if (pad->input_magnitude > 0.0f) {
-            pad->input_angle = NuAtan2D(input_x, input_z);
+            const NUANG world_input_angle = NuAtan2D(input_x, input_z);
+            // AI destinations are already expressed in world space.  The
+            // shared directional mover consumes camera-relative controller
+            // angles and adds GameCam's yaw again, so match the target's
+            // MovePlayer AI branch by removing that yaw here.
+            pad->input_angle = !accepts_player_input && GameCam != NULL
+                                   ? NuAngSub(world_input_angle, GameCam->input_yaw)
+                                   : world_input_angle;
+        }
+    }
+
+    enum AI_GOAL_SPEED_MODE : u8 {
+        AI_GOAL_SPEED_DEFAULT = 0,
+        AI_GOAL_SPEED_RUN = 1,
+        AI_GOAL_SPEED_WALK = 2,
+    };
+    if (!accepts_player_input) {
+        if (object->ai.goal_speed_mode == AI_GOAL_SPEED_RUN && pad->input_magnitude > game_character->walk_speed) {
+            pad->input_magnitude = game_character->walk_speed;
+        } else if (object->ai.goal_speed_mode == AI_GOAL_SPEED_WALK &&
+                   pad->input_magnitude > game_character->tiptoe_speed) {
+            pad->input_magnitude = game_character->tiptoe_speed;
         }
     }
 
@@ -304,6 +340,7 @@ static void SetGameCameraView(GAMECAMERA_s *camera, const NUVEC &position, const
         pNuCam->mtx = camera->render_mtx;
         NuCameraSet(pNuCam);
     }
+    MakePlayPlanes(camera);
 }
 
 void MoveGameCamera(GAMECAMERA_s *camera) {
@@ -379,14 +416,18 @@ void MoveGameCamera(GAMECAMERA_s *camera) {
     SockSysCamera(WORLD->sock_sys, &camera->pos, camera->mode != camera->previous_mode, player_camera_positions,
                   player_positions, player_count, &camera->sock_position, &position, &target, &overlap_blend,
                   &position_seek, &angle_seek, &terrain_clearance, &separation_scale);
+    overlap_blend *= 1.5f;
     camera->position_seek = position_seek;
     camera->angle_seek = angle_seek;
     camera->desired_position = position;
 
     if (!mode_changed) {
-        NUVEC smoothed_position;
-        SeekVec(&smoothed_position, &camera->pos, &position, camera->position_seek);
-        position = smoothed_position;
+        // Target common path: clamp the socket seek contribution first, then
+        // apply the independently writable stop blend to all three axes.
+        const f32 seek_blend = MIN(camera->position_seek * FRAMETIME, 1.0f) * CamStopBlend;
+        position.x = camera->pos.x + (position.x - camera->pos.x) * seek_blend;
+        position.y = camera->pos.y + (position.y - camera->pos.y) * seek_blend;
+        position.z = camera->pos.z + (position.z - camera->pos.z) * seek_blend;
     }
 
     // On the no-rail path SockSysCamera deliberately retains the previous
@@ -547,6 +588,66 @@ void Move_ATAT(GameObject_s *) {
 void Move_JAWA(GameObject_s *) {
 }
 
+static bool JediHasAction(const GameObject_s *object, JEDI_ACTION action) {
+    return object->apiobj.character_model != NULL && object->apiobj.character_model->model_data_b != NULL &&
+           object->apiobj.character_model->model_data_b[action] != NULL;
+}
+
+// Ordinary saber-combo entry and completion.  The target's full helper also
+// selects opponents, branches later swings and applies hit frames; those
+// branches remain separate work.  This slice owns only the evidenced opening
+// action (combo1_1 or combo2_1) and releases its context when that action finishes.
+static void LightSabreComboCode(GameObject_s *object, i32 action_pressed, i32, i32, i32) {
+    ANIMPACKET_s &animation = object->apiobj.anim_packet;
+    if (object->character_context == CHARACTER_CONTEXT_COMBO) {
+        if ((animation.flags & ANIMPACKET_FLAG_FINISHED) != 0) {
+            object->character_context = CHARACTER_CONTEXT_NONE;
+            object->field_0xe20 &= ~GAMEOBJECT_E20_FLAG_COMBO_MOVEMENT;
+            object->combo_stage = 0;
+            object->combo_branch = 0;
+        }
+        return;
+    }
+
+    if (action_pressed == 0 || (object->apiobj.flags_low & APIOBJECT_FLAG_PLAYER_ACTIVE) == 0 ||
+        object->apiobj.field_0x27d == 0) {
+        return;
+    }
+
+    const i8 context = object->character_context;
+    if (context != CHARACTER_CONTEXT_NONE && context != CHARACTER_CONTEXT_LAND_JUMP &&
+        context != CHARACTER_CONTEXT_LAND_JUMP_2 && context != CHARACTER_CONTEXT_LAND_FLIP &&
+        context != CHARACTER_CONTEXT_LAND_COMBO_JUMP && context != LEGOCONTEXT_WEAPONIN &&
+        context != LEGOCONTEXT_WEAPONOUT) {
+        return;
+    }
+
+    SetWeaponOut(object);
+    object->character_context = CHARACTER_CONTEXT_COMBO;
+    object->combo_stage = 0;
+    object->combo_input_timer = 0.0f;
+
+    JEDI_ACTION action = JEDI_ACTION_COMBO_1_1;
+    u8 alternate = 0;
+    if (JediHasAction(object, JEDI_ACTION_COMBO_2_1) && object->combo_alternate == 0) {
+        action = JEDI_ACTION_COMBO_2_1;
+        alternate = 1;
+    }
+    object->queued_context_animation = action;
+    object->context_animation = action;
+    object->field_0xe22 |= GAMEOBJECT_E22_FLAG_WEAPON_ANIMATION;
+    object->field_0xe20 |= GAMEOBJECT_E20_FLAG_COMBO_MOVEMENT;
+    object->context_flags &= GAMEOBJECT_CONTEXT_FLAGS_COMBO_START_RETAIN_MASK;
+    object->combo_alternate = alternate;
+    object->combo_branch = 0;
+    object->combo_input_latched = 0;
+    object->apiobj.velocity.y = 0.0f;
+
+    if (!JediHasAction(object, action)) {
+        object->character_context = CHARACTER_CONTEXT_NONE;
+    }
+}
+
 void Move_JEDI(GameObject_s *object) {
     if (object == NULL || object->pad_gamepad == NULL) {
         return;
@@ -617,6 +718,7 @@ void Move_JEDI(GameObject_s *object) {
     WeaponInCode(object);
     WeaponScalingCode(object);
     HoldCode(object);
+    LightSabreComboCode(object, action_pressed, action_held, jump_pressed, pressed);
     HeadMovement(object);
     CloakMovement(object);
     HairMovement(object);
@@ -637,8 +739,6 @@ void MoveToMarker::Process(float) {
 void MoveToMarker::Render() {
 }
 
-static __used__ void JumpAnimCode(GameObject_s *) {
-}
 static __used__ i32 Jump_UpdateHint(HINT_s *) {
     return 0;
 }
@@ -727,7 +827,7 @@ void ApplyGravity(GameObject_s *object, float *gravity, float terminal_velocity,
     }
 
     f32 &velocity = vertical_velocity != NULL ? *vertical_velocity : object->apiobj.velocity.y;
-    if ((object->apiobj.field_0x27d & 1) != 0 && vertical_velocity == NULL) {
+    if ((object->apiobj.field_0x27d & APIOBJECT_TERRAIN_CONTACT_FLOOR) != 0 && vertical_velocity == NULL) {
         velocity = 0.0f;
         return;
     }
@@ -846,7 +946,32 @@ void VehicleTurnOrLoopOffset(GameObject_s *) {
 void WallShuffle_SetTargetMom(GameObject_s *, u16) {
 }
 
-void SetMoveAndAnimateFunctions(u32, u32, u32, u32, i32, void *, void *, void *) {
+void SetMoveAndAnimateFunctions(u32 model_flag_mask, u32 model_flag_value, u32 game_flag_mask, u32 game_flag_value,
+                                i32 movement_type, void *move_function, void *animate_function, void *draw_function) {
+    const CHARACTERUPDATEFN move = reinterpret_cast<CHARACTERUPDATEFN>(move_function);
+    const CHARACTERUPDATEFN animate = reinterpret_cast<CHARACTERUPDATEFN>(animate_function);
+    const CHARACTERUPDATEFN draw = reinterpret_cast<CHARACTERUPDATEFN>(draw_function);
+
+    for (i32 character_index = 0; character_index < CHARCOUNT; ++character_index) {
+        CHARACTERDATA &character = CDataList[character_index];
+        GAMECHARACTERDATA &game_character = GCDataList[character_index];
+
+        if ((character.model_flags & model_flag_mask) != model_flag_value ||
+            (game_character.flags_090 & game_flag_mask) != game_flag_value ||
+            (movement_type != -1 && static_cast<i8>(game_character.field275_0x116) != movement_type)) {
+            continue;
+        }
+
+        if (move != NULL) {
+            character.move_fn = move;
+        }
+        if (animate != NULL) {
+            character.animate_fn = animate;
+        }
+        if (draw != NULL) {
+            character.draw_fn = draw;
+        }
+    }
 }
 
 u16 SeekRot(u16 current, u16 target, f32 rate) {

@@ -37,7 +37,7 @@ i32 HitTerrain() {
     }
 
     TerI->hit_time = 999.9f;
-    const f32 radius = TerI->collision_height_scale;
+    const f32 radius = TerI->collision_radius;
     TerI->shape_adjusted = 0;
     TerI->hit_type = TERRAIN_HIT_TYPE_NONE;
     TerI->terrain_group_index = -1;
@@ -143,10 +143,10 @@ i32 HitTerrain() {
     NUVEC sphere_position;
     for (i32 sphere_index = 0; sphere_index < curSphereter; ++sphere_index) {
         const TERRAIN_SPHERE &sphere = SphereData[sphere_index];
-        const f32 scaled_collision_height = TerI->collision_height_scale * TerI->object_scale;
+        const f32 scaled_collision_radius = TerI->collision_radius * TerI->object_scale;
         sphere_position = sphere.position;
         sphere_position.y *= TerI->inverse_object_scale;
-        sphere_position.y -= scaled_collision_height;
+        sphere_position.y -= scaled_collision_radius;
         DeRotatePoint(&sphere_position);
         collision_found |= CheckSphereTer(&sphere_position, sphere.radius);
     }
@@ -167,7 +167,7 @@ void KillRumble(GameObject_s *) {
 }
 
 i32 CheckSphere(i32 vertex_index) {
-    f32 radius = TerI->collision_height_scale;
+    f32 radius = TerI->collision_radius;
     if (TerI->transformed_vertices[vertex_index].z < -radius ||
         TerI->transformed_vertices[vertex_index].z > TerI->movement_length + radius) {
         return 0;
@@ -175,11 +175,11 @@ i32 CheckSphere(i32 vertex_index) {
 
     f32 radial_distance_sq = TerI->transformed_vertices[vertex_index].x * TerI->transformed_vertices[vertex_index].x +
                              TerI->transformed_vertices[vertex_index].y * TerI->transformed_vertices[vertex_index].y;
-    if (radial_distance_sq > TerI->collision_height_scale_sq) {
+    if (radial_distance_sq > TerI->collision_radius_sq) {
         return 0;
     }
 
-    f32 radial_extent = NuFsqrt(TerI->collision_height_scale_sq - radial_distance_sq);
+    f32 radial_extent = NuFsqrt(TerI->collision_radius_sq - radial_distance_sq);
     f32 hit_distance = TerI->transformed_vertices[vertex_index].z - radial_extent;
     if (0.0f <= hit_distance && TerI->movement_length >= hit_distance) {
         f32 hit_time = hit_distance / TerI->movement_length;
@@ -197,12 +197,12 @@ i32 CheckSphere(i32 vertex_index) {
 
     f32 distance_sq =
         radial_distance_sq + TerI->transformed_vertices[vertex_index].z * TerI->transformed_vertices[vertex_index].z;
-    if (TerI->collision_height_scale_sq <= distance_sq) {
+    if (TerI->collision_radius_sq <= distance_sq) {
         return 0;
     }
 
     f32 distance = NuFsqrt(distance_sq);
-    f32 overlap_time = distance - TerI->collision_height_scale;
+    f32 overlap_time = distance - TerI->collision_radius;
     if (TerI->hit_time <= overlap_time) {
         return 0;
     }
@@ -257,18 +257,18 @@ i32 CheckCylinder(i32 first_vertex, i32 second_vertex, i32 *vertex_mask, i32 rem
     // Reject an edge when both endpoints lie outside the swept sphere's
     // expanded bounds. Once an edge is rejected this way, its endpoint bits
     // can be removed from the later vertex tests as well.
-    if ((query->transformed_vertices[first_vertex].x > query->collision_height_scale &&
-         query->transformed_vertices[second_vertex].x > query->collision_height_scale) ||
-        (query->transformed_vertices[first_vertex].x < -query->collision_height_scale &&
-         query->transformed_vertices[second_vertex].x < -query->collision_height_scale) ||
-        (query->transformed_vertices[first_vertex].y > query->collision_height_scale &&
-         query->transformed_vertices[second_vertex].y > query->collision_height_scale) ||
-        (query->transformed_vertices[first_vertex].y < -query->collision_height_scale &&
-         query->transformed_vertices[second_vertex].y < -query->collision_height_scale) ||
-        (query->transformed_vertices[first_vertex].z < -query->collision_height_scale &&
-         query->transformed_vertices[second_vertex].z < -query->collision_height_scale) ||
-        (query->transformed_vertices[first_vertex].z > query->movement_length + query->collision_height_scale &&
-         query->transformed_vertices[second_vertex].z > query->movement_length + query->collision_height_scale)) {
+    if ((query->transformed_vertices[first_vertex].x > query->collision_radius &&
+         query->transformed_vertices[second_vertex].x > query->collision_radius) ||
+        (query->transformed_vertices[first_vertex].x < -query->collision_radius &&
+         query->transformed_vertices[second_vertex].x < -query->collision_radius) ||
+        (query->transformed_vertices[first_vertex].y > query->collision_radius &&
+         query->transformed_vertices[second_vertex].y > query->collision_radius) ||
+        (query->transformed_vertices[first_vertex].y < -query->collision_radius &&
+         query->transformed_vertices[second_vertex].y < -query->collision_radius) ||
+        (query->transformed_vertices[first_vertex].z < -query->collision_radius &&
+         query->transformed_vertices[second_vertex].z < -query->collision_radius) ||
+        (query->transformed_vertices[first_vertex].z > query->movement_length + query->collision_radius &&
+         query->transformed_vertices[second_vertex].z > query->movement_length + query->collision_radius)) {
         *vertex_mask &= remaining_vertex_mask;
         return 0;
     }
@@ -294,12 +294,12 @@ i32 CheckCylinder(i32 first_vertex, i32 second_vertex, i32 *vertex_mask, i32 rem
         const f32 distance_sq =
             query->transformed_vertices[second_vertex].x * query->transformed_vertices[second_vertex].x +
             query->transformed_vertices[second_vertex].y * query->transformed_vertices[second_vertex].y;
-        if (distance_sq > query->collision_height_scale_sq) {
+        if (distance_sq > query->collision_radius_sq) {
             return 0;
         }
 
         const f32 distance = NuFsqrt(distance_sq);
-        const f32 overlap_time = distance - query->collision_height_scale;
+        const f32 overlap_time = distance - query->collision_radius;
         if (query->hit_time <= overlap_time) {
             return 0;
         }
@@ -333,7 +333,7 @@ i32 CheckCylinder(i32 first_vertex, i32 second_vertex, i32 *vertex_mask, i32 rem
     // containing the edge. This avoids a square root for the common miss.
     const f32 line_cross = query->transformed_vertices[first_vertex].x * edge_direction.y -
                            query->transformed_vertices[first_vertex].y * edge_direction.x;
-    if (line_cross * line_cross > query->collision_height_scale_sq * horizontal_length_sq) {
+    if (line_cross * line_cross > query->collision_radius_sq * horizontal_length_sq) {
         *vertex_mask &= remaining_vertex_mask;
         return 0;
     }
@@ -386,7 +386,7 @@ i32 CheckCylinder(i32 first_vertex, i32 second_vertex, i32 *vertex_mask, i32 rem
         cylinder_side.z = 0.0f;
     }
 
-    const f32 radial_extent = NuFsqrt(query->collision_height_scale_sq - line_distance_sq);
+    const f32 radial_extent = NuFsqrt(query->collision_radius_sq - line_distance_sq);
     f32 height_offset = 0.0f;
     if (radial_extent != 0.0f && cylinder_side.z != 0.0f) {
         height_offset = radial_extent / cylinder_side.z;
@@ -427,10 +427,10 @@ i32 CheckCylinder(i32 first_vertex, i32 second_vertex, i32 *vertex_mask, i32 rem
 
     // No forward-time hit was found. Test whether the sphere already overlaps
     // the finite edge at the start of the sweep.
-    if ((query->transformed_vertices[first_vertex].z < -query->collision_height_scale &&
-         query->transformed_vertices[second_vertex].z < -query->collision_height_scale) ||
-        (query->transformed_vertices[first_vertex].z > query->collision_height_scale &&
-         query->transformed_vertices[second_vertex].z > query->collision_height_scale)) {
+    if ((query->transformed_vertices[first_vertex].z < -query->collision_radius &&
+         query->transformed_vertices[second_vertex].z < -query->collision_radius) ||
+        (query->transformed_vertices[first_vertex].z > query->collision_radius &&
+         query->transformed_vertices[second_vertex].z > query->collision_radius)) {
         return 0;
     }
 
@@ -456,12 +456,12 @@ i32 CheckCylinder(i32 first_vertex, i32 second_vertex, i32 *vertex_mask, i32 rem
     };
     const f32 distance_sq =
         edge_direction.x * edge_direction.x + edge_direction.y * edge_direction.y + edge_direction.z * edge_direction.z;
-    if (distance_sq >= query->collision_height_scale_sq) {
+    if (distance_sq >= query->collision_radius_sq) {
         return 0;
     }
 
     const f32 distance = NuFsqrt(distance_sq);
-    const f32 overlap_time = distance - query->collision_height_scale;
+    const f32 overlap_time = distance - query->collision_radius;
     if (query->hit_time <= overlap_time) {
         return 0;
     }
@@ -469,29 +469,28 @@ i32 CheckCylinder(i32 first_vertex, i32 second_vertex, i32 *vertex_mask, i32 rem
     RotateVec(&edge_direction, &horizontal_perpendicular);
     const NUVEC &surface_normal = query->working_surface->normals[0];
     if (horizontal_perpendicular.x * surface_normal.x + horizontal_perpendicular.y * surface_normal.y +
-            horizontal_perpendicular.z * surface_normal.z <=
+            horizontal_perpendicular.z * surface_normal.z <
         0.0f) {
-        return 0;
+        query = TerI;
+        query->hit_time = overlap_time;
+        f32 inverse_distance = 0.0f;
+        if (distance != 0.0f) {
+            inverse_distance = 1.0f / distance;
+        }
+        query->hit_type = TERRAIN_HIT_TYPE_CYLINDER | TERRAIN_HIT_TYPE_SECOND_NORMAL;
+        query->movement_normal.x = -edge_direction.x * inverse_distance;
+        query->movement_normal.y = -edge_direction.y * inverse_distance;
+        query->movement_normal.z = -edge_direction.z * inverse_distance;
+        return 1;
     }
-
-    query = TerI;
-    query->hit_time = overlap_time;
-    f32 inverse_distance = 0.0f;
-    if (distance != 0.0f) {
-        inverse_distance = 1.0f / distance;
-    }
-    query->hit_type = TERRAIN_HIT_TYPE_CYLINDER | TERRAIN_HIT_TYPE_SECOND_NORMAL;
-    query->movement_normal.x = -edge_direction.x * inverse_distance;
-    query->movement_normal.y = -edge_direction.y * inverse_distance;
-    query->movement_normal.z = -edge_direction.z * inverse_distance;
-    return 1;
+    return 0;
 }
 
 void HitWallSpline() {
 }
 
 i32 CheckSphereTer(NUVEC *position, f32 radius) {
-    const f32 terrain_radius = TerI->collision_height_scale;
+    const f32 terrain_radius = TerI->collision_radius;
     const f32 combined_radius = radius + terrain_radius;
 
     if (position->z < -combined_radius || position->z > TerI->movement_length + combined_radius) {
@@ -604,7 +603,7 @@ void CalcCapsuleIntersectDistance(VuVec const &, VuVec const &, float, VuVec con
 
 i32 HitPoly(f32 primary_start, f32 primary_end, f32 secondary_start, f32 secondary_end, tertype *surface) {
     TerrainQuery_s *query = TerI;
-    const f32 radius = query->collision_height_scale;
+    const f32 radius = query->collision_radius;
     const f32 no_secondary_normal = 65536.0f;
 
     i32 collision_found = 0;

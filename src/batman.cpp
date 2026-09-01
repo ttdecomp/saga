@@ -70,8 +70,7 @@ extern "C" i32 NuMain(i32 argc, char **argv) {
     WorldInfo_InitOnce();
     InitOnce(argc, argv);
     TriggerExtraDataLoad();
-    constexpr i32 game_menu_count = sizeof(GameMenuInfo) / sizeof(GameMenuInfo[0]);
-    MenuInitialise(GameMenuInfo, game_menu_count, LANGUAGECOUNT, DrawSaveSlots, 1, 0);
+    MenuInitialise(GameMenuInfo, LEGO_MENU_ID_COUNT, LANGUAGECOUNT, DrawSaveSlots, 1, 0);
     MenuReset();
     edGraInitTerrainSwapProtection();
     NuHGobjReversibleCharacters(1);
@@ -484,7 +483,7 @@ giz_freeplay:
                     }
 
                     if (world->current_gscn != NULL) {
-                        NuGScnUpdate(world->current_gscn, (i32)(FRAMETIME * 60.0f));
+                        NuGScnUpdate(world->current_gscn, FRAMETIME * 60.0f);
                     }
                     GameAnimSys_Update(world->game_anim_sys);
                     edanimUpdateObjects(1.0f);
@@ -1114,35 +1113,51 @@ giz_freeplay:
             frameTimeAccumulator = MAX(pastFrameTimes[4], frameTimeAccumulator);
             shortestFrameTime = MIN(pastFrameTimes[4], shortestFrameTime);
 
-            if (((shortestFrameIndex == 0) || (longestFrameIndex == 0)) || (pastFrameTimes[0] < 0.0f)) {
-                frameTimeAccumulator = 0.0f;
-                averagedFrameCount = 0;
-            } else {
-                frameTimeAccumulator = pastFrameTimes[0];
-                averagedFrameCount = 1;
-            }
-
-            if (((shortestFrameIndex != 1) && (longestFrameIndex != 1)) && (0.0f <= pastFrameTimes[1])) {
-                frameTimeAccumulator += pastFrameTimes[1];
-                averagedFrameCount += 1;
-            }
-            if (((shortestFrameIndex != 2) && (longestFrameIndex != 2)) && (0.0f <= pastFrameTimes[2])) {
-                frameTimeAccumulator += pastFrameTimes[2];
-                averagedFrameCount += 1;
-            }
-            if (((shortestFrameIndex != 3) && (longestFrameIndex != 3)) && (0.0f <= pastFrameTimes[3])) {
-                frameTimeAccumulator += pastFrameTimes[3];
-                averagedFrameCount += 1;
-            }
-
-            if (((shortestFrameIndex == 4) || (longestFrameIndex == 4)) || (pastFrameTimes[4] < 0.0f)) {
-                if (averagedFrameCount != 0) {
-                    goto frametime_avg;
+            frameTimeAccumulator = 0.0f;
+            averagedFrameCount = 0;
+            if (shortestFrameIndex != 0) {
+                if (longestFrameIndex != 0) {
+                    if (0.0f <= pastFrameTimes[0]) {
+                        frameTimeAccumulator = pastFrameTimes[0];
+                        averagedFrameCount = 1;
+                    }
                 }
-            } else {
-                frameTimeAccumulator += pastFrameTimes[4];
-                averagedFrameCount += 1;
-            frametime_avg:
+            }
+
+            if (shortestFrameIndex != 1) {
+                if (longestFrameIndex != 1) {
+                    if (0.0f <= pastFrameTimes[1]) {
+                        frameTimeAccumulator += pastFrameTimes[1];
+                        averagedFrameCount += 1;
+                    }
+                }
+            }
+            if (shortestFrameIndex != 2) {
+                if (longestFrameIndex != 2) {
+                    if (0.0f <= pastFrameTimes[2]) {
+                        frameTimeAccumulator += pastFrameTimes[2];
+                        averagedFrameCount += 1;
+                    }
+                }
+            }
+            if (shortestFrameIndex != 3) {
+                if (longestFrameIndex != 3) {
+                    if (0.0f <= pastFrameTimes[3]) {
+                        frameTimeAccumulator += pastFrameTimes[3];
+                        averagedFrameCount += 1;
+                    }
+                }
+            }
+            if (shortestFrameIndex != 4) {
+                if (longestFrameIndex != 4) {
+                    if (0.0f <= pastFrameTimes[4]) {
+                        frameTimeAccumulator += pastFrameTimes[4];
+                        averagedFrameCount += 1;
+                    }
+                }
+            }
+
+            if (averagedFrameCount != 0) {
                 savedFrametime = frameTimeAccumulator / (f32)averagedFrameCount;
                 FRAMETIME = savedFrametime;
             }

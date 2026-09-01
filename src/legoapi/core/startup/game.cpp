@@ -6,6 +6,7 @@
 #include "gameapi/gui/apimenu.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/core/input/gamepads.h"
+#include "legoapi/core/input/timer.h"
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/items/base/apiobject.h"
 #include "legoapi/legoapi_types.h"
@@ -13,6 +14,9 @@
 #include "legoapi/world/levels/episode.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nu3d/nutex.h"
+#include "nu2api/numusic/numusic.h"
+
+#include <stdio.h>
 
 struct AIROW_s;
 struct nuqthdr_s;
@@ -33,10 +37,14 @@ extern void Customiser_CopyDefaultPiecesToSave(CUSTOMISER *, CUSTOMISESAVE *);
 extern void FinishWeirdoNames(i32);
 extern void Store_UnlockPack(i32, bool);
 extern void ReCalculateCompletionPoints(void);
+extern void GameAudio_PlaySfx(i32, nuvec_s *, i32, i32);
+extern "C" void NuSound3StopRumble(void);
 extern i16 id_DEFAULTCHARACTER[2];
 extern volatile u8 LSW_HintConditions[4];
 extern "C" i32 NewMode;
 extern "C" i32 Paused;
+extern "C" i32 memcard_autosavedisabled;
+extern "C" i32 memcard_autosaveenabled;
 
 namespace {
 
@@ -52,7 +60,23 @@ void ClearPause() {
     NetPaused = 0;
 }
 
-void ResumeGame(i32, i32) {
+void ResumeGame(i32 play_sound, i32 resume_music) {
+    puts("Resume Game");
+    Paused = 0;
+    NetPaused = 0;
+    MenuRememberCursor(&GameMenu[GameMenuLevel]);
+    MenuReset();
+    puts("Resume game fades audio to 1.0f");
+    music_man.SetFader(1.0f, 0.5f);
+    if (resume_music != 0) {
+        music_man.ResumeTrack(0x10);
+    }
+    if (play_sound != 0) {
+        GameAudio_PlaySfx(0x37, NULL, 0, 0);
+    }
+    if (ResumeGame_ExtraCodeFn != NULL) {
+        ResumeGame_ExtraCodeFn();
+    }
 }
 
 void InitGameMode() {
@@ -249,5 +273,37 @@ void NewGame() {
     ReCalculateCompletionPoints();
 }
 
-void PauseGame(i32) {
+void PauseGame(i32 pad_index) {
+    puts("Pause Game");
+    Paused = 1;
+    puts("Pause game fades audio to 0.0f");
+    music_man.SetFader(0.0f, 0.5f);
+    music_man.PauseTrack(0x10);
+    NuSound3StopRumble();
+
+    if (memcard_autosaveenabled != 0 && memcard_autosavedisabled != 0) {
+        NewMenu(0x3f3, 0, -1);
+    } else if (CUTSTOPGAME != 0) {
+        NewMenu(LEGOMENU_PAUSECUT, 0, -1);
+    } else {
+        NewMenu(LEGOMENU_PAUSEMAIN, 0, -1);
+    }
+
+    ResetTimer(&PauseTimer, 0.0f);
+    GameAudio_PlaySfx(0x36, NULL, 0, 0);
+    DoubleScoreTime = 0.0f;
+    ResetTimer(&JoinInTimer, 0.0f);
+    pause_i_pad = pad_index;
+
+    for (i32 i = 0; i < 8; ++i) {
+        if (Player[i] != NULL) {
+            Player[i]->pause_input_state = 0;
+            Player[i]->pause_context_state = 0;
+            Player[i]->input_toggle_hold_time = TOGGLEHOLDTIME;
+        }
+    }
+
+    if (PauseGame_ExtraCodeFn != NULL) {
+        PauseGame_ExtraCodeFn();
+    }
 }

@@ -11,6 +11,7 @@
 #include "legoapi/world/world.h"
 #include "legoapi/world/world_shared.h"
 #include "nu2api/nu3d/nutex.h"
+#include "nu2api/nucore/nustring.h"
 #include "nu2api/numath/nurand.h"
 
 #include <stdio.h>
@@ -66,6 +67,31 @@ enum HUB_AI_CONSTANTS {
     HUB_CHARACTER_CAPACITY = 340,
     HUB_BARMAN_CREATURE_SET = 2,
 };
+
+union AI_HUB_AREA_ARGUMENT {
+    void *pointer;
+    isize value;
+};
+
+f32 Condition_InHubArea(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *area_argument) {
+    AI_HUB_AREA_ARGUMENT argument = {};
+    argument.pointer = area_argument;
+    return argument.value == hub_ai.area ? 1.0f : 0.0f;
+}
+
+void *Condition_InHubAreaInit(AISYS_s *, char *argument, AISCRIPT_s *) {
+    AI_HUB_AREA_ARGUMENT result = {};
+    result.value = -1;
+    if (argument != NULL) {
+        for (isize area = 0; area < HUB_AREA_COUNT; ++area) {
+            if (NuStrICmp(argument, hub_areas[area]) == 0) {
+                result.value = area;
+                break;
+            }
+        }
+    }
+    return result.pointer;
+}
 
 static inline void Hub_MarkCharacterUnavailable(i16 *characters, i16 character) {
     if (character != -1) {

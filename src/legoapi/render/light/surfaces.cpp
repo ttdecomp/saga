@@ -1,4 +1,5 @@
 #include "decomp.h"
+#include "globals.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nu3d/numtl.h"
@@ -124,7 +125,30 @@ void DeRotateTerrain(tertype *surface) {
 void InitSurfaceInfo(GameObject_s *) {
 }
 
-void Surface_Deflect(nuvec_s *, nuvec_s *, nuvec_s *, i32) {
+enum SurfaceDeflectMode : i32 {
+    SURFACE_DEFLECT_SLIDE = 0,
+    SURFACE_DEFLECT_PUSH_OUT_SLOW = 1,
+    SURFACE_DEFLECT_PUSH_OUT_FAST = 2,
+};
+
+void Surface_Deflect(nuvec_s *normal, nuvec_s *movement, nuvec_s *result, i32 mode) {
+    const f32 movement_x = movement->x;
+    const f32 movement_y = movement->y;
+    const f32 normal_x = normal->x;
+    const f32 normal_y = normal->y;
+    f32 correction = -movement_y * normal_y - movement_x * normal_x;
+    const f32 movement_z = movement->z;
+    const f32 normal_z = normal->z;
+    correction -= movement_z * normal_z;
+    if (mode == SURFACE_DEFLECT_PUSH_OUT_FAST) {
+        correction += FRAMETIME * 0.015f;
+    } else if (mode == SURFACE_DEFLECT_PUSH_OUT_SLOW) {
+        correction -= FRAMETIME * 0.006f;
+    }
+
+    result->x = movement_x + normal_x * correction;
+    result->y = movement_y + normal_y * correction;
+    result->z = movement_z + normal_z * correction;
 }
 
 void CreateUsefulMaterials() {

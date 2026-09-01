@@ -32,14 +32,26 @@ struct MechAutoJumpManager;
 struct DOOR_s;
 struct GIZOBSTACLESYS_s;
 struct GIZTURRETSYS_s;
+struct GIZSPINNER_s;
+struct pushblock_s;
+struct ZIPUP_s;
 struct GIZMOBLOWUPTYPE_s;
+struct GIZMOBLOWUP_s;
+struct GIZRANDOMSYS_s;
+struct EDGIZSHADOW_s;
+struct GAMEANIMOBJPOOL_s;
 struct GRABBER_s;
 struct PULSESYS_s;
 struct LEVER_s;
+struct GIZPANELSYS_s;
+struct TECHNO_s;
+struct HATMACHINESYS_s;
 struct GAMEANTINODESYS_s;
 struct GIZBOMBGENSYS_s;
+struct GIZTORPMACHINESYS_s;
 struct GIZSPECIALSYS_s;
 struct TRAFFICANIMSYS_s;
+struct PLUGSYS_s;
 struct GIZTIMER_s;
 struct TIMER_s;
 struct LEVEL_OBJECT_RUNTIME_s;
@@ -88,7 +100,8 @@ typedef struct WORLDINFO_s {
 
     i32 loaded; // 0x110  set to 1 at end of WorldInfo_Load
 
-    char filler1[0x8]; // 0x114 .. 0x11c
+    i32 field_0x114;
+    u32 reset_flags; // 0x118
 
     i32 level_idx;    // 0x11c
     i32 level_sub_id; // 0x120  from LEVELDATA.unknown_0af
@@ -151,16 +164,25 @@ typedef struct WORLDINFO_s {
     CLIMBOBJECTSYS_s *climb_object_sys;
     MechAutoJumpManager *mech_auto_jump_manager;
 
-    char filler6a[0x469c - 0x4684];     // 0x4684 .. 0x469c
-    DOOR_s *doors;                      // 0x469c
-    i32 door_count;                     // 0x46a0
-    DOOR_s *start_door;                 // 0x46a4
-    GIZOBSTACLESYS_s *giz_obstacle_sys; // 0x46a8
-    GIZBUILDITSYS_s *giz_buildit_sys;   // 0x46ac
-    GIZFORCESYS_s *giz_force_sys;       // 0x46b0
-    char filler7a[0x46bc - 0x46b4];     // 0x46b4 .. 0x46bc
-    GIZTURRETSYS_s *giz_turret_sys;     // 0x46bc
-    char filler7b[0x46f0 - 0x46c0];     // 0x46c0 .. 0x46f0
+    char filler6a[0x468c - 0x4684];       // 0x4684 .. 0x468c
+    struct ZIPUP_s *zipups;               // 0x468c
+    i32 zipup_count;                      // 0x4690
+    struct TUBE_s *tubes;                 // 0x4694
+    i32 tube_count;                       // 0x4698
+    DOOR_s *doors;                        // 0x469c
+    i32 door_count;                       // 0x46a0
+    DOOR_s *start_door;                   // 0x46a4
+    GIZOBSTACLESYS_s *giz_obstacle_sys;   // 0x46a8
+    GIZBUILDITSYS_s *giz_buildit_sys;     // 0x46ac
+    GIZFORCESYS_s *giz_force_sys;         // 0x46b0
+    char filler7a[0x46bc - 0x46b4];       // 0x46b4 .. 0x46bc
+    GIZTURRETSYS_s *giz_turret_sys;       // 0x46bc
+    pushblock_s *push_blocks;             // 0x46c0
+    i32 push_block_count;                 // 0x46c4
+    char filler7b[0x46e4 - 0x46c8];       // 0x46c8 .. 0x46e4
+    GIZSPINNER_s *spinners;               // 0x46e4
+    i32 spinner_count;                    // 0x46e8
+    GAMEANIMOBJPOOL_s *spinner_anim_pool; // 0x46ec
 
     GRABBER_s *grabber; // 0x46f0
 
@@ -176,39 +198,43 @@ typedef struct WORLDINFO_s {
     LEVER_s *levers; // 0x506c
     i32 nlevers;     // 0x5070
 
-    char filler10[0x50bc - 0x5074];
+    GIZPANELSYS_s *giz_panel_sys;     // 0x5074
+    HATMACHINESYS_s *hat_machine_sys; // 0x5078
+    TECHNO_s *technos;                // 0x507c
+    i32 ntechnos;                     // 0x5080
+    struct GRAPPLE_s *grapples;       // 0x5084
+    i32 grapple_count;                // 0x5088
+    char filler10b[0x50bc - 0x508c];
     GIZMOPICKUPSYS_s *gizmo_pickup_sys; // 0x50bc
 
     i32 gizmo_blowup_type_count;           // 0x50c0
     i32 gizmo_blowup_count;                // 0x50c4
     GIZMOBLOWUPTYPE_s *gizmo_blowup_types; // 0x50c8
+    GIZMOBLOWUP_s *gizmo_blowups;          // 0x50cc
 
-    struct GIZTIMER_s *giz_timers;
-    i32 giz_timers_count;
+    char filler11[0x50d8 - 0x50d0];
 
-    char filler11[0x50d8 - 0x50d4];
+    GIZRANDOMSYS_s *giz_randoms;
 
-    void *giz_randoms;
-
-    char filler12[0x50e0 - 0x50dc];
-
-    GAMEANTINODESYS_s *game_antinode_sys;
-
-    char filler13[0x50e8 - 0x50e4];
-
-    GIZBOMBGENSYS_s *giz_bombgen_sys;
-
-    char filler14a[0x510c - 0x50ec];
-    GIZSPECIALSYS_s *giz_special_sys; // 0x510c
-    char filler14c[0x5120 - 0x5110];
+    char filler12[0x50fc - 0x50dc];
+    struct GIZTIMER_s *giz_timers;             // 0x50fc
+    i32 giz_timers_count;                      // 0x5100
+    GIZTORPMACHINESYS_s *giz_torp_machine_sys; // 0x5104
+    char filler13b[0x510c - 0x5108];
+    GIZSPECIALSYS_s *giz_special_sys;     // 0x510c
+    GAMEANTINODESYS_s *game_antinode_sys; // 0x5110
+    EDGIZSHADOW_s *shadow_editor;         // 0x5114
+    GIZBOMBGENSYS_s *giz_bombgen_sys;     // 0x5118
+    char filler14d[0x5120 - 0x511c];
 
     void *podrace; // 0x5120  per-level PodRace state block
 
     char filler14b[0x516c - 0x5124];
 
     TRAFFICANIMSYS_s *trafficanim_sys; // 0x516c
+    PLUGSYS_s *plug_sys;               // 0x5170
 
-    char filler15[0x51b0 - 0x5170];
+    char filler15[0x51b0 - 0x5174];
 } WORLDINFO;
 
 DECOMP_ASSERT(offsetof(WORLDINFO, gizmo_blowup_type_count) == 0x50c0, "WORLDINFO blowup type count offset");
@@ -218,7 +244,29 @@ DECOMP_ASSERT(offsetof(WORLDINFO, portal_door_count) == 0x5050, "WORLDINFO porta
 DECOMP_ASSERT(offsetof(WORLDINFO, pulses_sys) == 0x5054, "WORLDINFO pulse system offset");
 DECOMP_ASSERT(offsetof(WORLDINFO, levers) == 0x506c, "WORLDINFO lever array offset");
 DECOMP_ASSERT(offsetof(WORLDINFO, nlevers) == 0x5070, "WORLDINFO lever count offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, giz_panel_sys) == 0x5074, "WORLDINFO giz-panel system offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, hat_machine_sys) == 0x5078, "WORLDINFO hat-machine system offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, technos) == 0x507c, "WORLDINFO techno array offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, ntechnos) == 0x5080, "WORLDINFO techno count offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, tubes) == 0x4694, "WORLDINFO tube array offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, tube_count) == 0x4698, "WORLDINFO tube count offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, zipups) == 0x468c, "WORLDINFO zip-up array offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, zipup_count) == 0x4690, "WORLDINFO zip-up count offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, grapples) == 0x5084, "WORLDINFO grapple array offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, grapple_count) == 0x5088, "WORLDINFO grapple count offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, plug_sys) == 0x5170, "WORLDINFO plug-system offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, game_antinode_sys) == 0x5110, "WORLDINFO game-antinode system offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, gizmo_blowups) == 0x50cc, "WORLDINFO blowup array offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, giz_timers) == 0x50fc, "WORLDINFO gizmo-timer array offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, giz_timers_count) == 0x5100, "WORLDINFO gizmo-timer count offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, spinners) == 0x46e4, "WORLDINFO spinner array offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, spinner_count) == 0x46e8, "WORLDINFO spinner count offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, spinner_anim_pool) == 0x46ec, "WORLDINFO spinner animation pool offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, push_blocks) == 0x46c0, "WORLDINFO push-block array offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, push_block_count) == 0x46c4, "WORLDINFO push-block count offset");
 DECOMP_ASSERT(offsetof(WORLDINFO, gizmo_pickup_sys) == 0x50bc, "WORLDINFO pickup system offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, giz_torp_machine_sys) == 0x5104, "WORLDINFO torpedo-machine system offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, giz_bombgen_sys) == 0x5118, "WORLDINFO bomb-generator system offset");
 DECOMP_ASSERT(sizeof(WORLDINFO) == 0x51b0, "WORLDINFO ABI");
 
 extern void (*WorldInfo_InitMenuFn)(WORLDINFO *, i32 *, i32 *);

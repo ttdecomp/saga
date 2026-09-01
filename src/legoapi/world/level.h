@@ -69,6 +69,7 @@ enum LEVEL_FLAGS : u32 {
     LEVEL_STATUS = 1 << 10,                     // 0x400
     LEVEL_DOUBLE_SCORE = 1 << 11,               // 0x800
     LEVEL_METAL = 1 << 12,                      // 0x1000
+    LEVEL_SHOW_COIN_TOTAL = 1 << 13,            // 0x2000
     LEVEL_CAMERA_RAIN = 1 << 14,                // 0x4000
     LEVEL_TERRAIN_RAIN = 1 << 15,               // 0x8000
     LEVEL_NEWGAME = 1 << 16,                    // 0x10000
@@ -219,6 +220,16 @@ typedef struct LEVELOBJECT {
     u8 pad_03;
     char *name;
 } LEVELOBJECT;
+
+enum LEVEL_OBJECT_SCENE_KIND : u8 {
+    LEVEL_OBJECT_SCENE_THINGS = 0,
+    LEVEL_OBJECT_SCENE_LEVEL = 1,
+    LEVEL_OBJECT_SCENE_AREA = 2,
+    LEVEL_OBJECT_SCENE_CHARACTER_ICON = 3,
+    LEVEL_OBJECT_SCENE_SAVE_ICON = 4,
+    LEVEL_OBJECT_SCENE_VEHICLE = 5,
+    LEVEL_OBJECT_SCENE_BUTTON = 6,
+};
 
 // Runtime counterpart to an LEVELOBJECT table entry. The first twelve bytes
 // are a normal Nu special handle; the loader adds its terrain platform id and

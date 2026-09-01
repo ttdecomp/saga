@@ -1,9 +1,13 @@
 #include "legoapi/core/input/gamepads.h"
+#include "gameapi/gui/apimenu.h"
 #include "globals.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/characters/motion.h"
+#include "legoapi/core/startup/game.h"
+#include "legoapi/cutscenes/cutscenes.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/props/system/socksys.h"
+#include "legoapi/world/area.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nucore/NuInputDevice.h"
@@ -16,6 +20,12 @@ extern GAMECAMERA_s *GameCam;
 extern WORLDINFO_s *WORLD;
 extern i32 (*GamePads_IgnoreInputFn)(void);
 extern NUPAD *pActivePad;
+extern "C" {
+    extern i32 Paused;
+    extern i32 NewMode;
+    extern FadeSystem FadeSys;
+    extern i32 CutSceneWaiting;
+}
 
 // Original bss @0x127a500: 64 pads x 0x60 bytes.
 GAMEPAD_s GamePad[64];
@@ -161,7 +171,23 @@ extern "C" {
 
 } // extern "C"
 
-void PadOutPause(i32, WORLDINFO_s *) {
+void PadOutPause(i32 port, WORLDINFO_s *world) {
+    if (Paused != 0 || NoPad(port, 1) == 0 || NewMode != 0 || NewLData != NULL || FadeSys.fade != 0.0f) {
+        return;
+    }
+    if (GamePads_IgnoreInputFn != NULL && GamePads_IgnoreInputFn() != 0) {
+        return;
+    }
+    if (MiniCutCam != 0 || (world->area != NULL && (world->area->flags & AREAFLAG_ENDING_AREA) != 0) ||
+        (world->current_level->flags & (LEVEL_INTRO | LEVEL_MIDTRO | LEVEL_OUTRO)) != 0 || GetMenuID() != -1) {
+        return;
+    }
+    if (CUTSTOPGAME != 0 && !CutScene_IsSkippable(static_cast<CUTINFO *>(CutStopInfo))) {
+        return;
+    }
+    if (CutSceneWaiting == 0) {
+        PauseGame(port);
+    }
 }
 
 void ResetRumble(RUMBLEPACKET *) {
@@ -185,7 +211,11 @@ void NewRumbleAllPlayers(float, float, i32, i32) {
 void NewStatusRumbleBuzz(i32, float, float, i32) {
 }
 
-void ObjLookingWithLeftStick(GameObject_s *) {
+i32 ObjLookingWithLeftStick(GameObject_s *object) {
+    if (object->character_id_0x7a5 == 0x4d) {
+        return object->field_0x7a3 == 0 ? 2 : 1;
+    }
+    return object->character_id_0x7a5 == 0x52 ? 2 : 1;
 }
 
 void PerformPauseButtonStuff() {
@@ -203,7 +233,18 @@ void VirtualControlButtonMover_OnDown_Callback(MechTouchUIElement &, TouchHolder
 void VirtualControlDPad_LockButton_OnClick_Callback(MechTouchUIElement &, TouchHolder &) {
 }
 
-void NoPad(i32, i32) {
+i32 NoPad(i32 port, i32 require_game_input) {
+    const i32 menu_id = GetMenuID();
+    if ((require_game_input != 0 && GamePad[port].input_state == 0) || GamePad[port].pad->is_valid != 0) {
+        return 0;
+    }
+    if (LEGOMENU_NEWGAME != -1 && menu_id == LEGOMENU_NEWGAME) {
+        return 0;
+    }
+    if (LEGOMENU_CREDITS != -1 && menu_id == LEGOMENU_CREDITS) {
+        return 0;
+    }
+    return 1;
 }
 
 void NewBuzz(nupad_s *, float, i32) {

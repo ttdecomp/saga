@@ -417,9 +417,9 @@ extern "C" void NuDisplaySceneAdd(NUDLDLISTSCENE *scene) {
     }
     global_dlist_manager.sort_list = sort_list;
 
-    if (scene->field_8c != nullptr) {
-        *reinterpret_cast<void **>(scene->field_8c) = global_dlist_manager.mtlanim_list;
-        global_dlist_manager.mtlanim_list = scene->field_8c;
+    if (scene->material_animations != nullptr) {
+        scene->material_animations->next = global_dlist_manager.mtlanim_list;
+        global_dlist_manager.mtlanim_list = scene->material_animations;
     }
     scene->flags &= 0xef;
     scene->render_buffer &= 0xdf;
@@ -470,17 +470,15 @@ extern "C" void NuDisplaySceneDestroy(NUDLDLISTSCENE *scene) {
     global_dlist_manager.sort_list = sort_list;
     global_dlist_manager.nused_sort_pris -= scene->nsort_pris;
 
-    if (scene->field_8c != nullptr) {
-        void *node = global_dlist_manager.mtlanim_list;
-        if (node == scene->field_8c) {
-            global_dlist_manager.mtlanim_list =
-                *reinterpret_cast<void **>(reinterpret_cast<u8 *>(scene->field_8c) + 0xc);
+    if (scene->material_animations != nullptr) {
+        NUMTLANIMSET *node = global_dlist_manager.mtlanim_list;
+        if (node == scene->material_animations) {
+            global_dlist_manager.mtlanim_list = scene->material_animations->next;
         } else {
-            while (*reinterpret_cast<void **>(reinterpret_cast<u8 *>(node) + 0xc) != scene->field_8c) {
-                node = *reinterpret_cast<void **>(reinterpret_cast<u8 *>(node) + 0xc);
+            while (node->next != scene->material_animations) {
+                node = node->next;
             }
-            *reinterpret_cast<void **>(reinterpret_cast<u8 *>(node) + 0xc) =
-                *reinterpret_cast<void **>(reinterpret_cast<u8 *>(scene->field_8c) + 0xc);
+            node->next = scene->material_animations->next;
         }
     }
 

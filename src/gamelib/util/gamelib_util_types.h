@@ -267,6 +267,8 @@ struct NetworkObjectManager {
     virtual ~NetworkObjectManager();
 };
 struct TouchHacks {
+    static bool TouchControlsActive;
+
     struct TintStack {
         float ambient[3];
 

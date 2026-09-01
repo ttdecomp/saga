@@ -62,7 +62,7 @@ struct nugspline_s;
 struct nupad_s;
 struct nuvec_s;
 struct part_typedesc_s;
-struct variptr_u;
+union variptr_u;
 
 struct ClassObjectList;
 struct EdMember {};
@@ -81,7 +81,7 @@ struct nugspline_s;
 struct nupad_s;
 struct nuvec_s;
 struct part_typedesc_s {};
-struct variptr_u;
+union variptr_u;
 
 struct EdBitControl {
     void AddMenuItem(eduimenu_s *, EdRef *, void *);

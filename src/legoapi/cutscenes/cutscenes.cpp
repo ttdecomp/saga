@@ -6,6 +6,8 @@
 extern i32 ACTIVECUTCOUNT;
 extern "C" i32 CUTDRAWWORLD;
 extern "C" i32 Paused;
+extern i32 CutSceneWaiting;
+extern FadeSystem FadeSys;
 CUTSCENESYS *CutSceneSys;
 
 extern "C" {
@@ -27,6 +29,7 @@ i32 CutScenePlayer_Active(void);
 i32 CutInstEndCount;
 static instNUGCUTSCENE_s *CutInstEnd[4];
 static i32 CutInstEndStop;
+static i32 cutaudiopaused;
 
 void CutScenes_End() {
     if (CutScenePlayer_Active() != 0 && NewLData != NULL && NewLData != HUB_LDATA) {
@@ -59,6 +62,9 @@ void CutScenes_Reset(WORLDINFO_s *world) {
     ACTIVECUTCOUNT = 0;
     CUTSTOPGAME = 0;
     CUTDRAWWORLD = 0;
+    cutaudiopaused = 0;
+    CutStopInfo = NULL;
+    CutSceneWaiting = 0;
     if (world == NULL || world->cutscene_sys == NULL) {
         return;
     }
@@ -160,7 +166,8 @@ void CutScene_SnapToEnd(CUTINFO *) {
 void CutScene_StartAudio() {
 }
 
-void CutScene_IsSkippable(CUTINFO *) {
+i32 CutScene_IsSkippable(CUTINFO *cut) {
+    return FadeSys.fade == 0.0f && cut != NULL && (CutStopInfo != cut || CutSceneWaiting == 0 || cutaudiopaused == 0);
 }
 
 void CutScene_StartFn_LSW(CUTINFO *) {

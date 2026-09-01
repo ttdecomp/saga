@@ -23,7 +23,43 @@ struct AREASAVE_s;
 struct GAMECAMERA_s;
 struct TEXTCRAWL_s;
 struct COLLECTION_s;
+struct ACTIONINFO_s;
+struct EXTRAACTIONDATA_s;
 class FadeSystem;
+
+struct CHARACTER_CONTEXT_INFO_s {
+    const char *name;
+    i32 action;
+    u32 flags;
+    i32 parameter;
+};
+
+enum CHARACTER_CONTEXT_INFO_FLAGS : u32 {
+    CHARACTER_CONTEXT_INFO_FLAG_USE_FALL_ANIMATION = 0x00000008,
+    CHARACTER_CONTEXT_INFO_FLAG_OWNS_ANIMATION = 0x00000010,
+    CHARACTER_CONTEXT_INFO_FLAG_DISABLE_BLOB_SHADOW = 0x00020000,
+    CHARACTER_CONTEXT_INFO_FLAG_ALLOW_DISABLED_MOVEMENT_SHADOW = 0x00040000,
+    CHARACTER_CONTEXT_INFO_FLAG_TERRAIN_ORIGIN_AT_TOP = 0x00080000,
+    CHARACTER_CONTEXT_INFO_FLAG_TERRAIN_ORIGIN_AT_POSITION = 0x00100000,
+};
+
+enum TERRAIN_LAYER_FLAGS : u32 {
+    TERRAIN_LAYER_FLAG_REJECT_CHARACTER_SHADOW = 0x00000001,
+};
+
+struct TERRAIN_LAYER_s {
+    f32 scale;
+    u32 flags;
+    i16 material;
+    i16 reserved;
+};
+
+DECOMP_ASSERT(sizeof(TERRAIN_LAYER_s) == 0x0c, "TERRAIN_LAYER_s ABI");
+
+typedef i32 (*USING_EXTRA_ACTIONS_FN)(GameObject_s *object);
+
+extern CHARACTER_CONTEXT_INFO_s *CInfo;
+extern USING_EXTRA_ACTIONS_FN UsingExtraActionsFn;
 
 struct AREA_GLOBAL_VALUES {
     i32 field_0x00;
@@ -186,6 +222,7 @@ extern f32 DEFAULTFRAMETIME;
 extern void *globalbuffer;
 extern i32 MaxAnimJoints;
 extern u8 ForcePlayEndFrame;
+extern u8 ForceEulerToQuat;
 extern u8 BitCountTable[256];
 extern i32 isBitCountTable;
 extern f32 MAXFRAMETIME;
@@ -235,6 +272,7 @@ extern struct AREADATA_s *LOSTTEMPLE_ADATA;
 // ------------------------------------------------------------------------
 extern struct GAMESAVE_s Game;
 extern struct GAMESAVE_s BackupGame;
+extern u32 areaSuitBits;
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -301,6 +339,32 @@ extern i32 BonusScore[2];
 extern i32 BonusCoinTotal;
 
 // ------------------------------------------------------------------------
+// Gameplay panel / coin-total state
+// ------------------------------------------------------------------------
+extern f32 STATSPOSY;
+extern f32 STATSPOS2Y;
+extern f32 COINTOTAL_SCOREDY;
+extern f32 COINTOTAL_COINDX;
+extern f32 COINTOTAL_COINSIZE;
+extern f32 COINTOTAL_SCORESIZE;
+extern f32 PANEL_COINADJUSTDY;
+extern f32 CoinTotalScale;
+extern f32 cointotal_x[2];
+extern i32 cointotal_i_obj[2];
+extern i32 SuperStoryEpisode;
+extern f32 SuperStoryTimer[4];
+extern u32 SuperStoryScore;
+
+extern f32 DrawMiniKitTime;
+extern f32 MiniKitScale;
+extern f32 DrawBuildUpTime;
+extern f32 builduptime;
+extern f32 BuildUpScale;
+extern f32 DrawRedBrickTime;
+extern f32 RedBrickScale;
+extern f32 DrawCoinTotalTime;
+
+// ------------------------------------------------------------------------
 // Audio & music
 // ------------------------------------------------------------------------
 struct nusound_filename_info_s;
@@ -315,6 +379,8 @@ extern i32 LevMusicAmbient;
 extern i32 LevMusicOtherAction;
 extern i32 LevMusicOtherAmbient;
 extern i16 AreaMusic;
+extern u16 rtltimer1;
+extern f32 rtltimer1adv;
 
 // ------------------------------------------------------------------------
 // Camera
@@ -371,6 +437,9 @@ extern NUGSCN *area_scene;
 // ------------------------------------------------------------------------
 extern f32 DoubleScoreTime;
 extern TIMER GameTimer;
+extern TIMER JoinInTimer;
+extern TIMER PauseTimer;
+extern f32 TOGGLEHOLDTIME;
 extern TIMER OverallGamePlayTimer;
 extern AREA_GLOBALS AreaGlobals;
 extern i32 HIGHGAMEOBJECT;
@@ -381,6 +450,10 @@ extern TIMER AreaTimer;
 extern f32 VehicleAreaRememberSpeed;
 extern nugspline_s *ObstacleCamSpl;
 extern GAMECAMERA_s *GameCam;
+extern i32 (*GameCam_ObjLookingWithLeftStick)(GameObject_s *object);
+extern PLAYPLANE_s PlayPlane[6];
+extern i32 KEEPONSCREEN_SIDESONLY;
+extern NUVEC GunshipANorm;
 extern u32 ZeroRTL[0x51];
 extern char *partdebris_name[64];
 enum GAMEPAD_BUTTON_FLAGS {
@@ -398,6 +471,10 @@ extern u32 GAMEPAD_SKIP;
 extern i32 MiniCutCam;
 extern i32 LEGOCONTEXT_DROPIN;
 extern i32 LEGOCONTEXT_DOOMED;
+extern i32 LEGOCONTEXT_BEENTAKENOVER;
+extern i32 LEGOCONTEXT_WEAPONIN;
+extern i32 LEGOCONTEXT_WEAPONOUT;
+extern i32 WeaponInOut_NoAIJediSfx;
 extern i32 Lap;
 extern f32 LevTime[5];
 
@@ -419,13 +496,14 @@ extern i32 gone_through_door_to_new_mode;
 extern CUTINFO *newmode_cutinfo;
 extern DOOR_s *setlastdoor_last;
 extern i32 LevelChange;
-extern i32 BombGenerator_PlayerBomb[2];
+extern GameObject_s *BombGenerator_PlayerBomb[2];
 
 // ------------------------------------------------------------------------
 // Player & character objects
 // ------------------------------------------------------------------------
 extern i16 temp_yrot;
 extern i16 temp_xrot;
+extern i16 temp_zrot;
 extern i32 avg_currentspeed_mul;
 extern GameObject_s *player2;
 extern GameObject_s *player;
@@ -433,6 +511,11 @@ extern GameObject_s *Player[8];
 extern struct playerprogress_s PlayerProgress[8];
 extern i32 DEFAULT_PLAYERHITPOINTS;
 extern struct MISSIONSYS_s *MissionSys;
+extern i32 CHARSHADOWS_ON;
+extern i32 ShadowMode;
+extern f32 EShadY;
+extern TERRAIN_LAYER_s TerLayer[17];
+extern NUVEC ShadNorm;
 
 // Feature switches and interaction timing configured by each game variant.
 extern i32 LedgeTerrain_On;
@@ -486,6 +569,7 @@ extern i32 EXTRALEVELOBJECTCOUNT;
 extern char *ExtraLevelObject_NameTable;
 extern i32 ExtraLevelObject_NameTableSize;
 extern i32 ExtraLevelObject_NameTableIndex;
+extern i32 KNOBS;
 
 extern i16 drawcharicon_hspecial_spin;
 extern f32 drawcharicon_hspecial_dz;
@@ -496,6 +580,8 @@ extern f32 PANEL3DMULY;
 extern f32 PANEL3DMULX;
 extern i32 LEGOOBJ_ICON_WEIRDO;
 extern i32 LEGOOBJ_ICON_QUESTION;
+extern i32 LEGOOBJ_GRAPPLE_HOOK;
+extern i32 LEGOOBJ_FLOORTARGET;
 
 // ------------------------------------------------------------------------
 // Level / area data pointers (LDATA / ADATA)
@@ -685,6 +771,8 @@ extern i32 waiting_for_new_level;
 extern i32 new_level_from_menu;
 extern i32 BGLOAD;
 extern i32 reset_restart;
+extern i32 come_from_an_editor;
+extern i32 CanDrawZipUpSwirls;
 extern i32 newlevelfrommenu_newmenuid;
 extern i32 newlevelfrommenu_newmenuy;
 extern i32 NextArea_FreePlay;
@@ -760,6 +848,13 @@ enum RESETBIT_FLAGS {
 };
 extern u32 ResetBits;
 extern i32 NetPaused;
+extern i32 pause_i_pad;
+extern i32 LEGOMENU_NEWGAME;
+extern i32 LEGOMENU_PAUSEMAIN;
+extern i32 LEGOMENU_PAUSECUT;
+extern i32 LEGOMENU_CREDITS;
+extern void (*PauseGame_ExtraCodeFn)(void);
+extern void (*ResumeGame_ExtraCodeFn)(void);
 extern f32 mtl_animation_speed_scale;
 extern u16 script_mask;
 extern i32 global_frame_count_paused;
@@ -777,8 +872,8 @@ extern u8 CharVariants_Game[0x5c];
 extern MemoryManager theMemoryManager;
 extern struct TEXTENTRY LSW_Text[713];
 
-extern void *ActionInfo;
-extern char *ExtraActionData;
+extern ACTIONINFO_s *ActionInfo;
+extern EXTRAACTIONDATA_s ExtraActionData[];
 extern void *theGameThings;
 extern void *theThingManager;
 
@@ -797,6 +892,7 @@ extern void (*InitBolt_AddMomentumType)(BOLT_s *, GameObject_s *, nuvec_s *);
 extern void (*Bolt_HitPlatFn)(BOLT_s *);
 extern void (*Bolt_HitCustomFn)(BOLT_s *, nuvec_s *);
 extern void (*GameBlowUpBlownUpFn)(GIZMOBLOWUP_s *);
+extern void (*GizmoBlowup_TransformDrawFn)(GIZMOBLOWUP_s *);
 extern void (*GizObstacle_SetDefaultSFXFn)(void *, GIZOBSTACLE_s *);
 
 extern i32 PermDataLoaded;          // original .data init 1
@@ -804,6 +900,9 @@ extern i32 LoadPerm_LanguageSelect; // bss
 extern i32 LoadPerm_StringsLoaded;  // bss
 extern i32 menu_flash;              // bss
 extern i32 noscenespecials;         // disables automatic display-scene specials
+extern i32 portals_enabled;
+extern i32 portal_special_objects; // portal visibility also filters display-scene specials
+extern u8 PortalVisiFlags[0x271];  // one portal-visibility byte per scene instance
 extern f32 game_pulse;
 extern f32 global_pulse;
 extern i32 IntroText_TextID; // .data init -1

@@ -673,13 +673,33 @@ extern "C" void rtlDynamicEnable(i32 id, i32 param) {
     (void)param;
 }
 
-float GameObjectNearFloor(GameObject_s *obj, float h, float *out) {
-    (void)obj;
-    (void)h;
-    if (out != NULL) {
-        *out = 0.0f;
+i32 GameObjectNearFloor(GameObject_s *obj, f32 h, f32 *out) {
+    // Target 0x46e7b0..0x46e862. GameShadow uses a large positive
+    // sentinel when it does not find terrain, rather than -1.
+    const f32 no_floor_height = 2000000.0f;
+    const f32 floor_height = obj->apiobj.field_0x218;
+    if (floor_height == no_floor_height) {
+        if (out != NULL) {
+            *out = no_floor_height;
+        }
+        return 0;
     }
-    return 0.0f;
+
+    i32 height_steps = static_cast<i32>(h);
+    if (height_steps < 0) {
+        height_steps = 0;
+    }
+    f32 tolerance = static_cast<f32>(height_steps) * 0.025f;
+    const f32 radius_tolerance = obj->apiobj.collision_radius / 0.225f * tolerance;
+    if (radius_tolerance > tolerance) {
+        tolerance = radius_tolerance;
+    }
+
+    const f32 floor_distance = obj->apiobj.collision_min.y - floor_height;
+    if (out != NULL) {
+        *out = floor_distance;
+    }
+    return tolerance > floor_distance;
 }
 
 float GetHoverPosY(GameObject_s *obj) {
@@ -755,7 +775,47 @@ i32 Player_HasFastBuild(GameObject_s *player) {
 void PlayerItemTypes_Init(PLAYERITEMTYPE_s *) {
 }
 
-void Player_ResetContexts(PLAYERPACKET_s *) {
+void Player_ResetContexts(PLAYERPACKET_s *packet) {
+    f32 context_blend = 0.0f;
+
+    packet->context_animation_time = 0.0f;
+    packet->context_target = -1;
+    if ((packet->animation_flags & GAMEOBJECT_E22_FLAG_WEAPON_ANIMATION) != 0) {
+        context_blend = 1.0f;
+    }
+
+    packet->context_distance = 5.0f;
+    packet->field_0x670 = 0;
+    packet->field_0x678 = 0;
+    packet->field_0x668 = 0;
+    packet->field_0x77e = 0;
+    packet->context_blend = context_blend;
+    packet->build_context = -1;
+    packet->action_movement_variant = 0;
+    packet->action_movement_state = 0;
+    packet->gamepad->allocated_5a &= static_cast<u8>(~(0x04 | 0x10));
+    packet->input_state = 0;
+    packet->secondary_flags &= static_cast<u8>(~0x04);
+    packet->field_0x648 = 0;
+
+    const i32 random_context = qrand();
+    packet->field_0x6a0 = 0;
+    packet->field_0x6a4 = 0;
+    packet->field_0x674 = 0;
+    packet->field_0x6e0 = 0;
+    packet->field_0x6f8 = 0;
+    packet->field_0x710 = 0;
+    packet->field_0x724 = 0;
+    packet->field_0x730 = 0;
+    packet->field_0x734 = 0;
+    packet->context_animation = 0;
+    packet->movement_angle_0 = -1;
+    packet->context_mode = 0;
+    packet->movement_angle_2 = -1;
+    packet->random_context = static_cast<u8>(random_context / 0x8000);
+    packet->movement_angle_3 = -1;
+    packet->field_0x77d = 0;
+    packet->linked_object = NULL;
 }
 
 void Player_CopyEssentials(GameObject_s *, GameObject_s *) {
@@ -1049,7 +1109,8 @@ void ResetPlayerMoves(GameObject_s *) {
 void SetToLastSafePos(GameObject_s *) {
 }
 
-void AvailableToPlayer(u32, i32, i32, i32) {
+i32 AvailableToPlayer(u32, i32, i32, i32) {
+    return 0;
 }
 
 void GetNumLocalPlayers() {

@@ -15,6 +15,8 @@
 
 i16 TerrImpact;
 i32 terrhitflags;
+i32 TERRAINMASK_NONWEAPON = 0x20;
+i32 TERRAINMASK_NONDROID;
 NUVEC TerrImpactPos;
 NUVEC TerrImpactNormal;
 NUVEC ShadNorm;
@@ -43,7 +45,7 @@ extern i32 terraincnt;
 extern i32 curSphereter;
 TERRAIN_SPHERE SphereData[16];
 extern i32 platinrange;
-extern i32 ShadPoly;
+extern TERRAIN_SHAPE *ShadPoly;
 void *TerImpactData;
 i32 *TerImpactDataCount;
 i32 TerImpactDataMax;
@@ -1036,7 +1038,10 @@ extern "C" {
     void NewScanInit(void) {
     }
 
-    void NewShadow(void) {
+    f32 NewShadowEx(NUVEC *position, i32 handle, f32 height_above, f32 height_below, i32 terrain_mask);
+
+    f32 NewShadow(NUVEC *position, f32 height_above, f32 height_below, i32 terrain_mask) {
+        return NewShadowEx(position, 0, height_above, height_below, terrain_mask);
     }
 
     f32 NewShadowEx(NUVEC *position, i32, f32 height_above, f32 height_below, i32 terrain_mask) {
@@ -1047,7 +1052,7 @@ extern "C" {
         ShadNorm.y = 1.0f;
         ShadNorm.z = 0.0f;
 
-        f32 shadow_height = -1.0f;
+        f32 shadow_height = 2000000.0f;
         if (CurTerr != NULL) {
             TerI = static_cast<TerrainQuery_s *>(NuScratchAlloc32(sizeof(TerrainQuery_s)));
             NUVEC scan_position = *position;
@@ -1065,7 +1070,16 @@ extern "C" {
     void NewShadowOnMSitu(void) {
     }
 
-    void NewShadowOnPlatform(void) {
+    i32 NewShadowOnPlatform(void) {
+        if (CurTerr == NULL || castnum == -1) {
+            return -1;
+        }
+
+        TERRAIN_GROUP &group = CurTerr->groups[castnum];
+        if (group.chunk_type != TERRAIN_CHUNK_GROUP_SECONDARY) {
+            return -1;
+        }
+        return group.scene_index;
     }
 
     void NewTerrHitInfo(void) {
@@ -1084,7 +1098,7 @@ extern "C" {
     }
 
     void NewTerrainScaleYMask(NUVEC *position, NUVEC *movement, u8 *hit_flags, i32 object_index, f32 radius,
-                              f32 collision_height_scale, f32 object_scale, i32 embedded_retry, i32 scan_flags,
+                              f32 collision_radius, f32 object_scale, i32 embedded_retry, i32 scan_flags,
                               i32 terrain_mask) {
         TerrainHitInfo[0] = 0;
         TerrainHitInfo[1] = 0;
@@ -1119,12 +1133,12 @@ extern "C" {
             query->inverse_object_scale = 1.0f / object_scale;
             query->inverse_object_scale_sq = query->inverse_object_scale * query->inverse_object_scale;
         }
-        query->collision_height_scale = collision_height_scale;
-        query->inverse_collision_height_scale = collision_height_scale == 0.0f ? 0.0f : 1.0f / collision_height_scale;
-        query->collision_height_scale_sq = collision_height_scale * collision_height_scale;
+        query->collision_radius = collision_radius;
+        query->inverse_collision_radius = collision_radius == 0.0f ? 0.0f : 1.0f / collision_radius;
+        query->collision_radius_sq = collision_radius * collision_radius;
 
         const f32 position_x = position->x;
-        const f32 position_y = position->y + collision_height_scale * object_scale;
+        const f32 position_y = position->y + collision_radius * object_scale;
         const f32 position_z = position->z;
         query->position.x = position_x;
         query->start_position.x = position_x;
@@ -1244,13 +1258,10 @@ extern "C" {
 
                 query = TerI;
                 --scan_count;
-                TerrLastImpact.position.x =
-                    query->position.x - query->movement_normal.x * query->collision_height_scale;
+                TerrLastImpact.position.x = query->position.x - query->movement_normal.x * query->collision_radius;
                 TerrLastImpact.position.y =
-                    (query->position.y - query->movement_normal.y * query->collision_height_scale) *
-                    query->object_scale;
-                TerrLastImpact.position.z =
-                    query->position.z - query->movement_normal.z * query->collision_height_scale;
+                    (query->position.y - query->movement_normal.y * query->collision_radius) * query->object_scale;
+                TerrLastImpact.position.z = query->position.z - query->movement_normal.z * query->collision_radius;
                 TerrLastImpact.hit_type = static_cast<f32>(static_cast<u32>(query->hit_type));
                 hit_type = query->hit_type;
             }
@@ -1258,8 +1269,7 @@ extern "C" {
             if (hit_type == TERRAIN_HIT_TYPE_NONE) {
                 if (scan_count > 3 && hit_flags[0] == 0 && hit_flags[1] == 0 && embedded_retry != 0) {
                     query->position.x = position->x;
-                    query->position.y =
-                        position->y * query->inverse_object_scale + query->collision_height_scale + 0.003f;
+                    query->position.y = position->y * query->inverse_object_scale + query->collision_radius + 0.003f;
                     query->position.z = position->z;
                     query->movement.x = 0.0f;
                     query->movement.y = -0.007f;
@@ -1281,8 +1291,8 @@ extern "C" {
                         TerrainImpact(position, movement, hit_flags);
                         query = TerI;
                         position->x = query->position.x;
-                        position->y = query->position.y * query->object_scale -
-                                      query->collision_height_scale * query->object_scale;
+                        position->y =
+                            query->position.y * query->object_scale - query->collision_radius * query->object_scale;
                         position->z = query->position.z;
                         movement->x = query->start_movement.x;
                         movement->y = query->start_movement.y;
@@ -1293,10 +1303,10 @@ extern "C" {
             }
 
             TerrImpact = query->surface == NULL ? 2 : 1;
-            TerrImpactPos.x = query->position.x - query->movement_normal.x * query->collision_height_scale;
+            TerrImpactPos.x = query->position.x - query->movement_normal.x * query->collision_radius;
             TerrImpactPos.y =
-                (query->position.y - query->movement_normal.y * query->collision_height_scale) * query->object_scale;
-            TerrImpactPos.z = query->position.z - query->movement_normal.z * query->collision_height_scale;
+                (query->position.y - query->movement_normal.y * query->collision_radius) * query->object_scale;
+            TerrImpactPos.z = query->position.z - query->movement_normal.z * query->collision_radius;
             TerrImpactNormal = query->impact_normal;
 
             if (scan_count > 0) {
@@ -1309,7 +1319,7 @@ extern "C" {
             }
 
             position->x = query->position.x;
-            position->y = query->position.y * query->object_scale - query->collision_height_scale * query->object_scale;
+            position->y = query->position.y * query->object_scale - query->collision_radius * query->object_scale;
             position->z = query->position.z;
             break;
         }

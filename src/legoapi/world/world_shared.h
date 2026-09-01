@@ -49,9 +49,9 @@ extern void *things_scene_terrain;
 // --- render.cpp — nu3d / NuGScn ---
 extern "C" {
     void NuDisplaySceneRndr(void *scene);
-    void NuPortalVisibility(NUGSCN *scene);
+    i32 NuPortalVisibility(NUGSCN *scene);
     void NuGScnRndr3(NUGSCN *scene);
-    void NuGScnUpdate(NUGSCN *gscn, i32 param);
+    void NuGScnUpdate(NUGSCN *gscn, f32 frame_delta);
     NUGSCN *NuGScnRead(VARIPTR *buf, VARIPTR buf_end, char *path);
     void NuGScnRemove(NUGSCN *scene);
     void NuGScnReadFromMemory(NUGSCN *scene);
@@ -79,7 +79,7 @@ extern "C" {
     void TerrainPlatformNewUpdate(void);
     void TerrainSetWallDeflectYScale(f32 scale);
     void NewTerrainScaleYMask(NUVEC *position, NUVEC *movement, u8 *hit_flags, i32 object_index, f32 radius,
-                              f32 collision_height_scale, f32 object_scale, i32 embedded_retry, i32 scan_flags,
+                              f32 collision_radius, f32 object_scale, i32 embedded_retry, i32 scan_flags,
                               i32 terrain_mask);
     void *TerrainInitEx(i32 param1, void *buf, void *buf_end, i32 param2, char *path, void *gscn, i32 param3,
                         u32 param4, u32 param5, u32 param6);

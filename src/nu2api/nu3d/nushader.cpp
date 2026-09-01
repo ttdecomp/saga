@@ -280,18 +280,136 @@ void NuShaderObjectInitGLSL(nushaderobjectglsl_s *, nushaderobjectkey_s const *,
 void NuShaderObjectInitGLSL(nushaderobjectglsl_s *, nushaderobjectkey_s const *, i32, u32, char const *, i32) {
 }
 
-// Original registry entry 90 in g_shaderUniforms. This is the branch required
-// by smooth skins; the remaining semantic-name registry is still pending.
+struct ShaderSemanticNames {
+    const char *vertex_name;
+    const char *fragment_name;
+};
+
+// Names from the target g_shaderUniforms registry at 0x6349c0.  Generated
+// shader uniforms carry a leading underscore, which is skipped by the lookup.
+static const ShaderSemanticNames kShaderSemanticNames[] = {
+    {NULL, "layer0_sampler"},
+    {NULL, "layer1_sampler"},
+    {NULL, "layer2_sampler"},
+    {NULL, "layer3_sampler"},
+    {NULL, "specular_sampler"},
+    {NULL, "specular2_sampler"},
+    {NULL, "surface_sampler"},
+    {NULL, "surface2_sampler"},
+    {NULL, "detailSurface_sampler"},
+    {"vertexFetch_sampler", NULL},
+    {NULL, "perm_sampler"},
+    {NULL, "permgrad_sampler"},
+    {NULL, "vtfNormal_sampler"},
+    {NULL, "diffenvmap_samplerCube"},
+    {NULL, "envmap_samplerCube"},
+    {NULL, "envmap_samplerSphere"},
+    {NULL, "ps2_shinemap_sampler"},
+    {NULL, "backBuffer_sampler"},
+    {"wind_sampler", NULL},
+    {NULL, "texAnimMap_sampler"},
+    {NULL, "texAnimCurves_sampler"},
+    {"ambientColor", "ambientColor"},
+    {"incandescentGlow", "incandescentGlow"},
+    {"bitangentFlip", NULL},
+    {NULL, "surface_params"},
+    {NULL, "surface_params2"},
+    {NULL, "specular_params"},
+    {NULL, "envmap_params"},
+    {"vtf_kHeight", NULL},
+    {NULL, "vtf_kNormal"},
+    {NULL, "gooch_params"},
+    {"waterTable", NULL},
+    {NULL, "layer0_diffuse"},
+    {NULL, "layer1_diffuse"},
+    {NULL, "layer2_diffuse"},
+    {NULL, "layer3_diffuse"},
+    {NULL, "layer_kOpacities"},
+    {NULL, "specular_specular"},
+    {NULL, "specular2_specular"},
+    {NULL, "refraction_color"},
+    {NULL, "refraction_kIndex"},
+    {"uvOffset0", NULL},
+    {"uvOffset1", NULL},
+    {"uvOffset2", NULL},
+    {"uvOffset3", NULL},
+    {NULL, "lego_params"},
+    {"fxAttributes", NULL},
+    {"dappleLimit", NULL},
+    {NULL, "carpaint_params"},
+    {NULL, "carpaint_tints"},
+    {NULL, "edgelit_params"},
+    {NULL, "fractal_params"},
+    {NULL, "alphaTestParameters"},
+    {"vs_sceneAmbientColor", "sceneAmbientColor"},
+    {"vs_lightColor0", "lightColor0"},
+    {"vs_lightColor1", "lightColor1"},
+    {"vs_lightColor2", "lightColor2"},
+    {"vs_lightPosition0", "lightPosition0"},
+    {"vs_lightPosition1", "lightPosition1"},
+    {"vs_lightPosition2", "lightPosition2"},
+    {"world", NULL},
+    {"vs_view", "view"},
+    {"viewProj", NULL},
+    {"worldViewProj", NULL},
+    {"worldView", NULL},
+    {"motion", NULL},
+    {"vs_lightParams", "fs_lightParams"},
+    {NULL, "fragmentUniforms_sampler"},
+    {"kTint", NULL},
+    {"vs_screenSize", "fs_screenSize"},
+    {NULL, "time"},
+    {NULL, "fog_color"},
+    {"fog_params", NULL},
+    {"vs_projection_params", "fs_projection_params"},
+    {"vs_frustum_params", "fs_frustum_params"},
+    {"ps2ShineMtx", NULL},
+    {NULL, "noiseTexSize"},
+    {"averageLightColor", NULL},
+    {"averageLightDir", NULL},
+    {"lightRotationMtx", NULL},
+    {"offsetTable", NULL},
+    {"vertexGroupStates", NULL},
+    {"worldParams", NULL},
+    {"wind_params", NULL},
+    {"worldViewInverseTranspose", NULL},
+    {"vs_viewInverseTranspose", "fs_viewInverseTranspose"},
+    {"worldCamPos", NULL},
+    {NULL, "specularDirection"},
+    {"lightmapOffset", NULL},
+    {"shadowCastingObject", NULL},
+    {"skinMatrix", NULL},
+    {"blendShapesCount", NULL},
+    {"blendShapes", NULL},
+    {"blendShapes[0]", NULL},
+    {"blendShapes[1]", NULL},
+    {"blendShapes[2]", NULL},
+    {"blendShapes[3]", NULL},
+    {"blendShapes[4]", NULL},
+    {"blendShapes[5]", NULL},
+    {"blendShapes[6]", NULL},
+    {"blendShapes[7]", NULL},
+};
+
+static_assert(sizeof(kShaderSemanticNames) / sizeof(kShaderSemanticNames[0]) == 0x65,
+              "target shader semantic registry size");
+
 i32 NuShaderObjectGLSLGetSemanticIndex(const char *name, nushaderuniform_e &uniform) {
-    if (NuStrCmp(name + 1, "skinMatrix") == 0) {
-        uniform.name_kind = 1;
-        return 0x5a;
+    for (i32 semantic = 0; semantic < 0x65; ++semantic) {
+        if (NuStrCmp(name + 1, kShaderSemanticNames[semantic].vertex_name) == 0) {
+            uniform.name_kind = 1;
+            return semantic;
+        }
+        if (NuStrCmp(name + 1, kShaderSemanticNames[semantic].fragment_name) == 0) {
+            uniform.name_kind = 2;
+            return semantic;
+        }
     }
     return -1;
 }
 
-// Original 0x30b560, retaining the complete active-uniform walk and the exact
-// metadata construction for the transcribed skinMatrix registry entry.
+// Original 0x30b560, retaining the complete active-uniform walk, sampler-unit
+// assignment, and parameter metadata construction.
 extern "C" void NuShaderObjectGLSLProbeSemantics(NUSHADEROBJECT *shader) {
     if (shader->glsl.program == 0) {
         return;
@@ -304,6 +422,7 @@ extern "C" void NuShaderObjectGLSLProbeSemantics(NUSHADEROBJECT *shader) {
     GLint uniform_count = 0;
     glGetProgramiv(shader->glsl.program, GL_ACTIVE_UNIFORMS, &uniform_count);
     NUSHADERUSAGEMASK usage_mask = {};
+    i32 sampler_count = 0;
     for (GLint i = 0; i < uniform_count; ++i) {
         char uniform_name[256];
         GLint array_size = 0;
@@ -317,6 +436,23 @@ extern "C" void NuShaderObjectGLSLProbeSemantics(NUSHADEROBJECT *shader) {
         nushaderuniform_e uniform;
         const i32 semantic = NuShaderObjectGLSLGetSemanticIndex(uniform_name, uniform);
         if (semantic < 0) {
+            if (type == GL_SAMPLER_2D) {
+                i32 lightmap_unit = -1;
+                if (NuStrCmp(uniform_name, "_lightmap0") == 0) {
+                    lightmap_unit = 0;
+                } else if (NuStrCmp(uniform_name, "_lightmap1") == 0) {
+                    lightmap_unit = 1;
+                } else if (NuStrCmp(uniform_name, "_lightmap2") == 0) {
+                    lightmap_unit = 2;
+                }
+                if (lightmap_unit >= 0) {
+                    const GLint location = glGetUniformLocation(shader->glsl.program, uniform_name);
+                    glUseProgram(shader->glsl.program);
+                    glUniform1i(location, lightmap_unit);
+                    glUseProgram(0);
+                    g_boundShader = 0;
+                }
+            }
             continue;
         }
 
@@ -331,7 +467,17 @@ extern "C" void NuShaderObjectGLSLProbeSemantics(NUSHADEROBJECT *shader) {
                                                  (type_info->setter_class & 3) | (type_info->element_count << 2);
         }
 
-        parameter.location = glGetUniformLocation(shader->glsl.program, uniform_name);
+        if ((parameter.type_and_flags & 0x0f) == 4) {
+            const GLint location = glGetUniformLocation(shader->glsl.program, uniform_name);
+            const i32 texture_unit = sampler_count++ + 3;
+            glUseProgram(shader->glsl.program);
+            glUniform1i(location, texture_unit);
+            glUseProgram(0);
+            g_boundShader = 0;
+            parameter.location = static_cast<i16>(texture_unit | 0x800);
+        } else {
+            parameter.location = glGetUniformLocation(shader->glsl.program, uniform_name);
+        }
         parameter.array_size = array_size;
         const u8 setter_class = parameter.element_count_and_setter & 3;
         const u8 element_count = parameter.element_count_and_setter >> 2;

@@ -1,6 +1,8 @@
 #include "decomp.h"
+#include "globals.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nu3d/android/nutimebar_plain.h"
 #include "nu2api/nu3d/nurndrstat.h"
 #include "nu2api/nufile/nufile.h"
 
@@ -240,7 +242,9 @@ extern "C" {
     void rtlDynamicSetType(void) {
     }
 
-    void rtlFrameUpdate(void) {
+    void rtlFrameUpdate(f32 frame_time) {
+        rtltimer1 = static_cast<u16>(static_cast<i32>(rtltimer1adv * frame_time) + rtltimer1);
+        NuTimeBarSlotReset(0, 6);
     }
 
     void rtlFree(void) {
@@ -285,7 +289,7 @@ extern "C" {
         return set;
     }
 
-    void rtlProcessLights(void) {
+    void rtlProcessLights(void *, f32) {
     }
 
     void rtlReset(void) {

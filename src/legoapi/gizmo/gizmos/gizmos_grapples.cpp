@@ -7,7 +7,8 @@ void Grapple_DrawLine(GameObject_s *) {
 void Grapple_MoveCode(GameObject_s *) {
 }
 
-void Grapple_Occupied(GRAPPLE_s *, GameObject_s *, AIPATHCNX_s *) {
+GameObject_s *Grapple_Occupied(GRAPPLE_s *, GameObject_s *, AIPATHCNX_s *) {
+    return NULL;
 }
 
 i32 Grapple_LookAtPos(GameObject_s *, nuvec_s *) {
@@ -39,9 +40,6 @@ void Grapple_SetPlayerTargetPoint(GameObject_s *, nuvec_s *) {
 }
 
 // Static grapple list helpers. Moved from gizmisc_stubs.cpp.
-
-static __used__ void Grapples_DrawList(WORLDINFO_s *, GRAPPLE_s *, int, u16, float) {
-}
 
 static __used__ void Grapple_FindNearestInList(nuvec_s *, GRAPPLE_s *, int, GameObject_s *, GRAPPLE_s **, float *) {
 }

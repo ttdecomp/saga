@@ -1,10 +1,12 @@
 #include "legoapi/gizmos/trigger/minicut.h"
 
 #include "decomp.h"
+#include "legoapi/world/level.h"
+#include "legoapi/world/world.h"
 
-static i32 GizMiniCut_GetMaxGizmos(void *minicut) {
-    UNIMPLEMENTED();
-    return {};
+static i32 GizMiniCut_GetMaxGizmos(void *world_ptr) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    return world->current_level->max_minicuts;
 }
 
 static void GizMiniCut_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {

@@ -10,8 +10,9 @@
 
 NuThreadBase *g_bgProcThread;
 
-static NULSTHDR *procinfo_pool;
-static i32 g_bgCritSec;
+// Shared with the legacy typed-varargs request builder in startup/main.cpp.
+NULSTHDR *procinfo_pool;
+i32 g_bgCritSec;
 
 i32 multithreaded = 1;
 
@@ -22,7 +23,7 @@ char *g_CrashDumpId = "CRASHDUMP_ID=LEGOSAGAANDROID_ANDROID_Feb_17_2014_01_01_01
 static char dummyBuf[0x80];
 static BGPROCINFO *cur_pi;
 
-static NuThreadSemaphore events[2] = {
+NuThreadSemaphore events[2] = {
     NuThreadSemaphore(1),
     NuThreadSemaphore(1),
 };
@@ -37,7 +38,7 @@ static void bgThreadMain(void *data) {
     NuThreadCriticalSectionEnd(g_bgCritSec);
 
     while (true) {
-        cur_pi->unknown_flag_1 = true;
+        cur_pi->work_started = true;
 
         NuThreadCriticalSectionBegin(g_performingBgProcWorkCritSec);
 
@@ -91,7 +92,7 @@ BGPROCINFO *bgPostRequest(bgprocdofn *do_fn, bgprocackfn *ack_fn, void *data, i3
     BGPROCINFO *info;
 
     if (!multithreaded) {
-        local.unknown_flag_1 = false;
+        local.work_started = false;
         local.unknown_flag_2 = false;
 
         local.do_fn = do_fn;
@@ -120,7 +121,7 @@ BGPROCINFO *bgPostRequest(bgprocdofn *do_fn, bgprocackfn *ack_fn, void *data, i3
 
     info = (BGPROCINFO *)NuLstAllocTail(procinfo_pool);
     if (info != NULL) {
-        info->unknown_flag_1 = false;
+        info->work_started = false;
         info->unknown_flag_2 = false;
 
         info->do_fn = do_fn;

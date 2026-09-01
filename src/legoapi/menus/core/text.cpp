@@ -23,6 +23,7 @@ void (*Text_GameSetLanguageFn)(i32);
 char *Text_GetLanguagePath(i32 language);
 void Text_LoadAndFixUpStrings(unsigned char *filename, unsigned char **buffer, char **table, i32 count);
 void IntroText_SetTextID(i32 id);
+void Text_InsertCommasIntoNumber(char *number, char *text, i32 length);
 void Text_LoadFont(char *path, variptr_u *buf, variptr_u *buf_end) {
     create_qfont3dz = 1;
     QFont2D = LoadGameFont(path, path, 1, buf, buf_end);
@@ -147,7 +148,18 @@ void Text_InitTable(TEXTENTRY *entry, i32 first, i32 last) {
         entry++;
     }
 }
-void Text_MakeScore(u32, char *) {
+void Text_MakeScore(u32 score, char *text) {
+    char digits[80];
+    char *end = &digits[79];
+    *end = '\0';
+
+    char *first = end;
+    do {
+        *--first = static_cast<char>('0' + score % 10);
+        score /= 10;
+    } while (score != 0);
+
+    Text_InsertCommasIntoNumber(first, text, static_cast<i32>(end - first));
 }
 extern i16 tALONGTIMEAGO;
 void Text_LoadStrings(variptr_u *buf, variptr_u *) {
@@ -384,7 +396,29 @@ void Text_ExpandAllButtonStrings(char *, char *) {
 }
 void Text_FillInExtendedSaveInfo() {
 }
-void Text_InsertCommasIntoNumber(char *, char *, i32) {
+void Text_InsertCommasIntoNumber(char *number, char *text, i32 length) {
+    char separator;
+    if (Text_Language == 2) {
+        separator = ' ';
+    } else if (Text_Language == 0 || Text_Language == 1 || Text_Language == 18) {
+        separator = ',';
+    } else {
+        separator = '.';
+    }
+
+    if (length < 0) {
+        length = NuStrLen(number);
+    }
+
+    i32 output = 0;
+    for (i32 digit = 0; digit < length; ++digit) {
+        text[output++] = number[digit];
+        const i32 remaining = length - digit - 1;
+        if (remaining > 0 && remaining % 3 == 0) {
+            text[output++] = separator;
+        }
+    }
+    text[output] = '\0';
 }
 extern "C" {
     void FixUpButtonsInFont(VUFNT *game_font, VUFNT *button_font) {

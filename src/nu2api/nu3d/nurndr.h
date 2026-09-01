@@ -1,5 +1,6 @@
 #pragma once
 
+#include "decomp_assert.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/numath/numtx.h"
 
@@ -24,6 +25,17 @@ typedef struct nucolour4_s {
     f32 a;
 } NUCOLOUR4;
 
+typedef struct NURND_SHADOW_s {
+    NUVEC position;
+    f32 radius;
+    u16 opacity;
+    u16 x_rotation;
+    u16 y_rotation;
+    u16 z_rotation;
+} NURND_SHADOW_s;
+
+DECOMP_ASSERT(sizeof(NURND_SHADOW_s) == 0x18, "NURND_SHADOW_s ABI");
+
 extern i32 g_backingWidth;
 extern i32 g_backingHeight;
 
@@ -35,6 +47,8 @@ extern "C" {
 #endif
     extern i32 nurndr_pixel_width;
     extern i32 nurndr_pixel_height;
+    extern i32 NuRndrShadowCnt;
+    extern NURND_SHADOW_s NuRndrShadPolDat[128];
 
     void NuRndrInitEx(i32 stream_buffer_size, VARIPTR *buffer);
 
@@ -46,8 +60,11 @@ extern "C" {
                                      const NUCOLOUR3 *colour1, const NUVEC *dir2, const NUCOLOUR3 *colour2);
     i32 NuRndrSetFxMtx(NUMTX *matrix);
     void NuRndrSetSpecularLightPS(const NUVEC *direction, const NUCOLOUR4 *intensity);
+    void NuRndrStartReflectionRender(i32 clear_depth);
+    void NuRndrEndReflectionRender(void);
 
     void FaceYDirStream(i32 y_angle);
+    void NuRndrAddShadow(NUVEC *position, f32 radius, i32 opacity, i32 x_rotation, i32 y_rotation, i32 z_rotation);
 #ifdef __cplusplus
 }
 #endif

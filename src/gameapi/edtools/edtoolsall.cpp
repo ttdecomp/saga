@@ -1,4 +1,5 @@
 #include "gameapi_edtools_types.h"
+#include "gameapi/edtools/edcam.h"
 
 void EdTerrInit(void *, void *) {
 }
@@ -159,7 +160,12 @@ void edbriBridgeCreate(nuvec_s *) {
 void edbriBridgeUpdate(i32, nugscn_s *) {
 }
 
-void edcamSetContoller(i32) {
+void edcamSetContoller(i32 invert_pitch) {
+    edcam_s *camera = edcamGetEdCam();
+    camera->freedoms &= ~EDCAM_FREEDOM_INVERT_PAD_PITCH;
+    if (invert_pitch != 0) {
+        camera->freedoms |= EDCAM_FREEDOM_INVERT_PAD_PITCH;
+    }
 }
 
 void edgraClumpDestroy(i32) {

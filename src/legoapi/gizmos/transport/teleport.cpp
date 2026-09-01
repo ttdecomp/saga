@@ -1,12 +1,14 @@
 #include "legoapi/gizmos/transport/teleport.h"
 
 #include "decomp.h"
+#include "legoapi/world/level.h"
+#include "legoapi/world/world.h"
 
 i32 teleport_gizmotype_id = -1;
 
-static i32 Teleport_GetMaxGizmos(void *teleport) {
-    UNIMPLEMENTED();
-    return {};
+static i32 Teleport_GetMaxGizmos(void *world_ptr) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    return world != NULL ? world->current_level->max_teleports : 0;
 }
 
 static void Teleport_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {

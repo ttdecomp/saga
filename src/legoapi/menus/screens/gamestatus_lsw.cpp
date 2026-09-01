@@ -1,7 +1,11 @@
 #include "decomp.h"
 #include "globals.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/characters/motion.h"
 #include "legoapi/core/input/qrand.h"
+#include "legoapi/world/area.h"
+#include "legoapi/world/level.h"
+#include "legoapi/world/world.h"
 #include "nu2api/nu3d/nutex.h"
 
 struct AIROW_s;
@@ -11,6 +15,42 @@ struct SHOPINPUT;
 
 extern "C" i32 NewMode;
 extern "C" i32 reset_load;
+extern "C" i32 Paused;
+extern FadeSystem FadeSys;
+extern f32 statstime;
+extern f32 cointotaltime;
+extern i32 screendump;
+extern i32 newgamecam;
+
+i32 GetMenuID();
+extern "C" i32 MenuInMemoryCard();
+
+namespace {
+    enum PANEL_BLOCKING_MENU {
+        PANEL_MENU_EPISODE_I = 20,
+        PANEL_MENU_EPISODE_II = 21,
+        PANEL_MENU_EPISODE_III = 22,
+        PANEL_MENU_EPISODE_IV = 23,
+        PANEL_MENU_SAVE = 25,
+        PANEL_MENU_LOAD = 26,
+    };
+
+    bool CoinTotalCanOpen() {
+        if (FadeSys.fade != 0.0f || CUTSTOPGAME != 0) {
+            return false;
+        }
+        if (Paused == 0 && NetPaused == 0 && DrawCoinTotalTime <= 0.0f) {
+            return false;
+        }
+        if (screendump != 0 || MenuInMemoryCard() != 0) {
+            return false;
+        }
+
+        const i32 menu = GetMenuID();
+        return menu != PANEL_MENU_EPISODE_I && menu != PANEL_MENU_EPISODE_II && menu != PANEL_MENU_EPISODE_III &&
+               menu != PANEL_MENU_EPISODE_IV && menu != PANEL_MENU_SAVE && menu != PANEL_MENU_LOAD;
+    }
+} // namespace
 
 u16 hub_iconang[4] = {};
 static f32 hub_icontime[4] = {};
@@ -21,6 +61,31 @@ void NewGameMode() {
 }
 
 void UpdateStats() {
+    LEVELDATA *level = WORLD->current_level;
+    if ((level->flags & LEVEL_GAMEPLAY) == 0) {
+        return;
+    }
+
+    f32 stats_target = 0.0f;
+    if (FadeSys.fade == 0.0f && CUTSTOPGAME == 0 && newgamecam == 0) {
+        const bool hub_camera_hidden = HUB_ADATA != NULL && WORLD->area == HUB_ADATA && GameCam->mode == 4;
+        const i32 menu = GetMenuID();
+        if (!hub_camera_hidden && (menu < PANEL_MENU_EPISODE_I || menu > PANEL_MENU_EPISODE_IV)) {
+            stats_target = 1.0f;
+        }
+    }
+    statstime = SeekLinearF(statstime, stats_target, FRAMETIME);
+
+    if ((level->flags & LEVEL_SHOW_COIN_TOTAL) != 0) {
+        DrawCoinTotalTime = 1.0f;
+    }
+    if (DrawCoinTotalTime > 0.0f) {
+        DrawCoinTotalTime -= FRAMETIME;
+    }
+
+    const f32 coin_total_target = CoinTotalCanOpen() ? 1.0f : 0.0f;
+    cointotaltime = SeekLinearF(cointotaltime, coin_total_target, FRAMETIME);
+    CoinTotalScale = SeekLinearF(CoinTotalScale, 1.0f, 3.0f * FRAMETIME);
 }
 
 void AddStatusStage(STATUSPACKET_s *, i32, i32) {

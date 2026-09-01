@@ -15,6 +15,18 @@ enum ANI3_MAGIC : u32 {
     ANI3_MAGIC_VERSION_5 = 0x414e4935,
 };
 
+enum ANI3_FORMAT_FLAGS : u8 {
+    ANI3_FORMAT_QUATERNION_ROTATION = 1 << 0,
+    ANI3_FORMAT_QUATERNION_STORES_W = 1 << 1,
+};
+
+enum NUANIM_NODE_FLAGS : u8 {
+    NUANIM_NODE_HAS_ROTATION = 1 << 0,
+    NUANIM_NODE_HAS_TRANSLATION = 1 << 1,
+    NUANIM_NODE_HAS_SCALE = 1 << 3,
+    NUANIM_NODE_COMPENSATE_PARENT_SCALE = 1 << 4,
+};
+
 struct ani3_scalemin_s {
     float scale;
     float minimum;
@@ -53,16 +65,24 @@ extern "C" {
     void *NuAnimData2LoadBuffEx(char *path, VARIPTR *buf, VARIPTR *buf_end, void **result);
     void *NuAnimData2LoadBuff(char *path, VARIPTR *buf, VARIPTR *buf_end);
     void *NuAnimData2LoadBuffFromPAK(void *data, i32 file_size);
+    f32 *NuAnimCurveExtractAllNodeCurves_3(ani3_animheader_s *animation, i32 node, f32 frame, char *curve_mask);
     void NuAnimData2CalcMatrix(struct nuanimdata_s *animation, i32 node, f32 frame, struct numtx_s *matrix);
     f32 NuAnimEndFrame(void *animation);
     f32 NuAnimEndFrameOld(void *animation);
     void ANI_Ani3ExtractAllNodeCurves(ani3_animheader_s *anim, f32 frame, f32 *values, i32 node, char *curve_mask);
-    void ANI_SimpleAni3PlayerV4Joint(ani3_animheader_s *anim, f32 frame, nuanimbuff_s *buffer, i32 first_joint,
-                                     i32 joint_count);
+    i32 ANI_SimpleAni3PlayerV4Joint(ani3_animheader_s *anim, f32 frame, nuanimbuff_s *buffer, i32 joint_count,
+                                    i32 first_joint);
     void ANI_SimpleAni3PlayerV4Joint_Blend(ani3_animheader_s *anim, f32 frame, nuanimbuff_s *buffer, f32 blend,
-                                           i32 first_joint, i32 joint_count, NUVEC *root_translation);
+                                           i32 joint_count, i32 first_joint, NUVEC *root_translation);
 #ifdef __cplusplus
 }
+#endif
+
+#ifdef __cplusplus
+i32 ANI_SimpleAni3PlayerV4Joint_Quat3(ani3_animheader_s *anim, f32 frame, nuanimbuff_s *buffer, i32 joint_count,
+                                      i32 first_joint);
+i32 ANI_SimpleAni3PlayerV4Joint_Quat3W(ani3_animheader_s *anim, f32 frame, nuanimbuff_s *buffer, i32 joint_count,
+                                       i32 first_joint);
 #endif
 
 struct nuanimtime_s {
@@ -84,7 +104,13 @@ struct ani3_animheader_s {
     u16 first_frame;
     u8 end_frame;
     u8 constant_index;
-    u16 field_12;
+    union {
+        u16 field_12;
+        struct {
+            u8 field_12_low;
+            u8 format_flags;
+        };
+    };
     u16 next_block;
     u16 declared_end_frame;
     u8 pad_18[4];
@@ -108,6 +134,14 @@ struct nuanimbuffjoint_s {
     f32 rotation_w;
     NUVEC scale;
     f32 scale_w;
+};
+
+enum NUANIMBUFF_JOINT_FLAGS : u8 {
+    NUANIMBUFF_JOINT_ROTATION = 0x01,
+    NUANIMBUFF_JOINT_TRANSLATION = 0x02,
+    NUANIMBUFF_JOINT_SCALE = 0x08,
+    NUANIMBUFF_JOINT_CANCEL_PARENT_SCALE = 0x10,
+    NUANIMBUFF_JOINT_BIND_MATRIX = 0x20,
 };
 
 struct nuanimbuff_s {

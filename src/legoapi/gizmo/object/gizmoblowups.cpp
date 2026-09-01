@@ -120,7 +120,15 @@ void GizmoBlowupVisibilityOverrides(WORLDINFO_s *) {
 void GizmoBlowup_SetAutoSetReflectY(GIZMOBLOWUP_s *, nuvec_s *) {
 }
 
-void GizmoBlowup_TransformDraw_Game(GIZMOBLOWUP_s *) {
+extern void Transform_DrawTarget(NUVEC *position, f32 scale, f32 opacity);
+extern i32 Transform_TargettedByObj(void *object);
+
+void GizmoBlowup_TransformDraw_Game(GIZMOBLOWUP_s *blowup) {
+    if (Transform_TargettedByObj(blowup) != 0) {
+        return;
+    }
+
+    Transform_DrawTarget(&blowup->mid_position, 1.4f * blowup->target_scale, 0.4f);
 }
 
 void RemapAllTypeFlagsToBlowupFlags(u32) {

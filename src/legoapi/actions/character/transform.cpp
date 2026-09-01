@@ -26,7 +26,7 @@ void DeRotatePoint(nuvec_s *point) {
     const f32 rotated_z = relative_z * cos_yaw - relative_x * sin_yaw;
 
     point->x = rotated_x;
-    const f32 relative_y = point->y + query->collision_height_scale - query->position.y;
+    const f32 relative_y = point->y + query->collision_radius - query->position.y;
     point->z = relative_y * sin_pitch + rotated_z * cos_pitch;
     point->y = relative_y * cos_pitch - rotated_z * sin_pitch;
 }
@@ -68,7 +68,8 @@ void DerotateMovementVector() {
                                      query->movement.z * query->movement.z);
 }
 
-void Transform_TargettedByObj(void *) {
+i32 Transform_TargettedByObj(void *) {
+    return 0;
 }
 
 void InterpolateRotationMatrix(numtx_s *, numtx_s *, numtx_s *, float) {

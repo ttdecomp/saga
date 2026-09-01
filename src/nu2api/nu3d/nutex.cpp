@@ -55,7 +55,7 @@ void NuTexLoadHires(i32 tex_id) {
 void NuTexUnloadHires(i32 tex_id) {
 }
 
-void NuTexAddReference(i32 tex_id) {
+void NuTexAddReference(i32 tex_id, NUGSCN *) {
     NUNATIVETEX *tex;
 
     tex = NuTexGetNative(tex_id);
@@ -138,6 +138,45 @@ NUNATIVETEX *NuTexGetNative(i32 tex_id) {
     }
 
     return NULL;
+}
+
+extern "C" i32 NuTexResolveReference(NUGSCN *scene, i32 tex_id) {
+    if ((tex_id & 0x4000) == 0) {
+        return scene->texture_ids[tex_id];
+    }
+    if (max_textures == 0) {
+        return 0;
+    }
+
+    const i32 reference_index = tex_id & 0x3fff;
+    NUNATIVETEX *reference = scene->textures[reference_index];
+    i32 newest_texture_id = 0;
+    i32 newest_texture_order = 0;
+
+    for (i32 index = 0; index < max_textures; ++index) {
+        NUNATIVETEX *texture = texture_list[index];
+        if (texture == NULL || texture->ref_count < 0) {
+            continue;
+        }
+
+        bool checksum_matches = true;
+        for (i32 byte = 0; byte < 16; ++byte) {
+            if (texture->checksum[byte] != reference->checksum[byte]) {
+                checksum_matches = false;
+                break;
+            }
+        }
+        if (checksum_matches && static_cast<u32>(texture_order[index]) > static_cast<u32>(newest_texture_order)) {
+            newest_texture_id = index + 1;
+            newest_texture_order = texture_order[index];
+        }
+    }
+
+    if (newest_texture_id != 0) {
+        NuTexAddReference(newest_texture_id, scene);
+        scene->texture_ids[reference_index] = newest_texture_id;
+    }
+    return newest_texture_id;
 }
 
 i32 NuTexWidth(i32 tex_id) {
@@ -263,7 +302,7 @@ i32 NuDDSGetTextureDescription(const char *dds_data, NUTEXFORMAT &out_format, i3
 
     u32 mipmap_count = header->dw_mip_map_count;
     if (mipmap_count == 0) {
-        mipmap_count = header->dw_flags & 0x20000 ? 1 : 0;
+        mipmap_count = (header->dw_flags & 0x20000) == 0;
     }
     out_mip_count = mipmap_count;
 
@@ -321,5 +360,6 @@ void NuTexManagerStream(nugscn_s *) {
 void NuTexAnimProgParseFile(i32, variptr_u *, variptr_u, i32) {
 }
 
-void NuTexGetUnresolvedTextureTIDPS() {
+i32 NuTexGetUnresolvedTextureTIDPS() {
+    return 0;
 }

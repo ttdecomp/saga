@@ -270,7 +270,7 @@ void WorldInfo_Init(WORLDINFO *world) {
 
     TerrainPlatformOldUpdate();
     if (world->current_gscn != NULL) {
-        NuGScnUpdate(world->current_gscn, 0);
+        NuGScnUpdate(world->current_gscn, 0.0f);
     }
     TerrainPlatformNewUpdate();
 
@@ -342,7 +342,7 @@ void WorldInfo_Init(WORLDINFO *world) {
     }
 
     reset_restart = 1;
-    *(i32 *)&world->filler1[0] = 1; // field_0x114
+    world->field_0x114 = 1;
 
     InitGameObjectLights();
 

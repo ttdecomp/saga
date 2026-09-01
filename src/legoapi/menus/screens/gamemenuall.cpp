@@ -1384,7 +1384,13 @@ extern "C" {
     void MenuInCriticalMemoryCard(void) {
     }
 
-    void MenuInMemoryCard(void) {
+    i32 MenuInMemoryCard(void) {
+        if (GameMenuLevel == -1 || MenuValidated == 0)
+            return 0;
+
+        const i32 menu_id = MenuInfo[GameMenu[GameMenuLevel].menu].id;
+        return (u32)(menu_id - LEGO_MENU_MEMORY_CARD_FIRST) <=
+               (LEGO_MENU_MEMORY_CARD_LAST - LEGO_MENU_MEMORY_CARD_FIRST);
     }
 
     void MenuInMemoryCardLoad(void) {

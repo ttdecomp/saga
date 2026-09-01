@@ -5,7 +5,10 @@
 #include "gameframework/saveload.h"
 #include "legoapi/menus/core/text.h"
 #include "legoapi/characters/core/character.h"
+#include "legoapi/gizmo/base/gizmo.h"
 #include "legoapi/items/objects/gameobjects.h"
+#include "legoapi/world/area.h"
+#include "legoapi/world/levels/episode.h"
 #include "legoapi/world/world_shared.h"
 #include "globals.h"
 struct starfighter_s;
@@ -26,11 +29,14 @@ struct rtlidata_s;
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nucore/bgproc.h"
 #include "nu2api/nucore/nuapi.h"
+#include "nu2api/nucore/nuanim3.h"
+#include "nu2api/nucore/nugcutscene.h"
 #include "nu2api/nucore/nuhgobj.h"
 #include "nu2api/nucore/nuptrblock.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/numath/numath.h"
+#include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/nutrig.h"
 
 #include <string.h>
@@ -59,6 +65,7 @@ struct ripple_set_s;
 struct VuVec;
 
 extern "C" void SetQFont2D(void);
+extern "C" bool StateAnimEvaluate2(StateAnim *state, u8 *index, char *value, f32 frame);
 extern "C" void DrawMenu(i32 paused);
 extern "C" i32 NuRndrBeginScene(i32);
 extern "C" void NuRndrEndScene(void);
@@ -103,13 +110,27 @@ extern "C" i32 TestForController(void);
 extern f32 text3d_height;
 extern f32 text3d_width;
 extern FadeSystem FadeSys;
+extern f32 cointotaltime;
 extern f32 MainRenderTime;
 extern numtl_s *pause_rndr_mtl;
 extern i32 editor_active;
 extern i32 Paused;
+extern i32 PANELOFF;
 extern i32 noscenespecials;
 extern void RotateGameMatrix(numtx_s *matrix, i32 order, u16 x, u16 y, u16 z);
 extern NUGSCN *IconScene_FindById(i32 character_id);
+void Hint_Draw(i32 player_index);
+
+static NUCAMERA *cam;
+static NUMTX local_inv_view_mtx;
+static NUVEC world_campos;
+NUVEC *override_campos;
+static NUFRUSTRUM **frustra;
+static i32 *nfrustra;
+static i16 camera_roomid;
+static NUPLANE near_clip_plane;
+NUPLANE cam_plane;
+i32 draw_portals;
 
 namespace {
     struct NuSpecialHandleLayout {
@@ -160,6 +181,8 @@ NUVIDEORESHEADER g_VideoResHeader;
 extern "C" {
     void RndrStateCopyGlobalState(NUGLOBALRNDRSTATE *state);
     i32 NuDisplayListRndrSpecial(nuhspecial_s *special, NUMTX *mtx, i32 skinned, void *skin_mtx, void *blend_values);
+    void Initialise_PS(NUGSCN *scene);
+    void SetAllInstancesVisible(void);
 
     static void DisplaySceneSetClipResult(NUDLDLISTSCENE *scene, i32 clip_index, i32 clip_result) {
         const u32 buffer = scene->render_buffer >> 7;
@@ -179,11 +202,74 @@ extern "C" {
         }
     }
 
-    // NuDisplaySceneRndr.part.101's non-NuVisi branch.  This is the original
-    // camera-culling fallback used when no visibility tree supplies a result.
-    // LOD child records (visibility bit 0 clear) are selected by their parent;
-    // zero-range scenes such as the Map therefore evaluate only the parent
-    // records and skip their child entries exactly as the original loop does.
+    static f32 DisplaySceneDistanceSqrToCamera(const NUCLIPBOUNDS &bounds) {
+        const f32 x = global_camera.mtx.m30 - bounds.center.x;
+        const f32 y = global_camera.mtx.m31 - bounds.center.y;
+        const f32 z = global_camera.mtx.m32 - bounds.center.z;
+        return x * x + y * y + z * z;
+    }
+
+    // A scene has one bound/visibility record per instance, but one or more
+    // clip-object records per instance.  lod_ranges terminates every instance
+    // group with zero; preceding values select progressively nearer LODs.
+    static i32 DisplaySceneSelectLod(const NUDLDLISTSCENE *scene, i32 first_clip, f32 distance_sqr) {
+        i32 selected_clip = first_clip;
+        if (scene->lod_ranges[selected_clip] != 0.0f && distance_sqr < scene->lod_ranges[selected_clip]) {
+            do {
+                ++selected_clip;
+            } while (distance_sqr < scene->lod_ranges[selected_clip]);
+        }
+        return selected_clip;
+    }
+
+    static i32 DisplaySceneNextInstance(const NUDLDLISTSCENE *scene, i32 clip_index) {
+        while (scene->lod_ranges[clip_index] != 0.0f) {
+            ++clip_index;
+        }
+        return clip_index + 1;
+    }
+
+    static f32 DisplaySceneFarClip(const NUDLDLISTSCENE *scene, i32 instance_index, i32 clip_index) {
+        f32 far_clip = scene->far_clip_ranges[clip_index];
+        if (scene->fade_ranges == NULL ||
+            (scene->visibility_flags[instance_index] & NUDL_INSTANCE_FLAG_DISTANCE_FADE) == 0) {
+            return far_clip;
+        }
+
+        const f32 fade_start = scene->fade_ranges[instance_index * 2];
+        const f32 fade_end = scene->fade_ranges[instance_index * 2 + 1];
+        if (fade_end > fade_start) {
+            return fade_end;
+        }
+        return far_clip;
+    }
+
+    static f32 DisplaySceneDistanceFade(const NUDLDLISTSCENE *scene, i32 instance_index, f32 distance_sqr) {
+        if (scene->fade_ranges == NULL ||
+            (scene->visibility_flags[instance_index] & NUDL_INSTANCE_FLAG_DISTANCE_FADE) == 0) {
+            return 1.0f;
+        }
+
+        const f32 fade_start = scene->fade_ranges[instance_index * 2];
+        const f32 fade_end = scene->fade_ranges[instance_index * 2 + 1];
+        if (fade_end <= fade_start) {
+            if (fade_end * fade_end < distance_sqr) {
+                const f32 alpha = (NuFsqrt(distance_sqr) - fade_end) / (fade_start - fade_end);
+                return alpha < 1.0f ? alpha : 1.0f;
+            }
+            return 0.0f;
+        }
+
+        if (fade_start * fade_start < distance_sqr) {
+            const f32 alpha = (fade_end - NuFsqrt(distance_sqr)) / (fade_end - fade_start);
+            return alpha > 0.0f ? alpha : 0.0f;
+        }
+        return 1.0f;
+    }
+
+    // NuDisplaySceneRndr.part.101's ordinary non-shadow path. NuVisiEvaluate
+    // is not reconstructed yet, so every instance starts portal-visible just
+    // as the target does when no visibility result is available.
     static void DisplaySceneEvaluateClipFallback(NUDLDLISTSCENE *scene) {
         scene->alpha_values = NULL;
         if (scene->nclip_objects <= 0) {
@@ -196,19 +282,25 @@ extern "C" {
             buffer->addr += static_cast<usize>(scene->nclip_objects) * sizeof(f32);
         }
 
-        for (i32 clip_index = 0; clip_index < scene->nclip_objects; ++clip_index) {
-            const u8 flags = static_cast<u8>(scene->visibility_flags[clip_index]);
-            if ((flags & 1) == 0) {
-                continue;
+        i32 clip_index = 0;
+        i32 instance_index = 0;
+        while (clip_index < scene->nclip_objects) {
+            const u8 flags = static_cast<u8>(scene->visibility_flags[instance_index]);
+            if ((flags & NUDL_INSTANCE_FLAG_VISIBLE) != 0) {
+                NUCLIPBOUNDS &bounds = scene->clip_bounds[instance_index];
+                const f32 distance_sqr = DisplaySceneDistanceSqrToCamera(bounds);
+                const i32 selected_clip = DisplaySceneSelectLod(scene, clip_index, distance_sqr);
+                const f32 far_clip = DisplaySceneFarClip(scene, instance_index, selected_clip);
+                const i32 clip_result = NuCameraClipTestExtentsAxisAligned(&bounds.center, &bounds.extent, far_clip);
+
+                if (clip_result != 0 && scene->alpha_values != NULL) {
+                    scene->alpha_values[selected_clip] = DisplaySceneDistanceFade(scene, instance_index, distance_sqr);
+                }
+                DisplaySceneSetClipResult(scene, selected_clip, clip_result);
             }
 
-            NUCLIPBOUNDS &bounds = scene->clip_bounds[clip_index];
-            const f32 far_clip = scene->far_clip_ranges != NULL ? scene->far_clip_ranges[clip_index] : 0.0f;
-            const i32 clip_result = NuCameraClipTestExtentsAxisAligned(&bounds.min, &bounds.max, far_clip);
-            if (scene->alpha_values != NULL) {
-                scene->alpha_values[clip_index] = clip_result != 0 ? 1.0f : 0.0f;
-            }
-            DisplaySceneSetClipResult(scene, clip_index, clip_result);
+            clip_index = DisplaySceneNextInstance(scene, clip_index);
+            ++instance_index;
         }
     }
 
@@ -249,8 +341,53 @@ extern "C" {
         }
     }
 
-    void NuPortalVisibility(NUGSCN *scene) {
-        (void)scene;
+    i32 NuPortalVisibility(NUGSCN *scene) {
+        Initialise_PS(scene);
+        NUVEC *camera_position = override_campos != NULL ? override_campos : &world_campos;
+        if (portals_enabled == 0) {
+            SetAllInstancesVisible();
+            return 0;
+        }
+        if (scene->max_portals == 0 || scene->num_rooms == 0 || scene->portal_visibility_data == NULL) {
+            return 0;
+        }
+
+        scene->num_portal_frusta = 0;
+        nfrustra = &scene->num_portal_frusta;
+        frustra = scene->portal_frusta;
+        cam = NuCameraGetCam();
+        local_inv_view_mtx = *NuCameraGetMtx();
+        world_campos = {
+            global_camera.mtx.m30,
+            global_camera.mtx.m31,
+            global_camera.mtx.m32,
+        };
+
+        camera_roomid = static_cast<i16>(NuPortalWhichRoom(scene, camera_position));
+        scene->camera_room = camera_roomid;
+        if (camera_roomid == -1) {
+            return 0;
+        }
+
+        const f32 forward_x = local_inv_view_mtx.m20;
+        const f32 forward_y = local_inv_view_mtx.m21;
+        const f32 forward_z = local_inv_view_mtx.m22;
+        cam_plane.a = forward_x;
+        cam_plane.b = forward_y;
+        cam_plane.c = forward_z;
+        cam_plane.d = -(world_campos.x * forward_x + world_campos.y * forward_y + world_campos.z * forward_z);
+
+        near_clip_plane.a = forward_x;
+        near_clip_plane.b = forward_y;
+        near_clip_plane.c = forward_z;
+        near_clip_plane.d = -((world_campos.x + cam->near_clip * forward_x) * forward_x +
+                              (world_campos.y + cam->near_clip * forward_y) * forward_y +
+                              (world_campos.z + cam->near_clip * forward_z) * forward_z);
+
+        // The recursive room/frustum traversal follows these target guards.
+        // Leave the preceding frame's visibility intact until that traversal
+        // is reconstructed, rather than publishing a partially hidden scene.
+        return 0;
     }
     void NuGScnRndr3(NUGSCN *scene) {
         NuDisplaySceneRndr(scene->display_list);
@@ -261,9 +398,149 @@ void SetCameraZoom(f32 zoom) {
     CameraZoom = zoom;
 }
 
-extern "C" void NuGScnUpdate(NUGSCN *gscn, i32 param) {
-    (void)gscn;
-    (void)param;
+extern "C" void NuGScnUpdate(NUGSCN *gscn, f32 frame_delta) {
+    if (gscn->instance_animation_data == NULL) {
+        return;
+    }
+
+    // The lookup array is reference-counted by the allocation word immediately
+    // before its first entry.  A sole owner means the optional table was not
+    // populated and the original runtime discards it here.
+    if (gscn->animation_end_frames != NULL && reinterpret_cast<i32 *>(gscn->animation_end_frames)[-1] <= 1) {
+        gscn->animation_end_frames = NULL;
+    }
+
+    if (gscn->num_instance_animations <= 0) {
+        return;
+    }
+
+    NUDISPLAYSPECIAL *display_specials = static_cast<NUDISPLAYSPECIAL *>(gscn->display_list->specials);
+    nuinstanim_s *instance_animation = gscn->instance_animations;
+    NUMTX *animation_matrix = gscn->instance_animation_matrices;
+
+    for (i32 i = 0; i < gscn->num_instance_animations; ++i, ++instance_animation, ++animation_matrix) {
+        if (instance_animation->anim_ix >= gscn->num_instance_animation_data) {
+            continue;
+        }
+
+        NUDISPLAYSPECIAL *display_special = &display_specials[instance_animation->instance_ix];
+        nuanimendlookup_s *state_animation = NULL;
+        nuanimdata_s *animation = NULL;
+
+        if ((instance_animation->end_frame_lookup_bits & NUINSTANIM_END_FRAME_LOOKUP_MASK) != 0 &&
+            gscn->animation_end_frames != NULL) {
+            const u16 lookup_index = instance_animation->end_frame_lookup_index;
+            state_animation = &gscn->animation_end_frames[lookup_index - 1];
+            animation = gscn->instance_animation_data[instance_animation->anim_ix];
+        } else {
+            if ((display_special->flags & NUDISPLAYSPECIAL_FLAG_VISIBLE) == 0) {
+                continue;
+            }
+            animation = gscn->instance_animation_data[instance_animation->anim_ix];
+            if (animation == NULL) {
+                continue;
+            }
+        }
+
+        f32 end_frame;
+        if (animation != NULL) {
+            end_frame = NuAnimEndFrameOld(animation);
+        } else if (state_animation != NULL) {
+            end_frame = static_cast<f32>(state_animation->end_frame);
+        } else {
+            continue;
+        }
+
+        if (end_frame == 0.0f) {
+            continue;
+        }
+
+        f32 frame;
+        u32 flags = static_cast<u32>(instance_animation->flags);
+        if ((flags & NUINSTANIM_FLAG_PLAYING) != 0) {
+            instance_animation->ltime += frame_delta * instance_animation->tfactor;
+            frame = instance_animation->ltime;
+            bool waiting_for_start = false;
+
+            if ((flags & NUINSTANIM_FLAG_WAITING) != 0) {
+                if (frame < instance_animation->tfirst) {
+                    waiting_for_start = true;
+                } else {
+                    flags &= ~NUINSTANIM_FLAG_WAITING;
+                    instance_animation->flags = static_cast<NUINSTANIM_FLAGS>(flags);
+                    instance_animation->ltime -= instance_animation->tfirst - 1.0f;
+                    frame = instance_animation->ltime;
+                }
+            }
+
+            if (!waiting_for_start) {
+                const f32 interval_end = instance_animation->tinterval + end_frame;
+                if (frame >= interval_end) {
+                    if ((flags & NUINSTANIM_FLAG_REPEATING) != 0) {
+                        const f32 repeat_length = interval_end - 1.0f;
+                        instance_animation->ltime -=
+                            NuFloor((instance_animation->ltime - 1.0f) / repeat_length) * repeat_length;
+                        frame = instance_animation->ltime;
+                    } else {
+                        flags &= ~NUINSTANIM_FLAG_PLAYING;
+                        instance_animation->flags = static_cast<NUINSTANIM_FLAGS>(flags);
+                        instance_animation->ltime = end_frame;
+                        frame = end_frame;
+                    }
+                } else if (frame > end_frame) {
+                    frame = end_frame;
+                } else if (frame < 1.0f) {
+                    flags &= ~NUINSTANIM_FLAG_PLAYING;
+                    instance_animation->flags = static_cast<NUINSTANIM_FLAGS>(flags);
+                    instance_animation->ltime = 1.0f;
+                    frame = 1.0f;
+                }
+
+                if ((flags & NUINSTANIM_FLAG_BACKWARDS) != 0) {
+                    frame = end_frame + 1.0f - frame;
+                }
+            }
+        } else {
+            frame = instance_animation->ltime;
+        }
+
+        if (frame != instance_animation->prev_eval_time) {
+            if (state_animation != NULL) {
+                u8 state_index =
+                    static_cast<u8>((static_cast<u32>(instance_animation->flags) & NUINSTANIM_STATE_INDEX_MASK) >>
+                                    NUINSTANIM_STATE_INDEX_SHIFT);
+                char state_value;
+                const bool state_changed = StateAnimEvaluate2(reinterpret_cast<StateAnim *>(state_animation),
+                                                              &state_index, &state_value, frame);
+                const u32 state_flags = (static_cast<u32>(instance_animation->flags) & ~NUINSTANIM_STATE_INDEX_MASK) |
+                                        (static_cast<u32>(state_index) << NUINSTANIM_STATE_INDEX_SHIFT);
+                instance_animation->flags = static_cast<NUINSTANIM_FLAGS>(state_flags);
+
+                if (state_changed) {
+                    if (instance_animation->instance_ix != 0xffff && state_value != 0) {
+                        display_special->flags |= NUDISPLAYSPECIAL_FLAG_VISIBLE;
+                    } else if (state_value == 0) {
+                        if (instance_animation->instance_ix != 0xffff) {
+                            display_special->flags &= ~NUDISPLAYSPECIAL_FLAG_VISIBLE;
+                        }
+                        animation = NULL;
+                    }
+                }
+            }
+
+            if (animation != NULL) {
+                NuAnimData2CalcMatrix(animation, 0, frame, animation_matrix);
+            }
+            instance_animation->prev_eval_time = frame;
+        }
+
+        if (animation != NULL) {
+            instance_animation->mtx = *animation_matrix;
+            instance_animation->mtx.m30 += display_special->draw_mtx.m30;
+            instance_animation->mtx.m31 += display_special->draw_mtx.m31;
+            instance_animation->mtx.m32 += display_special->draw_mtx.m32;
+        }
+    }
 }
 
 // --- NuGScn gfx-upload helpers: C++ / file-local (static) in original ---
@@ -1135,7 +1412,18 @@ void DrawGameObjectsProcess() {
         NUVEC scale = {uniform_scale, uniform_scale, uniform_scale};
         NUMTX matrix;
         NuMtxSetScale(&matrix, &scale);
-        NuMtxPreRotateY(&matrix, object->apiobj.field_0x276);
+        // Character meshes face -Z in hierarchy space.  The target's mode-2
+        // jump-table arm builds this half-turned orientation matrix and then
+        // composes it with the character scale before world translation.
+        const u16 render_angle = static_cast<u16>(object->apiobj.field_0x276 + NUANG_180DEG);
+        NUMTX orientation;
+        orientation.m00 = orientation.m22 = NU_COS_LUT(render_angle);
+        orientation.m20 = NU_SIN_LUT(render_angle);
+        orientation.m02 = -orientation.m20;
+        orientation.m11 = orientation.m33 = 1.0f;
+        orientation.m01 = orientation.m03 = orientation.m10 = orientation.m12 = orientation.m13 = 0.0f;
+        orientation.m21 = orientation.m23 = orientation.m30 = orientation.m31 = orientation.m32 = 0.0f;
+        NuMtxMulVU0(&matrix, &matrix, &orientation);
 
         NUVEC position = object->apiobj.position;
         NuMtxTranslate(&matrix, &position);
@@ -1187,8 +1475,35 @@ void DrawMSitu(i32) {
 
 void DrawPanel() {
     SetQFont2D();
-    if (editor_active == 0)
+
+    if (editor_active == 0 && PANELOFF == 0 && WORLD != NULL && WORLD->current_level != NULL) {
+        LEVELDATA *level = WORLD->current_level;
+        if ((level->flags & LEVEL_GAMEPLAY) != 0) {
+            // The target's ordinary Cantina branch is DrawCoinTotal(0, 0).
+            // Keep its recovered normal-game calculation here while that
+            // target-local helper remains in the separately reconstructed HUD
+            // translation unit.
+            if (WORLD->area == HUB_ADATA && FadeSys.fade == 0.0f) {
+                const i32 angle = static_cast<i32>(cointotaltime * static_cast<f32>(NUANG_90DEG));
+                const f32 y =
+                    NuTrigTable[(angle >> 1) & 0x7fff] * (STATSPOSY - STATSPOS2Y) + STATSPOS2Y + COINTOTAL_SCOREDY;
+                CoinTotal_Draw(static_cast<i32>(Game.coins), y, CoinTotalScale, 1, 1.0f, 255, 191, 0);
+            }
+
+            if (level->draw_status_fn != NULL) {
+                level->draw_status_fn(WORLD);
+            }
+            GizmoSysPanelDraw(WORLD->gizmo_sys, WORLD, FRAMETIME);
+            if (Paused == 0) {
+                Hint_Draw(-1);
+                DrawGameMessages();
+            }
+        }
+    }
+
+    if (editor_active == 0) {
         DrawMenu(Paused);
+    }
 }
 
 void DrawTimer(i32, i32, i32) {
@@ -1389,7 +1704,7 @@ void BackDrop_Dump() {
 
 void BackDrop_Update(float dt) {
     if (s_backdrop_scene != NULL) {
-        NuGScnUpdate(s_backdrop_scene, (i32)(dt * 60.0f));
+        NuGScnUpdate(s_backdrop_scene, dt * 60.0f);
     }
 }
 

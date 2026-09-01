@@ -4,6 +4,7 @@
 #include "gameapi/gui/apimenu.h"
 #include "globals.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/ai/core/ai_sys_stubs.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
 #include "legoapi/characters/motion.h"
@@ -14,6 +15,7 @@
 #include "legoapi/world/area.h"
 #include "legoapi/core/input/qrand.h"
 #include "legoapi/core/input/timer.h"
+#include "legoapi/gizmo/base/gizactions.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/numusic/sfx.h"
@@ -46,9 +48,11 @@ void SetPlayer();
 void InitPlayerAI(GameObject_s *object);
 void ResetPlayerMoves(GameObject_s *object);
 void SnapCreaturePos(GameObject_s *object, NUVEC *position, i32 angle, AIPATHINFO_s *path_info, i32 set_on_surface);
+void MovePlayerSpline(GameObject_s *object);
 void GetTopBot(GameObject_s *object);
 void ResetRumble(RUMBLEPACKET *packet);
 void ResetLights(NUVEC *position, rtldata_s *data, void *set);
+void LightGameObject(GameObject_s *object, void *set);
 void InitSurfaceInfo(GameObject_s *object);
 void SetObjOnSurface(GameObject_s *object, i32 mode);
 void PortalGameObject(GameObject_s *object, i32 enable, i32 immediate, i16 portal, nugscn_s *scene);
@@ -64,6 +68,9 @@ void InitAICreatures(AISYS_s *system);
 void ResetAICreatures(AISYS_s *system);
 void LevelScriptReStoreProgress(WORLDINFO_s *world, LEVELSCRIPTPROCESS_s *process);
 void GizmoSysAddGizmos(GIZMOSYS_s *gizmo_sys, GIZFLOW_s *giz_flow, void *world);
+
+f32 Condition_InHubArea(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *);
+void *Condition_InHubAreaInit(AISYS_s *, char *, AISCRIPT_s *);
 
 extern i32 LEGO_AIPATHCNX_BLOCKAGE;
 
@@ -111,8 +118,51 @@ enum AI_GAME_OBJECT_TYPE : u8 {
 
 enum GAME_OBJECT_AI_UPDATE_FLAGS : u8 {
     GAME_OBJECT_AI_UPDATE_PROCESS = 0x08,
-    GAME_OBJECT_AI_UPDATE_ELIGIBLE = 0x10,
+    GAME_OBJECT_AI_UPDATE_FORCED = 0x10,
+    GAME_OBJECT_AI_UPDATE_SPECIAL_STATE = 0x20,
 };
+
+// Enabled in the target data image.  Ordinary background characters are
+// staggered across frames; special movement states opt back into full-rate
+// processing through the forced-update path.
+i32 timebase_updates = 1;
+
+static i32 GameObjectAIUpdateInterval(WORLDINFO_s *world, GameObject_s *object) {
+    if (object->apiobj.field_0x27d == 0 || object->apiobj.character_data == NULL ||
+        object->apiobj.character_data->field11_0x24 == NULL) {
+        return 1;
+    }
+
+    // The target updates characters outside the visible portal set every ten
+    // frames.  This avoids doing a full script, controller and terrain pass
+    // for every off-screen Cantina inhabitant on the same frame.
+    const i16 room = object->room_id;
+    if (world == NULL || world->rooms_visible_ptr == NULL || room < 0 || world->rooms_visible_ptr[room] == 0 ||
+        object->apiobj.model_draw_result == 0) {
+        return 10;
+    }
+
+    const GAMECHARACTERDATA *character = static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
+    const f32 distance = object->ai_update_distance;
+    i32 interval = character->ai_update_interval_0;
+    if (interval == 0 || distance <= character->ai_update_distance_0) {
+        interval = character->ai_update_interval_1;
+        if (interval == 0 || distance <= character->ai_update_distance_1) {
+            interval = character->ai_update_interval_2;
+            if (interval == 0 || distance <= character->ai_update_distance_2) {
+                interval = character->ai_update_interval_3;
+                if (interval == 0 || distance <= character->ai_update_distance_3) {
+                    return 1;
+                }
+            }
+        }
+    }
+
+    // Cadence entries are distance-tier sentinels: zero advances to the next
+    // tier rather than selecting a zero-frame interval.  Values at or above
+    // seven use the target's capped seven-frame cadence.
+    return interval < 7 ? interval : 7;
+}
 
 static const f32 AI_RESPAWN_DELAY = 2.0f;
 
@@ -120,8 +170,19 @@ extern "C" {
     // Game-specific script registries are still populated incrementally as
     // their action and condition callbacks are reconstructed.  The null
     // terminators keep registration safe in the meantime.
-    AIACTIONDEF lego_aiactiondefs[] = {{NULL, NULL, 0, 0, 0}};
-    AICONDITIONDEF lego_aiconditiondefs[] = {{NULL, NULL, NULL}};
+    AICONDITIONDEF lego_aiconditiondefs[] = {
+        {"SpecialAtStart", NULL, NULL},
+        {"NumInSetAlive", NULL, NULL},
+        {"BeenToLevel", NULL, NULL},
+        {"Message", NULL, NULL},
+        {"CutSceneFinished", NULL, NULL},
+        {"Freeplay", NULL, NULL},
+        {"InHubArea", &Condition_InHubArea, &Condition_InHubAreaInit},
+        {"IsLowEndDevice", NULL, NULL},
+        {"RandomMapCharsAvailable", NULL, NULL},
+        {"CharacterLoaded", NULL, NULL},
+        {NULL, NULL, NULL},
+    };
 
     f32 default_path_heighttol = 0.2f;
     u8 default_activate_difficulty = AI_DEFAULT_ACTIVATE_DIFFICULTY;
@@ -481,6 +542,14 @@ f32 GameShadow(GameObject_s *object, nuvec_s *position, f32 probe_height, i32 te
 
 extern f32 MainRenderTime;
 extern f32 MainRenderTargetTime;
+extern f32 backdrop_top_r;
+extern f32 backdrop_top_g;
+extern f32 backdrop_top_b;
+extern f32 backdrop_bot_r;
+extern f32 backdrop_bot_g;
+extern f32 backdrop_bot_b;
+extern void (*BackDrop_AlphaFn)(f32 *alpha);
+extern void BackDrop_UpdateColours(i32 instant);
 extern i32 Paused;
 extern f32 PauseMenus_X;
 extern i32 PauseMenus_Align;
@@ -801,41 +870,95 @@ void GameAudio_AddSfx(i32, i32 *, i32 *, i32) {
 }
 
 void GameObjectOrigin(GameObject_s *object) {
-    // Common non-model-origin path at 0x46ec68 (Ghidra 0x47ec68).
-    object->apiobj.field_0x1f4 &= ~0x100u;
+    APIOBJECT &api = object->apiobj;
+    api.field_0x1f4 |= 0x100u;
 
-    const f32 frame_time = FRAMETIME;
-    const f32 vertical_offset = (object->field_0xffc + object->field_0x1000) * object->apiobj.field_0xa8 * 0.5f;
-    const NUVEC center = {
-        object->apiobj.position.x + object->apiobj.previous_velocity.x * frame_time,
-        object->apiobj.position.y + object->apiobj.previous_velocity.y * frame_time + vertical_offset,
-        object->apiobj.position.z + object->apiobj.previous_velocity.z * frame_time,
-    };
+    f32 predicted_vertical_displacement;
+    f32 origin_x;
+    f32 origin_z;
+    if (object->use_model_origin != 0) {
+        PLAYERCHARACTERCONFIG_s *config = api.character_data->player_config;
+        const i32 model_origin_joint = config->model_origin_joint;
+        CHARACTERMODEL_s *model = api.character_model;
+        if (model_origin_joint != -1 && model != NULL && model->points_of_interest[model_origin_joint] != NULL) {
+            const f32 frame_time = FRAMETIME;
+            const f32 predicted_x = api.previous_velocity.x * frame_time;
+            predicted_vertical_displacement = api.previous_velocity.y * frame_time;
+            const f32 predicted_z = api.previous_velocity.z * frame_time;
+            if ((object->field_0xe24 & GAMEOBJECT_E24_FLAG_JOINT_MATRICES_UPDATED) == 0) {
+                NUVEC local_origin = {0.0f, -object->character_bottom, 0.0f};
+                NuVecMtxRotate(&api.collision_position, &local_origin, &api.field_0xb8);
+                NuVecAdd(&api.collision_position, &api.collision_position, &api.position);
+                api.collision_position.x += predicted_x;
+                api.collision_position.y += predicted_vertical_displacement;
+                api.collision_position.z += predicted_z;
+            } else {
+                const NUVEC &joint_position = *NUMTX_GET_ROW_VEC(&object->joint_matrices[model_origin_joint], 3);
+                api.collision_position.x = joint_position.x + predicted_x * 2.0f;
+                api.collision_position.y = joint_position.y + predicted_vertical_displacement * 2.0f;
+                api.collision_position.y += (object->character_bottom + object->character_top) * api.field_0xa8 * 0.5f;
+                api.collision_position.z = joint_position.z + predicted_z * 2.0f;
+            }
+            origin_x = api.position.x + predicted_x;
+            origin_z = api.position.z + predicted_z;
+            goto update_bounds;
+        }
 
-    object->apiobj.pos_x = center.x;
-    object->apiobj.pos_y = center.y;
-    object->apiobj.pos_z = center.z;
+        const i32 collision_origin_joint = config->collision_origin_joint;
+        if (object->field_0xd24 == 1.0f && collision_origin_joint != -1 &&
+            model->points_of_interest[collision_origin_joint] != NULL && api.field_0x288 != 0) {
+            api.collision_position = *NUMTX_GET_ROW_VEC(&object->joint_matrices[collision_origin_joint], 3);
+            const f32 frame_time = FRAMETIME;
+            origin_x = api.position.x + api.previous_velocity.x * frame_time;
+            origin_z = api.position.z + api.previous_velocity.z * frame_time;
+            predicted_vertical_displacement = api.previous_velocity.y * frame_time;
+            goto update_bounds;
+        }
+    }
 
-    const f32 radius = object->apiobj.field_0x1dc;
-    const f32 half_height = object->apiobj.field_0x1e0;
-    object->apiobj.collision_min.x = center.x - radius;
-    object->apiobj.collision_min.y = center.y - half_height;
-    object->apiobj.collision_min.z = center.z - radius;
-    object->apiobj.collision_max.x = center.x + radius;
-    object->apiobj.collision_max.y = center.y + half_height;
-    object->apiobj.collision_max.z = center.z + radius;
+    api.field_0x1f4 &= ~0x100u;
+    predicted_vertical_displacement = api.previous_velocity.y * FRAMETIME;
+    api.collision_position.x = api.position.x + api.previous_velocity.x * FRAMETIME;
+    api.collision_position.y = api.position.y + predicted_vertical_displacement;
+    api.collision_position.y += (object->character_bottom + object->character_top) * api.field_0xa8 * 0.5f;
+    api.collision_position.z = api.position.z + api.previous_velocity.z * FRAMETIME;
+    origin_x = api.collision_position.x;
+    origin_z = api.collision_position.z;
 
-    object->apiobj.upper_position.x = center.x;
-    object->apiobj.upper_position.y = object->apiobj.collision_max.y;
-    object->apiobj.upper_position.z = center.z;
-    object->apiobj.lower_position.x = center.x;
-    object->apiobj.lower_position.y = object->apiobj.collision_min.y;
-    object->apiobj.lower_position.z = center.z;
-    object->apiobj.collision_origin.x = center.x;
-    object->apiobj.collision_origin.y =
-        object->apiobj.collision_min.y + object->apiobj.previous_velocity.y * frame_time;
-    object->apiobj.collision_origin.z = center.z;
-    object->ai.terrain_origin = object->apiobj.collision_origin;
+update_bounds:
+    const f32 radius = api.field_0x1dc;
+    const f32 half_height = api.field_0x1e0;
+    api.collision_min.x = api.collision_position.x - radius;
+    api.collision_min.y = api.collision_position.y - half_height;
+    api.collision_min.z = api.collision_position.z - radius;
+    api.collision_max.x = api.collision_position.x + radius;
+    api.collision_max.y = api.collision_position.y + half_height;
+    api.collision_max.z = api.collision_position.z + radius;
+
+    api.upper_position.x = origin_x;
+    api.upper_position.y = api.collision_max.y;
+    api.upper_position.z = origin_z;
+    api.lower_position.x = origin_x;
+    api.lower_position.y = api.collision_min.y;
+    api.lower_position.z = origin_z;
+    api.collision_origin.x = origin_x;
+    api.collision_origin.y = api.collision_min.y + predicted_vertical_displacement;
+    api.collision_origin.z = origin_z;
+
+    object->ai.terrain_origin = api.collision_origin;
+    const u32 context_flags = CInfo[object->character_context].flags;
+    if ((context_flags & CHARACTER_CONTEXT_INFO_FLAG_TERRAIN_ORIGIN_AT_TOP) != 0 &&
+        (object->context_variant_flags & 0x08) != 0) {
+        object->ai.terrain_origin.y += api.collision_max.y - api.collision_min.y;
+    } else if ((context_flags & CHARACTER_CONTEXT_INFO_FLAG_TERRAIN_ORIGIN_AT_POSITION) != 0) {
+        object->ai.terrain_origin = api.position;
+    } else {
+        object->ai.terrain_origin.y = api.collision_origin.y - object->terrain_origin_floor_offset;
+        if (object->ai.terrain_origin.y < api.field_0x218 &&
+            api.field_0x218 < object->ai.terrain_origin.y + api.scaled_height) {
+            object->ai.terrain_origin.y = api.field_0x218;
+        }
+    }
 }
 
 i32 Game_IgnoreInput() {
@@ -998,10 +1121,156 @@ f32 GameSetMusicVolume(OPTIONSSAVE_s *options) {
     return volume;
 }
 
-void GameAISysStartFrame(AISYS_s *) {
+void GameAISysStartFrame(AISYS_s *system) {
+    if (system == NULL || netclient != 0) {
+        return;
+    }
+
+    if (system->path_sys != NULL && system->path_sys->path_count != 0) {
+        for (i32 index = 0; index < system->path_sys->path_count; ++index) {
+            memset(&system->path_sys->paths[index]->updated_node_bits[0], 0, 0x20);
+            memmove(&system->path_sys->paths[index]->updated_node_bits[0x20],
+                    system->path_sys->paths[index]->inside_node_bits, 0x20);
+            memset(system->path_sys->paths[index]->inside_node_bits, 0,
+                   sizeof(system->path_sys->paths[index]->inside_node_bits));
+        }
+
+        // Moving specials can carry path endpoints. Update both ends of each
+        // connection; AIPathNodeUpdatePos uses updated_node_bits to ensure a
+        // shared endpoint is transformed only once this frame.
+        for (i32 path_index = 0; path_index < system->path_sys->path_count; ++path_index) {
+            AIPATH *path = system->path_sys->paths[path_index];
+            for (i32 connection_index = 0; connection_index < path->connection_count; ++connection_index) {
+                AIPATHCNX *connection = &path->connections[connection_index];
+                AIPATHNODE *node = &path->nodes[connection->direction_a];
+                if (node->has_special != 0) {
+                    AIPathNodeUpdatePos(system, path, node);
+                }
+                node = &path->nodes[connection->direction_b];
+                if (node->has_special != 0) {
+                    AIPathNodeUpdatePos(system, path, node);
+                }
+            }
+        }
+    }
+
+    // Spread the object/area overlap work across frames. Area runtime flags
+    // summarize the kinds of live characters inside it, while every object
+    // retains a 64-area occupancy mask for script queries.
+    if (system->next_area_check < system->area_count) {
+        AIAREA *area = &system->areas[system->next_area_check];
+        const i32 area_index = static_cast<i32>(area - WORLD->ai_sys->areas);
+        const u64 area_bit = 1ULL << area_index;
+        area->runtime_flags &= static_cast<u8>(
+            ~(AIAREA_RUNTIME_PLAYER_PRESENT | AIAREA_RUNTIME_OBJECT_STATE_CLEAR | AIAREA_RUNTIME_OBJECT_STATE_SET));
+
+        GameObject_s *object = Obj;
+        for (i32 object_index = 0; object_index < HIGHGAMEOBJECT; ++object_index, ++object) {
+            if ((object->apiobj.field_0x1f8 & (APIOBJECT_FLAG_CHARACTER | APIOBJECT_FLAG_IN_USE)) !=
+                (APIOBJECT_FLAG_CHARACTER | APIOBJECT_FLAG_IN_USE)) {
+                continue;
+            }
+            if (object->apiobj.field_0x287 != 0 && !(object->field_0x101c > 0.0f) &&
+                static_cast<i8>(object->apiobj.flags_low) >= 0) {
+                continue;
+            }
+
+            NUVEC local_position;
+            NuVecSub(&local_position, &object->apiobj.position, &area->position);
+            NuVecRotateY(&local_position, &local_position, -area->rotation);
+            const bool is_inside = local_position.x >= -area->half_width && local_position.y >= -0.1f &&
+                                   local_position.z >= -area->half_depth && local_position.x <= area->half_width &&
+                                   local_position.y <= area->height && local_position.z <= area->half_depth;
+            if (!is_inside) {
+                object->ai_area_mask &= ~area_bit;
+                continue;
+            }
+
+            object->ai_area_mask |= area_bit;
+            if ((object->apiobj.flags_low & APIOBJECT_FLAG_PLAYER_ACTIVE) != 0) {
+                area->runtime_flags |= AIAREA_RUNTIME_PLAYER_PRESENT;
+            }
+            if (object->apiobj.field_0x27c != -1) {
+                area->runtime_flags |= AIAREA_RUNTIME_CHARACTER_SLOT_SEEN;
+            }
+            if ((object->apiobj.field_0x1f4 & 1) != 0) {
+                area->runtime_flags |= AIAREA_RUNTIME_OBJECT_STATE_SET;
+            } else if ((object->apiobj.field_0x1f4 & 4) == 0) {
+                area->runtime_flags |= AIAREA_RUNTIME_OBJECT_STATE_CLEAR;
+            }
+        }
+
+        ++system->next_area_check;
+        if (system->next_area_check >= system->area_count) {
+            system->next_area_check = 0;
+        }
+    }
+
+    // Level scripts are ordinary AI processors without an object or packet.
+    // Disabled processors retain their state but do not advance this frame.
+    for (i32 index = 0; index < WORLD->processor_count; ++index) {
+        if (!WORLD->processors[index].processor.is_disabled) {
+            AIScriptProcess(system, NULL, NULL, &WORLD->processors[index].processor, FRAMETIME);
+        }
+    }
 }
 
-void GameDisplaySettings(LEVELDATADISPLAY *, i32 *) {
+void GameDisplaySettings(LEVELDATADISPLAY *display, i32 *background_colours) {
+    CUTINFO *cut = static_cast<CUTINFO *>(CutStopInfo);
+    if (cut != NULL && cut->camera_near_clip != 0.0f) {
+        pNuCam->near_clip = cut->camera_near_clip;
+    } else {
+        pNuCam->near_clip = display->unknown_04;
+    }
+
+    u16 far_clip;
+    if (cut != NULL) {
+        far_clip = cut->camera_far_clip;
+        if (far_clip == 0) {
+            far_clip = static_cast<u16>(display->unknown_14);
+        }
+    } else {
+        far_clip = static_cast<u16>(display->unknown_14);
+    }
+    pNuCam->far_clip = static_cast<f32>(static_cast<u32>(far_clip));
+
+    LEVELDATA *level = WORLD->current_level;
+    const bool use_backdrop = level == TITLES_LDATA || (level->flags & LEVEL_STATUS) != 0 || level == STATUS_LDATA ||
+                              level == CREDITS_LDATA || MainRenderTime < 0.0f;
+    if (!use_backdrop) {
+        background_colours[0] =
+            0x80000000u | static_cast<u8>(display->bg_red_top) |
+            (static_cast<u8>(display->bg_green_top) << 8 | static_cast<u8>(display->bg_blue_top) << 16);
+        background_colours[1] =
+            0x80000000u | static_cast<u8>(display->bg_red_bottom) |
+            (static_cast<u8>(display->bg_green_bottom) << 8 | static_cast<u8>(display->bg_blue_bottom) << 16);
+        return;
+    }
+
+    BackDrop_UpdateColours(0);
+
+    i32 top_g = static_cast<i32>(backdrop_top_g);
+    i32 top_r = static_cast<i32>(backdrop_top_r);
+    i32 top_b = static_cast<i32>(backdrop_top_b);
+    i32 bottom_r = static_cast<i32>(backdrop_bot_r);
+    i32 bottom_g = static_cast<i32>(backdrop_bot_g);
+    i32 bottom_b = static_cast<i32>(backdrop_bot_b);
+
+    f32 alpha = 1.0f;
+    if (BackDrop_AlphaFn != NULL) {
+        BackDrop_AlphaFn(&alpha);
+        if (alpha != 0.0f) {
+            top_r = static_cast<i32>(static_cast<f32>(top_r) * alpha);
+            top_g = static_cast<i32>(static_cast<f32>(top_g) * alpha);
+            top_b = static_cast<i32>(static_cast<f32>(top_b) * alpha);
+            bottom_r = static_cast<i32>(static_cast<f32>(bottom_r) * alpha);
+            bottom_g = static_cast<i32>(static_cast<f32>(bottom_g) * alpha);
+            bottom_b = static_cast<i32>(static_cast<f32>(bottom_b) * alpha);
+        }
+    }
+
+    background_colours[0] = 0x80000000u | (top_r & 0xff) | (top_g & 0xff) << 8 | (top_b & 0xff) << 16;
+    background_colours[1] = 0x80000000u | (bottom_r & 0xff) | (bottom_g & 0xff) << 8 | (bottom_b & 0xff) << 16;
 }
 
 void GameObjectSetCanUse(GameObject_s *, void *, unsigned char, unsigned char, float) {
@@ -1013,8 +1282,18 @@ void GameObjOwnsAnyCables(GameObject_s *) {
 void GameObjectDimensionsExtra_LSW(GameObject_s *object);
 
 void GameObjectDimensions(GameObject_s *object) {
-    object->apiobj.field_0x1dc = object->apiobj.collision_radius;
-    object->apiobj.field_0x1e0 = object->apiobj.collision_height;
+    APIOBJECT &api = object->apiobj;
+    PLAYERCHARACTERCONFIG_s *config = api.character_data->player_config;
+    const i32 collision_origin_joint = config->collision_origin_joint;
+    if (object->use_model_origin != 0 && object->field_0xd24 == 1.0f && collision_origin_joint != -1 &&
+        api.character_model->points_of_interest[collision_origin_joint] != NULL && api.field_0x288 != 0) {
+        const f32 radius = object->field_0x1004 * config->collision_origin_radius;
+        api.field_0x1dc = radius;
+        api.field_0x1e0 = radius;
+    } else {
+        api.field_0x1dc = api.collision_radius;
+        api.field_0x1e0 = api.collision_height;
+    }
     GameObjectDimensionsExtra_LSW(object);
 }
 
@@ -1076,9 +1355,16 @@ void GameObjectToCameraCode(GameObject_s *) {
 }
 
 void GameRegisterGizActions() {
+    RegisterGizActions(game_gizactiondefs);
 }
 
-void GameAudio_GetPlrSfxBits(void *) {
+i32 GameAudio_GetPlrSfxBits(void *object_ptr) {
+    APIOBJECT *object = static_cast<APIOBJECT *>(object_ptr);
+    i32 sfx_bits = 0;
+    if (object != NULL && static_cast<i8>(object->flags_low) < 0) {
+        sfx_bits = 1 << object->field_0x27c;
+    }
+    return sfx_bits;
 }
 
 void GameBlowUpBlownUpFn_LSW(GIZMOBLOWUP_s *) {
@@ -1114,6 +1400,19 @@ void GameAnimSys_ReStoreProgress(GAMEANIMSYS_s *, i32) {
 }
 
 void GameObjectToCameraDistances() {
+    const NUVEC camera_position = GameCam->pos;
+    GameObject_s *object = Obj;
+    for (i32 object_index = 0; object_index < HIGHGAMEOBJECT; ++object_index, ++object) {
+        const u16 required_flags = APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_CHARACTER;
+        if ((object->apiobj.field_0x1f8 & required_flags) != required_flags) {
+            continue;
+        }
+
+        const f32 dx = camera_position.x - object->apiobj.position.x;
+        const f32 dy = camera_position.y - object->apiobj.position.y;
+        const f32 dz = camera_position.z - object->apiobj.position.z;
+        object->ai_update_distance = NuFsqrt(dx * dx + dy * dy + dz * dz);
+    }
 }
 
 void GameAudio_PlaySfxAndSetVolume(i32, nuvec_s *, float) {
@@ -1190,7 +1489,29 @@ void ThingManager::AddThingAfterThis(BaseThing *thing) {
     }
 }
 
-void ThingManager::DisplayThings(ThingRenderData *) {
+// ThingManager::DisplayThings @0x4252c0. Single pass over Display,
+// bracketed with timebar slot 3 ("Dis"). PanelRender uses this pass for the
+// display-layer things that render on top of the gameplay panel.
+void ThingManager::DisplayThings(ThingRenderData *data) {
+    static const char *name = "Dis"; // timebar slot name @0x5734db
+
+    if (this->count <= 0) {
+        return;
+    }
+    for (i32 i = 0; i < this->count; i++) {
+        BaseThing *thing = this->things[i];
+        if (thing == NULL || (thing->flags & THING_FLAG_SKIP_DISPLAY)) {
+            continue;
+        }
+        if (thing->profiling_0xc != NULL) {
+            _NuTimeBarSlotBegin(this->timebar, 3, name);
+        }
+        thing->Display(data);
+        thing = this->things[i];
+        if (thing->profiling_0xc != NULL) {
+            _NuTimeBarSlotEnd(this->timebar, 3);
+        }
+    }
 }
 
 void ThingManager::EffectsThings(ThingRenderData *) {
@@ -1561,7 +1882,7 @@ void ScaleGameObject(GameObject_s *object) {
     CHARACTERDATA *character = object->apiobj.character_data;
     object->apiobj.scaled_radius = character->field13_0x2c * scale;
     object->apiobj.collision_radius = object->field_0x1008 * scale;
-    object->apiobj.collision_height = object->apiobj.collision_radius * object->collision_height_scale;
+    object->apiobj.collision_height = object->apiobj.collision_radius * object->collision_y_scale;
     object->apiobj.scaled_height = (character->field16_0x38 - character->field15_0x34) * object->field_0x1004;
 }
 
@@ -1642,12 +1963,42 @@ void UpdateGameObjects(WORLDINFO_s *world) {
 
         if ((object->field_0xf00 & GAME_OBJECT_AI_UPDATE_PROCESS) != 0) {
             object->ai_elapsed_time = 0.0f;
+        }
+        object->ai_elapsed_time += FRAMETIME;
+
+        const bool force_update =
+            timebase_updates == 0 || (object->apiobj.field_0x1f4 & APIOBJECT_MOTION_FLAG_AI_CONTROLLED) == 0 ||
+            (object->field_0xf00 & GAME_OBJECT_AI_UPDATE_SPECIAL_STATE) != 0 ||
+            object->apiobj.supporting_platform_id != -1 || object->apiobj.field_0x27d == 0 ||
+            (object->field_0xcc0 != NULL && object->character_context == CHARACTER_CONTEXT_LINKED_OBJECT) ||
+            (object->ai.group != NULL && object->ai.group->is_in_formation);
+        const i32 interval = force_update ? 1 : GameObjectAIUpdateInterval(world, object);
+
+        if (interval <= 1) {
+            object->field_0xf00 |= GAME_OBJECT_AI_UPDATE_FORCED | GAME_OBJECT_AI_UPDATE_PROCESS;
         } else {
-            object->ai_elapsed_time += FRAMETIME;
+            object->field_0xf00 &= ~GAME_OBJECT_AI_UPDATE_FORCED;
+            const u32 update_phase =
+                static_cast<u32>(object->apiobj.field_0x289) + static_cast<u32>(GameTimer.update_count);
+            if (update_phase % static_cast<u32>(interval) == 0) {
+                object->field_0xf00 |= GAME_OBJECT_AI_UPDATE_PROCESS;
+            } else {
+                object->field_0xf00 &= ~GAME_OBJECT_AI_UPDATE_PROCESS;
+            }
         }
 
-        if (object->apiobj.field_0x287 == 0) {
-            object->field_0xf00 |= GAME_OBJECT_AI_UPDATE_ELIGIBLE | GAME_OBJECT_AI_UPDATE_PROCESS;
+        // AI positions between scheduled updates are render extrapolations.
+        // The target restores the last terrain-resolved position here before
+        // GameAIProcess and the movement/terrain passes (0x140c2..0x140f0),
+        // so an extrapolated floor offset never becomes the next collision
+        // query's starting point.
+        const u32 authoritative_position_flags =
+            APIOBJECT_MOTION_FLAG_AI_CONTROLLED | APIOBJECT_STATE_FLAG_IGNORE_DOORS;
+        if ((object->field_0xf00 & GAME_OBJECT_AI_UPDATE_PROCESS) != 0 &&
+            (object->apiobj.field_0x1f4 & authoritative_position_flags) == APIOBJECT_MOTION_FLAG_AI_CONTROLLED) {
+            object->apiobj.position.x = object->field_0x10c8;
+            object->apiobj.position.y = object->field_0x10cc;
+            object->apiobj.position.z = object->field_0x10d0;
         }
     }
 
@@ -1668,22 +2019,104 @@ void UpdateGameObjects(WORLDINFO_s *world) {
         }
     }
 
-    // Integrate the same ordinary active-object path as the original. The
-    // terrain pass below is responsible for correcting the proposed player
-    // position and updating contact state.
+    // AI movement controllers run only on their scheduled AI frame and use
+    // the full interval accumulated since the previous scheduled update.
+    // Between scheduled updates the terrain/animation pass below advances the
+    // last resolved velocity; calling MovePlayer here every frame would both
+    // reselect path targets and integrate that velocity twice.
     for (i32 i = 0; i < HIGHGAMEOBJECT; ++i) {
         GameObject_s *object = &Obj[i];
-        const u16 player_flags = APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_PLAYER_CHARACTER;
-        if ((object->apiobj.field_0x1f8 & player_flags) != player_flags ||
+        const u16 character_flags = APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_CHARACTER;
+        if ((object->apiobj.field_0x1f8 & character_flags) != character_flags ||
+            (object->apiobj.field_0x1f4 & APIOBJECT_MOTION_FLAG_AI_CONTROLLED) == 0 ||
+            (object->field_0xf00 & GAME_OBJECT_AI_UPDATE_PROCESS) == 0) {
+            continue;
+        }
+
+        bool is_local_player = false;
+        for (i32 player_index = 0; player_index < 8; ++player_index) {
+            if (Player[player_index] == object) {
+                is_local_player = true;
+                break;
+            }
+        }
+        if (is_local_player) {
+            continue;
+        }
+
+        const f32 frame_time = FRAMETIME;
+        FRAMETIME = object->ai_elapsed_time;
+        if (object->move_override != NULL) {
+            object->move_override(object);
+        } else if (object->movement_spline == NULL) {
+            MovePlayer(object);
+        } else {
+            MovePlayerSpline(object);
+        }
+        FRAMETIME = frame_time;
+    }
+
+    // AI-controlled characters use their accumulated AI interval for a full
+    // terrain update when their script was processed. Between those updates,
+    // the original advances the last resolved velocity and still animates the
+    // object every frame.
+    for (i32 i = 0; i < HIGHGAMEOBJECT; ++i) {
+        GameObject_s *object = &Obj[i];
+        const u16 character_flags = APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_CHARACTER;
+        if ((object->apiobj.field_0x1f8 & character_flags) != character_flags ||
             (object->apiobj.field_0x1f4 & APIOBJECT_MOTION_FLAG_AI_CONTROLLED) == 0) {
             continue;
         }
 
-        PreResetCode(object);
-        PostResetCode(object);
-        object->apiobj.position.x += object->apiobj.velocity.x * FRAMETIME;
-        object->apiobj.position.y += object->vertical_velocity * FRAMETIME;
-        object->apiobj.position.z += object->apiobj.velocity.z * FRAMETIME;
+        bool is_local_player = false;
+        for (i32 player_index = 0; player_index < 8; ++player_index) {
+            if (Player[player_index] == object) {
+                is_local_player = true;
+                break;
+            }
+        }
+        if (is_local_player) {
+            // Player-owned objects have a dedicated terrain/animation pass
+            // below. Processing them here as AI as well applies terrain state
+            // twice and can discard the movement produced by MovePlayer.
+            continue;
+        }
+
+        if ((object->field_0xf00 & GAME_OBJECT_AI_UPDATE_PROCESS) != 0) {
+            const f32 frame_time = FRAMETIME;
+            FRAMETIME = object->ai_elapsed_time;
+            TerrainPlayer(object);
+
+            object->field_0x10c8 = object->apiobj.position.x;
+            object->field_0x10cc = object->apiobj.position.y;
+            object->field_0x10d0 = object->apiobj.position.z;
+
+            const f32 vertical_displacement = object->apiobj.position.y - object->apiobj.start_position.y;
+            if (vertical_displacement == 0.0f || object->ai_elapsed_time == 0.0f) {
+                object->vertical_velocity = 0.0f;
+            } else {
+                object->vertical_velocity = vertical_displacement / object->ai_elapsed_time;
+            }
+            FRAMETIME = frame_time;
+        } else {
+            PreResetCode(object);
+            PostResetCode(object);
+            if ((object->apiobj.field_0x1f4 & APIOBJECT_STATE_FLAG_IGNORE_DOORS) != 0) {
+                GameObjectOrigin(object);
+            } else {
+                object->apiobj.position.x += object->apiobj.velocity.x * FRAMETIME;
+                object->apiobj.position.y += object->vertical_velocity * FRAMETIME;
+                object->apiobj.position.z += object->apiobj.velocity.z * FRAMETIME;
+            }
+        }
+
+        AnimatePlayer(object);
+        object->context_target_position = NULL;
+        ScaleGameObject(object);
+        GameObjectDimensions(object);
+        if (object->use_model_origin != 0xff) {
+            ++object->use_model_origin;
+        }
     }
 
     for (i32 i = 0; i < 8; ++i) {
@@ -1700,6 +2133,24 @@ void UpdateGameObjects(WORLDINFO_s *world) {
         object->field_0x10cc = object->apiobj.position.y;
         object->field_0x10d0 = object->apiobj.position.z;
         AnimatePlayer(object);
+        object->context_target_position = NULL;
+        ScaleGameObject(object);
+        GameObjectDimensions(object);
+        if (object->use_model_origin != 0xff) {
+            ++object->use_model_origin;
+        }
+    }
+
+    // Character lighting is refreshed only for models which were visible in
+    // the preceding render pass. The original amortises this pass across the
+    // object array; the complete active set is small enough to update here.
+    for (i32 i = 0; i < HIGHGAMEOBJECT; ++i) {
+        GameObject_s *object = &Obj[i];
+        const u16 character_flags = APIOBJECT_FLAG_IN_USE | APIOBJECT_FLAG_CHARACTER;
+        if ((object->apiobj.field_0x1f8 & character_flags) == character_flags &&
+            object->apiobj.model_draw_result != 0) {
+            LightGameObject(object, world->rtl_set);
+        }
     }
 }
 
@@ -1778,8 +2229,6 @@ GameObject_s *AddDynamicCreature(i32 model, nuvec_s *position, i32 angle, char *
     // PointAlongSpline in the original. Keep the recovered parameters named
     // until that complete path is reconstructed rather than inventing a host
     // approximation here.
-    (void)script_name;
-    (void)path_info;
     (void)spline_offset;
     (void)spline_mode;
 
@@ -1827,6 +2276,16 @@ GameObject_s *AddDynamicCreature(i32 model, nuvec_s *position, i32 angle, char *
     object->ai.field_0x124 = -1;
     object->ai.field_0x138 = 0xff;
     object->ai.field_0x139 = 0;
+    if (path_info != NULL) {
+        AISysCharacterSetPath(&object->ai, path_info->path);
+        AISysCharacterSetPathCnx(&object->ai, &object->apiobj.position, path_info->connection, path_info->direction);
+    }
+    if (object->ai.movement_target == NULL) {
+        AISysGetCharacterPathPos(WORLD->ai_sys, &object->apiobj, &object->ai, 0xff,
+                                 static_cast<i8>(object->apiobj.field_0x27d));
+    }
+    AIScriptProcessorInit(WORLD->ai_sys, &object->ai, reinterpret_cast<AISCRIPTPROCESS *>(&object->ai), NULL,
+                          script_name, NULL, 1, NULL, NULL);
     object->apiobj.field_0x214 = 2000000.0f;
     PreResetCode(object);
     PostResetCode(object);
@@ -1866,6 +2325,7 @@ void FindNearestGameObject(nuvec_s *, GameObject_s *, u32, float, float, i32, i3
 }
 
 void SetAllInstancesHidden(nugscn_s *) {
+    memset(PortalVisiFlags, 0, sizeof(PortalVisiFlags));
 }
 
 void RemoveAnyChunkControls(i32 *) {

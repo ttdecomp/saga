@@ -106,7 +106,7 @@ void Store_UnlockPack(i32, bool) {
 void StoreLevelProgressFn(WORLDINFO_s *, LEVEL_PROGRESS_s *, i32) {
 }
 
-i32 Store_IsPackUnlocked(i32) {
+bool Store_IsPackUnlocked(i32) {
     return 1;
 }
 

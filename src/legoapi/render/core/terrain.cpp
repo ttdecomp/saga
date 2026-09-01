@@ -76,7 +76,7 @@ static void *WallSplList;
 i32 terraincnt;
 i32 curSphereter;
 i32 platinrange;
-i32 ShadPoly;
+TERRAIN_SHAPE *ShadPoly;
 TERRAIN_SHAPE *TerrPoly;
 u8 TerrWallInfo;
 u8 TerrWallTab[4];
@@ -113,9 +113,14 @@ void TerrainImpactNorm();
 void Tag_Check(GameObject_s *object);
 void BigJumpCode(GameObject_s *object);
 f32 GameShadow(GameObject_s *object, NUVEC *position, f32 probe_height, i32 terrain_mask);
+extern "C" i32 NewShadowOnPlatform();
 extern NUVEC ShadNorm;
 
 extern i32 terrhitflags;
+extern i32 TERRAINMASK_NONWEAPON;
+extern i32 TERRAINMASK_NONDROID;
+extern i32 LEGO_AIPATHCNX_BLOCKAGE;
+extern i32 LEGO_AIPATHCNX_FULLTERRAIN;
 
 void StorePlatImpact() {
     TerrainQuery_s *query = TerI;
@@ -147,9 +152,9 @@ void StorePlatImpact() {
         RotateVec(&impact_normal, &impact_normal);
         query = TerI;
         if ((query->hit_type & TERRAIN_HIT_TYPE_SECOND_NORMAL) == 0) {
-            impact_normal.x *= query->inverse_collision_height_scale;
-            impact_normal.y *= query->inverse_collision_height_scale;
-            impact_normal.z *= query->inverse_collision_height_scale;
+            impact_normal.x *= query->inverse_collision_radius;
+            impact_normal.y *= query->inverse_collision_radius;
+            impact_normal.z *= query->inverse_collision_radius;
         }
     } else if ((hit_type_flag & direct_hit_mask) == 0) {
         return;
@@ -224,7 +229,11 @@ namespace {
         header[0] = static_cast<i16>(writer->group_shape_count);
         header[1] = static_cast<i16>(group_index);
         writer->group_header = reinterpret_cast<u8 *>(writer->cursor);
-        writer->cursor = reinterpret_cast<TERRAIN_SHAPE **>(writer->group_header + 4);
+        // The target's pointers are four bytes, so its packed header occupies
+        // one pointer slot.  Keeping that relationship on wider hosts lets the
+        // scan consumers use the same `entries + 1` traversal without reading
+        // the first pointer halfway through the header.
+        writer->cursor = reinterpret_cast<TERRAIN_SHAPE **>(writer->group_header + sizeof(TERRAIN_SHAPE *));
         writer->group_shape_count = 0;
     }
 
@@ -235,7 +244,7 @@ namespace {
         if (query.scan_result != 1) {
             const f32 move_length = NuFsqrt(query.movement.x * query.movement.x + query.movement.y * query.movement.y +
                                             query.movement.z * query.movement.z);
-            const f32 reach = move_length + query.collision_height_scale + 0.1f;
+            const f32 reach = move_length + query.collision_radius + 0.1f;
             const f32 vertical_reach = reach * query.object_scale;
             bounds.min_x = query.position.x - padding - reach;
             bounds.max_x = query.position.x + padding + reach;
@@ -244,7 +253,7 @@ namespace {
             bounds.min_z = query.position.z - padding - reach;
             bounds.max_z = query.position.z + padding + reach;
         } else {
-            const f32 reach = padding + query.collision_height_scale;
+            const f32 reach = padding + query.collision_radius;
             if (query.movement.x > 0.0f) {
                 bounds.min_x = query.position.x - reach;
                 bounds.max_x = query.position.x + query.movement.x + reach;
@@ -851,7 +860,7 @@ void ScanTerrain(i32 scan_type, i32 terrain_mask, i32 scan_flags) {
 
     TerrainScanWriter writer;
     writer.group_header = TerI->scan_list_storage;
-    writer.cursor = reinterpret_cast<TERRAIN_SHAPE **>(writer.group_header + 4);
+    writer.cursor = reinterpret_cast<TERRAIN_SHAPE **>(writer.group_header + sizeof(TERRAIN_SHAPE *));
     writer.limit = reinterpret_cast<u8 *>(TerI) + 0x93c;
     writer.group_shape_count = 0;
     writer.scaled_shape_count = 0;
@@ -1084,7 +1093,7 @@ void TerrainImpact(NUVEC *position, NUVEC *movement, u8 *hit_flags) {
         hit_flags[0] = 0;
         position->x = query->position.x + query->movement.x;
         position->y = (query->position.y + query->movement.y) * query->object_scale -
-                      query->object_scale * query->collision_height_scale;
+                      query->object_scale * query->collision_radius;
         position->z = query->position.z + query->movement.z;
         query->flags &= static_cast<u8>(~TERRAIN_QUERY_FLAG_PREVIOUS_NORMAL);
     } else {
@@ -1228,7 +1237,7 @@ void TerrainImpact(NUVEC *position, NUVEC *movement, u8 *hit_flags) {
             }
 
             query = TerI;
-            const f32 contact_push = 1.05f - query->unclamped_hit_time * 0.0035f;
+            const f32 contact_push = 0.0035f - query->unclamped_hit_time * 1.05f;
             if (query->impact_normal.y >= walkable_normal_y) {
                 query->position.x += response_normal.x * contact_push;
                 query->position.y += response_normal.y * contact_push + response_normal.y * 0.01f;
@@ -1238,7 +1247,7 @@ void TerrainImpact(NUVEC *position, NUVEC *movement, u8 *hit_flags) {
                 FullDeflect(&response_normal, &query->movement, &query->movement);
                 FullDeflect(&query->impact_normal, movement, movement);
             } else {
-                const f32 movement_push = 1.05f - query->unclamped_hit_time * 0.35f;
+                const f32 movement_push = 0.0035f - query->unclamped_hit_time * 0.35f;
                 query->position.x += response_normal.x * contact_push;
                 query->position.y += response_normal.y * contact_push;
                 query->position.z += response_normal.z * contact_push;
@@ -1289,10 +1298,9 @@ void TerrainImpact(NUVEC *position, NUVEC *movement, u8 *hit_flags) {
 
     TERRAIN_IMPACT_RECORD *records = static_cast<TERRAIN_IMPACT_RECORD *>(TerImpactData);
     TERRAIN_IMPACT_RECORD &record = records[*TerImpactDataCount];
-    record.position.x = query->position.x - query->movement_normal.x * query->collision_height_scale;
-    record.position.y =
-        (query->position.y - query->movement_normal.y * query->collision_height_scale) * query->object_scale;
-    record.position.z = query->position.z - query->movement_normal.z * query->collision_height_scale;
+    record.position.x = query->position.x - query->movement_normal.x * query->collision_radius;
+    record.position.y = (query->position.y - query->movement_normal.y * query->collision_radius) * query->object_scale;
+    record.position.z = query->position.z - query->movement_normal.z * query->collision_radius;
     record.normal = query->movement_normal;
 
     if (query->surface != NULL) {
@@ -1313,39 +1321,109 @@ void TerrainPlayer(GameObject_s *object) {
         return;
     }
 
-    // The target's ordinary playable-character path integrates here.  The
-    // separate APIOBJECT_MOTION_FLAG_AI_CONTROLLED branch in
-    // UpdateGameObjects performs the corresponding update for AI creatures.
     APIOBJECT &api = object->apiobj;
-    api.position.x += api.velocity.x * FRAMETIME;
-    api.position.y += api.velocity.y * FRAMETIME;
-    api.position.z += api.velocity.z * FRAMETIME;
+    const AIPATHINFO &path_info = object->ai.path_info;
+    const AIPATHCNX *path_connection = path_info.connection;
+    const bool ordinary_ai_path =
+        (api.field_0x1f4 & APIOBJECT_MOTION_FLAG_AI_CONTROLLED) != 0 && object->movement_spline == NULL &&
+        object->context_target_position == NULL &&
+        (path_info.flags & (AIPATHINFO_FLAG_ON_PATH | AIPATHINFO_FLAG_NARROW_PATH)) == AIPATHINFO_FLAG_ON_PATH &&
+        (api.field_0x1fa & 4) == 0 && path_connection != NULL &&
+        (path_connection->original_traversal_flags[0] & static_cast<u32>(LEGO_AIPATHCNX_BLOCKAGE)) == 0 &&
+        (path_connection->traversal_flags[0] & static_cast<u32>(LEGO_AIPATHCNX_FULLTERRAIN)) == 0;
 
-    // Resolve the proposed position against the floor and refresh contact
-    // state before dispatching the character-specific movement callback.
-    const u8 previous_contact = api.field_0x27d;
-    api.field_0x27d = 0;
-    api.supporting_platform_id = -1;
-    object->field_0x6b0 = 0;
-
+    // TerrainPlayer selects either the inexpensive shadow-grounding path used
+    // by ordinary AI or the swept capsule resolver required by players and
+    // special traversal connections, then refreshes floor/contact state before
+    // dispatching the character movement callback.
     const f32 lower_bound = object->character_bottom * api.field_0xa8;
-    NUVEC floor_probe = api.position;
-    floor_probe.y += lower_bound;
-    const f32 floor_height = GameShadow(object, &floor_probe, 5.0f, -1);
-    api.field_0x218 = floor_height;
-    const f32 character_bottom = api.position.y + lower_bound;
-    if (floor_height != -1.0f && api.velocity.y <= 0.0f &&
-        (character_bottom <= floor_height || (previous_contact & 1) != 0)) {
-        api.position.y = floor_height - lower_bound;
-        api.velocity.y = 0.0f;
-        api.field_0x27d |= 1;
-        object->field_0x6b0 = api.field_0x281;
-        object->surface_normal = ShadNorm;
+    const i32 terrain_mask = TERRAINMASK_NONWEAPON | TERRAINMASK_NONDROID;
+
+    if (ordinary_ai_path) {
+        // Ordinary path-following AI uses the target's inexpensive shadow
+        // grounding path.  Full swept collision is reserved for path
+        // connections whose traversal flags require special collision.
+        api.respawn_timer = 0.0f;
+        object->field_0xe20 |= 2;
+        api.supporting_platform_id = -1;
+        api.position.x += api.velocity.x * FRAMETIME;
+        api.position.y += api.velocity.y * FRAMETIME;
+        api.position.z += api.velocity.z * FRAMETIME;
+
+        api.field_0x218 = GameShadow(object, &api.collision_position, 5.0f, terrain_mask | 0x1f);
+        api.supporting_platform_id = static_cast<i16>(NewShadowOnPlatform());
+        if (api.field_0x218 != 2000000.0f && api.position.y + lower_bound < api.field_0x218) {
+            api.velocity.y = 0.0f;
+            api.position.y = api.field_0x218 - lower_bound;
+        }
+
+        api.field_0x27d = 0;
+        if (GameObjectNearFloor(object, 1.0f, NULL) != 0) {
+            api.field_0x27d |= APIOBJECT_TERRAIN_CONTACT_NEAR_FLOOR;
+        }
+        if (api.collision_min.y <= api.field_0x218) {
+            api.field_0x27d |= APIOBJECT_TERRAIN_CONTACT_FLOOR;
+        }
+        if ((api.field_0x27d & APIOBJECT_TERRAIN_CONTACT_FLOOR) != 0) {
+            object->field_0x1084 = 1;
+            object->contact_position.x = api.position.x;
+            object->contact_position.y = api.field_0x218;
+            object->contact_position.z = api.position.z;
+            object->field_0x6b0 = api.field_0x281;
+            object->contact_normal = object->surface_normal;
+        } else {
+            object->field_0x6b0 = 0;
+        }
+    } else {
+        NUVEC collision_position = api.position;
+        collision_position.y += lower_bound;
+
+        NUVEC movement;
+        NuVecScale(&movement, &api.velocity, FRAMETIME);
+
+        // The full resolver retains the previous contact bits while preparing
+        // its query; they are rebuilt from field_0x105c at the common epilogue.
+        // The clears at 0x10343b/0x104447 belong to the alternate integration
+        // paths, while this path overwrites platform support from its shadow hit.
+        object->field_0x6b0 = 0;
+        const i32 object_index = Obj != NULL ? static_cast<i32>(object - Obj) : -1;
+
+        NewTerrainScaleYMask(&collision_position, &movement, reinterpret_cast<u8 *>(&object->field_0x105c),
+                             object_index, 0.0f, api.collision_radius, object->collision_y_scale, 0, 0, terrain_mask);
+        api.supporting_platform_id = static_cast<i16>(NewShadowOnPlatform());
+
+        api.position.x = collision_position.x;
+        api.position.y = collision_position.y - lower_bound;
+        api.position.z = collision_position.z;
+        if (FRAMETIME != 0.0f) {
+            NuVecScale(&api.velocity, &movement, 1.0f / FRAMETIME);
+        }
+
+        object->field_0x1084 = static_cast<u8>(TerrImpact);
+        if (TerrImpact != 0) {
+            object->contact_position = TerrImpactPos;
+            object->contact_normal = TerrImpactNormal;
+        }
+        // The full-resolver path reaches 0x105215 only after the resolved
+        // position and velocity have been copied back (via the backward edge at
+        // 0x105dc6).  This is distinct from the simple-integration shadow probe.
+        api.field_0x218 = GameShadow(object, &api.position, 5.0f, terrain_mask | 0x1f);
+        // Full-resolver epilogue 0x1037b9..0x103806 rebuilds contact from the
+        // resolver result and the common near-floor test.
+        api.field_0x27d = object->field_0x105c != 0 ? APIOBJECT_TERRAIN_CONTACT_FLOOR : 0;
+        if (GameObjectNearFloor(object, 1.0f, NULL) != 0) {
+            api.field_0x27d |= APIOBJECT_TERRAIN_CONTACT_NEAR_FLOOR;
+        }
+    }
+    if (api.field_0x27d != 0) {
+        // Target 0x103816 marks the object as terrain-supported here; the
+        // collision resolver owns the contact normal fields.
+        object->field_0xeff |= 2;
     }
 
-    // Target call flow at 0x102e97..0x102ecf.  This dispatch is what reaches
-    // Move_JEDI/Move_CHARACTER; omitting it leaves action state, gravity and
-    // interactions completely inert even though MovePlayer can translate.
+    // Target 0x102e97..0x102ee3 runs this block after the normal swept-terrain
+    // and contact path.  The model flag controls whether saved pad state is
+    // restored or BigJumpCode consumes the updated contact state.
     const u32 held_buttons = object->pad_gamepad->buttons_held;
     const u32 pressed_buttons = object->pad_gamepad->buttons_pressed;
     Tag_Check(object);
@@ -1367,7 +1445,51 @@ void TerrainPlayer(GameObject_s *object) {
     object->pad_gamepad->operator_data = NULL;
     NuVecRotateYValZ(&object->facing_direction, 1.0f, api.field_0x276);
 }
-void MakePlayPlanes(GAMECAMERA_s *) {
+static inline void MakePlayCorner(GAMECAMERA_s *camera, f32 screen_x, f32 screen_y, NUVEC *near_corner,
+                                  NUVEC *far_corner) {
+    NUVEC ray = {screen_x, screen_y, 1.0f};
+    NuVecMtxRotate(&ray, &ray, &camera->target_mtx);
+    NuVecAdd(near_corner, &ray, &camera->pos);
+    NuVecNorm(&ray, &ray);
+    far_corner->x = near_corner->x + ray.x * 5.0f;
+    far_corner->y = near_corner->y + ray.y * 5.0f;
+    far_corner->z = near_corner->z + ray.z * 5.0f;
+}
+
+static inline void SetPlayPlane(PLAYPLANE_s *plane, NUVEC *a, NUVEC *b, NUVEC *c, NUVEC *d, NUVEC *edge_a0,
+                                NUVEC *edge_a1, NUVEC *edge_b0, NUVEC *edge_b1) {
+    plane->point.x = (a->x + b->x + c->x + d->x) * 0.25f;
+    plane->point.y = (a->y + b->y + c->y + d->y) * 0.25f;
+    plane->point.z = (a->z + b->z + c->z + d->z) * 0.25f;
+    NUVEC first_edge;
+    NUVEC second_edge;
+    NuVecSub(&first_edge, edge_a0, edge_a1);
+    NuVecSub(&second_edge, edge_b0, edge_b1);
+    NuVecCross(&plane->normal, &first_edge, &second_edge);
+    NuVecNorm(&plane->normal, &plane->normal);
+}
+
+void MakePlayPlanes(GAMECAMERA_s *camera) {
+    NUVEC near_corner[4];
+    NUVEC far_corner[4];
+    MakePlayCorner(camera, -0.8f * PANEL3DMULX, 0.85f * PANEL3DMULY, &near_corner[0], &far_corner[0]);
+    MakePlayCorner(camera, 0.85f * PANEL3DMULX, 0.85f * PANEL3DMULY, &near_corner[1], &far_corner[1]);
+    MakePlayCorner(camera, -0.8f * PANEL3DMULX, -0.8f * PANEL3DMULY, &near_corner[2], &far_corner[2]);
+    MakePlayCorner(camera, 0.85f * PANEL3DMULX, -0.8f * PANEL3DMULY, &near_corner[3], &far_corner[3]);
+
+    // Plane order is near, left, right, top, bottom, far.
+    SetPlayPlane(&PlayPlane[1], &near_corner[0], &far_corner[0], &far_corner[2], &near_corner[2], &far_corner[0],
+                 &near_corner[0], &far_corner[2], &near_corner[2]);
+    SetPlayPlane(&PlayPlane[2], &far_corner[1], &near_corner[1], &near_corner[3], &far_corner[3], &near_corner[1],
+                 &far_corner[1], &near_corner[3], &far_corner[3]);
+    SetPlayPlane(&PlayPlane[3], &near_corner[0], &near_corner[1], &far_corner[1], &far_corner[0], &near_corner[1],
+                 &near_corner[0], &far_corner[1], &far_corner[0]);
+    SetPlayPlane(&PlayPlane[4], &near_corner[2], &far_corner[2], &far_corner[3], &near_corner[3], &far_corner[2],
+                 &near_corner[2], &far_corner[3], &near_corner[2]);
+    SetPlayPlane(&PlayPlane[0], &near_corner[0], &near_corner[2], &near_corner[3], &near_corner[1], &near_corner[2],
+                 &near_corner[0], &near_corner[3], &near_corner[0]);
+    SetPlayPlane(&PlayPlane[5], &far_corner[0], &far_corner[1], &far_corner[3], &far_corner[2], &far_corner[1],
+                 &far_corner[0], &far_corner[3], &far_corner[0]);
 }
 void TerrDrawPlatCol(tertype *, i16, i32) {
 }
@@ -1405,22 +1527,27 @@ void TerrainImpactNorm() {
         terrhitflags |= 4;
     }
 
-    if ((hit_type_flag & (rotate_and_mark_mask | rotate_mask)) != 0) {
+    const bool rotated_hit = (hit_type_flag & (rotate_and_mark_mask | rotate_mask)) != 0;
+    if (rotated_hit) {
         RotateVec(&TerI->movement_normal, &TerI->movement_normal);
     } else if ((hit_type_flag & direct_normal_mask) == 0) {
         return;
     }
 
     TerrainQuery_s *query = TerI;
-    if ((query->hit_type & TERRAIN_HIT_TYPE_SECOND_NORMAL) == 0) {
-        query->movement_normal.x *= query->inverse_collision_height_scale;
-        query->movement_normal.y *= query->inverse_collision_height_scale;
-        query->movement_normal.z *= query->inverse_collision_height_scale;
+    // Curved hits are produced in collision-height-scaled space and need to
+    // be transformed back. Face normals already come from the terrain in
+    // object space; the target's direct-face branch deliberately bypasses
+    // this scaling before copying the normal below.
+    if (rotated_hit && (query->hit_type & TERRAIN_HIT_TYPE_SECOND_NORMAL) == 0) {
+        query->movement_normal.x *= query->inverse_collision_radius;
+        query->movement_normal.y *= query->inverse_collision_radius;
+        query->movement_normal.z *= query->inverse_collision_radius;
+    }
 
-        if (query->object_scale == 1.0f) {
-            query->impact_normal = query->movement_normal;
-            return;
-        }
+    if (query->object_scale == 1.0f) {
+        query->impact_normal = query->movement_normal;
+        return;
     }
 
     const f32 normal_length =

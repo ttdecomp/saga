@@ -7,15 +7,41 @@
 struct nudldlistscene_s;
 struct nugscn_s;
 struct ani3_animheader_s;
-struct NUJOINTANIM_s;
+struct nuanimbuff_s;
 using NUHGOBJROOTFN = void (*)(NUMTX *, void *, NUVEC *, NUVEC *, NUVEC *, f32);
+
+enum NUJOINTANIM_FLAGS : u8 {
+    NUJOINTANIM_ROTATION = 1 << 0,
+    NUJOINTANIM_TRANSLATION = 1 << 1,
+    NUJOINTANIM_SCALE = 1 << 2,
+    NUJOINTANIM_LIMIT_ROTATION_X = 1 << 3,
+    NUJOINTANIM_LIMIT_ROTATION_Y = 1 << 4,
+    NUJOINTANIM_LIMIT_ROTATION_Z = 1 << 5,
+};
+
+struct NUJOINTANIM_s {
+    NUVEC rotation;
+    NUVEC translation;
+    NUVEC scale;
+    i16 rotation_limit_start[3];
+    i16 rotation_limit_end[3];
+    u8 joint_index;
+    NUJOINTANIM_FLAGS flags;
+    u8 pad_32[2];
+};
+
+using NUJOINTPROCANIMFN = void (*)(nuanimbuff_s *, struct nuhgobj_s *, i32, NUJOINTANIM_s *);
 
 struct nuhgobjpoi_s {
     u8 data[0x50];
 };
 
 struct nuhgobjjoint_s {
-    u8 data_0x00[0x50];
+    // Local matrix used when an animation node inherits its unanimated bind
+    // orientation.  The hierarchy also owns a separate bind-matrix array at
+    // 0x170 for rest-pose evaluation.
+    NUMTX animation_bind_matrix;
+    u8 data_0x40[0x10];
     u8 parent_index;
     u8 data_0x51[0xf];
 };
@@ -62,6 +88,9 @@ struct nuhgobj_s {
 DECOMP_ASSERT(sizeof(nuhgobjpoi_s) == 0x50, "nuhgobjpoi_s size");
 DECOMP_ASSERT(sizeof(nuhgobjjoint_s) == 0x60, "nuhgobjjoint_s size");
 DECOMP_ASSERT(sizeof(nuhgobjjointoverride_s) == 0x34, "nuhgobjjointoverride_s size");
+DECOMP_ASSERT(sizeof(NUJOINTANIM_s) == 0x34, "NUJOINTANIM_s size");
+DECOMP_ASSERT(offsetof(NUJOINTANIM_s, joint_index) == 0x30, "NUJOINTANIM_s joint index offset");
+DECOMP_ASSERT(offsetof(NUJOINTANIM_s, flags) == 0x31, "NUJOINTANIM_s flags offset");
 DECOMP_ASSERT(sizeof(nuhgobjrender_s) == 0x14, "nuhgobjrender_s size");
 DECOMP_ASSERT(sizeof(nuhgobj_s) == 0x1c4, "nuhgobj_s size");
 
@@ -70,8 +99,11 @@ DECOMP_ASSERT(sizeof(nuhgobj_s) == 0x1c4, "nuhgobj_s size");
 #ifdef __cplusplus
 extern "C" {
 #endif
+    extern NUJOINTPROCANIMFN JointProcAnimFn;
     i32 NuHGobjReversibleCharacters(i32 enabled);
     i32 NuHGobjForceShadowsOnCharacters(i32 enabled);
+    void NuAnimBuffProceduralAnimation(nuanimbuff_s *buffer, nuhgobj_s *object, i32 override_count,
+                                       NUJOINTANIM_s *overrides);
     nuhgobj_s *NuGHGRead(char *path, VARIPTR *buf, VARIPTR buf_end);
     nuhgobjpoi_s *NuHGobjGetPOI(nuhgobj_s *object, i32 index);
     i32 NuHGobjGetLayerIndex(char *name, nuhgobj_s *object);

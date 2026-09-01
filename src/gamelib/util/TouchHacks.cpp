@@ -5,6 +5,7 @@
 #include "nu2api/numath/nufloat.h"
 
 NUCOLOUR3 flashCol = {2.0f, 2.0f, 2.0f};
+bool TouchHacks::TouchControlsActive;
 extern i32 BonusArea;
 
 void TouchHacks::AiPlayerTakeDamageOnKillRescue(GameObject_s &) {

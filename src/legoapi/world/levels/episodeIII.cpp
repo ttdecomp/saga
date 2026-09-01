@@ -98,7 +98,7 @@ void GrievousA_Init(WORLDINFO_s *world) {
     GIZMOBLOWUP_s *b;
     if ((b = GizmoBlowUp_FindByName(world, "grievous_1")) != NULL) {
         nuvec_s pos = {5.42f, 2.76f, 1.79f};
-        NuSpecialSetDrawPos((char *)b->field_0xac + 0x30, &pos);
+        NuSpecialSetDrawPos(&b->type->animated_special, &pos);
         UpdateMidPos(b);
     }
     if ((b = GizmoBlowUp_FindByName(world, "grievous_2")) != NULL)

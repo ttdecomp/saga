@@ -1,6 +1,8 @@
 #include "decomp.h"
 #include "legoapi/items/base/apiobject.h"
 #include "legoapi/legoapi_types.h"
+#include "globals.h"
+#include "nu2api/nu3d/nugscn.h"
 #include "nu2api/numath/nufloat.h"
 
 #include <string.h>
@@ -90,7 +92,11 @@ extern "C" {
     void AddCollisionSphere(void) {
     }
 
-    void FlagRoomInstancesAsVisible(void) {
+    void FlagRoomInstancesAsVisible(NUROOM *room, NUGSCN *) {
+        for (i32 i = 0; i < room->instance_count; ++i) {
+            PortalVisiFlags[room->instance_indices[i] >> 3] =
+                PortalVisiFlags[room->instance_indices[i] >> 3] | static_cast<u8>(1 << (room->instance_indices[i] & 7));
+        }
     }
 
     void StoreLocatorCoordinates(void) {

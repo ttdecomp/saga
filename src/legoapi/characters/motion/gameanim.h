@@ -37,6 +37,8 @@ i32 GameAnimSet_SetRepeating(GAMEANIMSET_s *set, i32 repeating);
 void GameAnimSet_EvaluateState(GAMEANIMSET_s *set);
 i32 GameAnimSet_GetCentreAndRadius(GAMEANIMSET_s *set, NUVEC *centre, f32 *radius, i32 frame_selection,
                                    i32 include_animated, i32 include_static);
+void GameAnimSet_GetAveragePos(GAMEANIMSET_s *set, NUVEC *position, i32 frame_selection, i32 include_animated,
+                               i32 include_static);
 f32 GameAnimSet_GetCompletionRatio(GAMEANIMSET_s *set);
 GAMEANIMSET_VISIBILITY GameAnimSet_GetVisibility(GAMEANIMSET_s *set);
 void GameAnimSet_JumpToAnimPos(GAMEANIMSET_s *set, f32 position);

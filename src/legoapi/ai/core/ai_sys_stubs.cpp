@@ -11,6 +11,7 @@
 #include "nu2api/numath/nutrig.h"
 
 #include <stdio.h>
+#include <float.h>
 #include <string.h>
 
 extern "C" {
@@ -178,6 +179,8 @@ static AIPATHSYS *AISysLoadPaths(AISYS *system, i32 version, NUGSCN *scene) {
                 EdFileReadChar();
                 node->runtime_flags = static_cast<u8>(EdFileReadChar()) & ~6u;
                 node->path_flags = EdFileReadShort();
+                node->distance_cache_nodes[0] = 0xff;
+                node->distance_cache_nodes[1] = 0xff;
                 node->special_type = static_cast<u8>(EdFileReadChar());
 
                 char special_name[256] = {};
@@ -418,15 +421,13 @@ static void AISysLoadLocatorSets(AISYS *system, i32 version) {
     for (i32 index = 0; index < system->locator_set_count; ++index) {
         AILOCATORSET *locator_set = &system->locator_sets[index];
         EdFileRead(locator_set->name, sizeof(locator_set->name));
-        locator_set->locator_count = static_cast<u8>(EdFileReadInt());
-        locator_set->locator_entries = AISysLoadAlloc(system, locator_set->locator_count * 0x1c);
-        u8 *entry = static_cast<u8 *>(locator_set->locator_entries);
+        locator_set->locator_count = static_cast<i8>(EdFileReadInt());
+        locator_set->locator_entries = static_cast<u8 *>(AISysLoadAlloc(system, locator_set->locator_count));
         for (i32 locator_index = 0; locator_index < locator_set->locator_count; ++locator_index) {
-            *entry = static_cast<u8>(EdFileReadChar());
-            entry += 0x1c;
+            locator_set->locator_entries[locator_index] = static_cast<u8>(EdFileReadChar());
         }
         locator_set->assigned = static_cast<u8 *>(AISysLoadAlloc(system, locator_set->locator_count));
-        memset(locator_set->assigned, 0, locator_set->locator_count);
+        memset(locator_set->assigned, 0xff, locator_set->locator_count);
     }
 }
 
@@ -595,7 +596,26 @@ extern "C" {
     void AILocatorSet_AssignRandomLocator(void) {
     }
 
-    void AILocatorSet_CheckLocatorsStillAssigned(void) {
+    void AILocatorSet_CheckLocatorsStillAssigned(AISYS *system, AILOCATORSET *locator_set) {
+        if (locator_set == NULL || APIOBJECTFromObjIDFn == NULL) {
+            return;
+        }
+
+        for (i32 index = 0; index < locator_set->locator_count; ++index) {
+            const u8 assignment = locator_set->assigned[index];
+            if (assignment == 0x80 || assignment == 0xff) {
+                continue;
+            }
+
+            i32 locator_index = -1;
+            APIOBJECT *object = APIOBJECTFromObjIDFn(assignment);
+            if (object != NULL && object->ai != NULL && object->ai->locator != NULL) {
+                locator_index = object->ai->locator - system->locators;
+            }
+            if (locator_index != locator_set->locator_entries[index]) {
+                locator_set->assigned[index] = 0xff;
+            }
+        }
     }
 
     void AIMoveInstruction(AIPACKET *packet, NUVEC *destination, f32 stopping_distance, AIPATHINFO *path_info, i32 mode,
@@ -638,7 +658,15 @@ extern "C" {
         return NULL;
     }
 
-    void AIPathFindLocatorSet(void) {
+    AILOCATORSET *AIPathFindLocatorSet(AISYS *system, char *name) {
+        if (system != NULL) {
+            for (i32 index = 0; index < system->locator_set_count; ++index) {
+                if (NuStrICmp(system->locator_sets[index].name, name) == 0) {
+                    return &system->locator_sets[index];
+                }
+            }
+        }
+        return NULL;
     }
 
     void AIPathFindNode(void) {
@@ -647,7 +675,88 @@ extern "C" {
     void AIPathFindPathCnxFromIX(void) {
     }
 
-    void AIPathNodeDistanceToPathNode(void) {
+    f32 AIPathNodeDistanceToPathNode(AIPATH *path, i32 start_node, i32 destination_node, i32 route,
+                                     u32 excluded_route_mask) {
+        if (path == NULL || path->nodes == NULL || path->route_matrix == NULL || start_node < 0 ||
+            destination_node < 0 || start_node >= path->node_count || destination_node >= path->node_count) {
+            return FLT_MAX;
+        }
+        if (start_node == destination_node) {
+            return 0.0f;
+        }
+
+        AIPATHNODE &start = path->nodes[start_node];
+        f32 *cached_distance = NULL;
+        if (route == 0xff) {
+            if (start.distance_cache_nodes[0] == destination_node) {
+                return start.distance_cache[0];
+            }
+            if (start.distance_cache_nodes[1] == destination_node) {
+                return start.distance_cache[1];
+            }
+            start.distance_cache_nodes[1] = start.distance_cache_nodes[0];
+            start.distance_cache[1] = start.distance_cache[0];
+            start.distance_cache_nodes[0] = static_cast<u8>(destination_node);
+            cached_distance = &start.distance_cache[0];
+        }
+
+        f32 distance = 0.0f;
+        i32 node_index = start_node;
+        for (i32 step = 0; step < path->node_count; ++step) {
+            AIPATHNODE &node = path->nodes[node_index];
+            if (path->route_matrix[node_index] == NULL || node.connections == NULL) {
+                distance = FLT_MAX;
+                break;
+            }
+
+            const u8 connection_index = path->route_matrix[node_index][destination_node];
+            if (connection_index == 0xff || connection_index >= node.connection_count) {
+                distance = FLT_MAX;
+                break;
+            }
+
+            AIPATHCNX *connection = node.connections[connection_index];
+            if (connection == NULL || (connection->route_mask & excluded_route_mask) != 0) {
+                distance = FLT_MAX;
+                break;
+            }
+            if (route != 0xff) {
+                if (route < 0 || route >= 16) {
+                    distance = FLT_MAX;
+                    break;
+                }
+                const u16 route_bit = static_cast<u16>(1u << route);
+                if ((connection->route_mask & route_bit) == 0 && (node.value_0x5a & route_bit) == 0) {
+                    distance = FLT_MAX;
+                    break;
+                }
+            }
+
+            if (connection->node_indices[0] == node_index) {
+                node_index = connection->node_indices[1];
+            } else if (connection->node_indices[1] == node_index) {
+                node_index = connection->node_indices[0];
+            } else {
+                distance = FLT_MAX;
+                break;
+            }
+            if (node_index >= path->node_count) {
+                distance = FLT_MAX;
+                break;
+            }
+
+            distance += connection->distance;
+            if (node_index == destination_node) {
+                break;
+            }
+        }
+        if (node_index != destination_node) {
+            distance = FLT_MAX;
+        }
+        if (cached_distance != NULL) {
+            *cached_distance = distance;
+        }
+        return distance;
     }
 
     void AIPathNodeUpdatePos(AISYS *system, AIPATH *path, AIPATHNODE *node) {
@@ -925,7 +1034,7 @@ extern "C" {
                     if (packet != NULL) {
                         packet->goal_speed_mode = 0;
                         packet->goal_path_node = NULL;
-                        memset(packet->pad_17c, 0, sizeof(packet->pad_17c));
+                        packet->movement_instruction_parameter = 0.0f;
                         packet->frame_flags = 0;
                         if (ScriptProcessFirstTimeActionFn != NULL) {
                             ScriptProcessFirstTimeActionFn(system, packet, processor);
@@ -1067,7 +1176,7 @@ extern "C" {
     }
 
     void AISysCharacterMovement(AISYS *system, AIPACKET *packet, APIOBJECT *object, i32 checks) {
-        packet->field_0x1e7 &= static_cast<u8>(~AIPACKET_MOVEMENT_FRAME_RESET);
+        packet->movement_event_flags &= static_cast<u8>(~AIPACKET_PATH_CONNECTION_CHANGED);
         if (MidSpecialMoveFn != NULL && MidSpecialMoveFn(system, packet, object) != 0) {
             packet->field_0x1e6 |= AIPACKET_RUNTIME_SPECIAL_MOVE;
             packet->field_0x1e7 |= AIPACKET_MOVEMENT_SPECIAL_HANDLED;

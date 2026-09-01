@@ -6,3 +6,4 @@
 void HostInputReset();
 void HostInputTap(i32 port, u32 buttons);
 void HostInputSetHeld(i32 port, u32 buttons);
+void HostInputSetKeyboardHeld(i32 port, u32 buttons);

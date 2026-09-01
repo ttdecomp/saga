@@ -25,7 +25,7 @@ endforeach()
 # for its include path and let CMake resolve the actual library filename.
 pkg_check_modules(libsquish REQUIRED libsquish)
 set(HOST_BUNDLED_SQUISH_LIBRARY "${CMAKE_SOURCE_DIR}/libs/squishlib/lib/libsquish.a")
-if(EXISTS "${HOST_BUNDLED_SQUISH_LIBRARY}" AND NOT BUILD_FOR_HOST64)
+if(EXISTS "${HOST_BUNDLED_SQUISH_LIBRARY}")
     set(HOST_SQUISH_LIBRARY "${HOST_BUNDLED_SQUISH_LIBRARY}")
     target_include_directories(saga PRIVATE "${CMAKE_SOURCE_DIR}/libs/squishlib/include")
 else()
@@ -35,10 +35,3 @@ endif()
 target_link_libraries(saga PRIVATE ${HOST_SQUISH_LIBRARY})
 
 target_compile_definitions(saga PRIVATE HOST_BUILD)
-if(BUILD_FOR_HOST64)
-    target_compile_options(saga PRIVATE
-        -Werror=int-to-pointer-cast
-        $<$<COMPILE_LANGUAGE:C>:-Werror=pointer-to-int-cast>
-        -Werror=sizeof-pointer-memaccess
-    )
-endif()

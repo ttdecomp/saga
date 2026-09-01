@@ -452,18 +452,18 @@ void GunganA_Init(WORLDINFO_s *world) {
     if (b != NULL) {
         UpdateMidPos(b);
         b->field_0x124 = 1;
-        b->field_0x128 = b->field_0xb0;
+        b->field_0x128 = b->target_scale;
         GIZMOBLOWUP_s *b2 = GizmoBlowUp_FindByName(world, "leaves_exp11");
         if (b2 != NULL) {
             b2->field_0x124 = 1;
             b2->field_0x120 = (void *)&b->field_0x50;
-            b2->field_0x128 = b->field_0xb0;
+            b2->field_0x128 = b->target_scale;
         }
         GIZMOBLOWUP_s *b3 = GizmoBlowUp_FindByName(world, "branch3_exp11");
         if (b3 != NULL) {
             b3->field_0x124 = 1;
             b3->field_0x120 = (void *)&b->field_0x50;
-            b3->field_0x128 = b->field_0xb0;
+            b3->field_0x128 = b->target_scale;
         }
     }
 }

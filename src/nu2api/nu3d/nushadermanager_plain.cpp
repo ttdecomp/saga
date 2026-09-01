@@ -15,6 +15,8 @@
 #include "nu2api/nu3d/nu2api_nu3d_types.h"
 #include "nushader.h"
 #include "nu2api/nu3d/nutex.h"
+#include "nu2api/nu3d/android/nutex_android.h"
+#include "nu2api/nu3d/android/nutex_ios_ex.h"
 
 // NuShaderObjectInit overload used by the manager.
 void NuShaderObjectInit(nushaderobject_s *, const nushaderobjectkey_s *, i32, u32, u32, eSHADERVERSION);
@@ -897,12 +899,81 @@ extern "C" void NuShaderObjectGLSLSetupMaterial(NUSHADEROBJECT *shader, struct n
     set4fv("_fog_params", 1, fog_params);
     set4fv("_fog_color", 1, zero);
 
-    // Diffuse-map semantic (case 0 in the original texture-semantic walk at
-    // 0x31cba0). Samplers default to texture unit zero, matching the unit
-    // encoded for this semantic by the generated 2D shader.
-    const i32 texture_id = mtl->shader_desc.diffuse_map_tex_id[0];
-    if (texture_id != 0) {
-        NuTexSetTextureWithStagePS(NuTexGetNative(texture_id), 0);
+    // Target 0x31cba0 walks the active texture semantics and binds each map to
+    // the unit encoded by ProbeSemantics.  Keeping this driven by the usage
+    // mask is important for multi-sampler character materials.
+    const NUSHADERUSAGEMASK *usage = shader->usage_mask;
+    if (usage != NULL) {
+        for (i32 semantic = 0; semantic <= 20; ++semantic) {
+            if ((usage->semantics[semantic >> 5] & (1u << (semantic & 31))) == 0) {
+                continue;
+            }
+
+            const i32 texture_unit = static_cast<u16>(shader->parameters[semantic].location) & 0x7ff;
+            i32 texture_id = 0;
+            bool bind_2d = true;
+            switch (semantic) {
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                    texture_id = mtl->shader_desc.diffuse_map_tex_id[semantic];
+                    break;
+                case 4:
+                    texture_id = mtl->shader_desc.specular_map_tid;
+                    break;
+                case 5:
+                    texture_id = mtl->shader_desc.lightmap_tex_id[0];
+                    break;
+                case 6:
+                    texture_id = mtl->shader_desc.normal_map_tid;
+                    break;
+                case 7:
+                    texture_id = mtl->shader_desc.lightmap_tex_id[1];
+                    break;
+                case 9:
+                    texture_id = mtl->shader_desc.vtf_height_map_tid;
+                    break;
+                case 12:
+                    texture_id = mtl->shader_desc.vtf_normal_map_tid;
+                    break;
+                case 13:
+                    texture_id = mtl->shader_desc.unknown_198;
+                    bind_2d = false;
+                    break;
+                case 14:
+                    texture_id = mtl->shader_desc.envmap_cubic_tid;
+                    bind_2d = false;
+                    break;
+                case 16:
+                    texture_id = mtl->shader_desc.shine_map_ps2_tid;
+                    break;
+                case 19:
+                    texture_id = mtl->shader_desc.field_1e4;
+                    break;
+                case 20:
+                    texture_id = mtl->shader_desc.field_1e8;
+                    break;
+                default:
+                    continue;
+            }
+
+            glActiveTexture(GL_TEXTURE0 + texture_unit);
+            g_currentTexUnit = texture_unit;
+            GLuint gl_texture = 0;
+            if (semantic == 14 && (mtl->shader_desc.flags & 0x50000) != 0) {
+                gl_texture = g_LegoEnvTexture;
+            } else if (texture_id != 0) {
+                NUNATIVETEX *native = NuTexGetNative(texture_id);
+                if (native != NULL) {
+                    gl_texture = native->platform.gl_tex;
+                }
+            }
+            glBindTexture(bind_2d ? GL_TEXTURE_2D : GL_TEXTURE_CUBE_MAP, gl_texture);
+            if (!bind_2d && texture_unit < 16) {
+                g_lastBoundCubeTexIds[texture_unit] = gl_texture;
+            }
+        }
     }
 }
 

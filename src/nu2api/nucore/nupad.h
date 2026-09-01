@@ -165,6 +165,11 @@ typedef struct _nupadmapping_s {
     i32 is_active;
 } NUPADMAPPING;
 
+typedef enum nupadstatus_e {
+    NUPAD_STATUS_INACTIVE = 0,
+    NUPAD_STATUS_ACTIVE = 1,
+} NUPADSTATUS;
+
 typedef enum nurecmode_e { NUPAD_NORM = 0, NUPAD_RECORD = 1, NUPAD_PLAY = 2 } NURECMODE;
 
 typedef struct nupadrec_s {
@@ -197,11 +202,14 @@ extern "C" {
     extern i32 enable_touch_controls;
 
     void NuPadInit(void);
+    void NuPadSetStatus(i32 pad, i32 status);
     void NuPadInitPS(NUGENERICPAD *pad);
 
     i32 NuPadRead(NUPAD *pad);
 
     void NuPadUpdatePads(void);
+
+    i32 NuPs2ApplyDeadZone(i32 raw_value, i32 dead_zone);
 
     i32 NuPadGetMaxGamePads(void);
 

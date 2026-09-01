@@ -33,12 +33,49 @@ static void GizTurrets_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *, void 
     }
 }
 
-static void GizTurrets_Update(void *, void *, float) {
-    UNIMPLEMENTED();
+static void GizTurrets_Update(void *, void *system_ptr, float frame_time) {
+    GIZTURRETSYS_s *system = static_cast<GIZTURRETSYS_s *>(system_ptr);
+    if (system == NULL || system->count == 0) {
+        return;
+    }
+
+    GIZTURRET_s *turret = system->turrets;
+    for (i32 index = 0; index < system->count; ++index, ++turret) {
+        const u8 frame_flags = turret->flags;
+        turret->flags = static_cast<u8>(frame_flags & ~GIZTURRET_FLAG_FIRED_THIS_FRAME);
+        turret->runtime_flags &= ~GIZTURRET_RUNTIME_FLAG_ROTATION_SFX_PLAYING;
+
+        const u8 update_mask = GIZTURRET_FLAG_VISIBLE | GIZTURRET_FLAG_ACTIVE | GIZTURRET_FLAG_UPDATE_DISABLED;
+        if ((frame_flags & update_mask) == (GIZTURRET_FLAG_VISIBLE | GIZTURRET_FLAG_ACTIVE)) {
+            turret->fire_cooldown -= frame_time;
+            if (turret->fire_cooldown < 0.0f) {
+                turret->fire_cooldown = 0.0f;
+            }
+            // Target selection, aiming, animation, and firing continue here in the original.
+        }
+    }
 }
 
-static void GizTurrets_Draw(void *, void *, float) {
-    UNIMPLEMENTED();
+static void GizTurrets_Draw(void *world_ptr, void *system_ptr, float) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    GIZTURRETSYS_s *system = static_cast<GIZTURRETSYS_s *>(system_ptr);
+    if (system == NULL || system->count == 0) {
+        return;
+    }
+
+    for (i32 index = 0; index < system->count; ++index) {
+        GIZTURRET_s &turret = system->turrets[index];
+        if ((turret.flags & GIZTURRET_FLAG_VISIBLE) == 0) {
+            continue;
+        }
+        if (turret.room_id >= 0 && world->rooms_visible_ptr[turret.room_id] == 0) {
+            continue;
+        }
+        if ((turret.animation_flags & GIZTURRET_ANIMATION_FLAG_DRAW_REFLECTION) == 0) {
+            continue;
+        }
+        GameAnimSet_DrawReflection(turret.anim_set, 2, turret.reflection_alpha, NULL);
+    }
 }
 
 static char *GizmoTurret_GetGizmoName(GIZMO *gizmo) {
@@ -104,9 +141,8 @@ static i32 GizTurrets_BoltHit(void *, void *, void *, NUVEC *, i32, float, NUVEC
     return {};
 }
 
-static void *GizTurrets_AllocateProgressData(VARIPTR *, VARIPTR *) {
-    UNIMPLEMENTED();
-    return {};
+static void *GizTurrets_AllocateProgressData(VARIPTR *buffer, VARIPTR *buffer_end) {
+    return GizmoBufferAlloc(buffer, buffer_end, 0x70);
 }
 
 static void GizTurrets_ClearProgress(void *, void *) {

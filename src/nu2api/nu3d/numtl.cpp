@@ -240,7 +240,9 @@ void NuMtlUpdatePS(numtl_s *mtl) {
     }
 }
 
-void NuMtlSetUVOffsetPS(numtl_s *, u32, float, float) {
+void NuMtlSetUVOffsetPS(numtl_s *mtl, u32 layer, float u, float v) {
+    mtl->shader_desc.tex_anim_offsets[layer][0] = u;
+    mtl->shader_desc.tex_anim_offsets[layer][1] = v;
 }
 
 void NuMtlDisableCulling() {

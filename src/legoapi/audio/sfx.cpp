@@ -2,10 +2,32 @@
 #include "legoapi/audio/audio.h"
 #include "nu2api/numusic/sfx.h"
 #include "nu2api/nusound/nusound.h"
+#include "decomp_assert.h"
 
 #include <string.h>
 
 struct SoundTable;
+
+enum RepeatSfxState : u8 {
+    REPEAT_SFX_INACTIVE = 0,
+    REPEAT_SFX_INITIAL_DELAY = 1,
+    REPEAT_SFX_PLAY = 2,
+    REPEAT_SFX_INTERVAL = 3,
+};
+
+struct RepeatSfx {
+    i16 sfx_id;
+    RepeatSfxState state;
+    i8 plays_remaining;
+    f32 timer;
+    f32 interval;
+    nuvec_s *position;
+};
+
+DECOMP_ASSERT(sizeof(RepeatSfx) == 0x10, "RepeatSfx size");
+
+static i32 repsfxcount;
+static RepeatSfx repsfxtab[32];
 
 extern "C" {
     u16 GlobalSfxBits[100];
@@ -15,6 +37,7 @@ void NuSound3CreateVoice(nuvec_s *position, i32 sample_index, f32 volume_bits, f
                          i32 falloff_far, f32 pan, bool has_3d);
 
 extern "C" void PlaySfxByIdEx(i32 sfx_id, nuvec_s *position, f32 volume, f32 pitch);
+void GameAudio_PlaySfxById(i32 sfx_id, nuvec_s *position, i32 flags, i32 volume);
 
 i32 ActionFromQuiet(i32 idx) {
     static i16 ActionPairTab[14] = {-1};
@@ -270,10 +293,38 @@ void PlaySabreSfx(char *, GameObject_s *, nuvec_s *, i32) {
 void LevChatterSfx(char *, nuvec_s *) {
 }
 
-void PlayRepeatSfx(char *, i32, float, char, float, nuvec_s *) {
+void PlayRepeatSfx(char *name, i32 sfx_id, f32 initial_delay, char play_count, f32 interval, nuvec_s *position) {
+    if (play_count == 1 && initial_delay == 0.0f) {
+        if (sfx_id != -1) {
+            GameAudio_PlaySfxById(sfx_id, position, 0, 0);
+        } else {
+            PlaySfx(name, position);
+        }
+        return;
+    }
+
+    if (initial_delay > 0.0f) {
+        repsfxtab[repsfxcount].state = REPEAT_SFX_INITIAL_DELAY;
+    } else {
+        repsfxtab[repsfxcount].state = REPEAT_SFX_PLAY;
+    }
+
+    if (sfx_id == -1)
+        sfx_id = GetSfxId(name);
+
+    repsfxtab[repsfxcount].sfx_id = static_cast<i16>(sfx_id);
+    RepeatSfx &repeat = repsfxtab[repsfxcount];
+    repsfxcount = (repsfxcount + 1) & 31;
+    repeat.timer = initial_delay;
+    repeat.plays_remaining = play_count;
+    repeat.interval = interval;
+    repeat.position = position;
 }
 
 void ResetRepeatSfx() {
+    repsfxcount = 0;
+    memset(repsfxtab, 0, sizeof(repsfxtab));
+    repsfxtab[0].sfx_id = -1;
 }
 
 void SetSfxBit_OnEx(i32) {
@@ -289,6 +340,39 @@ void SetSfxBit_OffEx(i32) {
 }
 
 void UpdateRepeatSfx() {
+    for (RepeatSfx &repeat : repsfxtab) {
+        switch (repeat.state) {
+            case REPEAT_SFX_INITIAL_DELAY:
+                if (repeat.timer > 0.0f) {
+                    repeat.timer -= FRAMETIME;
+                } else {
+                    repeat.state = REPEAT_SFX_PLAY;
+                }
+                break;
+
+            case REPEAT_SFX_PLAY:
+                GameAudio_PlaySfxById(repeat.sfx_id, repeat.position, 0, 0);
+                --repeat.plays_remaining;
+                if (repeat.plays_remaining > 0) {
+                    repeat.timer = repeat.interval;
+                    repeat.state = REPEAT_SFX_INTERVAL;
+                } else {
+                    memset(&repeat, 0, sizeof(repeat));
+                }
+                break;
+
+            case REPEAT_SFX_INTERVAL:
+                if (repeat.timer > 0.0f) {
+                    repeat.timer -= FRAMETIME;
+                } else {
+                    repeat.state = REPEAT_SFX_PLAY;
+                }
+                break;
+
+            default:
+                break;
+        }
+    }
 }
 
 void AddLevelSfxFromId(i32, i32 *, i32 *, i32) {

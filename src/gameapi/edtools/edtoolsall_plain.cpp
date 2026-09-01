@@ -1,7 +1,10 @@
 #include "gameapi/edtools/edgra.h"
 #include "gameapi/edtools/edfile.h"
+#include "gameapi/edtools/edcam.h"
 #include "gameapi/edtools/edstubs.h"
 #include "legoapi/legoapi_types.h"
+#include "nu2api/nucore/nutime.h"
+#include "nu2api/numath/numtx.h"
 
 extern "C" {
     extern debinftype *effecttypes;
@@ -19,7 +22,48 @@ void FileLoadSingleEffectType(debinftype *, i32, char);
 
 void edppDetermineNearest(float);
 
+extern "C" void do_Pad_Standard_camera(edcam_s *camera, f32 delta_time, nupad_s *pad);
+extern "C" void do_maya_mouse_camera(edcam_s *camera);
+extern "C" void do_mouse_flymode_camera(edcam_s *camera, f32 delta_time);
+extern "C" i32 NuKeyboard(i32 key);
+
+static edcam_s gp_cam = {
+    {0.0f, 0.0f, 0.0f},
+    0,
+    0,
+    -2.0f,
+    {0.0f, 0.0f, 0.0f},
+    {0.0f, 0.0f, 0.0f},
+    {1.0f, 1.0f, 1.0f},
+    1,
+    1,
+    {0.0f, 0.0f, 0.0f},
+    0,
+    0,
+    {0.0015625f, 0.0015625f, 0.0015625f},
+    2,
+    2,
+    0.0078125f,
+    0.5f,
+    0.2f,
+    0.2f,
+    4.0f,
+    0.15f,
+    0.2f,
+    0.01f,
+    0.1f,
+    EDCAM_FREEDOM_POSITION_X | EDCAM_FREEDOM_POSITION_Y | EDCAM_FREEDOM_POSITION_Z | EDCAM_FREEDOM_PITCH |
+        EDCAM_FREEDOM_YAW | EDCAM_FREEDOM_DISTANCE,
+    {0, 0, 0},
+};
+
+static NUCAMERA *edmaincam = NULL;
+static NUCAMERA *edinternalcam = NULL;
+
 extern "C" {
+    i32 PadFlyMode = 0;
+    NUMTX *ed_remap_mtx = NULL;
+    i32 edmain_cursor_enabled = 0;
 
     void EdFileBackup(void) {
     }
@@ -133,45 +177,121 @@ extern "C" {
     }
     void edbriStopPage(void) {
     }
-    void edcamGetDist(void) {
+    f32 edcamGetDist(void) {
+        return gp_cam.distance;
     }
-    void edcamGetEdCam(void) {
+    edcam_s *edcamGetEdCam(void) {
+        return &gp_cam;
     }
-    void edcamGetOffset(void) {
+    void edcamGetOffset(NUVEC *offset) {
+        *offset = gp_cam.offset;
     }
-    void edcamGetPosAng(void) {
+    void edcamGetPosAng(NUVEC *position, i32 *pitch, i32 *yaw) {
+        if (position != NULL) {
+            *position = gp_cam.position;
+        }
+        if (pitch != NULL) {
+            *pitch = gp_cam.pitch;
+        }
+        if (yaw != NULL) {
+            *yaw = gp_cam.yaw;
+        }
     }
-    void edcamGetPosAngSnap(void) {
+    void edcamGetPosAngSnap(NUVEC *position, i32 *pitch, i32 *yaw) {
+        if (position != NULL) {
+            *position = gp_cam.snapped_position;
+        }
+        if (pitch != NULL) {
+            *pitch = gp_cam.snapped_pitch;
+        }
+        if (yaw != NULL) {
+            *yaw = gp_cam.snapped_yaw;
+        }
     }
-    void edcamGetPosPointer(void) {
+    NUVEC *edcamGetPosPointer(void) {
+        return &gp_cam.position;
     }
-    void edcamMove(void) {
+    void edcamMove(nupad_s *pad) {
+        edcamMoveEx(pad, NuTimeGetFrameTime());
     }
-    void edcamMoveEx(void) {
+    void edcamMoveEx(nupad_s *pad, f32 delta_time) {
+        if (edmainGetCursorEnabled() != 0) {
+            if (PadFlyMode == 0 || NuKeyboard(0x38) != 0) {
+                do_maya_mouse_camera(&gp_cam);
+            } else {
+                do_mouse_flymode_camera(&gp_cam, delta_time);
+            }
+        }
+        if (pad != NULL) {
+            if (PadFlyMode == 0) {
+                do_Pad_Standard_camera(&gp_cam, delta_time, pad);
+            } else {
+                do_Pad_flymode_camera(&gp_cam, delta_time, pad);
+            }
+        }
     }
-    void edcamMtx(void) {
+    void edcamMtx(NUMTX *matrix) {
+        NUVEC distance = {0.0f, 0.0f, gp_cam.distance};
+        NuMtxSetTranslation(matrix, &distance);
+        NuMtxRotateX(matrix, gp_cam.pitch);
+        NuMtxRotateY(matrix, gp_cam.yaw);
+        NuMtxTranslate(matrix, &gp_cam.position);
+        NuMtxTranslate(matrix, &gp_cam.offset);
+        if (ed_remap_mtx != NULL) {
+            NuMtxMul(matrix, matrix, ed_remap_mtx);
+            ed_remap_mtx = NULL;
+        }
     }
     void edcamSet(void) {
+        NUMTX matrix;
+        edcamMtx(&matrix);
+        edmainSetCamera(&matrix);
     }
-    void edcamSetAdjustFreedom(void) {
+    void edcamSetAdjustFreedom(bool position_x, bool position_y, bool position_z, bool pitch, bool yaw, bool distance) {
+        gp_cam.allow_position_x = position_x;
+        gp_cam.allow_position_y = position_y;
+        gp_cam.allow_position_z = position_z;
+        gp_cam.allow_pitch = pitch;
+        gp_cam.allow_yaw = yaw;
+        gp_cam.allow_distance = distance;
     }
-    void edcamSetAng(void) {
+    void edcamSetAng(i32 pitch, i32 yaw) {
+        gp_cam.pitch = pitch;
+        gp_cam.yaw = yaw;
     }
-    void edcamSetAutoSpeed(void) {
+    void edcamSetAutoSpeed(f32 move_base, f32 move_distance_scale, f32 zoom_base, f32 zoom_distance_scale) {
+        gp_cam.auto_move_base = move_base;
+        gp_cam.auto_move_dist_scale = move_distance_scale;
+        gp_cam.auto_zoom_base = zoom_base;
+        gp_cam.auto_zoom_dist_scale = zoom_distance_scale;
     }
-    void edcamSetDist(void) {
+    void edcamSetDist(f32 distance) {
+        gp_cam.distance = distance;
     }
-    void edcamSetMouseSensitivity(void) {
+    void edcamSetMouseSensitivity(f32 pitch, f32 yaw, f32 movement) {
+        gp_cam.mouse_pitch_speed = pitch;
+        gp_cam.mouse_yaw_speed = yaw;
+        gp_cam.mouse_move_speed = movement;
     }
-    void edcamSetOffset(void) {
+    void edcamSetOffset(NUVEC *offset) {
+        gp_cam.offset = *offset;
     }
-    void edcamSetPos(void) {
+    void edcamSetPos(NUVEC *position) {
+        gp_cam.position = *position;
+        gp_cam.offset = {0.0f, 0.0f, 0.0f};
     }
-    void edcamSetPosAng(void) {
+    void edcamSetPosAng(NUVEC *position, i32 pitch, i32 yaw) {
+        gp_cam.position = *position;
+        gp_cam.offset = {0.0f, 0.0f, 0.0f};
+        gp_cam.pitch = pitch;
+        gp_cam.yaw = yaw;
     }
-    void edcamSetSpeed(void) {
+    void edcamSetSpeed(f32 position_x, f32 position_y, f32 position_z, f32 distance) {
+        gp_cam.position_speed = {position_x, position_y, position_z};
+        gp_cam.distance_speed = distance;
     }
-    void edcamSetSpeedPos(void) {
+    void edcamSetSpeedPos(f32 position_x, f32 position_y, f32 position_z) {
+        gp_cam.position_speed = {position_x, position_y, position_z};
     }
     void edgraBufferUsage(void) {
     }
@@ -195,11 +315,14 @@ extern "C" {
     }
     void edmainCurrent(void) {
     }
-    void edmainExtCamera(void) {
+    void edmainExtCamera(NUCAMERA *camera) {
+        edmaincam = camera != NULL ? camera : edinternalcam;
     }
-    void edmainGetCamera(void) {
+    NUCAMERA *edmainGetCamera(void) {
+        return edmaincam;
     }
-    void edmainGetCursorEnabled(void) {
+    i32 edmainGetCursorEnabled(void) {
+        return edmain_cursor_enabled;
     }
     void edmainInit(void) {
     }
@@ -215,7 +338,9 @@ extern "C" {
     }
     void edmainRender(void) {
     }
-    void edmainSetCamera(void) {
+    void edmainSetCamera(NUMTX *matrix) {
+        edmaincam->mtx = *matrix;
+        NuCameraSet(edmaincam);
     }
     void edmainSetCursorEnabled(void) {
     }

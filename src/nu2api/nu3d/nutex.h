@@ -8,6 +8,8 @@
 
 #include "nu2api/nu3d/android/nutex_android.h"
 
+struct nugscn_s;
+
 typedef enum nutextype_e {
     NUTEX_RTT24 = 15,
 } NUTEXTYPE;
@@ -99,9 +101,10 @@ extern "C" {
 
     NUNATIVETEX *NuTexGetNative(i32 tex_id);
 
-    void NuTexAddReference(i32 tex_id);
+    void NuTexAddReference(i32 tex_id, struct nugscn_s *scene);
     void NuTexRemoveReference(i32 tex_id);
     i32 NuTexGetRefCount(i32 tex_id);
+    i32 NuTexResolveReference(struct nugscn_s *scene, i32 tex_id);
 
     i32 NuTexWidth(i32 tex_id);
     i32 NuTexHeight(i32 tex_id);

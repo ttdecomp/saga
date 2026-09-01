@@ -370,7 +370,15 @@ enum BUILDIT_FIND_ENUM : i32 {
     BUILDIT_FIND_AVAILABLE = 1,
     BUILDIT_FIND_ANY = 2,
 };
-struct CABLE_s {};
+struct CABLE_s {
+    GameObject_s *source;
+    GameObject_s *target;
+    u8 unknown_008[0x1c4 - 0x08];
+    f32 max_length;
+};
+DECOMP_ASSERT(offsetof(CABLE_s, target) == 0x04, "CABLE_s target offset");
+DECOMP_ASSERT(offsetof(CABLE_s, max_length) == 0x1c4, "CABLE_s max length offset");
+DECOMP_ASSERT(sizeof(CABLE_s) == 0x1c8, "CABLE_s ABI");
 struct CHARACTERDATA_s {};
 struct CHARCATEGORY {};
 struct CHARFIXUP;
@@ -408,8 +416,15 @@ struct CUTINFO {
     i32 field_58;
     f32 frames_per_second;
     f32 field_60;
-    u8 pad_64[0x198 - 0x64];
+    u8 pad_64[0x6c - 0x64];
+    f32 camera_near_clip; // 0x6c, zero keeps the level display setting
+    u8 pad_70[0xe8 - 0x70];
+    u16 camera_far_clip; // 0xe8, zero keeps the level display setting
+    u8 pad_ea[0x198 - 0xea];
 };
+DECOMP_ASSERT(offsetof(CUTINFO, camera_near_clip) == 0x6c, "CUTINFO near-clip offset");
+DECOMP_ASSERT(offsetof(CUTINFO, camera_far_clip) == 0xe8, "CUTINFO far-clip offset");
+DECOMP_ASSERT(sizeof(CUTINFO) == 0x198, "CUTINFO size");
 struct CUTSCENESYS {
     i16 blaster_object_0;
     i16 blaster_object_1;
@@ -617,6 +632,14 @@ struct GAMECAMERA_s {
 };
 DECOMP_ASSERT(sizeof(GAMECAMERA_s) == 0x230, "GAMECAMERA_s ABI");
 
+// Camera-space containment plane: one point on the plane followed by its
+// inward-facing normal.  The original PlayPlane global contains six of these.
+struct PLAYPLANE_s {
+    NUVEC point;
+    NUVEC normal;
+};
+DECOMP_ASSERT(sizeof(PLAYPLANE_s) == 0x18, "PLAYPLANE_s ABI");
+
 struct GAMECUTSCENES_s {
     CUTINFO *podrace_pod_explode;
     CUTINFO *podrace_out_of_time;
@@ -645,11 +668,11 @@ struct GAMEMESSAGE_s {
 // Rumble state packet embedded in GAMEPAD_s (20 bytes; floats driven by
 // NuSound3UpdateRumble / UpdateRumble).
 struct RUMBLEPACKET {
-    undefined field_0x00[4];
+    u32 field_0x00;
     f32 rumble_amount; // 0x04
-    undefined field_0x08[4];
+    u32 field_0x08;
     f32 rumble_time; // 0x0c
-    undefined field_0x10[4];
+    u32 field_0x10;
 };
 struct GAMEPAD_s {
     nupad_s *pad; // 0x00  the bound input pad (fields 0x00..0x1f)
@@ -694,8 +717,8 @@ struct GAMEPAD_s {
         f32 input_magnitude;
         f32 unknown_28;
     };
-    f32 input_direction_x; // 0x2c
-    f32 input_direction_z; // 0x30
+    f32 input_direction_z; // 0x2c
+    f32 input_direction_x; // 0x30
     union {
         f32 peak_input_magnitude;
         f32 animation_input_magnitude; // 0x34, speed consumed by AnimatePlayer
@@ -717,7 +740,13 @@ enum GAMEPAD_RUNTIME_FLAGS : u8 {
 DECOMP_ASSERT(sizeof(GAMEPAD_s) == 0x60, "GAMEPAD_s ABI");
 DECOMP_ASSERT(offsetof(GAMEPAD_s, input_angle) == 0x26, "GAMEPAD input angle offset");
 DECOMP_ASSERT(offsetof(GAMEPAD_s, input_magnitude) == 0x28, "GAMEPAD input magnitude offset");
-struct GIZACTIONDEFN_s {};
+typedef void GIZACTIONFN(GIZFLOW_s *, FLOWBOX_s *, char **, i32);
+
+struct GIZACTIONDEFN_s {
+    const char *name;
+    GIZACTIONFN *action_fn;
+};
+DECOMP_ASSERT(sizeof(GIZACTIONDEFN_s) == 8, "GIZACTIONDEFN_s ABI");
 
 // The AI message system: a fixed pool of 0x38-byte messages; the free list
 // and the active list live in the header (ResetGizAIMessageSys fills the
@@ -748,7 +777,7 @@ DECOMP_ASSERT(sizeof(GIZAIMESSAGE_s) == 0x38, "GIZAIMESSAGE_s ABI");
 DECOMP_ASSERT(offsetof(GIZAIMESSAGE_s, output_values) == 0x2c, "GIZAIMESSAGE_s output values offset");
 DECOMP_ASSERT(offsetof(GIZAIMESSAGE_s, output_count) == 0x34, "GIZAIMESSAGE_s output count offset");
 DECOMP_ASSERT(offsetof(GIZAIMESSAGE_s, flags) == 0x36, "GIZAIMESSAGE_s flags offset");
-struct GIZBOMBGENSYS_s {};
+// Defined by gizmos/traps/gizbombgen.h.
 struct GIZFLOWPROGRESS_s {};
 struct GIZFLOW_s {
     GIZMOSYS_s *gizmo_sys;
@@ -762,12 +791,35 @@ DECOMP_ASSERT(sizeof(GIZFLOW_s) == 0x10, "GIZFLOW_s ABI");
 DECOMP_ASSERT(offsetof(GIZFLOW_s, pointers_need_reset) == 0xd, "GIZFLOW reset flag offset");
 struct GIZFORCESYS_s;
 struct GIZMOBLOWUPTYPE_s {
-    u8 field_0x00[0xd8];
+    u8 field_0x00[0x30];
+    nuhspecial_s animated_special; // 0x30, primary model/animation shared by instances
+    nuhspecial_s decal_special;    // 0x3c, drawn for blown-up instances
+    nuhspecial_s shadow_special;   // 0x48, projected beneath active instances
+    nuhspecial_s burst_special;    // 0x54, drawn for instances with the burst output set
+    u8 field_0x60[0x7d - 0x60];
+    u8 animation_flags; // 0x7d, GIZMOBLOWUPTYPE_ANIMATION_FLAGS
+    u8 field_0x7e[0x90 - 0x7e];
+    f32 animation_base_frame; // 0x90
+    u8 field_0x94[0xb2 - 0x94];
+    u16 instance_count; // 0xb2, number of consecutive instances using this type
+    u8 field_0xb4[0xd8 - 0xb4];
     char name[0x20];
-    u8 field_0xf8[8];
+    u8 field_0xf8[4];
+    u8 animation_runtime_flags; // 0xfc, cleared by the late-update pass
+    u8 field_0xfd[3];
 };
 DECOMP_ASSERT(sizeof(GIZMOBLOWUPTYPE_s) == 0x100, "GIZMOBLOWUPTYPE_s ABI");
+DECOMP_ASSERT(offsetof(GIZMOBLOWUPTYPE_s, animated_special) == 0x30, "GIZMOBLOWUPTYPE_s animated special offset");
+DECOMP_ASSERT(offsetof(GIZMOBLOWUPTYPE_s, decal_special) == 0x3c, "GIZMOBLOWUPTYPE_s decal special offset");
+DECOMP_ASSERT(offsetof(GIZMOBLOWUPTYPE_s, shadow_special) == 0x48, "GIZMOBLOWUPTYPE_s shadow special offset");
+DECOMP_ASSERT(offsetof(GIZMOBLOWUPTYPE_s, burst_special) == 0x54, "GIZMOBLOWUPTYPE_s burst special offset");
+DECOMP_ASSERT(offsetof(GIZMOBLOWUPTYPE_s, animation_flags) == 0x7d, "GIZMOBLOWUPTYPE_s animation flags offset");
+DECOMP_ASSERT(offsetof(GIZMOBLOWUPTYPE_s, animation_base_frame) == 0x90,
+              "GIZMOBLOWUPTYPE_s animation base frame offset");
+DECOMP_ASSERT(offsetof(GIZMOBLOWUPTYPE_s, instance_count) == 0xb2, "GIZMOBLOWUPTYPE_s instance count offset");
 DECOMP_ASSERT(offsetof(GIZMOBLOWUPTYPE_s, name) == 0xd8, "GIZMOBLOWUPTYPE_s name offset");
+DECOMP_ASSERT(offsetof(GIZMOBLOWUPTYPE_s, animation_runtime_flags) == 0xfc,
+              "GIZMOBLOWUPTYPE_s animation runtime flags offset");
 enum GIZMOPICKUP_TYPE_FLAGS : u8 {
     GIZMOPICKUP_TYPE_DRAW_BOBBING = 0x01,
     GIZMOPICKUP_TYPE_DRAW_Y_ROTATION = 0x02,
@@ -874,7 +926,55 @@ struct GIZMOSYS_s;
 struct GIZMO_s;
 struct GIZOBSTACLESYS_s;
 struct GIZSPECIAL_s;
-struct GIZSPINNER_s {};
+enum GIZSPINNER_FLAGS : u8 {
+    GIZSPINNER_FLAG_VALID = 0x01,
+    GIZSPINNER_FLAG_HIDE_ARM = 0x02,
+    GIZSPINNER_FLAG_HIDE_BASE = 0x04,
+};
+
+enum GIZSPINNER_STATE_FLAGS : u32 {
+    GIZSPINNER_STATE_RESET = 0x0010,
+    GIZSPINNER_STATE_SHADOW_PLATFORM = 0x0800,
+};
+
+struct GIZSPINNER_s {
+    NUMTX matrix;                    // 0x000
+    char name[0x10];                 // 0x040
+    nuhspecial_s special;            // 0x050
+    NUVEC position;                  // 0x05c
+    GAMEANIMSET_s *anim_set;         // 0x068
+    GAMEANIMOBJ_s *primary_anim_obj; // 0x06c
+    u8 field_0x070[8];
+    f32 animation_speed; // 0x078
+    u16 rotation;        // 0x07c
+    u16 previous_rotation;
+    u16 target_rotation;
+    u16 initial_rotation; // 0x082
+    u32 state_flags;      // 0x084, GIZSPINNER_STATE_FLAGS
+    u8 field_0x088;
+    i8 room_index; // 0x089
+    u8 state;
+    u8 type;
+    u16 field_0x08c;
+    u8 field_0x08e[2];
+    f32 field_0x090;
+    f32 field_0x094;
+    f32 field_0x098;
+    f32 field_0x09c;
+    f32 ground_height; // 0x0a0
+    u8 output_count;   // 0x0a4
+    u8 field_0x0a5[7];
+    u8 flags; // 0x0ac, GIZSPINNER_FLAGS
+    u8 field_0x0ad[0x2d8 - 0x0ad];
+    f32 field_0x2d8;
+    f32 animation_points[10]; // 0x2dc
+};
+DECOMP_ASSERT(sizeof(GIZSPINNER_s) == 0x304, "GIZSPINNER_s ABI");
+DECOMP_ASSERT(offsetof(GIZSPINNER_s, name) == 0x40, "GIZSPINNER name offset");
+DECOMP_ASSERT(offsetof(GIZSPINNER_s, position) == 0x5c, "GIZSPINNER position offset");
+DECOMP_ASSERT(offsetof(GIZSPINNER_s, anim_set) == 0x68, "GIZSPINNER anim-set offset");
+DECOMP_ASSERT(offsetof(GIZSPINNER_s, flags) == 0xac, "GIZSPINNER flags offset");
+DECOMP_ASSERT(offsetof(GIZSPINNER_s, animation_points) == 0x2dc, "GIZSPINNER animation-points offset");
 struct GIZTURRETSYS_s;
 struct GRABBER_s {};
 struct GRAPPLE_s;
@@ -919,8 +1019,116 @@ struct PARTDEBSYS_s {};
 struct PLATSKININFO {};
 struct PLAYERITEMTYPE_s {};
 struct PLAYERITEM_s {};
-struct PLAYERPACKET_s {};
-struct PLUGSYS_s {};
+
+// Per-player runtime state embedded at GameObject_s + 0x6b4.  The packet is
+// reset independently of the rest of the object by ResetPlayerPacket and is
+// also shared by the local-player context helpers.
+struct PLAYERPACKET_s {
+    CHARACTER_SHADOW_s character_shadows[5]; // 0x000
+    u8 pad_064[0x0e8 - 0x064];
+    u16 context_animation; // 0x0e8
+    u8 pad_0ea[0x0ee - 0x0ea];
+    u8 context_mode; // 0x0ee
+    u8 pad_0ef[0x0f1 - 0x0ef];
+    i8 build_context; // 0x0f1, -1 when no gameplay context owns the player
+    u8 pad_0f2[0x0f4 - 0x0f2];
+    u8 action_movement_state;   // 0x0f4
+    u8 action_movement_variant; // 0x0f5
+    u8 pad_0f6[0x0fc - 0x0f6];
+    f32 context_animation_time; // 0x0fc
+    i8 context_target;          // 0x100
+    u8 context_state_flags;     // 0x101
+    u8 pad_102[0x5d4 - 0x102];
+    NUVEC reset_up_direction; // 0x5d4
+    GAMEPAD_s *gamepad;       // 0x5e0
+    u8 pad_5e4[0x604 - 0x5e4];
+    void *field_0x604;
+    u8 pad_608[0x60c - 0x608];
+    GameObject_s *linked_object; // 0x60c
+    u8 pad_610[0x614 - 0x610];
+    u32 field_0x614;
+    u32 field_0x618;
+    u32 field_0x61c;
+    u32 field_0x620;
+    u32 field_0x624;
+    u32 field_0x628;
+    u32 field_0x62c;
+    u32 field_0x630;
+    u8 pad_634[0x648 - 0x634];
+    u32 field_0x648;
+    u8 pad_64c[0x660 - 0x64c];
+    u32 input_state; // 0x660
+    u32 field_0x664;
+    u32 field_0x668;
+    u8 pad_66c[0x670 - 0x66c];
+    u32 field_0x670;
+    u32 field_0x674;
+    u32 field_0x678;
+    f32 context_blend;    // 0x67c
+    f32 context_distance; // 0x680
+    u8 pad_684[0x688 - 0x684];
+    u32 field_0x688;
+    f32 delayed_turn_timer; // 0x68c
+    u32 field_0x690;
+    u32 field_0x694;
+    u8 pad_698[0x69c - 0x698];
+    u32 field_0x69c;
+    u32 field_0x6a0;
+    u32 field_0x6a4;
+    u8 pad_6a8[0x6c8 - 0x6a8];
+    u32 field_0x6c8;
+    u8 pad_6cc[0x6e0 - 0x6cc];
+    u32 field_0x6e0;
+    u8 pad_6e4[0x6e8 - 0x6e4];
+    u32 field_0x6e8;
+    f32 ground_height; // 0x6ec, 2000000.0f when invalid
+    u8 pad_6f0[0x6f8 - 0x6f0];
+    u32 field_0x6f8;
+    u32 field_0x6fc;
+    u8 pad_700[0x710 - 0x700];
+    u32 field_0x710;
+    u8 pad_714[0x718 - 0x714];
+    u32 field_0x718;
+    u32 field_0x71c;
+    u32 field_0x720;
+    u32 field_0x724;
+    u32 field_0x728;
+    u8 pad_72c[0x730 - 0x72c];
+    u32 field_0x730;
+    u32 field_0x734;
+    u8 pad_738[0x73c - 0x738];
+    u32 field_0x73c;
+    u8 pad_740[0x75c - 0x740];
+    i16 movement_angle_0;     // 0x75c
+    i16 movement_angle_1;     // 0x75e
+    i16 movement_angle_2;     // 0x760
+    i16 movement_angle_3;     // 0x762
+    i16 movement_lean_angle;  // 0x764
+    i16 secondary_lean_angle; // 0x766
+    i16 tertiary_lean_angle;  // 0x768
+    i16 force_glow_index;     // 0x76a
+    u8 movement_flags;        // 0x76c, GAMEOBJECT_E20_FLAGS
+    u8 secondary_flags;       // 0x76d
+    u8 animation_flags;       // 0x76e, GAMEOBJECT_E22_FLAGS
+    u8 pad_76f;
+    u8 render_flags; // 0x770
+    u8 field_0x771;
+    u8 pad_772;
+    u8 random_state[4]; // 0x773
+    u8 pad_777[0x77d - 0x777];
+    u8 field_0x77d;
+    u8 field_0x77e;
+    u8 pad_77f[0x78c - 0x77f];
+    u8 random_context;
+    u8 pad_78d;
+    i8 surface_type; // 0x78e, -1 when no surface is selected
+    u8 pad_78f[0x794 - 0x78f];
+    u32 field_0x794;
+};
+DECOMP_ASSERT(sizeof(PLAYERPACKET_s) == 0x798, "PLAYERPACKET_s ABI");
+DECOMP_ASSERT(offsetof(PLAYERPACKET_s, gamepad) == 0x5e0, "PLAYERPACKET gamepad offset");
+DECOMP_ASSERT(offsetof(PLAYERPACKET_s, movement_lean_angle) == 0x764, "PLAYERPACKET movement lean offset");
+DECOMP_ASSERT(offsetof(PLAYERPACKET_s, animation_flags) == 0x76e, "PLAYERPACKET animation flags offset");
 struct PLUG_s;
 struct PULSESYS_s {};
 struct PartHeader;
@@ -952,6 +1160,10 @@ struct STATUSPACKET_s {
     undefined field_0xb3[0x14c - 0xb3];
 };
 struct STATUS_STAGE_s {};
+enum SUIT_STORE_FLAGS : u8 {
+    SUIT_STORE_FLAG_SHADOW_MODE = 0x01,
+    SUIT_STORE_FLAG_EXTRA_MOVEMENT_ANIMATIONS = 0x40,
+};
 struct SUIT_s {
     char *base_character_name;
     char *suit_character_name;
@@ -966,6 +1178,7 @@ struct SUIT_s {
     u8 field_0x17;
 };
 DECOMP_ASSERT(sizeof(SUIT_s) == 0x18, "SUIT_s size");
+DECOMP_ASSERT(offsetof(SUIT_s, store_flag) == 0x0c, "SUIT_s store flag offset");
 DECOMP_ASSERT(offsetof(SUIT_s, group) == 0xe, "SUIT_s group offset");
 struct SUPERCOUNTER {};
 struct SUPERCOUNTERPICKUP {};
@@ -1090,9 +1303,9 @@ struct TerrainQuery_s {
     f32 movement_pitch;
     f32 movement_yaw;
     f32 movement_length;
-    f32 collision_height_scale;
-    f32 collision_height_scale_sq;
-    f32 inverse_collision_height_scale;
+    f32 collision_radius;
+    f32 collision_radius_sq;
+    f32 inverse_collision_radius;
     f32 object_scale;
     f32 object_scale_sq;
     f32 inverse_object_scale;
@@ -1550,7 +1763,57 @@ struct debris_chunk_control_s {
 };
 DECOMP_ASSERT(sizeof(debris_chunk_control_s) == 0x2c, "debris_chunk_control_s size");
 struct drft_lookup {};
-struct edcam_s {};
+enum EDCAM_FREEDOM : u8 {
+    EDCAM_FREEDOM_POSITION_X = 1 << 0,
+    EDCAM_FREEDOM_POSITION_Y = 1 << 1,
+    EDCAM_FREEDOM_POSITION_Z = 1 << 2,
+    EDCAM_FREEDOM_PITCH = 1 << 3,
+    EDCAM_FREEDOM_YAW = 1 << 4,
+    EDCAM_FREEDOM_DISTANCE = 1 << 5,
+    EDCAM_FREEDOM_INVERT_PAD_PITCH = 1 << 6,
+};
+
+struct edcam_s {
+    NUVEC position;           // 0x00
+    i32 pitch;                // 0x0c
+    i32 yaw;                  // 0x10
+    f32 distance;             // 0x14
+    NUVEC offset;             // 0x18
+    NUVEC snap_origin;        // 0x24
+    NUVEC snap_step;          // 0x30
+    i32 pitch_snap_step;      // 0x3c
+    i32 yaw_snap_step;        // 0x40
+    NUVEC snapped_position;   // 0x44
+    i32 snapped_pitch;        // 0x50
+    i32 snapped_yaw;          // 0x54
+    NUVEC position_speed;     // 0x58
+    i32 pad_pitch_speed;      // 0x64
+    i32 pad_yaw_speed;        // 0x68
+    f32 distance_speed;       // 0x6c
+    f32 minimum_distance;     // 0x70
+    f32 mouse_pitch_speed;    // 0x74
+    f32 mouse_yaw_speed;      // 0x78
+    f32 mouse_move_speed;     // 0x7c
+    f32 auto_move_base;       // 0x80
+    f32 auto_move_dist_scale; // 0x84
+    f32 auto_zoom_base;       // 0x88
+    f32 auto_zoom_dist_scale; // 0x8c
+    union {
+        u8 freedoms; // 0x90, EDCAM_FREEDOM bits
+        struct {
+            u8 allow_position_x : 1;
+            u8 allow_position_y : 1;
+            u8 allow_position_z : 1;
+            u8 allow_pitch : 1;
+            u8 allow_yaw : 1;
+            u8 allow_distance : 1;
+            u8 invert_pad_pitch : 1;
+            u8 reserved_freedom : 1;
+        };
+    };
+    u8 padding_91[3];
+};
+DECOMP_ASSERT(sizeof(edcam_s) == 0x94, "edcam_s size");
 struct eduiitem_s;
 struct eduimenu_s;
 struct envelope_lookup {};
@@ -1582,6 +1845,11 @@ enum NUINSTANIM_FLAGS : u32 {
 enum NUINSTANIM_PACKED_FIELDS : u16 {
     NUINSTANIM_END_FRAME_LOOKUP_MASK = 0xffc0,
     NUINSTANIM_END_FRAME_LOOKUP_SHIFT = 6,
+};
+
+enum NUINSTANIM_STATE_FIELDS : u32 {
+    NUINSTANIM_STATE_INDEX_MASK = 0x003fc000,
+    NUINSTANIM_STATE_INDEX_SHIFT = 14,
 };
 
 struct nuinstanim_s {
@@ -1654,7 +1922,67 @@ struct particlechunkrendertype_s {
     u8 fields_062[2];
 };
 DECOMP_ASSERT(sizeof(particlechunkrendertype_s) == 0x64, "particlechunkrendertype_s size");
-struct pushblock_s {};
+struct pushblock_s {
+    f32 ground_offset;                      // 0x00
+    f32 ground_height;                      // 0x04
+    f32 snap_timer;                         // 0x08
+    f32 settled_height;                     // 0x0c
+    i8 terrain_info[4];                     // 0x10
+    i8 extra_terrain_info[4];               // 0x14
+    i32 previous_extra_terrain_info;        // 0x18
+    pushblock_s *supporting_block;          // 0x1c
+    pushblock_s *previous_supporting_block; // 0x20
+    nuhspecial_s special;                   // 0x24
+    GameObject_s *pushing_object;           // 0x30
+    i32 platform_id;                        // 0x34
+    u8 fields_038[8];
+    f32 snap_distance;                     // 0x40
+    char name[0x10];                       // 0x44
+    NUVEC *snap_positions;                 // 0x54
+    NUVEC *position;                       // 0x58
+    nuhspecial_s end_position_specials[2]; // 0x5c
+    NUVEC end_position_origins[2];         // 0x74
+    NUVEC velocity;                        // 0x8c
+    NUVEC target_velocity;                 // 0x98
+    NUVEC snap_origin;                     // 0xa4
+    NUVEC bounds_min;                      // 0xb0
+    NUVEC bounds_max;                      // 0xbc
+    u8 runtime_flags_0c8;
+    u8 runtime_flags_0c9;
+    union {
+        u8 flags_0ca;
+        struct {
+            u8 fields_0ca_0_3 : 4;
+            u8 config_0ca_4 : 1;
+            u8 config_0ca_5 : 1;
+            u8 config_0ca_6 : 1;
+            u8 config_0ca_7 : 1;
+        };
+    };
+    union {
+        u8 flags_0cb;
+        struct {
+            u8 fields_0cb_0_1 : 2;
+            u8 config_0cb_2 : 1;
+            u8 config_0cb_3 : 1;
+            u8 field_0cb_4 : 1;
+            u8 config_0cb_5 : 1;
+            u8 config_0cb_6 : 1;
+            u8 field_0cb_7 : 1;
+        };
+    };
+    u16 completion_flags; // 0xcc
+    u8 end_position_count;
+    u8 output_count;
+};
+DECOMP_ASSERT(sizeof(pushblock_s) == 0xd0, "pushblock_s size");
+DECOMP_ASSERT(offsetof(pushblock_s, special) == 0x24, "pushblock_s special offset");
+DECOMP_ASSERT(offsetof(pushblock_s, name) == 0x44, "pushblock_s name offset");
+DECOMP_ASSERT(offsetof(pushblock_s, snap_positions) == 0x54, "pushblock_s snap positions offset");
+DECOMP_ASSERT(offsetof(pushblock_s, position) == 0x58, "pushblock_s position offset");
+DECOMP_ASSERT(offsetof(pushblock_s, end_position_specials) == 0x5c, "pushblock_s end positions offset");
+DECOMP_ASSERT(offsetof(pushblock_s, velocity) == 0x8c, "pushblock_s velocity offset");
+DECOMP_ASSERT(offsetof(pushblock_s, completion_flags) == 0xcc, "pushblock_s completion flags offset");
 struct ripple_node_s {};
 struct ripple_set_s {};
 struct rtlset {};
@@ -2039,21 +2367,78 @@ struct GIZFORCESYS_s {
 DECOMP_ASSERT(sizeof(GIZFORCESYS_s) == 0x158, "GIZFORCESYS_s ABI");
 DECOMP_ASSERT(offsetof(GIZFORCESYS_s, visible_force_count) == 0x10, "GIZFORCESYS visible count offset");
 struct GIZMOBLOWUP_s {
-    undefined field0_0x0[0x50];
-    char field_0x50[0x4f];      // 0x50 .. 0x9f
-    u8 field_0x9f;              // 0x9f  state/flags byte
-    i32 field_0xa0;             // 0xa0
-    char field_0xa4[0x8];       // 0xa4 .. 0xac
-    void *field_0xac;           // 0xac
-    float field_0xb0;           // 0xb0
-    undefined field_0xb4[0x6c]; // 0xb4 .. 0x120
-    void *field_0x120;          // 0x120
-    u8 field_0x124;             // 0x124
+    union {
+        NUMTX transform; // 0x00, instance transform refreshed by the early-update pass
+        struct {
+            undefined field0_0x0[0x30];
+            NUVEC position; // 0x30, translation exposed through GIZMOFNS
+            undefined field_0x3c[4];
+        };
+    };
+    undefined field_0x40[4];
+    NUVEC screen_position; // 0x44, projected by the draw pass
+    union {
+        char field_0x50[0x50]; // compatibility view used by level-specific links
+        struct {
+            NUVEC mid_position; // 0x50, center used by effects and collision
+            NUVEC bounds_min;   // 0x5c
+            NUVEC bounds_max;   // 0x68
+            u8 field_0x74[0x24];
+            f32 flicker_timer; // 0x98
+            union {
+                u32 status_flags; // 0x9c, aggregate tested by the draw pass
+                struct {
+                    u8 output_flags;     // 0x9c, GIZMOBLOWUP_OUTPUT_FLAGS
+                    u8 visibility_flags; // 0x9d, GIZMOBLOWUP_VISIBILITY_FLAGS
+                    u8 state_flags;      // 0x9e, GIZMOBLOWUP_STATE_FLAGS
+                    u8 field_0x9f;       // 0x9f, secondary output/runtime flags
+                };
+            };
+        };
+    };
+    union {
+        u32 draw_flags; // 0xa0, GIZMOBLOWUP_DRAW_FLAGS
+        u32 field_0xa0; // compatibility name for level-specific setup code
+    };
+    char field_0xa4[0x8];    // 0xa4 .. 0xac
+    GIZMOBLOWUPTYPE_s *type; // 0xac, shared type/animation data
+    f32 target_scale;        // 0xb0, scales the transform-target marker
+    undefined field_0xb4[8];
+    f32 activation_delay; // 0xbc
+    undefined field_0xc0[4];
+    f32 animation_time; // 0xc4, explicitly selected animation frame
+    undefined field_0xc8[8];
+    f32 animation_offset; // 0xd0, offset from the type's base frame
+    f32 respawn_timer;    // 0xd4
+    undefined field_0xd8[4];
+    f32 reflection_height;     // 0xdc
+    GAMEANTINODE_s *anti_node; // 0xe0, registered while the blowup is visible
+    undefined field_0xe4[0x16];
+    char name[0x10]; // 0xfa
+    i16 platform_id; // 0x10a, terrain platform toggled with visibility
+    undefined field_0x10c[0xa];
+    u8 saved_state_0;   // 0x116
+    u8 initial_state_0; // 0x117
+    u8 saved_state_1;   // 0x118
+    u8 initial_state_1; // 0x119
+    undefined field_0x11a[6];
+    void *field_0x120; // 0x120
+    u8 field_0x124;    // 0x124
     undefined field_0x125[3];
     float field_0x128; // 0x128
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };
+DECOMP_ASSERT(sizeof(GIZMOBLOWUP_s) == 0x12c, "GIZMOBLOWUP_s ABI");
+DECOMP_ASSERT(offsetof(GIZMOBLOWUP_s, position) == 0x30, "GIZMOBLOWUP position offset");
+DECOMP_ASSERT(offsetof(GIZMOBLOWUP_s, output_flags) == 0x9c, "GIZMOBLOWUP output flags offset");
+DECOMP_ASSERT(offsetof(GIZMOBLOWUP_s, status_flags) == 0x9c, "GIZMOBLOWUP aggregate status offset");
+DECOMP_ASSERT(offsetof(GIZMOBLOWUP_s, draw_flags) == 0xa0, "GIZMOBLOWUP draw flags offset");
+DECOMP_ASSERT(offsetof(GIZMOBLOWUP_s, type) == 0xac, "GIZMOBLOWUP type offset");
+DECOMP_ASSERT(offsetof(GIZMOBLOWUP_s, target_scale) == 0xb0, "GIZMOBLOWUP target scale offset");
+DECOMP_ASSERT(offsetof(GIZMOBLOWUP_s, reflection_height) == 0xdc, "GIZMOBLOWUP reflection height offset");
+DECOMP_ASSERT(offsetof(GIZMOBLOWUP_s, name) == 0xfa, "GIZMOBLOWUP name offset");
+DECOMP_ASSERT(offsetof(GIZMOBLOWUP_s, platform_id) == 0x10a, "GIZMOBLOWUP platform id offset");
 struct GIZOBSTACLE_s {
     char name[0x10];
     union {
@@ -2232,10 +2617,62 @@ struct PODMODELDATA_s {
     char pad_0x00[0x4];
     float *value; // 0x04 pointer to the pod model's speed value
 };
+enum GIZPANEL_FLAGS : u8 {
+    GIZPANEL_FLAG_STATE = 1 << 1,
+    GIZPANEL_FLAG_VISIBLE = 1 << 2,
+    GIZPANEL_FLAG_TRACK_PLAYER = 1 << 3,
+    GIZPANEL_FLAG_PLAYER_NEAR = 1 << 4,
+    GIZPANEL_FLAG_HIDE_BASE = 1 << 5,
+    GIZPANEL_FLAG_HIDE_TARGET = 1 << 6,
+    GIZPANEL_FLAG_BADDIE = 1 << 7,
+};
+
+enum GIZPANEL_DRAW_FLAGS : u8 {
+    GIZPANEL_DRAW_FLAG_ALT_MODEL = 1 << 0,
+    GIZPANEL_DRAW_FLAG_NO_SHADOW_RESET = 1 << 1,
+    GIZPANEL_DRAW_FLAG_LEGACY = 1 << 2,
+};
+
 struct GIZPANEL_s {
+    NUMTX matrix;    // 0x00
+    char name[0x10]; // 0x40
+    NUVEC position;  // 0x50
+    u16 y_rotation;  // 0x5c
+    u8 field_0x5e[3];
+    u8 model_variant; // 0x61
+    u8 field_0x62[2];
+    f32 flash_timer;                // 0x64
+    GIZPANEL_FLAGS flags;           // 0x68
+    GIZPANEL_DRAW_FLAGS draw_flags; // 0x69
+    u8 field_0x6a[2];
+    NUVEC floor_position;  // 0x6c
+    NUVEC target_offset;   // 0x78
+    u16 target_x_rotation; // 0x84
+    u16 target_y_rotation; // 0x86
+    u16 arm_x_rotation;    // 0x88
+    u16 target_pitch;      // 0x8a
+    u16 target_roll;       // 0x8c
+    i16 platform_id;       // 0x8e
+    f32 activation_time;   // 0x90
+    f32 target_scale;      // 0x94
+    u8 field_0x98[4];
+
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };
+DECOMP_ASSERT(sizeof(GIZPANEL_s) == 0x9c, "GIZPANEL_s ABI");
+DECOMP_ASSERT(offsetof(GIZPANEL_s, name) == 0x40, "GIZPANEL name offset");
+DECOMP_ASSERT(offsetof(GIZPANEL_s, position) == 0x50, "GIZPANEL position offset");
+DECOMP_ASSERT(offsetof(GIZPANEL_s, flags) == 0x68, "GIZPANEL flags offset");
+DECOMP_ASSERT(offsetof(GIZPANEL_s, floor_position) == 0x6c, "GIZPANEL floor-position offset");
+DECOMP_ASSERT(offsetof(GIZPANEL_s, platform_id) == 0x8e, "GIZPANEL platform-id offset");
+DECOMP_ASSERT(offsetof(GIZPANEL_s, activation_time) == 0x90, "GIZPANEL activation-time offset");
+
+struct GIZPANELSYS_s {
+    i32 count;
+    GIZPANEL_s *panels;
+};
+DECOMP_ASSERT(sizeof(GIZPANELSYS_s) == 8, "GIZPANELSYS_s ABI");
 enum GIZSPECIAL_FLAGS : u8 {
     GIZSPECIAL_FLAG_REVERSED = 0x01,
     GIZSPECIAL_FLAG_ACTIVE = 0x02,
@@ -2269,15 +2706,54 @@ DECOMP_ASSERT(sizeof(GIZSPECIALSYS_s) == 0x10, "GIZSPECIALSYS_s ABI");
 struct GIZTURRET_s {
     u8 field_0x00[8];
     char name[0x10];
-    GAMEANIMSET_s *anim_set; // 0x18
-    u8 field_0x1c[8];
-    NUVEC position; // 0x24, position exposed through GIZMOFNS
-    u8 field_0x30[0x144 - 0x30];
+    GAMEANIMSET_s *anim_set;           // 0x18
+    GAMEANIMOBJ_s *primary_anim_obj;   // 0x1c
+    GAMEANIMOBJ_s *secondary_anim_obj; // 0x20
+    NUVEC position;                    // 0x24, position exposed through GIZMOFNS
+    u8 field_0x30[0x54 - 0x30];
+    NUANG pitch; // 0x54
+    u8 field_0x58[0x60 - 0x58];
+    NUANG yaw; // 0x60
+    u8 field_0x64[0xf4 - 0x64];
+    f32 reflection_alpha; // 0xf4
+    f32 fire_cooldown;    // 0xf8
+    f32 fire_interval;    // 0xfc
+    f32 pitch_turn_speed; // 0x100
+    f32 yaw_turn_speed;   // 0x104
+    union {
+        u32 behavior_flags; // 0x108
+        struct {
+            u8 behavior_flags_low;
+            u8 animation_flags; // 0x109
+            u16 behavior_flags_high;
+        };
+    };
+    u8 field_0x10c[0x10e - 0x10c];
+    i16 room_id; // 0x10e
+    u8 field_0x110[0x128 - 0x110];
+    i16 base_y_rotation; // 0x128
+    i16 field_0x12a;
+    u8 field_0x12c;
+    i8 bolt_type_id; // 0x12d
+    u8 field_0x12e[0x13a - 0x12e];
+    u8 flags;         // 0x13a
+    u8 runtime_flags; // 0x13b
+    u8 field_0x13c[0x144 - 0x13c];
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };
 DECOMP_ASSERT(sizeof(GIZTURRET_s) == 0x144, "GIZTURRET_s ABI");
 DECOMP_ASSERT(offsetof(GIZTURRET_s, position) == 0x24, "GIZTURRET position offset");
+DECOMP_ASSERT(offsetof(GIZTURRET_s, pitch) == 0x54, "GIZTURRET pitch offset");
+DECOMP_ASSERT(offsetof(GIZTURRET_s, yaw) == 0x60, "GIZTURRET yaw offset");
+DECOMP_ASSERT(offsetof(GIZTURRET_s, base_y_rotation) == 0x128, "GIZTURRET base-y-rotation offset");
+DECOMP_ASSERT(offsetof(GIZTURRET_s, bolt_type_id) == 0x12d, "GIZTURRET bolt-type offset");
+DECOMP_ASSERT(offsetof(GIZTURRET_s, reflection_alpha) == 0xf4, "GIZTURRET reflection-alpha offset");
+DECOMP_ASSERT(offsetof(GIZTURRET_s, fire_cooldown) == 0xf8, "GIZTURRET fire-cooldown offset");
+DECOMP_ASSERT(offsetof(GIZTURRET_s, behavior_flags) == 0x108, "GIZTURRET behavior-flags offset");
+DECOMP_ASSERT(offsetof(GIZTURRET_s, animation_flags) == 0x109, "GIZTURRET animation-flags offset");
+DECOMP_ASSERT(offsetof(GIZTURRET_s, room_id) == 0x10e, "GIZTURRET room offset");
+DECOMP_ASSERT(offsetof(GIZTURRET_s, flags) == 0x13a, "GIZTURRET flags offset");
 
 struct GIZTURRETSYS_s {
     GIZTURRET_s *turrets;         // 0x00
@@ -2288,10 +2764,57 @@ struct GIZTURRETSYS_s {
 };
 DECOMP_ASSERT(sizeof(GIZTURRETSYS_s) == 0x10, "GIZTURRETSYS_s ABI");
 struct GameThingManager; // defined after ThingManager (derives from it)
+
+enum HATMACHINE_FLAGS : u8 {
+    HATMACHINE_FLAG_ANIMATING = 0x01,
+    HATMACHINE_FLAG_FINISHED = 0x02,
+    HATMACHINE_FLAG_VISIBLE = 0x04,
+    HATMACHINE_FLAG_ENABLED = 0x08,
+    HATMACHINE_FLAG_HIDE_MACHINE = 0x20,
+};
+
 struct HATMACHINE_s {
+    NUMTX transform;          // 0x00
+    char name[0x10];          // 0x40
+    NUVEC position;           // 0x50
+    u16 y_rotation;           // 0x5c
+    u8 configured_hat_count;  // 0x5e
+    u8 displayed_hat;         // 0x5f
+    i8 animation_state;       // 0x60
+    u8 machine_special_index; // 0x61
+    i8 target_special_index;  // 0x62
+    HATMACHINE_FLAGS flags;   // 0x63
+    NUVEC ground_offset;      // 0x64
+    NUVEC target_offset;      // 0x70
+    u16 ground_x_rotation;    // 0x7c
+    u16 ground_z_rotation;    // 0x7e
+    i16 platform_id;          // 0x80
+    u16 reserved_82;
+    f32 hat_delay;         // 0x84
+    f32 state_duration;    // 0x88
+    f32 state_elapsed;     // 0x8c
+    f32 target_scale;      // 0x90
+    f32 flash_timer;       // 0x94
+    f32 animation_time;    // 0x98
+    f32 idle_bounce_timer; // 0x9c
+    u8 reserved_a0[8];
+
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };
+DECOMP_ASSERT(sizeof(HATMACHINE_s) == 0xa8, "HATMACHINE_s ABI");
+DECOMP_ASSERT(offsetof(HATMACHINE_s, name) == 0x40, "HATMACHINE name offset");
+DECOMP_ASSERT(offsetof(HATMACHINE_s, position) == 0x50, "HATMACHINE position offset");
+DECOMP_ASSERT(offsetof(HATMACHINE_s, flags) == 0x63, "HATMACHINE flags offset");
+DECOMP_ASSERT(offsetof(HATMACHINE_s, hat_delay) == 0x84, "HATMACHINE timer offset");
+
+struct HATMACHINESYS_s {
+    i32 count; // 0x00
+    i32 reserved_04;
+    i32 reserved_08;
+    HATMACHINE_s *machines; // 0x0c
+};
+DECOMP_ASSERT(sizeof(HATMACHINESYS_s) == 0x10, "HATMACHINESYS_s ABI");
 struct HudRadarPulse {
     HudRadarPulse(VuVec const &);
     void IsFinished();
@@ -2713,9 +3236,9 @@ struct TTNetwork {
 // All ThingManager methods are virtual in the original: its vtable order is
 // D2, D0, AddThing, AddThingAfterThis, RemoveTemporaryThings,
 // RemoveDependanciesThings, ResetThings, EnterLevelThings, ExitLevelThings,
-// ProcessThings (vptr+0x24), RenderThings (vptr+0x28), DisplayThings,
-// EffectsThings. NuMain dispatches ProcessThings/RenderThings through the
-// vtable, so the declarations must carry the same slots.
+// ProcessThings (vptr+0x24), RenderThings (vptr+0x28), DisplayThings
+// (vptr+0x2c), EffectsThings (vptr+0x30). NuMain and PanelRender dispatch
+// through these slots, so the declarations must carry the same order.
 struct ThingManager {
     virtual ~ThingManager();
     virtual void AddThing(BaseThing *);

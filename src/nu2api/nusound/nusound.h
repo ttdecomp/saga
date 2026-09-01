@@ -33,11 +33,48 @@ typedef enum {
 } NUSOUND_STEREO_STREAM_STATUS;
 
 #ifdef __cplusplus
+enum MusicPlaybackState : i16 {
+    MUSIC_PLAYBACK_STOPPED = 0,
+    // Both transition states keep the non-primary stereo stream alive while
+    // a game cutscene temporarily owns the mixer.
+    MUSIC_PLAYBACK_DUAL_STREAM = 11,
+    MUSIC_PLAYBACK_DUAL_STREAM_PENDING = 13,
+};
+
+struct MusicPlayback {
+    MusicPlaybackState state;
+    i16 requested_track;
+    i16 primary_stream;
+    i16 current_track;
+    i16 transition_frames;
+    i16 queued_track;
+    i16 secondary_stream;
+    i16 resume_frames;
+    bool pause_requested;
+    bool restore_requested;
+    bool field_0x12;
+    bool field_0x13;
+    void *track_data;
+    f32 transition;
+    u16 update_delay;
+    i16 resume_track;
+    void *context;
+};
+
+DECOMP_ASSERT(sizeof(MusicPlayback) == 0x24, "MusicPlayback size");
+#endif
+
+#ifdef __cplusplus
 
 NUSOUND_FILENAME_INFO *ConfigureMusic(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd);
 
 extern "C" {
 #endif
+#ifdef __cplusplus
+    extern MusicPlayback Music;
+#endif
+    extern i32 NUSOUND_STREAM_3;
+
     i32 NuSound3InitV(VARIPTR *bufferStart, VARIPTR bufferEnd, i32 zero1, i32 zero2);
     i32 NuSound3PlayStereoV(NUSOUNDPLAYTOK, ...);
 
@@ -55,6 +92,7 @@ extern "C" {
     void NuSound3StopStereoStream(i32 stream_index);
     void NuSound3PauseStereoStream(i32 stream_index);
     void NuSound3ResumeStereoStream(i32 stream_index);
+    void NuSound3CancelCheckStereo(void);
     i32 NuSound3StreamKeyStatus(i32 stream_index);
     void NuSound3SetStereoStreamVolume(i32 stream_index, i32 volume);
     f32 NuSound3dBToAmplitude(f32 db);

@@ -164,12 +164,11 @@ typedef struct AIPATHNODE_s {
     u8 has_special;
     u8 runtime_flags;
     i16 path_flags;
-    u8 connection_type;
-    u8 padding_0x2f;
+    u8 distance_cache_nodes[2];
     u8 special_type;
     u8 padding_0x31[3];
     AIPATHCNX **connections;
-    u8 padding_0x38[8];
+    f32 distance_cache[2];
     union {
         u8 special_handle[0xc];
         struct {
@@ -233,6 +232,10 @@ typedef struct AIPATH_s {
 } AIPATH;
 
 enum AIPATH_CONNECTION_FLAGS : u32 {
+    // Bit 29 is connection metadata and does not request a character capability.
+    AIPATH_CONNECTION_FLAG_NO_CAPABILITY_REQUIRED = 0x20000000u,
+    AIPATH_CONNECTION_CAPABILITY_MASK = 0xdfffffffu,
+    AIPATH_CONNECTION_SPECIAL_MASK = 0xd8000000u,
     // Recomputed when either endpoint is attached to a moving special.
     AIPATH_CONNECTION_FLAG_DYNAMIC_TOO_LONG = 0x08000000u,
     AIPATH_CONNECTION_FLAG_SPECIAL_UNAVAILABLE = 0x10000000u,
@@ -265,12 +268,9 @@ typedef struct AILOCATOR_s {
 
 typedef struct AILOCATORSET_s {
     char name[0x10];
-    u8 locator_count;
+    i8 locator_count;
     u8 padding_0x11[3];
-    // One 0x1c-byte runtime record per locator. The first byte is the locator
-    // index read from ai2; the remaining fields are populated by locator-set
-    // assignment at runtime.
-    void *locator_entries;
+    u8 *locator_entries;
     u8 *assigned;
 } AILOCATORSET;
 
@@ -303,12 +303,19 @@ typedef struct AIAREA_s {
         i16 rotation;
         i16 flags;
     };
-    u8 padding_0x2a;
+    u8 runtime_flags;
     u8 game_flags;
     u8 padding_0x2c[8];
     struct AISYS_s *system;
     u8 padding_0x38[4];
 } AIAREA;
+
+enum AIAREA_RUNTIME_FLAGS : u8 {
+    AIAREA_RUNTIME_PLAYER_PRESENT = 0x01,
+    AIAREA_RUNTIME_OBJECT_STATE_CLEAR = 0x02,
+    AIAREA_RUNTIME_OBJECT_STATE_SET = 0x04,
+    AIAREA_RUNTIME_CHARACTER_SLOT_SEEN = 0x08,
+};
 
 typedef struct AISCRIPTPROCESSSTACK_s {
     f32 complex_params[4];
@@ -329,7 +336,7 @@ typedef struct AISCRIPTPROCESS_s {
     AISCRIPTPROCESSSTACK param_stack[2];
 
     u32 is_first_time_action : 1;
-    u32 unknown_flag_2 : 1;
+    u32 is_disabled : 1;
     u32 unknown_flag_4 : 1;
 
     AIREFSCRIPT *active_refs[4];
@@ -545,6 +552,7 @@ typedef struct AISYS_s {
 
 DECOMP_ASSERT(sizeof(AICREATURE) == 0xa4, "AICREATURE size");
 DECOMP_ASSERT(sizeof(AIAREA) == 0x3c, "AIAREA size");
+DECOMP_ASSERT(offsetof(AIAREA, runtime_flags) == 0x2a, "AIAREA runtime flags offset");
 DECOMP_ASSERT(sizeof(AILOCATOR) == 0x3c, "AILOCATOR size");
 DECOMP_ASSERT(sizeof(AILOCATORSET) == 0x1c, "AILOCATORSET size");
 DECOMP_ASSERT(sizeof(AIPATHCNX) == 0x24, "AIPATHCNX size");
@@ -593,6 +601,46 @@ typedef struct AISCRIPTCONDITIONDEF_s {
     AICONDITIONINITFN *init_fn;
 } AICONDITIONDEF;
 
+// Shared registry indices let each callback-owning translation unit install
+// its local callbacks without changing their linkage.  Keep these values in
+// lockstep with the table definitions.
+enum AISCRIPT_REGISTRY_INDEX {
+    API_AI_ACTION_IDLE = 0,
+    API_AI_ACTION_RESET_TIMER = 2,
+    API_AI_ACTION_GO_TO_LOCATOR = 35,
+    API_AI_ACTION_FOLLOW_PATH = 38,
+    API_AI_CONDITION_TIMER = 2,
+    API_AI_CONDITION_RANDOM = 3,
+
+    LEGO_AI_ACTION_SET_DOOMED_ESCAPE_LOCATOR = 11,
+    LEGO_AI_ACTION_SNAP_TO_SOCK_POSITION = 13,
+    LEGO_AI_ACTION_CAN_SHOOT_OFF_SCREEN = 17,
+    LEGO_AI_ACTION_SET_BOLTS_DONT_GET_DEFLECTED_BACK = 22,
+    LEGO_AI_ACTION_CAN_SHOOT_OBSTRUCTIONS = 23,
+    LEGO_AI_ACTION_CAN_HIT_FORCE_OBJECTS = 32,
+    LEGO_AI_ACTION_PLAYER_SPEEDER_HACK = 34,
+    LEGO_AI_ACTION_CHAR_CLIP_TO_BLOB_SHADOWS = 47,
+    LEGO_AI_ACTION_DEFLECT_PLAYERS_PART = 55,
+    LEGO_AI_ACTION_SET_AI_OVERRIDE_CONTROL = 59,
+    LEGO_AI_ACTION_SET_LAST_SAFE_PATH_POS = 60,
+    LEGO_AI_ACTION_DONT_SET_STOPPED_FLAG = 62,
+    LEGO_AI_ACTION_PRESS_SPECIAL_BUTTON = 63,
+    LEGO_AI_ACTION_PRESS_ACTION_BUTTON = 65,
+    LEGO_AI_ACTION_DONT_AVOID_CHARACTER = 69,
+    LEGO_AI_ACTION_SET_ZERO_ACCELERATION = 74,
+    LEGO_AI_ACTION_CREATE_CREATURES = 78,
+
+    LEGO_AI_CONDITION_SPECIAL_AT_START = 0,
+    LEGO_AI_CONDITION_NUM_IN_SET_ALIVE = 1,
+    LEGO_AI_CONDITION_BEEN_TO_LEVEL = 2,
+    LEGO_AI_CONDITION_MESSAGE = 3,
+    LEGO_AI_CONDITION_CUT_SCENE_FINISHED = 4,
+    LEGO_AI_CONDITION_FREEPLAY = 5,
+    LEGO_AI_CONDITION_IS_LOW_END_DEVICE = 7,
+    LEGO_AI_CONDITION_RANDOM_MAP_CHARS_AVAILABLE = 8,
+    LEGO_AI_CONDITION_CHARACTER_LOADED = 9,
+};
+
 typedef i32 GAMEPARAMTOFLOAT(AIPACKET *, AISCRIPTPROCESS *, char *, f32 *);
 typedef i32 AICHARACTERTYPEID(char *name);
 // Character lookups return -1 when no entry exists.  This must remain a
@@ -617,9 +665,11 @@ extern "C" {
     extern i32 AiParseExpressionFailed;
 
     extern AICONDITIONDEF api_aiconditiondefs[];
+    extern AICONDITIONDEF lego_aiconditiondefs[];
 
     extern AIACTIONDEF api_aiactiondefs[];
     extern AIACTIONDEF *game_aiactiondefs;
+    extern AIACTIONDEF lego_aiactiondefs[];
 
     extern NULISTHDR global_aiscripts;
 
@@ -682,8 +732,16 @@ extern "C" {
     f32 AIParamToFloatEx(AIPACKET *packet, AISCRIPTPROCESS *processor, char *param);
 
     AIPATH *AISysFindPath(AISYS *system, char *name);
+    AILOCATOR *AIPathFindLocator(AISYS *system, char *name);
+    AILOCATORSET *AIPathFindLocatorSet(AISYS *system, char *name);
+    void AILocatorSet_CheckLocatorsStillAssigned(AISYS *system, AILOCATORSET *locator_set);
     void AISysCharacterSetPath(AIPACKET *packet, AIPATH *path);
     void AISysCharacterSetPathCnx(AIPACKET *packet, NUVEC *position, AIPATHCNX *connection, i32 direction);
+    i32 WithinConnection(AISYS *system, NUVEC *position, AIPATH *path, AIPATHCNX *connection, i32 checks,
+                         AIPATHCNX *previous_connection, i32 route, i32 ground, AIPATHINFO *path_info, f32 radius,
+                         i32 update_once);
+    f32 AIPathNodeDistanceToPathNode(AIPATH *path, i32 start_node, i32 destination_node, i32 route,
+                                     u32 excluded_route_mask);
     void AISysGetCharacterPathPos(AISYS *system, APIOBJECT *object, AIPACKET *packet, i32 checks, i32 ground);
     void AISysUpdateCharacterPathPos(AISYS *system, APIOBJECT *object, AIPACKET *packet, i32 checks, f32 elapsed);
     void AISysCharacterMovement(AISYS *system, AIPACKET *packet, APIOBJECT *object, i32 checks);

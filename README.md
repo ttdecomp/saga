@@ -1,4 +1,4 @@
-![Progress](https://img.shields.io/badge/matching-13.12%25-red)
+![Progress](https://img.shields.io/badge/matching-14.51%25-red)
 [![Discord](https://img.shields.io/discord/1467775700894224555?color=%235865F2&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/2HJuMtzA7q)
 
 |                 | Target (Android x86)                                                                                                                                                                                  | Host                                                                                                                                                                                  |
@@ -31,10 +31,9 @@ The Android x86 build uses the NDK r8e toolchain and targets the original
 Android platform. It is the matching build; its output is not a host-runnable
 game executable.
 
-A host build uses the configured host C/C++ compiler and is used for testing
-and development. The default host target builds 32-bit i686 code on non-Windows
-systems; a separate host64 target builds native 64-bit code. Both enable
-AddressSanitizer by default on non-Windows systems.
+A host build uses the configured host C/C++ compiler. On non-Windows systems it
+builds 32-bit i686 code with AddressSanitizer and is used for testing and
+development.
 
 
 ### Android x86 build
@@ -52,18 +51,14 @@ cmake --build build
 cmake -B build-host -DBUILD_FOR_HOST=ON
 cmake --build build-host
 
-# executable
-./build-host/saga
-```
+# run the game
+./build-host/saga window
 
-### 64-bit host build
+# enter the Cantina and rotate the camera through 360 degrees in 10 seconds
+./build-host/saga window --camera-orbit
 
-```bash
-cmake -B build-host64 -DBUILD_FOR_HOST64=ON
-cmake --build build-host64
-
-# executable
-./build-host64/saga
+# enter the Cantina with a free camera (numpad 8/5/4/6; hold Shift to move)
+./build-host/saga window --camera-free
 ```
 
 ## Contributing
@@ -94,29 +89,29 @@ See the [documentation index](doc/main.md).
 
 | Directory | Fuzzy % | Funcs % | Data % |
 |---|---|---|---|
-| `(root)` | 61.3% | 50.0% | 0.0% |
+| `(root)` | 62.3% | 50.0% | 0.0% |
 | `MechInputTouch` | 5.0% | 0.0% | 5.1% |
 | `editor` | 2.6% | 0.0% | - |
-| `gameapi` | 7.1% | 1.5% | 94.8% |
+| `gameapi` | 8.1% | 3.9% | 92.6% |
 | `gameframework` | 76.4% | 23.5% | 100.0% |
-| `gamelib` | 5.8% | 0.8% | 11.6% |
+| `gamelib` | 5.8% | 0.8% | 12.1% |
 | `java` | 10.7% | 0.0% | 0.0% |
-| `legoapi` | 11.5% | 12.1% | 31.6% |
-| `legoapi/actions` | 5.8% | 1.4% | 62.3% |
-| `legoapi/ai` | 10.0% | 1.1% | 88.5% |
-| `legoapi/audio` | 5.1% | 6.6% | 88.7% |
-| `legoapi/characters` | 10.1% | 6.9% | 36.1% |
-| `legoapi/core` | 20.8% | 12.4% | 97.8% |
-| `legoapi/cutscenes` | 6.1% | 2.3% | 95.5% |
-| `legoapi/gizmo` | 9.3% | 9.1% | 32.9% |
-| `legoapi/gizmos` | 21.5% | 15.0% | 98.0% |
-| `legoapi/items` | 6.5% | 13.9% | 4.0% |
-| `legoapi/menus` | 10.5% | 12.6% | 21.1% |
-| `legoapi/misc` | 5.0% | 2.0% | 100.0% |
-| `legoapi/props` | 22.7% | 9.9% | 58.8% |
-| `legoapi/render` | 8.9% | 11.2% | 95.1% |
-| `legoapi/world` | 21.7% | 29.8% | 1.3% |
-| `legogame` | 48.0% | 43.8% | 85.4% |
-| `nu2api` | 32.0% | 25.1% | 9.3% |
+| `legoapi` | 13.5% | 14.4% | 32.6% |
+| `legoapi/actions` | 5.9% | 1.8% | 62.3% |
+| `legoapi/ai` | 11.5% | 2.2% | 88.5% |
+| `legoapi/audio` | 6.2% | 7.4% | 96.0% |
+| `legoapi/characters` | 11.6% | 7.5% | 36.2% |
+| `legoapi/core` | 25.1% | 12.8% | 97.8% |
+| `legoapi/cutscenes` | 7.3% | 5.2% | 95.7% |
+| `legoapi/gizmo` | 10.4% | 9.9% | 33.0% |
+| `legoapi/gizmos` | 35.4% | 30.1% | 98.2% |
+| `legoapi/items` | 6.8% | 13.9% | 7.9% |
+| `legoapi/menus` | 11.1% | 14.1% | 21.4% |
+| `legoapi/misc` | 6.6% | 3.0% | 100.0% |
+| `legoapi/props` | 30.1% | 9.9% | 59.8% |
+| `legoapi/render` | 10.2% | 11.9% | 95.1% |
+| `legoapi/world` | 21.9% | 30.1% | 1.3% |
+| `legogame` | 48.6% | 43.8% | 85.4% |
+| `nu2api` | 33.1% | 25.9% | 9.3% |
 
 <!-- matching-table-end -->

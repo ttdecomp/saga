@@ -138,6 +138,7 @@ void NuPadRecordEndFrame(void);                                  // nupad_interf
 void bgSuspendMain(i32);                                         // main.cpp
 void NuAnimBuffInit(i32, VARIPTR *, VARIPTR);                    // nu2api_nucore_misc.cpp
 i32 NuCameraClipHGobj(nugscn_s *, NUMTX *, NUMTX *);             // nu2api_nucore_misc.cpp
+i32 findrange(nugscn_s *, i32);                                  // utilities.cpp
 
 extern "C" {
 
@@ -146,8 +147,8 @@ extern "C" {
     // ---------------------------------------------------------------------------
 
     void NuHasError(void);
-    void NuMtlAnimate(void);
-    void NuTexAnimProcess(void);
+    void NuMtlAnimate(f32 frame_time);
+    void NuTexAnimProcess(f32 frame_time);
     void NuWindAnimate(void);
     void NuTimeBarSetRender(void);
     void NuRndrSwapScreenEx(i32 mode, void (*callback)(void));
@@ -219,7 +220,50 @@ extern "C" {
     }
     void NuCameraClipTestPointVport(void) {
     }
-    void NuCameraClipTestPoints(void) {
+    i32 NuCameraClipTestPoints(NUVEC *points, i32 count, NUMTX *world_mtx) {
+        enum CLIP_POINT_FLAGS {
+            CLIP_POINT_LEFT = 0x01,
+            CLIP_POINT_RIGHT = 0x02,
+            CLIP_POINT_TOP = 0x04,
+            CLIP_POINT_BOTTOM = 0x08,
+            CLIP_POINT_FAR = 0x10,
+            CLIP_POINT_NEAR = 0x20,
+        };
+
+        NUMTX clip_matrix;
+        if (world_mtx != NULL) {
+            NuMtxMulH(&clip_matrix, world_mtx, &vmtx);
+        } else {
+            clip_matrix = vmtx;
+        }
+
+        i32 common_flags = -1;
+        for (i32 index = 0; index < count; ++index) {
+            NUVEC transformed;
+            NuVecMtxTransform(&transformed, &points[index], &clip_matrix);
+
+            i32 flags = 0;
+            if (transformed.z < global_camera.near_clip) {
+                flags |= CLIP_POINT_NEAR;
+            }
+            if (transformed.z > global_camera.far_clip) {
+                flags |= CLIP_POINT_FAR;
+            }
+            if (transformed.x < -transformed.z * zx) {
+                flags |= CLIP_POINT_LEFT;
+            }
+            if (transformed.x > transformed.z * zx) {
+                flags |= CLIP_POINT_RIGHT;
+            }
+            if (transformed.y < -transformed.z * zy) {
+                flags |= CLIP_POINT_BOTTOM;
+            }
+            if (transformed.y > transformed.z * zy) {
+                flags |= CLIP_POINT_TOP;
+            }
+            common_flags &= flags;
+        }
+        return common_flags;
     }
     void NuCameraFOVToFocalLen(void) {
     }
@@ -335,7 +379,7 @@ extern "C" {
     }
     void NuCameraTransformScreen(void) {
     }
-    void NuCameraTransformScreenClip(void) {
+    void NuCameraTransformScreenClip(NUVEC *, NUVEC *, i32, NUMTX *) {
     }
     void NuCameraTransformScreenVU0(void) {
     }
@@ -348,7 +392,73 @@ extern "C" {
     // Display list — faithful helpers + pending stubs
     // ---------------------------------------------------------------------------
 
-    void NuDisplayListAnimateMtls(void) {
+    void NuDisplayListBeginCriticalSection(void);
+    void NuDisplayListEndCriticalSection(void);
+
+    void NuDisplayListAnimateMtls(f32 frame_time) {
+        static f32 sinetime = 0.0f;
+        sinetime += frame_time;
+
+        NuDisplayListBeginCriticalSection();
+        for (NUMTLANIMSET *set = global_dlist_manager.mtlanim_list; set != NULL; set = set->next) {
+            for (i32 index = 0; index < set->material_count; ++index) {
+                NUMTL *material = set->scene->mtls[set->material_indices[index]];
+                if (material->disable_u_animation == 1 || material->disable_v_animation == 1) {
+                    continue;
+                }
+
+                for (u32 layer = 0; layer < 4; ++layer) {
+                    if (material->shader_desc.tex_anim_data[layer] == -1) {
+                        continue;
+                    }
+
+                    NUTEXANIMDATA &animation = material->shader_desc.tex_anim_desc[layer];
+                    f32 u = 0.0f;
+                    f32 v = 0.0f;
+
+                    switch (animation.u_mode) {
+                        case NUTEXANIM_MODE_LINEAR:
+                            material->shader_desc.tex_anim_offsets[layer][0] += frame_time * animation.u_frequency;
+                            material->shader_desc.tex_anim_offsets[layer][0] -=
+                                NuFloor(material->shader_desc.tex_anim_offsets[layer][0]);
+                            u = material->shader_desc.tex_anim_offsets[layer][0];
+                            break;
+                        case NUTEXANIM_MODE_SINE:
+                            u = NU_SIN_LUT(static_cast<i32>(animation.u_frequency * sinetime * 65536.0f)) *
+                                animation.u_amplitude;
+                            break;
+                        case NUTEXANIM_MODE_COSINE:
+                            u = NU_COS_LUT(static_cast<i32>(animation.u_frequency * sinetime * 65536.0f)) *
+                                animation.u_amplitude;
+                            break;
+                        default:
+                            break;
+                    }
+
+                    switch (animation.v_mode) {
+                        case NUTEXANIM_MODE_LINEAR:
+                            material->shader_desc.tex_anim_offsets[layer][1] += frame_time * animation.v_frequency;
+                            material->shader_desc.tex_anim_offsets[layer][1] -=
+                                NuFloor(material->shader_desc.tex_anim_offsets[layer][1]);
+                            v = material->shader_desc.tex_anim_offsets[layer][1];
+                            break;
+                        case NUTEXANIM_MODE_SINE:
+                            v = NU_SIN_LUT(static_cast<i32>(animation.v_frequency * sinetime * 65536.0f)) *
+                                animation.v_amplitude;
+                            break;
+                        case NUTEXANIM_MODE_COSINE:
+                            v = NU_COS_LUT(static_cast<i32>(animation.v_frequency * sinetime * 65536.0f)) *
+                                animation.v_amplitude;
+                            break;
+                        default:
+                            break;
+                    }
+
+                    NuMtlSetUVOffsetPS(material, layer, u, v);
+                }
+            }
+        }
+        NuDisplayListEndCriticalSection();
     }
     void NuDisplayListBeginCriticalSection(void) {
     }
@@ -735,9 +845,9 @@ extern "C" {
             nuapi.frametime = NuTimeSeconds(&delta);
         }
 
-        NuMtlAnimate();     // original passes frametime
-        NuTexAnimProcess(); // original passes frametime
-        NuWindAnimate();    // original: (wind, frametime)
+        NuMtlAnimate(nuapi.frametime);
+        NuTexAnimProcess(nuapi.frametime);
+        NuWindAnimate(); // original: (wind, frametime)
         NuOcclusionManagerEndFrame();
         NuPadRecordEndFrame();
         NuTimeBarSetRender(); // original passes -1
@@ -907,19 +1017,20 @@ extern "C" {
         }
         buffer->joint_count = object->joint_count;
 
-        // The public hierarchy evaluators pass zero here.  Non-zero values
-        // name a restricted hierarchy range and are handled by findrange in
-        // the original; that range helper is still pending transcription.
-        i32 joint = first_joint;
-        if (overwrite != 0) {
-            ANI_SimpleAni3PlayerV4Joint(animation, time - 1.0f, buffer, joint, object->joint_count - joint);
-        } else {
-            ANI_SimpleAni3PlayerV4Joint_Blend(animation, time - 1.0f, buffer, blend, joint, object->joint_count - joint,
-                                              root_translation);
+        i32 end_joint = object->joint_count;
+        if (first_joint != 0) {
+            end_joint = findrange(reinterpret_cast<nugscn_s *>(object), first_joint) + 1;
         }
-        if (root_translation != NULL && object->joint_count != 0) {
-            *root_translation = buffer->joints[0].translation;
-            root_translation->z = -root_translation->z;
+        if (overwrite != 0) {
+            ANI_SimpleAni3PlayerV4Joint(animation, time - 1.0f, buffer, end_joint - first_joint, first_joint);
+            if (root_translation != NULL) {
+                root_translation->x = buffer->joints[0].translation.x;
+                root_translation->y = buffer->joints[0].translation.y;
+                root_translation->z = -buffer->joints[0].translation.z;
+            }
+        } else {
+            ANI_SimpleAni3PlayerV4Joint_Blend(animation, time - 1.0f, buffer, blend, end_joint - first_joint,
+                                              first_joint, root_translation);
         }
     }
     void *NuAnimBuffCreate(i32 max_joints, VARIPTR *buf) {
@@ -965,23 +1076,26 @@ extern "C" {
     }
     // Original @0x2bd180.  Evaluate the decompressed per-joint samples into
     // hierarchy matrices while carrying scale through the parent chain.
-    void NuAnimBuffEvaluate_3(nuanimbuff_s *buffer, nuhgobj_s *object, NUMTX *matrices, ani3_animheader_s *,
-                              NUHGOBJROOTFN root_fn, NUVEC *, void *root_data) {
+    void NuAnimBuffEvaluate_3(nuanimbuff_s *buffer, nuhgobj_s *object, NUMTX *matrices, ani3_animheader_s *animation,
+                              NUHGOBJROOTFN root_fn, NUVEC *root_translation, void *root_data) {
         if (buffer == NULL) {
             buffer = static_cast<nuanimbuff_s *>(globalbuffer);
         }
 
-        NUVEC accumulated_scale[256];
+        static NUVEC scale_array[256];
+        scale_array[0xff] = {1.0f, 1.0f, 1.0f};
+
         const i32 evaluated_count =
-            buffer->joint_count < object->joint_count ? buffer->joint_count : object->joint_count;
+            animation->node_count < object->joint_count ? animation->node_count : object->joint_count;
+        NUVEC root_values = {0.0f, 0.0f, 0.0f};
         for (i32 joint_index = 0; joint_index < evaluated_count; ++joint_index) {
             const nuanimbuffjoint_s &joint = buffer->joints[joint_index];
             const u8 flags = buffer->joint_flags[joint_index];
             const u8 parent_index = object->joints[joint_index].parent_index;
-            const NUVEC parent_scale = parent_index == 0xff ? NUVEC{1.0f, 1.0f, 1.0f} : accumulated_scale[parent_index];
+            const NUVEC parent_scale = scale_array[parent_index];
 
             NUMTX local_matrix;
-            if ((flags & 1) != 0) {
+            if ((flags & NUANIMBUFF_JOINT_ROTATION) != 0) {
                 constexpr f32 kRadiansToNuAngle = 10430.378f;
                 NUANGVEC angles = {
                     static_cast<NUANG>(joint.rotation.x * kRadiansToNuAngle),
@@ -989,39 +1103,46 @@ extern "C" {
                     static_cast<NUANG>(joint.rotation.z * kRadiansToNuAngle),
                 };
                 NuMtxSetRotateXYZ(&local_matrix, &angles);
-                if ((flags & 0x20) != 0) {
-                    NuMtxMulH(&local_matrix, &local_matrix, &object->bind_matrices[joint_index]);
+                if ((flags & NUANIMBUFF_JOINT_BIND_MATRIX) != 0) {
+                    NuMtxMulRVU0(&local_matrix, &local_matrix, &object->joints[joint_index].animation_bind_matrix);
                 }
-            } else if ((flags & 0x20) != 0) {
-                local_matrix = object->bind_matrices[joint_index];
+            } else if ((flags & NUANIMBUFF_JOINT_BIND_MATRIX) != 0) {
+                local_matrix = object->joints[joint_index].animation_bind_matrix;
             } else {
                 NuMtxSetIdentity(&local_matrix);
             }
 
-            if ((flags & 8) != 0) {
-                NuMtxPreScale(&local_matrix, const_cast<NUVEC *>(&joint.scale));
-                accumulated_scale[joint_index] = {
+            if ((flags & NUANIMBUFF_JOINT_SCALE) != 0) {
+                NuMtxPreScaleVU0(&local_matrix, const_cast<NUVEC *>(&joint.scale));
+                scale_array[joint_index] = {
                     joint.scale.x * parent_scale.x,
                     joint.scale.y * parent_scale.y,
                     joint.scale.z * parent_scale.z,
                 };
             } else {
-                accumulated_scale[joint_index] = parent_scale;
+                scale_array[joint_index] = parent_scale;
             }
 
-            if ((flags & 0x10) != 0) {
-                NUVEC inverse_parent_scale = {
-                    parent_scale.x != 0.0f ? 1.0f / parent_scale.x : 1.0f,
-                    parent_scale.y != 0.0f ? 1.0f / parent_scale.y : 1.0f,
-                    parent_scale.z != 0.0f ? 1.0f / parent_scale.z : 1.0f,
-                };
-                NuMtxScale(&local_matrix, &inverse_parent_scale);
+            if ((flags & NUANIMBUFF_JOINT_CANCEL_PARENT_SCALE) != 0) {
+                NUVEC inverse_parent_scale = {0.0f, 0.0f, 0.0f};
+                if (parent_scale.x != 0.0f && parent_scale.y != 0.0f && parent_scale.z != 0.0f) {
+                    inverse_parent_scale = {
+                        1.0f / parent_scale.x,
+                        1.0f / parent_scale.y,
+                        1.0f / parent_scale.z,
+                    };
+                }
+                scale_array[joint_index].x *= inverse_parent_scale.x;
+                scale_array[joint_index].y *= inverse_parent_scale.y;
+                scale_array[joint_index].z *= inverse_parent_scale.z;
+                NuMtxScaleVU0(&local_matrix, &inverse_parent_scale);
             }
 
-            if ((flags & 2) != 0) {
+            if ((flags & NUANIMBUFF_JOINT_TRANSLATION) != 0) {
                 NUVEC translation = joint.translation;
-                translation.z = -translation.z;
                 NuMtxTranslate(&local_matrix, &translation);
+                root_values = joint.translation;
+                root_values.z = -root_values.z;
             }
 
             local_matrix.m02 = -local_matrix.m02;
@@ -1031,17 +1152,19 @@ extern "C" {
             local_matrix.m23 = -local_matrix.m23;
             local_matrix.m32 = -local_matrix.m32;
 
-            if (root_fn != NULL && joint_index == 0) {
-                NUVEC translation = joint.translation;
-                NUVEC rotation = joint.rotation;
-                NUVEC scale = joint.scale;
-                root_fn(&local_matrix, root_data, &translation, &rotation, &scale, 1.0f);
+            if (root_fn != NULL) {
+                root_fn(&local_matrix, root_data, &root_values, &root_values, root_translation, 0.0f);
+                root_fn = NULL;
             }
 
             if (parent_index == 0xff) {
                 matrices[joint_index] = local_matrix;
             } else {
-                NuMtxMulH(&matrices[joint_index], &local_matrix, &matrices[parent_index]);
+                NuMtxMulVU0(&matrices[joint_index], &local_matrix, &matrices[parent_index]);
+            }
+
+            if ((parent_index & 0x40) != 0) {
+                scale_array[joint_index] = {1.0f, 1.0f, 1.0f};
             }
         }
 
@@ -1049,7 +1172,74 @@ extern "C" {
             NuMtxSetIdentity(&matrices[joint_index]);
         }
     }
-    void NuAnimBuffProceduralAnimation(void) {
+    // Original @0x2bd900. Apply the character's per-joint procedural offsets
+    // to a decompressed ANI4/ANI5 pose before hierarchy evaluation.
+    void NuAnimBuffProceduralAnimation(nuanimbuff_s *buffer, nuhgobj_s *object, i32 override_count,
+                                       NUJOINTANIM_s *overrides) {
+        if (buffer == NULL) {
+            buffer = static_cast<nuanimbuff_s *>(globalbuffer);
+        }
+
+        constexpr f32 kRadiansToNuAngle = 10430.378f;
+        constexpr f32 kNuAngleToRadians = 0.0000958738f;
+
+        for (i32 override_index = 0; override_index < override_count; ++override_index) {
+            NUJOINTANIM_s &joint_override = overrides[override_index];
+            if (joint_override.joint_index >= object->joint_override_map_count) {
+                continue;
+            }
+
+            const u8 joint_index = object->joint_override_map[joint_override.joint_index];
+            if (joint_index == 0xff) {
+                continue;
+            }
+
+            nuanimbuffjoint_s &joint = buffer->joints[joint_index];
+            const u8 flags = joint_override.flags;
+            if ((flags & NUJOINTANIM_ROTATION) != 0) {
+                joint.rotation.x += joint_override.rotation.x;
+                joint.rotation.y += joint_override.rotation.y;
+                joint.rotation.z += joint_override.rotation.z;
+
+                i32 angles[3] = {
+                    static_cast<i32>(joint.rotation.x * kRadiansToNuAngle),
+                    static_cast<i32>(joint.rotation.y * kRadiansToNuAngle),
+                    static_cast<i32>(joint.rotation.z * kRadiansToNuAngle),
+                };
+                const u8 limit_flags[3] = {
+                    NUJOINTANIM_LIMIT_ROTATION_X,
+                    NUJOINTANIM_LIMIT_ROTATION_Y,
+                    NUJOINTANIM_LIMIT_ROTATION_Z,
+                };
+                for (i32 axis = 0; axis < 3; ++axis) {
+                    if ((flags & limit_flags[axis]) != 0) {
+                        const u32 wrapped = static_cast<u32>(angles[axis]) & 0xffff;
+                        angles[axis] =
+                            wrapped >= 0x8000 ? static_cast<i32>(wrapped) - 0x10000 : static_cast<i32>(wrapped);
+                        if (joint_override.rotation_limit_start[axis] >= angles[axis] &&
+                            angles[axis] < joint_override.rotation_limit_end[axis]) {
+                            angles[axis] = joint_override.rotation_limit_end[axis];
+                        }
+                    }
+                }
+                joint.rotation = {
+                    static_cast<f32>(angles[0]) * kNuAngleToRadians,
+                    static_cast<f32>(angles[1]) * kNuAngleToRadians,
+                    static_cast<f32>(angles[2]) * kNuAngleToRadians,
+                };
+            }
+
+            if ((flags & NUJOINTANIM_SCALE) != 0) {
+                joint.scale.x += joint_override.scale.x;
+                joint.scale.y += joint_override.scale.y;
+                joint.scale.z += joint_override.scale.z;
+            }
+            if ((flags & NUJOINTANIM_TRANSLATION) != 0) {
+                joint.translation.x += joint_override.translation.x;
+                joint.translation.y += joint_override.translation.y;
+                joint.translation.z += joint_override.translation.z;
+            }
+        }
     }
     f32 NuAnimCurve2CalcValEx(nuanimcurve2_s *curve, nuanimtime_s *time, u32 type) {
         nuanimcurvedata_s *data = curve->data.curvedata;
@@ -1164,7 +1354,33 @@ extern "C" {
     }
     void NuAnimCurve2SetApplyToJointTransLoc(void) {
     }
-    void NuAnimCurve2SetApplyToMatrix_3(void) {
+    void NuAnimCurve2SetApplyToMatrix_3(ani3_animheader_s *animation, i32 node, f32 frame, NUMTX *matrix) {
+        u8 node_flags = animation->node_flags[node];
+        f32 *values = NuAnimCurveExtractAllNodeCurves_3(animation, node, frame, NULL);
+
+        if ((node_flags & NUANIM_NODE_HAS_ROTATION) != 0) {
+            NUANGVEC rotation;
+            rotation.x = static_cast<NUANG>(values[3] * 10430.378f);
+            rotation.y = static_cast<NUANG>(values[4] * 10430.378f);
+            rotation.z = static_cast<NUANG>(values[5] * 10430.378f);
+            NuMtxSetRotateXYZVU0(matrix, &rotation);
+        } else {
+            NuMtxSetIdentity(matrix);
+        }
+
+        if ((node_flags & NUANIM_NODE_HAS_SCALE) != 0) {
+            NuMtxPreScaleVU0(matrix, reinterpret_cast<NUVEC *>(&values[6]));
+        }
+
+        NuMtxTranslate(matrix, reinterpret_cast<NUVEC *>(values));
+
+        // ANI3 animation data uses the opposite handedness for Z.
+        matrix->m02 = -matrix->m02;
+        matrix->m12 = -matrix->m12;
+        matrix->m20 = -matrix->m20;
+        matrix->m21 = -matrix->m21;
+        matrix->m23 = -matrix->m23;
+        matrix->m32 = -matrix->m32;
     }
     void NuAnimCurveCalcVal2(void) {
     }
@@ -1185,7 +1401,8 @@ extern "C" {
     }
     void NuAnimCurveSetDestroy(void) {
     }
-    void NuAnimData2CalcMatrix(nuanimdata_s *, i32, f32, numtx_s *) {
+    void NuAnimData2CalcMatrix(nuanimdata_s *animation, i32 node, f32 frame, numtx_s *matrix) {
+        NuAnimCurve2SetApplyToMatrix_3(reinterpret_cast<ani3_animheader_s *>(animation), node, frame, matrix);
     }
     void NuAnimData2CalcTime(nuanimdata2_s *anim, f32 frame, nuanimtime_s *time) {
         u32 magic = *reinterpret_cast<u32 *>(anim);
@@ -1582,7 +1799,11 @@ extern "C" {
     }
     void NuMtxMulArrayVU0(void) {
     }
-    void NuMtxMulRVU0(void) {
+    // Original @0x2babf0.  The VU0 entry point is an ordinary CPU wrapper in
+    // this build; animation evaluation uses it to combine an animated joint
+    // rotation with that joint's bind-pose matrix.
+    void NuMtxMulRVU0(NUMTX *result, NUMTX *left, NUMTX *right) {
+        NuMtxMulR(result, left, right);
     }
     void NuMtxMulVU0(NUMTX *result, NUMTX *left, NUMTX *right) {
         NuMtxMulH(result, left, right);
@@ -1591,9 +1812,13 @@ extern "C" {
     }
     void NuMtxPreScaleUVU0(void) {
     }
-    void NuMtxPreScaleVU0(void) {
+    void NuMtxPreScaleVU0(NUMTX *matrix, NUVEC *scale) {
+        NuMtxPreScale(matrix, scale);
     }
-    void NuMtxScaleVU0(void) {
+    // Original @0x2bad80.  Preserve the public VU0-shaped entry point while
+    // sharing the scalar matrix implementation used by the host build.
+    void NuMtxScaleVU0(NUMTX *matrix, NUVEC *scale) {
+        NuMtxScale(matrix, scale);
     }
     void NuMtxSetRotateXYZVU0(NUMTX *matrix, NUANGVEC *angles) {
         NuMtxSetRotateXYZ(matrix, angles);
@@ -2041,7 +2266,7 @@ extern "C" {
         nuspecial_const_alpha_enabled = enabled;
         nuspecial_const_alpha = alpha;
     }
-    void NuSpecialConstTint(void) {
+    void NuSpecialConstTint(i32, NUVEC *) {
     }
     i32 NuSpecialDrawAt(void *special, NUMTX *mtx) {
         NuPlainSpecialHandleLayout *handle = reinterpret_cast<NuPlainSpecialHandleLayout *>(special);
@@ -2428,12 +2653,15 @@ extern "C" {
         // branch in the original function; that legacy path remains pending.
     }
     // Original @0x2cd150.
-    void NuHGobjEvalAnim2Root_3(nuhgobj_s *object, ani3_animheader_s *animation, f32 time, i32, NUJOINTANIM_s *,
-                                NUMTX *matrices, NUHGOBJROOTFN root_fn, void *root_data) {
+    void NuHGobjEvalAnim2Root_3(nuhgobj_s *object, ani3_animheader_s *animation, f32 time, i32 override_count,
+                                NUJOINTANIM_s *overrides, NUMTX *matrices, NUHGOBJROOTFN root_fn, void *root_data) {
         nuanimbuff_s buffer;
         NUVEC root_translation = {0.0f, 0.0f, 0.0f};
         NuAnimBuffCreateScratch(&buffer);
         NuAnimBuffAccumulate_3(&buffer, animation, time, 1, 0.0f, 0, object, NULL);
+        if (override_count != 0 && JointProcAnimFn != NULL) {
+            JointProcAnimFn(&buffer, object, override_count, overrides);
+        }
         NuAnimBuffEvaluate_3(&buffer, object, matrices, animation, root_fn, &root_translation, root_data);
         NuAnimBuffDestroyScratch(&buffer);
     }
@@ -2682,8 +2910,6 @@ extern "C" {
     }
     void NuPadSetMotorsPS(void) {
     }
-    void NuPadSetStatus(i32, i32) {
-    }
     void NuPadSetValid(void) {
     }
     void NuPadUseCorrectDeadZoning(void) {
@@ -2694,7 +2920,20 @@ extern "C" {
     }
     void NuPad_Interface_TouchScreenInput(i32, i32, i32, i32, i32, i32, i32, i32) {
     }
-    void NuPs2ApplyDeadZone(void) {
+    i32 NuPs2ApplyDeadZone(i32 raw_value, i32 dead_zone) {
+        i32 value = raw_value - 128;
+        if (value > 0) {
+            if (value < dead_zone) {
+                value = 0;
+            } else {
+                value = (value - dead_zone) * 255 / (255 - dead_zone);
+            }
+        } else if (value > -dead_zone) {
+            value = 0;
+        } else {
+            value = (value + dead_zone) * 255 / (255 - dead_zone);
+        }
+        return value;
     }
     void NuPs2VideoScreenDump(void) {
     }
@@ -2709,22 +2948,126 @@ extern "C" {
     }
     void NuPortalClipTestBox(void) {
     }
-    void NuPortalEnabled(void) {
+    i32 NuPortalEnabled(i32 enabled) {
+        const i32 previous = portals_enabled;
+        portals_enabled = enabled;
+        return previous;
     }
-    void NuPortalNumRooms(void) {
+    i32 NuPortalNumRooms(NUGSCN *scene) {
+        return scene != NULL ? static_cast<u16>(scene->num_rooms) : 0;
     }
-    void NuPortalResetActive(void) {
+    void NuPortalResetActive(NUGSCN *scene) {
+        for (u32 i = 0; i < scene->max_portals; ++i) {
+            scene->portals[i].is_active |= NUPORTAL_FLAG_ACTIVE | NUPORTAL_FLAG_DEFAULT_ACTIVE;
+        }
     }
-    void NuPortalRoomClipTest(void) {
+    i32 NuPortalRoomClipTest(NUGSCN *scene, i16 room_id) {
+        if (scene == NULL || scene->max_portals == 0) {
+            return 1;
+        }
+        if (scene->num_portal_frusta <= 0) {
+            return 0;
+        }
+        for (i32 i = 0; i < scene->num_portal_frusta; ++i) {
+            if (scene->portal_frusta[i]->room_id == room_id) {
+                return 1;
+            }
+        }
+        return 0;
     }
-    void NuPortalRoomClipTestAll(void) {
+    void NuPortalRoomClipTestAll(NUGSCN *scene, u8 *room_visibility) {
+        if (scene == NULL || scene->max_portals == 0) {
+            return;
+        }
+        for (i32 i = 0; i < scene->num_rooms; ++i) {
+            room_visibility[i] = 0;
+        }
+        room_visibility[scene->camera_room] = 1;
+        for (i32 i = 0; i < scene->num_portal_frusta; ++i) {
+            const i16 room_id = scene->portal_frusta[i]->room_id;
+            if (room_id >= 0) {
+                room_visibility[room_id] = 1;
+            }
+        }
     }
-    i32 NuPortalWhichRoom(NUGSCN *, NUVEC *) {
+    i32 NuPortalWhichRoom(NUGSCN *scene, NUVEC *position) {
+        if (position == NULL || scene == NULL) {
+            return -1;
+        }
+
+        i16 candidates[2] = {0, 0};
+        if (scene->num_rooms <= 0) {
+            return -1;
+        }
+
+        i16 candidate_count = 0;
+        for (i32 room_index = 0; room_index < scene->num_rooms; ++room_index) {
+            NUROOM &room = scene->rooms[room_index];
+            f32 plane_distance = 0.0f;
+            for (i32 plane_index = 0; plane_index < room.plane_count; ++plane_index) {
+                const NUPLANE &plane = room.planes[plane_index];
+                plane_distance = plane.a * position->x + plane.b * position->y + plane.c * position->z + plane.d;
+                if (plane_distance > 0.0f) {
+                    break;
+                }
+            }
+            if (plane_distance > 0.0f) {
+                continue;
+            }
+
+            if (candidate_count == 2) {
+                NUROOM &first = scene->rooms[candidates[0]];
+                NUROOM &second = scene->rooms[candidates[1]];
+                if (first.priority < second.priority) {
+                    candidates[1] = static_cast<i16>(room_index);
+                } else {
+                    candidates[0] = static_cast<i16>(room_index);
+                }
+                candidate_count = 3;
+                continue;
+            }
+
+            candidates[candidate_count++] = static_cast<i16>(room_index);
+            if (candidate_count != 2) {
+                continue;
+            }
+
+            NUROOM &first = scene->rooms[candidates[0]];
+            NUROOM &second = scene->rooms[candidates[1]];
+            if ((first.flags & NUROOM_FLAG_OVERLAPPING) != 0 || (second.flags & NUROOM_FLAG_OVERLAPPING) != 0) {
+                continue;
+            }
+            break;
+        }
+
+        if (candidate_count == 1) {
+            return candidates[0];
+        }
+        if (candidate_count == 0) {
+            return -1;
+        }
+
+        NUROOM &first = scene->rooms[candidates[0]];
+        NUROOM &second = scene->rooms[candidates[1]];
+        for (i32 first_portal = 0; first_portal < first.portal_count; ++first_portal) {
+            const i16 portal_index = first.portal_indices[first_portal];
+            for (i32 second_portal = 0; second_portal < second.portal_count; ++second_portal) {
+                if (second.portal_indices[second_portal] != portal_index) {
+                    continue;
+                }
+
+                const NUPORTAL &portal = scene->portals[portal_index];
+                const f32 side = portal.plane.a * position->x + portal.plane.b * position->y +
+                                 portal.plane.c * position->z + portal.plane.d;
+                return side < 0.0f ? portal.front_room : portal.back_room;
+            }
+        }
         return -1;
     }
     void NuVisiBoxTree(void) {
     }
-    void NuVisiEvaluate(void) {
+    void *NuVisiEvaluate(NUGSCN *, void *) {
+        return NULL;
     }
     void NuVisiInstTree(void) {
     }

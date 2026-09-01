@@ -29,34 +29,11 @@ namespace {
         nuinstanim_s *animation;
     };
 
-    struct NuSpecialDisplayLayout {
-        NUMTX instance_mtx;
-        NUMTX draw_mtx;
-        NUVEC4 bounds_min;
-        NUVEC4 bounds_max;
-        u8 pad_a0[0x10];
-        NUCLIPOBJECT *clip_objects;
-        char *name;
-        u32 flags;
-        f32 *clip_range;
-        i32 instance_ix;
-        nuinstanim_s *instance_animation;
-    };
-
     DECOMP_ASSERT(offsetof(NuSpecialLegacyLayout, instance) == 0x40, "legacy special instance offset");
     DECOMP_ASSERT(offsetof(NuSpecialLegacyLayout, name) == 0x44, "legacy special name offset");
     DECOMP_ASSERT(offsetof(NuSpecialLegacyLayout, flags) == 0x48, "legacy special flags offset");
     DECOMP_ASSERT(offsetof(NuLegacyInstanceLayout, flags) == 0x44, "legacy instance flags offset");
     DECOMP_ASSERT(offsetof(NuLegacyInstanceLayout, animation) == 0x48, "legacy instance animation offset");
-    DECOMP_ASSERT(offsetof(NuSpecialDisplayLayout, name) == 0xb4, "display special name offset");
-    DECOMP_ASSERT(offsetof(NuSpecialDisplayLayout, bounds_min) == 0x80, "display special minimum bounds offset");
-    DECOMP_ASSERT(offsetof(NuSpecialDisplayLayout, bounds_max) == 0x90, "display special maximum bounds offset");
-    DECOMP_ASSERT(offsetof(NuSpecialDisplayLayout, clip_objects) == 0xb0, "display special clip object offset");
-    DECOMP_ASSERT(offsetof(NuSpecialDisplayLayout, flags) == 0xb8, "display special flags offset");
-    DECOMP_ASSERT(offsetof(NuSpecialDisplayLayout, instance_ix) == 0xc0, "display special instance index offset");
-    DECOMP_ASSERT(offsetof(NuSpecialDisplayLayout, instance_animation) == 0xc4,
-                  "display special instance animation offset");
-
 } // namespace
 
 extern "C" i32 NuSpecialExistsFn(void *special_ptr) {
@@ -79,7 +56,7 @@ extern "C" nuinstanim_s *NuSpecialGetInstAnim(nuhspecial_s *special) {
         return instance->animation;
     }
 
-    NuSpecialDisplayLayout *display = static_cast<NuSpecialDisplayLayout *>(special->display_special);
+    NUDISPLAYSPECIAL *display = static_cast<NUDISPLAYSPECIAL *>(special->display_special);
     if (display != NULL && display->instance_animation != reinterpret_cast<nuinstanim_s *>(-1)) {
         return display->instance_animation;
     }
@@ -92,7 +69,7 @@ extern "C" NUMTX *NuSpecialGetInstanceMtx(nuhspecial_s *special) {
         return static_cast<NUMTX *>(legacy->instance);
     }
 
-    NuSpecialDisplayLayout *display = static_cast<NuSpecialDisplayLayout *>(special->display_special);
+    NUDISPLAYSPECIAL *display = static_cast<NUDISPLAYSPECIAL *>(special->display_special);
     if (display != NULL) {
         return &display->draw_mtx;
     }
@@ -133,7 +110,7 @@ extern "C" char *NuSpecialGetName(nuhspecial_s *special) {
         return NULL;
     }
 
-    NuSpecialDisplayLayout *display = static_cast<NuSpecialDisplayLayout *>(special->display_special);
+    NUDISPLAYSPECIAL *display = static_cast<NUDISPLAYSPECIAL *>(special->display_special);
     if (display != NULL) {
         return display->name;
     }
@@ -152,7 +129,7 @@ extern "C" i32 NuSpecialGetNoVisiTestFn(nuhspecial_s *special) {
         return instance->no_visibility_test;
     }
 
-    NuSpecialDisplayLayout *display = static_cast<NuSpecialDisplayLayout *>(special->display_special);
+    NUDISPLAYSPECIAL *display = static_cast<NUDISPLAYSPECIAL *>(special->display_special);
     return display != NULL ? display->flags & NUDISPLAYSPECIAL_FLAG_NO_VISIBILITY_TEST : 0;
 }
 
@@ -168,7 +145,7 @@ extern "C" void NuSpecialSetNoVisiTest(nuhspecial_s *special, i32 enabled) {
         return;
     }
 
-    NuSpecialDisplayLayout *display = static_cast<NuSpecialDisplayLayout *>(special->display_special);
+    NUDISPLAYSPECIAL *display = static_cast<NUDISPLAYSPECIAL *>(special->display_special);
     if (display == NULL) {
         return;
     }
@@ -191,7 +168,7 @@ extern "C" i32 NuSpecialGetVisibilityFn(void *special_ptr) {
         return instance->visible;
     }
 
-    NuSpecialDisplayLayout *display = static_cast<NuSpecialDisplayLayout *>(special->display_special);
+    NUDISPLAYSPECIAL *display = static_cast<NUDISPLAYSPECIAL *>(special->display_special);
     return display != NULL ? (display->flags >> 1) & 1 : 0;
 }
 
@@ -219,7 +196,7 @@ extern "C" void NuSpecialSetVisibility(void *special_ptr, i32 visible) {
         return;
     }
 
-    NuSpecialDisplayLayout *display = static_cast<NuSpecialDisplayLayout *>(special->display_special);
+    NUDISPLAYSPECIAL *display = static_cast<NUDISPLAYSPECIAL *>(special->display_special);
     if (display == NULL) {
         return;
     }
@@ -241,7 +218,7 @@ extern "C" void NuSpecialSetVisibility(void *special_ptr, i32 visible) {
 }
 
 extern "C" void NuDisplayListUpdateSpecial(nuhspecial_s *special) {
-    NuSpecialDisplayLayout *display = static_cast<NuSpecialDisplayLayout *>(special->display_special);
+    NUDISPLAYSPECIAL *display = static_cast<NUDISPLAYSPECIAL *>(special->display_special);
     NUDLDLISTSCENE *display_scene = reinterpret_cast<NUDLDLISTSCENE *>(special->scene->display_list);
     NUMTX draw_matrix;
     draw_matrix = *NuSpecialGetDrawMtx(special);
@@ -293,7 +270,7 @@ extern "C" void NuSpecialUpdate(nuhspecial_s *special) {
         return;
     }
 
-    NuSpecialDisplayLayout *display = static_cast<NuSpecialDisplayLayout *>(special->display_special);
+    NUDISPLAYSPECIAL *display = static_cast<NUDISPLAYSPECIAL *>(special->display_special);
     if (display == NULL || special->scene == NULL) {
         return;
     }

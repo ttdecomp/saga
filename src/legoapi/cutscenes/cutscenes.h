@@ -11,6 +11,6 @@ i32 CutScene_HasPlayed(CUTINFO *cut);
 void CutScene_SnapToEnd(CUTINFO *cut);
 void CutScene_StoppedFn_LSW(CUTINFO *cut);
 i32 CutScene_PlayingOrRequested(CUTINFO *cut);
-bool CutScene_IsSkippable(CUTINFO *cut);
+i32 CutScene_IsSkippable(CUTINFO *cut);
 
 #endif
