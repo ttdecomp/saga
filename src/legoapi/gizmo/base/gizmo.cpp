@@ -670,7 +670,8 @@ void TwistLevel(LEVELDATA_s *) {
 void GizmoGetPos(GIZMOSYS_s *, GIZMO_s *) {
 }
 
-void GizmoGetGuid(GIZMOSYS_s *, GIZMO_s *) {
+i32 GizmoGetGuid(GIZMOSYS_s *, GIZMO_s *) {
+    return -1;
 }
 
 void GizmoGetName(GIZMO_s *) {

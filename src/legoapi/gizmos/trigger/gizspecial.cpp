@@ -6,6 +6,11 @@ i32 gizspecial_gizmotype_id = -1;
 
 static char *gizSpec_prefix = "Spec_";
 
+void GameAnimSet_Play(GAMEANIMSET_s *, f32, i32);
+void GameAnimSet_Stop(GAMEANIMSET_s *);
+void GameAnimSet_JumpToStart(GAMEANIMSET_s *);
+void GameAnimSet_SetVisibility(GAMEANIMSET_s *, i32);
+
 static i32 GizSpecial_GetMaxGizmos(void *special) {
     UNIMPLEMENTED();
     return {};
@@ -30,13 +35,23 @@ static char *GizSpecial_GetOutputName(GIZMO *gizmo, i32 output_index) {
     return {};
 }
 
-static i32 GizSpecial_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+static i32 GizSpecial_GetNumOutputs(GIZMO *) {
+    return 2;
 }
 
-static void GizSpecial_Activate(GIZMO *gizmo, i32) {
-    UNIMPLEMENTED();
+static void GizSpecial_Activate(GIZMO *gizmo, i32 active) {
+    if (gizmo == NULL || gizmo->object == NULL) {
+        return;
+    }
+    GIZSPECIAL_s *special = static_cast<GIZSPECIAL_s *>(gizmo->object);
+    if (active != 0) {
+        GameAnimSet_JumpToStart(special->animation_set);
+        GameAnimSet_Play(special->animation_set, 1.0f, 1);
+        special->flags |= 2;
+    } else {
+        GameAnimSet_Stop(special->animation_set);
+        special->flags &= ~2;
+    }
 }
 
 static i32 GizSpecial_ActivateRev(GIZMO *gizmo, i32, i32) {
@@ -44,8 +59,10 @@ static i32 GizSpecial_ActivateRev(GIZMO *gizmo, i32, i32) {
     return {};
 }
 
-static void GizSpecial_SetVisibility(GIZMO *gizmo, i32) {
-    UNIMPLEMENTED();
+static void GizSpecial_SetVisibility(GIZMO *gizmo, i32 visible) {
+    if (gizmo != NULL && gizmo->object != NULL) {
+        GameAnimSet_SetVisibility(static_cast<GIZSPECIAL_s *>(gizmo->object)->animation_set, visible);
+    }
 }
 
 static i32 GizSpecial_GetPos(GIZMO *gizmo) {

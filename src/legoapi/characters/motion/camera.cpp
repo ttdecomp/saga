@@ -12,6 +12,22 @@
 void Minicam_InitSystem(void);
 void GameCam_ResetLookRot(GAMECAMERA_s *camera);
 
+struct VIEWCAM_s {
+    i32 mode;
+    NUVEC target;
+    i16 pitch;
+    i16 yaw;
+    f32 distance;
+    f32 height;
+    f32 look_speed;
+    f32 move_speed;
+    GAMEPAD_s *gamepad;
+};
+
+DECOMP_ASSERT(sizeof(VIEWCAM_s) == 0x28, "VIEWCAM_s size");
+
+VIEWCAM_s ViewCam = {0, {1000000000.0f, 0.0f, 0.0f}, -0x2000, -0x733c, 2.66f, 0.0f, 120.0f, 200.0f, NULL};
+
 void GameCam_Blend(GAMECAMERA_s *, float, float, i32) {
 }
 
@@ -155,7 +171,8 @@ void SetCameraMatrices() {
     NuRndrSetFxMtx(&effect_matrix);
 }
 
-void ViewCamGetGamePad() {
+GAMEPAD_s *ViewCamGetGamePad() {
+    return ViewCam.gamepad;
 }
 
 void KeepVehicleOnScreen(GameObject_s *, i32, i32, i32) {

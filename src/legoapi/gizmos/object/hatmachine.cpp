@@ -1,6 +1,7 @@
 #include "legoapi/gizmos/object/hatmachine.h"
 
 #include "decomp.h"
+#include "legoapi/legoapi_types.h"
 
 struct HATMACHINEPROGRESS {
     i32 preserved_state;
@@ -27,8 +28,8 @@ static void HatMachine_Draw(void *, void *, float) {
 }
 
 static char *HatMachine_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    HATMACHINE_s *machine = gizmo != NULL ? static_cast<HATMACHINE_s *>(gizmo->object) : NULL;
+    return machine != NULL ? machine->name : NULL;
 }
 
 static i32 HatMachine_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -41,9 +42,8 @@ static char *HatMachine_GetOutputName(GIZMO *gizmo, i32 output_index) {
     return {};
 }
 
-static i32 HatMachine_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+static i32 HatMachine_GetNumOutputs(GIZMO *) {
+    return 1;
 }
 
 static void HatMachine_Activate(GIZMO *gizmo, i32) {
@@ -54,9 +54,8 @@ static void HatMachine_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static void *HatMachines_AllocateProgressData(VARIPTR *, VARIPTR *) {
-    UNIMPLEMENTED();
-    return {};
+static void *HatMachines_AllocateProgressData(VARIPTR *buffer, VARIPTR *buffer_end) {
+    return GizmoBufferAlloc(buffer, buffer_end, 12);
 }
 
 static void HatMachines_ClearProgress(void *, void *progress_data) {

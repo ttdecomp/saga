@@ -1,6 +1,7 @@
 #include "legoapi/gizmos/object/gizobstacles.h"
 
 #include "decomp.h"
+#include "legoapi/legoapi_types.h"
 
 i32 obstacle_gizmotype_id = -1;
 
@@ -22,8 +23,8 @@ static void GizObstacles_Draw(void *, void *, float) {
 }
 
 static char *GizmoObstacle_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    GIZOBSTACLE_s *obstacle = gizmo != NULL ? static_cast<GIZOBSTACLE_s *>(gizmo->object) : NULL;
+    return obstacle != NULL ? obstacle->name : NULL;
 }
 
 static i32 GizmoObstacle_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -36,9 +37,8 @@ static char *GizmoObstacle_GetOutputName(GIZMO *gizmo, i32 output_index) {
     return {};
 }
 
-static i32 GizmoObstacle_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+static i32 GizmoObstacle_GetNumOutputs(GIZMO *) {
+    return 5;
 }
 
 static void GizmoObstacle_Activate(GIZMO *gizmo, i32) {
@@ -55,8 +55,8 @@ static void GizmoObstacle_SetVisibility(GIZMO *gizmo, i32) {
 }
 
 static i32 GizmoObstacle_GetPos(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    GIZOBSTACLE_s *obstacle = gizmo != NULL ? static_cast<GIZOBSTACLE_s *>(gizmo->object) : NULL;
+    return obstacle != NULL ? static_cast<i32>(reinterpret_cast<usize>(&obstacle->position)) : 0;
 }
 
 static i32 GizObstacles_BoltHitPlat(void *, void *, BOLT *, unsigned char *) {
@@ -76,9 +76,8 @@ static i32 GizObstacles_BoltHit(void *, void *, void *, NUVEC *, i32, float, NUV
     return {};
 }
 
-static void *GizObstacles_AllocateProgressData(VARIPTR *, VARIPTR *) {
-    UNIMPLEMENTED();
-    return {};
+static void *GizObstacles_AllocateProgressData(VARIPTR *buffer, VARIPTR *buffer_end) {
+    return GizmoBufferAlloc(buffer, buffer_end, 0x70);
 }
 
 static void GizObstacles_ClearProgress(void *, void *) {
