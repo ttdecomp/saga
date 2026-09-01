@@ -236,7 +236,24 @@ struct ShaderObjectKey;
 struct SoundTable;
 struct SpecialObject;
 struct SwipeDecalRenderer;
-struct TECHNO_s;
+struct TECHNO_s {
+    char name[0x10];
+    NUVEC position;
+    NUVEC operator_position;
+    f32 movement;
+    f32 scale;
+    u16 yaw;
+    u16 terrain_pitch;
+    u16 terrain_roll;
+    u8 control_flags;
+    u8 target_type;
+    u32 target_flags;
+    u8 state_flags;
+    char target_name[0x10];
+    char loaded_name[0x1f];
+    void *target;
+};
+DECOMP_ASSERT(sizeof(TECHNO_s) == 0x70, "TECHNO_s size");
 struct TELEPORT_s;
 struct TERRPICKUPSET;
 struct TERRSET;
@@ -455,8 +472,6 @@ struct FadeBase {
     FADEINFO_s *info;
 };
 struct GAMEANIMOBJPOOL_s {};
-struct GAMEANIMOBJ_s {};
-struct GAMEANIMSET_s {};
 struct GAMEANIMSYS_s {};
 struct GAMEANTINODEDATA_s {};
 struct GAMEANTINODESYS_s {};
@@ -630,7 +645,19 @@ struct GIZFLOW_s {};
 struct GIZFORCESYS_s {};
 struct GIZMOBLOWUPTYPE_s {};
 struct GIZMOPICKUPSYS_s {};
-struct GIZMOPICKUP_s;
+struct GIZMOPICKUP_s {
+    char name[8];
+    NUVEC position;
+    u8 field_14;
+    u8 flags;
+    u8 field_16;
+    u8 runtime_flags;
+    u8 group_id;
+    u8 pad_19[0x0c];
+    u8 type_id;
+    u8 pad_26[6];
+};
+DECOMP_ASSERT(sizeof(GIZMOPICKUP_s) == 0x2c, "GIZMOPICKUP size");
 struct GIZMOSYS_s;
 struct GIZMO_s;
 struct GIZOBSTACLESYS_s {};
@@ -1022,6 +1049,33 @@ struct nuhspecial_s {
     void *display_special; // 0x08
 };
 DECOMP_ASSERT(sizeof(nuhspecial_s) == 0xc, "nuhspecial_s size");
+struct GAMEANIMOBJ_s {
+    GAMEANIMOBJ_s *next;
+    nuhspecial_s special;
+    void *instance_animation;
+    void *animation_data;
+    f32 start_frame;
+    f32 end_frame;
+    u32 reserved;
+    u32 flags;
+    void *custom_data;
+};
+DECOMP_ASSERT(sizeof(GAMEANIMOBJ_s) == 0x2c, "GAMEANIMOBJ_s size");
+DECOMP_ASSERT(offsetof(GAMEANIMOBJ_s, special) == 0x4, "GAMEANIMOBJ_s special offset");
+struct GAMEANIMSET_s {
+    GAMEANIMSET_s *previous;
+    GAMEANIMSET_s *next;
+    u8 object_count;
+    u8 animated_object_count;
+    u8 flags;
+    u8 pad_0x0b;
+    i32 state;
+    GAMEANIMOBJPOOL_s *pool;
+    GAMEANIMSYS_s *system;
+    GAMEANIMOBJ_s *objects;
+};
+DECOMP_ASSERT(sizeof(GAMEANIMSET_s) == 0x1c, "GAMEANIMSET_s size");
+DECOMP_ASSERT(offsetof(GAMEANIMSET_s, objects) == 0x18, "GAMEANIMSET_s objects offset");
 struct nuinstanim_s {};
 struct numtl_s;
 struct numtx_s;
@@ -1249,30 +1303,51 @@ struct GIZMOBLOWUP_s {
     void GetMechObjectInterface();
 };
 struct GIZOBSTACLE_s {
-    char pad_0x00[0x18];
-    f32 field_0x18; // 0x18
-    f32 field_0x1c; // 0x1c
-    f32 field_0x20; // 0x20
-    f32 field_0x24; // 0x24
-    char pad_0x28[0x34 - 0x28];
-    void *field_0x34; // 0x34
-    char pad_0x38[0x3c - 0x38];
-    f32 field_0x3c; // 0x3c
-    char pad_0x40[0xa1 - 0x40];
-    u8 field_a1_0xa1;
-    char pad_0xa2[0xdc - 0xa2];
-    i32 field_0xdc; // 0xdc
+    char name[0x10];
+    NUVEC position;
+    NUVEC target_position;
+    NUVEC average_position;
+    GAMEANIMSET_s *animation_set;
+    void *controller;
+    f32 trigger_delay;
+    f32 trigger_timer;
+    f32 trigger_distance;
+    f32 playback_speed;
+    f32 forward_speed;
+    f32 reverse_speed;
+    f32 proximity_radius;
+    f32 animation_radius;
+    NUVEC collision_extents;
+    u32 config_flags;
+    u32 exclude_flags;
+    NUVEC pickup_offset;
+    f32 pickup_spread;
+    u16 pickup_pitch;
+    u16 pickup_yaw;
+    u16 trigger_yaw;
+    i16 room_id;
+    i16 blowup_type;
+    i16 score;
+    i16 forward_sfx;
+    i16 reverse_sfx;
+    i8 control_mode;
+    i8 control_type;
+    i8 control_variant;
+    u8 pad_0x93[5];
+    u8 state_flags;
+    u8 reverse_flags;
+    u8 pad_0x9a[2];
+    i32 proximity;
+    u8 behavior_flags;
+    union {
+        u8 field_0xa1;
+        u8 field_a1_0xa1;
+    };
+    u8 pad_0xa2[2];
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };
-
-// Node in the obstacle linked list (field_0x34 → field_0x18 chain).
-struct GIZOBSTACLENODE_s {
-    void *next;    // 0x00
-    void *special; // 0x04
-    char pad_0x08[0x18 - 0x08];
-    void *field_0x18; // 0x18
-};
+DECOMP_ASSERT(sizeof(GIZOBSTACLE_s) == 0xa4, "GIZOBSTACLE_s size");
 
 // Object referenced by GIZFORCE_s::field_0x40 (flags at 0x24).
 struct GIZFORCEOBJ_s {
@@ -1320,7 +1395,30 @@ struct PODMODELDATA_s {
 struct GIZPANEL_s {
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
+
+    NUMTX matrix;
+    char name[16];
+    NUVEC position;
+    u16 yaw;
+    i16 special_index;
+    u8 panel_variant;
+    u8 panel_type;
+    u8 reserved_62[6];
+    u16 flags;
+    u8 reserved_6a[2];
+    NUVEC player_position;
+    NUVEC target_offset;
+    u16 tracking_pitch;
+    u16 tracking_yaw;
+    u16 animation_angle;
+    u16 terrain_pitch;
+    u16 terrain_roll;
+    i16 platform_id;
+    f32 tracking_timer;
+    f32 scale;
+    GizPanelObjectInterface *mech_interface;
 };
+DECOMP_ASSERT(sizeof(GIZPANEL_s) == 0x9c, "GIZPANEL_s size");
 struct GIZTURRET_s {
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
@@ -1329,7 +1427,34 @@ struct GameThingManager; // defined after ThingManager (derives from it)
 struct HATMACHINE_s {
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
+
+    NUMTX matrix;
+    char name[16];
+    NUVEC position;
+    u16 yaw;
+    u8 configured_hat;
+    u8 current_hat;
+    u8 animation_state;
+    char model_letter;
+    u8 model_special_index;
+    u8 flags;
+    NUVEC player_position;
+    NUVEC target_offset;
+    u16 terrain_pitch;
+    u16 terrain_roll;
+    i16 platform_id;
+    u16 reserved_82;
+    f32 hat_refresh_timer;
+    f32 animation_duration;
+    f32 animation_time;
+    f32 scale;
+    f32 flash_timer;
+    f32 render_animation_time;
+    f32 blink_timer;
+    u32 reserved_a0;
+    HatMachineObjectInterface *mech_interface;
 };
+DECOMP_ASSERT(sizeof(HATMACHINE_s) == 0xa8, "HATMACHINE_s size");
 struct HudRadarPulse {
     HudRadarPulse(VuVec const &);
     void IsFinished();

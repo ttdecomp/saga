@@ -1,6 +1,7 @@
 #include "legoapi/gizmos/door/door.h"
 
 #include "decomp.h"
+#include "legoapi/props/doors/door.h"
 
 static char door_gizmotype_id = -1;
 
@@ -14,13 +15,11 @@ static void Door_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
 }
 
 static char *Door_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL && gizmo->object != NULL ? ((DOOR *)gizmo->object)->gizmo_name : NULL;
 }
 
 static i32 Door_GetOutput(GIZMO *gizmo, i32, i32) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL && gizmo->object != NULL ? ((DOOR *)gizmo->object)->active == 0 : 0;
 }
 
 char *Door_GetOutputName(GIZMO *gizmo, i32 output_index) {
@@ -28,13 +27,14 @@ char *Door_GetOutputName(GIZMO *gizmo, i32 output_index) {
     return {};
 }
 
-static i32 Door_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+static i32 Door_GetNumOutputs(GIZMO *) {
+    return 1;
 }
 
-void Door_Activate(GIZMO *gizmo, i32) {
-    UNIMPLEMENTED();
+void Door_Activate(GIZMO *gizmo, i32 active) {
+    if (gizmo != NULL && gizmo->object != NULL) {
+        ((DOOR *)gizmo->object)->active = active == 0;
+    }
 }
 
 ADDGIZMOTYPE *Door_RegisterGizmo(i32 type_id) {

@@ -2,6 +2,8 @@
 
 #include "decomp.h"
 
+#include <string.h>
+
 static i32 Signals_GetMaxGizmos(void *signal) {
     UNIMPLEMENTED();
     return {};
@@ -20,8 +22,8 @@ static void Signals_Draw(void *, void *, float) {
 }
 
 static char *Signal_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    SIGNAL *signal = gizmo != NULL ? static_cast<SIGNAL *>(gizmo->object) : NULL;
+    return signal != NULL ? signal->name : NULL;
 }
 
 static i32 Signal_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -34,9 +36,8 @@ static char *Signal_GetOutputName(GIZMO *gizmo, i32 output_index) {
     return {};
 }
 
-static i32 Signal_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+static i32 Signal_GetNumOutputs(GIZMO *) {
+    return 1;
 }
 
 static void Signal_Activate(GIZMO *gizmo, i32) {
@@ -53,17 +54,21 @@ static void Signal_SetGizmoVisibility(GIZMO *gizmo, i32) {
 }
 
 static i32 Signal_GetPos(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    SIGNAL *signal = gizmo != NULL ? static_cast<SIGNAL *>(gizmo->object) : NULL;
+    return signal != NULL ? static_cast<i32>(reinterpret_cast<usize>(&signal->position)) : 0;
 }
 
-static void *Signals_AllocateProgressData(VARIPTR *, VARIPTR *) {
-    UNIMPLEMENTED();
-    return {};
+static void *Signals_AllocateProgressData(VARIPTR *buffer, VARIPTR *buffer_end) {
+    return GizmoBufferAlloc(buffer, buffer_end, sizeof(SIGNALPROGRESS));
 }
 
-static void Signals_ClearProgress(void *, void *) {
-    UNIMPLEMENTED();
+static void Signals_ClearProgress(void *, void *progress_data) {
+    SIGNALPROGRESS *progress = static_cast<SIGNALPROGRESS *>(progress_data);
+    if (progress != NULL) {
+        memset(progress->suit_letters, 0, sizeof(progress->suit_letters));
+        progress->active_mask = 0xffffffff;
+        progress->visible_mask = 0xffffffff;
+    }
 }
 
 static void Signals_StoreProgress(void *, void *, void *) {

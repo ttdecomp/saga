@@ -1,6 +1,7 @@
 #include "legoapi/gizmos/object/technos.h"
 
 #include "decomp.h"
+#include "legoapi/legoapi_types.h"
 
 struct TECHNOPROGRESS {
     i32 state[2];
@@ -30,8 +31,8 @@ static void Technos_Draw(void *, void *, float) {
 }
 
 static char *Techno_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    TECHNO_s *techno = gizmo != NULL ? static_cast<TECHNO_s *>(gizmo->object) : NULL;
+    return techno != NULL ? techno->name : NULL;
 }
 
 static i32 Techno_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -44,9 +45,8 @@ static char *Techno_GetOutputName(GIZMO *gizmo, i32 output_index) {
     return {};
 }
 
-static i32 Techno_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+static i32 Techno_GetNumOutputs(GIZMO *) {
+    return 1;
 }
 
 static void Techno_Activate(GIZMO *gizmo, i32) {
@@ -58,13 +58,12 @@ static void Techno_SetVisibility(GIZMO *gizmo, i32) {
 }
 
 static i32 Techno_GetPos(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    TECHNO_s *techno = gizmo != NULL ? static_cast<TECHNO_s *>(gizmo->object) : NULL;
+    return techno != NULL ? static_cast<i32>(reinterpret_cast<usize>(&techno->position)) : 0;
 }
 
-static void *Technos_AllocateProgressData(VARIPTR *, VARIPTR *) {
-    UNIMPLEMENTED();
-    return {};
+static void *Technos_AllocateProgressData(VARIPTR *buffer, VARIPTR *buffer_end) {
+    return GizmoBufferAlloc(buffer, buffer_end, 8);
 }
 
 static void Technos_ClearProgress(void *, void *progress_data) {

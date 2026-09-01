@@ -1528,64 +1528,56 @@ void RetakeE_Init(WORLDINFO_s *world) {
     if (g != NULL)
         g->field_0xa0 |= 2;
 
-    // The four obstacles are deliberately not uniform in the original:
-    // obstacle3 shifts specials -0.75 on z, obstacle12 +0.75, and 11/13 reuse
-    // the pos pointer left over from the previous loop iteration.
     GIZOBSTACLE_s *obs;
-    GIZOBSTACLENODE_s *n;
-    struct nuvec_s *pos;
+    GAMEANIMOBJ_s *object;
+    NUVEC *obstacle3_position;
+    NUVEC *position;
 
     obs = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle3");
     if (obs != NULL) {
-        n = (GIZOBSTACLENODE_s *)((GIZOBSTACLENODE_s *)obs->field_0x34)->field_0x18;
-        while (n != NULL) {
-            pos = NuSpecialGetPos(n->special);
-            pos->z -= 0.75f;
+        object = obs->animation_set->objects;
+        while (object != NULL) {
+            obstacle3_position = NuSpecialGetPos(&object->special);
+            obstacle3_position->z -= 0.5f;
             GizObstacle_EvalAveragePosAndRadius(obs, 2);
-            obs->field_0x18 = pos->z;
-            obs->field_0x24 = pos->z;
-            obs->field_0x3c = 15.0f;
-            n = (GIZOBSTACLENODE_s *)n->next;
+            object = object->next;
+            obs->position.z = obstacle3_position->z;
+            obs->target_position.z = obstacle3_position->z;
+            obs->trigger_delay = 15.0f;
         }
     }
 
     obs = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle12");
     if (obs != NULL) {
-        n = (GIZOBSTACLENODE_s *)((GIZOBSTACLENODE_s *)obs->field_0x34)->field_0x18;
-        while (n != NULL) {
-            pos = NuSpecialGetPos(n->special);
-            pos->z += 0.75f;
+        object = obs->animation_set->objects;
+        while (object != NULL) {
+            position = NuSpecialGetPos(&object->special);
+            position->z += 0.5f;
             GizObstacle_EvalAveragePosAndRadius(obs, 2);
-            obs->field_0x18 = pos->z;
-            obs->field_0x1c = pos->x;
-            obs->field_0x20 = pos->y;
-            obs->field_0x24 = pos->z;
-            obs->field_0x3c = 15.0f;
-            n = (GIZOBSTACLENODE_s *)n->next;
+            object = object->next;
+            obs->position.z = position->z;
+            obs->target_position = *obstacle3_position;
+            obs->trigger_delay = 15.0f;
         }
     }
 
     obs = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle11");
     if (obs != NULL) {
-        n = (GIZOBSTACLENODE_s *)((GIZOBSTACLENODE_s *)obs->field_0x34)->field_0x18;
-        while (n != NULL) {
-            obs->field_0x1c = pos->x; // stale pos on purpose (matches original)
-            obs->field_0x20 = pos->y;
-            obs->field_0x24 = pos->z;
-            obs->field_0x3c = 15.0f;
-            n = (GIZOBSTACLENODE_s *)n->next;
+        object = obs->animation_set->objects;
+        while (object != NULL) {
+            object = object->next;
+            obs->target_position = *obstacle3_position;
+            obs->trigger_delay = 15.0f;
         }
     }
 
     obs = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle13");
     if (obs != NULL) {
-        n = (GIZOBSTACLENODE_s *)((GIZOBSTACLENODE_s *)obs->field_0x34)->field_0x18;
-        while (n != NULL) {
-            obs->field_0x1c = pos->x; // stale pos on purpose (matches original)
-            obs->field_0x20 = pos->y;
-            obs->field_0x24 = pos->z;
-            obs->field_0x3c = 15.0f;
-            n = (GIZOBSTACLENODE_s *)n->next;
+        object = obs->animation_set->objects;
+        while (object != NULL) {
+            object = object->next;
+            obs->target_position = *obstacle3_position;
+            obs->trigger_delay = 15.0f;
         }
     }
 }

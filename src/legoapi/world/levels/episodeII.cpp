@@ -62,6 +62,8 @@ static i32 pursuit_state[0x20];  // bounty-hunter pursuit state
 static i16 gunship_bolts[2];     // gun-ship bolt type ids
 static u8 gunship_flags[0xa];    // gun-ship weapon-select flags
 static void *gunship_weapons[4]; // gun-ship gizmo weapons
+static f32 FactoryBConveyorXSpeed;
+static f32 FactoryBConveyorZSpeed;
 
 // Episode 2 level handlers, in the game's Episode_II progression:
 // pursuit (coruscant bounty-hunter) / kamino / factory (geonosis droid
@@ -214,11 +216,11 @@ void KaminoD_Init(WORLDINFO_s *world) {
         char buf[0x10];
         sprintf(buf, "DOT%i", i);
         GIZOBSTACLE_s *g = GizObstacle_FindByName(world->giz_obstacle_sys, buf);
-        if (g->field_0x3c != 0.0f) {
+        if (g->trigger_delay != 0.0f) {
             break;
         }
 
-        g->field_0x3c = 13.5f;
+        g->trigger_delay = 13.5f;
     }
 
     GIZMOBLOWUP_s *target = GizmoBlowUp_FindByName(world, "target_a11");
@@ -307,18 +309,55 @@ void NbKaminoA_Init(WORLDINFO_s *world) {
 void FactoryB_Init(WORLDINFO_s *world) {
     factoryb_netpacket = SetLevelHack(0x4);
     InitPaintPuzzle(world);
-    GIZOBSTACLE_s *conv[9] = {0};
-    conv[1] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv1");
-    conv[2] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv2");
-    conv[3] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv3");
-    conv[4] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv4");
-    conv[5] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv5");
-    conv[6] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv6");
-    conv[7] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv7");
-    conv[8] = GizObstacle_FindByName(world->giz_obstacle_sys, "conv8");
-    for (i32 i = 1; i <= 8; i++) {
-        if (conv[i] != NULL)
-            conv[i]->field_0xdc = 0;
+
+    if (FactoryBConveyorXSpeed == 0.0f && FactoryBConveyorZSpeed == 0.0f) {
+        FactoryBConveyorXSpeed = world->current_level->conveyor_x_speed;
+        FactoryBConveyorZSpeed = world->current_level->conveyor_z_speed;
+    }
+
+    world->current_level->conveyor_x_speed = 0.0f;
+    world->current_level->conveyor_z_speed = 0.0f;
+
+    LevGizObst[0] = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle49");
+    LevGizObst[1] = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle50");
+    LevGizObst[2] = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle48");
+    LevGizObst[3] = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle52");
+    LevGizObst[4] = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle47");
+    LevGizObst[5] = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle46");
+    LevGizObst[6] = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle45");
+    LevGizObst[7] = GizObstacle_FindByName(world->giz_obstacle_sys, "obstacle51");
+
+    if (LevGizObst[0] != NULL) {
+        LevGizObst[0]->control_type = 3;
+        LevGizObst[0]->control_mode = 0;
+    }
+    if (LevGizObst[1] != NULL) {
+        LevGizObst[1]->control_type = 3;
+        LevGizObst[1]->control_mode = 0;
+    }
+    if (LevGizObst[2] != NULL) {
+        LevGizObst[2]->control_type = 3;
+        LevGizObst[2]->control_mode = 0;
+    }
+    if (LevGizObst[3] != NULL) {
+        LevGizObst[3]->control_type = 3;
+        LevGizObst[3]->control_mode = 0;
+    }
+    if (LevGizObst[4] != NULL) {
+        LevGizObst[4]->control_type = 3;
+        LevGizObst[4]->control_mode = 0;
+    }
+    if (LevGizObst[5] != NULL) {
+        LevGizObst[5]->control_type = 3;
+        LevGizObst[5]->control_mode = 0;
+    }
+    if (LevGizObst[6] != NULL) {
+        LevGizObst[6]->control_type = 3;
+        LevGizObst[6]->control_mode = 0;
+    }
+    if (LevGizObst[7] != NULL) {
+        LevGizObst[7]->control_type = 3;
+        LevGizObst[7]->control_mode = 0;
     }
 }
 

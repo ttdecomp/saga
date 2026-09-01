@@ -33,6 +33,13 @@ struct GIZTURRETSYS_s;
 struct GRABBER_s;
 struct PULSESYS_s;
 struct LEVER_s;
+struct SIGNAL_s;
+struct GIZPANELSYS_s;
+struct HATMACHINESYS_s;
+struct TECHNO_s;
+struct SECURITYDOOR_s;
+struct GIZRANDOMSYS_s;
+struct GIZSPECIALSYS_s;
 struct GAMEANTINODESYS_s;
 struct GIZBOMBGENSYS_s;
 struct TRAFFICANIMSYS_s;
@@ -144,42 +151,71 @@ typedef struct WORLDINFO_s {
 
     GRABBER_s *grabber; // 0x46f0
 
-    char filler8[0x5054 - 0x46f4];
-
-    PULSESYS_s *pulses_sys; // 0x5058
-
-    char filler9[0x505c - 0x5058];
-
+    char filler8[0x5038 - 0x46f4];
+    void *faders;
+    i32 fader_count;
+    void *mini_trooper_packets;
+    void *mini_trooper_teams;
+    void *mini_trooper_storage;
+    void *portal_doors;
+    i32 portal_door_count;
+    PULSESYS_s *pulses_sys;
+    void *special_minikits;
+    u8 reserved_505c[0x8];
+    SIGNAL_s *signals;
+    i32 signal_count;
     LEVER_s *levers;
     i32 nlevers;
-
-    char filler10[0x50cc - 0x5064];
-
+    GIZPANELSYS_s *giz_panel_sys;
+    HATMACHINESYS_s *hat_sys;
+    TECHNO_s *techno_sys;
+    i32 techno_count;
+    void *grapples;
+    i32 grapple_count;
+    u8 reserved_508c[0x8];
+    void *shards;
+    i32 shard_count;
+    void *attractos;
+    i32 attracto_count;
+    u8 reserved_50a4[0x8];
+    void *ledges;
+    i32 ledge_count;
+    SECURITYDOOR_s *security;
+    i32 security_count;
+    void *pickup_sys;
+    i32 blowup_type_count;
+    i32 blowup_count;
+    void *blowup_types;
+    void *blowups;
+    void *target_type;
+    void *target;
+    u8 reserved_50d8[0x14];
+    void *matrices;
+    u8 reserved_50f0[0xc];
     struct GIZTIMER_s *giz_timers;
     i32 giz_timers_count;
-
-    char filler11[0x50d8 - 0x50d4];
-
-    void *giz_randoms;
-
-    char filler12[0x50e0 - 0x50dc];
-
+    void *torpedoes;
+    GIZRANDOMSYS_s *giz_randoms;
+    GIZSPECIALSYS_s *special_sys;
     GAMEANTINODESYS_s *game_antinode_sys;
-
-    char filler13[0x50e8 - 0x50e4];
-
+    void *shadow_sys;
     GIZBOMBGENSYS_s *giz_bombgen_sys;
-
-    char filler14a[0x5120 - 0x50ec];
-
-    void *podrace; // 0x5120  per-level PodRace state block
-
-    char filler14b[0x516c - 0x5124];
-
+    i32 level_specific_allocated;
+    union {
+        void *level_specific_data;
+        void *podrace;
+    };
+    void *customiser_parts[18];
     TRAFFICANIMSYS_s *trafficanim_sys; // 0x516c
-
-    char filler15[0x51b0 - 0x5170];
+    void *plugs;
+    i32 progress_restored;
+    u8 reserved_5178[0x38];
 } WORLDINFO;
+
+DECOMP_ASSERT(sizeof(WORLDINFO) == 0x51b0, "WORLDINFO size");
+DECOMP_ASSERT(offsetof(WORLDINFO, pulses_sys) == 0x5054, "WORLDINFO pulse system offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, levers) == 0x506c, "WORLDINFO lever offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, giz_timers) == 0x50fc, "WORLDINFO timer offset");
 
 extern void (*WorldInfo_InitMenuFn)(WORLDINFO *, i32 *, i32 *);
 extern void (*WorldInfo_InitLastFn)(WORLDINFO *);

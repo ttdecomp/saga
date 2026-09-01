@@ -1,12 +1,14 @@
 #include "legoapi/gizmos/trigger/gizrandom.h"
 
 #include "decomp.h"
+#include "legoapi/world/level.h"
+#include "legoapi/world/world.h"
 
 i32 gizrandom_gizmotype_id = -1;
 
-i32 GizRandom_GetMaxGizmos(void *random) {
-    UNIMPLEMENTED();
-    return {};
+i32 GizRandom_GetMaxGizmos(void *world_info) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_info);
+    return world != NULL && world->current_level != NULL ? world->current_level->max_giz_randoms : 0;
 }
 
 void GizRandom_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -14,13 +16,12 @@ void GizRandom_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
 }
 
 char *GizRandom_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL ? static_cast<GIZRANDOM *>(gizmo->object)->name : NULL;
 }
 
-i32 GizRandom_GetOutput(GIZMO *gizmo, i32, i32) {
-    UNIMPLEMENTED();
-    return {};
+i32 GizRandom_GetOutput(GIZMO *gizmo, i32 output, i32) {
+    GIZRANDOM *random = static_cast<GIZRANDOM *>(gizmo->object);
+    return (random->flags & 1) != 0 && random->selected_output == output;
 }
 
 char *GizRandom_GetOutputName(GIZMO *gizmo, i32 output_index) {
@@ -29,8 +30,7 @@ char *GizRandom_GetOutputName(GIZMO *gizmo, i32 output_index) {
 }
 
 i32 GizRandom_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return static_cast<GIZRANDOM *>(gizmo->object)->output_count;
 }
 
 void GizRandom_Activate(GIZMO *gizmo, i32) {

@@ -1,6 +1,7 @@
 #include "legoapi/gizmos/object/gizpanel.h"
 
 #include "decomp.h"
+#include "legoapi/legoapi_types.h"
 
 struct GIZPANELPROGRESS {
     i32 state;
@@ -28,8 +29,8 @@ static void GizPanel_Draw(void *, void *, float) {
 }
 
 static char *GizPanel_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    GIZPANEL_s *panel = gizmo != NULL ? static_cast<GIZPANEL_s *>(gizmo->object) : NULL;
+    return panel != NULL ? panel->name : NULL;
 }
 
 static i32 GizPanel_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -42,9 +43,8 @@ static char *GizPanel_GetOutputName(GIZMO *gizmo, i32 output_index) {
     return {};
 }
 
-static i32 GizPanel_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+static i32 GizPanel_GetNumOutputs(GIZMO *) {
+    return 1;
 }
 
 static void GizPanel_Activate(GIZMO *gizmo, i32) {
@@ -55,9 +55,8 @@ static void GizPanel_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static void *GizPanels_AllocateProgressData(VARIPTR *, VARIPTR *) {
-    UNIMPLEMENTED();
-    return {};
+static void *GizPanels_AllocateProgressData(VARIPTR *buffer, VARIPTR *buffer_end) {
+    return GizmoBufferAlloc(buffer, buffer_end, 0xc);
 }
 
 static void GizPanels_ClearProgress(void *, void *progress_data) {

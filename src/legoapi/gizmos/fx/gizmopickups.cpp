@@ -1,6 +1,7 @@
 #include "legoapi/gizmos/fx/gizmopickups.h"
 
 #include "decomp.h"
+#include "legoapi/legoapi_types.h"
 
 i32 gizmopickup_typeid = -1;
 
@@ -22,8 +23,8 @@ static void GizmoPickups_Draw(void *, void *, float) {
 }
 
 static char *GizmoPickup_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    GIZMOPICKUP_s *pickup = gizmo != NULL ? static_cast<GIZMOPICKUP_s *>(gizmo->object) : NULL;
+    return pickup != NULL ? pickup->name : NULL;
 }
 
 static i32 GizmoPickup_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -36,9 +37,8 @@ static char *GizmoPickup_GetOutputName(GIZMO *gizmo, i32 output_index) {
     return {};
 }
 
-static i32 GizmoPickup_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+static i32 GizmoPickup_GetNumOutputs(GIZMO *) {
+    return 1;
 }
 
 static void GizmoPickup_Activate(GIZMO *gizmo, i32) {

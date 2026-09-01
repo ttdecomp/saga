@@ -1,4 +1,4 @@
-![Progress](https://img.shields.io/badge/matching-11.19%25-red)
+![Progress](https://img.shields.io/badge/matching-11.21%25-red)
 [![Discord](https://img.shields.io/discord/1467775700894224555?color=%235865F2&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/2HJuMtzA7q)
 
 |                 | Target (Android x86)                                                                                                                                                                                  | Host                                                                                                                                                                                  |
@@ -112,15 +112,15 @@ See the [documentation index](doc/main.md).
 | `gameframework` | 68.5% | 11.8% | 100.0% |
 | `gamelib` | 5.6% | 0.9% | 5.0% |
 | `java` | 10.7% | 0.0% | 0.0% |
-| `legoapi` | 8.3% | 6.8% | 30.9% |
+| `legoapi` | 8.3% | 7.6% | 30.9% |
 | `legoapi/actions` | 1.7% | 0.5% | 3.2% |
 | `legoapi/ai` | 3.9% | 0.0% | 89.2% |
 | `legoapi/audio` | 4.9% | 5.8% | 98.1% |
-| `legoapi/characters` | 7.2% | 2.7% | 36.1% |
+| `legoapi/characters` | 7.3% | 2.9% | 36.5% |
 | `legoapi/core` | 16.2% | 5.1% | 97.8% |
 | `legoapi/cutscenes` | 4.5% | 0.0% | 93.8% |
-| `legoapi/gizmo` | 4.9% | 4.7% | 0.4% |
-| `legoapi/gizmos` | 12.4% | 4.9% | 100.0% |
+| `legoapi/gizmo` | 4.9% | 4.9% | 0.4% |
+| `legoapi/gizmos` | 12.9% | 11.4% | 100.0% |
 | `legoapi/items` | 3.2% | 0.2% | 6.7% |
 | `legoapi/menus` | 9.7% | 10.7% | 18.1% |
 | `legoapi/misc` | 4.6% | 1.0% | - |
