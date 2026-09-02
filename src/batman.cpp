@@ -204,11 +204,11 @@ restart_level:
 giz_freeplay:
     gizMsg = CheckGizAIMessage(gizMsgSys, "FreePlay", NULL);
     if (gizMsg != NULL) {
-        gizMsg->mode = 1;
-        gizMsg->mode_args = 0;
+        gizMsg->output_values[0] = 1;
+        gizMsg->output_values[1] = 0;
         gizMsg->flags |= 1;
         gizMsg->value = (f32)FreePlay;
-        gizMsg->flag = 2;
+        gizMsg->num_outputs = 2;
     }
 
     gizMsg2 = CheckGizAIMessage(gizaimessagesys, "MissionMode", NULL);
@@ -217,9 +217,9 @@ giz_freeplay:
             gizMsg2->value = 1.0f;
         }
         gizMsg2->flags |= 1;
-        gizMsg2->mode = 1;
-        gizMsg2->mode_args = 0;
-        gizMsg2->flag = 2;
+        gizMsg2->output_values[0] = 1;
+        gizMsg2->output_values[1] = 0;
+        gizMsg2->num_outputs = 2;
     }
 
     gizMsg = CheckGizAIMessage(gizaimessagesys, "ChallengeMode", NULL);
@@ -228,9 +228,9 @@ giz_freeplay:
             gizMsg->value = 1.0f;
         }
         gizMsg->flags |= 1;
-        gizMsg->mode = 1;
-        gizMsg->mode_args = 0;
-        gizMsg->flag = 2;
+        gizMsg->output_values[0] = 1;
+        gizMsg->output_values[1] = 0;
+        gizMsg->num_outputs = 2;
     }
 
     if (((Area == -1) || (ADataList[Area].episode_index == 0xff)) || ((ADataList[Area].flags & 0x14) != 0x10)) {

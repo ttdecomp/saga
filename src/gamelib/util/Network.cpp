@@ -295,6 +295,10 @@ void NetSample::Max(NetSample const &) {
 }
 
 void NetSample::Reset() {
+    values[0] = 0;
+    values[1] = 0;
+    values[2] = 0;
+    values[3] = 0;
 }
 
 void NetSample::operator+=(NetSample const &) {

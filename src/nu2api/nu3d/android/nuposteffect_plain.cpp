@@ -50,9 +50,9 @@ enum NuPostEffectFlag : i32 {
     kEffect_MotionBlur = 0x80,
 };
 
-i32 g_effectFlags;     // bss — see masks above
-i32 g_effectsRan;      // bss — set by the (untranscribed) effect dispatch
-i32 g_lastFrameEffect; // bss — last dispatched effect id
+i32 g_effectFlags; // bss - see masks above
+extern i32 g_effectsRan __asm__("_ZL12g_effectsRan") __attribute__((visibility("hidden")));
+extern u8 g_lastFrameEffect __asm__("_ZL17g_lastFrameEffect") __attribute__((visibility("hidden")));
 
 // ── Filter objects ───────────────────────────────────────────────────────────
 // On device these are heap-allocated C++ objects with a vtable.  On host they

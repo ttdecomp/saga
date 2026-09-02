@@ -7,6 +7,9 @@
 
 struct SoundTable;
 
+static u16 repsfxtab[256];
+static i32 repsfxcount;
+
 extern "C" {
     u16 GlobalSfxBits[100];
     u16 SfxBits[100];
@@ -52,15 +55,10 @@ void SetLevelSfxBits(WORLDINFO *world) {
     (void)world;
 }
 void ResetLevSfx(WORLDINFO *world) {
-    // SFX bit array and counter in the filler8 region.
-    // TODO: these offsets must be replaced with typed struct fields.
-    //   0x4720 → filler8[0x2c]: SFX bit array (0x400 bytes, stride 0x10)
-    //   0x4b14 → filler8[0x420]: SFX counter
-    i16 *sfx = (i16 *)&world->filler8[0x2c];
     for (i32 i = 0; i < 0x40; i++) {
-        sfx[i] = -1;
+        world->level_sfx[i].id = -1;
     }
-    *(i32 *)&world->filler8[0x420] = 0;
+    world->level_sfx_count = 0;
 }
 
 void InitSpecialSfx(WORLDINFO *world) {
@@ -178,6 +176,14 @@ extern "C" {
     }
 
     void ResetPreSeek(void) {
+        if (Music.mode == 11) {
+            Music.cutscene_track = -1;
+        } else {
+            Music.previous_track = -1;
+            Music.queued_track = -1;
+            Music.preseek_pending = 0;
+        }
+        Music.preseek_start_point = 0;
     }
 
     void RestoreGameMusic(void) {
@@ -279,6 +285,9 @@ void PlayRepeatSfx(char *, i32, float, char, float, nuvec_s *) {
 }
 
 void ResetRepeatSfx() {
+    repsfxcount = 0;
+    memset(repsfxtab, 0, sizeof(repsfxtab));
+    repsfxtab[0] = 0xffff;
 }
 
 void SetSfxBit_OnEx(i32) {

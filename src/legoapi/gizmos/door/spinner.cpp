@@ -1,12 +1,13 @@
 #include "legoapi/gizmos/door/spinner.h"
 
 #include "decomp.h"
+#include "legoapi/world/level.h"
 
 i32 spinner_gizmotype_id = -1;
 
 static i32 GizSpinner_GetMaxGizmos(void *spinner) {
-    UNIMPLEMENTED();
-    return {};
+    WORLDINFO *world = static_cast<WORLDINFO *>(spinner);
+    return world->current_level->max_spinners;
 }
 
 static void GizSpinner_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -25,8 +26,7 @@ static void GizSpinner_PanelDraw(void *, void *, float) {
 }
 
 static char *GizSpinner_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL ? static_cast<SPINNER *>(gizmo->object)->name : NULL;
 }
 
 i32 GizSpinner_GetOutput(GIZMO *gizmo, i32, i32) {

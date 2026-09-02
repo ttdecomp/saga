@@ -1,12 +1,13 @@
 #include "legoapi/gizmos/traps/gizturrets.h"
 
 #include "decomp.h"
+#include "legoapi/world/level.h"
 
 i32 turret_gizmotype_id = -1;
 
-static i32 GizTurrets_GetMaxGizmos(void *turret) {
-    UNIMPLEMENTED();
-    return {};
+static i32 GizTurrets_GetMaxGizmos(void *world_info) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_info);
+    return world != NULL ? world->current_level->max_turrets : 0;
 }
 
 static void GizTurrets_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -22,8 +23,7 @@ static void GizTurrets_Draw(void *, void *, float) {
 }
 
 static char *GizmoTurret_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL ? static_cast<GIZTURRET *>(gizmo->object)->name : NULL;
 }
 
 static i32 GizmoTurret_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -37,8 +37,7 @@ static char *GizmoTurret_GetOutputName(GIZMO *gizmo, i32 output_index) {
 }
 
 static i32 GizmoTurret_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return 3;
 }
 
 static void GizmoTurret_Activate(GIZMO *gizmo, i32) {

@@ -146,33 +146,43 @@ extern "C" {
     // and NuDisplayListBeforeFrame @0x2a9ea0/@0x2a9ff0).
     // ---------------------------------------------------------------------------
     typedef struct nudldlistscene_s {
-        char *name;                              // 0x00 debug name (CaptureSortPriority)
-        i32 nitems;                              // 0x04
-        nudisplaylistitem_s *items;              // 0x08
-        f32 *fade_ranges;                        // 0x0c per-instance near/far fade pairs
-        i32 nclip_objects;                       // 0x10
-        NUCLIPOBJECT *clip_objects;              // 0x14
-        u16 *clip_counts;                        // 0x18 per-clip-object item counts
-        void *field_1c;                          // 0x1c
-        void *field_20;                          // 0x20
-        void *field_24;                          // 0x24
-        f32 *lod_ranges;                         // 0x28 zero-terminated LOD ranges per instance
-        f32 *far_clip_ranges;                    // 0x2c per-instance camera far-clip override
-        u8 *clip_used[2];                        // 0x30 double-buffered clip word bitmaps
-        u8 pad_38[0x0c];                         // 0x38..0x43 unnamed in original DB
-        NUCLIPBOUNDS *clip_bounds;               // 0x44 per-instance min/max bounds
-        char *visibility_flags;                  // 0x48
-        u32 nmtls;                               // 0x4c
-        NUMTL **mtls;                            // 0x50
-        NUDISPLAYLIST **dlist_mtls;              // 0x54
-        u8 *mtl_used[2];                         // 0x58 double-buffered per-material used bits
-        i32 nsort_pris;                          // 0x60
-        nusortpri_s *sort_pris;                  // 0x64
-        f32 *alpha_values;                       // 0x68 per-clip-object alpha (SetAlphaPS)
-        i32 nspecials;                           // 0x6c
-        void *specials;                          // 0x70
-        u8 flags;                                // 0x74 update-request bits (see enum below)
-        u8 render_buffer;                        // 0x75 bit7 selects the current clip/mtl buffer
+        char *name;                 // 0x00 debug name (CaptureSortPriority)
+        i32 nitems;                 // 0x04
+        nudisplaylistitem_s *items; // 0x08
+        f32 *fade_ranges;           // 0x0c per-instance near/far fade pairs
+        i32 nclip_objects;          // 0x10
+        NUCLIPOBJECT *clip_objects; // 0x14
+        u16 *clip_counts;           // 0x18 per-clip-object item counts
+        void *field_1c;             // 0x1c
+        void *field_20;             // 0x20
+        void *field_24;             // 0x24
+        f32 *lod_ranges;            // 0x28 zero-terminated LOD ranges per instance
+        f32 *far_clip_ranges;       // 0x2c per-instance camera far-clip override
+        u8 *clip_used[2];           // 0x30 double-buffered clip word bitmaps
+        u8 pad_38[0x0c];            // 0x38..0x43 unnamed in original DB
+        NUCLIPBOUNDS *clip_bounds;  // 0x44 per-instance min/max bounds
+        char *visibility_flags;     // 0x48
+        u32 nmtls;                  // 0x4c
+        NUMTL **mtls;               // 0x50
+        NUDISPLAYLIST **dlist_mtls; // 0x54
+        u8 *mtl_used[2];            // 0x58 double-buffered per-material used bits
+        i32 nsort_pris;             // 0x60
+        nusortpri_s *sort_pris;     // 0x64
+        f32 *alpha_values;          // 0x68 per-clip-object alpha (SetAlphaPS)
+        i32 nspecials;              // 0x6c
+        void *specials;             // 0x70
+        union {
+            struct {
+                u16 unknown_74_1f : 5;
+                u16 layer_mask : 8;
+                u16 unknown_74_1e0 : 3;
+            };
+            struct {
+                u8 flags;         // 0x74 update-request bits (see enum below)
+                u8 render_buffer; // 0x75 bit7 selects the current clip/mtl buffer
+            };
+            u16 flags_word;
+        };
         u8 pad_76[2];                            // 0x76..0x77 unnamed in original DB
         struct nugscn_s *gscene;                 // 0x78
         void *ps;                                // 0x7c platform scratch
@@ -283,17 +293,19 @@ extern "C" {
     extern VARIPTR *display_list_buffer;
 
     // Item-handler dispatch tables extracted from the binary. The original
-    // keeps two 49-entry arrays (`__ItemFnTable` @0x625ae0 and
-    // `__ShadowItemTable` @0x625bc0, both 196 bytes per symtab) indexed by
-    // item type - 0x80; they are modelled here as absolute-type-indexed
-    // [0x100] arrays so NuDisplayListExecute's literal arithmetic
-    // (table + type*4 - 0x200) addresses the identical entries. Entries for
-    // types without a handler are NULL.
+    // table base is the entry for item type 0x80; entries are indexed by the
+    // item type relative to that base.
     typedef void (*nudl_handler_fn)(void *data);
-    extern nudl_handler_fn g_nudl_dispatch_table[0x100]; // __ItemFnTable
+    enum {
+        NUDL_ITEM_TYPE_FIRST = 0x80,
+        NUDL_ITEM_TYPE_LAST = 0xb0,
+        NUDL_ITEM_TABLE_SIZE = NUDL_ITEM_TYPE_LAST - NUDL_ITEM_TYPE_FIRST + 1,
+    };
+    typedef nudl_handler_fn NUDLITEMTABLE[NUDL_ITEM_TABLE_SIZE];
+    extern NUDLITEMTABLE g_nudl_dispatch_table; // __ItemFnTable
 
     // Transcribed functions (original addresses in nudlist.cpp comments).
-    void NuDisplayListExecute(nudisplaylistitem_s *item, u32 item_table);
+    void NuDisplayListExecute(nudisplaylistitem_s *item, const NUDLITEMTABLE *item_table);
     void NuDisplayListDrawItems(nudisplaylistitem_s *items);
     void NuDisplayListDrawRenderScene(i32 render_scene_id);
     i32 NuDisplayListAddRenderScene(void);

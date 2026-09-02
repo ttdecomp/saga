@@ -2,6 +2,7 @@
 
 #include "legoapi/items/base/apiobject.h"
 #include "nu2api/nu3d/nugscn.h"
+#include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nu3d/nuspline.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nucore/nulist.h"
@@ -132,8 +133,7 @@ typedef struct AIPATHNODE_s {
     u8 padding_0x31[3];
     AIPATHCNX **connections;
     u8 padding_0x38[8];
-    void *special;
-    u8 padding_0x44[8];
+    nuhspecial_s special;
     NUVEC special_position;
     i16 value_0x58;
     i16 value_0x5a;
@@ -411,8 +411,7 @@ struct AIANTINODE_s {
     f32 width;
     f32 max_height;
     f32 min_height;
-    void *special;
-    u8 padding_0x24[8];
+    nuhspecial_s special;
     NUVEC special_position;
     i32 flags;
     u8 padding_0x3c[4];

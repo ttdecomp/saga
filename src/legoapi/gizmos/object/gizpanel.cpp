@@ -1,4 +1,5 @@
 #include "legoapi/gizmos/object/gizpanel.h"
+#include "legoapi/world/level.h"
 
 #include "decomp.h"
 #include "legoapi/legoapi_types.h"
@@ -12,8 +13,8 @@ struct GIZPANELPROGRESS {
 i32 gizpanel_gizmotype_id = -1;
 
 static i32 GizPanel_GetMaxGizmos(void *panel) {
-    UNIMPLEMENTED();
-    return {};
+    WORLDINFO *world = static_cast<WORLDINFO *>(panel);
+    return world != NULL ? world->current_level->max_giz_panels : 0;
 }
 
 static void GizPanel_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {

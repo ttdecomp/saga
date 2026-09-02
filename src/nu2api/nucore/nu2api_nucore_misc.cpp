@@ -385,7 +385,10 @@ void NuMarkSceneAsZPrePass() {
 void NuMemBlkCheckFreeList(numemblk_s *) {
 }
 
+extern "C" i32 g_signedinUser;
+
 void NuOnlineResetProfiles() {
+    g_signedinUser = -1;
 }
 
 void NuAnimDataChunkDestroy(nuanimdatachunk_s *) {
@@ -636,7 +639,10 @@ void NuIOS_CopyBackbufferToTexture(nunativetex_s *texture, bool) {
 void NuIOS_IsProductPurchasedByNum(i32) {
 }
 
+static i32 g_vaoRecordCount asm("_ZL16g_vaoRecordCount");
+
 void NuIOS_ResetVAODuplicateFinder() {
+    g_vaoRecordCount = 0;
 }
 
 void NuFadeObjGetAngleTerrainValues(nuvec_s *) {
@@ -860,15 +866,15 @@ NuNetEmu::EmuPacket::~EmuPacket() {
 void NuNetEmu::PackStats::Draw(float, float, float, float, NetSmallStats::eInfo) const {
 }
 
-static void NuErrorFunction(char *, ...) {
+static __used__ void NuErrorFunction(char *, ...) {
 }
 
-static void NuWarningFunction(char *, ...) {
+static __used__ void NuWarningFunction(char *, ...) {
 }
 
-static void NuDebugMsgFunction(char *, ...) {
+static __used__ void NuDebugMsgFunction(char *, ...) {
 }
 
-static i32 NuDebugMsgFunctionTTY(i32, char *, ...) {
+static __used__ i32 NuDebugMsgFunctionTTY(i32, char *, ...) {
     return 0;
 }

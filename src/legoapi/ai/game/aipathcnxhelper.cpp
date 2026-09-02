@@ -2,6 +2,9 @@
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nu3d/nutex.h"
 
+#include <string.h>
+#include "nu2api/nucore/nulist.h"
+
 struct AIROW_s;
 struct nuqthdr_s;
 struct nunativegscene_s;
@@ -16,7 +19,20 @@ void AIPathCheckExtents(AIPATH_s *, nuvec_s *) {
 void pathEditorDrawNode(nuvec_s *, float, float, float, u32, numtl_s *, i32, i32) {
 }
 
-void AIPathCnxHelperSysReset(WORLDINFO_s *, AIPATHCNXHELPERSYS_s *) {
+extern "C" {
+    void (*AIPathCnxHelperSysInitFn)(WORLDINFO_s *) = NULL;
+}
+
+void AIPathCnxHelperSysReset(WORLDINFO_s *world, AIPATHCNXHELPERSYS_s *system) {
+    if (system != NULL) {
+        if (system->helper_count != 0) {
+            memset(system->helpers, 0, system->helper_count * sizeof(*system->helpers));
+            system->helper_count = 0;
+        }
+        if (AIPathCnxHelperSysInitFn != NULL) {
+            AIPathCnxHelperSysInitFn(world);
+        }
+    }
 }
 
 void AIPathCnxHelperSys_Find(AIPATHCNXHELPERSYS_s *, GameObject_s *, AIPATHCNX_s *, unsigned char, unsigned char,
@@ -24,7 +40,19 @@ void AIPathCnxHelperSys_Find(AIPATHCNXHELPERSYS_s *, GameObject_s *, AIPATHCNX_s
                                      unsigned char)) {
 }
 
-void AIPathCnxControlSysReset(AIPATHCNXCONTROLSYS_s *) {
+void AIPathCnxControlSysReset(AIPATHCNXCONTROLSYS_s *system) {
+    if (system == NULL) {
+        return;
+    }
+
+    system->available_controllers.head = NULL;
+    system->available_controllers.tail = NULL;
+    system->field_0x10 = 0;
+    system->field_0x14 = 0;
+    memset(system->controllers, 0, system->controller_count * sizeof(*system->controllers));
+    for (i32 i = 0; i < system->controller_count; ++i) {
+        NuLinkedListAppend(&system->available_controllers, &system->controllers[i].links);
+    }
 }
 
 void AIPathCnxControlSysUpdate(AIPATHCNXCONTROLSYS_s *) {

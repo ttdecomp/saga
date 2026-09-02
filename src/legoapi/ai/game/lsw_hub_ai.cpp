@@ -82,7 +82,7 @@ void LSW_Hub_InitAI(WORLDINFO_s *world) {
 
 void LSW_Hub_ResetAI(WORLDINFO_s *world) {
     hub_ai.area = -1;
-    LevGizObst[0] = GizObstacle_FindByName(world->giz_obstacle_sys, "BARMAN");
+    LevGizObst[0] = GizObstacle_FindByName(world->giz_obstacle_sys, "BandDoor_Open");
 }
 
 void LSW_Hub_UpdateAI(WORLDINFO_s *world) {

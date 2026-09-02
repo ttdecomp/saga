@@ -48,8 +48,12 @@ extern "C" {
 // that KaminoC_Init clears via memset of the enclosing disco struct, which is
 // why readers cannot be constant-folded.
 static u8 kaminodisco;
-static i32 dooku_c;        // _ZL7dooku_c
-static i32 dooku_state[4]; // dooku level state (hit counters / node)
+static i32 dooku_c; // _ZL7dooku_c
+struct dooku_state_s {
+    i32 hit_message;
+    nuhspecial_s node;
+};
+static dooku_state_s dooku_state;
 
 // kamino_e level state block and hud scene object.
 struct kamino_e_state_s {
@@ -253,7 +257,7 @@ void KaminoE_Draw(WORLDINFO_s *world) {
     if (netclient == 0) {
         if (kamino_e_state != NULL && kamino_e_state->field_0x28 > 0.0f) {
             GameObject_s *obj = (GameObject_s *)FindGameObject((i32)(i16)id_JANGOFETT, 1, 1, 1, 0);
-            if (obj != NULL && kamino_e_state != NULL && obj->apiobj.anim_packet.field_0x20 == 1.0f)
+            if (obj != NULL && kamino_e_state != NULL && obj->apiobj.anim_packet.time_secondary == 1.0f)
                 DrawBossHitPoints(obj);
         }
     }
@@ -611,15 +615,12 @@ void DookuC_Init(WORLDINFO_s *world) {
 
 void DookuC_Reset(WORLDINFO_s *world) {
     dooku_c = 0;
-    dooku_state[0] = 0;
-    dooku_state[1] = 0;
-    dooku_state[2] = 0;
-    dooku_state[3] = 0;
+    dooku_state = {};
     if (netclient == 0) {
         dooku_c = (i32)(usize)SetGizAIMessage(gizaimessagesys, "dooku_total", 0.0f, NULL);
-        dooku_state[0] = (i32)(usize)CheckGizAIMessage(gizaimessagesys, "dooku_hits", NULL);
+        dooku_state.hit_message = (i32)(usize)CheckGizAIMessage(gizaimessagesys, "dooku_hits", NULL);
     }
-    NuSpecialFind(world->current_gscn, (void **)&dooku_state[1], "dooku_node", 1);
+    NuSpecialFind(world->current_gscn, &dooku_state.node, "dooku_node", 1);
 }
 
 void DookuC_Update(WORLDINFO_s *world) {
@@ -630,13 +631,13 @@ void DookuC_Update(WORLDINFO_s *world) {
             KillBossNewLevel((i32)(i16)id_COUNTDOOKU, 0, 0.0f, DOOKUOUTRO_LDATA->idx);
         }
     }
-    DrawForceBackEffect((nuhspecial_s *)dooku_state[1]);
+    DrawForceBackEffect(&dooku_state.node);
 }
 
 void DookuC_DrawPanel(WORLDINFO_s *) {
     if (netclient != 0)
         return;
     GameObject_s *obj = (GameObject_s *)FindGameObject((i32)(i16)id_COUNTDOOKU, 1, 1, 1, 0);
-    if (obj != NULL && dooku_c != 0 && obj->apiobj.anim_packet.field_0x20 == 1.0f)
+    if (obj != NULL && dooku_c != 0 && obj->apiobj.anim_packet.time_secondary == 1.0f)
         DrawBossHitPoints(obj);
 }

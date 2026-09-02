@@ -1,10 +1,11 @@
 #include "legoapi/gizmos/traps/attractos.h"
 
 #include "decomp.h"
+#include "legoapi/world/level.h"
 
-static i32 Attractos_GetMaxGizmos(void *attracto) {
-    UNIMPLEMENTED();
-    return {};
+static i32 Attractos_GetMaxGizmos(void *world_info) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_info);
+    return world != NULL ? world->current_level->max_attractos : 0;
 }
 
 static void Attractos_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -20,8 +21,7 @@ static void Attractos_Draw(void *, void *, float) {
 }
 
 static char *Attracto_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL ? static_cast<ATTRACTO *>(gizmo->object)->name : NULL;
 }
 
 static i32 Attracto_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -35,8 +35,7 @@ static char *Attracto_GetOutputName(GIZMO *gizmo, i32 output_index) {
 }
 
 static i32 Attracto_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return 1;
 }
 
 static void Attracto_Activate(GIZMO *gizmo, i32) {

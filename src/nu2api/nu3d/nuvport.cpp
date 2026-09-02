@@ -62,7 +62,10 @@ void NuVpSetRegions(f32 source_x, f32 source_y, f32 source_right, f32 source_bot
 }
 
 void NuVpResetRegions(void) {
-    NuVpSetRegions(0.0f, 0.0f, kVirtualWidth, kVirtualHeight, 0.0f, 0.0f, kVirtualWidth, kVirtualHeight);
+    f32 height = (f32)PS2_VREZ_H;
+    f32 width = (f32)PS2_VREZ_W;
+
+    NuVpSetRegions(0.0f, 0.0f, width, height, 0.0f, 0.0f, width, height);
 }
 
 void NuVpRestore(void) {

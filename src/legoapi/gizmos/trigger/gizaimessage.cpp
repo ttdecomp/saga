@@ -1,14 +1,16 @@
 #include "legoapi/gizmos/trigger/gizaimessage.h"
 
 #include "decomp.h"
+#include "legoapi/legoapi_types.h"
+
+#include <stdio.h>
 
 i32 gizaimessage_gizmotype_id = -1;
 
 static char *gizaimessage_prefix = "msg_";
 
 static i32 GizAIMessage_GetMaxGizmos(void *message) {
-    UNIMPLEMENTED();
-    return {};
+    return 0x40;
 }
 
 static void GizAIMessage_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -16,23 +18,34 @@ static void GizAIMessage_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
 }
 
 static char *GizAIMessage_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    if (gizmo == NULL) {
+        return NULL;
+    }
+    return GizAIMessage_GetName(static_cast<GIZAIMESSAGE_s *>(gizmo->object));
 }
 
-static i32 GizAIMessage_GetOutput(GIZMO *gizmo, i32, i32) {
-    UNIMPLEMENTED();
-    return {};
+static i32 GizAIMessage_GetOutput(GIZMO *gizmo, i32 output_index, i32) {
+    return gizmo != NULL && gizmo->object != NULL && static_cast<u32>(output_index) < 8 &&
+           static_cast<f32>(static_cast<GIZAIMESSAGE_s *>(gizmo->object)->output_values[output_index]) ==
+               static_cast<GIZAIMESSAGE_s *>(gizmo->object)->value;
 }
 
 static char *GizAIMessage_GetOutputName(GIZMO *gizmo, i32 output_index) {
-    UNIMPLEMENTED();
-    return {};
+    static char returnstr[16];
+
+    if (gizmo != NULL && gizmo->object != NULL && static_cast<u32>(output_index) < 8) {
+        GIZAIMESSAGE_s *message = static_cast<GIZAIMESSAGE_s *>(gizmo->object);
+        sprintf(returnstr, "%d", message->output_values[output_index]);
+        return returnstr;
+    }
+    return NULL;
 }
 
 static i32 GizAIMessage_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    if (gizmo == NULL || gizmo->object == NULL) {
+        return 0;
+    }
+    return static_cast<GIZAIMESSAGE_s *>(gizmo->object)->num_outputs;
 }
 
 ADDGIZMOTYPE *GizAIMessage_RegisterGizmo(i32 type_id) {

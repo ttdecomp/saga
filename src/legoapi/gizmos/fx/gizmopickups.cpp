@@ -2,12 +2,13 @@
 
 #include "decomp.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/world/level.h"
 
 i32 gizmopickup_typeid = -1;
 
 static i32 GizmoPickups_GetMaxGizmos(void *pickup) {
-    UNIMPLEMENTED();
-    return {};
+    WORLDINFO *world = static_cast<WORLDINFO *>(pickup);
+    return world != NULL ? world->current_level->max_pickups : 0;
 }
 
 static void GizmoPickups_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {

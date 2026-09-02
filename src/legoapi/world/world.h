@@ -7,6 +7,7 @@
 
 struct GIZFORCESYS_s;
 struct GIZOBSTACLESYS_s;
+struct FADER_s;
 
 struct AREADATA_s;
 struct LEVEL_PROGRESS_s;
@@ -28,24 +29,52 @@ struct AITRIGGERSETSYS_s;
 struct CLIMBOBJECTSYS_s;
 struct MechAutoJumpManager;
 struct DOOR_s;
+struct TELEPORT_s;
+struct PORTALDOOR_s;
 struct GIZOBSTACLESYS_s;
 struct GIZTURRETSYS_s;
 struct GRABBER_s;
 struct PULSESYS_s;
+struct pushblock_s;
 struct LEVER_s;
 struct SIGNAL_s;
 struct GIZPANELSYS_s;
-struct HATMACHINESYS_s;
+struct HATMACHINE_s;
+struct HATMACHINESYS_s {
+    i32 count;
+    i32 max_count;
+    i32 unknown;
+    HATMACHINE_s *machines;
+};
+struct GUIDELINE_s;
+struct TUBE_s;
 struct TECHNO_s;
 struct SECURITYDOOR_s;
 struct GIZRANDOMSYS_s;
 struct GIZSPECIALSYS_s;
 struct GAMEANTINODESYS_s;
 struct GIZBOMBGENSYS_s;
+struct GIZMOBLOWUPTYPE_s;
+struct GIZMOBLOWUP_s;
+struct GIZMOPICKUPSYS_s;
+struct SPECIALMINIKITSYS_s;
 struct TRAFFICANIMSYS_s;
 struct GIZTIMER_s;
 struct TIMER_s;
 struct LEVEL_OBJECT_RUNTIME_s;
+struct spacelevel_s;
+struct CHARSCENE_s;
+
+struct BOLTTYPE_s {
+    u8 data[0xa4];
+};
+DECOMP_ASSERT(sizeof(BOLTTYPE_s) == 0xa4, "BOLTTYPE_s size");
+
+struct LEVELSFXENTRY_s {
+    i16 id;
+    u8 reserved_02[0xe];
+};
+DECOMP_ASSERT(sizeof(LEVELSFXENTRY_s) == 0x10, "LEVELSFXENTRY_s size");
 
 // A portal-position spline stores camera/player points as position/target
 // pairs (six floats per point).  MoveGameCamera uses portal_places[2] for
@@ -60,8 +89,10 @@ typedef struct portalpos_s {
 typedef struct MINIKIT {
     void *gscn;
     char filler[0x14];
-    i32 field_0x18;
+    struct CHARSCENE_s *character_scenes;
 } MINIKIT;
+DECOMP_ASSERT(offsetof(MINIKIT, character_scenes) == 0x18, "MINIKIT character scenes offset");
+DECOMP_ASSERT(sizeof(MINIKIT) == 0x1c, "MINIKIT size");
 
 // Layout matches the original WORLDINFO_s (0x51b0 = 20912 bytes).
 // Field offsets verified against the original binary disassembly.
@@ -140,27 +171,45 @@ typedef struct WORLDINFO_s {
     CLIMBOBJECTSYS_s *climb_object_sys;
     MechAutoJumpManager *mech_auto_jump_manager;
 
-    char filler6a[0x469c - 0x4684];     // 0x4684 .. 0x469c
+    TELEPORT_s *teleports;              // 0x4684
+    i32 teleport_count;                 // 0x4688
+    u8 reserved_468c[0x8];              // 0x468c .. 0x4694
+    TUBE_s *tubes;                      // 0x4694
+    i32 tube_count;                     // 0x4698
     DOOR_s *doors;                      // 0x469c
     i32 door_count;                     // 0x46a0
     DOOR_s *start_door;                 // 0x46a4
     GIZOBSTACLESYS_s *giz_obstacle_sys; // 0x46a8
     GIZTURRETSYS_s *giz_turret_sys;     // 0x46ac
     GIZFORCESYS_s *giz_force_sys;       // 0x46b0
-    char filler7[0x46f0 - 0x46b4];      // 0x46b4 .. 0x46f0
+    char filler7a[0x46c0 - 0x46b4];     // 0x46b4 .. 0x46c0
+    pushblock_s *push_blocks;           // 0x46c0
+    i32 push_block_count;               // 0x46c4
+    char filler7b[0x46f0 - 0x46c8];     // 0x46c8 .. 0x46f0
 
     GRABBER_s *grabber; // 0x46f0
 
-    char filler8[0x5038 - 0x46f4];
-    void *faders;
+    union {
+        struct {
+            u8 reserved_46f4[0x4720 - 0x46f4];
+            LEVELSFXENTRY_s level_sfx[64]; // 0x4720
+            u8 reserved_4b20[0x5038 - 0x4b20];
+        };
+        struct {
+            u8 reserved_to_4b14[0x4b14 - 0x46f4];
+            i32 level_sfx_count;      // 0x4b14
+            BOLTTYPE_s bolt_types[8]; // 0x4b18
+        };
+    };
+    FADER_s *faders;
     i32 fader_count;
     void *mini_trooper_packets;
     void *mini_trooper_teams;
     void *mini_trooper_storage;
-    void *portal_doors;
-    i32 portal_door_count;
+    PORTALDOOR_s *portal_doors; // 0x504c
+    i32 portal_door_count;      // 0x5050
     PULSESYS_s *pulses_sys;
-    void *special_minikits;
+    SPECIALMINIKITSYS_s *special_minikits;
     u8 reserved_505c[0x8];
     SIGNAL_s *signals;
     i32 signal_count;
@@ -177,16 +226,17 @@ typedef struct WORLDINFO_s {
     i32 shard_count;
     void *attractos;
     i32 attracto_count;
-    u8 reserved_50a4[0x8];
+    GUIDELINE_s *guidelines;
+    i32 guideline_count;
     void *ledges;
     i32 ledge_count;
     SECURITYDOOR_s *security;
     i32 security_count;
-    void *pickup_sys;
+    GIZMOPICKUPSYS_s *pickup_sys;
     i32 blowup_type_count;
     i32 blowup_count;
-    void *blowup_types;
-    void *blowups;
+    GIZMOBLOWUPTYPE_s *blowup_types;
+    GIZMOBLOWUP_s *blowups;
     void *target_type;
     void *target;
     u8 reserved_50d8[0x14];
@@ -204,6 +254,7 @@ typedef struct WORLDINFO_s {
     union {
         void *level_specific_data;
         void *podrace;
+        spacelevel_s *space_level;
     };
     void *customiser_parts[18];
     TRAFFICANIMSYS_s *trafficanim_sys; // 0x516c

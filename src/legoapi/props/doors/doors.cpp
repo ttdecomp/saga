@@ -17,6 +17,9 @@ struct nunativegscene_s;
 struct SHOPINPUT;
 
 void Door_Reset() {
+    Door_ExitName[0] = '\0';
+    Door_Start = 0;
+    Door_NextSock = -1;
 }
 
 void Doors_Check(WORLDINFO_s *, GameObject_s *) {

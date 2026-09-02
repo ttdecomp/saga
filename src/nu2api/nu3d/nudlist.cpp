@@ -55,11 +55,6 @@ extern "C" {
     NUDLIST_MANAGER global_dlist_manager = {0};
 }
 
-// Scratch backing for the 2D list's item cursor so AddItem is safe before
-// NuDisplayListInit has run (host safety net).
-static u8 s_2d_item_scratch[0x100] = {0};
-static u8 s_2d_state_storage[0x40] = {0};
-
 // Capture debug state (bss @0x11a0070 / @0x11a0068).
 static i32 s_capture_enabled; // do_capture
 static i32 s_capture_fh;      // capture file handle
@@ -92,54 +87,54 @@ void NuIOSDLDeferredTransformCallback(void *);
 void NuIOSDLDeferredTransformParamsCallback(void *);
 
 // Primary table — __ItemFnTable @0x625ae0 (sparse, indexed by absolute type).
-nudl_handler_fn g_nudl_dispatch_table[0x100] = {nullptr};
-static nudl_handler_fn s_shadow_table_storage[0x100] = {nullptr};
-static const nudl_handler_fn *s_shadow_table = s_shadow_table_storage;
+NUDLITEMTABLE g_nudl_dispatch_table = {nullptr};
+static NUDLITEMTABLE s_shadow_table_storage = {nullptr};
+static const NUDLITEMTABLE *s_shadow_table = &s_shadow_table_storage;
 
 struct NudlTableInit {
     NudlTableInit() {
-        auto *t = g_nudl_dispatch_table;
-        auto *s = s_shadow_table_storage;
-        t[0x80] = NuIOSDLMtlCallback;
-        t[0x82] = NuIOSDLGeomCallback;
-        t[0x83] = NuIOSDLTransformCallback;
-        t[0x8b] = NuIOSDLGeomCallback;
-        t[0x8c] = NuIOSDLTransformParamsCallback;
-        t[0x8f] = NuIOSDLFaceOnCallback;
-        t[0x90] = NuIOSDLFaceOnTransformCallback;
-        t[0x93] = NuIOSDLGeom2DCallback;
-        t[0x94] = NuIOSDLLightsCallback;
-        t[0x98] = NuIOSDLGeomCallback;
-        t[0x99] = NuIOSDLSkinMtxCallback;
-        t[0x9a] = NuIOSDLCameraCallback;
-        t[0xa5] = NuIOSDLKonstCallback;
-        t[0xa6] = NuIOSDLFogCallback;
-        t[0xa7] = NuIOSDLDebrisCallback;
-        t[0xa9] = NuIOSDLVertexGroupsCallback;
-        t[0xaa] = NuIOSDLVertexOffsetsCallback;
-        t[0xab] = NuIOSDLReflectionCallback;
-        t[0xae] = NuIOSDLLightmapOld;
-        t[0xaf] = NuIOSDLLightmapOffsetOld;
-        t[0xb0] = NuIOSDLLightmap;
+        auto *t = &g_nudl_dispatch_table;
+        auto *s = &s_shadow_table_storage;
+        (*t)[0x00] = NuIOSDLMtlCallback;
+        (*t)[0x02] = NuIOSDLGeomCallback;
+        (*t)[0x03] = NuIOSDLTransformCallback;
+        (*t)[0x0b] = NuIOSDLGeomCallback;
+        (*t)[0x0c] = NuIOSDLTransformParamsCallback;
+        (*t)[0x0f] = NuIOSDLFaceOnCallback;
+        (*t)[0x10] = NuIOSDLFaceOnTransformCallback;
+        (*t)[0x13] = NuIOSDLGeom2DCallback;
+        (*t)[0x14] = NuIOSDLLightsCallback;
+        (*t)[0x18] = NuIOSDLGeomCallback;
+        (*t)[0x19] = NuIOSDLSkinMtxCallback;
+        (*t)[0x1a] = NuIOSDLCameraCallback;
+        (*t)[0x25] = NuIOSDLKonstCallback;
+        (*t)[0x26] = NuIOSDLFogCallback;
+        (*t)[0x27] = NuIOSDLDebrisCallback;
+        (*t)[0x29] = NuIOSDLVertexGroupsCallback;
+        (*t)[0x2a] = NuIOSDLVertexOffsetsCallback;
+        (*t)[0x2b] = NuIOSDLReflectionCallback;
+        (*t)[0x2e] = NuIOSDLLightmapOld;
+        (*t)[0x2f] = NuIOSDLLightmapOffsetOld;
+        (*t)[0x30] = NuIOSDLLightmap;
 
-        s[0x80] = NuIOSDLDeferredMtlCallback;
-        s[0x82] = NuIOSDLGeomCallback;
-        s[0x83] = NuIOSDLDeferredTransformCallback;
-        s[0x8b] = NuIOSDLGeomCallback;
-        s[0x8c] = NuIOSDLDeferredTransformParamsCallback;
-        s[0x98] = NuIOSDLGeomCallback;
-        s[0x99] = NuIOSDLSkinMtxCallback;
-        s[0xa9] = NuIOSDLVertexGroupsCallback;
-        s[0xaa] = NuIOSDLVertexOffsetsCallback;
+        (*s)[0x00] = NuIOSDLDeferredMtlCallback;
+        (*s)[0x02] = NuIOSDLGeomCallback;
+        (*s)[0x03] = NuIOSDLDeferredTransformCallback;
+        (*s)[0x0b] = NuIOSDLGeomCallback;
+        (*s)[0x0c] = NuIOSDLDeferredTransformParamsCallback;
+        (*s)[0x18] = NuIOSDLGeomCallback;
+        (*s)[0x19] = NuIOSDLSkinMtxCallback;
+        (*s)[0x29] = NuIOSDLVertexGroupsCallback;
+        (*s)[0x2a] = NuIOSDLVertexOffsetsCallback;
     }
 };
 static NudlTableInit s_nudl_table_init;
 
 // CurrentItemTable @0x625c84 — points at entry for type 0x80.
-static const nudl_handler_fn *s_current_table = nullptr;
+static const NUDLITEMTABLE *s_current_table = nullptr;
 struct NudlCurrentTableInit {
     NudlCurrentTableInit() {
-        s_current_table = &g_nudl_dispatch_table[0x80];
+        s_current_table = &g_nudl_dispatch_table;
     }
 };
 static NudlCurrentTableInit s_nudl_current_init;
@@ -175,19 +170,12 @@ extern "C" void NuDisplayListCheckBuffer(void) {
 }
 
 extern "C" nudisplaylist_s *NuDisplayListGet2dList(void) {
-    nudisplaylist_s *list = &global_dlist_manager.dlist_2d;
-    if (list->items == nullptr) {
-        list->items = reinterpret_cast<nudisplaylistitem_s *>(s_2d_item_scratch);
-        if (list->state == nullptr) {
-            list->state = reinterpret_cast<nurndrstate_s *>(s_2d_state_storage);
-        }
-    }
-    return list;
+    return &global_dlist_manager.dlist_2d;
 }
 
 extern "C" void NuDisplayListResetBuffer(void) {
     display_list_buffer = reinterpret_cast<VARIPTR *>(&rndrstream_free);
-    display_list_buffer_end = reinterpret_cast<VARIPTR *>(rndrstream_end.addr);
+    display_list_buffer_end = reinterpret_cast<VARIPTR *>(rndrstream_end.void_ptr);
 }
 
 // Small builders used by NuDisplayListCreateMtlDlist — second args are
@@ -212,15 +200,12 @@ extern "C" void NuDisplayListAddLightState(nudisplaylistitem_s *item, void * /*m
 // Executor
 // ──────────────────────────────────────────────────────────────────────────────
 
-extern "C" void NuDisplayListExecute(nudisplaylistitem_s *item, u32 table_base) {
-    // `table_base` points at the entry for type 0x80, so entry for type t
-    // is at table_base + t*4 - 0x200.
+extern "C" void NuDisplayListExecute(nudisplaylistitem_s *item, const NUDLITEMTABLE *item_table) {
     for (;;) {
         // Walk the linear run until a NEXT links elsewhere.
         while (item->id != kItemId_Next) {
             if (item->id == kItemId_Call) {
-                auto handler = *reinterpret_cast<nudl_handler_fn *>(static_cast<usize>(table_base) +
-                                                                    static_cast<u32>(item->type) * 4u - 0x200u);
+                auto handler = (*item_table)[item->type - NUDL_ITEM_TYPE_FIRST];
                 if (handler) {
                     handler(item->next);
                 }
@@ -235,14 +220,15 @@ extern "C" void NuDisplayListExecute(nudisplaylistitem_s *item, u32 table_base) 
 }
 
 extern "C" void NuDisplayListDrawItems(nudisplaylistitem_s *items) {
-    NuDisplayListExecute(items, static_cast<u32>(reinterpret_cast<usize>(s_current_table)));
+    nudisplaylistitem_s *item = items;
+    NuDisplayListExecute(items, s_current_table);
 }
 
 extern "C" void NuDisplayListSetItemTable(i32 which) {
     if (which == 0) {
-        s_current_table = &g_nudl_dispatch_table[0x80];
+        s_current_table = &g_nudl_dispatch_table;
     } else if (which == 1) {
-        s_current_table = &s_shadow_table[0x80];
+        s_current_table = s_shadow_table;
     }
 }
 

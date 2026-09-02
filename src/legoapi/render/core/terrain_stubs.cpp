@@ -689,6 +689,11 @@ extern "C" {
     }
 
     void DebrisResetTimers(void) {
+        panelglobaltime = 0.0f;
+        renderpanelglobaltime = 0.0f;
+        globaltime = 0.0f;
+        renderglobaltime = 0.0f;
+        globalframes = 0;
     }
 
     void DebrisSetCutSceneMode(i32) {
@@ -715,7 +720,7 @@ extern "C" {
     void DebrisSetRoomID(void) {
     }
 
-    void DebrisSetSeed(void) {
+    void DebrisSetSeed(i32) {
     }
 
     void DebrisSetTimeIncrement(f32 increment) {
@@ -874,7 +879,7 @@ extern "C" {
     void DrawPlatform(void) {
     }
 
-    i16 FindPlatInst(void *) {
+    i32 FindPlatInst(void *) {
         return -1;
     }
 

@@ -331,6 +331,7 @@ void LevelEditor::RegisterEditor(BaseEditor &) {
 }
 
 void LevelEditor::Reset() {
+    reset_pending = 0;
 }
 
 void LevelEditor::Save() {

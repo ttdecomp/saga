@@ -1,4 +1,5 @@
 #include "legoapi/gizmos/object/technos.h"
+#include "legoapi/world/level.h"
 
 #include "decomp.h"
 #include "legoapi/legoapi_types.h"
@@ -10,8 +11,8 @@ struct TECHNOPROGRESS {
 i32 techno_gizmotype_id = -1;
 
 static i32 Technos_GetMaxGizmos(void *techno) {
-    UNIMPLEMENTED();
-    return {};
+    WORLDINFO *world = static_cast<WORLDINFO *>(techno);
+    return world != NULL ? world->current_level->max_technos : 0;
 }
 
 static void Technos_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {

@@ -124,7 +124,10 @@ extern "C" {
 void PadOutPause(i32, WORLDINFO_s *) {
 }
 
-void ResetRumble(RUMBLEPACKET *) {
+void ResetRumble(RUMBLEPACKET *packet) {
+    packet->rumble_time = 0.0f;
+    packet->rumble_amount = 0.0f;
+    packet->active = 0;
 }
 
 void UpdateRumble(RUMBLEPACKET *) {

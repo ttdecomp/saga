@@ -9,6 +9,9 @@
 #include "nu2api/numath/numtx.h"
 
 struct GameObject_s;
+struct GizForceLOSState_s {
+    u8 state[0x630];
+};
 struct MechObjectInterface;
 struct GAMEOBJECTADDONS_s;
 struct characterdata_s;
@@ -29,11 +32,12 @@ struct CHARACTERMODEL_s {
 DECOMP_ASSERT(sizeof(CHARACTERMODEL_s) == 0x54, "CHARACTERMODEL_s size");
 
 typedef struct COINPACKET_s {
-    u32 coins;     // 0x00
-    u32 field_0x4; // 0x04
-    u16 lastcoin;  // 0x08
-    u16 field_0xa; // 0x0a
-    u32 field_0xc; // 0x0c
+    u32 coins;              // 0x00
+    f32 scale;              // 0x04
+    u16 lastcoin;           // 0x08
+    u8 active;              // 0x0a
+    u8 field_0xb;           // 0x0b
+    f32 double_score_timer; // 0x0c
 } COINPACKET;
 typedef COINPACKET COINPACKET_s;
 
@@ -249,7 +253,7 @@ typedef struct GameObject_s {
     u8 mini_anim_packet[0x24];                  // 0x07c0 .. 0x07e4
     u8 pad_7e4[0x7ec - 0x7e4];                  // 0x07e4 .. 0x07ec
     COINPACKET *coinpacket;                     // 0x07ec
-    void *gizforce_los_info;                    // 0x07f0
+    GizForceLOSState_s *gizforce_los_info;      // 0x07f0
     NUMTX field_0x7f4;                          // 0x07f4
     u8 pad_834[0xc34 - 0x834];                  // 0x0834 .. 0x0c34
     u32 field_0xc34;                            // 0x0c34

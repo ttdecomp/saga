@@ -1,9 +1,28 @@
 #include "legoapi/legoapi_types.h"
+#include "legoapi/items/base/animpacket.h"
+
+f32 CustomiseMenuTime[2];
+extern "C" void ResetAnimPacket(void *, i32);
 
 void Customiser_Init(CUSTOMISER *) {
 }
 
-void Customiser_Reset(CUSTOMISER *) {
+void Customiser_Reset(CUSTOMISER *customiser) {
+    if (customiser == NULL) {
+        return;
+    }
+
+    CustomiseMenuTime[0] = 0.0f;
+    ResetAnimPacket(&customiser->animation_packets[0], -1);
+    customiser->animation_values[0] = 0;
+    customiser->animation_active[0] = 0;
+    customiser->animation_state[0] = 2;
+
+    CustomiseMenuTime[1] = 0.0f;
+    ResetAnimPacket(&customiser->animation_packets[1], -1);
+    customiser->animation_values[1] = 0;
+    customiser->animation_active[1] = 0;
+    customiser->animation_state[1] = 2;
 }
 
 void Customiser_Draw3D(CUSTOMISER *) {
@@ -88,7 +107,29 @@ void Customiser_Set100PercentPieces(CUSTOMISER *) {
 void Customiser_GetActiveWeirdoIndex(i32 *, i32 *) {
 }
 
-void Customiser_ResetModelTextureIDs(CUSTOMISER *) {
+void Customiser_ResetModelTextureIDs(CUSTOMISER *customiser) {
+    if (customiser == NULL) {
+        return;
+    }
+
+    customiser->model_texture_ids[0] = 0;
+    customiser->model_texture_ids[1] = 0;
+    customiser->model_texture_ids[2] = 0;
+    customiser->model_texture_ids[3] = 0;
+    customiser->model_texture_ids[4] = 0;
+    customiser->model_texture_ids[5] = 0;
+    customiser->model_texture_ids[6] = 0;
+    customiser->model_texture_ids[7] = 0;
+    customiser->model_texture_ids[8] = 0;
+    customiser->model_texture_ids[9] = 0;
+    customiser->model_texture_ids[10] = 0;
+    customiser->model_texture_ids[11] = 0;
+    customiser->model_texture_ids[12] = 0;
+    customiser->model_texture_ids[13] = 0;
+    customiser->model_texture_ids[14] = 0;
+    customiser->model_texture_ids[15] = 0;
+    customiser->model_texture_ids[16] = 0;
+    customiser->model_texture_ids[17] = 0;
 }
 
 void Customiser_RestoreModelTextureIDs(CUSTOMISER *) {

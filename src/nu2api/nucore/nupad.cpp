@@ -10,11 +10,12 @@
 #include "nu2api/numath/nufloat.h"
 
 #define MAX_GAME_PAD_COUNT 2
+#define MAX_SCANNED_PAD_COUNT 4
 
 #define ANALOG_CENTER 0x80
 
-static NUGENERICPAD g_nupadScannedPads[MAX_GAME_PAD_COUNT];
-static i32 g_atLeastOnePadBeenActivated;
+NUGENERICPAD g_nupadScannedPads[MAX_SCANNED_PAD_COUNT] __attribute__((visibility("hidden")));
+i32 g_atLeastOnePadBeenActivated __attribute__((visibility("hidden")));
 static i32 g_directpadMapping;
 
 NUPADMAPPING g_nupadMapping[MAX_GAME_PAD_COUNT];
@@ -28,7 +29,7 @@ void NuPadInit() {
 
     memset(g_nupadScannedPads, 0, sizeof(g_nupadScannedPads));
 
-    for (i = 0; i < MAX_GAME_PAD_COUNT; i++) {
+    for (i = 0; i < MAX_SCANNED_PAD_COUNT; i++) {
         g_nupadScannedPads[i].mapped_to_pad = -1;
 
         NuPadInitPS(g_nupadScannedPads + i);

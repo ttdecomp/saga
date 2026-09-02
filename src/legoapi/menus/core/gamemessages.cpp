@@ -7,6 +7,8 @@ struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
 
+GAMEMESSAGE_s GameMessage[128] = {};
+
 void AddGameMsg(ADDGAMEMSG *) {
 }
 
@@ -25,6 +27,9 @@ void EndScoreMessage(GAMEMESSAGE_s *) {
 }
 
 void ResetGameMessages() {
+    for (i32 i = 0; i < 128; i++) {
+        GameMessage[i].active = 0;
+    }
 }
 
 void AddFancyMessageRGB(char *, float, float, float, float, i32, unsigned char, unsigned char, unsigned char) {

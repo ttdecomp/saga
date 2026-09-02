@@ -7,12 +7,23 @@
 #include "legoapi/world/level.h"
 #include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
 #include "legoapi/gizmo/base/GizObstacleObjectInterface.h"
+#include "legoapi/gizmo/base/gizmo.h"
+#include "legoapi/gizmos/object/gizobstacles.h"
 #include "nu2api/nu3d/nutex.h"
 
 struct AIROW_s;
 struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
+
+struct BLOCKADERUNNERD_LEVFLAG_s {
+    u8 obstacle15_active;
+    u8 obstacle14_active;
+    u8 reserved_02[0x0e];
+};
+
+static_assert(sizeof(BLOCKADERUNNERD_LEVFLAG_s) == 0x10, "LevFlag size");
+extern BLOCKADERUNNERD_LEVFLAG_s LevFlag;
 
 // Episode 4 level handlers, in the game's Episode_IV progression:
 // blockade runner / tatooine / mos eisley / death star rescue / escape /
@@ -35,7 +46,11 @@ void BlockadeRunnerB_Update(WORLDINFO_s *) {
 void BlockadeRunnerD_Update(WORLDINFO_s *) {
 }
 
-void BlockadeRunnerD_Reset(WORLDINFO_s *) {
+void BlockadeRunnerD_Reset(WORLDINFO_s *world) {
+    LevGizmo[0] = GizmoFindByName(world->gizmo_sys, obstacle_gizmotype_id, "obstacle15");
+    LevGizmo[1] = GizmoFindByName(world->gizmo_sys, obstacle_gizmotype_id, "obstacle14");
+    LevFlag.obstacle15_active = 0;
+    LevFlag.obstacle14_active = 0;
 }
 
 // ===========================================================================
@@ -147,6 +162,7 @@ void DeathStarEscapeD_Update(WORLDINFO_s *) {
 }
 
 void DeathStarEscapeC_Reset(WORLDINFO_s *) {
+    LevAIMessage[0] = CheckGizAIMessage(gizaimessagesys, "RescuedDroids", NULL);
 }
 
 void DeathStarEscapeB_AlwaysUpdate(WORLDINFO_s *) {

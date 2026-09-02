@@ -3,6 +3,29 @@
 #include "gameapi/edtools/edstubs.h"
 #include "legoapi/legoapi_types.h"
 
+#include <string.h>
+
+struct part_emit_s {
+    i32 state_words[18];
+    i32 instance_id;
+    i32 trailing_state_words[8];
+};
+DECOMP_ASSERT(sizeof(part_emit_s) == 0x6c, "part_emit_s size");
+
+struct edanim_param_s {
+    i32 instance_id;
+    u8 reserved_004[0x2d4 - 0x004];
+};
+DECOMP_ASSERT(sizeof(edanim_param_s) == 0x2d4, "edanim_param_s size");
+
+struct edbridge_s {
+    i32 instance_id;
+    u8 reserved_04[0x18];
+    u8 connection_index;
+    u8 reserved_1d[0x44 - 0x1d];
+};
+DECOMP_ASSERT(sizeof(edbridge_s) == 0x44, "edbridge_s size");
+
 extern "C" {
     extern debinftype *effecttypes;
     extern debinftype **debtab;
@@ -13,9 +36,24 @@ extern "C" {
     extern i32 DEBPAGE_GENERAL;
     extern i32 DEBPAGE_CHARACTER;
     extern i32 DEBPAGE_AREA;
+    part_emit_s part_emits[512];
+    i32 part_page_on[8];
+    i32 part_page_used[8];
+    i32 edpart_instances_used;
+    edanim_param_s AnimParams[64];
+    i32 edanim_next_param;
+    i32 edanim_params_used;
+    i32 edanim_page_on[8];
+    i32 edanim_page_used[8];
+    edbridge_s edBridges[64];
+    i32 edbri_bridges_used;
+    i32 edbri_page_on[8];
+    i32 edbri_page_scene[8];
+    i32 edbri_page_used[8];
 }
 
 void FileLoadSingleEffectType(debinftype *, i32, char);
+extern "C" void NuBridgeInit(void);
 
 void edppDetermineNearest(float);
 
@@ -58,6 +96,13 @@ extern "C" {
     void edanimLookupSpecial(void) {
     }
     void edanimParamReset(void) {
+        for (i32 i = 0; i < 64; ++i) {
+            AnimParams[i].instance_id = -1;
+        }
+        edanim_next_param = 0;
+        edanim_params_used = 0;
+        memset(edanim_page_used, 0, sizeof(edanim_page_used));
+        memset(edanim_page_on, 0, sizeof(edanim_page_on));
     }
     void edanimParticleDestroy(void) {
     }
@@ -126,6 +171,15 @@ extern "C" {
     void edbitsVector2YZRot(void) {
     }
     void edbriBridgesReset(void) {
+        NuBridgeInit();
+        for (i32 i = 0; i < 64; ++i) {
+            edBridges[i].instance_id = -1;
+            edBridges[i].connection_index = 0xff;
+        }
+        memset(edbri_page_used, 0, sizeof(edbri_page_used));
+        memset(edbri_page_scene, 0, sizeof(edbri_page_scene));
+        memset(edbri_page_on, 0, sizeof(edbri_page_on));
+        edbri_bridges_used = 0;
     }
     void edbriClearPage(void) {
     }
@@ -230,6 +284,14 @@ extern "C" {
     void edpartLoadPageEx(void) {
     }
     void edpartParticleReset(void) {
+        part_emit_s *emit = part_emits;
+        part_emit_s *const emit_end = part_emits + 512;
+        do {
+            emit->instance_id = -1;
+        } while (++emit != emit_end);
+        memset(part_page_used, 0, sizeof(part_page_used));
+        memset(part_page_on, 0, sizeof(part_page_on));
+        edpart_instances_used = 0;
     }
     void edpartRegisterPointerToGameCharLocation(void) {
     }

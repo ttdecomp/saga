@@ -3,7 +3,11 @@
 #include "nu2api/nucore/common.h"
 #include "nu2api/nucore/numemory.h"
 
+class NuSoundHandle;
+
 class NuListNodeBase {
+    friend class NuSoundHandle;
+
     NuListNodeBase *prev;
     NuListNodeBase *next;
 
@@ -47,6 +51,8 @@ template <typename T> class NuListNode : public NuListNodeBase {
 };
 
 template <typename T> class NuList {
+    friend class NuSoundHandle;
+
     NuListNodeBase start;
     NuListNodeBase end;
 

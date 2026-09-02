@@ -1,12 +1,13 @@
 #include "legoapi/gizmos/object/newblowup.h"
+#include "legoapi/world/level.h"
 
 #include "decomp.h"
 
 i32 blowup_gizmotype_id = -1;
 
 static i32 Blowup_GetMaxGizmos(void *blowup) {
-    UNIMPLEMENTED();
-    return {};
+    WORLDINFO *world = static_cast<WORLDINFO *>(blowup);
+    return world != NULL ? world->current_level->max_gizmo_blowups : 0;
 }
 
 static void Blowup_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -26,8 +27,7 @@ void GizmoBlowupBurstDraw(void *, void *, float) {
 }
 
 static char *Blowup_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL ? static_cast<BLOWUP *>(gizmo->object)->name : NULL;
 }
 
 static i32 Blowup_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -41,8 +41,7 @@ static char *Blowup_GetOutputName(GIZMO *gizmo, i32 output_index) {
 }
 
 static i32 Blowup_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return 3;
 }
 
 static void Blowup_Activate(GIZMO *gizmo, i32) {

@@ -46,6 +46,7 @@ extern struct nugspline_s *Door_CutSpl;
 extern char Door_ExitCameraSplineName[64];
 extern char Door_ExitName[64];
 extern i32 Door_Start;
+extern i32 Door_NextSock;
 
 extern void *HubStartDoor;
 extern void *VEHICLES_ADATA;

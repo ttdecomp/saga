@@ -5,8 +5,7 @@
 i32 edGizShadow_gizmotype_id;
 
 static i32 edGizShadow_GetMaxGizmos(void *shadow) {
-    UNIMPLEMENTED();
-    return {};
+    return 1;
 }
 
 static void edGizShadow_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -29,8 +28,7 @@ static char *edGizShadow_GetOutputName(GIZMO *gizmo, i32 output_index) {
 }
 
 static i32 edGizShadow_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return 1;
 }
 
 static void *edGizShadow_ReserveBufferSpace(void *) {

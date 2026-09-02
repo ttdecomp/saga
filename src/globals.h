@@ -9,6 +9,8 @@
 // Forward declarations for the function-pointer table below (full types in
 // legoapi/legoapi_types.h).
 struct CUTINFO;
+struct DETONATOR_s;
+struct PART_s;
 struct NUGCUTCHAR_s;
 struct BOLT_s;
 struct GameObject_s;
@@ -21,6 +23,12 @@ struct AREASAVE_s;
 struct GAMECAMERA_s;
 struct TEXTCRAWL_s;
 class FadeSystem;
+
+extern BOLT_s Bolt[32];
+extern i32 i_bolt;
+extern f32 BOLT_OVERRIDE_PLAYERBOLTSPEED;
+extern f32 BOLT_OVERRIDE_PLAYERBOLTDURATION;
+extern u8 CutSceneCameraCTRL;
 
 // ----------------------------------------------------------------------
 // Placeholder save-game / model-list structures.
@@ -169,6 +177,12 @@ extern u8 ForcePlayEndFrame;
 extern u8 BitCountTable[256];
 extern i32 isBitCountTable;
 extern f32 MAXFRAMETIME;
+extern u8 MainFrameCounters[5];
+extern i32 GAMERAND;
+extern i32 come_from_an_editor;
+
+extern __attribute__((visibility("hidden"))) GameObject_s *ForceBackObj asm("_ZL12ForceBackObj");
+extern __attribute__((visibility("hidden"))) NUVEC *ForceBackPos asm("_ZL12ForceBackPos");
 
 // ------------------------------------------------------------------------
 // Super buffer / memory arena
@@ -281,6 +295,7 @@ extern i32 LevMusicAmbient;
 extern i32 LevMusicOtherAction;
 extern i32 LevMusicOtherAmbient;
 extern i16 AreaMusic;
+extern i32 *radios_playing;
 
 // ------------------------------------------------------------------------
 // Camera
@@ -345,7 +360,13 @@ extern nugspline_s *ObstacleCamSpl;
 extern GAMECAMERA_s *GameCam;
 extern i32 MiniCutCam;
 extern i32 Lap;
+extern PART_s *Part;
+extern i32 MAXPARTS;
+extern i32 i_part;
 extern f32 LevTime[5];
+extern u8 minikitCounter_A;
+extern u8 minikitCounter_C;
+extern DETONATOR_s Detonator[10];
 
 // ------------------------------------------------------------------------
 // Bonus / arcade / challenge mode
@@ -654,12 +675,12 @@ extern i32 Tag_DoneAny;
 extern i32 LevSfxFlag[4];
 extern u8 dynamic_antinodes[0x1500]; // AI anti-node spawn data (cleared per level)
 extern i32 LevInstAnim[12];
-extern i32 LevArea[4];
+extern AIAREA_s *LevArea[4];
 extern i32 LevPathNodes[8];
 extern void *LevPathCnx[16];
-extern i32 LevGameObject[8];
+extern GameObject_s *LevGameObject[8];
 extern i32 LevGamePart[8];
-extern i32 LevAIMessage[8];
+extern GIZAIMESSAGE_s *LevAIMessage[8];
 extern GIZBUILDIT_s *LevBuildIt[4];
 extern i32 LevelLocator;
 extern GIZOBSTACLE_s *LevGizObst[8];

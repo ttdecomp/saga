@@ -2,11 +2,18 @@
 
 #include "decomp.h"
 
+#include "legoapi/world/level.h"
+#include "legoapi/world/world.h"
+
 i32 teleport_gizmotype_id = -1;
 
-static i32 Teleport_GetMaxGizmos(void *teleport) {
-    UNIMPLEMENTED();
-    return {};
+static i32 Teleport_GetMaxGizmos(void *world_info) {
+    WORLDINFO *world = (WORLDINFO *)world_info;
+    if (world == NULL) {
+        return 0;
+    }
+
+    return world->current_level->max_teleports;
 }
 
 static void Teleport_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -14,8 +21,7 @@ static void Teleport_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
 }
 
 static char *Teleport_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL ? static_cast<char *>(gizmo->object) : NULL;
 }
 
 static i32 Teleport_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -29,8 +35,7 @@ char *Teleport_GetOutputName(GIZMO *gizmo, i32 output_index) {
 }
 
 static i32 Teleport_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return 1;
 }
 
 static void Teleport_Activate(GIZMO *gizmo, i32) {

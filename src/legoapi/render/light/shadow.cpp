@@ -33,6 +33,7 @@ void EnableShadowMapRendering(i32) {
 }
 
 void ResetShadowMapRenderingFn() {
+    ResetShadowMapRendering();
 }
 
 void EnableShadowMapRenderingFn() {

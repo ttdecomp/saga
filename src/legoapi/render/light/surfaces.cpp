@@ -11,6 +11,21 @@ struct SHOPINPUT;
 NUMTL *SolidMtl;
 NUMTL *SolidMtl3D;
 
+extern "C" {
+    u32 LAYER_HOVERIGNORE = 0xffffffff;
+    volatile u16 SURFACEBITS_DUST;
+    u16 SURFACEBITS_NODUST;
+    tertype TerSurface[32] = {
+        {1.0f, 0, 0xffff},     {1.0f, 65, 0xffff},   {1.0f, 2, 0xffff},      {1.0f, 8, 0xffff},   {1.0f, 65536, 0xffff},
+        {1.0f, 66560, 0xffff}, {1.0f, 0, 0xffff},    {1.0f, 2048, 0xffff},   {1.0f, 0, 0xffff},   {1.0f, 8192, 0xffff},
+        {1.0f, 10, 0xffff},    {1.0f, 67, 0xffff},   {1.0f, 16, 0xffff},     {1.0f, 16, 0xffff},  {1.0f, 8192, 0xffff},
+        {1.0f, 8192, 0xffff},  {0.1f, 1088, 0xffff}, {0.2f, 131074, 0xffff}, {1.0f, 81, 0xffff},  {1.0f, 512, 0xffff},
+        {1.0f, 8192, 0xffff},  {1.0f, 514, 0xffff},  {1.0f, 64, 0xffff},     {1.0f, 192, 0xffff}, {1.0f, 8192, 0xffff},
+        {1.0f, 4160, 0xffff},  {1.0f, 0, 0xffff},    {1.0f, 5184, 0xffff},   {1.0f, 256, 0xffff}, {1.0f, 320, 0xffff},
+        {1.0f, 64, 0xffff},    {1.0f, 64, 0xffff},
+    };
+}
+
 void AllocTerrId() {
 }
 
@@ -57,6 +72,24 @@ void SurfaceMaskOff(u32 *) {
 }
 
 void Surfaces_Reset() {
+    LAYER_HOVERIGNORE = 0x10;
+    SURFACEBITS_DUST = 0;
+
+    i32 i = 0;
+    u32 no_dust = 0;
+    const u32 initial_surface_bit = 1;
+    u32 dust = 0;
+    while (i < 32) {
+        const u32 surface_bit = initial_surface_bit << i;
+        if ((TerSurface[i].dwFlags & 4) != 0) {
+            dust |= surface_bit;
+        } else {
+            no_dust |= surface_bit;
+        }
+        ++i;
+    }
+    SURFACEBITS_DUST = dust;
+    SURFACEBITS_NODUST = no_dust;
 }
 
 void AdjustLayerBits(u32, GameObject_s *) {

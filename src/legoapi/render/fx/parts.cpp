@@ -33,6 +33,13 @@ extern "C" {
     extern debris_chunk_control_s **freechunkcontrols;
     extern i32 freechunkcontrolsptr;
     extern debris_chunk_control_s *debris_chunk_control_stack[2];
+    extern edpp_particle_s edpp_ptls[512];
+    extern i32 edpp_page_used[8];
+    extern i32 edpp_page_on[8];
+    extern i32 edpp_instances_used;
+    extern PART_s *Part;
+    extern i32 MAXPARTS;
+    extern i32 i_part;
 
     i32 DebAlloc(void);
     void DebrisStartOffset(i32, f32);
@@ -663,6 +670,12 @@ extern "C" {
     }
 
     void ParticleReset(void) {
+        for (i32 i = 0; i < 512; ++i) {
+            edpp_ptls[i].instance_id = -1;
+        }
+        memset(edpp_page_used, 0, sizeof(edpp_page_used));
+        memset(edpp_page_on, 0, sizeof(edpp_page_on));
+        edpp_instances_used = 0;
     }
 
     void ParticlesPerFrame(void) {
@@ -678,6 +691,10 @@ extern "C" {
     }
 
     void ResetParts(void) {
+        if (Part != NULL) {
+            memset(Part, 0, static_cast<usize>(MAXPARTS) * sizeof(PART_s));
+        }
+        i_part = 0;
     }
 
     void UpdateParts(f32) {

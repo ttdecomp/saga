@@ -1,12 +1,13 @@
 #include "legoapi/gizmos/door/plugs.h"
 
 #include "decomp.h"
+#include "legoapi/world/level.h"
 
 i32 plug_gizmotype_id = -1;
 
 static i32 Plugs_GetMaxGizmos(void *plug) {
-    UNIMPLEMENTED();
-    return {};
+    WORLDINFO *world = static_cast<WORLDINFO *>(plug);
+    return world != NULL ? world->current_level->max_plugs : 0;
 }
 
 static void Plugs_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -22,8 +23,7 @@ static void Plugs_Draw(void *, void *, float) {
 }
 
 static char *Plug_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL ? static_cast<char *>(gizmo->object) : NULL;
 }
 
 static i32 Plug_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -37,8 +37,7 @@ static char *Plug_GetOutputName(GIZMO *gizmo, i32 output_index) {
 }
 
 static i32 Plug_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return 1;
 }
 
 static void Plug_Activate(GIZMO *gizmo, i32) {

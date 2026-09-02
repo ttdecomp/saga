@@ -5,6 +5,8 @@
 
 #include "nu2api/nucore/common.h"
 
+struct SUPERCOUNTER;
+
 typedef struct AREADATA_s {
     char dir[64];
     char file[32];
@@ -17,8 +19,8 @@ typedef struct AREADATA_s {
     byte index;
     byte level_count;
     byte cheat;
-    byte field30_0x7f;
-    i32 field31_0x80;
+    u8 super_counter_count;
+    SUPERCOUNTER *super_counters;
     u16 challenge_trial_time;
     byte episode_index;
     byte area_index;

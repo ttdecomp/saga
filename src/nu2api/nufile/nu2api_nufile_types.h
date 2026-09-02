@@ -20,10 +20,12 @@ struct NuFile {
     };
 };
 struct NuFileAndroidAPK {
+    static NuFileAndroidAPK *ms_fileId[0x400];
+
     void Init();
     void Open(char const *, NuFile::OpenMode::T);
-    void ResetId(i32);
-    void SetFileId(NuFileAndroidAPK *);
+    static void ResetId(i32 id);
+    static i32 SetFileId(NuFileAndroidAPK *file);
 };
 struct NuFileBase {
     void Closedown();

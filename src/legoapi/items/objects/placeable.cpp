@@ -60,6 +60,9 @@ void PlaceableNameControl::cbSelectObject(eduimenu_s *, eduiitem_s *, u32) {
 void Placeable::GetCurrentPosition() const {
 }
 
+__attribute__((weak)) void Placeable::Reset() {
+}
+
 void Placeable::GetInitialPosition() const {
 }
 

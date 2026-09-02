@@ -112,12 +112,6 @@ extern void RotateGameMatrix(numtx_s *matrix, i32 order, u16 x, u16 y, u16 z);
 extern NUGSCN *IconScene_FindById(i32 character_id);
 
 namespace {
-    struct NuSpecialHandleLayout {
-        NUGSCN *scene;
-        void *special;
-        void *display_special;
-    };
-
     struct NuDisplaySpecialLayout {
         NUMTX mtx;
         NUMTX draw_mtx;
@@ -145,7 +139,6 @@ namespace {
     };
 } // namespace
 
-DECOMP_ASSERT(sizeof(NuSpecialHandleLayout) == 0xc, "special handle size");
 DECOMP_ASSERT(sizeof(NuDisplaySpecialLayout) == 0xd0, "display special size");
 
 // Camera zoom state
@@ -233,11 +226,11 @@ extern "C" {
                 gscene = &temporary_scene;
             }
 
-            NuSpecialHandleLayout handle = {gscene, NULL, NULL};
+            nuhspecial_s handle = {gscene, NULL, NULL};
             NuDisplaySpecialLayout *special = static_cast<NuDisplaySpecialLayout *>(scene->specials);
             for (i32 i = 0; i < scene->nspecials; ++i, ++special) {
                 if ((special->flags & 2) != 0) {
-                    handle.display_special = special;
+                    handle.display_special = reinterpret_cast<NUDISPLAYSPECIAL_s *>(special);
                     NUMTX *draw_mtx = special->draw_mtx_ptr;
                     if (draw_mtx == NULL || draw_mtx == reinterpret_cast<NUMTX *>(-1)) {
                         draw_mtx = &special->draw_mtx;
@@ -450,10 +443,10 @@ extern "C" {
     }
 } // extern "C"
 
-i32 NuSpecialFind(NUGSCN *scene, void **dest, char *name, i32 flags) {
+i32 NuSpecialFind(NUGSCN *scene, nuhspecial_s *dest, char *name, i32 flags) {
     (void)flags; // Present in the exported ABI; unused by the original body.
 
-    NuSpecialHandleLayout *handle = reinterpret_cast<NuSpecialHandleLayout *>(dest);
+    nuhspecial_s *handle = dest;
     if (name != NULL && scene != NULL) {
         NUDLDLISTSCENE *display_scene = reinterpret_cast<NUDLDLISTSCENE *>(scene->display_list);
         if (display_scene != NULL) {
@@ -462,7 +455,7 @@ i32 NuSpecialFind(NUGSCN *scene, void **dest, char *name, i32 flags) {
                 if (NuStrICmp(name, special->name) == 0) {
                     handle->scene = scene;
                     handle->special = NULL;
-                    handle->display_special = special;
+                    handle->display_special = reinterpret_cast<NUDISPLAYSPECIAL_s *>(special);
                     return 1;
                 }
             }
@@ -524,7 +517,7 @@ void DrawCharIcon(i32 character_id, float x, float y, float z, float scale, i32 
 
     nuhspecial_s special;
     if (drawcharicon_find != 0) {
-        NuSpecialFind(things_scene, reinterpret_cast<void **>(&special), ObjTabList[frame_object_id].name, 1);
+        NuSpecialFind(things_scene, &special, ObjTabList[frame_object_id].name, 1);
     } else {
         special = world->lev_objs[frame_object_id].special;
     }
@@ -554,11 +547,9 @@ void DrawCharIcon(i32 character_id, float x, float y, float z, float scale, i32 
                 if (drawcharicon_find != 0) {
                     NUGSCN *icon_scene = character_id == -1 ? NULL : IconScene_FindById(character_id);
                     if (icon_scene != NULL) {
-                        NuSpecialFind(icon_scene, reinterpret_cast<void **>(&special), ObjTabList[icon_object_id].name,
-                                      1);
+                        NuSpecialFind(icon_scene, &special, ObjTabList[icon_object_id].name, 1);
                     } else {
-                        NuSpecialFind(things_scene, reinterpret_cast<void **>(&special),
-                                      ObjTabList[icon_object_id].name, 1);
+                        NuSpecialFind(things_scene, &special, ObjTabList[icon_object_id].name, 1);
                     }
                 } else {
                     special = world->lev_objs[icon_object_id].special;
@@ -1326,7 +1317,7 @@ extern i32 qrand(void);
 
 static NUGSCN *s_backdrop_scene = nullptr;
 
-static NuSpecialHandleLayout s_backdrop_hspecial[4];
+static nuhspecial_s s_backdrop_hspecial[4];
 
 static f32 s_backdrop_back_wait = 0.0f;
 
@@ -1337,14 +1328,14 @@ f32 backdrop_bot_r = 0.0f;
 f32 backdrop_bot_g = 0.0f;
 f32 backdrop_bot_b = 0.0f;
 
-f32 backdrop_top_tr = 0.0f;
-f32 backdrop_top_tg = 0.0f;
-f32 backdrop_top_tb = 0.0f;
-f32 backdrop_bot_tr = 0.0f;
-f32 backdrop_bot_tg = 0.0f;
-f32 backdrop_bot_tb = 0.0f;
+static f32 backdrop_top_tr = 0.0f;
+static f32 backdrop_top_tg = 0.0f;
+static f32 backdrop_top_tb = 0.0f;
+static f32 backdrop_bot_tr = 0.0f;
+static f32 backdrop_bot_tg = 0.0f;
+static f32 backdrop_bot_tb = 0.0f;
 
-i32 backdrop_black = 0;
+static i32 backdrop_black = 0;
 
 void (*BackDrop_AlphaFn)(float *) = nullptr;
 
@@ -1368,10 +1359,10 @@ void BackDrop_Init(char *path, variptr_u *buf, variptr_u *buf_end) {
     if (scene == NULL) {
         return;
     }
-    NuSpecialFind(scene, (void **)&s_backdrop_hspecial[0], (char *)"ball1", 1);
-    NuSpecialFind(scene, (void **)&s_backdrop_hspecial[1], (char *)"ball2", 1);
-    NuSpecialFind(scene, (void **)&s_backdrop_hspecial[2], (char *)"ball3", 1);
-    NuSpecialFind(scene, (void **)&s_backdrop_hspecial[3], (char *)"ball4", 1);
+    NuSpecialFind(scene, &s_backdrop_hspecial[0], (char *)"ball1", 1);
+    NuSpecialFind(scene, &s_backdrop_hspecial[1], (char *)"ball2", 1);
+    NuSpecialFind(scene, &s_backdrop_hspecial[2], (char *)"ball3", 1);
+    NuSpecialFind(scene, &s_backdrop_hspecial[3], (char *)"ball4", 1);
 }
 
 void BackDrop_Dump() {
@@ -1392,13 +1383,13 @@ void BackDrop_ResetColours() {
     backdrop_bot_r = 0.0f;
     backdrop_bot_g = 0.0f;
     backdrop_bot_b = 0.0f;
+    s_backdrop_back_wait = 0.0001f;
     backdrop_top_tr = 0.0f;
     backdrop_top_tg = 0.0f;
     backdrop_top_tb = 0.0f;
     backdrop_bot_tr = 0.0f;
     backdrop_bot_tg = 0.0f;
     backdrop_bot_tb = 0.0f;
-    s_backdrop_back_wait = 1.0f;
     backdrop_black = 0;
 }
 
@@ -1434,7 +1425,7 @@ void BackDrop_Draw(float alpha, i32 flags) {
     }
 
     for (i32 special_index = 0; special_index < 2; ++special_index) {
-        NuSpecialHandleLayout *special = &s_backdrop_hspecial[special_index];
+        nuhspecial_s *special = &s_backdrop_hspecial[special_index];
         if (NuSpecialExistsFn(special) == 0) {
             continue;
         }

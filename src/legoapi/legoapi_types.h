@@ -9,6 +9,7 @@
 #include "nu2api/nucore/nuanim3.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nuvec.h"
+#include "nu2api/nu3d/nuspecial.h"
 
 #include "legoapi/items/base/apiobject.h"
 #include "MechInputTouch/MechInputTouch_types.h"
@@ -124,6 +125,8 @@ struct GAMEPAD_s;
 struct GIZACTIONDEFN_s;
 struct GIZAIMESSAGESYS_s;
 struct GIZAIMESSAGE_s;
+struct AIMESSAGESYS_s;
+struct AIMESSAGE_s;
 struct GIZBOMBGENSYS_s;
 struct GIZBUILDIT_s;
 struct GIZFLOWPROGRESS_s;
@@ -347,16 +350,46 @@ struct AIAREA_s;
 struct AIGROUP_s;
 struct AILOCATOR_s;
 struct AIPACKET_s;
-struct AIPATHCNXCONTROLLER_s {};
-struct AIPATHCNXCONTROLSYS_s {};
-struct AIPATHCNXHELPERSYS_s {};
-struct AIPATHCNXHELPER_s {};
+struct AIPATHCNXCONTROLLER_s {
+    NULISTLNK links;
+    u8 pad_0x08[0xa8 - 0x08];
+};
+DECOMP_ASSERT(sizeof(AIPATHCNXCONTROLLER_s) == 0xa8, "AIPATHCNXCONTROLLER_s size");
+struct AIPATHCNXCONTROLSYS_s {
+    i32 controller_count;
+    AIPATHCNXCONTROLLER_s *controllers;
+    NULISTHDR available_controllers;
+    i32 field_0x10;
+    i32 field_0x14;
+};
+DECOMP_ASSERT(sizeof(AIPATHCNXCONTROLSYS_s) == 0x18, "AIPATHCNXCONTROLSYS_s size");
+struct AIPATHCNXHELPER_s {
+    u8 data[0x10];
+};
+DECOMP_ASSERT(sizeof(AIPATHCNXHELPER_s) == 0x10, "AIPATHCNXHELPER_s size");
+struct AIPATHCNXHELPERSYS_s {
+    i16 field_0x00;
+    i16 helper_count;
+    AIPATHCNXHELPER_s *helpers;
+};
+DECOMP_ASSERT(sizeof(AIPATHCNXHELPERSYS_s) == 0x8, "AIPATHCNXHELPERSYS_s size");
 struct AIPATHINFO_s;
 struct AIPATHNODE_s;
 struct AISCRIPTPROCESS_s;
 struct AISCRIPT_s;
-struct AITRIGGERSETSYS_s {};
-struct AITRIGGERSET_s {};
+struct AITRIGGERSET_s {
+    u8 pad_0x000[0x204];
+    i8 trigger_indices[8];
+    u8 pad_0x20c[8];
+};
+DECOMP_ASSERT(sizeof(AITRIGGERSET_s) == 0x214, "AITRIGGERSET_s size");
+struct AITRIGGERSETSYS_s {
+    AITRIGGERSET_s sets[32];
+    i8 field_0x4280[64];
+    i8 field_0x42c0[64];
+    i32 field_0x4300;
+};
+DECOMP_ASSERT(sizeof(AITRIGGERSETSYS_s) == 0x4304, "AITRIGGERSETSYS_s size");
 struct ANIMREDIRECT {};
 struct AREADATA_s;
 struct AREASAVE_s {
@@ -371,20 +404,45 @@ struct AREASAVE_s {
 DECOMP_ASSERT(sizeof(AREASAVE_s) == 0xc, "AREASAVE_s size");
 DECOMP_ASSERT(offsetof(AREASAVE_s, challenge_trial_time) == 0x8, "AREASAVE challenge time offset");
 struct ATTRACTO_s;
-struct BATARANG_s {};
+struct BATARANG_s {
+    u8 pad_0x00[0x7c];
+    u8 active; // 0x7c
+    u8 field_0x7d;
+    u8 pad_0x7e[0x84 - 0x7e];
+    i32 target_id; // 0x84
+    u8 pad_0x88[0xac - 0x88];
+    u16 cooldown; // 0xac
+    u8 pad_0xae[0xb4 - 0xae];
+};
+DECOMP_ASSERT(sizeof(BATARANG_s) == 0xb4, "BATARANG_s size");
 struct BOLTSYS {};
-struct BOLT_s;
+struct BOLT_s {
+    u8 pad_0x00[0xf0];
+    u8 flags; // 0xf0
+    u8 pad_0xf1[0x100 - 0xf1];
+    u8 active; // 0x100
+    u8 pad_0x101[0x138 - 0x101];
+};
+DECOMP_ASSERT(sizeof(BOLT_s) == 0x138, "BOLT_s size");
 struct BUILDIT_FIND_ENUM {};
 struct CABLE_s {};
 struct CHARACTERDATA_s {};
 struct CHARCATEGORY {};
 struct CHARFIXUP;
 struct CHARPIVOT {};
-struct CHARPLATFORMSYS_s {};
+struct CHARPLATFORM_s;
 struct CHARVARIANT {};
 struct CHEAT;
 struct CLIMBOBJECTSYS_s {};
-struct CUSTOMISER {};
+struct CUSTOMISER {
+    u8 pad_0x00[0x178];
+    ANIMPACKET_s animation_packets[2]; // 0x178
+    i32 model_texture_ids[18];         // 0x208
+    u8 pad_0x250[0xa6c - 0x250];
+    u8 animation_active[2];  // 0xa6c
+    u8 animation_state[2];   // 0xa6e
+    i32 animation_values[2]; // 0xa70
+};
 struct __attribute__((packed)) CUSTOMISESAVE_s {
     i16 pieces[9];              // 0x00
     u8 field_0x12[2];           // 0x12
@@ -427,10 +485,40 @@ struct CUTSYS {
     u32 *character_bits;
 };
 struct ClassItem {};
-struct DETONATOR_s {};
+struct DETONATOR_s {
+    NUVEC position;            // 0x00
+    NUVEC detonation_position; // 0x0c
+    NUVEC screen_position;     // 0x18
+    GameObject_s *owner;       // 0x24
+    u8 active;                 // 0x28
+    u8 pad_29;
+    i16 rotation_x; // 0x2a
+    i16 rotation_y; // 0x2c
+    u16 rotation_z; // 0x2e
+    f32 timer;      // 0x30
+    void *antinode; // 0x34
+};
+DECOMP_ASSERT(sizeof(DETONATOR_s) == 0x38, "DETONATOR_s size");
 struct EDCREATURE_s {};
 struct EPISODEDATA;
-struct EXPLOSION {};
+struct EXPLOSION {
+    i32 state;
+    i32 field_0x4;
+    GameObject_s *object;
+    NUVEC position;
+    f32 field_0x18;
+    f32 elapsed;
+    f32 duration;
+    i32 field_0x24;
+    u16 field_0x28;
+    u16 rotation;
+    u16 type;
+    u16 hit_flags;
+    u16 field_0x30;
+    u8 active;
+    u8 field_0x33;
+};
+DECOMP_ASSERT(sizeof(EXPLOSION) == 0x34, "EXPLOSION size");
 struct EXTRAMODEL {
     i16 *model_list;
     void *field_04;
@@ -460,7 +548,28 @@ struct FADEINFO_s {
 struct FADETYPE {
     i32 type;
 };
-struct FLOWBOX_s {};
+struct FLOWBOXGIZMODATA_s {
+    i32 gizmo_count;
+    u8 reserved_04[0x04];
+    GIZMO_s ***gizmos;
+};
+DECOMP_ASSERT(sizeof(FLOWBOXGIZMODATA_s) == 0xc, "FLOWBOXGIZMODATA_s size");
+struct FLOWBOX_s {
+    u8 parent_count;
+    u8 loop_parent_count;
+    u8 child_count;
+    u8 type;
+    u32 runtime_id;
+    u8 last_process_frame;
+    u8 loop_checksum;
+    u16 state_flags;
+    FLOWBOXGIZMODATA_s *data;
+    FLOWBOX_s **parents;
+    FLOWBOX_s **children;
+    u8 *output_indices;
+    char *name;
+};
+DECOMP_ASSERT(sizeof(FLOWBOX_s) == 0x20, "FLOWBOX_s size");
 struct FS_FILEENTRYHDR {};
 struct FadeBase {
     virtual ~FadeBase() = default;
@@ -550,8 +659,11 @@ struct GAMEMESSAGE_s {
     u32 color2; // 0xec
     u32 color3; // 0xf0
     char pad_0xf4[0xf7 - 0xf4];
-    u8 alpha; // 0xf7
+    u8 alpha;  // 0xf7
+    u8 active; // 0xf8
+    u8 pad_0xf9[0x114 - 0xf9];
 };
+DECOMP_ASSERT(sizeof(GAMEMESSAGE_s) == 0x114, "GAMEMESSAGE_s size");
 // Rumble state packet embedded in GAMEPAD_s (20 bytes; floats driven by
 // NuSound3UpdateRumble / UpdateRumble).
 struct RUMBLEPACKET {
@@ -559,8 +671,10 @@ struct RUMBLEPACKET {
     f32 rumble_amount; // 0x04
     undefined field_0x08[4];
     f32 rumble_time; // 0x0c
-    undefined field_0x10[4];
+    u8 active;       // 0x10
+    u8 pad_0x11[3];
 };
+DECOMP_ASSERT(sizeof(RUMBLEPACKET) == 0x14, "RUMBLEPACKET ABI");
 struct GAMEPAD_s {
     nupad_s *pad; // 0x00  the bound input pad (fields 0x00..0x1f)
     union {
@@ -620,6 +734,22 @@ DECOMP_ASSERT(offsetof(GAMEPAD_s, input_angle) == 0x26, "GAMEPAD input angle off
 DECOMP_ASSERT(offsetof(GAMEPAD_s, input_magnitude) == 0x28, "GAMEPAD input magnitude offset");
 struct GIZACTIONDEFN_s {};
 
+// AI messages use the same pooled-list arrangement as Giz AI messages.  Their
+// payload is 0x24 bytes after the list links; no payload fields are consumed
+// by the message-system reset path.
+struct AIMESSAGESYS_s {
+    i32 count;
+    AIMESSAGE_s *messages;
+    NULISTHDR free_list;
+    NULISTHDR active_list;
+};
+struct AIMESSAGE_s {
+    NULISTLNK links;
+    u8 payload[0x24];
+};
+DECOMP_ASSERT(sizeof(AIMESSAGE_s) == 0x2c, "AIMESSAGE_s size");
+DECOMP_ASSERT(sizeof(AIMESSAGESYS_s) == 0x18, "AIMESSAGESYS_s size");
+
 // The AI message system: a fixed pool of 0x38-byte messages; the free list
 // and the active list live in the header (ResetGizAIMessageSys fills the
 // free list from the pool, CheckGizAIMessage moves nodes free -> active).
@@ -630,21 +760,51 @@ struct GIZAIMESSAGESYS_s {
     NULISTHDR active_list;    // 0x10
 };
 struct GIZAIMESSAGE_s {
-    NULISTLNK links; // 0x00
-    char name[0x20]; // 0x08
-    float value;     // 0x28
-    byte mode;       // 0x2c
-    byte mode_args;  // 0x2d
-    undefined field_0x2e[0x34 - 0x2e];
-    i32 flag;  // 0x34
-    u16 flags; // 0x36
+    NULISTLNK links;     // 0x00
+    char name[0x20];     // 0x08
+    float value;         // 0x28
+    i8 output_values[8]; // 0x2c
+    i8 num_outputs;      // 0x34
+    u8 field_0x35;
+    u8 flags; // 0x36
+    u8 field_0x37;
 };
 struct GIZBOMBGENSYS_s {};
 struct GIZFLOWPROGRESS_s {};
-struct GIZFLOW_s {};
+struct GIZFLOW_s {
+    GIZMOSYS_s *gizmo_sys;
+    i32 flow_box_count;
+    void *flow_boxes;
+    u8 flags;
+    u8 pointers_valid;
+    u8 reserved_0e[2];
+};
+DECOMP_ASSERT(sizeof(GIZFLOW_s) == 0x10, "GIZFLOW_s size");
 struct GIZFORCESYS_s {};
-struct GIZMOBLOWUPTYPE_s {};
-struct GIZMOPICKUPSYS_s {};
+struct GIZMOBLOWUPTYPE_s;
+struct GIZMOPICKUPTYPE_s;
+struct GIZMOPICKUPSYSDESCRIPTOR_s {
+    GIZMOPICKUPTYPE_s *pickup_types;
+    u8 *coin_table;
+    u8 descriptor_state[3];
+    i8 gizmo_type_id;
+    i32 descriptor_flags;
+};
+DECOMP_ASSERT(sizeof(GIZMOPICKUPSYSDESCRIPTOR_s) == 0x10, "GIZMOPICKUPSYS descriptor size");
+struct GIZMOPICKUPSYSRUNTIME_s {
+    GIZMOPICKUP_s *pickups;
+    GIZMOPICKUP_s *active_pickups;
+    i32 pickup_count;
+    i32 field_0c;
+};
+DECOMP_ASSERT(sizeof(GIZMOPICKUPSYSRUNTIME_s) == 0x10, "GIZMOPICKUPSYS runtime size");
+struct GIZMOPICKUPSYS_s {
+    union {
+        GIZMOPICKUPSYSDESCRIPTOR_s descriptor;
+        GIZMOPICKUPSYSRUNTIME_s runtime;
+    };
+};
+DECOMP_ASSERT(sizeof(GIZMOPICKUPSYS_s) == 0x10, "GIZMOPICKUPSYS size");
 struct GIZMOPICKUP_s {
     char name[8];
     NUVEC position;
@@ -652,10 +812,10 @@ struct GIZMOPICKUP_s {
     u8 flags;
     u8 field_16;
     u8 runtime_flags;
-    u8 group_id;
-    u8 pad_19[0x0c];
     u8 type_id;
-    u8 pad_26[6];
+    u8 field_19_to_23[0x0b];
+    u8 collected;
+    u8 field_25_to_2b[7];
 };
 DECOMP_ASSERT(sizeof(GIZMOPICKUP_s) == 0x2c, "GIZMOPICKUP size");
 struct GIZMOSYS_s;
@@ -666,7 +826,45 @@ struct GIZSPINNER_s {};
 struct GIZTURRETSYS_s {};
 struct GRABBER_s {};
 struct GRAPPLE_s;
-struct HINT_s {};
+struct HINT_s {
+    i16 control_mode_ids[2]; // 0x00
+    u8 flags;                // 0x04
+    u8 pad_0x05[0x1c - 0x05];
+    u8 completion_flags[4]; // 0x1c
+    i32 field_0x20;
+};
+DECOMP_ASSERT(sizeof(HINT_s) == 0x24, "HINT_s size");
+struct HINTSYS_s {
+    u8 pad_0x00[0x04];
+    HINT_s *hints; // 0x04
+    u8 pad_0x08[0x0d - 0x08];
+    u8 state; // 0x0d
+    u8 pad_0x0e[0x18 - 0x0e];
+    i32 current_hint; // 0x18
+    i32 field_0x1c;
+};
+DECOMP_ASSERT(sizeof(HINTSYS_s) == 0x20, "HINTSYS_s size");
+struct HINTUIBUTTON_s {
+    u8 pad_0x00[0x40];
+    f32 *field_0x40;
+    f32 field_0x44;
+    f32 field_0x48;
+    f32 field_0x4c;
+    f32 field_0x50;
+    f32 field_0x54;
+    u8 pad_0x58[0x78 - 0x58];
+    void *field_0x78;
+    i32 field_0x7c;
+    u8 pad_0x80[0x84 - 0x80];
+    f32 *field_0x84;
+    f32 field_0x88;
+    f32 field_0x8c;
+    f32 field_0x90;
+    f32 field_0x94;
+    f32 field_0x98;
+    u8 pad_0x9c[0xa0 - 0x9c];
+    u8 field_0xa0;
+};
 struct HOTHBATTLE_MELEE_s {};
 struct HashRedirect;
 struct HashedKey {};
@@ -705,12 +903,36 @@ struct NuShaderUsageMask_s {};
 struct OPTIONSSAVE_s;
 struct PARTDEBSYS_s {};
 struct PLATSKININFO {};
+struct CHARSHADOW_s {
+    NUVEC position;
+    u16 angle;
+    u16 flags;
+    f32 scale;
+};
+DECOMP_ASSERT(sizeof(CHARSHADOW_s) == 0x14, "CHARSHADOW_s ABI");
 struct PLAYERITEMTYPE_s {};
 struct PLAYERITEM_s {};
-struct PLAYERPACKET_s {};
+struct PLAYERPACKET_s {
+    CHARSHADOW_s char_shadows[5];
+    u8 reserved_064[0x654 - 0x64];
+    i32 force_glow_mode;
+    i32 force_glow_state;
+    u8 reserved_65c[0x70];
+    f32 force_glow_x;
+    f32 force_glow_y;
+    f32 force_glow_intensity;
+    u8 reserved_6d8[0x4];
+    f32 force_glow_z;
+};
 struct PLUGSYS_s {};
 struct PLUG_s;
-struct PULSESYS_s {};
+struct PULSE_s;
+struct PULSESYS_s {
+    PULSE_s *pulses;
+    u16 pulse_count;
+    u16 pad_0x06;
+};
+DECOMP_ASSERT(offsetof(PULSESYS_s, pulse_count) == 0x4, "PULSESYS pulse count offset");
 struct PartHeader;
 struct PropertyMenuList {};
 struct REGISTERSTATUSPACKET_s {};
@@ -723,9 +945,14 @@ struct SPLINEPOS_s {};
 // Status / achievements screen packet (332 bytes; fields used by NuMain:
 // model ids at 0x9c/0x9e, per-player bytes at 0xa4/0xa5, flags at 0xb1/0xb2).
 struct STATUSPACKET_s {
-    undefined field_0x00[0x04];
+    struct STATUSPACKET_LSW_s *lsw_packet; // 0x00
     i32 field_0x04;
-    undefined field_0x08[0x9c - 0x08];
+    i32 field_0x08;
+    void (*reset_callback)(STATUSPACKET_s *); // 0x0c
+    i32 field_0x10;
+    undefined field_0x14[0x68 - 0x14];
+    f32 field_0x68;
+    undefined field_0x6c[0x9c - 0x6c];
     u16 player0_model; // 0x9c
     u16 player1_model; // 0x9e
     undefined field_0xa0[0xa4 - 0xa0];
@@ -736,7 +963,18 @@ struct STATUSPACKET_s {
     u8 status_flags; // 0xb2
     undefined field_0xb3[0x14c - 0xb3];
 };
-struct STATUS_STAGE_s {};
+struct STATUSPACKET_LSW_s {
+    i32 field_0x00;
+};
+struct STATUS_STAGE_s {
+    u8 pad_0x00[0x12];
+    u8 field_0x12;
+    u8 pad_0x13;
+    i32 field_0x14;
+    i32 field_0x18;
+    f32 field_0x1c;
+};
+DECOMP_ASSERT(sizeof(STATUS_STAGE_s) == 0x20, "STATUS_STAGE_s size");
 struct SUIT_s {
     char *base_character_name;
     char *suit_character_name;
@@ -752,7 +990,13 @@ struct SUIT_s {
 };
 DECOMP_ASSERT(sizeof(SUIT_s) == 0x18, "SUIT_s size");
 DECOMP_ASSERT(offsetof(SUIT_s, group) == 0xe, "SUIT_s group offset");
-struct SUPERCOUNTER {};
+struct SUPERCOUNTER {
+    char pad_0x00[0x1e2];
+    u16 reset_value; // 0x1e2
+    char pad_0x1e4[0x1e7 - 0x1e4];
+    u8 processed_flags; // 0x1e7
+};
+DECOMP_ASSERT(sizeof(SUPERCOUNTER) == 0x1e8, "SUPERCOUNTER size");
 struct SUPERCOUNTERPICKUP {};
 struct ShaderObjectKey;
 struct SoundTable {};
@@ -1043,16 +1287,63 @@ struct nuglobalrndrstate_s;
 struct nugraph_s {};
 struct nugscn_s;
 struct nugspline_s;
-struct nuhspecial_s {
-    nugscn_s *scene;       // 0x00
-    void *special;         // 0x04
-    void *display_special; // 0x08
+struct SPECIALMINIKIT_s {
+    nuhspecial_s special;
+    void *inst_anim;
+    void *anim_data;
+    f32 end_frame;
+    char special_name[16];
+    char pickup_name[8];
+    GIZMO_s *special_gizmo;
+    GIZMO_s *pickup_gizmo;
+    u8 flags;
 };
-DECOMP_ASSERT(sizeof(nuhspecial_s) == 0xc, "nuhspecial_s size");
+DECOMP_ASSERT(sizeof(SPECIALMINIKIT_s) == 0x3c, "SPECIALMINIKIT size");
+struct SPECIALMINIKITSYS_s {
+    SPECIALMINIKIT_s *items;
+    i32 count;
+};
+DECOMP_ASSERT(sizeof(SPECIALMINIKITSYS_s) == 0x8, "SPECIALMINIKITSYS size");
+struct CHARPLATFORM_s {
+    nuhspecial_s special;
+    i16 object_id;
+    i16 platform_id;
+    GameObject_s *object;
+};
+DECOMP_ASSERT(sizeof(CHARPLATFORM_s) == 0x14, "CHARPLATFORM_s size");
+struct CHARPLATFORMSYS_s {
+    i32 field_0x00;
+    i32 platform_count;
+    CHARPLATFORM_s platforms[1];
+};
+DECOMP_ASSERT(offsetof(CHARPLATFORMSYS_s, platforms) == 0x8, "CHARPLATFORMSYS platforms offset");
+struct GIZMOBLOWUPTYPE_s {
+    u8 reserved_00[0x30];
+    nuhspecial_s special;
+    u8 reserved_3c[0x100 - 0x3c];
+};
+DECOMP_ASSERT(sizeof(GIZMOBLOWUPTYPE_s) == 0x100, "GIZMOBLOWUPTYPE_s size");
+struct FADER_s {
+    nuhspecial_s special;
+    u8 pad_0x0c[0xc];
+};
+DECOMP_ASSERT(sizeof(FADER_s) == 0x18, "FADER_s size");
+struct PULSE_s {
+    nuhspecial_s special;
+    f32 on_time;
+    f32 off_time;
+    f32 timer;
+    f32 start_wait;
+    u16 active;
+    u16 disabled;
+    char gizmo_name[16];
+    GIZMO_s *gizmo;
+};
+DECOMP_ASSERT(sizeof(PULSE_s) == 0x34, "PULSE size");
 struct GAMEANIMOBJ_s {
     GAMEANIMOBJ_s *next;
     nuhspecial_s special;
-    void *instance_animation;
+    struct GAMEANIMINSTANCE_s *instance_animation;
     void *animation_data;
     f32 start_frame;
     f32 end_frame;
@@ -1076,6 +1367,47 @@ struct GAMEANIMSET_s {
 };
 DECOMP_ASSERT(sizeof(GAMEANIMSET_s) == 0x1c, "GAMEANIMSET_s size");
 DECOMP_ASSERT(offsetof(GAMEANIMSET_s, objects) == 0x18, "GAMEANIMSET_s objects offset");
+struct GAMEANIMINSTANCE_s {
+    u8 pad_0x00[0x40];
+    f32 playback_scale;
+    u8 pad_0x44[0x4c - 0x44];
+    f32 start_frame;
+    u8 flags;
+};
+DECOMP_ASSERT(offsetof(GAMEANIMINSTANCE_s, playback_scale) == 0x40, "GAMEANIMINSTANCE_s scale offset");
+DECOMP_ASSERT(offsetof(GAMEANIMINSTANCE_s, start_frame) == 0x4c, "GAMEANIMINSTANCE_s frame offset");
+DECOMP_ASSERT(offsetof(GAMEANIMINSTANCE_s, flags) == 0x50, "GAMEANIMINSTANCE_s flags offset");
+struct MINIANIMPACKET_s {
+    i32 current_animation;
+    i32 animation_mode;
+    u8 pad_0x08[0x14 - 0x08];
+    i32 previous_animation_mode;
+    u8 reset_state;
+    u8 field_0x19;
+    u8 pad_0x1a[0x1e - 0x1a];
+    i16 current_animation_id;
+    i16 previous_animation_id;
+    i16 requested_animation_id;
+};
+DECOMP_ASSERT(sizeof(MINIANIMPACKET_s) == 0x24, "MINIANIMPACKET_s size");
+struct MINICAMCOMMAND_s {
+    i32 state_words[7];
+};
+DECOMP_ASSERT(sizeof(MINICAMCOMMAND_s) == 0x1c, "MINICAMCOMMAND_s size");
+struct MINICAM_s {
+    MINICAMCOMMAND_s commands[32];
+    u8 command_count;
+    u8 current_command;
+    u8 flags[2];
+    i32 command_state[27];
+    f32 delta_time;
+    i32 field_0x3f4;
+    i32 field_0x3f8;
+};
+DECOMP_ASSERT(sizeof(MINICAM_s) == 0x3fc, "MINICAM_s size");
+DECOMP_ASSERT(offsetof(MINICAM_s, command_count) == 0x380, "MINICAM command count offset");
+DECOMP_ASSERT(offsetof(MINICAM_s, current_command) == 0x381, "MINICAM command index offset");
+DECOMP_ASSERT(offsetof(MINICAM_s, delta_time) == 0x3f0, "MINICAM delta time offset");
 struct nuinstanim_s {};
 struct numtl_s;
 struct numtx_s;
@@ -1104,7 +1436,6 @@ struct nupad_s;
 struct nushadermtldesc_s;
 struct nusound_filename_info_s;
 struct nutex_s;
-struct nutexmanager_s {};
 struct particlechunkrendertype_s {
     dma_particle_chunk_s *particle_chunk;
     debinftype *effect;
@@ -1117,16 +1448,71 @@ struct particlechunkrendertype_s {
     u8 fields_062[2];
 };
 DECOMP_ASSERT(sizeof(particlechunkrendertype_s) == 0x64, "particlechunkrendertype_s size");
-struct pushblock_s {};
-struct ripple_node_s {};
-struct ripple_set_s {};
+struct edpp_particle_s {
+    u8 reserved_00[0x10];
+    i32 instance_id;
+    u8 reserved_14[0x58 - 0x14];
+};
+DECOMP_ASSERT(sizeof(edpp_particle_s) == 0x58, "edpp_particle_s size");
+struct NUDISPLAYSPECIAL_s {
+    u8 pad_0x00[0xc0];
+    i32 instance_ix; // 0xc0
+};
+DECOMP_ASSERT(offsetof(NUDISPLAYSPECIAL_s, instance_ix) == 0xc0, "display special instance index offset");
+struct pushblock_s {
+    f32 vertical_penetration;
+    f32 support_height;
+    u8 reserved_08[0x14];
+    pushblock_s *block_below;
+    u32 field_20;
+    nuhspecial_s special;
+    u8 reserved_30[0x28];
+    NUVEC *position;
+    u8 reserved_5c[0x54];
+    NUVEC bounds_min;
+    NUVEC bounds_max;
+    u8 state_flags[4];
+    u16 field_cc;
+    u16 field_ce;
+};
+DECOMP_ASSERT(offsetof(pushblock_s, block_below) == 0x1c, "push block below offset");
+DECOMP_ASSERT(offsetof(pushblock_s, special) == 0x24, "push block special offset");
+DECOMP_ASSERT(offsetof(pushblock_s, position) == 0x58, "push block position offset");
+DECOMP_ASSERT(offsetof(pushblock_s, bounds_min) == 0xb0, "push block minimum bounds offset");
+DECOMP_ASSERT(offsetof(pushblock_s, bounds_max) == 0xbc, "push block maximum bounds offset");
+DECOMP_ASSERT(sizeof(pushblock_s) == 0xd0, "push block size");
+struct ripple_node_s {
+    u8 pad_0x00[0x78];
+    ripple_node_s *next;
+    ripple_node_s *previous;
+};
+DECOMP_ASSERT(sizeof(ripple_node_s) == 0x80, "ripple_node_s size");
+struct ripple_set_s {
+    union {
+        u32 reset_state;
+        struct {
+            u16 count;
+            u16 free_count;
+        };
+    };
+    ripple_node_s *nodes;
+    ripple_node_s *current;
+    void *field_0x0c;
+    void *field_0x10;
+};
+DECOMP_ASSERT(sizeof(ripple_set_s) == 0x14, "ripple_set_s size");
 struct rtlset {};
 struct shopitem_s {};
 struct specialsfx_s {};
 struct speedup_s {};
 struct starfighter_s {};
 struct terrsitu_s {};
-struct tertype {};
+struct tertype {
+    f32 flMovement_scale;
+    u32 dwFlags;
+    u32 field_0x08;
+};
+DECOMP_ASSERT(sizeof(tertype) == 0xc, "tertype size");
 struct uv1deb {};
 struct uv1debdata;
 struct BaseEditor {
@@ -1274,29 +1660,37 @@ struct FadeWipe : FadeBase {
     void UpdateFade();
 };
 struct GIZBUILDIT_s {
+    char name[0x10];
+
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };
 struct GIZFORCE_s {
-    char pad_0x00[0x40];
+    char name[0x10];
+    char pad_0x10[0x30];
     void *field_0x40; // 0x40
     float field_0x44; // 0x44  force strength threshold / start value
     char pad_0x48[0x6c - 0x48];
     float strength_0x6c;
+    char pad_0x70[0xac - 0x70];
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };
 struct GIZMOBLOWUP_s {
-    undefined field0_0x0[0x50];
+    u8 reserved_00[0x17];
+    u8 state_flags;
+    u8 reserved_18[0x50 - 0x18];
     char field_0x50[0x4f];      // 0x50 .. 0x9f
     u8 field_0x9f;              // 0x9f  state/flags byte
     i32 field_0xa0;             // 0xa0
     char field_0xa4[0x8];       // 0xa4 .. 0xac
     void *field_0xac;           // 0xac
     float field_0xb0;           // 0xb0
-    undefined field_0xb4[0x6c]; // 0xb4 .. 0x120
-    void *field_0x120;          // 0x120
-    u8 field_0x124;             // 0x124
+    undefined field_0xb4[0x46]; // 0xb4 .. 0xf9
+    char name[0x10];            // 0xfa
+    undefined field_0x10a[0x16];
+    void *field_0x120; // 0x120
+    u8 field_0x124;    // 0x124
     undefined field_0x125[3];
     float field_0x128; // 0x128
     void ClearMechObjectInterface();
@@ -1420,6 +1814,9 @@ struct GIZPANEL_s {
 };
 DECOMP_ASSERT(sizeof(GIZPANEL_s) == 0x9c, "GIZPANEL_s size");
 struct GIZTURRET_s {
+    char reserved_00[0x8];
+    char name[0x10];
+    char reserved_18[0x12c];
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };
@@ -1437,7 +1834,16 @@ struct HATMACHINE_s {
     u8 animation_state;
     char model_letter;
     u8 model_special_index;
-    u8 flags;
+    union {
+        u8 flags;
+        struct {
+            u8 state_bit0 : 1;
+            u8 state_bit1 : 1;
+            u8 progress_state1 : 1;
+            u8 progress_state0 : 1;
+            u8 reserved_state_bits : 4;
+        };
+    };
     NUVEC player_position;
     NUVEC target_offset;
     u16 terrain_pitch;
@@ -1462,10 +1868,16 @@ struct HudRadarPulse {
     void Render();
 };
 struct LEVER_s {
+    u8 reserved_00[0x5c];
+    char name[0x10];
+
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };
-struct LevelEditor {
+struct LevelEditor : BaseThing {
+    u8 unknown_10[0x290];
+    i32 reset_pending;
+
     void AddInfoText(char *);
     void AddScene(char *, nugscn_s *, i32);
     void AddText(char *);
@@ -1520,15 +1932,15 @@ struct MINEENTRY_s {
 // pod-race code: PodRaceInit fills the header + radius/areas/debris ids,
 // UpdatePodRaceMines iterates mines[] and uses the timers.
 struct MINESYS_s {
-    char pad_0x00[0xc];     // 0x00  holds the "mine" special handle at 0x00
-    MINEENTRY_s mines[64];  // 0x0c .. 0x70c
-    float mine_radius;      // 0x70c NuSpecialGetOriginRadius(mine special)
-    float spawn_timer;      // 0x710 seeded from camera zoom / 1000000000.0f sentinel
-    void *nomine_areas[10]; // 0x714 AISysFindArea("nomine_N")
-    i16 nomine_count;       // 0x73c
-    i16 mine_debris;        // 0x73e FindGameDebris("MINE_POP")
-    i32 mine_part;          // 0x740 PARTLookupType("POD_MINE_PART")
-    float update_timer;     // 0x744
+    nuhspecial_s mine_special; // 0x00
+    MINEENTRY_s mines[64];     // 0x0c .. 0x70c
+    float mine_radius;         // 0x70c NuSpecialGetOriginRadius(mine special)
+    float spawn_timer;         // 0x710 seeded from camera zoom / 1000000000.0f sentinel
+    void *nomine_areas[10];    // 0x714 AISysFindArea("nomine_N")
+    i16 nomine_count;          // 0x73c
+    i16 mine_debris;           // 0x73e FindGameDebris("MINE_POP")
+    i32 mine_part;             // 0x740 PARTLookupType("POD_MINE_PART")
+    float update_timer;        // 0x744
 };
 
 struct MoveToMarker {
@@ -1568,9 +1980,11 @@ struct OcclusionManager {
     ~OcclusionManager();
 };
 struct PART_s {
+    u8 data[0x224];
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };
+DECOMP_ASSERT(sizeof(PART_s) == 0x224, "PART_s ABI");
 struct PartObjectInterface {
     void GetPos(VuVec &, i32) const;
     void GetRadius() const;
@@ -1579,6 +1993,7 @@ struct PartObjectInterface {
     virtual ~PartObjectInterface();
 };
 struct Placeable {
+    void Reset();
     void GetCurrentPosition() const;
     void GetInitialPosition() const;
     void SetCurrentPosition(VuVec const *);
@@ -1780,9 +2195,19 @@ struct SpecialObject {
     SpecialObject();
 };
 struct TELEPORT_s {
+    u8 reserved_00[0x4e];
+    u8 enabled;
+    u8 active;
+    u8 reserved_50[0x24];
+    u16 field_74;
+    u16 field_76;
+    u16 field_78;
+    u16 field_7a;
+    u8 reserved_7c[0x84];
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };
+DECOMP_ASSERT(sizeof(TELEPORT_s) == 0x100, "TELEPORT_s size");
 struct TMClient {
     struct TM_MOUSE_AXIS {};
     void AllocHandle();

@@ -2,9 +2,16 @@
 
 #include "decomp.h"
 
-static i32 Tubes_GetMaxGizmos(void *tube) {
-    UNIMPLEMENTED();
-    return {};
+#include "legoapi/world/level.h"
+#include "legoapi/world/world.h"
+
+static i32 Tubes_GetMaxGizmos(void *world_info) {
+    WORLDINFO *world = (WORLDINFO *)world_info;
+    if (world == NULL) {
+        return 0;
+    }
+
+    return world->current_level->max_tubes;
 }
 
 static void Tubes_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -19,8 +26,7 @@ static void Tubes_Draw(void *, void *, float) {
 }
 
 static char *Tube_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL ? static_cast<char *>(gizmo->object) : NULL;
 }
 
 static i32 Tube_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -34,8 +40,7 @@ static char *Tube_GetOutputName(GIZMO *gizmo, i32 output_index) {
 }
 
 static i32 Tube_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return 1;
 }
 
 static void Tube_Activate(GIZMO *gizmo, i32) {
@@ -69,8 +74,29 @@ static void Tubes_StoreProgress(void *, void *, void *) {
     UNIMPLEMENTED();
 }
 
-static void Tubes_Reset(void *, void *, void *) {
-    UNIMPLEMENTED();
+struct TUBEPROGRESS {
+    u32 state[2];
+};
+
+static void Tubes_Reset(void *world_info, void *, void *progress_data) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_info);
+    if (world == NULL || world->tubes == NULL || world->tube_count <= 0) {
+        return;
+    }
+
+    TUBE *tube = world->tubes;
+    for (i32 i = 0; i < world->tube_count; i++, tube++) {
+        tube->target_y = tube->position.y + tube->initial_y_offset;
+        tube->travel_speed_squared = tube->travel_speed * tube->travel_speed;
+        tube->active = 1;
+        tube->visible = 1;
+
+        if (i <= 31 && progress_data != NULL) {
+            u32 mask = 1u << i;
+            tube->visible = (static_cast<TUBEPROGRESS *>(progress_data)->state[0] & mask) != 0;
+            tube->active = (static_cast<TUBEPROGRESS *>(progress_data)->state[1] & mask) != 0;
+        }
+    }
 }
 
 static void *Tubes_ReserveBufferSpace(void *) {

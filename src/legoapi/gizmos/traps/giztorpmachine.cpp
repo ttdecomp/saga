@@ -1,12 +1,13 @@
 #include "legoapi/gizmos/traps/giztorpmachine.h"
 
 #include "decomp.h"
+#include "legoapi/world/level.h"
 
 i32 giztorpmachine_gizmotype_id;
 
-static i32 GizTorp_GetMaxGizmos(void *torp) {
-    UNIMPLEMENTED();
-    return {};
+static i32 GizTorp_GetMaxGizmos(void *world_info) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_info);
+    return world != NULL ? world->current_level->max_torp_machines : 0;
 }
 
 static void GizTorp_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -22,8 +23,7 @@ static void GizTorp_Draw(void *, void *, float) {
 }
 
 static char *GizTorp_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL ? static_cast<GIZTORPMACHINE *>(gizmo->object)->name : NULL;
 }
 
 static i32 GizTorp_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -37,8 +37,7 @@ static char *GizTorp_GetOutputName(GIZMO *gizmo, i32 output_index) {
 }
 
 static i32 GizTorp_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return 1;
 }
 
 static void GizTorp_Activate(GIZMO *gizmo, i32) {
@@ -49,8 +48,20 @@ static void GizTorp_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static void GizTorps_Reset(void *, void *, void *) {
-    UNIMPLEMENTED();
+static void GizTorps_Reset(void *world_info, void *, void *) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_info);
+    if (world == NULL || world->torpedoes == NULL) {
+        return;
+    }
+
+    GIZTORPSYS *system = static_cast<GIZTORPSYS *>(world->torpedoes);
+    if (system->machines == NULL || system->count <= 0) {
+        return;
+    }
+
+    for (i32 i = 0; i < system->count; i++) {
+        system->machines[i].flags |= 3;
+    }
 }
 
 static void *GizTorps_ReserveBufferSpace(void *) {

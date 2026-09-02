@@ -1,6 +1,7 @@
 #include "legoapi/gizmos/trigger/gizspecial.h"
 
 #include "decomp.h"
+#include "legoapi/world/level.h"
 
 i32 gizspecial_gizmotype_id = -1;
 
@@ -10,10 +11,11 @@ void GameAnimSet_Play(GAMEANIMSET_s *, f32, i32);
 void GameAnimSet_Stop(GAMEANIMSET_s *);
 void GameAnimSet_JumpToStart(GAMEANIMSET_s *);
 void GameAnimSet_SetVisibility(GAMEANIMSET_s *, i32);
+char *GizSpecial_GetName(GIZSPECIAL_s *);
 
-static i32 GizSpecial_GetMaxGizmos(void *special) {
-    UNIMPLEMENTED();
-    return {};
+static i32 GizSpecial_GetMaxGizmos(void *world_info) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_info);
+    return world->current_level->max_giz_specials;
 }
 
 static void GizSpecial_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -21,8 +23,7 @@ static void GizSpecial_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
 }
 
 static char *GizSpecial_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL ? GizSpecial_GetName(static_cast<GIZSPECIAL *>(gizmo->object)) : NULL;
 }
 
 static i32 GizSpecial_GetOutput(GIZMO *gizmo, i32, i32) {

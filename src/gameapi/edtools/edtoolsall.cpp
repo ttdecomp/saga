@@ -177,7 +177,15 @@ void edppPtlCreateCopy(nuvec_s *, i32) {
 void edrtlPlaceBurnout(i32, nuvec_s *) {
 }
 
-void edrtlResetBurnset(burnset_s *) {
+void edrtlResetBurnset(burnset_s *burnset) {
+    if (burnset == NULL) {
+        return;
+    }
+    for (i32 i = 0; i < 32; ++i) {
+        burnset->burnouts[i].active = 0;
+    }
+    burnset->active_count = 0;
+    burnset->selected_index = -1;
 }
 
 void eduiSetPinnedMenu(eduimenu_s *) {
@@ -808,6 +816,21 @@ void EdSystem::Render() {
 }
 
 void EdSystem::Reset() {
+    for (EdSubSystem *subsystem = first_subsystem; subsystem != NULL; subsystem = subsystem->next) {
+        subsystem->SubReset();
+    }
+}
+
+__attribute__((weak)) void EdSubSystem::SubInitialise(variptr_u &, variptr_u &, i32) {
+}
+
+__attribute__((weak)) void EdSubSystem::SubReset() {
+}
+
+__attribute__((weak)) void EdSubSystem::SubProcess(float) {
+}
+
+__attribute__((weak)) void EdSubSystem::SubRender() {
 }
 
 void EdControl::AddMenuItem(eduimenu_s *, EdRef *, void *) {

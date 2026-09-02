@@ -1,12 +1,17 @@
 #include "decomp.h"
 struct SHOPINPUT;
 #include "legoapi/menus/screens/store.h"
+#include "legoapi/world/levels/episode.h"
+#include "legoapi/world/world.h"
 
+#include "globals.h"
 #include "nu2api/nucore/nustring.h"
 
 struct GameObject_s;
 struct LEVEL_PROGRESS_s;
 struct WORLDINFO_s;
+
+extern void TurnEpisodeDoorLightsOn(i32);
 
 STOREPACK StorePack[11] = {0};
 
@@ -139,14 +144,54 @@ void StoreStatusTakeOverObjectSys() {
 }
 
 static __used__ void StoreUnlockEp2() {
+    if (Game_AreaSave != NULL) {
+        if (EDataList != NULL) {
+            Game_AreaSave[EDataList[1].area_ids[0]].complete = 1;
+        }
+        if (WORLD != NULL && WORLD->current_level == HUB_LDATA) {
+            TurnEpisodeDoorLightsOn(1);
+        }
+    }
 }
 static __used__ void StoreUnlockEp3() {
+    if (Game_AreaSave != NULL) {
+        if (EDataList != NULL) {
+            Game_AreaSave[EDataList[2].area_ids[0]].complete = 1;
+        }
+        if (WORLD != NULL && WORLD->current_level == HUB_LDATA) {
+            TurnEpisodeDoorLightsOn(2);
+        }
+    }
 }
 static __used__ void StoreUnlockEp4() {
+    if (Game_AreaSave != NULL) {
+        if (EDataList != NULL) {
+            Game_AreaSave[EDataList[3].area_ids[0]].complete = 1;
+        }
+        if (WORLD != NULL && WORLD->current_level == HUB_LDATA) {
+            TurnEpisodeDoorLightsOn(3);
+        }
+    }
 }
 static __used__ void StoreUnlockEp5() {
+    if (Game_AreaSave != NULL) {
+        if (EDataList != NULL) {
+            Game_AreaSave[EDataList[4].area_ids[0]].complete = 1;
+        }
+        if (WORLD != NULL && WORLD->current_level == HUB_LDATA) {
+            TurnEpisodeDoorLightsOn(4);
+        }
+    }
 }
 static __used__ void StoreUnlockEp6() {
+    if (Game_AreaSave != NULL) {
+        if (EDataList != NULL) {
+            Game_AreaSave[EDataList[5].area_ids[0]].complete = 1;
+        }
+        if (WORLD != NULL && WORLD->current_level == HUB_LDATA) {
+            TurnEpisodeDoorLightsOn(5);
+        }
+    }
 }
 static __used__ void StoreUnlockJedi() {
 }

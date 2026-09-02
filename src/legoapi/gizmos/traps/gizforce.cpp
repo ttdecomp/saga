@@ -1,12 +1,13 @@
 #include "legoapi/gizmos/traps/gizforce.h"
 
 #include "decomp.h"
+#include "legoapi/world/level.h"
 
 i32 force_gizmotype_id = -1;
 
-static i32 GizForces_GetMaxGizmos(void *force) {
-    UNIMPLEMENTED();
-    return {};
+static i32 GizForces_GetMaxGizmos(void *world_info) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_info);
+    return world != NULL ? world->current_level->max_force : 0;
 }
 
 static void GizForces_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -22,8 +23,7 @@ static void GizForces_Draw(void *, void *, float) {
 }
 
 static char *GizmoForce_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL ? static_cast<GIZFORCE *>(gizmo->object)->name : NULL;
 }
 
 static i32 GizmoForce_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -37,8 +37,7 @@ static char *GizmoForce_GetOutputName(GIZMO *gizmo, i32 output_index) {
 }
 
 static i32 GizmoForce_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return 8;
 }
 
 static void GizmoForce_Activate(GIZMO *gizmo, i32) {

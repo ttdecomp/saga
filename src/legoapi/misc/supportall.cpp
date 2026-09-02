@@ -51,6 +51,11 @@ struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
 
+static i32 TBGAMECOUNT;
+static i32 TBDRAWCOUNT;
+static i32 TBPLAYERCOUNT;
+static i32 TBAICOUNT;
+
 void CatchUpCode(GameObject_s *, float, float, i32) {
 }
 
@@ -768,6 +773,10 @@ void unref(unsigned char *, unsigned char *) {
 }
 
 void TBRESET() {
+    TBGAMECOUNT = 0;
+    TBDRAWCOUNT = 0;
+    TBPLAYERCOUNT = 0;
+    TBAICOUNT = 0;
 }
 
 void RootFnEx(numtx_s *, void *, nuvec_s *, nuvec_s *, nuvec_s *, float, i32) {

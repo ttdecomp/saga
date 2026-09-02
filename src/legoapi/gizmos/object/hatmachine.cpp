@@ -1,18 +1,28 @@
 #include "legoapi/gizmos/object/hatmachine.h"
+#include "legoapi/items/objects/gameobjects.h"
+#include "legoapi/world/level.h"
 
 #include "decomp.h"
+#include "globals.h"
 #include "legoapi/legoapi_types.h"
+#include "nu2api/numath/numtx.h"
+#include "nu2api/numath/nutrig.h"
+#include "nu2api/numath/nuvec.h"
+
+void Hat_GetAbsTargetPos(HATMACHINE_s *machine, NUVEC *target_position);
+void FindAnglesZX(NUVEC *vector, u16 *pitch, u16 *yaw);
+extern "C" f32 NuFloatRand(i32 *random);
 
 struct HATMACHINEPROGRESS {
     i32 preserved_state;
-    i32 state[2];
+    u32 state[2];
 };
 
 i32 hatmachine_gizmotype_id = -1;
 
 static i32 HatMachine_GetMaxGizmos(void *hatmachine) {
-    UNIMPLEMENTED();
-    return {};
+    WORLDINFO *world = static_cast<WORLDINFO *>(hatmachine);
+    return world != NULL ? world->current_level->max_hat_machines : 0;
 }
 
 static void HatMachine_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -72,8 +82,72 @@ static void HatMachines_StoreProgress(void *, void *, void *) {
     UNIMPLEMENTED();
 }
 
-static void HatMachines_Reset(void *, void *, void *) {
-    UNIMPLEMENTED();
+static __used__ void HatMachine_Reset(HATMACHINE_s *machine) {
+    machine->player_position.y = 0.0f;
+    machine->player_position.x = 0.0f;
+    machine->player_position.z = 0.1441f;
+    NuVecRotateY(&machine->player_position, &machine->player_position, machine->yaw + 0x8000);
+    NuVecAdd(&machine->player_position, &machine->player_position, &machine->position);
+
+    NUVEC target_position;
+    Hat_GetAbsTargetPos(machine, &target_position);
+    target_position.y = machine->position.y;
+
+    machine->player_position.y = GameShadow(NULL, &machine->player_position, 1.0f, -1);
+    f32 target_y = GameShadow(NULL, &target_position, 1.0f, -1);
+    if (target_y == 2000000.0f) {
+        machine->target_offset.y = target_y;
+    } else {
+        machine->target_offset.y = target_y + 0.005f;
+        FindAnglesZX(&GameTimer.elapsed_components, &machine->terrain_pitch, &machine->terrain_roll);
+    }
+
+    machine->animation_state = 0;
+    machine->progress_state1 = 1;
+    machine->progress_state0 = 1;
+    machine->state_bit0 = 0;
+    machine->state_bit1 = 0;
+    machine->hat_refresh_timer = 0.0f;
+    machine->animation_duration = 0.0f;
+    machine->render_animation_time = 0.0f;
+
+    if (machine->model_letter == 'r') {
+        machine->model_special_index = 0x22;
+    } else {
+        machine->model_special_index = (machine->model_letter == 'o') + 0x20;
+    }
+
+    if (machine->configured_hat != 0) {
+        machine->current_hat = machine->configured_hat;
+    } else {
+        machine->current_hat = static_cast<u8>(NuFloatRand(&GAMERAND) * 4.0f) + 1;
+    }
+
+    NuMtxSetRotationY(&machine->matrix, machine->yaw);
+    NuMtxTranslate(&machine->matrix, &machine->position);
+}
+
+static void HatMachines_Reset(void *world_info, void *, void *progress_data) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_info);
+    if (world == NULL) {
+        return;
+    }
+
+    HATMACHINESYS_s *system = world->hat_sys;
+    if (system == NULL || system->machines == NULL || system->count <= 0) {
+        return;
+    }
+
+    for (i32 i = 0; i < system->count; i++) {
+        HATMACHINE *machine = &system->machines[i];
+        HatMachine_Reset(machine);
+
+        if (i <= 31 && progress_data != NULL) {
+            u32 mask = 1u << i;
+            machine->progress_state1 = (static_cast<HATMACHINEPROGRESS *>(progress_data)->state[1] & mask) != 0;
+            machine->progress_state0 = (static_cast<HATMACHINEPROGRESS *>(progress_data)->state[0] & mask) != 0;
+        }
+    }
 }
 
 static void *HatMachines_ReserveBufferSpace(void *) {

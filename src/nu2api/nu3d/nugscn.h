@@ -6,6 +6,7 @@
 
 struct nunativetex_s;
 struct nudldlistscene_s;
+struct nuhspecial_s;
 
 typedef struct nuvideoresheader_s {
     u16 nvertex_buffers;
@@ -101,10 +102,10 @@ typedef struct nugscn_s {
     undefined pad_44[0x20];
     void *texture_anims;
     undefined pad_68[4];
-    undefined4 field84_0x6c;
-    undefined4 field88_0x70;
+    i32 portal_count;      // 0x6c
+    NUPORTAL *portal_list; // 0x70
     i32 max_portals;
-    NUPORTAL *portals;
+    NUPORTAL *portals; // 0x78 room portal array
     undefined field100_0x7c;
     undefined field101_0x7d;
     undefined field102_0x7e;
@@ -494,7 +495,7 @@ extern "C" {
     void NuGScnFixupPS(NUGSCN *scene);
     // The trailing flags argument is passed as 1 by every caller in the
     // original binary; the original implementation never reads it.
-    i32 NuSpecialFind(NUGSCN *scene, void **dest, char *name, i32 flags);
+    i32 NuSpecialFind(NUGSCN *scene, struct nuhspecial_s *dest, char *name, i32 flags);
 
 #ifdef __cplusplus
 }

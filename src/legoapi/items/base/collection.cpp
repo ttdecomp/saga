@@ -307,7 +307,12 @@ void AddToGoldBricks() {
 void Pup_CollectCoin(WORLDINFO_s *, GIZMOPICKUP_s *, i32, GameObject_s *, i32) {
 }
 
-void ResetCoinPacket(COINPACKET_s *) {
+void ResetCoinPacket(COINPACKET_s *packet) {
+    if (packet != NULL) {
+        packet->scale = 1.0f;
+        packet->double_score_timer = 0.0f;
+        packet->active = 1;
+    }
 }
 
 void UpdateCoinPacket(COINPACKET_s *, i32, i32) {

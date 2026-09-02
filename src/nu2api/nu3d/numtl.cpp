@@ -177,7 +177,8 @@ void NuMtlUpdate(NUMTL *mtl) {
 void NuMtlAddEx(numtl_s *, i32) {
 }
 
-void NuMtlInsert(numtl_s *, i32) {
+void NuMtlInsert(numtl_s *mtl, i32 render_plane) {
+    mtl->renderplane = static_cast<u8>(render_plane);
 }
 
 // original 0x29bc50 — refresh the material's shader desc, (re)acquire its
@@ -239,7 +240,9 @@ void NuMtlUpdatePS(numtl_s *mtl) {
     }
 }
 
-void NuMtlSetUVOffsetPS(numtl_s *, u32, float, float) {
+void NuMtlSetUVOffsetPS(numtl_s *mtl, u32 texture, float u, float v) {
+    mtl->shader_desc.tex_anim_offsets[texture][0] = u;
+    mtl->shader_desc.tex_anim_offsets[texture][1] = v;
 }
 
 void NuMtlDisableCulling() {

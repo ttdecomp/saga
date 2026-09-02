@@ -2,3 +2,7 @@
 
 NuSoundEffect::~NuSoundEffect() {
 }
+
+bool NuSoundEffect::Initialise() {
+    return true;
+}

@@ -18,6 +18,11 @@ typedef struct nutex_s {
     i32 height;
 } NUTEX;
 
+struct nutexmanager_s;
+
+extern nutexmanager_s *g_texman;
+extern i32 streamOff;
+
 typedef struct nunativetex_s {
     i32 width;
     i32 height;
@@ -112,6 +117,9 @@ extern "C" {
 #endif
 
 void NuTexInitExPS(VARIPTR *buf);
+
+nutexmanager_s *NuTexGetManager();
+void NuTexManagerInit(VARIPTR *buf, VARIPTR buf_end);
 
 void NuTexCreatePS(NUNATIVETEX *tex, bool is_pvrtc);
 

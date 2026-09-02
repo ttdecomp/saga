@@ -17,10 +17,19 @@ struct SHOPINPUT;
 void SetLights(NUCOLOUR3 *colour0, NUVEC *direction0, NUCOLOUR3 *colour1, NUVEC *direction1, NUCOLOUR3 *colour2,
                NUVEC *direction2, NUVEC *ambient);
 
+extern "C" {
+    void rtlResetEx(rtldata_s *data, i32 reset_cached);
+    void rtlApplySetScale(void *, rtldata_s *, NUVEC *, NUMTX *, i32, f32);
+}
+
 void SetFlicker(GameObject_s *, float) {
 }
 
-void ResetLights(nuvec_s *, rtldata_s *, void *) {
+void ResetLights(nuvec_s *position, rtldata_s *data, void *set) {
+    rtlResetEx(data, 1);
+    if (position != NULL) {
+        rtlApplySetScale(set, data, position, NULL, -1, 1.0f);
+    }
 }
 
 extern "C" {
@@ -46,7 +55,6 @@ void SetZeroLights() {
 rtldata_s lev_rtldata;
 
 extern "C" {
-    void rtlApplySetScale(void *, rtldata_s *, NUVEC *, NUMTX *, i32, f32);
     void rtlSetLights(rtldata_s *);
 }
 

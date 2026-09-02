@@ -1,12 +1,13 @@
 #include "legoapi/gizmos/trigger/signals.h"
 
 #include "decomp.h"
+#include "legoapi/world/level.h"
 
 #include <string.h>
 
-static i32 Signals_GetMaxGizmos(void *signal) {
-    UNIMPLEMENTED();
-    return {};
+static i32 Signals_GetMaxGizmos(void *world_info) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_info);
+    return world != NULL ? world->current_level->max_signals : 0;
 }
 
 static void Signals_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {

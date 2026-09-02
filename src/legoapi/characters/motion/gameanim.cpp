@@ -70,7 +70,29 @@ void Animate_CHARACTER(GameObject_s *) {
 void Animate_GEONOSIAN(GameObject_s *) {
 }
 
-void GameAnimSet_Reset(GAMEANIMSET_s *) {
+void GameAnimSet_RemoveFromSystemList(GAMEANIMSET_s *);
+
+i32 GameAnimSet_Reset(GAMEANIMSET_s *set) {
+    GAMEANIMOBJ_s *object;
+    GAMEANIMINSTANCE_s *instance;
+
+    if (set != NULL) {
+        object = set->objects;
+        if (object != NULL) {
+            do {
+                instance = object->instance_animation;
+                if (instance != NULL) {
+                    instance->flags &= 0xfa;
+                    const f32 start_frame = object->start_frame;
+                    instance->playback_scale = 1.0f;
+                    instance->start_frame = start_frame;
+                }
+                GameAnimSet_RemoveFromSystemList(set);
+                object = object->next;
+            } while (object != NULL);
+        }
+    }
+    return 1;
 }
 
 void Animate_HOVERDROID(GameObject_s *) {
@@ -478,14 +500,40 @@ extern "C" {
     void GetInstAnimEndFrame(void) {
     }
 
-    void ResetAnimPacket(void *, i32) {
+    extern i32 AnimBlendMode __asm__("_ZL13AnimBlendMode") __attribute__((visibility("hidden")));
+
+    void ResetAnimPacket(ANIMPACKET_s *packet, i32 animation) {
+        if (packet != NULL) {
+            packet->field_0x3a = static_cast<i16>(animation);
+            packet->field_0x38 = packet->field_0x3a;
+            packet->animation_index = packet->field_0x38;
+            packet->animation_mode = AnimBlendMode;
+            packet->previous_animation_mode = packet->animation_mode;
+            packet->current_animation = packet->previous_animation_mode;
+            packet->blending = 0;
+            packet->field_0x30 = 4;
+            packet->frame = -1;
+            packet->field_0x3e = 0;
+            packet->reset_flags = 0;
+            packet->field_0x3d = 0;
+        }
     }
 
 #ifdef __EMSCRIPTEN__
     void ResetMiniAnimPacket(void *, i32) {
     }
 #else
-    void ResetMiniAnimPacket(void) {
+    void ResetMiniAnimPacket(MINIANIMPACKET_s *packet, i32 animation) {
+        if (packet != NULL) {
+            packet->requested_animation_id = static_cast<i16>(animation);
+            packet->previous_animation_id = packet->requested_animation_id;
+            packet->current_animation_id = packet->previous_animation_id;
+            packet->animation_mode = AnimBlendMode;
+            packet->previous_animation_mode = packet->animation_mode;
+            packet->current_animation = packet->previous_animation_mode;
+            packet->field_0x19 = 0;
+            packet->reset_state = 4;
+        }
     }
 #endif
 

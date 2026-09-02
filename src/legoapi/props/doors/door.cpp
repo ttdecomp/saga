@@ -18,6 +18,7 @@ struct nugspline_s *Door_CutSpl = NULL;
 char Door_ExitCameraSplineName[64] = {0};
 char Door_ExitName[64] = {0};
 i32 Door_Start = 0;
+i32 Door_NextSock = -1;
 
 // ---- Hub exit-door bookkeeping ----
 void *HubStartDoor = NULL;

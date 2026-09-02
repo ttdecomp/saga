@@ -5,8 +5,7 @@
 #include "legoapi/world/world.h"
 
 static i32 AI_GetMaxGizmos(void *ai) {
-    UNIMPLEMENTED();
-    return {};
+    return 0x20;
 }
 
 static void AI_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_ptr, void *unused) {
@@ -39,8 +38,7 @@ char *AI_GetOutputName(GIZMO *gizmo, i32 output_index) {
 }
 
 static i32 AI_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return 1;
 }
 
 void AI_Activate(GIZMO *gizmo, i32) {

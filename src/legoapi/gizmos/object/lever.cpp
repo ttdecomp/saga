@@ -1,6 +1,8 @@
 #include "legoapi/gizmos/object/lever.h"
+#include "legoapi/world/level.h"
 
 #include "decomp.h"
+#include "legoapi/legoapi_types.h"
 
 struct LEVERPROGRESS {
     i32 state;
@@ -11,8 +13,8 @@ struct LEVERPROGRESS {
 i32 lever_gizmotype_id = -1;
 
 static i32 Levers_GetMaxGizmos(void *lever) {
-    UNIMPLEMENTED();
-    return {};
+    WORLDINFO *world = static_cast<WORLDINFO *>(lever);
+    return world != NULL ? world->current_level->max_levers : 0;
 }
 
 static void Levers_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -28,8 +30,7 @@ static void Levers_Draw(void *, void *, float) {
 }
 
 static char *Lever_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL ? static_cast<LEVER_s *>(gizmo->object)->name : NULL;
 }
 
 static i32 Lever_GetOutput(GIZMO *gizmo, i32, i32) {

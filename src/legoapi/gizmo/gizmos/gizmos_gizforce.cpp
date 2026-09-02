@@ -1,6 +1,8 @@
 #include "decomp.h"
 #include "legoapi/legoapi_types.h"
 
+#include <string.h>
+
 void GizForce_Throw(GameObject_s *, GIZFORCE_s *, float, float, i32) {
 }
 
@@ -9,7 +11,10 @@ i32 GizForce_Complete(GIZFORCE_s *) {
     return 0;
 }
 
-void GizForce_ResetLOS(GameObject_s *) {
+void GizForce_ResetLOS(GameObject_s *object) {
+    if (object->gizforce_los_info != NULL) {
+        memset(object->gizforce_los_info, 0, sizeof(*object->gizforce_los_info));
+    }
 }
 
 GIZFORCE_s *GizForce_FindByName(GIZFORCESYS_s *, char *) {

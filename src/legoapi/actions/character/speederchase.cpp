@@ -1,13 +1,20 @@
 #include "decomp.h"
 #include "globals.h"
+#include "legoapi/gizmo/base/gizmo.h"
 #include "legoapi/items/base/apiobject.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nu3d/nutex.h"
+#include <string.h>
 
 struct AIROW_s;
 struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
+
+static i32 PodRaceKey[8] __attribute__((aligned(16))) = {-1, -1, -1, -1, -1, -1, -1, -1};
+
+u8 troopercannons_beenReset = 0;
+i32 players_going_forward = 0;
 
 void getPodRoll(i32) {
 }
@@ -16,6 +23,9 @@ void ObjOpponent(GameObject_s *, float, float, i32, i32, i32) {
 }
 
 void PodKeyReset() {
+    for (i32 i = 0; i < 8; i++) {
+        PodRaceKey[i] = -1;
+    }
 }
 
 void PodLoseSpeed(GameObject_s *, i32, i32) {
@@ -52,6 +62,15 @@ void SpeederChaseA_Panel(WORLDINFO_s *) {
 }
 
 void SpeederChaseA_Reset(WORLDINFO_s *) {
+    troopercannons_beenReset = 0;
+    InitBikeParts();
+    LevAIMessage[0] = CheckGizAIMessage(gizaimessagesys, "SpeedersToKill", NULL);
+    LevAIMessage[1] = CheckGizAIMessage(gizaimessagesys, "BeenKilled", NULL);
+    LevAIMessage[2] = CheckGizAIMessage(gizaimessagesys, "Stage", NULL);
+    LevAIMessage[3] = CheckGizAIMessage(gizaimessagesys, "SpeedersKilled", NULL);
+    LevAIMessage[4] = CheckGizAIMessage(gizaimessagesys, "KeepPlayersOnSpeeders", NULL);
+    LevAIMessage[5] = CheckGizAIMessage(gizaimessagesys, "SpeederMode", NULL);
+    players_going_forward = 1;
 }
 
 void SpeedersDroppedBack() {

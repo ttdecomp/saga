@@ -199,7 +199,7 @@ void Players_Init(void) {
             coins = PlayerProgress[1].coins;
         }
         cp->coins = coins;
-        p[1]->gizforce_los_info = (char *)GizForceLOSInfo + 0x630;
+        p[1]->gizforce_los_info = &GizForceLOSInfo[1];
         memcpy(BackUpPlayers + 0x439, p[1], 0x439 * 4);
     }
 
@@ -362,8 +362,8 @@ typedef struct {
     u8 field_0xb;
 } PlayerItemTypeEntry;
 
-extern PlayerItemTypeEntry *PlayerItemType;
-extern i32 PLAYERITEMTYPECOUNT;
+extern PlayerItemTypeEntry *PlayerItemType __asm__("_ZL14PlayerItemType") __attribute__((visibility("hidden")));
+extern i32 PLAYERITEMTYPECOUNT __asm__("_ZL19PLAYERITEMTYPECOUNT") __attribute__((visibility("hidden")));
 
 extern i8 BoltType_FindIDByName(char *name, WORLDINFO *world);
 

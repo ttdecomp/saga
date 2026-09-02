@@ -57,11 +57,11 @@ static void Pictures_FixUp(NUGSCN **scene) {
         for (i32 episode = 0; episode < EPISODECOUNT; episode++) {
             char name[72];
             sprintf(name, "EP_%i", episode + 1);
-            NuSpecialFind(*scene, reinterpret_cast<void **>(&LevHSpecial[10 + episode]), name, 1);
+            NuSpecialFind(*scene, &LevHSpecial[10 + episode], name, 1);
 
             for (i32 chapter = 0; chapter < 8; chapter++) {
                 sprintf(name, "EP_%i_CH_%i", episode + 1, chapter + 1);
-                NuSpecialFind(*scene, reinterpret_cast<void **>(&LevHSpecial[20 + Pictures_NumLevels]), name, 1);
+                NuSpecialFind(*scene, &LevHSpecial[20 + Pictures_NumLevels], name, 1);
                 Pictures_NumLevels++;
             }
         }
@@ -70,8 +70,7 @@ static void Pictures_FixUp(NUGSCN **scene) {
             "pod_race", "anakin_flight", "gunship", "new_hope", "lego_city", "new_town",
         };
         for (i32 i = 0; i < 6; i++) {
-            NuSpecialFind(*scene, reinterpret_cast<void **>(&LevHSpecial[20 + Pictures_NumLevels]),
-                          const_cast<char *>(bonus_names[i]), 1);
+            NuSpecialFind(*scene, &LevHSpecial[20 + Pictures_NumLevels], const_cast<char *>(bonus_names[i]), 1);
             Pictures_NumLevels++;
         }
     }
@@ -104,7 +103,7 @@ static void Titles_Init(WORLDINFO *world) {
             break;
     }
 
-    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&LevHSpecial[0]), title_name, 1);
+    NuSpecialFind(world->current_gscn, &LevHSpecial[0], title_name, 1);
     LevAlpha = 1.0f;
     nuhspecial_s *title_special = &LevHSpecial[0];
     if (NuSpecialExistsFn(title_special) != 0) {

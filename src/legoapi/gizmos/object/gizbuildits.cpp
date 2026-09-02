@@ -1,12 +1,14 @@
 #include "legoapi/gizmos/object/gizbuildits.h"
+#include "legoapi/world/level.h"
 
 #include "decomp.h"
+#include "legoapi/legoapi_types.h"
 
 i32 gizbuildit_gizmotype_id = -1;
 
 static i32 GizBuildIts_GetMaxGizmos(void *buildit) {
-    UNIMPLEMENTED();
-    return {};
+    WORLDINFO *world = static_cast<WORLDINFO *>(buildit);
+    return world != NULL ? world->current_level->max_buildits : 0;
 }
 
 static void GizBuildIts_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -26,8 +28,7 @@ static void GizBuildIts_Draw(void *, void *, float) {
 }
 
 static char *GizmoBuildit_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL ? static_cast<GIZBUILDIT_s *>(gizmo->object)->name : NULL;
 }
 
 static i32 GizmoBuildit_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -41,8 +42,7 @@ static char *GizmoBuildit_GetOutputName(GIZMO *gizmo, i32 output_index) {
 }
 
 static i32 GizmoBuildit_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return 1;
 }
 
 static void GizmoBuildit_Activate(GIZMO *gizmo, i32) {

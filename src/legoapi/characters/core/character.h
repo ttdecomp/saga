@@ -2,6 +2,7 @@
 
 #include "decomp.h"
 #include "nu2api/nucore/common.h"
+#include "nu2api/nu3d/nuspecial.h"
 
 struct CHARFIXUP {
     char *name;
@@ -32,9 +33,7 @@ DECOMP_ASSERT(sizeof(CHARACTERANIM_s) == 0x4c, "CHARACTERANIM_s size");
 
 struct CHARSCENE_s {
     nugscn_s *scene;
-    void *special_scene;
-    void *special;
-    void *display_special;
+    nuhspecial_s special_scene;
 };
 
 DECOMP_ASSERT(sizeof(CHARSCENE_s) == 0x10, "CHARSCENE_s size");

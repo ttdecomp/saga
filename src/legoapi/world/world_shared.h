@@ -61,7 +61,7 @@ extern "C" {
 i32 NuGScnUploadGfxDataFromFilePS(VARIPTR *buf, VARIPTR *buf_end, i32 file);
 // The trailing flags argument is passed as 1 by every caller in the
 // original binary; the original implementation never reads it.
-i32 NuSpecialFind(NUGSCN *scene, void **dest, char *name, i32 flags);
+i32 NuSpecialFind(NUGSCN *scene, nuhspecial_s *dest, char *name, i32 flags);
 void SetCameraZoom(f32 zoom);
 
 // --- chris.cpp ---
@@ -173,7 +173,7 @@ void *GameAnimSys_Create(VARIPTR *buf, VARIPTR *buf_end);
 void *GameAntnode_CreateSys(WORLDINFO *world, VARIPTR *buf, VARIPTR *buf_end, i32 count);
 extern "C" {
     void SockSys_Configure(void *sock_sys, char *config, i32 param, void *buf, void *buf_end, void *gscn);
-    void rtlResetDynamic(void);
+    i32 rtlResetDynamic(void);
     void SetPartRTLSet(i32 rtl_set);
     i32 rtlFindByUserId(i32 rtl_set, i32 user_id);
     void rtlGetDirection(i32 rtl_set, i32 id, void **out);

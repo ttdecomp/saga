@@ -2,12 +2,13 @@
 
 #include "decomp.h"
 #include "legoapi/props/doors/door.h"
+#include "legoapi/world/level.h"
 
 static char door_gizmotype_id = -1;
 
 static i32 Door_GetMaxGizmos(void *door) {
-    UNIMPLEMENTED();
-    return {};
+    WORLDINFO *world = static_cast<WORLDINFO *>(door);
+    return world != NULL ? world->current_level->max_doors : 0;
 }
 
 static void Door_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {

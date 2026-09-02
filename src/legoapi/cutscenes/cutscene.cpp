@@ -169,8 +169,8 @@ void CharScenes_LevelLoad(WORLDINFO *world) {
     }
 
     for (i32 i = 0; i < CHARCOUNT; i++) {
-        void **entry = (void **)(*(i32 *)&world->minikit.field_0x18 + i * sizeof(CHARSCENE_s));
-        *entry = NULL;
+        CHARSCENE_s *entry = &world->minikit.character_scenes[i];
+        entry->scene = NULL;
 
         // Check if we should load this character scene
         if ((CharScene_Area == NULL || CharScene_Area[i].scene == NULL) && (CDataList[i].flags & 1) != 0 &&
@@ -184,9 +184,9 @@ void CharScenes_LevelLoad(WORLDINFO *world) {
                 VARIPTR buf_end = world->unknown_0108;
                 sprintf(path, "chars\\%s\\%s.gsc", CDataList[i].dir, CDataList[i].file);
                 NUGSCN *scene = NuGScnRead(&world->giz_buffer, buf_end, path);
-                *entry = scene;
+                entry->scene = scene;
                 if (scene != NULL) {
-                    NuSpecialFind(scene, (void **)(entry + 1), CDataList[i].file, 1);
+                    NuSpecialFind(scene, &entry->special_scene, CDataList[i].file, 1);
                 }
             }
         }
@@ -297,7 +297,7 @@ extern "C" {
             for (u32 i = 0; i < cutscene->rigid_system->count; ++i) {
                 NUGCUTRIGID_s *rigid = &cutscene->rigid_system->rigids[i];
                 nuhspecial_s special;
-                if (NuSpecialFind(scene, reinterpret_cast<void **>(&special), rigid->name, 1) != 0) {
+                if (NuSpecialFind(scene, &special, rigid->name, 1) != 0) {
                     rigid->flags |= 4;
                     rigid->scene = special.scene;
                     rigid->special_object = special.display_special != NULL ? special.display_special : special.special;
@@ -365,7 +365,7 @@ extern "C" {
             }
 
             nuhspecial_s special;
-            if (NuSpecialFind(area, reinterpret_cast<void **>(&special), rigid->name, 1) == 0) {
+            if (NuSpecialFind(area, &special, rigid->name, 1) == 0) {
                 continue;
             }
             rigid->flags |= 4;
@@ -726,7 +726,19 @@ static __used__ unsigned int CutScene_FindCharacters(NUGCUTSCENE_s *) {
     return {};
 }
 
-static __used__ void CutScene_ResetCharacters(instNUGCUTSCENE_s *) {
+static __used__ void CutScene_ResetCharacters(instNUGCUTSCENE_s *instance) {
+    NUGCUTSCENE_s *cutscene = instance->cutscene;
+    instNUGCUTCHARSYS_s *character_instance = instance->character_instance;
+    NUGCUTCHARSYS_s *character_system = cutscene->character_system;
+
+    i32 i = 0;
+    while (i < character_system->character_count) {
+        instNUGCUTCHAR_s *character = &character_instance->characters[i];
+        character->field_04 = 0;
+        character->field_14 = 0;
+        character->field_15 = 0xff;
+        ++i;
+    }
 }
 
 static __used__ void CutScene_RigidPostRender(NUGCUTRIGID_s *, instNUGCUTRIGID_s *, numtx_s *) {

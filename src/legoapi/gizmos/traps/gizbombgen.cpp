@@ -1,12 +1,27 @@
 #include "legoapi/gizmos/traps/gizbombgen.h"
 
 #include "decomp.h"
+#include "legoapi/world/level.h"
+
+struct GIZBOMBGEN_RESET_s {
+    u8 data[0x0c];
+    u8 flags;
+    u8 pad_0d[3];
+    u32 reset_value;
+};
+
+struct GIZBOMBGEN_RESET_CONTEXT_s {
+    u8 data[0x118];
+    i32 editor_flag;
+};
+
+extern i32 come_from_an_editor;
 
 i32 bombgen_gizmotype_id = -1;
 
-static i32 GizBombGens_GetMaxGizmos(void *bombgen) {
-    UNIMPLEMENTED();
-    return {};
+static i32 GizBombGens_GetMaxGizmos(void *world_info) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_info);
+    return world != NULL ? world->current_level->max_bombgens : 0;
 }
 
 static void GizBombGens_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -18,8 +33,7 @@ static void GizBombGens_Update(void *, void *, float) {
 }
 
 static char *GizmoBombGen_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL ? static_cast<GIZBOMBGEN *>(gizmo->object)->name : NULL;
 }
 
 static i32 GizmoBombGen_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -33,8 +47,7 @@ static char *GizmoBombGen_GetOutputName(GIZMO *gizmo, i32 output_index) {
 }
 
 static i32 GizmoBombGen_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return 1;
 }
 
 static void GizmoBombGen_Activate(GIZMO *gizmo, i32) {
@@ -63,8 +76,19 @@ static void GizBombGens_StoreProgress(void *, void *, void *) {
     UNIMPLEMENTED();
 }
 
-static void GizBombGens_SetResetFlag(void *, void *, void *) {
-    UNIMPLEMENTED();
+static void GizBombGens_SetResetFlag(void *context_ptr, void *bomb_ptr, void *value_ptr) {
+    GIZBOMBGEN_RESET_s *bomb = static_cast<GIZBOMBGEN_RESET_s *>(bomb_ptr);
+    GIZBOMBGEN_RESET_CONTEXT_s *context = static_cast<GIZBOMBGEN_RESET_CONTEXT_s *>(context_ptr);
+    i32 editor_flag = 0;
+    u8 flags = bomb->flags;
+    flags = static_cast<u8>(flags | 1);
+    bomb->flags = flags;
+    if (come_from_an_editor == 0) {
+        editor_flag = context->editor_flag;
+    }
+    flags = static_cast<u8>((flags & static_cast<u8>(~2)) | static_cast<u8>((editor_flag & 1) << 1));
+    bomb->flags = flags;
+    bomb->reset_value = reinterpret_cast<u32>(value_ptr);
 }
 
 static void *GizBombGens_ReserveBufferSpace(void *) {

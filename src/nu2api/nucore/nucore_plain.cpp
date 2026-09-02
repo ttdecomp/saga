@@ -37,6 +37,8 @@ extern "C" NUGCUTLOCATORFNENTRY_s *locatorfns;
 #include "nu2api/nucore/nuanim3.h"
 #include "nu2api/nucore/nuapi.h"
 #include "nu2api/nucore/nuhgobj.h"
+#include "nu2api/nucore/nugcutscene.h"
+#include "nu2api/nucore/nupad.h"
 #include "nu2api/nucore/nuptrblock.h"
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nu3d/nudlist.h"
@@ -44,15 +46,16 @@ extern "C" NUGCUTLOCATORFNENTRY_s *locatorfns;
 #include "nu2api/nu3d/numtl.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nu3d/nuvport.h"
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/nu3d/NuRenderDevice.h"
+#include "nu2api/nucore/NuDynamicLight.h"
 #include "nu2api/numath/numtx.h"
 #include "globals.h"
 
-struct nuhspecial_s;
 struct ani3_animheader_s;
 
 extern "C" {
@@ -2012,7 +2015,8 @@ extern "C" {
     i32 NuSpecialClipTestShadowLights(NUVEC *, NUVEC *, i32) {
         return 0;
     }
-    void NuSpecialCompare(void) {
+    i32 NuSpecialCompare(void *, nuhspecial_s *) {
+        return 0;
     }
     void NuSpecialConstAlpha(i32 enabled, f32 alpha) {
         nuspecial_const_alpha_enabled = enabled;
@@ -2061,13 +2065,9 @@ extern "C" {
         NuPlainSpecialHandleLayout *handle = reinterpret_cast<NuPlainSpecialHandleLayout *>(special);
         return handle->special != NULL || handle->display_special != NULL;
     }
-#ifdef __EMSCRIPTEN__
-    void NuSpecialFindMulti(NUGSCN *, void **, char *, i32, i32) {
+    i32 NuSpecialFindMulti(NUGSCN *, nuhspecial_s *, char *, i32, i32) {
+        return 0;
     }
-#else
-    void NuSpecialFindMulti(void) {
-    }
-#endif
     void NuSpecialFindMultiWC(void) {
     }
     void NuSpecialForceMtl(void) {
@@ -2115,7 +2115,8 @@ extern "C" {
     }
     void NuSpecialGetMtx(void) {
     }
-    void NuSpecialGetName(void) {
+    char *NuSpecialGetName(nuhspecial_s *) {
+        return NULL;
     }
     void NuSpecialGetNext(void) {
     }
@@ -2306,7 +2307,8 @@ extern "C" {
     }
     void NuDynamicLightLookAt(void) {
     }
-    void NuDynamicLightResetGeometry(void) {
+    void NuDynamicLightResetGeometry(NuDynamicLight *light) {
+        light->resetGeometry();
     }
     void NuDynamicLightSetDirectional(void) {
     }
@@ -2360,9 +2362,11 @@ extern "C" {
     }
     void NuPartGetSeed(void) {
     }
+    extern "C" i32 partglobaltime;
     void NuPartResetGlobalTime(void) {
+        partglobaltime = 0;
     }
-    void NuPartSetSeed(void) {
+    void NuPartSetSeed(i32) {
     }
     void NuPolyShadowInit(void) {
     }
@@ -2673,7 +2677,19 @@ extern "C" {
     }
     void NuPadRecordInit(void) {
     }
-    void NuPadResetState(void) {
+    void NuPadResetState(i32 preserve_scanned_state) {
+        g_atLeastOnePadBeenActivated = 0;
+        g_profilePlayerPad = -1;
+        g_nupadMapping[0].port = -1;
+        g_nupadMapping[1].port = -1;
+
+        if (preserve_scanned_state == 0) {
+            for (i32 i = 0; i <= 3; i++) {
+                g_nupadScannedPads[i].digital_state.pressed = 0;
+                g_nupadScannedPads[i].digital_state.previous = g_nupadScannedPads[i].digital_state.pressed;
+                g_nupadScannedPads[i].digital_state.buttons = g_nupadScannedPads[i].digital_state.previous;
+            }
+        }
     }
     void NuPadSetDirectMappingState(void) {
     }
@@ -2690,8 +2706,6 @@ extern "C" {
     void NuPadUseCorrectDeadZoning(void) {
     }
     void NuPad_Interface_Render(void) {
-    }
-    void NuPad_Interface_ResetAllTouches(void) {
     }
     void NuPad_Interface_TouchScreenInput(void) {
     }
@@ -2714,7 +2728,16 @@ extern "C" {
     }
     void NuPortalNumRooms(void) {
     }
-    void NuPortalResetActive(void) {
+    void NuPortalResetActive(NUGSCN *scene) {
+        const i32 portal_count = scene->portal_count;
+        if (portal_count != 0) {
+            NUPORTAL *portal_list = scene->portal_list;
+            i32 i = 0;
+            do {
+                portal_list[i].is_active |= 3;
+                i++;
+            } while (i != portal_count);
+        }
     }
     void NuPortalRoomClipTest(void) {
     }
@@ -3014,7 +3037,9 @@ extern "C" {
     }
     void NuTimeBarInitEx(void) {
     }
+    static i32 NuTimeBar_PeakReset asm("_ZL19NuTimeBar_PeakReset");
     void NuTimeBarResetPeaks(void) {
+        NuTimeBar_PeakReset = 1;
     }
     void NuTimeBarSetRender(void) {
     }
@@ -3096,7 +3121,8 @@ extern "C" {
     }
     void NuSetCutSceneRequestSFXFn(void) {
     }
-    void NuSetCutSceneResetCharactersFn(void) {
+    void NuSetCutSceneResetCharactersFn(NUGCUTSCENERESETCHARACTERSFN function) {
+        NuCutSceneResetCharactersFn = function;
     }
     void NuSetCutSceneRigidCollisionCheckFn(void) {
     }

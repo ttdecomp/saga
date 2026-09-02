@@ -1,4 +1,5 @@
 #include "legoapi/gizmos/object/gizobstacles.h"
+#include "legoapi/world/level.h"
 
 #include "decomp.h"
 #include "legoapi/legoapi_types.h"
@@ -6,8 +7,8 @@
 i32 obstacle_gizmotype_id = -1;
 
 static i32 GizObstacles_GetMaxGizmos(void *obstacle) {
-    UNIMPLEMENTED();
-    return {};
+    WORLDINFO *world = static_cast<WORLDINFO *>(obstacle);
+    return world != NULL ? world->current_level->max_obstacles : 0;
 }
 
 static void GizObstacles_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {

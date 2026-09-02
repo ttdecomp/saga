@@ -1,12 +1,15 @@
 #include "legoapi/gizmos/door/push.h"
 
 #include "decomp.h"
+#include "legoapi/world/level.h"
+
+void ResetPushProgress(WORLDINFO *world, void *progress);
 
 i32 pushblock_gizmotype_id;
 
 static i32 Push_GetMaxGizmos(void *push) {
-    UNIMPLEMENTED();
-    return {};
+    WORLDINFO *world = static_cast<WORLDINFO *>(push);
+    return world != NULL ? world->current_level->max_push_blocks : 0;
 }
 
 static void Push_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -18,8 +21,7 @@ void UpdatePushBlocks(void *, void *, float) {
 }
 
 static char *GizPush_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL ? static_cast<PUSHBLOCK *>(gizmo->object)->name : NULL;
 }
 
 i32 GizPush_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -63,8 +65,8 @@ static void Push_StoreProgress(void *, void *, void *) {
     UNIMPLEMENTED();
 }
 
-static void Push_Reset(void *, void *, void *) {
-    UNIMPLEMENTED();
+static void Push_Reset(void *world_info, void *, void *progress) {
+    ResetPushProgress(static_cast<WORLDINFO *>(world_info), progress);
 }
 
 static void *PushBlocks_ReserveBufferSpace(void *) {

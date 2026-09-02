@@ -2,13 +2,20 @@
 
 #include "decomp.h"
 
+#include "legoapi/world/level.h"
+#include "legoapi/world/world.h"
+
 struct TIGHTROPEPROGRESS {
     i32 state[2];
 };
 
-static i32 TightRopes_GetMaxGizmos(void *tightrope) {
-    UNIMPLEMENTED();
-    return {};
+static i32 TightRopes_GetMaxGizmos(void *world_info) {
+    WORLDINFO *world = (WORLDINFO *)world_info;
+    if (world == NULL) {
+        return 0;
+    }
+
+    return world->current_level->max_tightropes;
 }
 
 static void TightRopes_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -20,8 +27,7 @@ static void TightRopes_Draw(void *, void *, float) {
 }
 
 static char *TightRope_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL ? static_cast<char *>(gizmo->object) : NULL;
 }
 
 static i32 TightRope_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -35,8 +41,7 @@ static char *TightRope_GetOutputName(GIZMO *gizmo, i32 output_index) {
 }
 
 static i32 TightRope_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return 1;
 }
 
 static void TightRope_Activate(GIZMO *gizmo, i32) {

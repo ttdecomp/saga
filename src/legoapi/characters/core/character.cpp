@@ -1049,12 +1049,13 @@ extern "C" {
                         animation->blend_duration != 0.0f ? animation->blend_elapsed / animation->blend_duration : 0.0f;
                     const u32 combined_flags = animation_flags(first_index) | animation_flags(second_index);
                     if ((combined_flags & 0x20) != 0) {
-                        NuHGobjEvalAnimBlend2Root(model->hierarchy, first, animation->time, second, animation->time2,
-                                                  blend, joint_override_count, joint_overrides, output_matrices,
-                                                  BlendRootFn, object);
+                        NuHGobjEvalAnimBlend2Root(model->hierarchy, first, animation->time, second,
+                                                  animation->time_secondary, blend, joint_override_count,
+                                                  joint_overrides, output_matrices, BlendRootFn, object);
                     } else {
-                        NuHGobjEvalAnimBlend2(model->hierarchy, first, animation->time, second, animation->time2, blend,
-                                              joint_override_count, joint_overrides, output_matrices);
+                        NuHGobjEvalAnimBlend2(model->hierarchy, first, animation->time, second,
+                                              animation->time_secondary, blend, joint_override_count, joint_overrides,
+                                              output_matrices);
                     }
                     evaluated = true;
                 }
@@ -1065,10 +1066,10 @@ extern "C" {
                     const u32 selected_flags = animation_flags(index);
                     if ((selected_flags & 0x20) != 0) {
                         NUHGOBJROOTFN root_fn = (selected_flags & 0x200) != 0 ? RootFnY : RootFn;
-                        NuHGobjEvalAnim2Root(model->hierarchy, selected, animation->field_0x00, joint_override_count,
+                        NuHGobjEvalAnim2Root(model->hierarchy, selected, animation->time, joint_override_count,
                                              joint_overrides, output_matrices, root_fn, object);
                     } else {
-                        NuHGobjEvalAnim2(model->hierarchy, selected, animation->field_0x00, joint_override_count,
+                        NuHGobjEvalAnim2(model->hierarchy, selected, animation->time, joint_override_count,
                                          joint_overrides, output_matrices);
                     }
                     evaluated = true;

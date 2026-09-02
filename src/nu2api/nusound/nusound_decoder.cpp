@@ -60,6 +60,9 @@ NuSoundDecoder::~NuSoundDecoder() {
     delete this->buffers[1];
 }
 
+__attribute__((weak)) void NuSoundDecoder::Reset() {
+}
+
 // libTTapp.so 0x31ec90: fill the ring buffers upfront. Each buffer is
 // allocated at the decoder's buffer size and decoded via the virtual Decode;
 // the loop stops after the first two buffers or once the whole stream has

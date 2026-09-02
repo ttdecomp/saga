@@ -304,8 +304,8 @@ AREADATA *Areas_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *bufferE
             area->index = (u8)area_count;
             area->level_count = 0;
             area->cheat = 0xff;
-            area->field30_0x7f = 0;
-            area->field31_0x80 = 0;
+            area->super_counter_count = 0;
+            area->super_counters = NULL;
             area->challenge_trial_time = 0;
             area->episode_index = 0xff;
             area->area_index = 0xff;

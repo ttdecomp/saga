@@ -1,6 +1,7 @@
 #include "legoapi/gizmos/door/zipups.h"
 
 #include "decomp.h"
+#include "legoapi/world/level.h"
 
 struct ZIPUPPROGRESS {
     i32 state[2];
@@ -9,8 +10,8 @@ struct ZIPUPPROGRESS {
 i32 zipup_gizmotype_id = -1;
 
 static i32 ZipUps_GetMaxGizmos(void *zipup) {
-    UNIMPLEMENTED();
-    return {};
+    WORLDINFO *world = static_cast<WORLDINFO *>(zipup);
+    return world != NULL ? world->current_level->max_zipups : 0;
 }
 
 static void ZipUps_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -26,8 +27,7 @@ static void ZipUps_Draw(void *, void *, float) {
 }
 
 static char *ZipUp_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL ? static_cast<char *>(gizmo->object) : NULL;
 }
 
 static i32 ZipUp_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -41,8 +41,7 @@ static char *ZipUp_GetOutputName(GIZMO *gizmo, i32 output_index) {
 }
 
 static i32 ZipUp_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return 1;
 }
 
 static void ZipUp_Activate(GIZMO *gizmo, i32) {
