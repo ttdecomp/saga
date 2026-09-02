@@ -27,17 +27,19 @@ f32 memcard_autosavepostdelay = 0.0f;
 
 void SaveSystemInitialise(i32 slots, void *makeSaveHash, void *save, i32 saveSize, i32 saveCount,
                           void (*drawSaveIcon)(void), void *extradata, i32 extradataSize) {
+    i32 saveslots;
     if (extradata == NULL) {
-        SAVESLOTS = 6;
+        saveslots = 6;
         if (slots < 7) {
-            SAVESLOTS = slots;
+            saveslots = slots;
         }
     } else {
-        SAVESLOTS = 5;
+        saveslots = 5;
         if (slots < 6) {
-            SAVESLOTS = slots;
+            saveslots = slots;
         }
     }
+    SAVESLOTS = saveslots;
 
     memcard_hashfn = (hashfn_t)makeSaveHash;
     memcard_savedata = save;
@@ -75,14 +77,12 @@ bool TriggerExtraDataSave(void) {
 }
 
 i32 TriggerExtraDataLoad(void) {
-    void *buffer = memcard_extra_savedatabuffer;
-
-    if (saveloadLoadSlot(SAVESLOTS, buffer, memcard_extra_savedatasize + 4) != 0) {
-        i32 checksum = *(i32 *)((usize)buffer + memcard_extra_savedatasize);
-        i32 correct = ChecksumSaveData(buffer, memcard_extra_savedatasize);
+    if (saveloadLoadSlot(SAVESLOTS, memcard_extra_savedatabuffer, memcard_extra_savedatasize + 4) != 0) {
+        i32 correct = ChecksumSaveData(memcard_extra_savedatabuffer, memcard_extra_savedatasize);
+        i32 checksum = *(i32 *)((char *)memcard_extra_savedatabuffer + memcard_extra_savedatasize);
         LOG_DEBUG("checksum=%08X, correct=%08X", checksum, correct);
         if (correct == checksum) {
-            memmove(memcard_extra_savedata, buffer, memcard_extra_savedatasize);
+            memmove(memcard_extra_savedata, memcard_extra_savedatabuffer, memcard_extra_savedatasize);
             return 1;
         }
     }
