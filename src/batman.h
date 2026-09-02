@@ -61,7 +61,7 @@ extern char uberShader2[];
 extern "C" {
 #endif
     float NuFrameEnd(void);
-    void NuRndrBeginScene(i32);
+    i32 NuRndrBeginScene(i32);
     void NuRndrEndScene(void);
     void NuRndrEndSceneEx(i32);
     void NuRndrClear(i32, i32, float);

@@ -683,7 +683,8 @@ NUVEC *GizmoGetPos(GIZMOSYS_s *, GIZMO_s *gizmo) {
     return NULL;
 }
 
-void GizmoGetGuid(GIZMOSYS_s *, GIZMO_s *) {
+i32 GizmoGetGuid(GIZMOSYS_s *, GIZMO_s *) {
+    return -1;
 }
 
 void GizmoGetName(GIZMO_s *) {

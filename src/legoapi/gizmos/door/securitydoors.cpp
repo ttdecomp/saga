@@ -39,9 +39,8 @@ static char *SecurityDoor_GetOutputName(GIZMO *gizmo, i32 output_index) {
     return {};
 }
 
-static i32 SecurityDoor_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+static i32 SecurityDoor_GetNumOutputs(GIZMO *) {
+    return 1;
 }
 
 static void SecurityDoor_Activate(GIZMO *gizmo, i32) {
@@ -57,9 +56,8 @@ static NUVEC *SecurityDoor_GetPos(GIZMO *gizmo) {
     return {};
 }
 
-static void *SecurityDoors_AllocateProgressData(VARIPTR *, VARIPTR *) {
-    UNIMPLEMENTED();
-    return {};
+static void *SecurityDoors_AllocateProgressData(VARIPTR *buffer, VARIPTR *buffer_end) {
+    return GizmoBufferAlloc(buffer, buffer_end, 12);
 }
 
 static void SecurityDoors_ClearProgress(void *, void *progress_data) {

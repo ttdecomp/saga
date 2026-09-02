@@ -96,22 +96,22 @@ See the [documentation index](doc/main.md).
 | `gameframework` | 76.4% | 23.5% | 100.0% |
 | `gamelib` | 5.8% | 0.8% | 12.1% |
 | `java` | 10.7% | 0.0% | 0.0% |
-| `legoapi` | 13.5% | 14.4% | 32.6% |
+| `legoapi` | 13.5% | 14.5% | 32.6% |
 | `legoapi/actions` | 5.9% | 1.8% | 62.3% |
 | `legoapi/ai` | 11.5% | 2.2% | 88.5% |
 | `legoapi/audio` | 6.2% | 7.4% | 96.0% |
 | `legoapi/characters` | 11.6% | 7.5% | 36.2% |
 | `legoapi/core` | 25.1% | 12.8% | 97.8% |
 | `legoapi/cutscenes` | 7.3% | 5.2% | 95.7% |
-| `legoapi/gizmo` | 10.4% | 9.9% | 33.0% |
-| `legoapi/gizmos` | 35.4% | 30.1% | 98.2% |
+| `legoapi/gizmo` | 10.4% | 10.1% | 33.0% |
+| `legoapi/gizmos` | 35.5% | 31.4% | 98.2% |
 | `legoapi/items` | 6.8% | 13.9% | 7.9% |
-| `legoapi/menus` | 11.1% | 14.1% | 21.4% |
+| `legoapi/menus` | 11.1% | 13.9% | 21.4% |
 | `legoapi/misc` | 6.6% | 3.0% | 100.0% |
 | `legoapi/props` | 30.1% | 9.9% | 59.8% |
 | `legoapi/render` | 10.2% | 11.9% | 95.1% |
 | `legoapi/world` | 21.9% | 30.1% | 1.3% |
-| `legogame` | 48.6% | 43.8% | 85.4% |
+| `legogame` | 48.7% | 43.8% | 85.4% |
 | `nu2api` | 33.1% | 25.9% | 9.3% |
 
 <!-- matching-table-end -->

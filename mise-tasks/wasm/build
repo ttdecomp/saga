@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Build the WebAssembly host"
+#MISE depends=["wasm:configure"]
+set -euo pipefail
+
+cmake --build build-wasm --parallel

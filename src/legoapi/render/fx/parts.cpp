@@ -271,10 +271,11 @@ extern "C" {
     void AddFiniteShotDebrisEffectUserData(void) {
     }
 
-    void AddFiniteShotPART(void) {
+    void AddFiniteShotPART(i32, void *, i32) {
     }
 
-    void AddGameDebris(void) {
+    void *AddGameDebris(void *, i32, void *) {
+        return NULL;
     }
 
     void AddGameDebrisMom(void) {
@@ -310,7 +311,7 @@ extern "C" {
     void AddRotatedDebrisEffect(void) {
     }
 
-    void AddScaledFiniteShotDebrisEffect(void) {
+    void AddScaledFiniteShotDebrisEffect(i32 *, i32, NUVEC *, i32, i32, i32, f32) {
     }
 
     void AddScaledFiniteShotPART(void) {
@@ -607,7 +608,7 @@ extern "C" {
     void CheckPartCount(void) {
     }
 
-    void DrawParts(void) {
+    void DrawParts(i32) {
     }
 
     void FindPart(void) {
@@ -622,7 +623,7 @@ extern "C" {
     void GetPartName(void) {
     }
 
-    void InitParts(void) {
+    void InitParts(i32, VARIPTR *, VARIPTR) {
     }
 
     void KillAllParts(void) {
@@ -649,7 +650,8 @@ extern "C" {
     void PARTGetTotalOnTime(void) {
     }
 
-    void PARTLookupType(void) {
+    i32 PARTLookupType(char *) {
+        return -1;
     }
 
     void PARTLookupTypePageOnly(void) {
@@ -691,7 +693,7 @@ extern "C" {
     void ResetParts(void) {
     }
 
-    void UpdateParts(void) {
+    void UpdateParts(f32) {
     }
 
     void SetPartRTLSet(usize rtl_set) {

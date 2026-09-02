@@ -22,7 +22,7 @@ struct SHOPINPUT;
 
 extern "C" {
     extern i32 FinishLoop_On;
-    void NuRndrBeginScene(i32 flags);
+    i32 NuRndrBeginScene(i32 flags);
     void NuRndrClear(i32 flags, i32 colour, f32 depth);
     void NuRndrEndScene(void);
     f32 NuFrameEnd(void);

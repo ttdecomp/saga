@@ -38,23 +38,17 @@ copy of the game.
 The contents of the .apk can be extracted with a zip tool. The file
 `lib/x86/libTTapp.so` must then be placed in the project's `res/` directory.
 
-Once you have placed the shared object in the `res/` directory and built the
-project following the instructions in [README.md](README.md), you will need to
-build and run the `gonk` tool, included in the source tree. This requires an
-installation of the Rust toolchain.
+Once you have placed the shared object in the `res/` directory, mise installs
+the pinned Rust toolchain, builds `gonk`, and runs the full matching pipeline:
 
-1. `cargo build --release --manifest-path gonk/Cargo.toml`
-2. `./gonk/target/release/gonk split`
+```bash
+mise run match
+```
 
 This generates ELF objects from the original shared object corresponding to the
 structure of our source tree, as well as a configuration for the `objdiff` tool.
 
-The pre-commit hook expects `objdiff-cli` and installs the project-tested fork
-when it is missing:
-
-```bash
-cargo install objdiff-cli --git https://github.com/ttdecomp/objdiff
-```
+The mise configuration installs the pinned project fork of `objdiff-cli`.
 
 The upstream `objdiff` GUI remains useful for interactive inspection, but the
 command-line workflows documented in `doc/decomp/` assume `objdiff-cli 3.6.x`.
@@ -140,12 +134,13 @@ personal tastes in readability, the following guidelines apply:
 
 ## Git hooks
 
-Run `git config core.hooksPath .githooks` to enable the repository hook.
+Run `mise run setup` once after cloning. It installs all pinned development
+tools and uses prek to install the repository hook.
 
-The hook is intentionally stateful: it formats and stages tracked C/C++ source
-files, builds the target, regenerates `objdiff.json`/`report.json`, updates the
-README matching table and badge, and stages the generated documentation. Review
-the staged diff before committing.
+The hook formats changed C/C++ source files, builds the target, regenerates
+`objdiff.json`/`report.json`, updates the README matching table and badge, and
+runs the symbol check when `res/libTTapp.so` is available. Review and stage any
+generated changes before committing again.
 
 For repository-specific agent guidance, see
 `skills/saga-decomp/SKILL.md`. The package uses the Codex `SKILL.md` format and

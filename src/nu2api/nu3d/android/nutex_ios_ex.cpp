@@ -32,6 +32,10 @@ const char *g_textureName;
 i32 g_fileSize;
 
 extern i32 g_loadingCharacterInHub;
+#ifdef __EMSCRIPTEN__
+extern "C" void HostWasmUploadCompressedTexture(GLenum target, GLint level, GLenum internal_format, GLsizei width,
+                                                GLsizei height, GLint border, GLsizei image_size, const void *data);
+#endif
 
 GLuint NuIOS_CreateGLTexFromPlatfomSpecificFile(const char *filename) {
     static u8 buffer[0x600081];
@@ -421,7 +425,11 @@ void GetNativeTextureFormat(NUTEXFORMAT inFormat, i32 &outBpp, u32 &outInternalF
             return;
     }
 
-    if (!g_renderDevice.enabled_extensions[formatToCheck]) {
+    if (!g_renderDevice.enabled_extensions[formatToCheck]
+#ifdef __EMSCRIPTEN__
+        && formatToCheck != NUTEX_ETC1
+#endif
+    ) {
         while (true) {
         }
     }
@@ -807,8 +815,13 @@ void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, 
                         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
                         if (g_loadDefaultTexture == 0) {
+#ifdef __EMSCRIPTEN__
+                            HostWasmUploadCompressedTexture(GL_TEXTURE_2D, mip, glInternalFormat, mipWidth, hLimit, 0,
+                                                            mipSize, mipData);
+#else
                             glCompressedTexImage2D(GL_TEXTURE_2D, mip, glInternalFormat, mipWidth, hLimit, 0, mipSize,
                                                    mipData);
+#endif
                         } else {
                             loadDefaultTexture(texID, mip, mipWidth, GL_TEXTURE_2D, GL_TEXTURE_2D);
                         }
@@ -822,8 +835,13 @@ void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, 
                         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
                         if (g_loadDefaultTexture == 0) {
+#ifdef __EMSCRIPTEN__
+                            HostWasmUploadCompressedTexture(faceTarget, mip, glInternalFormat, mipWidth, hLimit, 0,
+                                                            mipSize, mipData);
+#else
                             glCompressedTexImage2D(faceTarget, mip, glInternalFormat, mipWidth, hLimit, 0, mipSize,
                                                    mipData);
+#endif
                         } else {
                             loadDefaultTexture(texID, mip, mipWidth, GL_TEXTURE_CUBE_MAP, faceTarget);
                         }

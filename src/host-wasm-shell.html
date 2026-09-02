@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LEGO Star Wars: The Complete Saga</title>
+    <style>
+      #launcher[hidden] {
+        display: none;
+      }
+      #status.error {
+        color: red;
+      }
+      #game {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: black;
+      }
+      #game.running {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #canvas {
+        max-width: 100%;
+        max-height: 100%;
+      }
+      #runtime-error {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1;
+        color: red;
+        background: white;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="launcher">
+      <h1>LEGO Star Wars: The Complete Saga</h1>
+      <p>Choose your Android OBB. It stays in browser memory and is not uploaded.</p>
+      <p><input id="obb-file" type="file" accept=".obb,application/octet-stream"></p>
+      <p>or</p>
+      <form id="url-form">
+        <label for="obb-url">OBB URL:</label>
+        <input id="obb-url" type="url" size="60" required>
+        <button type="submit">Load</button>
+      </form>
+      <p id="status" role="status" aria-live="polite">Preparing runtime...</p>
+    </main>
+
+    <div id="game">
+      <canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
+    </div>
+    <div id="runtime-error" role="alert" hidden></div>
+
+    <script>
+      const launcher = document.getElementById("launcher");
+      const game = document.getElementById("game");
+      const canvas = document.getElementById("canvas");
+      const fileInput = document.getElementById("obb-file");
+      const urlForm = document.getElementById("url-form");
+      const urlInput = document.getElementById("obb-url");
+      const status = document.getElementById("status");
+      const runtimeError = document.getElementById("runtime-error");
+      let resolveRuntime;
+      let started = false;
+      const runtimeReady = new Promise((resolve) => {
+        resolveRuntime = resolve;
+      });
+
+      function setStatus(message, isError = false) {
+        status.textContent = message;
+        status.classList.toggle("error", isError);
+      }
+
+      function showRuntimeError(error) {
+        const message = error instanceof Error ? error.message : String(error);
+        runtimeError.textContent = message;
+        runtimeError.hidden = false;
+        console.error(error);
+      }
+
+      function proxyUrl(url) {
+        return `/proxy?url=${encodeURIComponent(url)}`;
+      }
+
+      async function startGame(buffer) {
+        if (started) {
+          return;
+        }
+
+        if (!buffer.byteLength) {
+          throw new Error("The selected OBB is empty.");
+        }
+
+        started = true;
+        setStatus("Preparing game...");
+
+        try {
+          await runtimeReady;
+          Module.FS.mkdirTree("/res");
+          Module.FS.writeFile(
+            "/res/main.1060.com.wb.lego.tcs.obb",
+            new Uint8Array(buffer),
+            { canOwn: true },
+          );
+          launcher.hidden = true;
+          game.classList.add("running");
+          canvas.focus();
+          Module.callMain([]);
+        } catch (error) {
+          started = false;
+          setStatus(error instanceof Error ? error.message : String(error), true);
+          throw error;
+        }
+      }
+
+      async function resolveObbUrl(value) {
+        const url = new URL(value);
+        const pathParts = url.pathname.split("/").filter(Boolean);
+        if (url.hostname.endsWith("archive.org") && pathParts[0] === "details" && pathParts[1]) {
+          const identifier = decodeURIComponent(pathParts[1]);
+          setStatus("Finding OBB in Archive.org item...");
+          const metadataUrl = `https://archive.org/metadata/${encodeURIComponent(identifier)}`;
+          const metadataResponse = await fetch(proxyUrl(metadataUrl));
+          if (!metadataResponse.ok) {
+            throw new Error(`Archive.org metadata failed: HTTP ${metadataResponse.status}`);
+          }
+
+          const metadata = await metadataResponse.json();
+          const obb = metadata.files.find((file) => file.name.toLowerCase().endsWith(".obb"));
+          if (!obb) {
+            throw new Error("The Archive.org item does not contain an OBB.");
+          }
+
+          const encodedName = obb.name.split("/").map(encodeURIComponent).join("/");
+          return `https://archive.org/download/${encodeURIComponent(identifier)}/${encodedName}`;
+        }
+        return url.href;
+      }
+
+      async function downloadObb(value) {
+        const url = await resolveObbUrl(value);
+        setStatus("Downloading OBB...");
+        const response = await fetch(proxyUrl(url));
+        if (!response.ok) {
+          throw new Error(`OBB download failed: HTTP ${response.status}`);
+        }
+        if ((response.headers.get("content-type") || "").includes("text/html")) {
+          throw new Error("The URL returned a web page instead of an OBB.");
+        }
+
+        const size = Number(response.headers.get("content-length"));
+        if (!response.body || !Number.isSafeInteger(size) || size <= 0) {
+          return response.arrayBuffer();
+        }
+
+        const reader = response.body.getReader();
+        const data = new Uint8Array(size);
+        let offset = 0;
+        while (true) {
+          const { done, value: chunk } = await reader.read();
+          if (done) {
+            break;
+          }
+          if (offset + chunk.byteLength > data.byteLength) {
+            throw new Error("The OBB download was larger than the server reported.");
+          }
+          data.set(chunk, offset);
+          offset += chunk.byteLength;
+          setStatus(`Downloading OBB... ${Math.floor(offset * 100 / size)}%`);
+        }
+        if (offset !== size) {
+          throw new Error("The OBB download was incomplete.");
+        }
+        return data.buffer;
+      }
+
+      fileInput.addEventListener("change", async () => {
+        const file = fileInput.files[0];
+        if (!file) {
+          return;
+        }
+
+        setStatus(`Reading ${file.name}...`);
+        try {
+          await startGame(await file.arrayBuffer());
+        } catch (error) {
+          console.error(error);
+        }
+      });
+
+      urlForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+
+        try {
+          await startGame(await downloadObb(urlInput.value));
+        } catch (error) {
+          started = false;
+          setStatus(error instanceof Error ? error.message : String(error), true);
+          console.error(error);
+        }
+      });
+
+      var Module = {
+        canvas,
+        noInitialRun: true,
+        print: (...args) => console.log(...args),
+        printErr: (...args) => console.error(...args),
+        setStatus(message) {
+          if (!started && message) {
+            setStatus(message);
+          }
+        },
+        onRuntimeInitialized() {
+          setStatus("Choose an OBB to start.");
+          resolveRuntime();
+        },
+        onAbort: showRuntimeError,
+      };
+
+      window.addEventListener("error", (event) => {
+        showRuntimeError(event.error || event.message);
+      });
+      window.addEventListener("unhandledrejection", (event) => {
+        showRuntimeError(event.reason);
+      });
+    </script>
+    {{{ SCRIPT }}}
+  </body>
+</html>

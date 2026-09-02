@@ -252,6 +252,14 @@ namespace {
 } // namespace
 
 i32 main(i32 argc, char **argv) {
+#ifdef __EMSCRIPTEN__
+    char *wasm_argv[] = {argv[0], const_cast<char *>("window"), nullptr};
+    if (argc < 2) {
+        argc = 2;
+        argv = wasm_argv;
+    }
+#endif
+
     HostHarnessOptions options;
     const HostParseResult result = host_parse_arguments(argc, argv, options);
     if (result != HostParseResult::run) {

@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Build gonk"
+#MISE hide=true
+set -euo pipefail
+
+cargo build --release --manifest-path gonk/Cargo.toml

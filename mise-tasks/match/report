@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+#MISE description="Regenerate the objdiff report and README progress"
+#MISE depends=["gonk:split"]
+#MISE hide=true
+set -euo pipefail
+
+objdiff-cli report generate -o report.json
+python3 scripts/matching_report.py --readme

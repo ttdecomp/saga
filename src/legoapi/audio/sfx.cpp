@@ -113,7 +113,8 @@ extern "C" {
     void GetSfxCount(void) {
     }
 
-    void GetSfxIdN(void) {
+    i32 GetSfxIdN(char *, i32) {
+        return -1;
     }
 
     void GetSfxName(void) {

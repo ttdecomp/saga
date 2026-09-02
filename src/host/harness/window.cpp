@@ -71,7 +71,9 @@ namespace {
         u32 pad_cc;
     };
 
-#ifdef _WIN32
+#ifdef __EMSCRIPTEN__
+    constexpr const char *host_video_driver = "emscripten";
+#elif defined(_WIN32)
     constexpr const char *host_video_driver = "windows";
 #else
     constexpr const char *host_video_driver = "x11";
@@ -477,12 +479,15 @@ namespace {
         }
 
         const SDL_PropertiesID props = SDL_GetWindowProperties(window);
-#ifdef _WIN32
+#ifdef __EMSCRIPTEN__
+        g_renderDevice.OnWindowCreated(nullptr);
+#elif defined(_WIN32)
         HWND handle = static_cast<HWND>(SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
+        g_renderDevice.OnWindowCreated(reinterpret_cast<ANativeWindow *>(handle));
 #else
         auto handle = static_cast<i32>(SDL_GetNumberProperty(props, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0));
-#endif
         g_renderDevice.OnWindowCreated(reinterpret_cast<ANativeWindow *>(handle));
+#endif
     }
 
     static SDL_Thread *host_numain_thread = nullptr;
@@ -609,7 +614,21 @@ i32 host_run_window(const HostWindowOptions &options) {
             }
             if (event.type == SDL_EVENT_QUIT) {
                 quit_requested = true;
+#ifdef __EMSCRIPTEN__
+            } else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
+                HostInputTouch(static_cast<i32>(event.button.x), static_cast<i32>(event.button.y), host_window_width,
+                               host_window_height);
+            } else if (event.type == SDL_EVENT_FINGER_DOWN) {
+                HostInputTouch(static_cast<i32>(event.tfinger.x * host_window_width),
+                               static_cast<i32>(event.tfinger.y * host_window_height), host_window_width,
+                               host_window_height);
+#endif
             } else if (event.type == SDL_EVENT_KEY_DOWN) {
+#ifdef __EMSCRIPTEN__
+                if (event.key.key == SDLK_RETURN || event.key.key == SDLK_SPACE) {
+                    HostInputTap(0, GAMEPAD_START | GAMEPAD_JUMP);
+                }
+#else
                 if (event.key.key == SDLK_ESCAPE) {
                     if (escape_held_button == 0) {
                         const i32 menu_id = host_menu_id();
@@ -618,6 +637,7 @@ i32 host_run_window(const HostWindowOptions &options) {
                         escape_held_button = opens_pause || resumes_pause ? GAMEPAD_START : GAMEPAD_TAG;
                     }
                 }
+#endif
             } else if (event.type == SDL_EVENT_KEY_UP) {
                 if (event.key.key == SDLK_ESCAPE) {
                     escape_held_button = 0;
@@ -633,8 +653,12 @@ i32 host_run_window(const HostWindowOptions &options) {
         u32 keyboard_buttons = escape_held_button;
         if (!options.offscreen) {
             const bool *keyboard = SDL_GetKeyboardState(nullptr);
+#ifndef __EMSCRIPTEN__
+            // On WebAssembly RETURN/SPACE arrive as taps from the key events
+            // above, so they must not also be polled as held buttons.
             keyboard_buttons |= keyboard[SDL_SCANCODE_RETURN] ? GAMEPAD_START | GAMEPAD_JUMP : 0;
             keyboard_buttons |= keyboard[SDL_SCANCODE_SPACE] ? GAMEPAD_JUMP : 0;
+#endif
             keyboard_buttons |= keyboard[SDL_SCANCODE_UP] || keyboard[SDL_SCANCODE_W] ? GAMEPAD_DUP : 0;
             keyboard_buttons |= keyboard[SDL_SCANCODE_DOWN] || keyboard[SDL_SCANCODE_S] ? GAMEPAD_DDOWN : 0;
             keyboard_buttons |= keyboard[SDL_SCANCODE_LEFT] || keyboard[SDL_SCANCODE_A] ? GAMEPAD_DLEFT : 0;

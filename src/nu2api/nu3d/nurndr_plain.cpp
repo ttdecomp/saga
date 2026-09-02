@@ -467,7 +467,7 @@ extern "C" void NuRndrAxes(void) {
 }
 extern "C" void NuRndrAxisArrows(void) {
 }
-extern "C" void NuRndrAxisArrowsMtx(void) {
+extern "C" void NuRndrAxisArrowsMtx(void *, f32, void *) {
 }
 extern "C" void NuRndrAxisBright(void) {
 }
@@ -770,7 +770,7 @@ extern "C" void NuRndrSetSpecularLightPS(const NUVEC *, const NUCOLOUR4 *) {
 }
 extern "C" void NuRndrSetWind(void) {
 }
-extern "C" void NuRndrShadPolys(void) {
+extern "C" void NuRndrShadPolys(void *) {
 }
 extern "C" void NuRndrShadowDirCol(const NUVEC *, u32, f32, f32) {
 }

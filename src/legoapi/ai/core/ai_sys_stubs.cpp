@@ -644,7 +644,8 @@ extern "C" {
         packet->movement_parameter = movement_parameter;
     }
 
-    void AIPAthFindPathCnx(void) {
+    void *AIPAthFindPathCnx(AISYS_s *, i32, char *, void *, void *) {
+        return NULL;
     }
 
     AILOCATOR *AIPathFindLocator(AISYS *sys, char *name) {

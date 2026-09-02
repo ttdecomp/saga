@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+#MISE description="Build the matching Android target"
+#MISE depends=["target:configure"]
+set -euo pipefail
+
+cmake --build build --parallel

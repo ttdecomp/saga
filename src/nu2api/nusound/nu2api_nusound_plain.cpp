@@ -97,7 +97,7 @@ extern "C" {
             Music.resume_track = -1;
         }
     }
-    void SoundUpdate(void) {
+    void SoundUpdate(float) {
     }
     void edanimSoundDestroy(void) {
     }

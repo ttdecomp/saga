@@ -211,8 +211,14 @@ void Episodes_CompleteAllSuperStories() {
 void Episode_FindFromArea(i32) {
 }
 
+#ifdef __EMSCRIPTEN__
+i32 Episode_CountOpenAreas(i32, i32, AREASAVE_s *) {
+    return 0;
+}
+#else
 void Episode_CountOpenAreas(i32, i32, AREASAVE_s *) {
 }
+#endif
 
 void InitSuperStory(i32) {
 }

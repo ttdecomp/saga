@@ -78,15 +78,6 @@ enum CHARACTER_ANIMATION_FLAGS : u32 {
     CHARACTER_ANIMATION_FLAG_VERTICAL_ROOT_MOTION = 0x200,
 };
 
-enum PLAYER_JUMP_ACTION : i16 {
-    PLAYER_JUMP_ACTION_FALL = 5,
-    PLAYER_JUMP_ACTION_COMBAT_ROLL_FALL = 181,
-};
-
-enum PLAYER_JUMP_MOVEMENT_STATE : u8 {
-    PLAYER_JUMP_MOVEMENT_COMBAT_ROLL = 8,
-};
-
 static bool HasAnimation(const CHARACTERMODEL_s *model, i32 animation) {
     return model != NULL && animation >= 0 && model->model_data_b != NULL && model->model_data_b[animation] != NULL;
 }
@@ -112,13 +103,13 @@ static __attribute__((used, noinline)) void MoveAnim_Check(GameObject_s *object)
     }
 }
 
-static __attribute__((used, noinline)) bool JumpAnim_HasAction(const GameObject_s *object, i16 action) {
+static __used__ bool JumpAnim_HasAction(const GameObject_s *object, i16 action) {
     return object != NULL && action >= 0 && object->apiobj.character_model != NULL &&
            object->apiobj.character_model->model_data_b != NULL &&
            object->apiobj.character_model->model_data_b[action] != NULL;
 }
 
-static __attribute__((used, noinline)) void JumpAnimCode(GameObject_s *object) {
+static __used__ void JumpAnimCode(GameObject_s *object) {
     if (object == NULL) {
         return;
     }
@@ -1615,7 +1606,8 @@ extern "C" {
     void AnimDuration(void) {
     }
 
-    void AnimEndFrame(void) {
+    float AnimEndFrame(void *, i32) {
+        return 0.0f;
     }
 
     void AnimListFrame(void) {
@@ -1793,8 +1785,13 @@ extern "C" {
         packet->blend_target_reversed = 0;
     }
 
+#ifdef __EMSCRIPTEN__
+    void ResetMiniAnimPacket(void *, i32) {
+    }
+#else
     void ResetMiniAnimPacket(void) {
     }
+#endif
 
     void RootFn(NUMTX *matrix, void *data, NUVEC *source_root, NUVEC *target_root, NUVEC *root_delta, f32 blend) {
         RootFnEx(matrix, data, source_root, target_root, root_delta, blend, 0);

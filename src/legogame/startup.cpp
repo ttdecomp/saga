@@ -64,7 +64,7 @@ extern "C" {
     void NuCameraSet(NUCAMERA *cam);
     void NuFrameBegin(void);
     f32 NuFrameEnd(void);
-    void NuRndrBeginScene(void);
+    i32 NuRndrBeginScene(i32 flags);
     void NuRndrEndScene(void);
     void NuRndrGradClear(i32 a, i32 b, i32 c, f32 d);
     void NuRndrClear(u32 flags, u32 colour, f32 alpha);
@@ -546,7 +546,7 @@ void LoadPerm(void) {
             tail_timer -= FRAMETIME;
         }
 
-        NuRndrBeginScene();
+        NuRndrBeginScene(-1);
         NuRndrGradClear(0xf00, 0x80000000, 0x80000000, 1.0f);
 
         if (!sequence_done || tail_timer >= 0.0f) {

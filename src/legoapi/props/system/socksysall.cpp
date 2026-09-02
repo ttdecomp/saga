@@ -591,8 +591,13 @@ extern "C" {
         }
     }
 
+#ifdef __EMSCRIPTEN__
+    void ComplexSockAngles(SOCKPOSITION *) {
+    }
+#else
     void ComplexSockAngles(void) {
     }
+#endif
 
     f32 EnforceSockYLimits(f32 y, SOCKPOSITION *position, SOCKSYS *sock_sys) {
         if (sock_sys != NULL) {

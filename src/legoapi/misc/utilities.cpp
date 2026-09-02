@@ -113,7 +113,8 @@ void PackShortIntoInt(i16, i16) {
 void RatioAlongLineXZ(nuvec_s *, nuvec_s *, nuvec_s *) {
 }
 
-void XZLinesIntersect(nuvec_s *, nuvec_s *, nuvec_s *, nuvec_s *, float *, float *) {
+i32 XZLinesIntersect(nuvec_s *, nuvec_s *, nuvec_s *, nuvec_s *, float *, float *) {
+    return 0;
 }
 
 void GetRotationAngles(nuvec_s *, u16 *, u16 *) {
