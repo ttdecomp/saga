@@ -37,6 +37,7 @@ struct NetStats;
 struct NetTransporter;
 struct NetworkObject;
 struct NetworkObjectManager;
+struct nucolour3_s;
 struct NuFileDeviceAndroidOBBType;
 struct ReplicatorData;
 struct TouchHacks;
@@ -266,7 +267,11 @@ struct NetworkObjectManager {
     virtual ~NetworkObjectManager();
 };
 struct TouchHacks {
+    static bool TouchControlsActive;
+
     struct TintStack {
+        float ambient[3];
+
         TintStack();
         ~TintStack();
     };
@@ -300,19 +305,19 @@ struct TouchHacks {
     void CheckJumpForLandingSpot(GameObject_s &, float);
     static void CleanupAllMechObjectInterfaces(WORLDINFO_s *);
     void FindBombTarget(GameObject_s &);
-    void GetFlashColour();
-    void GetIncomingPartRange();
-    void GetLoseStudsDieValue();
-    void GetLoseStudsFallValue();
-    void InParty(GameObject_s &);
+    static nucolour3_s *GetFlashColour();
+    float GetIncomingPartRange();
+    i32 GetLoseStudsDieValue();
+    i32 GetLoseStudsFallValue();
+    bool InParty(GameObject_s &);
     void PlaySmartBombBuildupEffects(GameObject_s &, float, float);
     void ShouldAutoGrabDragBomb(GameObject_s &);
     void ShouldBlock(GameObject_s &);
     void ShouldDeflectBolt(GameObject_s &, BOLT_s &);
-    void ShouldFlash(float);
+    static bool ShouldFlash(float);
     void ShouldKeepWeaponOut(GameObject_s &);
     void ShouldPutWeaponAway(GameObject_s &);
-    void SolveRoot(float, float, float, float &, float &);
+    bool SolveRoot(float, float, float, float &, float &);
     void TriggerVehicleSmartBomb(GameObject_s &);
 };
 struct V2SessionManager {

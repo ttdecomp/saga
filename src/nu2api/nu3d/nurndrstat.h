@@ -80,6 +80,12 @@ typedef struct nuglobalrndrstate_s {
     f32 proj_21;                  // 0x1ac
 } NUGLOBALRNDRSTATE;
 
+extern "C" {
+    extern NUGLOBALRNDRSTATE render_state;
+    void NuRndrStateSetFogEnabled(i32 enabled);
+    void NuRndrStateSetFogState(f32 near_distance, f32 far_distance, u32 colour, f32 density);
+}
+
 // Game-facing light selection state.  The first 0x54 bytes are the ambient
 // colour followed by the three directional-light vectors and colours.  The
 // remaining fields are retained until their individual lighting controls are

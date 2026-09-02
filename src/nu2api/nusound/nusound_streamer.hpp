@@ -71,6 +71,7 @@ class NuSoundStreamer {
         NuSoundBuffer *buffer;
 
         NuSoundWeakPtr<NuSoundBufferCallback> weak_ptr;
+        bool weak_flag;
 
         QueueElement() = default;
 
@@ -123,3 +124,5 @@ class NuSoundStreamer {
   private:
     static void ThreadFunc(void *self);
 };
+
+DECOMP_ASSERT(sizeof(NuSoundStreamer::QueueElement) == 0x28, "NuSoundStreamer queue element size");

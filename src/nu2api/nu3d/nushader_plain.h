@@ -6,6 +6,9 @@
 
 #include <GLES2/gl2.h>
 
+struct nushaderobject_s;
+typedef nushaderobject_s NUSHADEROBJECT;
+
 // Combined shader key (ShaderObjectKey): first dword is the program key the
 // redirect tables and slot cache are keyed on.
 namespace nu2api {
@@ -42,11 +45,11 @@ namespace nu2api {
     extern void *g_shaderManager;
 } // namespace nu2api
 
-extern "C" i32 NuShaderManagerGetShaderById(i32 id);
-extern "C" void NuShaderManagerReleaseShader(i32 shader);
-extern "C" void NuShaderManagerBindShader(i32 slot);
+extern "C" NUSHADEROBJECT *NuShaderManagerGetShaderById(i32 id);
+extern "C" void NuShaderManagerReleaseShader(NUSHADEROBJECT *shader);
+extern "C" void NuShaderManagerBindShader(NUSHADEROBJECT *slot);
 extern "C" void *NuShaderManagerRetrieveShader(NUSHADERMTLDESC *desc, void *mtl);
 extern "C" void *NuShaderManagerRetrieveShaderVariant(NUSHADERMTLDESC *desc, void *mtl, i32 variant);
 extern "C" void NuShaderManagerSetfv(i32 semantic, const f32 *values);
-extern "C" i32 NuShaderManagerGetCurrentShader(void);
+extern "C" NUSHADEROBJECT *NuShaderManagerGetCurrentShader(void);
 extern "C" void NuShaderManagerInit(VARIPTR *arena, VARIPTR arena_end);

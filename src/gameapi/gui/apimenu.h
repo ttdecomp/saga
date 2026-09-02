@@ -102,12 +102,25 @@ typedef struct MENUFNINFO_s {
     u8 filler_1b;
 } MENUFNINFO;
 
+enum LEGO_MENU_ID {
+    LEGO_MENU_TITLES = 0,
+    LEGO_MENU_NEW_GAME = 1,
+    LEGO_MENU_PAUSE_MAIN = 2,
+    LEGO_MENU_PAUSE_CUTSCENE = 0x1b,
+    LEGO_MENU_CREDITS = 0x1e,
+    LEGO_MENU_SELECT_CONTROLS = 0x21,
+    LEGO_MENU_MEMORY_CARD_FIRST = 1000,
+    LEGO_MENU_MEMORY_CARD_LAST = 1024,
+    LEGO_MENU_ID_COUNT = LEGO_MENU_SELECT_CONTROLS + 1,
+    LEGO_MENU_INFO_COUNT = LEGO_MENU_ID_COUNT - 1, // Menu ID 0x1c has no table entry.
+};
+
 DECOMP_ASSERT(sizeof(MENUFNINFO) == 0x1c, "MENUFNINFO size");
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-    extern MENUFNINFO GameMenuInfo[33];
+    extern MENUFNINFO GameMenuInfo[LEGO_MENU_INFO_COUNT];
     extern MENUFNINFO MenuInfo[100];
     extern MENU GameMenu[10];
     extern i32 GameMenuLevel;
@@ -146,14 +159,16 @@ extern "C" {
 
 void APIMenuDrawMemCardSlots(MENU *menu, f32 y);
 void APIMenuDrawGameState(f32 x, f32 y, i32 highlight, i32 slot);
+i32 GetMenuID(void);
 
 extern "C" {
 #endif
     void MenuReset(void);
-    void MenuInitialiseEx(MENUFNINFO *menu_info, i32 menu_info_count, i32 language_count,
+    void NewMenu(i32 menu_id, i32 menu_y, i32 param3);
+    void MenuInitialiseEx(MENUFNINFO *menu_info, i32 menu_id_count, i32 language_count,
                           void (*draw_save_slots_info_fn)(f32, f32, i32, i32), i32 is_fade_enabled,
                           i32 is_shadow_enabled);
-    void MenuInitialise(MENUFNINFO *menu_info, i32 menu_info_count, i32 language_count,
+    void MenuInitialise(MENUFNINFO *menu_info, i32 menu_id_count, i32 language_count,
                         void (*draw_save_slots_fn)(MENU *, f32), i32 is_fade_enabled, i32 is_shadow_enabled);
 
     void MenuLoadTechnicalStrings(char *filepath, char *language, VARIPTR *buf, VARIPTR buf_end);

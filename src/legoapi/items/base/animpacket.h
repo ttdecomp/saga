@@ -2,26 +2,73 @@
 
 #include "decomp.h"
 
+enum ANIMPACKET_FLAGS : u8 {
+    ANIMPACKET_FLAG_FINISHED = 0x01,
+    ANIMPACKET_FLAG_LOOPED = 0x02,
+    ANIMPACKET_FLAG_ANIMATION_CHANGED = 0x04,
+    ANIMPACKET_FLAG_PLAYING_REVERSED = 0x08,
+    ANIMPACKET_FLAG_PAUSED = 0x10,
+    ANIMPACKET_FLAG_ZERO_TIMESTEP = 0x20,
+    ANIMPACKET_FLAG_BLEND_FINISHED = 0x40,
+    ANIMPACKET_FLAG_FORCE_RESTART = 0x80,
+};
+
 struct ANIMPACKET_s {
-    f32 field_0x00;
-    f32 field_0x04;
+    union {
+        f32 current_time;
+        f32 field_0x00;
+    };
+    union {
+        f32 previous_time;
+        f32 field_0x04;
+    };
     f32 blend_elapsed;  // 0x08
     f32 blend_duration; // 0x0c
-    f32 time;           // 0x10
-    f32 time2;          // 0x14
+    union {
+        f32 blend_source_time;
+        f32 time;
+    };
+    union {
+        f32 blend_target_time;
+        f32 time2;
+    };
     u8 pad_0x18[0x20 - 0x18];
     f32 field_0x20; // 0x20
     u8 pad_0x24[0x30 - 0x24];
-    u8 field_0x30;
+    union {
+        u8 flags;
+        u8 field_0x30;
+    };
     u8 blending;           // 0x31
     i16 blend_animation_a; // 0x32
     i16 blend_animation_b; // 0x34
-    u16 animation_index;   // 0x36
-    i16 field_0x38;
-    i16 field_0x3a; // 0x3a
-    u8 pad_0x3c[0x42 - 0x3c];
-    u16 frame;      // 0x42
+    i16 animation_index;   // 0x36
+    union {
+        i16 previous_animation;
+        i16 field_0x38;
+    };
+    union {
+        i16 requested_animation;
+        i16 field_0x3a;
+    };
+    u8 blend_source_reversed; // 0x3c
+    u8 blend_target_reversed; // 0x3d
+    u8 current_reversed;      // 0x3e
+    u8 pad_0x3f[0x42 - 0x3f];
+    union {
+        i16 overlay_animation; // -1 when no overlay is active
+        u16 frame;
+    }; // 0x42
     f32 field_0x44; // 0x44
 };
 
 DECOMP_ASSERT(sizeof(ANIMPACKET_s) == 0x48, "ANIMPACKET_s size");
+
+struct MINIANIMPACKET_s {
+    u8 data_0x00[0x1e];
+    i16 animation_index;    // 0x1e
+    i16 previous_animation; // 0x20
+    u8 data_0x22[0x24 - 0x22];
+};
+
+DECOMP_ASSERT(sizeof(MINIANIMPACKET_s) == 0x24, "MINIANIMPACKET_s size");

@@ -7,6 +7,19 @@ struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
 
+struct MAIN_FRAME_COUNTERS_s {
+    u8 warmup_frame;
+    u8 every_frame;
+    u8 alternate_frame;
+    u8 third_frame;
+    u8 fourth_frame;
+};
+
+DECOMP_ASSERT(sizeof(MAIN_FRAME_COUNTERS_s) == 5, "MAIN_FRAME_COUNTERS_s size");
+
+MAIN_FRAME_COUNTERS_s MainFrameCounters;
+i32 do_multiframe_update;
+
 void TimingBars() {
 }
 
@@ -17,7 +30,28 @@ void SetFramesToWait(u32) {
 }
 
 void ResetFrameCounters() {
+    MainFrameCounters.warmup_frame = 0;
+    MainFrameCounters.every_frame = 0xff;
+    MainFrameCounters.alternate_frame = 0xff;
+    MainFrameCounters.third_frame = 0xff;
+    MainFrameCounters.fourth_frame = 0xff;
 }
 
 void UpdateFrameCounters() {
+    if (do_multiframe_update == 0) {
+        ResetFrameCounters();
+        return;
+    }
+
+    if (static_cast<i8>(MainFrameCounters.warmup_frame) <= 0) {
+        ++MainFrameCounters.warmup_frame;
+        return;
+    }
+
+    MainFrameCounters.every_frame = 1;
+    MainFrameCounters.alternate_frame = (MainFrameCounters.alternate_frame + 1) & 1;
+    if (++MainFrameCounters.third_frame == 3) {
+        MainFrameCounters.third_frame = 0;
+    }
+    MainFrameCounters.fourth_frame = (MainFrameCounters.fourth_frame + 1) & 3;
 }

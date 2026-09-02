@@ -1,6 +1,11 @@
 #include "decomp.h"
+#include "gameapi/gui/apimenu.h"
+#include "gameframework/saveload.h"
+#include "globals.h"
 #include "legoapi/characters/core/players.h"
+#include "legoapi/core/startup/game.h"
 #include "legoapi/core/input/gamepads.h"
+#include "legoapi/cutscenes/cutscenes.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nutex.h"
@@ -9,6 +14,18 @@ struct AIROW_s;
 struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
+
+extern void RestoreOptions(void);
+extern void *CutStopInfo;
+extern "C" {
+    extern i32 Paused;
+    extern i32 NewMode;
+    extern i32 CutSceneWaiting;
+    extern i32 editor_active;
+    extern i32 (*GamePads_IgnoreInputFn)(void);
+    extern GAMEPAD_s GamePad[64];
+    extern FadeSystem FadeSys;
+}
 
 void ClearStill() {
 }
@@ -91,13 +108,50 @@ void DoInput(WORLDINFO_s *world) {
         world = WorldInfo_CurrentlyActive();
     }
 
-    // This is the common prefix of the original function and the complete
-    // title/menu path: refresh both game-facing pad packets, then process the
-    // player drop-in state. The remaining original tail only handles in-level
-    // pause/resume and disconnected-pad cases.
-    ReadPad(0);
-    ReadPad(1);
-    PlayersDropInOut();
+    const i32 player_0_input = ReadPad(0);
+    const i32 player_1_input = ReadPad(1);
+    const i32 player_state_changed = PlayersDropInOut();
+
+    for (i32 player_index = 0; player_index < 2; ++player_index) {
+        const i32 input_result = player_index == 0 ? player_0_input : player_1_input;
+        if (GamePads_IgnoreInputFn != NULL && GamePads_IgnoreInputFn() != 0) {
+            continue;
+        }
+        if (input_result <= 1 || player_state_changed != 0) {
+            continue;
+        }
+
+        GameObject_s *player = Player[player_index];
+        if (player == NULL || static_cast<i8>(player->apiobj.field_0x1f8) >= 0 ||
+            (LEGOCONTEXT_DROPIN != -1 && static_cast<i8>(player->field_0x7a5) == LEGOCONTEXT_DROPIN) ||
+            (GamePad[player_index].buttons_pressed & GAMEPAD_START) == 0) {
+            continue;
+        }
+        if (NewMode != 0 || NewLData != NULL || FadeSys.fade != 0.0f || editor_active != 0 ||
+            GameTimer.time_elapsed <= 0.0f || world == NULL || world->current_level == NULL ||
+            world->current_level == TITLES_LDATA) {
+            continue;
+        }
+
+        const bool player_can_resume = pause_i_pad == -1 || pause_i_pad == player_index;
+        if (Paused != 0 || (GameMenu[GameMenuLevel].menu != -1 && NetPaused != 0)) {
+            if (player_can_resume) {
+                ResumeGame(1, 1);
+                RestoreOptions();
+            }
+            continue;
+        }
+        if (GameMenu[GameMenuLevel].menu != -1 || CutSceneWaiting != 0 || MiniCutCam != 0 ||
+            memcard_autosavestarted != 0 || memcard_autosavepostdelay > 0.0f || memcard_autosavepredelay > 0.0f ||
+            GameTimer.update_count == 0) {
+            continue;
+        }
+        if (CUTSTOPGAME != 0 && !CutScene_IsSkippable(static_cast<CUTINFO *>(CutStopInfo))) {
+            continue;
+        }
+
+        PauseGame(static_cast<i32>(player->pad_gamepad - GamePad));
+    }
 }
 
 void CatI64ToX(char *, i64) {

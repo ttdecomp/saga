@@ -23,6 +23,16 @@ i32 MaxGamePads = MAX_GAME_PAD_COUNT;
 char UseCorrectDeadZoning;
 i32 enable_touch_controls = 1;
 
+extern "C" void NuPadSetStatus(i32 pad, i32 status) {
+    if (status == NUPAD_STATUS_ACTIVE) {
+        if (g_atLeastOnePadBeenActivated == 0) {
+            g_profilePlayerPad = g_nupadMapping[pad].port;
+        }
+        g_atLeastOnePadBeenActivated = 1;
+    }
+    g_nupadMapping[pad].is_active = status;
+}
+
 void NuPadInit() {
     i32 i;
 

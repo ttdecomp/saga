@@ -9,6 +9,12 @@ typedef struct gizportalprogress_s {
     u32 progress_mask;
 } GIZPORTALPROGRESS;
 
+enum PORTALDOOR_FLAGS : u16 {
+    PORTALDOOR_TRIGGER_AT_END = 0x01,
+    PORTALDOOR_OPENED = 0x02,
+    PORTALDOOR_CLOSED = 0x04,
+};
+
 #ifdef __cplusplus
 
 ADDGIZMOTYPE *Portal_RegisterGizmo(i32 type_id);

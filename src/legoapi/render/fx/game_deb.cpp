@@ -1,5 +1,6 @@
 #include "decomp.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/render/fx.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nu3d/numtl.h"
 #include "nu2api/nucore/nustring.h"
@@ -149,7 +150,7 @@ extern "C" {
     i32 DEBPAGE_AREA = -1;
     i32 DEBPAGE_CHARACTER = -1;
     i32 DEBPAGE_GENERAL = -1;
-    i32 edpp_page_scene[8] = {};
+    usize edpp_page_scene[8] = {};
     i32 edpp_page_on[8] = {};
     i32 edpp_page_used[8] = {};
     u8 edpp_ptls[0xb000] = {};
@@ -310,7 +311,12 @@ extern "C" {
         DebrisSetup2(p1, p2, p1, p2, p3, p4, 0x20, p5, p6);
     }
 
-    i16 FindGameDebris(void *, char *) {
+    i32 FindGameDebris(APIDEBRISSYS_s *debris_sys, char *name) {
+        for (i32 index = debris_sys->named_count; index < debris_sys->capacity; ++index) {
+            if (NuStrICmp(name, debris_sys->entries[index].name) == 0) {
+                return index;
+            }
+        }
         return -1;
     }
 
@@ -379,59 +385,49 @@ extern "C" {
         return -1;
     }
 
-    // InitGameDebris @0x3ca2d0. Carves the debris system from the world's
-    // particle bump buffer: a 0xc-byte header {flags, count, entries} followed
-    // by `count` 0x14-byte entries {i32 effect handle (-1 = none), char[16]
-    // name}. The first `flags` entries are seeded from the static debris_name
-    // table and looked up in the loaded pages; the rest stay -1.
-    void *InitGameDebris(VARIPTR *cursor, VARIPTR end, i32 count, i32 flags, char **names, char page) {
+    // InitGameDebris @0x3ca2d0. Carves a typed debris system and its entries
+    // from the world's particle bump buffer. Pointer-sized fields and sizeof
+    // keep the host layout valid without changing the original 32-bit layout.
+    APIDEBRISSYS_s *InitGameDebris(VARIPTR *cursor, VARIPTR end, i32 count, i32 flags, char **names, char page) {
         (void)end;
-        u32 aligned = (cursor->addr + 0xf) & ~0xfu;
-        cursor->addr = aligned;
-        cursor->addr += 0xc;
-        if (aligned == 0) {
+        if (cursor->addr == 0) {
             return NULL;
         }
 
-        u32 *sys = (u32 *)aligned;
-        memset(sys, 0, 0xc);
-        sys[0] = (u32)flags;
-        sys[1] = (u32)count;
-        sys[2] = (cursor->addr + 0xf) & ~0xfu;
-        cursor->addr = sys[2];
-        cursor->addr += (u32)count * 0x14;
+        APIDEBRISSYS_s *sys = BUFFER_ALLOC_T(cursor, APIDEBRISSYS_s);
+        sys->named_count = flags;
+        sys->capacity = count;
+        sys->entries = BUFFER_ALLOC_ARRAY(cursor, count, GAMEDEBRISENTRY_s);
 
-        memset((void *)sys[2], 0xff, (usize)count * 0x14);
-        u32 entries = sys[2];
+        memset(sys->entries, 0xff, static_cast<usize>(count) * sizeof(*sys->entries));
 
         // Seed the named entries from the debris_name table.
-        for (i32 i = 0; i < (i32)sys[0]; i++) {
-            char *entry = (char *)(entries + (u32)i * 0x14);
-            NuStrCpy(entry + 4, names[i]);
-            *(i32 *)entry = -1;
-            *(i32 *)entry = LookupDebrisEffectPage(entry + 4, page);
+        for (i32 i = 0; i < sys->named_count; i++) {
+            GAMEDEBRISENTRY_s &entry = sys->entries[i];
+            NuStrCpy(entry.name, names[i]);
+            entry.effect = LookupDebrisEffectPage(entry.name, page);
         }
 
         // The original appends the currently registered page effects after
         // the fixed debris_name set.  effecttypes[0] is reserved, and the
         // pointer table is append-only while pages are loaded.
-        i32 i = (i32)sys[0];
-        for (i32 j = 1; i < (i32)sys[1] && j < edpp_types_used; j++) {
+        i32 i = sys->named_count;
+        for (i32 j = 1; i < sys->capacity && j < edpp_types_used; j++) {
             debinftype *effect = debtab != NULL ? debtab[j] : NULL;
             if (effect == NULL) {
                 break;
             }
-            char *entry = (char *)(entries + (u32)i * 0x14);
-            NuStrCpy(entry + 4, effect->name);
-            *(i32 *)entry = LookupDebrisEffectPageOnly(entry + 4, page);
+            GAMEDEBRISENTRY_s &entry = sys->entries[i];
+            NuStrCpy(entry.name, effect->name);
+            entry.effect = LookupDebrisEffectPageOnly(entry.name, page);
             i++;
         }
 
-        for (; i < (i32)sys[1]; i++) {
-            *(i32 *)(entries + (u32)i * 0x14) = -1;
+        for (; i < sys->capacity; i++) {
+            sys->entries[i].effect = -1;
         }
 
-        return (void *)sys;
+        return sys;
     }
 
     void LookupDebrisEffect(void) {

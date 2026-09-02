@@ -231,7 +231,39 @@ void Collection_GetPos(COLLECTION_s *collection, i32 id, float *x, float *y) {
     }
 }
 
-void Collection_GetIDList(COLLECTION_s *, u32, u32, i16 *, i32 *, i32 *, i32) {
+i32 Collection_GetIDList(COLLECTION_s *collection, u32 model_flag_mask, u32 required_model_flags, i16 *ids,
+                         i32 *first_id, i32 *second_id, i32 unused) {
+    (void)unused;
+    if (first_id != NULL) {
+        *first_id = -1;
+    }
+    if (second_id != NULL) {
+        *second_id = -1;
+    }
+
+    i32 result_count = 0;
+    for (i32 index = 0; index < collection->count_y; ++index) {
+        const i16 id = collection->list[index].id;
+        if ((CDataList[id].model_flags & model_flag_mask) != required_model_flags || Collection_Got(id) == 0) {
+            continue;
+        }
+
+        if (ids != NULL) {
+            ids[result_count] = id;
+        }
+        ++result_count;
+
+        if (first_id != NULL && *first_id == -1) {
+            *first_id = id;
+        } else if (first_id != NULL && second_id != NULL && *second_id == -1) {
+            *second_id = id;
+        }
+    }
+
+    if (ids != NULL) {
+        ids[result_count] = -1;
+    }
+    return result_count;
 }
 
 void Collection_CreateCustom(char *, i16 *, COLLECTION_s *, u32, u32, u32, i32, i32, variptr_u *, variptr_u *, i32,
@@ -319,7 +351,15 @@ void TotalLevelCoinTally(WORLDINFO_s *, u32 *, u32 *, u32 *, u32 *, u32 *, u32 *
 void AddToCompletionPoints(u32) {
 }
 
-void GetFreePlayCollection(i32) {
+COLLECTION_s *GetFreePlayCollection(i32 area) {
+    const u16 area_flags = ADataList[area].flags;
+    if ((area_flags & AREAFLAG_VEHICLE_AREA) == 0) {
+        return &CharacterCollection;
+    }
+    if ((area_flags & AREAFLAG_BONUS_AREA) != 0) {
+        return &MiniKitCollection;
+    }
+    return &VehicleCollection;
 }
 
 void ReCalculateCompletionPoints() {

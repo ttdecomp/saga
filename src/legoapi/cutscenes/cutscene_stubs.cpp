@@ -2,6 +2,8 @@
 #include "decomp.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nucore/nugcutscene.h"
+#include "nu2api/numusic/numusic.h"
+#include "nu2api/nusound/nusound.h"
 
 #include <string.h>
 
@@ -49,9 +51,31 @@ extern "C" {
     }
 
     void PauseGameCut(void) {
+        if (NOMUSIC != 0 || NOSOUND != 0 || NUSOUND_STREAM_3 == -1) {
+            return;
+        }
+
+        MusicPlayback *music = &Music;
+        if (music->state != MUSIC_PLAYBACK_DUAL_STREAM && music->state != MUSIC_PLAYBACK_DUAL_STREAM_PENDING) {
+            return;
+        }
+        NuSound3CancelCheckStereo();
+        NuSound3PauseStereoStream(1 - music->primary_stream);
     }
 
     void RestoreGameCut(void) {
+        MusicPlayback *music = &Music;
+
+        if (NOMUSIC != 0 && NOSOUND != 0) {
+            return;
+        }
+        if (NUSOUND_STREAM_3 == -1) {
+            return;
+        }
+        if (music->state != MUSIC_PLAYBACK_DUAL_STREAM && music->state != MUSIC_PLAYBACK_DUAL_STREAM_PENDING) {
+            return;
+        }
+        NuSound3ResumeStereoStream(1 - music->primary_stream);
     }
 
     void SetForceScenePlayBack(void) {
@@ -90,13 +114,14 @@ extern "C" {
     void instNuGCutSceneEnable(void) {
     }
 
-    void instNuGCutSceneEnd(void) {
+    void instNuGCutSceneEnd(instNUGCUTSCENE_s *) {
     }
 
     void instNuGCutSceneFind(void) {
     }
 
-    void instNuGCutSceneIsFinished(void) {
+    i32 instNuGCutSceneIsFinished(instNUGCUTSCENE_s *) {
+        return 0;
     }
 
     void instNuGCutSceneJumpToEnd(void) {

@@ -1,11 +1,25 @@
 #include "legoapi/world/levels/episode.h"
 
 #include "globals.h"
+#include "legoapi/legoapi_types.h"
+#include "legoapi/menus/core/text.h"
+#include "legoapi/render/core/render.h"
 #include "legoapi/world/area.h"
+#include "legoapi/world/level.h"
+#include "legoapi/world/mission.h"
+#include "legoapi/world/world.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufpar.h"
+#include "nu2api/numath/nutrig.h"
 
 EPISODEDATA *EDataList = NULL;
+
+extern TerrainQuery_s *TerI;
+extern u8 TerrainHitInfo[4];
+extern f32 text3d_width;
+
+void Text_MakeScore(u32 score, char *text);
+void DrawSuperStoryTime(f32 x, f32 timer, f32 target, i32 flags, i32 draw_icon);
 
 u32 Episode_FindAreaFromFlags(EPISODEDATA *ep, u32 flags, u32 want) {
     for (i32 i = 0; i < (i32)ep->area_count; i++) {
@@ -210,14 +224,45 @@ void InitSuperStory(i32) {
 }
 
 i32 InStory() {
-    return 0;
+    if (FreePlay != 0 || ChallengeMode != 0 || Mission_Active(NULL) != NULL || Arcade != 0) {
+        return 0;
+    }
+    return 1;
 }
 
 // ===========================================================================
 // HUD / score helpers
 // ===========================================================================
 
-void CoinTotal_Draw(i32, float, float, i32, float, i32, i32, i32) {
+void CoinTotal_Draw(i32 total, f32 y, f32 scale, i32 remember_positions, f32 icon_phase, i32 red, i32 green, i32 blue) {
+    char text[32];
+    Text_MakeScore(static_cast<u32>(total), text);
+
+    const f32 score_scale = scale * COINTOTAL_SCORESIZE;
+    const i32 alpha = static_cast<u8>(icon_phase * 128.0f);
+    Text3DEx(text, 0.0f, y + PANEL_COINADJUSTDY, 1.0f, score_scale, score_scale, score_scale, 0, static_cast<u8>(red),
+             static_cast<u8>(green), static_cast<u8>(blue), alpha);
+
+    const i32 phase = static_cast<i32>(icon_phase * 16384.0f);
+    const f32 icon_scale = scale * COINTOTAL_COINSIZE * NuTrigTable[(phase >> 1) & 0x7fff];
+
+    LEVEL_OBJECT_RUNTIME *left = &WORLD->lev_objs[cointotal_i_obj[0]];
+    if (left->active != 0) {
+        const f32 x = text3d_width * -0.5f - scale * COINTOTAL_COINDX;
+        if (remember_positions != 0) {
+            cointotal_x[0] = x;
+        }
+        DrawPanel3DObject(x, y, 1.0f, icon_scale, icon_scale, icon_scale, 0, 0, 0, &left->special, 0, 1.0f);
+    }
+
+    LEVEL_OBJECT_RUNTIME *right = &WORLD->lev_objs[cointotal_i_obj[1]];
+    if (right->active != 0) {
+        const f32 x = text3d_width * 0.5f + scale * COINTOTAL_COINDX;
+        if (remember_positions != 0) {
+            cointotal_x[1] = x;
+        }
+        DrawPanel3DObject(x, y, 1.0f, icon_scale, icon_scale, icon_scale, 0, 0, 0, &right->special, 0, 1.0f);
+    }
 }
 
 void DoubleScoreAlpha() {
@@ -231,6 +276,24 @@ void TrooperShoot(WORLDINFO_s *, minitrooperteam_s *, minisnowtrooper_s *, u16 *
 }
 
 void NewTerrStoreAnyInfo() {
+    TerrainQuery_s *query = TerI;
+    TERRAIN_SHAPE *surface = query->surface;
+    if (surface == NULL || query->terrain_group_index == -1) {
+        return;
+    }
+
+    if (surface->material[0] != 0) {
+        TerrainHitInfo[0] = surface->material[0];
+    }
+    if (surface->material[1] != 0) {
+        TerrainHitInfo[1] = surface->material[1];
+    }
+    if (surface->flags != 0) {
+        TerrainHitInfo[2] = surface->flags;
+    }
+    if (surface->normal_flags != 0) {
+        TerrainHitInfo[3] = surface->normal_flags;
+    }
 }
 
 void SetBobaRocketTarget(MechObjectInterface *) {

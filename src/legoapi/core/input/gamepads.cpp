@@ -1,8 +1,13 @@
 #include "legoapi/core/input/gamepads.h"
+#include "gameapi/gui/apimenu.h"
 #include "globals.h"
 #include "legoapi/characters/core/players.h"
+#include "legoapi/characters/motion.h"
+#include "legoapi/core/startup/game.h"
+#include "legoapi/cutscenes/cutscenes.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/props/system/socksys.h"
+#include "legoapi/world/area.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nucore/NuInputDevice.h"
@@ -15,13 +20,31 @@ extern GAMECAMERA_s *GameCam;
 extern WORLDINFO_s *WORLD;
 extern i32 (*GamePads_IgnoreInputFn)(void);
 extern NUPAD *pActivePad;
+extern "C" {
+    extern i32 Paused;
+    extern i32 NewMode;
+    extern FadeSystem FadeSys;
+    extern i32 CutSceneWaiting;
+}
 
 // Original bss @0x127a500: 64 pads x 0x60 bytes.
 GAMEPAD_s GamePad[64];
 // Original bss @0x127a4e0.
 i32 readpads_always = 0;
 
-__attribute__((optimize("O2"))) void GamePads_Init() {
+// Two frames of direction history for each local player.  MovePlayer shifts
+// these before accepting the new input; GamePad_Rotate then reports a stable
+// angular velocity only when both consecutive turns agree.
+f32 PadOldSpeed2[2] = {};
+f32 PadOldSpeed[2] = {};
+u16 PadOldAngle2[2] = {};
+u16 PadOldAngle[2] = {};
+
+static i32 RotationDistance(i32 difference) {
+    return difference < 0 ? -difference : difference;
+}
+
+void GamePads_Init() {
     Game_NuPad[0] = NuPadOpen(0, 0);
     Game_NuPad[1] = NuPadOpen(1, 0);
 
@@ -32,10 +55,39 @@ __attribute__((optimize("O2"))) void GamePads_Init() {
     GamePad[1].pad = Game_NuPad[1];
 }
 
-void GamePad_Rotate(GameObject_s *) {
+f32 GamePad_Rotate(GameObject_s *object) {
+    i32 player_index;
+    if (Player[0] == object) {
+        player_index = 0;
+    } else if (Player[1] == object) {
+        player_index = 1;
+    } else {
+        return 0.0f;
+    }
+
+    GAMEPAD_s *pad = object->pad_gamepad;
+    if (pad == NULL || pad->input_magnitude == 0.0f || PadOldSpeed[player_index] == 0.0f ||
+        PadOldSpeed2[player_index] == 0.0f) {
+        return 0.0f;
+    }
+
+    const i32 current_delta = RotDiff(PadOldAngle[player_index], pad->input_angle);
+    const i32 previous_delta = RotDiff(PadOldAngle2[player_index], PadOldAngle[player_index]);
+    const bool turning_clockwise = current_delta > 0 && previous_delta > 0;
+    const bool turning_counter_clockwise = current_delta < 0 && previous_delta < 0;
+    if ((!turning_clockwise && !turning_counter_clockwise) || RotationDistance(current_delta) >= 0x2000 ||
+        RotationDistance(previous_delta) >= 0x2000) {
+        return 0.0f;
+    }
+    return (static_cast<f32>(current_delta) / 65536.0f) / FRAMETIME;
 }
 
-void GamePad_Waggle(GAMEPAD_s *) {
+i32 GamePad_Waggle(GAMEPAD_s *pad) {
+    if (pad->input_magnitude != 0.0f &&
+        RotationDistance(RotDiff(pad->previous_input_angle, pad->input_angle)) > 0x2000) {
+        return 1;
+    }
+    return (pad->input_magnitude != 0.0f) != (pad->previous_input_magnitude != 0.0f);
 }
 
 GAMEPAD_s *GamePad_Allocate() {
@@ -54,8 +106,7 @@ void GamePads_NetHost() {
 void GamePads_NetReset(i32) {
 }
 
-__attribute__((optimize("O2,omit-frame-pointer,no-reorder-blocks"))) u16 GamePad_InputAngle(GameObject_s *object,
-                                                                                            GAMEPAD_s *pad) {
+u16 GamePad_InputAngle(GameObject_s *object, GAMEPAD_s *pad) {
     if (static_cast<i8>(object->apiobj.field_0x1f8) >= 0 || object->field_0x661 == 0xff) {
         goto camera_relative;
     }
@@ -69,11 +120,10 @@ __attribute__((optimize("O2,omit-frame-pointer,no-reorder-blocks"))) u16 GamePad
 camera_relative:
     return static_cast<u16>(pad->input_angle + GameCam->input_yaw);
 
-socket_relative:
-    {
-        SOCK &socket = WORLD->sock_sys->sock[static_cast<i8>(object->field_0x661)];
-        return static_cast<u16>(pad->input_angle + object->yrot + socket.input_yaw);
-    }
+socket_relative: {
+    SOCK &socket = WORLD->sock_sys->sock[static_cast<i8>(object->field_0x661)];
+    return static_cast<u16>(pad->input_angle + object->yrot + socket.input_yaw);
+}
 }
 
 void GamePads_NetClient() {
@@ -121,7 +171,23 @@ extern "C" {
 
 } // extern "C"
 
-void PadOutPause(i32, WORLDINFO_s *) {
+void PadOutPause(i32 port, WORLDINFO_s *world) {
+    if (Paused != 0 || NoPad(port, 1) == 0 || NewMode != 0 || NewLData != NULL || FadeSys.fade != 0.0f) {
+        return;
+    }
+    if (GamePads_IgnoreInputFn != NULL && GamePads_IgnoreInputFn() != 0) {
+        return;
+    }
+    if (MiniCutCam != 0 || (world->area != NULL && (world->area->flags & AREAFLAG_ENDING_AREA) != 0) ||
+        (world->current_level->flags & (LEVEL_INTRO | LEVEL_MIDTRO | LEVEL_OUTRO)) != 0 || GetMenuID() != -1) {
+        return;
+    }
+    if (CUTSTOPGAME != 0 && !CutScene_IsSkippable(static_cast<CUTINFO *>(CutStopInfo))) {
+        return;
+    }
+    if (CutSceneWaiting == 0) {
+        PauseGame(port);
+    }
 }
 
 void ResetRumble(RUMBLEPACKET *) {
@@ -145,7 +211,11 @@ void NewRumbleAllPlayers(float, float, i32, i32) {
 void NewStatusRumbleBuzz(i32, float, float, i32) {
 }
 
-void ObjLookingWithLeftStick(GameObject_s *) {
+i32 ObjLookingWithLeftStick(GameObject_s *object) {
+    if (object->character_id_0x7a5 == 0x4d) {
+        return object->field_0x7a3 == 0 ? 2 : 1;
+    }
+    return object->character_id_0x7a5 == 0x52 ? 2 : 1;
 }
 
 void PerformPauseButtonStuff() {
@@ -163,13 +233,24 @@ void VirtualControlButtonMover_OnDown_Callback(MechTouchUIElement &, TouchHolder
 void VirtualControlDPad_LockButton_OnClick_Callback(MechTouchUIElement &, TouchHolder &) {
 }
 
-void NoPad(i32, i32) {
+i32 NoPad(i32 port, i32 require_game_input) {
+    const i32 menu_id = GetMenuID();
+    if ((require_game_input != 0 && GamePad[port].input_state == 0) || GamePad[port].pad->is_valid != 0) {
+        return 0;
+    }
+    if (LEGOMENU_NEWGAME != -1 && menu_id == LEGOMENU_NEWGAME) {
+        return 0;
+    }
+    if (LEGOMENU_CREDITS != -1 && menu_id == LEGOMENU_CREDITS) {
+        return 0;
+    }
+    return 1;
 }
 
 void NewBuzz(nupad_s *, float, i32) {
 }
 
-__attribute__((optimize("O2"))) i32 ReadPad(i32 port) {
+i32 ReadPad(i32 port) {
     GAMEPAD_s *gamepad = &GamePad[port];
     NUPAD *pad = gamepad->pad;
     WORLDINFO_s *world = WorldInfo_CurrentlyActive();

@@ -118,7 +118,6 @@ struct rndrstream_s;
 enum NUAPPLICATIONSTATUS : i32;
 struct NUGCUTCHAR_s;
 struct NUGCUTSCENE_s;
-struct NUJOINTANIM_s {};
 struct NUPADMOTIONVALUE;
 struct NUPADTYPE {};
 struct NUTHREADCAFECORE {};

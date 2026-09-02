@@ -55,7 +55,7 @@ void NuSoundStreamer::RequestCue(NuSoundStreamingSample *streaming_sample, bool 
     }
     NuSoundWeakPtrListNode::sPtrListLock.Unlock();
 
-    element->weak_ptr.bool_value = false;
+    element->weak_flag = weak_flag;
 
     __sync_fetch_and_add(&this->queue1_length, 1);
 
@@ -76,7 +76,6 @@ void NuSoundStreamer::RequestFill(NuSoundStreamingSample *sample, NuSoundBuffer 
     NuSoundWeakPtrListNode::sPtrListLock.Lock();
     NuSoundWeakPtr<NuSoundBufferCallback> local;
     local.obj = callback.obj;
-    local.bool_value = false;
     if (element->weak_ptr.obj != local.obj) {
         if (element->weak_ptr.obj != NULL) {
             element->weak_ptr.obj->Unlink(&element->weak_ptr);
@@ -87,7 +86,7 @@ void NuSoundStreamer::RequestFill(NuSoundStreamingSample *sample, NuSoundBuffer 
         element->weak_ptr.obj = local.obj;
     }
     NuSoundWeakPtrListNode::sPtrListLock.Unlock();
-    element->weak_ptr.bool_value = false;
+    element->weak_flag = false;
 
     __sync_fetch_and_add(&this->queue2_length, 1);
 
@@ -111,7 +110,7 @@ void NuSoundStreamer::RequestClose(NuSoundStreamingSample *sample) {
     }
     NuSoundWeakPtrListNode::sPtrListLock.Unlock();
 
-    element->weak_ptr.bool_value = false;
+    element->weak_flag = false;
 
     __sync_fetch_and_add(&this->queue1_length, 1);
 
@@ -135,7 +134,7 @@ void NuSoundStreamer::RequestReCue(NuSoundStreamingSample *sample, bool loop, f3
     }
     NuSoundWeakPtrListNode::sPtrListLock.Unlock();
 
-    element->weak_ptr.bool_value = false;
+    element->weak_flag = false;
 
     __sync_fetch_and_add(&this->queue1_length, 1);
 
@@ -150,7 +149,7 @@ void NuSoundStreamer::ShutdownThread() {
     element->start_offset = 0.0f;
     element->buffer = NULL;
     element->weak_ptr.obj = NULL;
-    element->weak_ptr.bool_value = false;
+    element->weak_flag = false;
 
     __sync_fetch_and_add(&this->queue1_length, 1);
 
@@ -193,9 +192,9 @@ void NuSoundStreamer::ThreadFunc(void *self) {
         element.start_offset = slot->start_offset;
         element.buffer = slot->buffer;
         element.weak_ptr.obj = slot->weak_ptr.obj;
-        element.weak_ptr.bool_value = slot->weak_ptr.bool_value;
+        element.weak_flag = slot->weak_flag;
         slot->weak_ptr.obj = NULL;
-        slot->weak_ptr.bool_value = false;
+        slot->weak_flag = false;
 
         LOG_INFO("NuSoundStreamer::ThreadFunc: processing element %p (message=%d, sample=%p, loop=%d, "
                  "start_offset=%f, buffer=%p, weak_ptr.obj=%p)",
@@ -204,7 +203,7 @@ void NuSoundStreamer::ThreadFunc(void *self) {
 
         switch (element.message) {
             case QueueElement::Message::OPEN_SAMPLE:
-                element.sample->Open(element.start_offset, element.loop, element.weak_ptr.bool_value);
+                element.sample->Open(element.start_offset, element.loop, element.weak_flag);
                 element.sample->RemovedFromThreadQueue();
                 break;
 
@@ -271,7 +270,7 @@ NuSoundStreamingSample::~NuSoundStreamingSample() {
 }
 
 i32 NuSoundStreamingSample::Open(f32 start_offset, bool loop, bool weak_flag) {
-    if (GetResourceCount() == 0 || GetLoadState() == LoadState::TWO) {
+    if (GetResourceCount() == 0 || GetLoadState() == LoadState::STREAM_READY) {
         return 0;
     }
 
@@ -352,7 +351,7 @@ i32 NuSoundStreamingSample::Open(f32 start_offset, bool loop, bool weak_flag) {
         }
     }
 
-    this->SetLoadState(LoadState::TWO);
+    this->SetLoadState(LoadState::STREAM_READY);
     this->SetLastErrorState(ErrorState::NONE);
     return 0;
 
@@ -496,7 +495,6 @@ void NuSoundStreamingSample::RequestBuffer(bool loop, NuSoundWeakPtr<NuSoundBuff
 
         NuSoundWeakPtr<NuSoundBufferCallback> local;
         local.obj = callback.obj;
-        local.bool_value = callback.bool_value;
 
         this->streamer->RequestFill(this, buffer, loop, local);
         this->some_count++;

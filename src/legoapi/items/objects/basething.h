@@ -8,8 +8,7 @@
 //   0x18 Reset              0x1c Process
 //   0x20 ProcessEvenWhenPaused        0x24 ProcessOnlyWhenPaused
 //   0x28 Render             0x2c Display           0x30 Effects
-// (the original emits a 0 slot for the pure GetName; we give it a NULL body
-// so the target build needs no __cxa_pure_virtual — the slot index is the ABI).
+// (the original emits a 0 slot for the pure GetName; the slot index is the ABI).
 //
 // Data layout (BaseThing::BaseThing @0x425840 zeroes 0x4/0x8/0xc):
 //   0x4  id matched by ThingManager::EnableActions
@@ -27,10 +26,18 @@ struct ThingProcessData;
 struct ThingRenderData;
 struct ThingResetData;
 
+enum BASETHING_FLAGS {
+    THING_FLAG_SKIP_PROCESS = 0x10,
+    THING_FLAG_SKIP_PROCESS_EVEN_WHEN_PAUSED = 0x20,
+    THING_FLAG_SKIP_PROCESS_ONLY_WHEN_PAUSED = 0x40,
+    THING_FLAG_SKIP_RENDER = 0x80,
+    THING_FLAG_SKIP_DISPLAY = 0x100,
+};
+
 struct BaseThing {
     BaseThing();
     virtual ~BaseThing();
-    virtual char const *GetName();
+    virtual char const *GetName() = 0;
     virtual i32 RemoveDependancies(ThingRemoveData *);
     virtual void EnterLevel(ThingLevelData *);
     virtual void ExitLevel(ThingLevelData *);

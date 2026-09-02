@@ -334,15 +334,65 @@ static __used__ void LC_BL_wind_speed(nufpar_s *fp) {
     levelconfig_ldata->wind_speed = NuFParGetFloat(fp);
 }
 
+// Game-specific pre-load limits. These must be applied before WorldInfo
+// reserves each level's fixed-size gameplay systems.
+NUFPCOMJMP LevelConfigKeywords_BeforeLoad[] = {
+    {const_cast<char *>("max_tightropes"), LC_BL_max_tightropes},
+    {const_cast<char *>("max_signals"), LC_BL_max_signals},
+    {const_cast<char *>("max_levers"), LC_BL_max_levers},
+    {const_cast<char *>("max_technos"), LC_BL_max_technos},
+    {const_cast<char *>("max_zipups"), LC_BL_max_zipups},
+    {const_cast<char *>("max_grapples"), LC_BL_max_grapples},
+    {const_cast<char *>("max_obstacles"), LC_BL_max_obstacles},
+    {const_cast<char *>("max_obstacle_objects"), LC_BL_max_obstacle_objects},
+    {const_cast<char *>("max_turrets"), LC_BL_max_turrets},
+    {const_cast<char *>("max_buildits"), LC_BL_max_buildits},
+    {const_cast<char *>("max_buildit_objects"), LC_BL_max_buildit_objects},
+    {const_cast<char *>("max_spinneranim_objs"), LC_BL_max_spinneranim_objs},
+    {const_cast<char *>("max_shards"), LC_BL_max_shards},
+    {const_cast<char *>("max_spinners"), LC_BL_max_spinners},
+    {const_cast<char *>("max_minicuts"), LC_BL_max_minicuts},
+    {const_cast<char *>("max_minicut_stages"), LC_BL_max_minicutParts},
+    {const_cast<char *>("maxgizmoblowuptypes"), LC_BL_max_gizmoblowuptypes},
+    {const_cast<char *>("maxgizmoblowups"), LC_BL_max_gizmoblowups},
+    {const_cast<char *>("max_climb_objects"), LC_BL_max_climb_objects},
+    {const_cast<char *>("max_attractos"), LC_BL_max_attractos},
+    {const_cast<char *>("max_timers"), LC_BL_max_timers},
+    {const_cast<char *>("max_guidelines"), LC_BL_max_guidelines},
+    {const_cast<char *>("max_ledges"), LC_BL_max_ledges},
+    {const_cast<char *>("max_securitydoors"), LC_BL_max_securitydoors},
+    {const_cast<char *>("max_tubes"), LC_BL_max_tubes},
+    {const_cast<char *>("max_pickups"), LC_BL_max_pickups},
+    {const_cast<char *>("max_gameantinodes"), LC_BL_max_gameantinodes},
+    {const_cast<char *>("max_gizpanels"), LC_BL_max_gizpanels},
+    {const_cast<char *>("max_force"), LC_BL_max_force},
+    {const_cast<char *>("max_force_objects"), LC_BL_max_force_objects},
+    {const_cast<char *>("max_pushblocks"), LC_BL_max_pushblocks},
+    {const_cast<char *>("max_pushblock_endpos"), LC_BL_max_pushblock_endpos},
+    {const_cast<char *>("max_gizspecials"), LC_BL_max_gizspecials},
+    {const_cast<char *>("max_hatmachines"), LC_BL_max_hatmachines},
+    {const_cast<char *>("max_doors"), LC_BL_max_doors},
+    {const_cast<char *>("max_teleports"), LC_BL_max_teleports},
+    {const_cast<char *>("max_gizrandoms"), LC_BL_max_gizrandoms},
+    {const_cast<char *>("max_torpmachines"), LC_BL_max_torpmachines},
+    {const_cast<char *>("max_bridges"), LC_BL_max_bridges},
+    {const_cast<char *>("max_plugs"), LC_BL_max_plugs},
+    {const_cast<char *>("max_bombgen_objects"), LC_BL_max_bombgen_objects},
+    {const_cast<char *>("max_bombgens"), LC_BL_max_bombgens},
+    {const_cast<char *>("windspeed"), LC_BL_wind_speed},
+    {const_cast<char *>("windsize"), LC_BL_wind_size},
+    {NULL, NULL},
+};
+
 static u8 load_conditionParam;
 
 static __used__ void loadSumBox(nufpar_s *fp) {
     load_conditionParam = (u8)NuFParGetInt(fp);
 }
 static __used__ void LC_AL_metal(nufpar_s *fp) {
-    levelconfig_ldata->flags |= 0x1000;
+    levelconfig_ldata->flags |= LEVEL_METAL;
     if (NuFParGetWord(fp) != 0 && NuStrICmp(fp->word_buf, "off") == 0) {
-        levelconfig_ldata->flags &= ~0x1000;
+        levelconfig_ldata->flags &= ~LEVEL_METAL;
     }
 }
 static __used__ void LC_AL_music(nufpar_s *fp) {
@@ -375,50 +425,50 @@ static __used__ void LC_AL_farclip(nufpar_s *fp) {
     levelconfig_ldata->data_display.unknown_14 = (i16)farclip;
 }
 static __used__ void LC_AL_camera_rain(nufpar_s *fp) {
-    levelconfig_ldata->flags |= 0x4000;
+    levelconfig_ldata->flags |= LEVEL_CAMERA_RAIN;
     if (NuFParGetWord(fp) != 0 && NuStrICmp(fp->word_buf, "off") == 0) {
-        levelconfig_ldata->flags &= ~0x4000;
+        levelconfig_ldata->flags &= ~LEVEL_CAMERA_RAIN;
     }
 }
 static __used__ void LC_AL_in_space(nufpar_s *fp) {
-    levelconfig_ldata->flags |= 0x40000;
+    levelconfig_ldata->flags |= LEVEL_IN_SPACE;
     if (NuFParGetWord(fp) != 0 && NuStrICmp(fp->word_buf, "off") == 0) {
-        levelconfig_ldata->flags &= ~0x40000;
+        levelconfig_ldata->flags &= ~LEVEL_IN_SPACE;
     }
 }
 static __used__ void LC_AL_flat_terrain(nufpar_s *fp) {
-    levelconfig_ldata->flags |= 0x10;
+    levelconfig_ldata->flags |= LEVEL_FLAT_TERRAIN;
     if (NuFParGetWord(fp) != 0 && NuStrICmp(fp->word_buf, "off") == 0) {
-        levelconfig_ldata->flags &= ~0x10;
+        levelconfig_ldata->flags &= ~LEVEL_FLAT_TERRAIN;
     }
 }
 static __used__ void LC_AL_hidden_icons(nufpar_s *fp) {
     if (NuFParGetWord(fp) != 0) {
         if (NuStrICmp(fp->word_buf, "on") == 0) {
-            levelconfig_ldata->flags &= ~0x800000;
+            levelconfig_ldata->flags &= ~LEVEL_HIDE_ICONS;
             return;
         }
         if (NuStrICmp(fp->word_buf, "off") == 0) {
-            levelconfig_ldata->flags |= 0x800000;
+            levelconfig_ldata->flags |= LEVEL_HIDE_ICONS;
         }
     }
 }
 static __used__ void LC_AL_double_score(nufpar_s *fp) {
-    levelconfig_ldata->flags |= 0x800;
+    levelconfig_ldata->flags |= LEVEL_DOUBLE_SCORE;
     if (NuFParGetWord(fp) != 0 && NuStrICmp(fp->word_buf, "off") == 0) {
-        levelconfig_ldata->flags &= ~0x800;
+        levelconfig_ldata->flags &= ~LEVEL_DOUBLE_SCORE;
     }
 }
 static __used__ void LC_AL_narrow_socks(nufpar_s *fp) {
-    levelconfig_ldata->flags |= 0x200000;
+    levelconfig_ldata->flags |= LEVEL_NARROW_SOCKS;
     if (NuFParGetWord(fp) != 0 && NuStrICmp(fp->word_buf, "off") == 0) {
-        levelconfig_ldata->flags &= ~0x200000;
+        levelconfig_ldata->flags &= ~LEVEL_NARROW_SOCKS;
     }
 }
 static __used__ void LC_AL_terrain_rain(nufpar_s *fp) {
-    levelconfig_ldata->flags |= 0x8000;
+    levelconfig_ldata->flags |= LEVEL_TERRAIN_RAIN;
     if (NuFParGetWord(fp) != 0 && NuStrICmp(fp->word_buf, "off") == 0) {
-        levelconfig_ldata->flags &= ~0x8000;
+        levelconfig_ldata->flags &= ~LEVEL_TERRAIN_RAIN;
     }
 }
 static __used__ void LC_AL_lowendfarclip(nufpar_s *fp) {
@@ -493,24 +543,131 @@ static __used__ void LC_AL_lowendparticlethin(nufpar_s *fp) {
     }
 }
 static __used__ void LC_AL_forget_takeovers(nufpar_s *fp) {
-    levelconfig_ldata->flags |= 0x100000;
+    levelconfig_ldata->flags |= LEVEL_FORGET_TAKEOVERS;
     if (NuFParGetWord(fp) != 0 && NuStrICmp(fp->word_buf, "off") == 0) {
-        levelconfig_ldata->flags &= ~0x100000;
+        levelconfig_ldata->flags &= ~LEVEL_FORGET_TAKEOVERS;
     }
 }
 static __used__ void LC_AL_pickups_to_panel(nufpar_s *fp) {
-    levelconfig_ldata->flags |= 0x80000;
+    levelconfig_ldata->flags |= LEVEL_PICKUPS_TO_PANEL;
     if (NuFParGetWord(fp) != 0 && NuStrICmp(fp->word_buf, "off") == 0) {
-        levelconfig_ldata->flags &= ~0x80000;
+        levelconfig_ldata->flags &= ~LEVEL_PICKUPS_TO_PANEL;
     }
 }
 static __used__ void LC_AL_override_nopickupgravity(nufpar_s *fp) {
-    levelconfig_ldata->flags |= 0x400000;
+    levelconfig_ldata->flags |= LEVEL_OVERRIDE_NO_PICKUP_GRAVITY;
     if (NuFParGetWord(fp) != 0 && NuStrICmp(fp->word_buf, "off") == 0) {
-        levelconfig_ldata->flags &= ~0x400000;
+        levelconfig_ldata->flags &= ~LEVEL_OVERRIDE_NO_PICKUP_GRAVITY;
     }
 }
 static __used__ void LC_BL_fix_strobing_anims(nufpar_s *fp) {
     (void)fp;
-    levelconfig_ldata->flags |= 0x100;
+    levelconfig_ldata->flags |= LEVEL_FIX_STROBING_ANIMS;
+}
+
+static NUFPCOMJMP LevelConfig_BeforeLoad_GenericKeywords[] = {
+    {const_cast<char *>("mipmapmode"), LC_BL_mipmapmode},
+    {const_cast<char *>("fix_strobing_anims"), LC_BL_fix_strobing_anims},
+    {const_cast<char *>("max_ter_groups"), LC_BL_max_ter_groups},
+    {const_cast<char *>("max_ter_platforms"), LC_BL_max_ter_platforms},
+    {NULL, NULL},
+};
+
+static NUFPCOMJMP LevelConfig_AfterLoad_GenericKeywords[] = {
+    {const_cast<char *>("backr"), LC_AL_backr},
+    {const_cast<char *>("backg"), LC_AL_backg},
+    {const_cast<char *>("backb"), LC_AL_backb},
+    {const_cast<char *>("backr_top"), LC_AL_backr_top},
+    {const_cast<char *>("backg_top"), LC_AL_backg_top},
+    {const_cast<char *>("backb_top"), LC_AL_backb_top},
+    {const_cast<char *>("backr_bottom"), LC_AL_backr_bottom},
+    {const_cast<char *>("backg_bottom"), LC_AL_backg_bottom},
+    {const_cast<char *>("backb_bottom"), LC_AL_backb_bottom},
+    {const_cast<char *>("farclip_hack"), LC_AL_farclip_hack},
+    {const_cast<char *>("lowendfarclip"), LC_AL_lowendfarclip},
+    {const_cast<char *>("lowendfogstart"), LC_AL_lowendfogstart},
+    {const_cast<char *>("lowendparticlethin"), LC_AL_lowendparticlethin},
+    {const_cast<char *>("farclip"), LC_AL_farclip},
+    {const_cast<char *>("nearclip"), LC_AL_nearclip},
+    {const_cast<char *>("pspcharclip"), LC_AL_lowendcharclip},
+    {const_cast<char *>("lowendcharclip"), LC_AL_lowendcharclip},
+    {const_cast<char *>("lowendcamerazoom"), LC_AL_lowendcamerazoom},
+    {const_cast<char *>("farclip_pc"), LC_AL_farclip},
+    {const_cast<char *>("nearclip_pc"), LC_AL_nearclip},
+    {const_cast<char *>("hover_height"), LC_AL_hover_height},
+    {const_cast<char *>("blobshadow_alpha"), LC_AL_blobshadow_alpha},
+    {const_cast<char *>("blobshadow_fadenear"), LC_AL_blobshadow_fadenear},
+    {const_cast<char *>("blobshadow_fadefar"), LC_AL_blobshadow_fadefar},
+    {const_cast<char *>("reflect_range"), LC_AL_reflect_range},
+    {const_cast<char *>("reflect_y"), LC_AL_reflect_y},
+    {const_cast<char *>("metal"), LC_AL_metal},
+    {const_cast<char *>("in_space"), LC_AL_in_space},
+    {const_cast<char *>("override_nopickupgravity"), LC_AL_override_nopickupgravity},
+    {const_cast<char *>("hidden_icons"), LC_AL_hidden_icons},
+    {const_cast<char *>("pickups_to_panel"), LC_AL_pickups_to_panel},
+    {const_cast<char *>("forget_takeovers"), LC_AL_forget_takeovers},
+    {const_cast<char *>("narrow_socks"), LC_AL_narrow_socks},
+    {const_cast<char *>("camera_rain"), LC_AL_camera_rain},
+    {const_cast<char *>("terrain_rain"), LC_AL_terrain_rain},
+    {const_cast<char *>("double_score"), LC_AL_double_score},
+    {const_cast<char *>("flat_terrain"), LC_AL_flat_terrain},
+    {const_cast<char *>("cam_tilt"), LC_AL_cam_tilt},
+    {const_cast<char *>("raycaststep"), LC_AL_raycaststep},
+    {const_cast<char *>("plat_scan_dist"), LC_AL_plat_scan_dist},
+    {const_cast<char *>("waterripple_startcol_r"), LC_AL_waterripple_startcol_r},
+    {const_cast<char *>("waterripple_startcol_g"), LC_AL_waterripple_startcol_g},
+    {const_cast<char *>("waterripple_startcol_b"), LC_AL_waterripple_startcol_b},
+    {const_cast<char *>("waterripple_startcol_a"), LC_AL_waterripple_startcol_a},
+    {const_cast<char *>("waterripple_endcol_r"), LC_AL_waterripple_endcol_r},
+    {const_cast<char *>("waterripple_endcol_g"), LC_AL_waterripple_endcol_g},
+    {const_cast<char *>("waterripple_endcol_b"), LC_AL_waterripple_endcol_b},
+    {const_cast<char *>("waterripple_endcol_a"), LC_AL_waterripple_endcol_a},
+    {const_cast<char *>("waterripple_life"), LC_AL_waterripple_life},
+    {const_cast<char *>("cam_pullback_dist"), LC_AL_cam_pullback_dist},
+    {const_cast<char *>("cam_lateral_dist"), LC_AL_cam_lateral_dist},
+    {const_cast<char *>("campos_seek"), LC_AL_campos_seek},
+    {const_cast<char *>("camang_seek"), LC_AL_camang_seek},
+    {const_cast<char *>("music"), LC_AL_music},
+    {const_cast<char *>("music_other"), LC_AL_music_other},
+    {const_cast<char *>("sfx_ambient"), LC_AL_sfx_ambient},
+    {const_cast<char *>("conveyor"), LC_AL_conveyor},
+    {NULL, NULL},
+};
+
+void LevelConfig_BeforeLoad(LEVELDATA *level, char *buffer, nufpcomjmp_s *keywords) {
+    NUFPAR *parser = NuFParCreateMem("levelbeforeload", buffer, 0xffff);
+    if (parser == NULL) {
+        return;
+    }
+
+    levelconfig_ldata = level;
+    NuFParPushCom2(parser, LevelConfig_BeforeLoad_GenericKeywords, keywords);
+    while (NuFParGetLine(parser) != 0) {
+        if (NuFParGetWord(parser) != 0) {
+            NuFParInterpretWord(parser);
+        }
+    }
+    NuFParDestroy(parser);
+}
+
+void LevelConfig_AfterLoad(LEVELDATA *level, char *buffer, nufpcomjmp_s *keywords) {
+    NUFPAR *parser = NuFParCreateMem("levelafterload", buffer, 0xffff);
+    if (parser == NULL) {
+        return;
+    }
+
+    levelconfig_ldata = level;
+    NuFParPushCom2(parser, LevelConfig_AfterLoad_GenericKeywords, keywords);
+    while (NuFParGetLine(parser) != 0) {
+        if (NuFParGetWord(parser) != 0) {
+            NuFParInterpretWord(parser);
+        }
+    }
+    NuFParDestroy(parser);
+
+    if (level->blob_shadow_fade_far < level->blob_shadow_fade_near) {
+        level->blob_shadow_fade_near = level->blob_shadow_fade_far;
+    }
+    level->field91_0x118 = level->data_display.unknown_14;
+    level->flags |= LEVEL_CONFIG_LOADED;
 }

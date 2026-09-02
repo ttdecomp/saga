@@ -8,6 +8,7 @@
 #include "legoapi/legoapi_types.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/core/players.h"
+#include "legoapi/menus/screens/gamemenuall.h"
 #include "legoapi/world/level.h"
 #include "legoapi/menus/core/text.h"
 #include "legoapi/render/core/render.h"
@@ -21,6 +22,8 @@ struct AIROW_s;
 struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
+
+MENUPACKET_s MenuPacket = {};
 
 extern "C" void NewMenu(i32 menu_id, i32 menu_y, i32 param3);
 extern "C" void BackupMenu(void);
@@ -282,6 +285,18 @@ void RenderFileSel() {
 }
 
 void MakeMenuPacket() {
+    for (i32 player_index = 0; player_index < 2; ++player_index) {
+        GameObject_s *object = Player[player_index];
+        if (object == NULL) {
+            MenuPacket.player_model[player_index] = -1;
+            MenuPacket.active_player[player_index] = 0;
+        } else {
+            MenuPacket.player_model[player_index] = object->id;
+            MenuPacket.active_player[player_index] = (object->apiobj.flags_low & APIOBJECT_FLAG_PLAYER_ACTIVE) != 0;
+        }
+        MenuPacket.reserved_0[player_index] = 0;
+        MenuPacket.reserved_1[player_index] = 0;
+    }
 }
 
 void MenuDrawExtras(MENU_s *) {
@@ -1370,7 +1385,12 @@ extern "C" {
     }
 
     i32 MenuInMemoryCard(void) {
-        return 0;
+        if (GameMenuLevel == -1 || MenuValidated == 0)
+            return 0;
+
+        const i32 menu_id = MenuInfo[GameMenu[GameMenuLevel].menu].id;
+        return (u32)(menu_id - LEGO_MENU_MEMORY_CARD_FIRST) <=
+               (LEGO_MENU_MEMORY_CARD_LAST - LEGO_MENU_MEMORY_CARD_FIRST);
     }
 
     void MenuInMemoryCardLoad(void) {

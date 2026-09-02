@@ -2,39 +2,62 @@
 
 #include "decomp.h"
 #include "legoapi/props/doors/door.h"
+#include "legoapi/world/world.h"
+#include "legoapi/world/level.h"
 
 static char door_gizmotype_id = -1;
 
 static i32 Door_GetMaxGizmos(void *door) {
-    UNIMPLEMENTED();
-    return {};
+    WORLDINFO *world = static_cast<WORLDINFO *>(door);
+    if (world == NULL) {
+        return 0;
+    }
+    return world->current_level->max_doors;
 }
 
-static void Door_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
-    UNIMPLEMENTED();
+static void Door_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_ptr, void *) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    if (world != NULL && world->doors != NULL && world->door_count > 0) {
+        i32 i = 0;
+        do {
+            GizmoGetUniqueName(world->gizmo_sys, const_cast<char *>("Door_"), world->doors[i].name,
+                               world->doors[i].gizmo_name, sizeof(world->doors[i].gizmo_name));
+            AddGizmo(gizmo_sys, type_id, NULL, &world->doors[i]);
+            ++i;
+        } while (world->door_count > i);
+    }
 }
 
 static char *Door_GetGizmoName(GIZMO *gizmo) {
-    return gizmo != NULL && gizmo->object != NULL ? ((DOOR *)gizmo->object)->gizmo_name : NULL;
+    if (gizmo == NULL || gizmo->object == NULL) {
+        return NULL;
+    }
+    DOOR_s *door = static_cast<DOOR_s *>(gizmo->object);
+    return door->gizmo_name;
 }
 
 static i32 Door_GetOutput(GIZMO *gizmo, i32, i32) {
-    return gizmo != NULL && gizmo->object != NULL ? ((DOOR *)gizmo->object)->active == 0 : 0;
+    if (gizmo == NULL || gizmo->object == NULL) {
+        return 0;
+    }
+    DOOR_s *door = static_cast<DOOR_s *>(gizmo->object);
+    return door->active == 0;
 }
 
-char *Door_GetOutputName(GIZMO *gizmo, i32 output_index) {
-    UNIMPLEMENTED();
-    return {};
+char *Door_GetOutputName(GIZMO *, i32) {
+    return const_cast<char *>("Active");
 }
 
 static i32 Door_GetNumOutputs(GIZMO *) {
     return 1;
 }
 
-void Door_Activate(GIZMO *gizmo, i32 active) {
-    if (gizmo != NULL && gizmo->object != NULL) {
-        ((DOOR *)gizmo->object)->active = active == 0;
+void Door_Activate(GIZMO *gizmo, i32 value) {
+    if (gizmo == NULL || gizmo->object == NULL) {
+        return;
     }
+    DOOR_s *door = static_cast<DOOR_s *>(gizmo->object);
+    door->active = value == 0;
 }
 
 ADDGIZMOTYPE *Door_RegisterGizmo(i32 type_id) {

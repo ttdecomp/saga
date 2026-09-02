@@ -3,11 +3,14 @@
 #include "globals.h"
 #include "legoapi/core/input/timer.h"
 #include "legoapi/characters/core/character.h"
+#include "legoapi/gizmo/base/gizactions.h"
+#include "legoapi/items/base/collection.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/area.h"
 #include "legoapi/world/levels/levels.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nucore/common.h"
+#include "nu2api/nucore/nuanim3.h"
 #include "nu2api/nusound/nusound.h"
 
 struct CUSTOMISER;
@@ -27,9 +30,122 @@ f32 DEFAULTFRAMETIME = 0;
 void *globalbuffer = NULL;
 i32 MaxAnimJoints = 0;
 u8 ForcePlayEndFrame = 0;
+u8 ForceEulerToQuat = 0;
+extern const u8 CurveGroupMasks[3] = {
+    NUANIMBUFF_JOINT_TRANSLATION,
+    NUANIMBUFF_JOINT_ROTATION,
+    NUANIMBUFF_JOINT_SCALE,
+};
 u8 BitCountTable[256] = {};
 i32 isBitCountTable = 0;
 f32 MAXFRAMETIME = 0;
+
+static CHARACTER_CONTEXT_INFO_s CharacterContextInfoTable[] = {
+    {"NoContext", -1, 0x00001000, 0},
+    {"Jump", -1, 0x01000000, 0},
+    {"LandJump", -1, 0x00000015, 0},
+    {"LandJump2", -1, 0x00000015, 0},
+    {"LandFlip", -1, 0x00000015, 0},
+    {"LandComboJump", -1, 0x00000015, 0},
+    {"Combo", -1, 0x00800010, 1},
+    {"WeaponIn", -1, 0x00001013, 0},
+    {"WeaponOut", -1, 0x00001013, 0},
+    {"Force", -1, 0x00000222, 0},
+    {"ComboRotate", -1, 0x00000011, 0},
+    {"Shoot", -1, 0x00000011, 0},
+    {"Interface", -1, 0x00000033, 0},
+    {"Block", -1, 0x04000010, 0},
+    {"LandLunge", -1, 0x00800011, 0},
+    {"LandSlam", -1, 0x00800011, 0},
+    {"Teleport", -1, 0x000001b3, 12},
+    {"Swipe", -1, 0x00800010, 0},
+    {"Tube", -1, 0x00000408, 0},
+    {"ForceThrow", -1, 0x00000012, 0},
+    {"HoverUp", -1, 0x00000030, 0},
+    {"Rocket", -1, 0x00000011, 0},
+    {"TakeHit", -1, 0x10000031, 0},
+    {"Zap", -1, 0x00000010, 0},
+    {"Deactivated", -1, 0x10200031, 0},
+    {"Hold", -1, 0x04000010, 0},
+    {"LandSpecial", -1, 0x00000015, 0},
+    {"Communicate", -1, 0x00000033, 0},
+    {"ForcePush", -1, 0x00000002, 0},
+    {"ForcePushed", -1, 0x00000231, 0},
+    {"ForceDeflect", -1, 0x00000002, 0},
+    {"ForceFrozen", -1, 0x0000000b, 0},
+    {"BigJump", -1, 0x02400111, 0},
+    {"BackFlip", -1, 0x00000091, 0},
+    {"Recoil", -1, 0x00000009, 0},
+    {"ForcedBack", -1, 0x00000008, 0},
+    {"DropIn", -1, 0x00040113, 0},
+    {"DropOut", -1, 0x00040113, 0},
+    {"Dodge", -1, 0x00000092, 1},
+    {"Punch", -1, 0x00010032, 1},
+    {"Push", -1, 0x00002030, 0},
+    {"PushSpinner", -1, 0x00003010, 0},
+    {"LandCombatRoll", -1, 0x000000b4, 0},
+    {"Turn", -1, 0x00000190, 0},
+    {"Doomed", -1, 0x00400110, 0},
+    {"Launch", -1, 0x00000000, 0},
+    {"BuildIt", -1, 0x00000010, 0},
+    {"ThrowDetonator", -1, 0x00000033, 0},
+    {"Grabbed", -1, 0x00000013, 0},
+    {"SpecialMoveVictim", -1, 0x00000033, 0},
+    {"Roll", -1, 0x00000010, 16},
+    {"UnRoll", -1, 0x00000013, 16},
+    {"Slide", -1, 0x40000030, 0},
+    {"BeenDragged", -1, 0x00000000, 0},
+    {"ZipDown", -1, 0x00000030, 0},
+    {"Loop", -1, 0x00000190, 0},
+    {"Poo", -1, 0x00000033, 0},
+    {"Grab", -1, 0x00000033, 0},
+    {"Eaten", -1, 0x60020933, 0},
+    {"BarrelRoll", -1, 0x00000190, 0},
+    {"BeenTakenOver", -1, 0x600209b0, 0},
+    {"GetIn", -1, 0x60400130, 0},
+    {"Flatten", -1, 0x00000033, 0},
+    {"Buck", -1, 0x00000033, 0},
+    {"Eat", -1, 0x00000033, 0},
+    {"Disorientate", -1, 0x00000100, 0},
+    {"Activate", -1, 0x00200033, 0},
+    {"ZappedByFloor", -1, 0x00000031, 0},
+    {"Climb", -1, 0x00000431, 0},
+    {"Tightrope", -1, 0x00080431, 0},
+    {"WallShuffle", -1, 0x00003031, 0},
+    {"Grapple", -1, 0x40000430, 0},
+    {"ZipUp", -1, 0x40000430, 0},
+    {"PlaceDetonator", -1, 0x00000033, 0},
+    {"PickUpDetonator", -1, 0x00000031, 0},
+    {"PullLever", -1, 0x00000031, 0},
+    {"Float", -1, 0x00000030, 2},
+    {"Signal", -1, 0x04000433, 0},
+    {"Batarang", -1, 0x08000033, 0},
+    {"Hang", -1, 0x00000430, 0},
+    {"Glide", -1, 0x00000430, 0},
+    {"Catch", -1, 0x00000013, 0},
+    {"Techno", -1, 0x84000031, 0},
+    {"AttractoTarget", -1, 0x04000033, 0},
+    {"AttractoDeposit", -1, 0x00000033, 0},
+    {"Sonar", -1, 0x00000033, 0},
+    {"LedgeTerrain", -1, 0x00000431, 0},
+    {"Transform", -1, 0x00000033, 0},
+    {"WallJumpWait", -1, 0x00002431, 0},
+    {"SuperCarry", -1, 0x00000033, 0},
+    {"PushObstacle", -1, 0x00003010, 0},
+    {"Stunned", -1, 0x10000031, 0},
+    {"Ledge", -1, 0x00000431, 0},
+    {"Security", -1, 0x00000033, 0},
+    {"Ballooning", -1, 0x00100010, 0},
+    {"ThrowQuick", -1, 0x00000033, 0},
+    {"DieAir", -1, 0x000080b1, 0},
+    {"DieGround", -1, 0x000080b1, 0},
+    {"HatMachine", -1, 0x00000033, 0},
+    {"Whip", -1, 0x00000033, 1},
+    {"NetWait", -1, 0x00000023, 0},
+};
+
+CHARACTER_CONTEXT_INFO_s *CInfo = &CharacterContextInfoTable[1];
+USING_EXTRA_ACTIONS_FN UsingExtraActionsFn = NULL;
 
 // ------------------------------------------------------------------------
 // Super buffer / memory arena
@@ -54,12 +170,18 @@ const char *theEmptyString = "";
 // ------------------------------------------------------------------------
 i32 EPISODECOUNT = 0;
 i32 AREACOUNT = 0;
+AREADATA_s *LOSTTEMPLE_ADATA = NULL;
 
 // ------------------------------------------------------------------------
 // Game save state
 // ------------------------------------------------------------------------
 GAMESAVE_s Game = {0};
 GAMESAVE_s BackupGame = {0};
+u32 areaSuitBits = 0;
+u8 *Game_LevelSave = NULL;
+EPISODESAVE_s *Game_EpisodeSave = NULL;
+u16 *Game_CompletionSave = NULL;
+MISSIONSAVE *Game_MissionSave = NULL;
 
 // ------------------------------------------------------------------------
 // Character customiser
@@ -94,6 +216,31 @@ i32 OldBonusScore[2] = {0};
 i32 BonusScore[2] = {0};
 i32 BonusCoinTotal = 0;
 
+// Gameplay panel layout and animation state.  The non-zero constants are the
+// original panel coordinates; the animation values are reset by Panel_Clear.
+f32 STATSPOSY = 0.745f;
+f32 STATSPOS2Y = 1.255f;
+f32 COINTOTAL_SCOREDY = -0.005f;
+f32 COINTOTAL_COINDX = 0.05f;
+f32 COINTOTAL_COINSIZE = 0.5f;
+f32 COINTOTAL_SCORESIZE = 0.5f;
+f32 PANEL_COINADJUSTDY = -0.006f;
+f32 CoinTotalScale = 0.0f;
+f32 cointotal_x[2] = {0.0f, 0.0f};
+i32 cointotal_i_obj[2] = {187, 187};
+i32 SuperStoryEpisode = -1;
+f32 SuperStoryTimer[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+u32 SuperStoryScore = 0;
+
+f32 DrawMiniKitTime = 0.0f;
+f32 MiniKitScale = 0.0f;
+f32 DrawBuildUpTime = 0.0f;
+f32 builduptime = 0.0f;
+f32 BuildUpScale = 0.0f;
+f32 DrawRedBrickTime = 0.0f;
+f32 RedBrickScale = 0.0f;
+f32 DrawCoinTotalTime = 0.0f;
+
 // ------------------------------------------------------------------------
 // Audio & music
 // ------------------------------------------------------------------------
@@ -103,11 +250,15 @@ u8 g_BackgroundUsedFogColour = 0;
 i32 g_BackgroundColour = 0;
 u32 SFX_MUSIC_COUNT = 0;
 i32 NOSOUND = 0;
+i32 NUSOUND_STREAM_3 = 0;
 i16 AreaMusic = 0;
 i32 LevMusicAction = 0;
 i32 LevMusicAmbient = 0;
 i32 LevMusicOtherAction = 0;
 i32 LevMusicOtherAmbient = 0;
+
+u16 rtltimer1 = 0;
+f32 rtltimer1adv = 2500.0f;
 
 // ------------------------------------------------------------------------
 // Camera
@@ -115,6 +266,17 @@ i32 LevMusicOtherAmbient = 0;
 NUCAMERA *pNuCam = NULL;
 static GAMECAMERA_s GameCamera;
 GAMECAMERA_s *GameCam = &GameCamera;
+i32 (*GameCam_ObjLookingWithLeftStick)(GameObject_s *object) = nullptr;
+PLAYPLANE_s PlayPlane[6] = {};
+i32 KEEPONSCREEN_SIDESONLY = 0;
+NUVEC GunshipANorm = {};
+u32 ZeroRTL[0x51] = {};
+char *partdebris_name[64] = {
+    "TRAINING_P",   "PART_MOUSE", "PART_BLACK_3", "DRAG_PART_1", "SMALL_PART_2", "RAT_PART",
+    "BOULDER_PART", "POPCORN",    "PART_THROW",   "ENG_POP",     "DOOKU_PART",   "MAUL_P_1",
+    "MAUL_P_2",     "MAUL_P_3",   "SPEAR_HIT",    "RED_BRICK",   "POD_ROCK",
+};
+u32 GAMEPAD_SKIP = GAMEPAD_BUTTON_START | GAMEPAD_BUTTON_JUMP | GAMEPAD_BUTTON_TAG;
 
 // ------------------------------------------------------------------------
 // Platform & device info
@@ -139,6 +301,9 @@ i32 disable_narrow_socks = 0;
 i32 script_spline_selected = 0;
 f32 character_farclip = 0.0f;
 f32 CutBorderScale = 0.0f;
+i32 LEGOCAMMODE_DOORCUT = -1;
+i32 LEGOCAMMODE_OBSTACLE = -1;
+i32 ObstacleCamBorders = 0;
 i32 texanimbits = 0;
 
 // ------------------------------------------------------------------------
@@ -150,8 +315,10 @@ NUGSCN *vehicle_scene = NULL;
 // Gameplay timers & area state
 // ------------------------------------------------------------------------
 f32 DoubleScoreTime = 0.0f;
+f32 TOGGLEHOLDTIME = 1.0f;
 TIMER GameTimer;
-u8 AreaGlobals[0x34] = {0};
+TIMER OverallGamePlayTimer;
+AREA_GLOBALS AreaGlobals = {};
 i32 HIGHGAMEOBJECT = 0;
 GameObject_s *Obj = NULL;
 f32 AreaPickupGravity = 0.0f;
@@ -174,9 +341,13 @@ i32 LSW2 = 0;
 i32 Arcade = 0;
 i32 BuildUpTotal = 0;
 i32 BuildUpDone = 0;
-void *Door_Last = NULL;
+DOOR_s *Door_Last = NULL;
+void (*Door_GoThrough_ExtraCodeFn)(WORLDINFO_s *, DOOR_s *) = NULL;
+i32 gone_through_door_to_new_mode = 0;
+CUTINFO *newmode_cutinfo = NULL;
+DOOR_s *setlastdoor_last = NULL;
 i32 LevelChange = 0;
-i32 BombGenerator_PlayerBomb[2] = {0};
+GameObject_s *BombGenerator_PlayerBomb[2] = {NULL};
 i32 BonusArea = 0;
 
 // ------------------------------------------------------------------------
@@ -184,6 +355,14 @@ i32 BonusArea = 0;
 // ------------------------------------------------------------------------
 i16 temp_yrot = 0;
 i16 temp_xrot = 0;
+i16 temp_zrot = 0;
+f32 EShadY = 0.0f;
+i32 CHARSHADOWS_ON = 1;
+TERRAIN_LAYER_s TerLayer[17] = {
+    {1.0f, 0, -1, 0}, {2.0f, 0, -1, 0}, {2.0f, 0, -1, 0}, {1.0f, 1, -1, 0}, {1.0f, 0, -1, 0}, {1.0f, 0x20, -1, 0},
+    {1.0f, 1, -1, 0}, {1.0f, 0, -1, 0}, {1.0f, 0, -1, 0}, {1.0f, 0, -1, 0}, {1.0f, 0, -1, 0}, {1.0f, 0, -1, 0},
+    {1.0f, 0, -1, 0}, {1.0f, 0, -1, 0}, {1.0f, 0, -1, 0}, {1.0f, 0, -1, 0}, {1.0f, 0, -1, 0},
+};
 GameObject_s *player = NULL;
 GameObject_s *player2 = NULL;
 i32 avg_currentspeed_mul = 0;
@@ -194,6 +373,13 @@ u8 object_switches[0x80] = {0};
 GIZFORCE_s *force_array[4] = {0};
 GameObject_s *ObiWan = NULL;
 GameObject_s **game_objects = NULL;
+i32 LedgeTerrain_On = 0;
+i32 Grapples_Available = 1;
+i32 SuperCarry_Bash = 0;
+i32 SuperCarry_Jump = 0;
+f32 PUNCHGAP = 0.3f;
+f32 PUNCHCHARGAP = 0.6f;
+i32 HINTS_ON = 1;
 
 // ------------------------------------------------------------------------
 // Character preview / free-play model lists
@@ -222,16 +408,19 @@ i32 FreePlayBonusCount = 0;
 CHARCAT_s *CharCategory = NULL;
 i32 CHARCATEGORYCOUNT = 0;
 EXTRAMODEL ExtraModelList[1] = {{0}};
-VEHICLECOLLECTION_s VehicleCollection = {0};
+COLLECTION_s CharacterCollection = {};
+COLLECTION_s VehicleCollection = {};
+COLLECTION_s MiniKitCollection = {};
 ARCADEITEM_s ArcadeItem = {0};
 ARCADE_MODE_s Arcade_Mode[1] = {{0}};
 GAME_CUSTOMISER_s *Game_Customiser = NULL;
 AREASAVE_s *Game_AreaSave = NULL;
 u8 *Game_CharacterSave = NULL;
-void *CurrentCList = NULL;
-void *CurrentStoryCList = NULL;
+APICHARACTERMODELLIST_s *CurrentCList = NULL;
+APICHARACTERMODELLIST_s *CurrentStoryCList = NULL;
 i32 CharacterDataLoad = 0;
 i32 makefreeplaymodellist = 0;
+i32 hub_freeplaysource = 0;
 i16 id_DEFAULTCHARACTER[2] = {-1, -1};
 i16 tBATMANSUIT = 0;
 i16 tSHADOWSUIT = 0;
@@ -259,6 +448,7 @@ i32 EXTRALEVELOBJECTCOUNT = 0;
 char *ExtraLevelObject_NameTable = NULL;
 i32 ExtraLevelObject_NameTableSize = 0;
 i32 ExtraLevelObject_NameTableIndex = 0;
+i32 KNOBS = -1;
 
 i16 drawcharicon_hspecial_spin = 0;
 f32 drawcharicon_hspecial_dz = 0.0f;
@@ -269,15 +459,65 @@ f32 PANEL3DMULY = 0.0f;
 f32 PANEL3DMULX = 0.0f;
 i32 LEGOOBJ_ICON_WEIRDO = -1;
 i32 LEGOOBJ_ICON_QUESTION = -1;
+i32 LEGOOBJ_GRAPPLE_HOOK = -1;
+i32 LEGOOBJ_FLOORTARGET = -1;
 
 // ------------------------------------------------------------------------
 // Level / area data pointers (LDATA / ADATA)
 // ------------------------------------------------------------------------
 LEVELDATA *ANAKINSFLIGHTB_LDATA = NULL;
+AREADATA *ANAKINSFLIGHT_ADATA = NULL;
 AREADATA *ANEWHOPE_ADATA = NULL;
+AREADATA *ASTEROIDCHASE_ADATA = NULL;
+AREADATA *BATTLEOVERCORUSCANT_ADATA = NULL;
+AREADATA *BLOCKADERUNNER_ADATA = NULL;
 AREADATA *BONUSKASHYYYK_ADATA = NULL;
 AREADATA *BONUSKAMINO_ADATA = NULL;
 AREADATA *BONUSDAGOBAH_ADATA = NULL;
+AREADATA *BOUNTYHUNTERPURSUIT_ADATA = NULL;
+AREADATA *CLOUDCITYESCAPE_ADATA = NULL;
+AREADATA *CLOUDCITYTRAP_ADATA = NULL;
+AREADATA *CRUISER_ADATA = NULL;
+AREADATA *DAGOBAH_ADATA = NULL;
+AREADATA *DEATHSTARBATTLE_ADATA = NULL;
+AREADATA *DEATHSTARBATTLE2_ADATA = NULL;
+AREADATA *DEATHSTARESCAPE_ADATA = NULL;
+AREADATA *DEATHSTARRESCUE_ADATA = NULL;
+AREADATA *DOGFIGHT_ADATA = NULL;
+AREADATA *E1CHARACTER_ADATA = NULL;
+AREADATA *E2CHARACTER_ADATA = NULL;
+AREADATA *E3CHARACTER_ADATA = NULL;
+AREADATA *E4CHARACTER_ADATA = NULL;
+AREADATA *E5CHARACTER_ADATA = NULL;
+AREADATA *E6CHARACTER_ADATA = NULL;
+AREADATA *E1VEHICLE_ADATA = NULL;
+AREADATA *E2VEHICLE_ADATA = NULL;
+AREADATA *E3VEHICLE_ADATA = NULL;
+AREADATA *E4VEHICLE_ADATA = NULL;
+AREADATA *E5VEHICLE_ADATA = NULL;
+AREADATA *E6VEHICLE_ADATA = NULL;
+AREADATA *EMPERORFIGHT_ADATA = NULL;
+AREADATA *ENDORBATTLE_ADATA = NULL;
+AREADATA *FACTORY_ADATA = NULL;
+AREADATA *GRIEVOUS_ADATA = NULL;
+AREADATA *GUNGAN_ADATA = NULL;
+AREADATA *GUNSHIP_ADATA = NULL;
+AREADATA *HOTHESCAPE_ADATA = NULL;
+AREADATA *JABBASPALACE_ADATA = NULL;
+AREADATA *JIMTEST_ADATA = NULL;
+AREADATA *KASHYYYK_ADATA = NULL;
+AREADATA *LEGOCITY_ADATA = NULL;
+AREADATA *MAUL_ADATA = NULL;
+AREADATA *MOSEISLEY_ADATA = NULL;
+AREADATA *NEGOTIATIONS_ADATA = NULL;
+AREADATA *NEWTOWN_ADATA = NULL;
+AREADATA *RESCUE_ADATA = NULL;
+AREADATA *RETAKE_ADATA = NULL;
+AREADATA *SARLACCPIT_ADATA = NULL;
+AREADATA *SPEEDERCHASE_ADATA = NULL;
+AREADATA *TATOOINE_ADATA = NULL;
+AREADATA *TEMPLE_ADATA = NULL;
+AREADATA *VADER_ADATA = NULL;
 LEVELDATA *ASTEROIDCHASEA_LDATA = NULL;
 LEVELDATA *ASTEROIDCHASEB_LDATA = NULL;
 LEVELDATA *ASTEROIDCHASEC_LDATA = NULL;
@@ -478,6 +718,8 @@ i32 new_level_from_menu = 0;
 // The original .data initialises BGLOAD to 1 (background loading enabled).
 i32 BGLOAD = 1;
 i32 reset_restart = 0;
+i32 come_from_an_editor = 0;
+i32 CanDrawZipUpSwirls = 0;
 i32 newlevelfrommenu_newmenuid = -1;
 i32 newlevelfrommenu_newmenuy = -1;
 i32 NextArea_FreePlay = 0;
@@ -517,13 +759,13 @@ i32 LevForce = 0;
 i32 LevSfxId[4] = {0};
 i32 LevelCodeSpline[8] = {0};
 GIZFORCE_s *LevGizForce[4] = {0};
-i32 LevAIPathNode[4] = {0};
+void *LevAIPathNode[4] = {0};
 i32 LevBoltIgnorePlatIds[2] = {0};
 i32 LevPlatID[2] = {0};
 u64 LevHSpecialExists = 0;
 i32 LevPathCnxDir = 0;
 i32 LevDeaths = 0;
-i32 LevLock[4] = {0};
+u8 LevLock[5] = {0};
 i32 LevSafePlatID[2] = {0};
 
 // ------------------------------------------------------------------------
@@ -944,12 +1186,282 @@ LEVELSPLINE SplTab[26] = {
 u8 LSW_CharCategory[0x78];  // LSW character-category table
 u8 Cheat[0x5a0];            // cheat table
 u8 CharVariants_Game[0x5c]; // in-game character-variant table
-u8 theMemoryManager[0x248]; // inline memory-manager block
+MemoryManager theMemoryManager;
 #include "legoapi/menus/core/lsw_text_data.inc"
 TEXTCRAWL_s TextCrawl_LSW = {&tCHAPTER, &tVEHICLEBONUS, &tCHARACTERBONUS, 3};
 
-void *ActionInfo = NULL;      // bound to &self+0x38 table at runtime
-char *ExtraActionData = NULL; // "run1" pool pointer at runtime
+static ACTIONINFO_s ActionInfoList[] = {
+    {"?", 0x0},
+    {"walk", 0x2},
+    {"idle", 0x0},
+    {"fire", 0x0},
+    {"run", 0x4},
+    {"tiptoe", 0x1},
+    {"fall", 0x0},
+    {"jump", 0x0},
+    {"land", 0x0},
+    {"idle4", 0x0},
+    {"jump2", 0x0},
+    {"land2", 0x0},
+    {"force", 0x0},
+    {"flip", 0x0},
+    {"flipland", 0x0},
+    {"jump3", 0x0},
+    {"idle2", 0x0},
+    {"weaponin", 0x0},
+    {"weaponout", 0x0},
+    {"combojump", 0x0},
+    {"comboland", 0x0},
+    {"idle3", 0x0},
+    {"land3", 0x0},
+    {"shoot", 0x0},
+    {"run2", 0x4},
+    {"interface", 0x0},
+    {"weaponidle", 0x0},
+    {"block1", 0x8},
+    {"block2", 0x8},
+    {"block3", 0x8},
+    {"run3", 0x4},
+    {"crawl", 0x0},
+    {"lunge", 0x0},
+    {"lungeland", 0x0},
+    {"slam", 0x0},
+    {"slamland", 0x0},
+    {"open", 0x0},
+    {"hover", 0x0},
+    {"fly", 0x0},
+    {"left", 0x0},
+    {"force2", 0x0},
+    {"fall2", 0x0},
+    {"weaponback", 0x0},
+    {"up", 0x0},
+    {"pushed", 0x0},
+    {"in", 0x0},
+    {"out", 0x0},
+    {"combo1_1", 0x0},
+    {"combo1_2a", 0x0},
+    {"combo1_2b", 0x0},
+    {"combo1_3a", 0x0},
+    {"combo1_3b", 0x0},
+    {"combo1_3c", 0x0},
+    {"combo1_3d", 0x0},
+    {"combo2_1", 0x0},
+    {"combo2_2a", 0x0},
+    {"combo2_2b", 0x0},
+    {"combo2_3a", 0x0},
+    {"combo2_3b", 0x0},
+    {"combo2_3c", 0x0},
+    {"combo2_3d", 0x0},
+    {"shoot2", 0x0},
+    {"takehit", 0x0},
+    {"takehit2", 0x0},
+    {"tiptoe2", 0x1},
+    {"walk2", 0x2},
+    {"deactivated", 0x0},
+    {"deactivated2", 0x0},
+    {"deactivated3", 0x0},
+    {"deactivated4", 0x0},
+    {"interface2", 0x0},
+    {"interface3", 0x0},
+    {"interface4", 0x0},
+    {"hoverup", 0x0},
+    {"hoverdown", 0x0},
+    {"land4", 0x0},
+    {"fall3", 0x0},
+    {"fall4", 0x0},
+    {"fire2", 0x0},
+    {"eat", 0x0},
+    {"right", 0x0},
+    {"walkbackwards", 0x0},
+    {"punch", 0x0},
+    {"push", 0x0},
+    {"choked", 0x0},
+    {"zapped", 0x0},
+    {"punch2", 0x0},
+    {"punch3", 0x0},
+    {"combatroll_fire", 0x0},
+    {"forwards", 0x0},
+    {"fallland", 0x0},
+    {"shootleft", 0x0},
+    {"shootright", 0x0},
+    {"shootback", 0x0},
+    {"pulllever", 0x0},
+    {"helmeton", 0x0},
+    {"build", 0x0},
+    {"idle5", 0x0},
+    {"idle6", 0x0},
+    {"idle7", 0x0},
+    {"idle8", 0x0},
+    {"attack", 0x0},
+    {"throw", 0x0},
+    {"pickup", 0x0},
+    {"drop", 0x0},
+    {"grabbed", 0x0},
+    {"attacked", 0x0},
+    {"slide", 0x0},
+    {"communicate", 0x0},
+    {"ride", 0x0},
+    {"helmeton2", 0x0},
+    {"throw2", 0x0},
+    {"throw3", 0x0},
+    {"ride2", 0x0},
+    {"extra_tiptoe", 0x1},
+    {"extra_walk", 0x2},
+    {"extra_run", 0x4},
+    {"extra_fall", 0x0},
+    {"extra_idle", 0x0},
+    {"extra_weaponidle", 0x0},
+    {"backflip", 0x0},
+    {"extra_jump", 0x0},
+    {"extra_jump2", 0x0},
+    {"extra_land", 0x0},
+    {"extra_land2", 0x0},
+    {"extra_lunge", 0x0},
+    {"extra_lungeland", 0x0},
+    {"extra_weaponin", 0x0},
+    {"extra_weaponout", 0x0},
+    {"activate", 0x0},
+    {"deactivate", 0x0},
+    {"walk3", 0x2},
+    {"ride3", 0x0},
+    {"ride4", 0x0},
+    {"splat", 0x0},
+    {"ride5", 0x0},
+    {"climb_idle", 0x0},
+    {"tightrope_idle", 0x0},
+    {"tightrope_move", 0x0},
+    {"wallshuffle_idle", 0x0},
+    {"wallshuffle_left", 0x0},
+    {"wallshuffle_right", 0x0},
+    {"putdown", 0x0},
+    {"float", 0x0},
+    {"tightrope_geton", 0x0},
+    {"target", 0x0},
+    {"hang_idle", 0x0},
+    {"hang_move", 0x0},
+    {"glide", 0x0},
+    {"punch_behind", 0x0},
+    {"tightrope_getoff", 0x0},
+    {"change", 0x0},
+    {"throw_wait", 0x0},
+    {"catch", 0x0},
+    {"hack", 0x0},
+    {"attract", 0x0},
+    {"transfer", 0x0},
+    {"sonar", 0x0},
+    {"ledge_idle", 0x0},
+    {"ledge_left", 0x0},
+    {"ledge_right", 0x0},
+    {"transform", 0x0},
+    {"walljump_wait", 0x0},
+    {"walljump", 0x0},
+    {"supercarry_pickup", 0x0},
+    {"supercarry_idle", 0x0},
+    {"supercarry_walk", 0x0},
+    {"supercarry_throw", 0x0},
+    {"stun", 0x0},
+    {"stun2", 0x0},
+    {"stun3", 0x0},
+    {"stunned", 0x0},
+    {"stunned2", 0x0},
+    {"stunned3", 0x0},
+    {"security", 0x0},
+    {"superpush_idle", 0x0},
+    {"superpush_push", 0x0},
+    {"superpush_pull", 0x0},
+    {"ballooning", 0x0},
+    {"throw_quick", 0x0},
+    {"backpackfallland", 0x0},
+    {"combatroll_jump", 0x0},
+    {"combatroll_fall", 0x0},
+    {"combatroll_land", 0x0},
+    {"recoil", 0x0},
+    {"die_air", 0x0},
+    {"stun_die", 0x0},
+    {"grapple_idle", 0x0},
+    {"grapple_up", 0x0},
+    {"grapple_down", 0x0},
+    {"grapple_hang", 0x0},
+    {"idle9", 0x0},
+    {"idle10", 0x0},
+    {"ride6", 0x0},
+    {"ride7", 0x0},
+    {"ride8", 0x0},
+    {"ride9", 0x0},
+    {"ride10", 0x0},
+    {"magnet_walk_metal", 0x2},
+    {"magnet_tiptoe", 0x1},
+    {"magnet_walk", 0x2},
+    {"magnet_run", 0x4},
+    {"magnet_jump", 0x0},
+    {"magnet_land", 0x0},
+    {"dropin", 0x0},
+    {"dropout", 0x0},
+    {"climb_up", 0x0},
+    {"climb_down", 0x0},
+    {"climb_left", 0x0},
+    {"climb_right", 0x0},
+    {"ai_override1", 0x0},
+    {"ai_override2", 0x0},
+    {"ai_override3", 0x0},
+    {"ai_override4", 0x0},
+    {"supercarry_putdown", 0x0},
+    {"supercarry_bash", 0x0},
+    {"supercarry_jump", 0x0},
+    {"supercarry_land", 0x0},
+    {"supercarry_fallland", 0x0},
+    {"ledge_grab", 0x0},
+    {"teeter", 0x0},
+    {"whip_start", 0x0},
+    {"whip_crack", 0x0},
+    {"whip_grab", 0x0},
+    {"whip_break", 0x0},
+    {"whip_swing_start", 0x0},
+    {"whip_swing_swing", 0x0},
+    {"whip_swing_jump", 0x0},
+    {"crawl_idle", 0x0},
+    {"crawl_move", 0x0},
+    {"swim", 0x0},
+    {"wade", 0x0},
+    {"dig", 0x0},
+    {"winch", 0x0},
+};
+ACTIONINFO_s *ActionInfo = &ActionInfoList[1];
+EXTRAACTIONDATA_s ExtraActionData[] = {
+    {"run1", 3},
+    {"idle1", 1},
+    {"interface1", 24},
+    {"deactivated1", 65},
+    {"fall1", 5},
+    {"fire1", 2},
+    {"force1", 11},
+    {"walk1", 0},
+    {"tiptoe1", 4},
+    {"jump1", 6},
+    {"land1", 7},
+    {"shoot1", 22},
+    {"block", 26},
+    {"takehit1", 61},
+    {"punch1", 81},
+    {"trooperaccess", 69},
+    {"throw1", 101},
+    {"hunteraccess", 70},
+    {"stun1", 167},
+    {"stunned1", 170},
+    {"ride", 108},
+    {"ride_buggy", 112},
+    {"ride_gyrocopter", 131},
+    {"ride_bantha", 112},
+    {"ride_dewback", 131},
+    {"ride_landspeeder", 132},
+    {"ride_tauntaun", 134},
+    {"ride_speederbike", 192},
+    {"ride_heavyrepeatingcannon", 193},
+    {"ride_troopercannon", 194},
+    {"rideluke", 195},
+    {"rideluke_running", 196},
+    {NULL, 0},
+};
 void *theGameThings = NULL;
 void *theThingManager = NULL;
 
@@ -968,6 +1480,7 @@ void (*InitBolt_AddMomentumType)(BOLT_s *, GameObject_s *, nuvec_s *) = NULL;
 void (*Bolt_HitPlatFn)(BOLT_s *) = NULL;
 void (*Bolt_HitCustomFn)(BOLT_s *, nuvec_s *) = NULL;
 void (*GameBlowUpBlownUpFn)(GIZMOBLOWUP_s *) = NULL;
+void (*GizmoBlowup_TransformDrawFn)(GIZMOBLOWUP_s *) = NULL;
 void (*GizObstacle_SetDefaultSFXFn)(void *, GIZOBSTACLE_s *) = NULL;
 // Original bss @0x6a3f54 / @0x6a3f50.
 i32 LoadPerm_LanguageSelect = 0;
@@ -981,8 +1494,8 @@ i32 IntroText_TextID = -1;
 i32 LANGUAGECOUNT = 6;
 // Original .data @0x667ce0: default language list, entries of {language, 0}
 // (8 bytes per entry); Text_LanguageList points at it (@0x667d30).
-LANGLISTENTRY Text_LanguageList_Default[6] = {{1, 0}, {2, 0}, {4, 0}, {5, 0}, {3, 0}, {8, 0}};
-LANGLISTENTRY *Text_LanguageList = Text_LanguageList_Default;
+LANGUAGEDATA Text_LanguageList_Default[6] = {{1, 0}, {2, 0}, {4, 0}, {5, 0}, {3, 0}, {8, 0}};
+LANGUAGEDATA *Text_LanguageList = Text_LanguageList_Default;
 // Original .data @0x667ca0/@0x667ca4.
 f32 INTROTEXT_Y = 0.175f;
 f32 INTROTEXT_SCALE = 0.79f;
@@ -1016,8 +1529,18 @@ i32 PauseMenus_Align;
 u8 MENUEXITR = 0xff;
 u8 MENUEXITG = 0xbf;
 u8 MENUEXITB;
-i32 pause_i_pad;
+i32 pause_i_pad = -1;
+i32 LEGOMENU_NEWGAME = -1;
+i32 LEGOMENU_PAUSEMAIN = -1;
+i32 LEGOMENU_PAUSECUT = -1;
+i32 LEGOMENU_CREDITS = -1;
 i32 MiniCutCam = 0;
+i32 LEGOCONTEXT_DROPIN = -1;
+i32 LEGOCONTEXT_DOOMED = -1;
+i32 LEGOCONTEXT_BEENTAKENOVER = -1;
+i32 LEGOCONTEXT_WEAPONIN = -1;
+i32 LEGOCONTEXT_WEAPONOUT = -1;
+i32 WeaponInOut_NoAIJediSfx = 0;
 i32 LEGOSPL_SPLIT = 0;
 GAMECUTSCENES_s game_cutscenes;
 float MiscTime = 0.0f;
@@ -1033,6 +1556,8 @@ i32 AddCoinDelay[2] = {0};
 i32 adaptivedifficulty[3] = {0};
 i32 back_rgba[2] = {0};
 TIMER BonusTimer = {0};
+TIMER JoinInTimer = {0};
+TIMER PauseTimer = {0};
 f32 brickimpactwait = 0.0f;
 i32 BURNOUTON = 1;
 VARIPTR characterbuffer_base = {0};
@@ -1058,9 +1583,14 @@ i32 enable_zero_frametime = 0;
 i32 FinishLoop_On = 1;
 i32 finishloop_backdroponly = 0;
 i32 noscenespecials = 0;
+i32 portals_enabled = 1;
+i32 portal_special_objects = 1;
+u8 PortalVisiFlags[0x271] = {0};
 LANGUAGEDATA Game_LanguageList[7] = {{1, 0}, {2, 0}, {4, 0}, {5, 0}, {3, 0}, {8, 0}, {-1, 0}};
 OPTIONSSAVE *Game_OptionsSave = NULL;
 i32 (*GamePads_IgnoreInputFn)(void) = NULL;
+void (*PauseGame_ExtraCodeFn)(void) = NULL;
+void (*ResumeGame_ExtraCodeFn)(void) = NULL;
 // Original bss @0x127bd00. Selected by ReadPad's successful normal path.
 struct nupad_s *pActivePad = NULL;
 i32 g_introState = 1;
@@ -1096,6 +1626,7 @@ i32 save_paused = 0;
 i32 screendump = 0;
 i32 SHADOWCALLS = 0;
 numtl_s *ShadowMat = NULL;
+i32 ShadowMode = 0;
 STATUSPACKET_s StatusPacket = {0};
 u8 status_plr_active[8] = {0};
 i32 SuperStory = 0;
@@ -1121,3 +1652,10 @@ i32 LEGO_AIPATHCNX_JUMP_NOW = 0;
 i32 LEGO_AIPATHCNX_DONT_JUMP_NOW = 0;
 i32 mechAutoJumpFlags = 0;
 i32 mechAutoJumpCantReachFlags = 0;
+
+// Shared symbols recovered from the original global data surface.
+i32 NetPaused = 0;
+f32 mtl_animation_speed_scale = 1.0f;
+u16 script_mask = 0xffff;
+i32 (*GizObstacle_CheckExcludeFlagsFn)(GIZOBSTACLE_s *, GameObject_s *) = NULL;
+void (*AIPathCnxHelperSysInitFn)(WORLDINFO_s *) = NULL;

@@ -53,9 +53,9 @@ static void Signal_SetGizmoVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static i32 Signal_GetPos(GIZMO *gizmo) {
+static NUVEC *Signal_GetPos(GIZMO *gizmo) {
     SIGNAL *signal = gizmo != NULL ? static_cast<SIGNAL *>(gizmo->object) : NULL;
-    return signal != NULL ? static_cast<i32>(reinterpret_cast<usize>(&signal->position)) : 0;
+    return signal != NULL ? &signal->position : NULL;
 }
 
 static void *Signals_AllocateProgressData(VARIPTR *buffer, VARIPTR *buffer_end) {

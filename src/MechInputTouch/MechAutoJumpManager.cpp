@@ -12,7 +12,15 @@ void MechAutoJumpManager::DeleteJumpConnectionsAndStreaks() {
 void MechAutoJumpManager::Init() {
 }
 
-MechAutoJumpManager::MechAutoJumpManager(AISYS_s *) {
+MechAutoJumpManager::MechAutoJumpManager(AISYS_s *ai_system) {
+    if (ai_system != nullptr) {
+        streak_time = 0.0f;
+        ai_sys = ai_system;
+        streaks.head = nullptr;
+        streaks.tail = nullptr;
+        jump_connections.head = nullptr;
+        jump_connections.tail = nullptr;
+    }
 }
 
 void MechAutoJumpManager::PreProcessJumpConnections() {

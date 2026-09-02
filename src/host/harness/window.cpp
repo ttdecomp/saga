@@ -13,6 +13,7 @@
 #include "gameapi/gui/apimenu.h"
 #include "gameframework/saveload.h"
 #include "host/harness/window.hpp"
+#include "host/platform/free_camera.hpp"
 #include "host/platform/graphics.hpp"
 #include "host/platform/input.hpp"
 #include "legoapi/characters/core/players.h"
@@ -23,6 +24,7 @@
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/nudlist.h"
 #include "nu2api/nu3d/nuscreen.hpp"
+#include "nu2api/nucore/nuanim3.h"
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nuplatform/nuplatform.h"
 
@@ -39,6 +41,7 @@ extern i32 abort_load;
 extern i32 reset_load;
 extern i32 CharacterDataLoad;
 extern i32 NewMode;
+extern i32 Paused;
 extern FadeSystem FadeSys;
 extern GAMEPAD_s GamePad[64];
 
@@ -86,6 +89,15 @@ namespace {
     constexpr Uint64 host_scripted_menu_settle_ms = 500;
     constexpr Uint64 host_scripted_play_move_ms = 2000;
     constexpr Uint64 host_scripted_play_settle_ms = 1000;
+    constexpr Uint64 host_scripted_play_jump_ready_timeout_ms = 2000;
+    constexpr Uint64 host_scripted_play_jump_ascent_ms = 200;
+    constexpr Uint64 host_scripted_play_second_jump_ms = 64;
+    constexpr Uint64 host_scripted_play_jump_timeout_ms = 2500;
+    constexpr Uint64 host_scripted_action_entry_timeout_ms = 2000;
+    constexpr Uint64 host_scripted_action_release_timeout_ms = 5000;
+    constexpr Uint64 host_scripted_pause_settle_ms = 500;
+    constexpr Uint64 host_camera_orbit_duration_ms = 10000;
+    constexpr f32 host_full_camera_rotation = 65536.0f;
 
     enum class HostScriptedInputStage {
         title,
@@ -97,20 +109,72 @@ namespace {
         cantina_wait,
         play_move,
         play_settle,
+        play_jump_ascent,
+        play_jump_second,
+        play_jump_land,
+        action_wait_entry,
+        action_wait_release,
+        pause_wait,
+        pause_settle,
+        pause_move_wait,
+        pause_return_wait,
+        resume_wait,
         complete,
     };
 
     struct HostScriptedPlaySnapshot {
         NUVEC player_position{};
         NUVEC camera_position{};
+        NUVEC camera_desired_position{};
+        NUVEC camera_socket_position{};
+        NUVEC camera_target{};
         NUVEC player_velocity{};
+        u16 camera_pitch = 0;
+        u16 camera_yaw = 0;
+        u16 camera_desired_pitch = 0;
+        u16 camera_desired_yaw = 0;
+        f32 camera_position_seek = 0.0f;
+        f32 camera_angle_seek = 0.0f;
+        f32 camera_look_pitch = 0.0f;
+        f32 camera_look_yaw = 0.0f;
+        i8 camera_mode = -1;
+        i8 camera_previous_mode = -1;
+        i8 camera_socket = -1;
+        i16 camera_socket_segment = -1;
+        f32 camera_socket_ratio = 0.0f;
         u16 player_yrot = 0;
+        u16 player_facing_angle = 0;
+        u16 player_input_angle = 0;
         u32 player_flags = 0;
         u32 player_motion_flags = 0;
         u32 buttons_held = 0;
+        u8 pad_runtime_flags = 0;
+        i8 player_context = -1;
+        i16 context_animation = -1;
+        i16 queued_context_animation = -1;
         f32 input_magnitude = 0.0f;
+        f32 animation_input_magnitude = 0.0f;
         f32 movement_speed = 0.0f;
         f32 frame_time = 0.0f;
+        f32 animation_time = 0.0f;
+        f32 animation_blend_elapsed = 0.0f;
+        f32 animation_blend_duration = 0.0f;
+        i16 animation_current = -1;
+        i16 animation_requested = -1;
+        i16 animation_previous = -1;
+        i16 animation_blend_source = -1;
+        i16 animation_blend_target = -1;
+        u8 animation_flags = 0;
+        u8 animation_blending = 0;
+        u8 animation_format_flags = 0;
+        u32 character_model_flags = 0;
+        u32 game_character_flags = 0;
+        i8 character_movement_type = -1;
+        CHARACTERUPDATEFN move_function = nullptr;
+        CHARACTERUPDATEFN animate_function = nullptr;
+        bool has_walk_animation = false;
+        bool has_idle_animation = false;
+        bool has_run_animation = false;
         i32 object_index = -1;
     };
 
@@ -119,6 +183,28 @@ namespace {
         navigating,
         confirmed,
     };
+
+    enum class HostJediAction : i16 {
+        combo_1_1 = 46,
+        combo_2_1 = 53,
+    };
+
+    enum class HostJumpAction : i16 {
+        land = 7,
+        second_jump = 9,
+        land_after_fall = 10,
+        third_jump = 14,
+    };
+
+    static bool host_is_jedi_combo_action(i16 action) {
+        return action == static_cast<i16>(HostJediAction::combo_1_1) ||
+               action == static_cast<i16>(HostJediAction::combo_2_1);
+    }
+
+    static bool host_is_jump_landing_action(i16 action) {
+        return action == static_cast<i16>(HostJumpAction::land) ||
+               action == static_cast<i16>(HostJumpAction::land_after_fall);
+    }
 
     static bool host_finite_vec(const NUVEC &vec) {
         return std::isfinite(vec.x) && std::isfinite(vec.y) && std::isfinite(vec.z);
@@ -155,17 +241,67 @@ namespace {
                waiting_for_level == -1 && waiting_for_character == -1 && waiting_for_new_level == 0 && abort_load == 0;
     }
 
+    static bool host_player_can_start_jump(const GameObject_s *object) {
+        if (object == nullptr || object->character_context != CHARACTER_CONTEXT_NONE) {
+            return false;
+        }
+
+        // JumpCode accepts a grounded character, or the short grace period
+        // established by PreResetCode after the last grounded frame.
+        return object->apiobj.field_0x27d != 0 || object->ground_contact_grace_timer > 0.0f;
+    }
+
     static HostScriptedPlaySnapshot host_scripted_play_snapshot() {
         HostScriptedPlaySnapshot snapshot;
         snapshot.player_position = Player[0]->apiobj.position;
-        snapshot.player_velocity = {Player[0]->apiobj.field_0x68, Player[0]->apiobj.field_0x6c,
-                                    Player[0]->apiobj.field_0x70};
+        snapshot.player_velocity = Player[0]->apiobj.velocity;
         snapshot.player_yrot = Player[0]->yrot;
+        snapshot.player_facing_angle = Player[0]->apiobj.facing_angle;
+        snapshot.player_input_angle = Player[0]->current_input_angle;
         snapshot.player_flags = Player[0]->apiobj.field_0x1f8;
         snapshot.player_motion_flags = Player[0]->apiobj.field_0x1f4;
         snapshot.buttons_held = GamePad[0].buttons_held;
+        snapshot.pad_runtime_flags = GamePad[0].allocated_5a;
+        snapshot.player_context = Player[0]->character_context;
+        snapshot.context_animation = Player[0]->context_animation;
+        snapshot.queued_context_animation = Player[0]->queued_context_animation;
         snapshot.input_magnitude = GamePad[0].input_magnitude;
+        snapshot.animation_input_magnitude = GamePad[0].animation_input_magnitude;
         snapshot.frame_time = FRAMETIME;
+        const ANIMPACKET_s &animation = Player[0]->apiobj.anim_packet;
+        snapshot.animation_time = animation.current_time;
+        snapshot.animation_blend_elapsed = animation.blend_elapsed;
+        snapshot.animation_blend_duration = animation.blend_duration;
+        snapshot.animation_current = animation.animation_index;
+        snapshot.animation_requested = animation.requested_animation;
+        snapshot.animation_previous = animation.previous_animation;
+        snapshot.animation_blend_source = animation.blend_animation_a;
+        snapshot.animation_blend_target = animation.blend_animation_b;
+        snapshot.animation_flags = animation.flags;
+        snapshot.animation_blending = animation.blending;
+        if (Player[0]->apiobj.character_data != nullptr) {
+            CHARACTERDATA *character = Player[0]->apiobj.character_data;
+            snapshot.character_model_flags = character->model_flags;
+            snapshot.move_function = character->move_fn;
+            snapshot.animate_function = character->animate_fn;
+            if (character->field11_0x24 != nullptr) {
+                GAMECHARACTERDATA *game_character = static_cast<GAMECHARACTERDATA *>(character->field11_0x24);
+                snapshot.game_character_flags = game_character->flags_090;
+                snapshot.character_movement_type = static_cast<i8>(game_character->field275_0x116);
+            }
+        }
+        if (Player[0]->apiobj.character_model != nullptr &&
+            Player[0]->apiobj.character_model->model_data_b != nullptr) {
+            void **animations = Player[0]->apiobj.character_model->model_data_b;
+            snapshot.has_walk_animation = animations[0] != nullptr;
+            snapshot.has_idle_animation = animations[1] != nullptr;
+            snapshot.has_run_animation = animations[3] != nullptr;
+            if (animation.animation_index >= 0 && animations[animation.animation_index] != nullptr) {
+                const ani3_animheader_s *header =
+                    static_cast<ani3_animheader_s *>(animations[animation.animation_index]);
+                snapshot.animation_format_flags = header->format_flags;
+            }
+        }
         if (Obj != nullptr && Player[0] >= Obj && Player[0] < Obj + HIGHGAMEOBJECT) {
             snapshot.object_index = static_cast<i32>(Player[0] - Obj);
         }
@@ -174,7 +310,54 @@ namespace {
                 static_cast<GAMECHARACTERDATA *>(Player[0]->apiobj.character_data->field11_0x24)->movement_speed;
         }
         snapshot.camera_position = {global_camera.mtx.m30, global_camera.mtx.m31, global_camera.mtx.m32};
+        if (GameCam != nullptr) {
+            snapshot.camera_target = GameCam->target;
+            snapshot.camera_desired_position = GameCam->desired_position;
+            snapshot.camera_socket_position = GameCam->sock_position.camera_position;
+            snapshot.camera_pitch = static_cast<u16>(GameCam->pitch);
+            snapshot.camera_yaw = static_cast<u16>(GameCam->yaw);
+            snapshot.camera_desired_pitch = GameCam->desired_pitch;
+            snapshot.camera_desired_yaw = GameCam->desired_yaw;
+            snapshot.camera_position_seek = GameCam->position_seek;
+            snapshot.camera_angle_seek = GameCam->angle_seek;
+            snapshot.camera_look_pitch = GameCam->field_0x214;
+            snapshot.camera_look_yaw = GameCam->field_0x218;
+            snapshot.camera_mode = GameCam->mode;
+            snapshot.camera_previous_mode = GameCam->previous_mode;
+            snapshot.camera_socket = GameCam->sock_position.location.sock;
+            snapshot.camera_socket_segment = GameCam->sock_position.location.segment;
+            snapshot.camera_socket_ratio = GameCam->sock_position.ratio;
+        }
         return snapshot;
+    }
+
+    static void host_log_camera_trace(const char *stage, const HostScriptedPlaySnapshot &snapshot) {
+        LOG_INFO("scripted camera %s: rendered=(%.3f,%.3f,%.3f) desired=(%.3f,%.3f,%.3f) "
+                 "socket-position=(%.3f,%.3f,%.3f) socket=%d segment=%d ratio=%.4f look=(%.1f,%.1f)",
+                 stage, snapshot.camera_position.x, snapshot.camera_position.y, snapshot.camera_position.z,
+                 snapshot.camera_desired_position.x, snapshot.camera_desired_position.y,
+                 snapshot.camera_desired_position.z, snapshot.camera_socket_position.x,
+                 snapshot.camera_socket_position.y, snapshot.camera_socket_position.z, snapshot.camera_socket,
+                 snapshot.camera_socket_segment, snapshot.camera_socket_ratio, snapshot.camera_look_pitch,
+                 snapshot.camera_look_yaw);
+    }
+
+    static void host_log_animation_trace(const char *stage, const HostScriptedPlaySnapshot &snapshot) {
+        LOG_INFO("scripted animation %s: current=%d requested=%d previous=%d time=%.3f flags=0x%x format=0x%x "
+                 "blend=(active=%u,source=%d,target=%d,elapsed=%.3f,duration=%.3f) "
+                 "movement=(context=%d,pad-flags=0x%x,input=%.3f,animation-input=%.3f,facing=%u,input-angle=%u) "
+                 "character=(model-flags=0x%x,game-flags=0x%x,movement-type=%d,move=%p,animate=%p) "
+                 "available=(walk=%d,idle=%d,run=%d)",
+                 stage, snapshot.animation_current, snapshot.animation_requested, snapshot.animation_previous,
+                 snapshot.animation_time, snapshot.animation_flags, snapshot.animation_format_flags,
+                 snapshot.animation_blending, snapshot.animation_blend_source, snapshot.animation_blend_target,
+                 snapshot.animation_blend_elapsed, snapshot.animation_blend_duration, snapshot.player_context,
+                 snapshot.pad_runtime_flags, snapshot.input_magnitude, snapshot.animation_input_magnitude,
+                 snapshot.player_facing_angle, snapshot.player_input_angle, snapshot.character_model_flags,
+                 snapshot.game_character_flags, snapshot.character_movement_type,
+                 reinterpret_cast<void *>(snapshot.move_function), reinterpret_cast<void *>(snapshot.animate_function),
+                 snapshot.has_walk_animation ? 1 : 0, snapshot.has_idle_animation ? 1 : 0,
+                 snapshot.has_run_animation ? 1 : 0);
     }
 
     static HostScriptedMenuAction host_scripted_menu_select(i32 row, i32 column, Uint64 elapsed_ticks,
@@ -334,6 +517,7 @@ namespace {
 
 i32 host_run_window(const HostWindowOptions &options) {
     HostSetReadbackEnabled(options.capture);
+    HostFreeCameraConfigure(options.camera_free);
     host_sdl_init(options.offscreen, options.mute);
     const char *documents_path = ".work/host-documents/";
     char scripted_documents_path[256];
@@ -392,16 +576,31 @@ i32 host_run_window(const HostWindowOptions &options) {
     bool image_changing = false;
     HostScriptedInputStage scripted_stage = HostScriptedInputStage::title;
     Uint64 scripted_stage_ticks = 0;
+    Uint64 scripted_jump_ready_wait_ticks = 0;
     i32 scripted_last_menu = -2;
     Uint64 scripted_menu_since = 0;
     HostScriptedPlaySnapshot scripted_play_before{};
     HostScriptedPlaySnapshot scripted_play_during{};
     HostScriptedPlaySnapshot scripted_play_after{};
+    HostScriptedPlaySnapshot scripted_play_jump_start{};
+    HostScriptedPlaySnapshot scripted_play_jump_ascent{};
+    HostScriptedPlaySnapshot scripted_play_jump_landed{};
+    HostScriptedPlaySnapshot scripted_action_active{};
+    HostScriptedPlaySnapshot scripted_action_released{};
     bool scripted_play_started = false;
     bool scripted_play_finished = false;
     bool scripted_play_movement_observed = false;
+    bool scripted_play_jump_observed = false;
+    bool scripted_action_observed = false;
+    bool scripted_action_release_observed = false;
+    i16 scripted_action = -1;
+    i16 scripted_pause_initial_row = 0;
     bool scripted_play_input_held = false;
-    u32 keyboard_held_buttons = 0;
+    bool camera_orbit_started = false;
+    bool camera_orbit_finished = false;
+    Uint64 camera_orbit_start_ticks = 0;
+    f32 camera_orbit_base_yaw = 0.0f;
+    u32 escape_held_button = 0;
     std::vector<u8> pixels;
     i32 capture_width = 0;
     i32 capture_height = 0;
@@ -425,58 +624,60 @@ i32 host_run_window(const HostWindowOptions &options) {
                                host_window_height);
 #endif
             } else if (event.type == SDL_EVENT_KEY_DOWN) {
-                u32 button = 0;
-                if (event.key.key == SDLK_RETURN || event.key.key == SDLK_SPACE) {
 #ifdef __EMSCRIPTEN__
+                if (event.key.key == SDLK_RETURN || event.key.key == SDLK_SPACE) {
                     HostInputTap(0, GAMEPAD_START | GAMEPAD_JUMP);
-                    continue;
+                }
 #else
-                    button = event.key.key == SDLK_RETURN ? GAMEPAD_START | GAMEPAD_JUMP : GAMEPAD_JUMP;
+                if (event.key.key == SDLK_ESCAPE) {
+                    if (escape_held_button == 0) {
+                        const i32 menu_id = host_menu_id();
+                        const bool opens_pause = Paused == 0 && menu_id == -1;
+                        const bool resumes_pause = Paused != 0 && menu_id == LEGO_MENU_PAUSE_MAIN;
+                        escape_held_button = opens_pause || resumes_pause ? GAMEPAD_START : GAMEPAD_TAG;
+                    }
+                }
 #endif
-                } else if (event.key.key == SDLK_UP || event.key.key == SDLK_W) {
-                    button = GAMEPAD_DUP;
-                } else if (event.key.key == SDLK_DOWN || event.key.key == SDLK_S) {
-                    button = GAMEPAD_DDOWN;
-                } else if (event.key.key == SDLK_LEFT || event.key.key == SDLK_A) {
-                    button = GAMEPAD_DLEFT;
-                } else if (event.key.key == SDLK_RIGHT || event.key.key == SDLK_D) {
-                    button = GAMEPAD_DRIGHT;
-                } else if (event.key.key == SDLK_ESCAPE) {
-                    button = GAMEPAD_TAG;
-                }
-                if (button != 0) {
-                    keyboard_held_buttons |= button;
-                    HostInputSetHeld(0, keyboard_held_buttons);
-                }
             } else if (event.type == SDL_EVENT_KEY_UP) {
-                u32 button = 0;
-                if (event.key.key == SDLK_RETURN) {
-#ifndef __EMSCRIPTEN__
-                    button = GAMEPAD_START | GAMEPAD_JUMP;
-#endif
-                } else if (event.key.key == SDLK_SPACE) {
-#ifndef __EMSCRIPTEN__
-                    button = GAMEPAD_JUMP;
-#endif
-                } else if (event.key.key == SDLK_UP || event.key.key == SDLK_W) {
-                    button = GAMEPAD_DUP;
-                } else if (event.key.key == SDLK_DOWN || event.key.key == SDLK_S) {
-                    button = GAMEPAD_DDOWN;
-                } else if (event.key.key == SDLK_LEFT || event.key.key == SDLK_A) {
-                    button = GAMEPAD_DLEFT;
-                } else if (event.key.key == SDLK_RIGHT || event.key.key == SDLK_D) {
-                    button = GAMEPAD_DRIGHT;
-                } else if (event.key.key == SDLK_ESCAPE) {
-                    button = GAMEPAD_TAG;
+                if (event.key.key == SDLK_ESCAPE) {
+                    escape_held_button = 0;
                 }
-                if (button != 0) {
-                    keyboard_held_buttons &= ~button;
-                    HostInputSetHeld(0, keyboard_held_buttons);
-                }
+            } else if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST) {
+                escape_held_button = 0;
             }
         }
         if (quit_requested) {
             break;
+        }
+
+        u32 keyboard_buttons = escape_held_button;
+        if (!options.offscreen) {
+            const bool *keyboard = SDL_GetKeyboardState(nullptr);
+#ifndef __EMSCRIPTEN__
+            // On WebAssembly RETURN/SPACE arrive as taps from the key events
+            // above, so they must not also be polled as held buttons.
+            keyboard_buttons |= keyboard[SDL_SCANCODE_RETURN] ? GAMEPAD_START | GAMEPAD_JUMP : 0;
+            keyboard_buttons |= keyboard[SDL_SCANCODE_SPACE] ? GAMEPAD_JUMP : 0;
+#endif
+            keyboard_buttons |= keyboard[SDL_SCANCODE_UP] || keyboard[SDL_SCANCODE_W] ? GAMEPAD_DUP : 0;
+            keyboard_buttons |= keyboard[SDL_SCANCODE_DOWN] || keyboard[SDL_SCANCODE_S] ? GAMEPAD_DDOWN : 0;
+            keyboard_buttons |= keyboard[SDL_SCANCODE_LEFT] || keyboard[SDL_SCANCODE_A] ? GAMEPAD_DLEFT : 0;
+            keyboard_buttons |= keyboard[SDL_SCANCODE_RIGHT] || keyboard[SDL_SCANCODE_D] ? GAMEPAD_DRIGHT : 0;
+            keyboard_buttons |= keyboard[SDL_SCANCODE_E] ? GAMEPAD_ACTION : 0;
+            keyboard_buttons |= keyboard[SDL_SCANCODE_F] ? GAMEPAD_SPECIAL : 0;
+        }
+        HostInputSetKeyboardHeld(0, keyboard_buttons);
+
+        if (options.camera_free) {
+            const bool *keyboard = SDL_GetKeyboardState(nullptr);
+            u32 controls = 0;
+            controls |= keyboard[SDL_SCANCODE_KP_4] ? HOST_FREE_CAMERA_NUMPAD_4 : 0;
+            controls |= keyboard[SDL_SCANCODE_KP_5] ? HOST_FREE_CAMERA_NUMPAD_5 : 0;
+            controls |= keyboard[SDL_SCANCODE_KP_6] ? HOST_FREE_CAMERA_NUMPAD_6 : 0;
+            controls |= keyboard[SDL_SCANCODE_KP_8] ? HOST_FREE_CAMERA_NUMPAD_8 : 0;
+            controls |= keyboard[SDL_SCANCODE_LSHIFT] || keyboard[SDL_SCANCODE_RSHIFT] ? HOST_FREE_CAMERA_SHIFT : 0;
+            HostFreeCameraSetControls(controls);
+            HostFreeCameraSetReady(host_scripted_play_ready());
         }
 
         if (host_numain_done.load(std::memory_order_acquire)) {
@@ -498,7 +699,10 @@ i32 host_run_window(const HostWindowOptions &options) {
             }
 
             if (scripted_stage == HostScriptedInputStage::title && menu_id == 0 &&
-                elapsed_ticks >= host_scripted_title_input_ms) {
+                elapsed_ticks >= host_scripted_title_input_ms && GameTimer.time_elapsed >= 4.0f) {
+                // This deliberately sends one edge. A connected controller's
+                // first press must reach the title menu rather than being
+                // consumed by host device discovery/remapping.
                 HostInputTap(0, GAMEPAD_START | GAMEPAD_JUMP);
                 scripted_stage = HostScriptedInputStage::new_or_load;
                 scripted_stage_ticks = elapsed_ticks;
@@ -572,19 +776,28 @@ i32 host_run_window(const HostWindowOptions &options) {
                     scripted_stage =
                         options.script_play ? HostScriptedInputStage::cantina_wait : HostScriptedInputStage::complete;
                 }
-            } else if (scripted_stage == HostScriptedInputStage::cantina_wait && host_scripted_play_ready()) {
+            } else if (scripted_stage == HostScriptedInputStage::cantina_wait && host_scripted_play_ready() &&
+                       (options.script_action ? Player[0]->apiobj.field_0x27d != 0 &&
+                                                    Player[0]->character_context == CHARACTER_CONTEXT_NONE
+                                              : host_player_can_start_jump(Player[0]))) {
                 scripted_play_before = host_scripted_play_snapshot();
+                host_log_camera_trace("before", scripted_play_before);
+                host_log_animation_trace("before", scripted_play_before);
                 scripted_play_started = true;
                 const CHARACTERMODEL_s *player_model = Player[0]->apiobj.character_model;
                 LOG_INFO("scripted play: cantina ready level=%s idx=%d area=%d player=%p pad=%p pad0=%p "
-                         "flags=(state=0x%x,motion=0x%x) position=(%.3f,%.3f,%.3f) "
+                         "flags=(state=0x%x,motion=0x%x,contact=0x%x,terrain=0x%x) "
+                         "floor=(shadow=%.3f,bottom=%.3f,radius=%.3f) position=(%.3f,%.3f,%.3f) "
                          "velocity=(%.3f,%.3f,%.3f) yrot=%u "
                          "input=(held=0x%x,magnitude=%.3f,speed=%.3f) objects=(base=%p,high=%d,index=%d) "
                          "render=(model=%p,hierarchy=%p,draw=%u,mode=%u,scale=%.3f) "
-                         "frametime=%.6f camera=(%.3f,%.3f,%.3f)",
+                         "frametime=%.6f camera=(%.3f,%.3f,%.3f)->(%.3f,%.3f,%.3f) "
+                         "angles=(%u,%u)->(%u,%u) seek=(%.3f,%.3f) mode=%d/%d",
                          WORLD->current_level->name, WORLD->current_level->idx, WORLD->area->index, Player[0],
                          Player[0]->pad_gamepad, &GamePad[0], scripted_play_before.player_flags,
-                         scripted_play_before.player_motion_flags, scripted_play_before.player_position.x,
+                         scripted_play_before.player_motion_flags, Player[0]->apiobj.field_0x27d,
+                         Player[0]->field_0x105c, Player[0]->apiobj.field_0x218, Player[0]->apiobj.collision_min.y,
+                         Player[0]->apiobj.collision_radius, scripted_play_before.player_position.x,
                          scripted_play_before.player_position.y, scripted_play_before.player_position.z,
                          scripted_play_before.player_velocity.x, scripted_play_before.player_velocity.y,
                          scripted_play_before.player_velocity.z, scripted_play_before.player_yrot,
@@ -593,24 +806,121 @@ i32 host_run_window(const HostWindowOptions &options) {
                          player_model, player_model != nullptr ? player_model->hierarchy : nullptr,
                          Player[0]->apiobj.model_draw_result, Player[0]->field_0x1086, Player[0]->apiobj.field_0xa8,
                          scripted_play_before.frame_time, scripted_play_before.camera_position.x,
-                         scripted_play_before.camera_position.y, scripted_play_before.camera_position.z);
-                HostInputSetHeld(0, GAMEPAD_DRIGHT);
-                scripted_play_input_held = true;
-                scripted_stage = HostScriptedInputStage::play_move;
+                         scripted_play_before.camera_position.y, scripted_play_before.camera_position.z,
+                         scripted_play_before.camera_target.x, scripted_play_before.camera_target.y,
+                         scripted_play_before.camera_target.z, scripted_play_before.camera_pitch,
+                         scripted_play_before.camera_yaw, scripted_play_before.camera_desired_pitch,
+                         scripted_play_before.camera_desired_yaw, scripted_play_before.camera_position_seek,
+                         scripted_play_before.camera_angle_seek, scripted_play_before.camera_mode,
+                         scripted_play_before.camera_previous_mode);
+                if (options.script_action) {
+                    LOG_INFO("scripted action: tapping GAMEPAD_ACTION (0x%x)", GAMEPAD_ACTION);
+                    HostInputTap(0, GAMEPAD_ACTION);
+                    scripted_stage = HostScriptedInputStage::action_wait_entry;
+                } else {
+                    scripted_play_jump_start = scripted_play_before;
+                    HostInputTap(0, GAMEPAD_JUMP);
+                    scripted_stage = HostScriptedInputStage::play_jump_ascent;
+                }
                 scripted_stage_ticks = elapsed_ticks;
+            } else if (scripted_stage == HostScriptedInputStage::cantina_wait && !options.script_action &&
+                       host_scripted_play_ready()) {
+                if (scripted_jump_ready_wait_ticks == 0) {
+                    scripted_jump_ready_wait_ticks = elapsed_ticks;
+                } else if (elapsed_ticks >= scripted_jump_ready_wait_ticks + host_scripted_play_jump_ready_timeout_ms) {
+                    LOG_ERR("scripted play: player did not become jump-eligible within %llu ms; "
+                            "position-y=%.3f velocity-y=%.3f contact=0x%x terrain=0x%x "
+                            "contact-grace=%.3f context=%d",
+                            static_cast<unsigned long long>(host_scripted_play_jump_ready_timeout_ms),
+                            Player[0]->apiobj.position.y, Player[0]->apiobj.velocity.y, Player[0]->apiobj.field_0x27d,
+                            Player[0]->field_0x105c, Player[0]->ground_contact_grace_timer,
+                            Player[0]->character_context);
+                    scripted_play_finished = true;
+                    scripted_stage = HostScriptedInputStage::complete;
+                    scripted_stage_ticks = elapsed_ticks;
+                }
+            } else if (scripted_stage == HostScriptedInputStage::action_wait_entry && Player[0] != nullptr) {
+                const ANIMPACKET_s &animation = Player[0]->apiobj.anim_packet;
+                const i16 selected_action = Player[0]->context_animation;
+                const bool animation_active =
+                    animation.animation_index == selected_action || animation.requested_animation == selected_action;
+                if (Player[0]->character_context == CHARACTER_CONTEXT_COMBO &&
+                    host_is_jedi_combo_action(selected_action) &&
+                    Player[0]->queued_context_animation == selected_action && animation_active) {
+                    scripted_action = selected_action;
+                    scripted_action_active = host_scripted_play_snapshot();
+                    scripted_action_observed = true;
+                    LOG_INFO("scripted action: active context=%d action=%d queued=%d animation=%d/%d flags=0x%x",
+                             scripted_action_active.player_context, scripted_action_active.context_animation,
+                             scripted_action_active.queued_context_animation, scripted_action_active.animation_current,
+                             scripted_action_active.animation_requested, scripted_action_active.animation_flags);
+                    scripted_stage = HostScriptedInputStage::action_wait_release;
+                    scripted_stage_ticks = elapsed_ticks;
+                } else if (elapsed_ticks >= scripted_stage_ticks + host_scripted_action_entry_timeout_ms) {
+                    LOG_ERR("scripted action: combo context/action did not become active within %llu ms; "
+                            "context=%d selected=%d queued=%d animation=%d/%d contact=0x%x terrain=0x%x "
+                            "buttons=(held=0x%x,pressed=0x%x) flags=(api=0x%x,e20=0x%x,e22=0x%x)",
+                            static_cast<unsigned long long>(host_scripted_action_entry_timeout_ms),
+                            Player[0]->character_context, Player[0]->context_animation,
+                            Player[0]->queued_context_animation, animation.animation_index,
+                            animation.requested_animation, Player[0]->apiobj.field_0x27d, Player[0]->field_0x105c,
+                            Player[0]->pad_gamepad->buttons_held, Player[0]->pad_gamepad->buttons_pressed,
+                            Player[0]->apiobj.flags_low, Player[0]->field_0xe20, Player[0]->field_0xe22);
+                    scripted_play_finished = true;
+                    scripted_stage = HostScriptedInputStage::complete;
+                    scripted_stage_ticks = elapsed_ticks;
+                }
+            } else if (scripted_stage == HostScriptedInputStage::action_wait_release && Player[0] != nullptr) {
+                if (Player[0]->character_context == CHARACTER_CONTEXT_NONE &&
+                    (Player[0]->field_0xe20 & GAMEOBJECT_E20_FLAG_COMBO_MOVEMENT) == 0) {
+                    scripted_action_released = host_scripted_play_snapshot();
+                    scripted_action_release_observed = scripted_action_observed &&
+                                                       host_is_jedi_combo_action(scripted_action) &&
+                                                       host_finite_vec(scripted_action_released.player_position);
+                    LOG_INFO("scripted action: released action=%d context=%d animation=%d/%d "
+                             "combo-movement=%d observed=%d",
+                             scripted_action, scripted_action_released.player_context,
+                             scripted_action_released.animation_current, scripted_action_released.animation_requested,
+                             (Player[0]->field_0xe20 & GAMEOBJECT_E20_FLAG_COMBO_MOVEMENT) != 0,
+                             scripted_action_release_observed ? 1 : 0);
+                    scripted_play_finished = true;
+                    scripted_stage = HostScriptedInputStage::complete;
+                    scripted_stage_ticks = elapsed_ticks;
+                } else if (elapsed_ticks >= scripted_stage_ticks + host_scripted_action_release_timeout_ms) {
+                    LOG_ERR("scripted action: combo did not release within %llu ms; context=%d action=%d "
+                            "animation=%d/%d flags=0x%x",
+                            static_cast<unsigned long long>(host_scripted_action_release_timeout_ms),
+                            Player[0]->character_context, scripted_action,
+                            Player[0]->apiobj.anim_packet.animation_index,
+                            Player[0]->apiobj.anim_packet.requested_animation, Player[0]->apiobj.anim_packet.flags);
+                    scripted_play_finished = true;
+                    scripted_stage = HostScriptedInputStage::complete;
+                    scripted_stage_ticks = elapsed_ticks;
+                }
             } else if (scripted_stage == HostScriptedInputStage::play_move &&
                        elapsed_ticks >= scripted_stage_ticks + host_scripted_play_move_ms) {
                 scripted_play_during = host_scripted_play_snapshot();
+                host_log_camera_trace("during", scripted_play_during);
+                host_log_animation_trace("during", scripted_play_during);
                 LOG_INFO("scripted play: during DRIGHT flags=(state=0x%x,motion=0x%x) "
                          "position=(%.3f,%.3f,%.3f) velocity=(%.3f,%.3f,%.3f) "
-                         "input=(held=0x%x,magnitude=%.3f,speed=%.3f) object-index=%d frametime=%.6f",
+                         "input=(held=0x%x,magnitude=%.3f,speed=%.3f) object-index=%d frametime=%.6f "
+                         "camera=(%.3f,%.3f,%.3f)->(%.3f,%.3f,%.3f) angles=(%u,%u)->(%u,%u) "
+                         "seek=(%.3f,%.3f) mode=%d/%d",
                          scripted_play_during.player_flags, scripted_play_during.player_motion_flags,
                          scripted_play_during.player_position.x, scripted_play_during.player_position.y,
                          scripted_play_during.player_position.z, scripted_play_during.player_velocity.x,
                          scripted_play_during.player_velocity.y, scripted_play_during.player_velocity.z,
                          scripted_play_during.buttons_held, scripted_play_during.input_magnitude,
                          scripted_play_during.movement_speed, scripted_play_during.object_index,
-                         scripted_play_during.frame_time);
+                         scripted_play_during.frame_time, scripted_play_during.camera_position.x,
+                         scripted_play_during.camera_position.y, scripted_play_during.camera_position.z,
+                         scripted_play_during.camera_target.x, scripted_play_during.camera_target.y,
+                         scripted_play_during.camera_target.z, scripted_play_during.camera_pitch,
+                         scripted_play_during.camera_yaw, scripted_play_during.camera_desired_pitch,
+                         scripted_play_during.camera_desired_yaw, scripted_play_during.camera_position_seek,
+                         scripted_play_during.camera_angle_seek, scripted_play_during.camera_mode,
+                         scripted_play_during.camera_previous_mode);
                 HostInputSetHeld(0, 0);
                 scripted_play_input_held = false;
                 scripted_stage = HostScriptedInputStage::play_settle;
@@ -618,7 +928,8 @@ i32 host_run_window(const HostWindowOptions &options) {
             } else if (scripted_stage == HostScriptedInputStage::play_settle &&
                        elapsed_ticks >= scripted_stage_ticks + host_scripted_play_settle_ms) {
                 scripted_play_after = host_scripted_play_snapshot();
-                scripted_play_finished = true;
+                host_log_camera_trace("after", scripted_play_after);
+                host_log_animation_trace("after", scripted_play_after);
                 const NUVEC player_delta = {
                     scripted_play_after.player_position.x - scripted_play_before.player_position.x,
                     scripted_play_after.player_position.y - scripted_play_before.player_position.y,
@@ -636,7 +947,8 @@ i32 host_run_window(const HostWindowOptions &options) {
                          "after position=(%.3f,%.3f,%.3f) velocity=(%.3f,%.3f,%.3f) yrot=%u "
                          "input=(held=0x%x,magnitude=%.3f,speed=%.3f) camera=(%.3f,%.3f,%.3f); "
                          "deltas player=(%.3f,%.3f,%.3f) yrot=%d camera=(%.3f,%.3f,%.3f); "
-                         "movement_observed=%d",
+                         "camera-target=(%.3f,%.3f,%.3f) angles=(%u,%u)->(%u,%u) seek=(%.3f,%.3f) "
+                         "mode=%d/%d movement_observed=%d",
                          static_cast<unsigned long long>(host_scripted_play_move_ms),
                          scripted_play_after.player_position.x, scripted_play_after.player_position.y,
                          scripted_play_after.player_position.z, scripted_play_after.player_velocity.x,
@@ -647,18 +959,159 @@ i32 host_run_window(const HostWindowOptions &options) {
                          scripted_play_after.camera_position.z, player_delta.x, player_delta.y, player_delta.z,
                          static_cast<i32>(scripted_play_after.player_yrot) -
                              static_cast<i32>(scripted_play_before.player_yrot),
-                         camera_delta.x, camera_delta.y, camera_delta.z, scripted_play_movement_observed ? 1 : 0);
+                         camera_delta.x, camera_delta.y, camera_delta.z, scripted_play_after.camera_target.x,
+                         scripted_play_after.camera_target.y, scripted_play_after.camera_target.z,
+                         scripted_play_after.camera_pitch, scripted_play_after.camera_yaw,
+                         scripted_play_after.camera_desired_pitch, scripted_play_after.camera_desired_yaw,
+                         scripted_play_after.camera_position_seek, scripted_play_after.camera_angle_seek,
+                         scripted_play_after.camera_mode, scripted_play_after.camera_previous_mode,
+                         scripted_play_movement_observed ? 1 : 0);
+                if (options.script_pause) {
+                    HostInputTap(0, GAMEPAD_START);
+                    scripted_stage = HostScriptedInputStage::pause_wait;
+                } else {
+                    scripted_play_finished = true;
+                    scripted_stage = HostScriptedInputStage::complete;
+                }
+                scripted_stage_ticks = elapsed_ticks;
+            } else if (scripted_stage == HostScriptedInputStage::play_jump_ascent &&
+                       elapsed_ticks >= scripted_stage_ticks + host_scripted_play_jump_ascent_ms) {
+                scripted_play_jump_ascent = host_scripted_play_snapshot();
+                host_log_animation_trace("jump-ascent", scripted_play_jump_ascent);
+                const f32 ascent =
+                    scripted_play_jump_ascent.player_position.y - scripted_play_jump_start.player_position.y;
+                const bool jump_animation = scripted_play_jump_ascent.animation_current == 6 ||
+                                            scripted_play_jump_ascent.animation_requested == 6;
+                scripted_play_jump_observed = ascent > 0.02f && scripted_play_jump_ascent.player_velocity.y > 0.0f &&
+                                              scripted_play_jump_ascent.player_context == 0 && jump_animation;
+                LOG_INFO("scripted play: jump ascent position-y=%.3f delta-y=%.3f velocity-y=%.3f "
+                         "context=%d animation=%d/%d observed=%d",
+                         scripted_play_jump_ascent.player_position.y, ascent,
+                         scripted_play_jump_ascent.player_velocity.y, scripted_play_jump_ascent.player_context,
+                         scripted_play_jump_ascent.animation_current, scripted_play_jump_ascent.animation_requested,
+                         scripted_play_jump_observed ? 1 : 0);
+                HostInputTap(0, GAMEPAD_JUMP);
+                scripted_stage = HostScriptedInputStage::play_jump_second;
+                scripted_stage_ticks = elapsed_ticks;
+            } else if (scripted_stage == HostScriptedInputStage::play_jump_second &&
+                       elapsed_ticks >= scripted_stage_ticks + host_scripted_play_second_jump_ms) {
+                const HostScriptedPlaySnapshot second_jump = host_scripted_play_snapshot();
+                const bool second_jump_animation =
+                    second_jump.animation_current == static_cast<i16>(HostJumpAction::second_jump) ||
+                    second_jump.animation_requested == static_cast<i16>(HostJumpAction::second_jump) ||
+                    second_jump.animation_current == static_cast<i16>(HostJumpAction::third_jump) ||
+                    second_jump.animation_requested == static_cast<i16>(HostJumpAction::third_jump);
+                const bool second_jump_observed = Player[0]->jump_sequence == 2 &&
+                                                  second_jump.player_context == CHARACTER_CONTEXT_JUMP &&
+                                                  second_jump.player_velocity.y > 0.0f && second_jump_animation;
+                scripted_play_jump_observed = scripted_play_jump_observed && second_jump_observed;
+                LOG_INFO("scripted play: second jump position-y=%.3f velocity-y=%.3f sequence=%u "
+                         "context=%d animation=%d/%d observed=%d",
+                         second_jump.player_position.y, second_jump.player_velocity.y, Player[0]->jump_sequence,
+                         second_jump.player_context, second_jump.animation_current, second_jump.animation_requested,
+                         second_jump_observed ? 1 : 0);
+                scripted_stage = HostScriptedInputStage::play_jump_land;
+                scripted_stage_ticks = elapsed_ticks;
+            } else if (scripted_stage == HostScriptedInputStage::play_jump_land &&
+                       Player[0]->character_context == CHARACTER_CONTEXT_NONE && Player[0]->apiobj.field_0x27d != 0) {
+                scripted_play_jump_landed = host_scripted_play_snapshot();
+                host_log_animation_trace("jump-landed", scripted_play_jump_landed);
+                const f32 landing_height_delta =
+                    scripted_play_jump_landed.player_position.y - scripted_play_jump_start.player_position.y;
+                const bool land_animation = host_is_jump_landing_action(scripted_play_jump_landed.animation_current) ||
+                                            host_is_jump_landing_action(scripted_play_jump_landed.animation_previous) ||
+                                            host_is_jump_landing_action(scripted_play_jump_landed.animation_requested);
+                scripted_play_jump_observed = scripted_play_jump_observed &&
+                                              std::isfinite(scripted_play_jump_landed.player_position.y) &&
+                                              scripted_play_jump_landed.player_velocity.y <= 0.0f &&
+                                              scripted_play_jump_landed.player_velocity.y > -0.5f &&
+                                              std::fabs(landing_height_delta) < 0.6f && land_animation;
+                LOG_INFO("scripted play: jump landed position-y=%.3f delta-y=%.3f velocity-y=%.3f "
+                         "context=%d animation=%d/%d observed=%d",
+                         scripted_play_jump_landed.player_position.y, landing_height_delta,
+                         scripted_play_jump_landed.player_velocity.y, scripted_play_jump_landed.player_context,
+                         scripted_play_jump_landed.animation_current, scripted_play_jump_landed.animation_requested,
+                         scripted_play_jump_observed ? 1 : 0);
+                HostInputSetHeld(0, GAMEPAD_DRIGHT);
+                scripted_play_input_held = true;
+                scripted_stage = HostScriptedInputStage::play_move;
+                scripted_stage_ticks = elapsed_ticks;
+            } else if (scripted_stage == HostScriptedInputStage::play_jump_land &&
+                       elapsed_ticks >= scripted_stage_ticks + host_scripted_play_jump_timeout_ms) {
+                const HostScriptedPlaySnapshot timeout = host_scripted_play_snapshot();
+                LOG_ERR("scripted play: jump did not land within %llu ms; "
+                        "position-y=%.3f delta-y=%.3f velocity-y=%.3f contact=0x%x context=%d "
+                        "animation=%d/%d time=%.3f flags=0x%x",
+                        static_cast<unsigned long long>(host_scripted_play_jump_timeout_ms), timeout.player_position.y,
+                        timeout.player_position.y - scripted_play_jump_start.player_position.y,
+                        timeout.player_velocity.y, Player[0]->apiobj.field_0x27d, timeout.player_context,
+                        timeout.animation_current, timeout.animation_requested, timeout.animation_time,
+                        timeout.animation_flags);
+                scripted_play_jump_observed = false;
+                scripted_play_finished = true;
                 scripted_stage = HostScriptedInputStage::complete;
                 scripted_stage_ticks = elapsed_ticks;
-            } else if (scripted_stage == HostScriptedInputStage::complete &&
+            } else if (scripted_stage == HostScriptedInputStage::pause_wait && Paused != 0 &&
+                       host_menu_id() == LEGO_MENU_PAUSE_MAIN) {
+                LOG_INFO("scripted play: pause menu opened id=%d pad=%d", host_menu_id(), pause_i_pad);
+                scripted_pause_initial_row = GameMenu[GameMenuLevel].selected_row;
+                scripted_stage = HostScriptedInputStage::pause_settle;
+                scripted_stage_ticks = elapsed_ticks;
+            } else if (scripted_stage == HostScriptedInputStage::pause_settle &&
+                       elapsed_ticks >= scripted_stage_ticks + host_scripted_pause_settle_ms) {
+                HostInputTap(0, GAMEPAD_DDOWN);
+                scripted_stage = HostScriptedInputStage::pause_move_wait;
+                scripted_stage_ticks = elapsed_ticks;
+            } else if (scripted_stage == HostScriptedInputStage::pause_move_wait &&
+                       GameMenu[GameMenuLevel].selected_row != scripted_pause_initial_row) {
+                LOG_INFO("scripted play: pause menu moved row=%d->%d", scripted_pause_initial_row,
+                         GameMenu[GameMenuLevel].selected_row);
+                HostInputTap(0, GAMEPAD_DUP);
+                scripted_stage = HostScriptedInputStage::pause_return_wait;
+                scripted_stage_ticks = elapsed_ticks;
+            } else if (scripted_stage == HostScriptedInputStage::pause_return_wait &&
+                       GameMenu[GameMenuLevel].selected_row == scripted_pause_initial_row &&
+                       elapsed_ticks >= scripted_stage_ticks + host_scripted_pause_settle_ms) {
+                HostInputTap(0, GAMEPAD_START);
+                scripted_stage = HostScriptedInputStage::resume_wait;
+                scripted_stage_ticks = elapsed_ticks;
+            } else if (scripted_stage == HostScriptedInputStage::resume_wait && Paused == 0 && host_menu_id() == -1) {
+                LOG_INFO("scripted play: resumed from pause menu");
+                scripted_play_finished = true;
+                scripted_stage = HostScriptedInputStage::complete;
+                scripted_stage_ticks = elapsed_ticks;
+            } else if (scripted_stage == HostScriptedInputStage::complete && !options.camera_free &&
                        elapsed_ticks >= scripted_stage_ticks + options.script_tail_ms) {
                 break;
             }
         }
 
+        if (options.camera_orbit && !camera_orbit_finished && GameCam != nullptr &&
+            (camera_orbit_started || host_scripted_play_ready())) {
+            if (!camera_orbit_started) {
+                camera_orbit_started = true;
+                camera_orbit_start_ticks = elapsed_ticks;
+                camera_orbit_base_yaw = GameCam->field_0x218;
+                LOG_INFO("host camera orbit: starting 360-degree yaw over %llu ms",
+                         static_cast<unsigned long long>(host_camera_orbit_duration_ms));
+            }
+
+            const Uint64 orbit_elapsed = elapsed_ticks - camera_orbit_start_ticks;
+            const Uint64 clamped_elapsed =
+                orbit_elapsed < host_camera_orbit_duration_ms ? orbit_elapsed : host_camera_orbit_duration_ms;
+            const f32 progress = static_cast<f32>(clamped_elapsed) / static_cast<f32>(host_camera_orbit_duration_ms);
+            GameCam->field_0x218 = camera_orbit_base_yaw + progress * host_full_camera_rotation;
+
+            if (orbit_elapsed >= host_camera_orbit_duration_ms) {
+                GameCam->field_0x218 = camera_orbit_base_yaw;
+                camera_orbit_finished = true;
+                LOG_INFO("host camera orbit: completed");
+            }
+        }
+
         SDL_Delay(host_poll_interval_ms);
 
-        if (SDL_GetTicks() - start_ticks > options.timeout_ms) {
+        if (SDL_GetTicks() - start_ticks > options.timeout_ms && options.timeout_ms > 0) {
             LOG_ERR("window utility: timeout after %llu ms", static_cast<unsigned long long>(options.timeout_ms));
             break;
         }
@@ -711,6 +1164,8 @@ i32 host_run_window(const HostWindowOptions &options) {
     if (scripted_play_input_held) {
         HostInputSetHeld(0, 0);
     }
+    HostInputSetKeyboardHeld(0, 0);
+    HostFreeCameraSetControls(0);
 
     if (options.capture) {
         u64 final_hash = 0;
@@ -825,14 +1280,15 @@ i32 host_run_window(const HostWindowOptions &options) {
                                             ? static_cast<NUDLDLISTSCENE *>(handle->scene->display_list)
                                             : nullptr;
                 NUCLIPOBJECT *clip_object = special != nullptr ? special->clip_objects : nullptr;
-                LOG_INFO("scripted player special: part=%d visibility=%p rigid=(array=%p,count=%d) "
+                LOG_INFO("scripted player special: part=%d name=%s rigid=(array=%p,count=%d) "
                          "smooth=%p alternate=(rigid=%p,count=%d,smooth=%p) handle=(scene=%p,legacy=%p,display=%p) "
                          "display=(name=%s,flags=0x%x,instance=%d,clip=%p,range=%p,bounds=(%.3f,%.3f,%.3f)-"
                          "(%.3f,%.3f,%.3f)) scene=(display=%p,items=%d,clip=%d,mtls=%u,specials=%d,flags=0x%x) "
                          "clip-object=(materials=%d,ids=%p,indices=%p)",
-                         render_indices[0], part.visibility, part.rigid_specials, rigid_count, part.smooth_skin_special,
-                         part.alternate_rigid_specials, alternate_rigid_count, part.alternate_smooth_skin_special,
-                         handle != nullptr ? handle->scene : nullptr, handle != nullptr ? handle->special : nullptr,
+                         render_indices[0], part.name != nullptr ? part.name : "-", part.rigid_specials, rigid_count,
+                         part.smooth_skin_special, part.alternate_rigid_specials, alternate_rigid_count,
+                         part.alternate_smooth_skin_special, handle != nullptr ? handle->scene : nullptr,
+                         handle != nullptr ? handle->special : nullptr,
                          handle != nullptr ? handle->display_special : nullptr,
                          special != nullptr && special->name != nullptr ? special->name : "-",
                          special != nullptr ? special->flags : 0, special != nullptr ? special->instance_ix : -1,
@@ -873,7 +1329,10 @@ i32 host_run_window(const HostWindowOptions &options) {
         }
     }
     const bool scripted_play_passed =
-        !options.script_play || (scripted_play_finished && scripted_play_movement_observed);
+        !options.script_play ||
+        (scripted_play_finished &&
+         (options.script_action ? scripted_action_observed && scripted_action_release_observed
+                                : scripted_play_movement_observed && scripted_play_jump_observed));
     const bool capture_passed = !options.capture || (have_hash && saw_visible_frame);
     LOG_INFO("presented %d frame_count", frame_count);
     if (numain_finished) {

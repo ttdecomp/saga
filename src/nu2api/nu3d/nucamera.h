@@ -87,11 +87,13 @@ extern "C" {
     f32 NuCameraDistSqr(NUVEC *v);
 
     i32 NuCameraClipTestExtents(NUVEC *min, NUVEC *max, NUMTX *world_mtx, f32 far_clip, i32 should_clip_to_screen);
-    i32 NuCameraClipTestExtentsAxisAligned(NUVEC *min, NUVEC *max, f32 far_clip);
+    i32 NuCameraClipTestExtentsAxisAligned(NUVEC *center, NUVEC *extent, f32 far_clip);
     i32 NuCameraClipTestSphere(NUVEC *pnt, float radius, NUMTX *world_mtx);
+    i32 NuCameraClipTestPoints(NUVEC *points, i32 count, NUMTX *world_mtx);
 
     void NuCameraCalcRay(float screen_x, float screen_y, NUVEC *ray_start, NUVEC *ray_end, NUCAMERA *cam);
     void NuCameraRayCast(NUVEC *pnt, f32 x, f32 y);
+    void NuCameraTransformScreenClip(NUVEC *screen_points, NUVEC *world_points, i32 point_count, NUMTX *matrix);
 #ifdef __cplusplus
 }
 #endif

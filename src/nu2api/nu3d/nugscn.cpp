@@ -37,11 +37,18 @@ i32 NuGScnFixupTID(nugscn_s *scene, i32 tid) {
         return 0;
     }
     if ((tid & 0x4000) == 0) {
-        return (*reinterpret_cast<i32 **>(scene))[tid];
+        return scene->texture_ids[tid];
     }
-    // Texture-reference scenes are handled by NuTexResolveReference in the
-    // original.  That subsystem is not yet transcribed.
-    return 0;
+
+    i32 resolved_tid = NuTexResolveReference(scene, tid);
+    if (resolved_tid != 0) {
+        return resolved_tid;
+    }
+
+    extern i32 NuTexGetUnresolvedTextureTIDPS();
+    resolved_tid = NuTexGetUnresolvedTextureTIDPS();
+    NuTexAddReference(resolved_tid, scene);
+    return resolved_tid;
 }
 
 void NuGScnDestroyPS(nugscn_s *) {
@@ -71,20 +78,32 @@ extern "C" void NuGScnRemove(nugscn_s *scene) {
 }
 
 void NuGScnFixupTIDs(nugscn_s *scene) {
-    static const usize shader_tid_offsets[] = {
-        0x04, 0x08, 0x0c, 0x10, 0x34, 0x38, 0x48, 0x4c, 0x50, 0x54, 0x58, 0x5c, 0x198, 0x1e4, 0x1e8,
-    };
-
     for (i32 i = 0; i < scene->nummtl; ++i) {
         NUMTL *material = scene->mtls[i];
         material->tex_id = (i16)NuGScnFixupTID(scene, material->tex_id);
-        for (usize offset : shader_tid_offsets) {
-            i32 *tid = reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(&material->shader_desc) + offset);
-            *tid = NuGScnFixupTID(scene, *tid);
+
+        NUSHADERMTLDESC &shader = material->shader_desc;
+        shader.specular_map_tid = NuGScnFixupTID(scene, shader.specular_map_tid);
+        shader.lightmap_tex_id[0] = NuGScnFixupTID(scene, shader.lightmap_tex_id[0]);
+        shader.normal_map_tid = NuGScnFixupTID(scene, shader.normal_map_tid);
+        shader.lightmap_tex_id[1] = NuGScnFixupTID(scene, shader.lightmap_tex_id[1]);
+        shader.envmap_cubic_tid = NuGScnFixupTID(scene, shader.envmap_cubic_tid);
+        shader.unknown_198 = NuGScnFixupTID(scene, shader.unknown_198);
+        shader.shine_map_ps2_tid = NuGScnFixupTID(scene, shader.shine_map_ps2_tid);
+        for (i32 layer = 0; layer < 4; ++layer) {
+            shader.diffuse_map_tex_id[layer] = NuGScnFixupTID(scene, shader.diffuse_map_tex_id[layer]);
         }
-        reinterpret_cast<u8 *>(material)[0x46] &= 0xbf;
-        NuMtlUpdate(material);
+        shader.vtf_height_map_tid = NuGScnFixupTID(scene, shader.vtf_height_map_tid);
+        shader.vtf_normal_map_tid = NuGScnFixupTID(scene, shader.vtf_normal_map_tid);
+        shader.field_1e4 = NuGScnFixupTID(scene, shader.field_1e4);
+        shader.field_1e8 = NuGScnFixupTID(scene, shader.field_1e8);
+
+        NUMTL *updated_material = scene->mtls[i];
+        reinterpret_cast<u8 *>(updated_material)[0x46] &= 0xbf;
+        NuMtlUpdate(updated_material);
     }
+
+    NuGScnFixupTIDsPS(scene);
 }
 
 void NuGScnRestoreTID(nugscn_s *, i32) {

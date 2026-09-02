@@ -200,31 +200,23 @@ void NuIOS_WaitForRenderThreadCompletion(void) {
     constexpr i64 kFrameBudgetMs = 16;
     constexpr i64 kMinSleepMs = 2;
 
-    i64 elapsed = getCurrentTime() - g_renderStartTime;
+    i64 elapsed_ms = getCurrentTime();
+    elapsed_ms -= g_renderStartTime;
+    i64 remaining_ms = kFrameBudgetMs;
+    remaining_ms -= elapsed_ms;
 
-    if (elapsed < kFrameBudgetMs) {
-        i64 remainMs = kFrameBudgetMs - elapsed;
-        // Clamp to a sane range and avoid tiny sleeps that cost more than
-        // they save.  The decompiled original had extensive unsigned-wrap
-        // guards here; the intent is simply "sleep the remainder, if
-        // worthwhile".
-        if (remainMs >= kMinSleepMs && remainMs < 32) {
-            struct timespec ts = {};
-            ts.tv_sec = 0;
-            ts.tv_nsec = remainMs * 1000000L;
-            nanosleep(&ts, nullptr);
+    if (remaining_ms >= 0) {
+        if (remaining_ms > kFrameBudgetMs) {
+            remaining_ms = kFrameBudgetMs;
+        }
+        if (remaining_ms >= kMinSleepMs) {
+            struct timespec sleep_time = {};
+            sleep_time.tv_nsec = remaining_ms * 1000000L;
+            nanosleep(&sleep_time, nullptr);
         }
     }
 
     pthread_mutex_lock(&g_renderThreadDoneThreadMutex);
-    {
-        // Throttled log — first few frames only, to confirm the handoff
-        // is alive without spamming logcat.
-        static i32 s_waitLogCount = 0;
-        if (s_waitLogCount++ < 3) {
-            LOG_WARN("[rt] game waiting for render done (elapsed=%lld)", (long long)elapsed);
-        }
-    }
     while (g_renderThreadDoneThread == 0) {
         pthread_cond_wait(&g_renderThreadDoneThreadCondition, &g_renderThreadDoneThreadMutex);
     }

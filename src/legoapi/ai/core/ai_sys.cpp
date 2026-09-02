@@ -59,20 +59,12 @@ extern "C" APIOBJECTSYS_s *APIObjectSysInit(i32 size, VARIPTR *buf, VARIPTR *buf
     return system;
 }
 
-static __used__ unsigned int AIRespawnOnPath(APIOBJECT_s *) {
-    return {};
-}
-
 static __used__ int Collide2Objects(APIOBJECT_s *, APIOBJECT_s *) {
     return {};
 }
 
 static __used__ unsigned int CalculateIntersection(AISYS_s *, AIPACKET_s *, APIOBJECT_s *, AIPATHCNX_s *,
                                                    AIPATHCNX_s *) {
-    return {};
-}
-
-static __used__ unsigned int AIBigJumpToDestination(APIOBJECT_s *, nuvec_s *) {
     return {};
 }
 
@@ -93,29 +85,11 @@ static __used__ unsigned int AISysCheckAntinode_Rectangle(APIOBJECT_s *, AIANTIN
     return {};
 }
 
-static __used__ void GameAILoad(AISYS_s *, int, nugscn_s *, variptr_u *, variptr_u *) {
-}
-
 static __used__ void FormationMove(AIGROUP_s *, int (*)(AIGROUP_s *, AIROW_s *, AIROW_s *, APIOBJECT_s *)) {
-}
-
-static __used__ APIOBJECT_s *GetNamedAPIObject(AISYS_s *, char *) {
-    return nullptr;
 }
 
 static __used__ void *GetNextConnection(AIPACKET_s const *, int *) {
     return nullptr;
-}
-
-static __used__ nuvec_s *GetAICreatureOrigin(AISYS_s *, AIPACKET_s *) {
-    return nullptr;
-}
-
-static __used__ int GameAIActionParseSpeed(char *, unsigned char *) {
-    return 0;
-}
-
-static __used__ void GameFindAlternativeSpecialObject(AISYS_s *, nuhspecial_s *) {
 }
 
 static __used__ void GenerateTrooperTeamShape(minitrooperteam_s *, int) {

@@ -10,7 +10,8 @@ struct SHOPINPUT;
 void InitCables(WORLDINFO_s *) {
 }
 
-void CreateCable(GameObject_s *, GameObject_s *, i32) {
+CABLE_s *CreateCable(GameObject_s *, GameObject_s *, i32) {
+    return NULL;
 }
 
 void DestroyCable(CABLE_s *) {

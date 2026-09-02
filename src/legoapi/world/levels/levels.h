@@ -51,7 +51,11 @@ extern float gungan_a_time_LowEnd;
 extern i32 active_neutral_count;
 extern i32 active_baddy_count;
 extern FadeSystem FadeSys;
+#ifdef __cplusplus
+extern "C" i32 Paused;
+#else
 extern i32 Paused;
+#endif
 extern i32 MiniCutCam;
 extern PODRACENETPACKET_s *podrace_netpacket;
 extern PODSPRINTNETPACKET_s *podsprint_netpacket;

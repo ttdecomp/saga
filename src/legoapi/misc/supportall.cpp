@@ -3,7 +3,12 @@
 #include <stdarg.h>
 #include "decomp.h"
 #include "globals.h"
+#include "gameapi/ai/aisys/aisys.h"
+#include "legoapi/gizmo/base/gizmo.h"
+#include "legoapi/items/base/apiobject.h"
+#include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/render/core/render.h"
 #include "legoapi/world/level.h"
 #include "nu2api/nu3d/nudlist.h"
 #include "nu2api/nu3d/numtl.h"
@@ -40,6 +45,11 @@ void ResetRippleSet(ripple_set_s *);
 void Grabber_Reset(WORLDINFO_s *);
 void Faders_Reset(WORLDINFO_s *);
 void InitGameMode(void);
+void GameAnimSys_ReStoreProgress(GAMEANIMSYS_s *system, i32 progress_index);
+void ResetForceBack(void);
+void ClearAICreatures(void);
+void ReStoreStatusTakeOverObjectSys(i32 restore_progress);
+void InitPlayerAI(GameObject_s *object);
 extern GAMECAMERA_s *GameCam;
 extern ripple_set_s *ripples;
 extern "C" void ResetParts(void);
@@ -82,7 +92,7 @@ void RndrTexQuad3D(VuMtx const &, i32, numtl_s *) {
 }
 
 void CheckResetBits() {
-    if ((ResetBits & 0x20) != 0 && WORLD->current_level->area_level_index != -1) {
+    if ((ResetBits & RESETBIT_CLEAR_LEVEL_PROGRESS) != 0 && WORLD->current_level->area_level_index != -1) {
         ClearLevelProgress(WORLD->current_level->area_level_index, WORLD);
     }
 
@@ -99,7 +109,7 @@ void CheckResetBits() {
     CutScenes_Reset(WORLD);
 
     if (NOSOUND == 0) {
-        if ((ResetBits & 0x40) == 0) {
+        if ((ResetBits & RESETBIT_USE_CUSTOMISER_SETUP) == 0) {
             InitGameMode();
         } else {
             Customiser_SetUpCharacterData(CharacterCustomiser);
@@ -128,6 +138,39 @@ void CheckResetBits() {
     ResetRippleSet(ripples);
     Grabber_Reset(WORLD);
     Faders_Reset(WORLD);
+
+    const i32 progress_index = WORLD->current_level->area_level_index;
+    if ((ResetBits & RESETBIT_CLEAR_LEVEL_PROGRESS) != 0) {
+        GizmoSysClearLevelProgress(WORLD, progress_index);
+    }
+
+    GameAnimSys_ReStoreProgress(WORLD->game_anim_sys, progress_index);
+    GizmoSysReset(WORLD->gizmo_sys, WORLD, progress_index);
+
+    if ((ResetBits & RESETBIT_REINITIALISE_LEVEL) != 0) {
+        DrawBossHitPoints(NULL);
+        ResetForceBack();
+        ClearAICreatures();
+        GameAISysReset(WORLD->ai_sys);
+        ReStoreStatusTakeOverObjectSys(1);
+        AIScriptInitConditions(WORLD->ai_sys);
+
+        for (i32 player_index = 0; player_index < 8; ++player_index) {
+            if (Player[player_index] != NULL) {
+                InitPlayerAI(Player[player_index]);
+            }
+        }
+    } else {
+        ReStoreStatusTakeOverObjectSys(0);
+    }
+
+    if (WORLD->current_level->reset_fn != NULL) {
+        WORLD->current_level->reset_fn(WORLD);
+    }
+
+    // Reset requests are edge-triggered. Leaving the bits set would rebuild the
+    // level's AI and gizmo state again on every frame through Batman().
+    ResetBits = 0;
 }
 
 void DebrisTimeSlip(i32) {
@@ -770,7 +813,45 @@ void unref(unsigned char *, unsigned char *) {
 void TBRESET() {
 }
 
-void RootFnEx(numtx_s *, void *, nuvec_s *, nuvec_s *, nuvec_s *, float, i32) {
+void RootFnEx(NUMTX *matrix, void *data, NUVEC *sampled_root, NUVEC *, NUVEC *translation, f32, i32 include_y) {
+    APIOBJECT *object = static_cast<APIOBJECT *>(data);
+
+    if (object->previous_animation_root_time > object->anim_packet.current_time) {
+        object->previous_animation_root = *sampled_root;
+    }
+
+    object->animation_root_delta.x = sampled_root->x - object->previous_animation_root.x;
+    object->animation_root_delta.y = include_y ? sampled_root->y - object->previous_animation_root.y : 0.0f;
+    object->animation_root_delta.z = sampled_root->z - object->previous_animation_root.z;
+    NuVecMtxRotate(&object->animation_root_delta, &object->animation_root_delta, &object->field_0xb8);
+    if (!include_y) {
+        object->animation_root_delta.y = 0.0f;
+    }
+
+    object->previous_animation_root = *sampled_root;
+    object->previous_animation_root_time = object->anim_packet.current_time;
+
+    if (object->anim_packet.requested_animation != -1) {
+        CHARACTERANIM_s *animation = static_cast<CHARACTERANIM_s *>(
+            object->character_model->model_data_a[object->anim_packet.requested_animation]);
+        matrix->m30 = translation->x + animation->root_translation.x;
+        matrix->m32 = translation->z + animation->root_translation.z;
+        if (include_y) {
+            matrix->m31 = translation->y + animation->root_translation.y;
+        }
+    } else {
+        matrix->m30 = translation->x;
+        if (include_y) {
+            matrix->m31 = translation->y;
+        }
+        matrix->m32 = translation->z;
+    }
+
+    if (include_y && object->animation_root_delta.y == 0.0f) {
+        object->animation_root_delta.y = 1.0f;
+    } else if (object->animation_root_delta.x == 0.0f && object->animation_root_delta.z == 0.0f) {
+        object->animation_root_delta.x = 1.0f;
+    }
 }
 
 void TBOPENFN(char *, i32) {

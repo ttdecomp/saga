@@ -165,6 +165,11 @@ typedef struct _nupadmapping_s {
     i32 is_active;
 } NUPADMAPPING;
 
+typedef enum nupadstatus_e {
+    NUPAD_STATUS_INACTIVE = 0,
+    NUPAD_STATUS_ACTIVE = 1,
+} NUPADSTATUS;
+
 typedef enum nurecmode_e { NUPAD_NORM = 0, NUPAD_RECORD = 1, NUPAD_PLAY = 2 } NURECMODE;
 
 typedef struct nupadrec_s {
@@ -197,18 +202,25 @@ extern "C" {
     extern i32 enable_touch_controls;
 
     void NuPadInit(void);
+    void NuPadSetStatus(i32 pad, i32 status);
     void NuPadInitPS(NUGENERICPAD *pad);
 
     i32 NuPadRead(NUPAD *pad);
 
     void NuPadUpdatePads(void);
 
+    i32 NuPs2ApplyDeadZone(i32 raw_value, i32 dead_zone);
+
     i32 NuPadGetMaxGamePads(void);
 
     void NuPadRecordStart(void);
+    void NuSetPadDemoEndButtons(u32 buttons);
 
     void NuPad_Interface_InputManagerInitialise(void);
     void NuPad_Interface_InputManagerUpdate(f32 unknown);
+    void NuPad_Interface_ResetAllTouches(void);
+    void NuPad_Interface_TouchScreenInput(i32 touch_id, i32 x, i32 y, i32 pressure, i32 is_down, i32 is_up, i32 is_move,
+                                          i32 is_cancelled);
 
     u32 NuPad_Interface_NuPadRead(i32 port, u8 *analog_left_x, u8 *analog_left_y, u8 *analog_right_x,
                                   u8 *analog_right_y, u8 *analog_l1, u8 *analog_l2, u8 *analog_r1, u8 *analog_r2,

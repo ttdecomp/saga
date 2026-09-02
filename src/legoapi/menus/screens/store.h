@@ -42,6 +42,16 @@ DECOMP_ASSERT(sizeof(storepack_s) == 0x34, "STOREPACK size");
 typedef struct storepack_s STOREPACK;
 extern STOREPACK StorePack[11];
 
+enum STORE_PACK_INDEX {
+    STORE_PACK_EPISODE_I = 0,
+    STORE_PACK_EPISODE_II = 1,
+    STORE_PACK_EPISODE_III = 2,
+    STORE_PACK_EPISODE_IV = 3,
+    STORE_PACK_EPISODE_V = 4,
+    STORE_PACK_BONUS_AREA = 5,
+    STORE_PACK_OPEN_ALL_AREAS = 8,
+};
+
 typedef struct COLLECTID {
     i16 id;
     u8 type;
@@ -54,4 +64,4 @@ typedef struct COLLECTID {
 } COLLECTID;
 
 i32 Store_FindPack(i32 id, char *name);
-i32 Store_IsPackUnlocked(i32 pack);
+bool Store_IsPackUnlocked(i32 pack);

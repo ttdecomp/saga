@@ -34,6 +34,7 @@ extern "C" {
     i32 NuStrICmp(const char *a, const char *b);
     char *NuStrIStr(char *str, char *sub);
     i32 NuStrLen(const char *str);
+    i32 NuStrNCat(char *str, const char *ext, i32 n);
     i32 NuStrNCmp(const char *a, const char *b, i32 n);
     i32 NuStrNICmp(const char *a, const char *b, i32 n);
     i32 NuStrNCpy(char *dst, const char *src, i32 n);

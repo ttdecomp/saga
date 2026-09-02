@@ -12,9 +12,7 @@ typedef struct nushaderobjectkey_s NUSHADEROBJECTKEY;
 struct nushaderobjectbase_s {
     i32 field0;
     i32 field1;
-    // this is a NUSHADEROBJECTKEY*, but for some reason they store it as an i32
-    // if it isn't an i32 then SSE instructions aren't generated and it doesn't match
-    i32 key;
+    u32 key;
     i32 field3;
 };
 
@@ -101,7 +99,8 @@ extern "C" {
     void NuShaderObjectUnInit(NUSHADEROBJECT *shader);
     void NuShaderObjectBaseUnInit(NUSHADEROBJECTBASE *shader);
     void NuShaderObjectBaseSetWaterSpeed(f32 speed);
-    void NuShaderObjectSetElementsfv(i32 shader_object, i32 semantic, i32 first_element, i32 count, const f32 *values);
+    void NuShaderObjectSetElementsfv(NUSHADEROBJECT *shader_object, i32 semantic, i32 first_element, i32 count,
+                                     const f32 *values);
     NUSHADERPROGRAM *NuShaderProgramCreateIOS(const char *vertex_source, const char *fragment_source);
     void NuShaderProgramSetVertexParamfv(NUSHADERPROGRAM *program, u32 register_index, const f32 *values,
                                          i32 component_count);

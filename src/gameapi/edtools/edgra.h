@@ -10,8 +10,8 @@ extern "C" {
     void edGraInitTerrainSwapProtection();
     void edGraEnableTerrainSwap();
     void edGraDisableTerrainSwap();
-    void edgraStartPage(i32 page);
-    void edgraStopPage(i32 page);
+    void edgraStartPage(i8 page);
+    void edgraStopPage(i8 page);
 #ifdef __cplusplus
 }
 #endif

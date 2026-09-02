@@ -119,7 +119,7 @@ extern "C" {
     }
     void NuSound3RestoreStreamPitch(void) {
     }
-    void NuSound3SetDPL(i32, i32) {
+    void NuSound3SetDPL(void) {
     }
     void NuSound3SetDat(void) {
     }
@@ -134,11 +134,12 @@ extern "C" {
     }
     void NuSound3SetMonoIopBufferSize(void) {
     }
-    void NuSound3SetReverb(i32) {
+    i32 NuSound3SetReverb(i32) {
+        return 0;
     }
     void NuSound3SetReverbVol(void) {
     }
-    void NuSound3SetRumblePads(void *, void *) {
+    void NuSound3SetRumblePads(void) {
     }
     void NuSound3SetSFXPitch(void) {
     }
@@ -166,7 +167,7 @@ extern "C" {
     }
     void NuSound3UpdatePending(void) {
     }
-    void NuSound3UpdateRumble(f32) {
+    void NuSound3UpdateRumble(void) {
     }
     void NuSound3UpdateV(void) {
     }

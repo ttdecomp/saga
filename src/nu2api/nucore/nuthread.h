@@ -20,6 +20,12 @@ typedef union nuthread_core_u {
     i32 value;
 } NUTHREAD_CORE;
 
+struct NULEGACYTHREADDATA {
+    pthread_t thread;
+    void (*thread_fn)(void *);
+    void *fn_arg;
+};
+
 typedef void nuthreadenableswapfn();
 typedef void nuthreaddisableswapfn();
 
@@ -27,6 +33,9 @@ typedef void nuthreaddisableswapfn();
 extern "C" {
 #endif
     extern u32 nu_current_thread_id;
+#ifdef ANDROID
+    extern pthread_key_t g_currentThreadSpecificKey;
+#endif
     extern nuthreadenableswapfn *NuThreadEnableThreadSwap;
     extern nuthreaddisableswapfn *NuThreadDisableThreadSwap;
 

@@ -11,6 +11,7 @@
 #include "nu2api/nufile/nufpar.h"
 #include "nu2api/nufile/nufilepak.h"
 #include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nu3d/numtl.h"
 
 #include <string.h>
 struct numtx_s;
@@ -31,6 +32,8 @@ struct EDCREATURE_s;
 struct APIOBJECT_s;
 
 extern "C" {
+    NUMTL *APITrans_Mtl[2];
+
     i16 id_WEIRDO1 = -1;
     i16 id_WEIRDO2 = -1;
     i16 id_BATMAN = -1;
@@ -88,6 +91,7 @@ extern "C" {
     i16 id_WOMPRAT = -1;
     i16 id_WAMPA = -1;
     i16 id_HANINCARBONITE = -1;
+    i16 id_YODA = -1;
     i16 id_YODAGHOST = -1;
     i16 id_MOSEISLEYCITIZEN = -1;
     i16 id_CANTINAALIEN = -1;
@@ -297,6 +301,7 @@ extern "C" {
         {"womprat", &id_WOMPRAT},
         {"wampa", &id_WAMPA},
         {"hanincarbonite", &id_HANINCARBONITE},
+        {"yoda", &id_YODA},
         {"yoda_ghost", &id_YODAGHOST},
         {"moseisleycitizen", &id_MOSEISLEYCITIZEN},
         {"cantinaaliens", &id_CANTINAALIEN},
@@ -654,7 +659,7 @@ CHARACTERDATA *ConfigureCharacterList(char *file, VARIPTR *bufferStart, VARIPTR 
         bufferStart->void_ptr = (void *)ALIGN((usize)bufferStart->void_ptr, 4);
         if (0 < count2) {
             if (dataList != NULL) {
-                *dataList = (gamecharacterdata_s *)bufferStart->void_ptr;
+                *dataList = (GAMECHARACTERDATA_s *)bufferStart->void_ptr;
             }
             for (j = 0; j < i; j = j + 1) {
                 characterdata[j].field11_0x24 = bufferStart->void_ptr;
@@ -695,49 +700,6 @@ CharacterObjectInterface::~CharacterObjectInterface() {
 
 static __used__ void NewCharacterIdle(GameObject_s *, i32) {
 }
-static __used__ char *LevelCharacterName(u8) {
-    return nullptr;
-}
-static __used__ i32 LevelCharacterTypeID(char *) {
-    return 0;
-}
-static __used__ i32 LevelCharacterGlobalID(u8) {
-    return 0;
-}
-
-// Static character/global-character and gameplay helpers. Stubbed to satisfy
-// the symbol baseline.
-
-static __used__ char *GlobalCharacterName(int) {
-    return nullptr;
-}
-
-static __used__ void *GlobalCharacterHGobj(int) {
-    return nullptr;
-}
-
-static __used__ void GlobalCharacterRender(nuvec_s *, i16, int, int, EDCREATURE_s *) {
-}
-
-static __used__ int GlobalCharacterTypeID(char *) {
-    return 0;
-}
-
-static __used__ float GetViewRange(int) {
-    return 0;
-}
-
-static __used__ float GetHearDistance(int) {
-    return 0;
-}
-
-static __used__ float GetMaxViewHeight(int) {
-    return 0;
-}
-
-static __used__ float GetMinViewHeight(int) {
-    return 0;
-}
 
 static __used__ bool IsWearingBackPack_Game(GameObject_s *) {
     return false;
@@ -754,10 +716,6 @@ static __used__ int GameAudio_CheckReverb_LSW() {
 }
 
 static __used__ int GameAudio_OverrideFootStep_LSW(GameObject_s *, int) {
-    return 0;
-}
-
-static __used__ float GetCharacterGoalSpeed(APIOBJECT_s *) {
     return 0;
 }
 
@@ -1082,6 +1040,10 @@ extern "C" {
         }
         drawcharactermodel_locatorsupdated = 1;
 
+        if (object != NULL && apicharsys != NULL && apicharsys->set_creature_lights != NULL) {
+            apicharsys->set_creature_lights(&object->apiobj);
+        }
+
         i32 result = 0;
         if (!evaluate_only) {
             const i32 render_flags = object == NULL || (object->apiobj.field_0x1f4 & 0x200) == 0;
@@ -1134,6 +1096,15 @@ extern "C" {
             NuStrCat(directory, character.dir);
             NuStrCat(directory, "\\");
 
+            char directory_pack_path[0x100];
+            char model_pack_path[0x100];
+            NuStrCpy(directory_pack_path, directory);
+            NuStrCat(directory_pack_path, character.dir);
+            NuStrCat(directory_pack_path, ".fpk");
+            NuStrCpy(model_pack_path, directory);
+            NuStrCat(model_pack_path, character.file);
+            NuStrCat(model_pack_path, ".fpk");
+
             APICHARACTERMODEL *model;
             bool model_loaded = false;
             if (apicharsys->playermodelids[model_id] != -1) {
@@ -1143,17 +1114,9 @@ extern "C" {
                 APICharacterModelReset(model);
 
                 char hierarchy_path[0x200];
-                char directory_pack_path[0x100];
-                char model_pack_path[0x100];
                 NuStrCpy(hierarchy_path, directory);
                 NuStrCat(hierarchy_path, character.file);
                 NuStrCat(hierarchy_path, ".ghg");
-                NuStrCpy(directory_pack_path, directory);
-                NuStrCat(directory_pack_path, character.dir);
-                NuStrCat(directory_pack_path, ".fpk");
-                NuStrCpy(model_pack_path, directory);
-                NuStrCat(model_pack_path, character.file);
-                NuStrCat(model_pack_path, ".fpk");
 
                 model->hierarchy = NuGHGRead(hierarchy_path, buf, buf_end);
                 if (model->hierarchy == NULL) {
@@ -1164,105 +1127,105 @@ extern "C" {
                     model->points_of_interest[poi] = NuHGobjGetPOI(model->hierarchy, poi);
                 }
                 model_loaded = true;
+            }
 
-                CHARACTERANIM_s *animations = area_models != 0 && list->count != 0 ? character.animations : NULL;
-                void *pak = NULL;
-                if (apiloadcharactermodels_nopakfile == 0) {
-                    pak = NuFilePakLoad(directory_pack_path, buf, buf_end, 0x10);
-                    if (pak == NULL) {
-                        pak = NuFilePakLoad(model_pack_path, buf, buf_end, 0x10);
+            CHARACTERANIM_s *animations = area_models != 0 && list->count != 0 ? character.animations : NULL;
+            void *pak = NULL;
+            if (apiloadcharactermodels_nopakfile == 0) {
+                pak = NuFilePakLoad(directory_pack_path, buf, buf_end, 0x10);
+                if (pak == NULL) {
+                    pak = NuFilePakLoad(model_pack_path, buf, buf_end, 0x10);
+                }
+            }
+
+            if (pak != NULL) {
+                for (CHARACTERANIM_s *animation = animations; animation != NULL && animation->name != NULL;
+                     ++animation) {
+                    if (!ShouldLoadAnimation(*animation, area_animation)) {
+                        continue;
+                    }
+                    char animation_path[0x200];
+                    if ((animation->flags & 4) != 0 && model->model_data_b[animation->animation_id] == NULL) {
+                        GetAnimationPath(animation_path, directory, animation, ".an3");
+                        i32 item = NuFilePakGetItem(pak, animation_path);
+                        if (item != 0) {
+                            NuFilePakSetItemRequired(pak, item, 1);
+                        }
+                    }
+                    if ((animation->flags & 8) != 0 && model->model_data_c[animation->animation_id] == NULL) {
+                        GetAnimationPath(animation_path, directory, animation, ".bsa");
+                        i32 item = NuFilePakGetItem(pak, animation_path);
+                        if (item != 0) {
+                            NuFilePakSetItemRequired(pak, item, 1);
+                        }
                     }
                 }
 
-                if (pak != NULL) {
-                    for (CHARACTERANIM_s *animation = animations; animation != NULL && animation->name != NULL;
-                         ++animation) {
-                        if (!ShouldLoadAnimation(*animation, area_animation)) {
-                            continue;
-                        }
-                        char animation_path[0x200];
-                        if ((animation->flags & 4) != 0 && model->model_data_b[animation->animation_id] == NULL) {
-                            GetAnimationPath(animation_path, directory, animation, ".an3");
-                            i32 item = NuFilePakGetItem(pak, animation_path);
-                            if (item != 0) {
-                                NuFilePakSetItemRequired(pak, item, 1);
+                buf->addr -= NuFilePakCondense(pak);
+                for (CHARACTERANIM_s *animation = animations; animation != NULL && animation->name != NULL;
+                     ++animation) {
+                    if (!ShouldLoadAnimation(*animation, area_animation)) {
+                        continue;
+                    }
+                    char animation_path[0x200];
+                    if ((animation->flags & 4) != 0 && model->model_data_b[animation->animation_id] == NULL) {
+                        GetAnimationPath(animation_path, directory, animation, ".an3");
+                        i32 item = NuFilePakGetItem(pak, animation_path);
+                        void *data;
+                        i32 size;
+                        if (item != 0 && NuFilePakGetItemInfo(pak, item, &data, &size) != 0) {
+                            const bool pointer_block = static_cast<i32 *>(data)[1] > static_cast<i32>(0x414e4934);
+                            ani3_animheader_s *joint_animation = reinterpret_cast<ani3_animheader_s *>(
+                                pointer_block ? static_cast<u8 *>(data) + 4 : data);
+                            if ((joint_animation->field_12 & 0xff) == 0) {
+                                if (pointer_block) {
+                                    NuPtrBlockFix(data);
+                                } else {
+                                    NuAnimData2Fixup(size, &data);
+                                }
+                                joint_animation->field_12 |= 1;
                             }
-                        }
-                        if ((animation->flags & 8) != 0 && model->model_data_c[animation->animation_id] == NULL) {
-                            GetAnimationPath(animation_path, directory, animation, ".bsa");
-                            i32 item = NuFilePakGetItem(pak, animation_path);
-                            if (item != 0) {
-                                NuFilePakSetItemRequired(pak, item, 1);
-                            }
+                            model->model_data_b[animation->animation_id] = joint_animation;
+                            model->model_data_a[animation->animation_id] = animation;
                         }
                     }
-
-                    buf->addr -= NuFilePakCondense(pak);
-                    for (CHARACTERANIM_s *animation = animations; animation != NULL && animation->name != NULL;
-                         ++animation) {
-                        if (!ShouldLoadAnimation(*animation, area_animation)) {
-                            continue;
-                        }
-                        char animation_path[0x200];
-                        if ((animation->flags & 4) != 0 && model->model_data_b[animation->animation_id] == NULL) {
-                            GetAnimationPath(animation_path, directory, animation, ".an3");
-                            i32 item = NuFilePakGetItem(pak, animation_path);
-                            void *data;
-                            i32 size;
-                            if (item != 0 && NuFilePakGetItemInfo(pak, item, &data, &size) != 0) {
-                                const bool pointer_block = static_cast<i32 *>(data)[1] > static_cast<i32>(0x414e4934);
-                                ani3_animheader_s *joint_animation = reinterpret_cast<ani3_animheader_s *>(
-                                    pointer_block ? static_cast<u8 *>(data) + 4 : data);
-                                if ((joint_animation->field_12 & 0xff) == 0) {
-                                    if (pointer_block) {
-                                        NuPtrBlockFix(data);
-                                    } else {
-                                        NuAnimData2Fixup(size, &data);
-                                    }
-                                    joint_animation->field_12 |= 1;
-                                }
-                                model->model_data_b[animation->animation_id] = joint_animation;
-                                model->model_data_a[animation->animation_id] = animation;
-                            }
-                        }
-                        if ((animation->flags & 8) != 0 && model->model_data_c[animation->animation_id] == NULL) {
-                            GetAnimationPath(animation_path, directory, animation, ".bsa");
-                            i32 item = NuFilePakGetItem(pak, animation_path);
-                            void *data;
-                            i32 size;
-                            if (item != 0 && NuFilePakGetItemInfo(pak, item, &data, &size) != 0) {
-                                model->model_data_c[animation->animation_id] =
-                                    LoadAnimFromPAK(animation_path, area_animation, data, size);
-                                if (model->model_data_c[animation->animation_id] != NULL) {
-                                    model->model_data_a[animation->animation_id] = animation;
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    for (CHARACTERANIM_s *animation = animations; animation != NULL && animation->name != NULL;
-                         ++animation) {
-                        if (!ShouldLoadAnimation(*animation, area_animation)) {
-                            continue;
-                        }
-                        char animation_path[0x200];
-                        if ((animation->flags & 4) != 0 && model->model_data_b[animation->animation_id] == NULL) {
-                            GetAnimationPath(animation_path, directory, animation, ".an3");
-                            if (NuFileExists(animation_path) != 0) {
-                                model->model_data_b[animation->animation_id] =
-                                    LoadAnim(animation_path, area_animation, buf, buf_end);
-                            }
-                            if (model->model_data_b[animation->animation_id] != NULL) {
-                                model->model_data_a[animation->animation_id] = animation;
-                            }
-                        }
-                        if ((animation->flags & 8) != 0 && model->model_data_c[animation->animation_id] == NULL) {
-                            GetAnimationPath(animation_path, directory, animation, ".bsa");
+                    if ((animation->flags & 8) != 0 && model->model_data_c[animation->animation_id] == NULL) {
+                        GetAnimationPath(animation_path, directory, animation, ".bsa");
+                        i32 item = NuFilePakGetItem(pak, animation_path);
+                        void *data;
+                        i32 size;
+                        if (item != 0 && NuFilePakGetItemInfo(pak, item, &data, &size) != 0) {
                             model->model_data_c[animation->animation_id] =
-                                LoadAnim(animation_path, area_animation, buf, buf_end);
+                                LoadAnimFromPAK(animation_path, area_animation, data, size);
                             if (model->model_data_c[animation->animation_id] != NULL) {
                                 model->model_data_a[animation->animation_id] = animation;
                             }
+                        }
+                    }
+                }
+            } else {
+                for (CHARACTERANIM_s *animation = animations; animation != NULL && animation->name != NULL;
+                     ++animation) {
+                    if (!ShouldLoadAnimation(*animation, area_animation)) {
+                        continue;
+                    }
+                    char animation_path[0x200];
+                    if ((animation->flags & 4) != 0 && model->model_data_b[animation->animation_id] == NULL) {
+                        GetAnimationPath(animation_path, directory, animation, ".an3");
+                        if (NuFileExists(animation_path) != 0) {
+                            model->model_data_b[animation->animation_id] =
+                                LoadAnim(animation_path, area_animation, buf, buf_end);
+                        }
+                        if (model->model_data_b[animation->animation_id] != NULL) {
+                            model->model_data_a[animation->animation_id] = animation;
+                        }
+                    }
+                    if ((animation->flags & 8) != 0 && model->model_data_c[animation->animation_id] == NULL) {
+                        GetAnimationPath(animation_path, directory, animation, ".bsa");
+                        model->model_data_c[animation->animation_id] =
+                            LoadAnim(animation_path, area_animation, buf, buf_end);
+                        if (model->model_data_c[animation->animation_id] != NULL) {
+                            model->model_data_a[animation->animation_id] = animation;
                         }
                     }
                 }
@@ -1294,42 +1257,31 @@ extern "C" {
     }
 
     void APITransparentInit(void) {
-    }
+        APITrans_Mtl[0] = NuMtlCreate3D(1);
+        APITrans_Mtl[0]->attribs.unknown_1_1_2 = 1;
+        APITrans_Mtl[0]->attribs.unknown_1_4_8 = 1;
+        APITrans_Mtl[0]->diffuse_color.r = 0.0f;
+        APITrans_Mtl[0]->diffuse_color.g = 0.0f;
+        APITrans_Mtl[0]->diffuse_color.b = 0.0f;
+        APITrans_Mtl[0]->opacity = 1.0f;
+        APITrans_Mtl[0]->attribs.alpha_mode = 2;
+        APITrans_Mtl[0]->attribs.z_mode = 0;
+        APITrans_Mtl[0]->attribs.alpha_ref = 0;
+        APITrans_Mtl[0]->sort_pri = 0x24;
+        NuMtlUpdate(APITrans_Mtl[0]);
 
-    void InitFn_GetCharacterGoalSpeedFn(void) {
-    }
-
-    void InitFn_GetHearDistance(void) {
-    }
-
-    void InitFn_GetViewRange(void) {
-    }
-
-    void InitFn_GlobalCharacterHGobj(void) {
-    }
-
-    void InitFn_GlobalCharacterName(void) {
-    }
-
-    void InitFn_GlobalCharacterRender(void) {
-    }
-
-    void InitFn_GlobalCharacterTypeID(void) {
-    }
-
-    void InitFn_GlobalGetMaxViewHeight(void) {
-    }
-
-    void InitFn_GlobalGetMinViewHeight(void) {
-    }
-
-    void InitFn_LevelCharacterGlobalID(void) {
-    }
-
-    void InitFn_LevelCharacterName(void) {
-    }
-
-    void InitFn_LevelCharacterTypeID(void) {
+        APITrans_Mtl[1] = NuMtlCreate3D(1);
+        APITrans_Mtl[1]->attribs.unknown_1_1_2 = 1;
+        APITrans_Mtl[1]->attribs.unknown_1_4_8 = 1;
+        APITrans_Mtl[1]->diffuse_color.r = 0.0f;
+        APITrans_Mtl[1]->diffuse_color.g = 0.0f;
+        APITrans_Mtl[1]->diffuse_color.b = 0.0f;
+        APITrans_Mtl[1]->opacity = 1.0f;
+        APITrans_Mtl[1]->attribs.alpha_mode = 2;
+        APITrans_Mtl[1]->attribs.z_mode = 1;
+        APITrans_Mtl[1]->attribs.alpha_ref = 0;
+        APITrans_Mtl[1]->sort_pri = 0x24;
+        NuMtlUpdate(APITrans_Mtl[1]);
     }
 
 } // extern "C"

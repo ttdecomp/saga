@@ -1,5 +1,6 @@
 #include "legoapi/gizmo/base/gizmo.h"
 #include "decomp.h"
+#include "globals.h"
 
 #include "legoapi/gizmo/base/GizBlowupObjectInterface.h"
 #include "legoapi/gizmo/base/GizBuildItObjectInterface.h"
@@ -38,10 +39,14 @@
 #include "legoapi/gizmos/transport/teleport.h"
 #include "legoapi/gizmos/transport/tubes.h"
 #include "legoapi/gizmos/door/zipups.h"
+#include "gameapi/edtools/edfile.h"
 #include "nu2api/nucore/nustring.h"
 
+#include <stdio.h>
 #include <string.h>
 struct FLOWBOX_s;
+
+i32 GizObstacle_CheckExcludeFlagsFn_LSW(GIZOBSTACLE_s *, GameObject_s *);
 
 static i32 DefaultGizmo_GetOutput(GIZMO *, i32, i32) {
     return 0;
@@ -667,7 +672,15 @@ static __used__ void ProcessConditionFlowBox(GIZFLOW_s *, FLOWBOX_s *, u8) {
 void TwistLevel(LEVELDATA_s *) {
 }
 
-void GizmoGetPos(GIZMOSYS_s *, GIZMO_s *) {
+NUVEC *GizmoGetPos(GIZMOSYS_s *, GIZMO_s *gizmo) {
+    if (gizmotypes != NULL && gizmo != NULL) {
+        GIZMOGETPOSFN get_pos = gizmotypes->types[gizmo->type_id].fns.get_pos_fn;
+        if (get_pos != NULL) {
+            return get_pos(gizmo);
+        }
+    }
+
+    return NULL;
 }
 
 i32 GizmoGetGuid(GIZMOSYS_s *, GIZMO_s *) {
@@ -677,17 +690,71 @@ i32 GizmoGetGuid(GIZMOSYS_s *, GIZMO_s *) {
 void GizmoGetName(GIZMO_s *) {
 }
 
-void GizmoSysReset(GIZMOSYS_s *, void *, i32) {
+void GizmoSysReset(GIZMOSYS *gizmo_sys, void *world, i32 progress_index) {
+    if (gizmotypes != NULL && gizmo_sys != NULL) {
+        GIZMOTYPE *type = gizmotypes->types;
+        GIZMOSET *set = gizmo_sys->sets;
+
+        for (i32 type_index = 0; type_index < gizmotypes->count; ++type_index, ++type, ++set) {
+            if (type->fns.reset_fn != NULL) {
+                if (progress_index >= 0) {
+                    if (type->buffer != NULL) {
+                        type->fns.reset_fn(world, set->unknown, type->buffer[progress_index].void_ptr);
+                    } else {
+                        type->fns.reset_fn(world, set->unknown, NULL);
+                    }
+                } else {
+                    type->fns.reset_fn(world, set->unknown, NULL);
+                }
+            }
+        }
+    }
 }
 
 void GizmoFindByData(GIZMOSYS_s *, i32, void *) {
 }
 
-GIZMO *GizmoFindByName(GIZMOSYS *, i32, char *) {
+GIZMO *GizmoFindByName(GIZMOSYS *gizmo_sys, i32 type_id, char *name) {
+    if (gizmotypes == NULL || name == NULL || gizmo_sys == NULL) {
+        return NULL;
+    }
+
+    if (type_id >= 0 && type_id <= gizmotypes->count) {
+        GIZMOTYPE &type = gizmotypes->types[type_id];
+        GIZMOSET &set = gizmo_sys->sets[type_id];
+        if (type.fns.get_gizmo_name_fn == NULL) {
+            return NULL;
+        }
+
+        GIZMO *gizmo = set.gizmos;
+        for (i32 i = 0; i < set.count; ++i, ++gizmo) {
+            if (NuStrICmp(type.fns.get_gizmo_name_fn(gizmo), name) == 0) {
+                return gizmo;
+            }
+        }
+        return NULL;
+    }
+
+    GIZMOTYPE *type = gizmotypes->types;
+    GIZMOSET *set = gizmo_sys->sets;
+    for (i32 type_index = 0; type_index < gizmotypes->count; ++type_index, ++type, ++set) {
+        if (type->fns.get_gizmo_name_fn == NULL) {
+            continue;
+        }
+
+        GIZMO *gizmo = set->gizmos;
+        for (i32 gizmo_index = 0; gizmo_index < set->count; ++gizmo_index, ++gizmo) {
+            if (NuStrICmp(type->fns.get_gizmo_name_fn(gizmo), name) == 0) {
+                return gizmo;
+            }
+        }
+    }
+
     return NULL;
 }
 
 void GizmoSysSetGame() {
+    GizObstacle_CheckExcludeFlagsFn = GizObstacle_CheckExcludeFlagsFn_LSW;
 }
 
 void GizmoSys_BoltHit(GIZMOSYS_s *, void *, BOLT_s *, nuvec_s *, nuvec_s *, nuvec_s *, float, unsigned char *) {
@@ -696,10 +763,37 @@ void GizmoSys_BoltHit(GIZMOSYS_s *, void *, BOLT_s *, nuvec_s *, nuvec_s *, nuve
 void ResetPaintPuzzle(WORLDINFO_s *) {
 }
 
-void GizmoFileReadName(char *) {
+i32 GizmoFileReadName(char *name) {
+    i32 name_length = EdFileReadChar();
+    if (name_length == 0) {
+        return 0;
+    }
+
+    EdFileRead(name, name_length);
+    return 1;
 }
 
-void GizmoIsNameUnique(GIZMOSYS_s *, char *) {
+i32 GizmoIsNameUnique(GIZMOSYS *gizmo_sys, char *name) {
+    if (name == NULL || gizmo_sys == NULL) {
+        return 1;
+    }
+
+    GIZMOSET *set = gizmo_sys->sets;
+    GIZMOTYPE *type = gizmotypes->types;
+    for (i32 type_index = 0; type_index < gizmotypes->count; ++type_index, ++type, ++set) {
+        if (type->fns.get_gizmo_name_fn == NULL) {
+            continue;
+        }
+
+        GIZMO *gizmo = set->gizmos;
+        for (i32 gizmo_index = 0; gizmo_index < set->count; ++gizmo_index, ++gizmo) {
+            if (NuStrICmp(name, type->fns.get_gizmo_name_fn(gizmo)) == 0) {
+                return 0;
+            }
+        }
+    }
+
+    return 1;
 }
 
 void GizmoSysWriteInfo(GIZMOSYS_s *, char *, nugscn_s *) {
@@ -711,10 +805,59 @@ void UpdatePaintPuzzle(WORLDINFO_s *) {
 void GizmoGetNumOutputs(GIZMOSYS_s *, GIZMO_s *) {
 }
 
-void GizmoGetUniqueName(GIZMOSYS_s *, char *, char *, char *, i32) {
+i32 GizmoGetUniqueName(GIZMOSYS *gizmo_sys, char *prefix, char *name, char *result, i32 result_size) {
+    if (name == NULL || gizmo_sys == NULL || result == NULL) {
+        return 0;
+    }
+
+    for (i32 type_index = 0; type_index < gizmotypes->count; ++type_index) {
+        if (NuStrICmp(prefix, gizmotypes->types[type_index].prefix) != 0 &&
+            GizmoNameUsesPrefix(name, gizmotypes->types[type_index].prefix)) {
+            return 0;
+        }
+    }
+
+    char suffix[16];
+    char shortened_name[64];
+    i32 name_length = NuStrLen(name);
+
+    for (i32 suffix_number = 1; suffix_number != 999; ++suffix_number) {
+        sprintf(suffix, "%d", suffix_number);
+        i32 suffix_length = NuStrLen(suffix);
+
+        if (name_length + suffix_length >= result_size) {
+            name_length = result_size - suffix_length;
+            if (name_length <= 0) {
+                return 0;
+            }
+
+            NuStrNCpy(shortened_name, name, name_length);
+            name = shortened_name;
+        }
+
+        sprintf(result, "%s%s", name, suffix);
+        if (GizmoIsNameUnique(gizmo_sys, result)) {
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
-void GizmoNameUsesPrefix(char *, char *) {
+i32 GizmoNameUsesPrefix(char *name, char *prefix) {
+    if (prefix == NULL || name == NULL) {
+        return 0;
+    }
+
+    while (*name != '\0') {
+        if (NuToUpper(*name) != NuToUpper(*prefix)) {
+            return 0;
+        }
+        ++prefix;
+        ++name;
+    }
+
+    return 1;
 }
 
 void GizmoActivateReverse(GIZMOSYS_s *, GIZMO_s *, i32, i32, i32) {

@@ -17,11 +17,13 @@ extern "C" {
     struct AILOCATOR_s;
     struct AIAREA_s;
     struct AIPATH_s;
+    struct AIPATHNODE_s;
 
     AILOCATOR_s *AIPathFindLocator(AISYS_s *aisys, char *name);
     AIAREA_s *AISysFindArea(AISYS_s *ai_sys, char *name);
     AIPATH_s *AISysFindPath(AISYS_s *ai_sys, char *name);
     void *AIPathFindNode(AISYS_s *aisys, char *name, i32 unknown);
+    void AIPathNodeUpdatePos(AISYS_s *system, AIPATH_s *path, AIPATHNODE_s *node);
 
 #ifdef __cplusplus
 }

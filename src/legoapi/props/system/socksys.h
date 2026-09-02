@@ -11,6 +11,18 @@ typedef struct SOCKROT {
     u16 y;
 } SOCKROT;
 
+enum SOCK_FLAGS : u16 {
+    SOCK_FLAG_MISSING_C_OR_D = 0x0001,
+    SOCK_FLAG_CLAMP_TARGET_Y = 0x0020,
+    SOCK_FLAG_PROJECT_CAMERA_FROM_PLAYER = 0x0080,
+    SOCK_FLAG_SCALE_LATERAL_OFFSET = 0x0200,
+    // Two-player pullback follows the camera/target line in XZ only.
+    SOCK_FLAG_TWO_PLAYER_PLANAR_PULLBACK = 0x0400,
+    SOCK_FLAG_CAMERA_DISTANCE_XZ = 0x2000,
+    // Two-player pullback is driven by vertical rather than spatial separation.
+    SOCK_FLAG_TWO_PLAYER_VERTICAL_SEPARATION = 0x4000,
+};
+
 typedef struct SOCKLOCATION_s {
     u8 unknown_00;
     i8 sock;
@@ -71,80 +83,76 @@ DECOMP_ASSERT(sizeof(SOCKPOSITION) == 0x38, "SOCKPOSITION size");
 // `sock_lateral_`, `sock_trackin_`, `sock_limit_`) and are resolved against
 // the scene splines by SockSysFindInScene.
 typedef struct SOCK {
-    NUGSPLINE *cam;                // 0x00 — sock_cam_ rail; NULL until found in scene
-    NUGSPLINE *a;                  // 0x04 — sock_a_ rail spline
-    NUGSPLINE *b;                  // 0x08 — sock_b_ rail spline
-    NUGSPLINE *c;                  // 0x0c — sock_c_ rail spline (optional)
-    NUGSPLINE *d;                  // 0x10 — sock_d_ rail spline (optional)
-    NUGSPLINE *mid;                // 0x14 — sock_mid_ centre spline (optional)
-    NUGSPLINE *left;               // 0x18 — sock_left_ rail spline (optional)
-    NUGSPLINE *right;              // 0x1c — sock_right_ rail spline (optional)
-    NUGSPLINE *look;               // 0x20 — sock_look_ spline (optional)
-    NUGSPLINE *lateral;            // 0x24 — sock_lateral_ spline (optional)
-    NUGSPLINE *trackin;            // 0x28 — sock_trackin_ spline (optional)
-    NUGSPLINE *limit;              // 0x2c — sock_limit_ spline (optional)
-    u16 length;                    // 0x30 — rail point count - 1
-    u8 valid;                      // 0x32 — 1 once the socket has been populated
-    u8 unknown_33;                 // 0x33
-    SOCKSEGMENT *segments;         // 0x34 — generated data for each rail segment
-    SOCKROT *cam_rotations;        // 0x38 — generated camera-rail rotations
-    SOCKROT *mid_rotations;        // 0x3c — generated midpoint-rail rotations
-    NUVEC min;                     // 0x40 — min of the A/B(/C/D) rail points
-    NUVEC max;                     // 0x4c — max of the A/B(/C/D) rail points
-    NUVEC center;                  // 0x58 — midpoint of min and max
-    f32 extent;                    // 0x64 — half of the smaller of the x/z extents
-    u16 flags;                     // 0x68 — bit 0: missing C or D rail (length mismatch)
-    u8 unknown_6a;                 // 0x6a
-    u8 unknown_6b;                 // 0x6b
-    u8 unknown_6c;                 // 0x6c
-    u8 unknown_6d;                 // 0x6d
-    u16 input_yaw;                 // 0x6e — controller angle offset on camera-relative sockets
-    u8 unknown_70;                 // 0x70
-    u8 unknown_71;                 // 0x71
-    u8 unknown_72;                 // 0x72
-    u8 unknown_73;                 // 0x73
-    u8 unknown_74;                 // 0x74
-    u8 unknown_75;                 // 0x75
-    u8 unknown_76;                 // 0x76
-    u8 unknown_77;                 // 0x77
-    u8 unknown_78;                 // 0x78
-    u8 unknown_79;                 // 0x79
-    u8 unknown_7a;                 // 0x7a
-    u8 unknown_7b;                 // 0x7b
-    f32 unknown_7c;                // 0x7c — default 1.0
-    f32 unknown_80;                // 0x80 — default 1.0
-    f32 unknown_84;                // 0x84 — default 1.0
-    f32 unknown_88;                // 0x88 — default 1.0; blend weight toward look pos
-    f32 unknown_8c;                // 0x8c — default 1.0; blend weight toward look pos
-    f32 unknown_90;                // 0x90 — default 5.0
-    f32 unknown_94;                // 0x94 — default 5.0
-    f32 unknown_98;                // 0x98
-    f32 unknown_9c;                // 0x9c
-    f32 unknown_a0;                // 0xa0
-    f32 unknown_a4;                // 0xa4
-    f32 unknown_a8;                // 0xa8
-    f32 unknown_ac;                // 0xac
-    f32 unknown_b0;                // 0xb0
-    f32 unknown_b4;                // 0xb4
-    f32 unknown_b8;                // 0xb8
-    f32 unknown_bc;                // 0xbc
-    f32 unknown_c0;                // 0xc0
-    f32 unknown_c4;                // 0xc4
-    f32 unknown_c8;                // 0xc8
-    f32 unknown_cc;                // 0xcc
-    f32 unknown_d0;                // 0xd0
-    f32 unknown_d4;                // 0xd4
-    f32 unknown_d8;                // 0xd8
-    u32 overlap_exclusion_mask[2]; // 0xdc — sockets whose bounds do not overlap
-    char name[16];                 // 0xe4 — zero-padded socket index, e.g. "03"
-    f32 unknown_f4;                // 0xf4 — default 0.5
-    u32 unknown_f8;                // 0xf8 — array of scene specials shown on the socket
-    u16 unknown_fc;                // 0xfc — count of specials at 0xf8
-    u8 unknown_fe;                 // 0xfe
-    u8 unknown_ff;                 // 0xff
-    u8 unknown_100[16];            // 0x100 — exception entries (2 bytes each)
-    u32 unknown_110;               // 0x110 — exception entry count
-    u8 unknown_114[40];            // 0x114
+    NUGSPLINE *cam;                 // 0x00 — sock_cam_ rail; NULL until found in scene
+    NUGSPLINE *a;                   // 0x04 — sock_a_ rail spline
+    NUGSPLINE *b;                   // 0x08 — sock_b_ rail spline
+    NUGSPLINE *c;                   // 0x0c — sock_c_ rail spline (optional)
+    NUGSPLINE *d;                   // 0x10 — sock_d_ rail spline (optional)
+    NUGSPLINE *mid;                 // 0x14 — sock_mid_ centre spline (optional)
+    NUGSPLINE *left;                // 0x18 — sock_left_ rail spline (optional)
+    NUGSPLINE *right;               // 0x1c — sock_right_ rail spline (optional)
+    NUGSPLINE *look;                // 0x20 — sock_look_ spline (optional)
+    NUGSPLINE *lateral;             // 0x24 — sock_lateral_ spline (optional)
+    NUGSPLINE *trackin;             // 0x28 — sock_trackin_ spline (optional)
+    NUGSPLINE *limit;               // 0x2c — sock_limit_ spline (optional)
+    u16 length;                     // 0x30 — rail point count - 1
+    u8 valid;                       // 0x32 — 1 once the socket has been populated
+    u8 unknown_33;                  // 0x33
+    SOCKSEGMENT *segments;          // 0x34 — generated data for each rail segment
+    SOCKROT *cam_rotations;         // 0x38 — generated camera-rail rotations
+    SOCKROT *mid_rotations;         // 0x3c — generated midpoint-rail rotations
+    NUVEC min;                      // 0x40 — min of the A/B(/C/D) rail points
+    NUVEC max;                      // 0x4c — max of the A/B(/C/D) rail points
+    NUVEC center;                   // 0x58 — midpoint of min and max
+    f32 extent;                     // 0x64 — half of the smaller of the x/z extents
+    u16 flags;                      // 0x68 — SOCK_FLAGS
+    u8 unknown_6a;                  // 0x6a
+    u8 unknown_6b;                  // 0x6b
+    u8 unknown_6c;                  // 0x6c
+    u8 look_ahead_segments;         // 0x6d
+    u16 input_yaw;                  // 0x6e — controller angle offset on camera-relative sockets
+    u8 unknown_70;                  // 0x70
+    u8 unknown_71;                  // 0x71
+    u8 unknown_72;                  // 0x72
+    u8 unknown_73;                  // 0x73
+    u8 unknown_74;                  // 0x74
+    u8 unknown_75;                  // 0x75
+    u8 unknown_76;                  // 0x76
+    u8 unknown_77;                  // 0x77
+    u8 unknown_78;                  // 0x78
+    u8 unknown_79;                  // 0x79
+    u8 unknown_7a;                  // 0x7a
+    u8 unknown_7b;                  // 0x7b
+    f32 unknown_7c;                 // 0x7c — default 1.0
+    f32 unknown_80;                 // 0x80 — default 1.0
+    f32 unknown_84;                 // 0x84 — default 1.0
+    f32 look_ratio_xz;              // 0x88 — default 1.0
+    f32 look_ratio_y;               // 0x8c — default 1.0
+    f32 camera_position_seek;       // 0x90 — default 5.0
+    f32 camera_angle_seek;          // 0x94 — default 5.0
+    f32 unknown_98;                 // 0x98
+    f32 camera_local_x_ratio;       // 0x9c
+    f32 camera_vertical_ratio;      // 0xa0
+    f32 camera_lateral_ratio;       // 0xa4
+    NUVEC camera_arena_offset;      // 0xa8
+    f32 camera_rail_offset;         // 0xb4
+    NUVEC camera_arena_blend;       // 0xb8
+    f32 camera_distance_to_target;  // 0xc4
+    f32 camera_pullback_ratio;      // 0xc8
+    f32 single_player_pullback;     // 0xcc
+    f32 two_player_pullback;        // 0xd0
+    f32 camera_height_above_ground; // 0xd4
+    f32 camera_shake;               // 0xd8
+    u32 overlap_exclusion_mask[2];  // 0xdc — sockets whose bounds do not overlap
+    char name[16];                  // 0xe4 — zero-padded socket index, e.g. "03"
+    f32 overlap_blend_ratio;        // 0xf4 — default 0.5
+    u32 unknown_f8;                 // 0xf8 — array of scene specials shown on the socket
+    u16 unknown_fc;                 // 0xfc — count of specials at 0xf8
+    u8 unknown_fe;                  // 0xfe
+    u8 unknown_ff;                  // 0xff
+    u8 unknown_100[16];             // 0x100 — exception entries (2 bytes each)
+    u32 unknown_110;                // 0x110 — exception entry count
+    u8 unknown_114[40];             // 0x114
 } SOCK;
 
 typedef struct SOCKSYS {
@@ -165,7 +173,7 @@ extern "C" {
     i32 SockSysCamera(SOCKSYS *sock_sys, NUVEC *fallback_camera_position, i32 socket_changed,
                       NUVEC *player_camera_positions, NUVEC *player_positions, i32 player_count,
                       SOCKPOSITION *camera_socket_position, NUVEC *camera_position, NUVEC *camera_target,
-                      f32 *overlap_blend, f32 *position_seek, f32 *angle_seek, f32 *terrain_clearance,
+                      f32 *overlap_blend, f32 *position_seek, f32 *angle_seek, f32 *camera_shake,
                       f32 *separation_scale);
 
 #ifdef __cplusplus

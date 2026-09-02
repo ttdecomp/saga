@@ -29,6 +29,7 @@
 #include "nu2api/nu3d/numtl.h"
 #include "nu2api/nu3d/nushader.h"
 #include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nu3d/nudlist.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nucore/nuapi.h"
@@ -42,7 +43,7 @@ NUSHADERPROGRAM *g_currentShaderProgram = nullptr;
 numtl_s *g_boundMaterial = nullptr;
 numtl_s *g_renderContext_materialInUse = nullptr;
 numtl_s *g_LastMtl = nullptr;
-u32 g_boundVertexFormat = 0; // NuVertexFormatPS* as integer (attribute-word array).
+usize g_boundVertexFormat = 0;
 u32 g_activeAttributes = 0;
 i32 g_renderContext_zFunc = 0;
 u32 g_alphaRef = 0;
@@ -84,10 +85,10 @@ static i32 NuIOSDLMtlCallback_lastFrameCount = 0;
 // Cross-TU imports.
 // ---------------------------------------------------------------------------
 
-extern "C" void NuShaderManagerBindShader(i32 shader);
-extern "C" void NuShaderObjectGLSLSetupMaterial(i32 shader_obj, numtl_s *mtl);
-extern "C" i32 NuShaderManagerGetShaderById(i32 id);
-extern "C" i32 NuShaderManagerGetCurrentShader(void);
+extern "C" void NuShaderManagerBindShader(NUSHADEROBJECT *shader);
+extern "C" void NuShaderObjectGLSLSetupMaterial(NUSHADEROBJECT *shader_obj, numtl_s *mtl);
+extern "C" NUSHADEROBJECT *NuShaderManagerGetShaderById(i32 id);
+extern "C" NUSHADEROBJECT *NuShaderManagerGetCurrentShader(void);
 
 extern i32 g_currentTexUnit; // nutex_ios_ex.cpp
 extern NUAPI nuapi;
@@ -105,19 +106,11 @@ static inline i32 NuApiFrameCount() {
     return *(i32 *)((u8 *)&nuapi + 0x60);
 }
 
-static inline u32 ptrToU32(const void *p) {
-    union {
-        const void *ptr;
-        u32 id;
-    } u{p};
-    return u.id;
+static inline usize ptrToUsize(const void *p) {
+    return reinterpret_cast<usize>(p);
 }
-static inline const void *u32ToPtr(u32 id) {
-    union {
-        u32 id;
-        const void *ptr;
-    } u{id};
-    return u.ptr;
+static inline const void *usizeToPtr(usize value) {
+    return reinterpret_cast<const void *>(value);
 }
 
 NUNATIVETEX *NuTexGetNative(i32 tex_id);
@@ -386,7 +379,7 @@ static void NuIOS_BindVertexAttributesInternal(isize dataAddr, usize baseVertex,
 static void NuIOS_BindVertexAttributesImmediate(isize, isize dataAddr) {
     NuIOSBindVAO(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
-    const u32 *fmt = (const u32 *)u32ToPtr(g_boundVertexFormat); // NOLINT
+    const u32 *fmt = static_cast<const u32 *>(usizeToPtr(g_boundVertexFormat));
     NuIOS_BindVertexAttributesInternal(dataAddr, 0, fmt, fmt[0]);
 }
 
@@ -397,7 +390,7 @@ void NuIOSDLDebrisCallback(void *data) {
     if (packet->vertex_count == 0) {
         return;
     }
-    g_boundVertexFormat = ptrToU32(g_nuDebrisVertexFormat);
+    g_boundVertexFormat = ptrToUsize(g_nuDebrisVertexFormat);
     if (packet->use_system_memory_vb == 0) {
         NuIOSBindVAO(0);
         glBindBuffer(GL_ARRAY_BUFFER, g_DebriVB[g_readBufferIndex * 4 + packet->vertex_buffer_index]);
@@ -410,7 +403,7 @@ void NuIOSDLDebrisCallback(void *data) {
 }
 
 static void NuIOS_BindVertexAttributes(isize dataAddr, usize baseVertex) {
-    const u32 *fmt = (const u32 *)u32ToPtr(g_boundVertexFormat); // NOLINT
+    const u32 *fmt = static_cast<const u32 *>(usizeToPtr(g_boundVertexFormat));
     NuIOS_BindVertexAttributesInternal(dataAddr, baseVertex, fmt, fmt[0]);
 }
 
@@ -426,7 +419,7 @@ static void NuIOS_BindVertexAttributesImmediateOverrideDataLayout(isize dataAddr
 // ---------------------------------------------------------------------------
 
 // original 0x29c070
-extern "C" void NuIOS_SetVertexFormat(u32 fmt) {
+extern "C" void NuIOS_SetVertexFormat(usize fmt) {
     g_boundVertexFormat = fmt;
 }
 
@@ -580,7 +573,7 @@ void NuIOSDLFaceOnCallback(void *arg) {
 
     NuIOSBindVAO(0);
     glBindBuffer(GL_ARRAY_BUFFER, packet->vertex_buffer);
-    g_boundVertexFormat = ptrToU32(g_nuFaceOnVertexFormat);
+    g_boundVertexFormat = ptrToUsize(g_nuFaceOnVertexFormat);
     NuIOS_BindVertexAttributes(0, 0);
     glDrawArrays(GL_TRIANGLES, packet->first_vertex, packet->face_count * 6);
 }
@@ -602,9 +595,9 @@ void NuIOSDLMtlCallback(void *arg) {
     g_boundMaterial = mtl;
     g_LastMtl = mtl;
     g_renderContext_materialInUse = mtl;
-    NuIOS_SetVertexFormat(ptrToU32(mtl->vertex_decl)); // NOLINT
+    NuIOS_SetVertexFormat(ptrToUsize(mtl->vertex_decl));
 
-    i32 shaderId = NuShaderManagerGetShaderById(mtl->shader_desc.shader_id);
+    NUSHADEROBJECT *shaderId = NuShaderManagerGetShaderById(mtl->shader_desc.shader_id);
     u8 variantFlags = MaterialVariantFlags(mtl);
 
     const bool isDebris = (variantFlags & 0x10) != 0;
@@ -619,12 +612,12 @@ void NuIOSDLMtlCallback(void *arg) {
                 g_currentShaderProgram = nullptr;
                 NuShaderManagerBindShader(shaderId);
                 // BindShader may clobber the format; restore it.
-                NuIOS_SetVertexFormat(ptrToU32(mtl->vertex_decl)); // NOLINT
+                NuIOS_SetVertexFormat(ptrToUsize(mtl->vertex_decl));
             }
         } else {
             // ---- Face-on / billboard ----
             NuShaderManagerBindShader(0);
-            g_boundVertexFormat = ptrToU32(g_nuFaceOnVertexFormat); // NOLINT
+            g_boundVertexFormat = ptrToUsize(g_nuFaceOnVertexFormat);
 
             char decalSel = FaceOnDecalSelector(mtl);
             NUSHADERPROGRAM *program = (decalSel == '\0') ? g_faceonProgram : g_faceonDecalProgram;
@@ -655,7 +648,7 @@ void NuIOSDLMtlCallback(void *arg) {
 
         NUSHADERPROGRAM *program = isGlass ? g_debrisGlassProgram : g_debrisProgram;
 
-        g_boundVertexFormat = ptrToU32(g_nuDebrisVertexFormat); // NOLINT
+        g_boundVertexFormat = ptrToUsize(g_nuDebrisVertexFormat);
         NuShaderManagerBindShader(0);
 
         g_boundShader = program != nullptr ? program->program : 0;
@@ -698,14 +691,9 @@ void NuIOSDLGeom2DCallback(void *arg) {
         return;
     }
 
-    i32 shader = NuShaderManagerGetShaderById(g_LastMtl ? g_LastMtl->shader_desc.shader_id : -1);
+    NUSHADEROBJECT *shader = NuShaderManagerGetShaderById(g_LastMtl ? g_LastMtl->shader_desc.shader_id : -1);
 
-    struct ShaderObjView {
-        u32 pad[4];
-        GLuint gl_prog;
-    };
-    auto *obj = (ShaderObjView *)(uintptr_t)shader; // NOLINT
-    if (shader == 0 || obj->gl_prog == 0) {
+    if (shader == NULL || shader->glsl.program == 0) {
         return;
     }
 
@@ -730,53 +718,37 @@ void NuIOSDLGeom2DCallback(void *arg) {
 
 // original 0x2a430d — 3D geometry callback
 void NuIOSDLGeomCallback(void *arg) {
-    struct GeomItem {
-        i32 prim_type;       // 0x00
-        i32 index_count;     // 0x04
-        u16 vertex_stride;   // 0x08
-        u8 pad_0a[0x0a];     // 0x0a
-        i32 base_vertex;     // 0x14
-        i32 vertex_count;    // 0x18
-        i32 first_index;     // 0x1c
-        GLuint index_buffer; // 0x20
-        u32 vertex_buffer;   // 0x24 GL buffer or immediate-data pointer
-        i32 immediate;       // 0x28
-        u32 pad_2c;          // 0x2c
-        u32 vertex_format;   // 0x30
-        void *dynamic_data;  // 0x34
-        u8 vertices[0];      // 0x38 immediate primitive data
-    };
-
-    auto *geom = static_cast<GeomItem *>(arg);
-    i32 shader = NuShaderManagerGetCurrentShader();
-    if (shader == 0 || *reinterpret_cast<GLuint *>((u8 *)(uintptr_t)shader + 0x10) == 0) { // NOLINT
+    auto *geom = static_cast<NUDISPLAYLISTGEOM *>(arg);
+    const isize immediate_vertices = PtrToArgInt(geom + 1);
+    NUSHADEROBJECT *shader = NuShaderManagerGetCurrentShader();
+    if (shader == NULL || shader->glsl.program == 0) {
         return;
     }
 
     NuShaderObjectGLSLSetupMaterial(shader, g_LastMtl);
-    switch (geom->prim_type) {
+    switch (geom->primitive_type) {
         case 0:
-            NuIOS_BindVertexAttributesImmediateOverrideDataLayout(PtrToArgInt(geom->vertices), 0,
+            NuIOS_BindVertexAttributesImmediateOverrideDataLayout(immediate_vertices, 0,
                                                                   (const u32 *)g_nuPrimVertexFormat);
             glDrawArrays(GL_TRIANGLES, 0, geom->vertex_count);
             break;
         case 1:
-            NuIOS_BindVertexAttributesImmediateOverrideDataLayout(PtrToArgInt(geom->vertices), 0,
+            NuIOS_BindVertexAttributesImmediateOverrideDataLayout(immediate_vertices, 0,
                                                                   (const u32 *)g_nuPrimVertexFormat);
             glDrawArrays(GL_TRIANGLE_STRIP, 0, geom->vertex_count);
             break;
         case 2:
-            NuIOS_BindVertexAttributesImmediateOverrideDataLayout(PtrToArgInt(geom->vertices), 0,
+            NuIOS_BindVertexAttributesImmediateOverrideDataLayout(immediate_vertices, 0,
                                                                   (const u32 *)g_nuPrimVertexFormat);
             glDrawArrays(GL_LINES, 0, geom->vertex_count);
             break;
         case 3:
-            NuIOS_BindVertexAttributesImmediateOverrideDataLayout(PtrToArgInt(geom->vertices), 0,
+            NuIOS_BindVertexAttributesImmediateOverrideDataLayout(immediate_vertices, 0,
                                                                   (const u32 *)g_nuPrimVertexFormat);
             glDrawArrays(GL_LINE_STRIP, 0, geom->vertex_count);
             break;
         case 5:
-            NuIOS_BindVertexAttributesImmediateOverrideDataLayout(PtrToArgInt(geom->vertices), 0,
+            NuIOS_BindVertexAttributesImmediateOverrideDataLayout(immediate_vertices, 0,
                                                                   (const u32 *)g_nuPrimVertexFormat);
             glDrawArrays(GL_TRIANGLE_FAN, 0, geom->vertex_count);
             break;
@@ -787,7 +759,7 @@ void NuIOSDLGeomCallback(void *arg) {
                 NuIOSBindVAO(0);
                 glBindBuffer(GL_ARRAY_BUFFER, geom->vertex_buffer);
                 NuIOS_BindVertexAttributes(0, geom->base_vertex);
-            } else if (geom->dynamic_data == nullptr) {
+            } else if (geom->dynamic_vertex_data == nullptr) {
                 NuIOSBindVAO(0);
 #ifdef __EMSCRIPTEN__
                 static GLuint immediate_vertex_buffer = 0;
@@ -805,7 +777,7 @@ void NuIOSDLGeomCallback(void *arg) {
                 NuIOSBindVAO(0);
                 glBindBuffer(GL_ARRAY_BUFFER, geom->vertex_format);
                 glBufferData(GL_ARRAY_BUFFER, geom->vertex_stride * geom->vertex_count, nullptr, GL_DYNAMIC_DRAW);
-                glBufferData(GL_ARRAY_BUFFER, geom->vertex_stride * geom->vertex_count, geom->dynamic_data,
+                glBufferData(GL_ARRAY_BUFFER, geom->vertex_stride * geom->vertex_count, geom->dynamic_vertex_data,
                              GL_DYNAMIC_DRAW);
                 NuIOS_BindVertexAttributes(0, 0);
             }
@@ -815,7 +787,7 @@ void NuIOSDLGeomCallback(void *arg) {
             break;
         }
         case 0x32:
-            NuIOS_BindVertexAttributesImmediateOverrideDataLayout(PtrToArgInt(geom->vertices), 0,
+            NuIOS_BindVertexAttributesImmediateOverrideDataLayout(immediate_vertices, 0,
                                                                   (const u32 *)g_nuPrimVertexFormat);
             glDrawArrays(GL_POINTS, 0, geom->vertex_count);
             break;
@@ -956,14 +928,14 @@ void NuIOSDLPreWarmGeomCallback(void *arg) {
     if (g_LastMtl == nullptr || g_LastMtl->shader_desc.blend_op2 == 0xff) {
         return;
     }
-    i32 shader = NuShaderManagerGetShaderById(g_LastMtl->shader_desc.shader_id);
-    if (shader == 0 || *reinterpret_cast<GLuint *>((u8 *)(uintptr_t)shader + 0x10) == 0) { // NOLINT
+    NUSHADEROBJECT *shader = NuShaderManagerGetShaderById(g_LastMtl->shader_desc.shader_id);
+    if (shader == NULL || shader->glsl.program == 0) {
         return;
     }
 
-    auto *words = static_cast<u32 *>(arg);
+    auto *geometry = static_cast<NUDISPLAYLISTGEOM *>(arg);
     NuIOSBindVAO(0);
-    if (words[0] == 6 && words[10] == 0) {
-        words[12] = g_boundVertexFormat;
+    if (geometry->primitive_type == 6 && geometry->immediate == 0) {
+        geometry->vertex_format = g_boundVertexFormat;
     }
 }
