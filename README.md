@@ -100,7 +100,7 @@ See the [documentation index](doc/main.md).
 | `legoapi/actions` | 6.6% | 4.0% | 99.1% |
 | `legoapi/ai` | 13.1% | 5.9% | 88.7% |
 | `legoapi/audio` | 6.5% | 9.2% | 96.7% |
-| `legoapi/characters` | 11.9% | 8.9% | 36.2% |
+| `legoapi/characters` | 11.9% | 9.3% | 36.2% |
 | `legoapi/core` | 25.3% | 14.3% | 97.8% |
 | `legoapi/cutscenes` | 10.6% | 6.8% | 99.6% |
 | `legoapi/gizmo` | 10.8% | 11.1% | 49.4% |
