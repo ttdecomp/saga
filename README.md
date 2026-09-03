@@ -96,7 +96,7 @@ See the [documentation index](doc/main.md).
 | `gameframework` | 76.4% | 23.5% | 100.0% |
 | `gamelib` | 7.3% | 5.9% | 12.1% |
 | `java` | 10.7% | 0.0% | 0.0% |
-| `legoapi` | 14.2% | 16.6% | 50.0% |
+| `legoapi` | 14.2% | 16.7% | 50.0% |
 | `legoapi/actions` | 6.6% | 4.0% | 99.1% |
 | `legoapi/ai` | 13.1% | 5.9% | 88.7% |
 | `legoapi/audio` | 6.5% | 9.2% | 96.7% |
@@ -105,7 +105,7 @@ See the [documentation index](doc/main.md).
 | `legoapi/cutscenes` | 10.6% | 6.8% | 99.6% |
 | `legoapi/gizmo` | 10.8% | 11.1% | 49.4% |
 | `legoapi/gizmos` | 36.3% | 34.6% | 98.2% |
-| `legoapi/items` | 7.5% | 16.9% | 23.2% |
+| `legoapi/items` | 7.6% | 17.0% | 23.2% |
 | `legoapi/menus` | 11.9% | 16.6% | 97.7% |
 | `legoapi/misc` | 8.5% | 7.0% | 100.0% |
 | `legoapi/props` | 30.1% | 9.9% | 59.8% |
