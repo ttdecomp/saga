@@ -14,7 +14,7 @@ class NuSoundSample : public NuSoundSource {
     enum class LoadState {
         NOT_LOADED = 0,
         LOADED = 1,
-        TWO = 2,
+        STREAM_READY = 2,
     };
     enum class ErrorState {
         NONE = 0,
@@ -52,7 +52,7 @@ class NuSoundSample : public NuSoundSource {
     LoadState GetLoadState() const;
     ErrorState GetLastErrorState() const;
     i32 GetThreadQueueCount() const;
-    u32 GetResourceCount();
+    i32 GetResourceCount();
 
     void Reference();
     void Release();

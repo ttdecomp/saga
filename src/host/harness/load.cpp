@@ -50,12 +50,12 @@ static void host_dat_list_names(NUDATHDR *dat, const char *filter) {
         const char *name = cur;
         usize len = strlen(name);
         cur += len + 1;
-        if ((uintptr_t)cur & 1) {
+        if (reinterpret_cast<usize>(cur) & 1) {
             cur++;
         }
         i16 idx = *(const i16 *)cur;
         cur += 2;
-        if ((uintptr_t)cur & 1) {
+        if (reinterpret_cast<usize>(cur) & 1) {
             cur++;
         }
         if (filter == NULL || host_strcasestr(name, filter) != NULL) {

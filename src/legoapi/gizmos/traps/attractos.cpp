@@ -46,7 +46,7 @@ static void Attracto_SetVisibility(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static i32 Attracto_GetPos(GIZMO *gizmo) {
+static NUVEC *Attracto_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
     return {};
 }

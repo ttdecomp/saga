@@ -56,7 +56,6 @@ static void MenuUpdateShop(MENU *);
 
 extern "C" void NewMenu(i32 menu_id, i32 menu_y, i32 param3);
 extern "C" void BackupMenu(void);
-extern "C" void NuPadSetStatus(i32 port, i32 status);
 extern "C" void NuIOS_RecordFlurryEvent(char *event_name);
 extern "C" i32 NuIOS_IsWidescreen(void);
 f32 GameGetMusicVolume(OPTIONSSAVE_s *options);
@@ -249,7 +248,7 @@ extern "C" void SmartTextEx(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_
                             u8 red, u8 green, u8 blue, f32 max_width, i32 max_lines, void *message_box,
                             i32 suppress_draw, u32 alpha);
 
-MENUFNINFO GameMenuInfo[33] = {
+MENUFNINFO GameMenuInfo[LEGO_MENU_INFO_COUNT] = {
     {0, MenuEnterTitles, MenuDrawTitles, MenuUpdateTitles, NULL, -1, -1, 0},
     {1, MenuEnterNewGame, MenuDrawNewGame, MenuUpdateNewGame, MenuExitNewGame, -1, -1, 0},
     {2, NULL, MenuDrawPauseMain, MenuUpdatePauseMain, NULL, -1, -1, 0},
@@ -413,20 +412,26 @@ void APIMenuDrawGameState(f32 x, f32 y, i32 highlight, i32 slot) {
 void (*drawslotsfn)(MENU *, f32) = APIMenuDrawMemCardSlots;
 void (*drawslotinfofn)(f32, f32, i32, i32) = APIMenuDrawGameState;
 
-void MenuInitialiseEx(MENUFNINFO *menu_info, i32 menu_info_count, i32 language_count,
+void MenuInitialiseEx(MENUFNINFO *menu_info, i32 menu_id_count, i32 language_count,
                       void (*draw_save_slots_info_fn)(f32, f32, i32, i32), i32 is_fade_enabled, i32 is_shadow_enabled) {
     char menus_used_str[64];
 
-    i32 menus_used = TOTAL_MENUS_COUNT - RESERVED_MENUS_COUNT;
-    if (menu_info_count <= TOTAL_MENUS_COUNT - RESERVED_MENUS_COUNT) {
-        menus_used = menu_info_count;
+    i32 menu_ids_used = TOTAL_MENUS_COUNT - RESERVED_MENUS_COUNT;
+    if (menu_id_count <= TOTAL_MENUS_COUNT - RESERVED_MENUS_COUNT) {
+        menu_ids_used = menu_id_count;
     }
 
-    for (i32 i = 0; i < menus_used; i++) {
+    // menu_id_count describes the valid ID range, not the number of records.
+    // The game table is sparse (ID 0x1c is absent), sorted, and ends with the
+    // record for menu_id_count - 1.
+    for (i32 i = 0; i < menu_ids_used; i++) {
         MenuInfo[RESERVED_MENUS_COUNT + i] = menu_info[i];
+        if (menu_info[i].id >= menu_ids_used - 1) {
+            break;
+        }
     }
 
-    MenusUsed = menus_used + RESERVED_MENUS_COUNT;
+    MenusUsed = menu_ids_used + RESERVED_MENUS_COUNT;
     sprintf(menus_used_str, "Menus used: %d", MenusUsed);
 
     MenuLanguages = language_count;
@@ -461,9 +466,9 @@ void MenuInitialiseEx(MENUFNINFO *menu_info, i32 menu_info_count, i32 language_c
     NuMtlUpdate(menu_fade_mtl);
 }
 
-void MenuInitialise(MENUFNINFO *menu_info, i32 menu_info_count, i32 language_count,
+void MenuInitialise(MENUFNINFO *menu_info, i32 menu_id_count, i32 language_count,
                     void (*draw_save_slots_fn)(MENU *, f32), i32 is_fade_enabled, i32 is_shadow_enabled) {
-    MenuInitialiseEx(menu_info, menu_info_count, language_count, NULL, is_fade_enabled, is_shadow_enabled);
+    MenuInitialiseEx(menu_info, menu_id_count, language_count, NULL, is_fade_enabled, is_shadow_enabled);
 
     if (draw_save_slots_fn != NULL) {
         drawslotsfn = draw_save_slots_fn;
@@ -632,7 +637,7 @@ static __used__ void MenuUpdateTitles(MENU *menu) {
         }
 
         MechInputTouchMenuController::AnyTouchesThisFrame = 0;
-        NuPadSetStatus(0, 1);
+        NuPadSetStatus(0, NUPAD_STATUS_ACTIVE);
         NewMenu(1, saveload_savepresent != 0, -1);
         MenuSFX = GameAudio_GetSfxId(0x30);
         NuIOS_RecordFlurryEvent("loadscreen_startgame");
@@ -726,7 +731,7 @@ void MenuUpdateNewGame(MENU *menu) {
     }
 
     if ((GamePad[0].unknown_04 & GAMEPAD_START) != 0) {
-        NuPadSetStatus(GamePad[0].pad->port, 1);
+        NuPadSetStatus(GamePad[0].pad->port, NUPAD_STATUS_ACTIVE);
     }
     if (static_cast<u8>(GamePad[0].unknown_24) == 0 || GamePad[0].pad->is_valid == 0) {
         PlayerProgress[0].active = 0;
@@ -735,7 +740,7 @@ void MenuUpdateNewGame(MENU *menu) {
     }
 
     if ((GamePad[1].unknown_04 & GAMEPAD_START) != 0) {
-        NuPadSetStatus(GamePad[1].pad->port, 1);
+        NuPadSetStatus(GamePad[1].pad->port, NUPAD_STATUS_ACTIVE);
     }
     if (static_cast<u8>(GamePad[1].unknown_24) == 0 || GamePad[1].pad->is_valid == 0) {
         PlayerProgress[1].active = 0;

@@ -65,17 +65,7 @@ nuthreaddisableswapfn *NuThreadDisableThreadSwap = &NuDisableVBlank;
 // in `NuThread_android.cpp`, and the functions are contiguous with the other
 // functions in this file. Who knows what was going on.
 #ifdef ANDROID
-// This struct is only evidenced in size and partial composition in the unused
-// function `NuThreadCreate`.
-struct ThreadData {
-    pthread_t thread;
-
-    // Types uncertain.
-    u32 unknown_04;
-    u32 unknown_08;
-};
-
-static ThreadData NuThread_Threads[0x10];
+static NULEGACYTHREADDATA NuThread_Threads[0x10];
 
 pthread_key_t g_currentThreadSpecificKey;
 

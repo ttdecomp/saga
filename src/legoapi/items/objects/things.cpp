@@ -20,6 +20,6 @@ void FindMtlInHGObj(nugscn_s *, i32) {
 // MemoryManager pool (zeroed) and construct it with room for 4 things. The
 // ctor stores the object in theGameThings.
 void CreateThingManager() {
-    void *obj = reinterpret_cast<MemoryManager *>(theMemoryManager)->AllocPool(0x24, 1);
+    void *obj = theMemoryManager.AllocPool(sizeof(GameThingManager), 1);
     new (obj) GameThingManager(4);
 }

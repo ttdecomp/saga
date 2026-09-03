@@ -1,5 +1,6 @@
 #include "decomp.h"
 #include "legoapi/core/config/cheat.h"
+#include "legoapi/characters/motion.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nucamera.h"
@@ -27,7 +28,7 @@ void SetFlicker(GameObject_s *, float) {
 
 void ResetLights(nuvec_s *position, rtldata_s *data, void *set) {
     rtlResetEx(data, 1);
-    if (position != NULL) {
+    if (set != NULL) {
         rtlApplySetScale(set, data, position, NULL, -1, 1.0f);
     }
 }
@@ -56,14 +57,57 @@ rtldata_s lev_rtldata;
 
 extern "C" {
     void rtlSetLights(rtldata_s *);
+    void NuLightSpotFadeSet(u32);
 }
+
+static constexpr u32 kNeutralSpotLightFade = 0x80808080u;
 
 void SetLevelLights(void *set, float) {
     rtlApplySetScale(set, &lev_rtldata, reinterpret_cast<NUVEC *>(&global_camera.mtx.m30), NULL, 0x10, 1.0f);
     rtlSetLights(&lev_rtldata);
 }
 
-void LightGameObject(GameObject_s *, void *) {
+void LightGameObject(GameObject_s *object, void *set) {
+    rtlApplySetScale(set, &object->light_data, &object->apiobj.position, NULL, -1, 1.0f);
+
+    const rtldata_s &target = object->light_data;
+    OBJECTLIGHTINGSTATE_s &current = object->lighting_state;
+    const bool reset = (object->field_0xefc & 0x80) != 0;
+
+    auto update_colour = [reset](NUCOLOUR3 &value, const NUCOLOUR3 &next) {
+        if (reset) {
+            value = next;
+        } else {
+            value.r = SeekValF(value.r, next.r, 5.0f);
+            value.g = SeekValF(value.g, next.g, 5.0f);
+            value.b = SeekValF(value.b, next.b, 5.0f);
+        }
+    };
+    auto update_direction = [reset](NUVEC &value, const NUVEC &next) {
+        if (reset) {
+            value = next;
+        } else {
+            value.x = SeekValF(value.x, next.x, 5.0f);
+            value.y = SeekValF(value.y, next.y, 5.0f);
+            value.z = SeekValF(value.z, next.z, 5.0f);
+        }
+        if (value.x != 0.0f || value.y != 0.0f || value.z != 0.0f) {
+            NuVecNorm(&value, &value);
+        }
+    };
+
+    if (reset) {
+        current.ambient = target.ambient;
+    } else {
+        current.ambient.x = SeekValF(current.ambient.x, target.ambient.x, 5.0f);
+        current.ambient.y = SeekValF(current.ambient.y, target.ambient.y, 5.0f);
+        current.ambient.z = SeekValF(current.ambient.z, target.ambient.z, 5.0f);
+    }
+    for (i32 light = 0; light < 3; ++light) {
+        update_colour(current.intensity[light], target.intensity[light]);
+        update_direction(current.direction[light], target.direction[light]);
+    }
+    object->field_0xefc &= 0x7f;
 }
 
 void FindAndSetLights(nuvec_s *, float, void *) {
@@ -73,6 +117,7 @@ void LightSabreDebris(GameObject_s *) {
 }
 
 void SetSpotLightMode() {
+    NuLightSpotFadeSet(kNeutralSpotLightFade);
 }
 
 void SetCreatureLights(APIOBJECT_s *object) {

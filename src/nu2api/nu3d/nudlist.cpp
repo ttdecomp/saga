@@ -55,6 +55,11 @@ extern "C" {
     NUDLIST_MANAGER global_dlist_manager = {0};
 }
 
+// Scratch backing for the 2D list's item cursor so AddItem is safe before
+// NuDisplayListInit has run (host safety net).
+static u8 s_2d_item_scratch[0x100] = {0};
+static u8 s_2d_state_storage[0x40] = {0};
+
 // Capture debug state (bss @0x11a0070 / @0x11a0068).
 static i32 s_capture_enabled; // do_capture
 static i32 s_capture_fh;      // capture file handle
@@ -87,54 +92,54 @@ void NuIOSDLDeferredTransformCallback(void *);
 void NuIOSDLDeferredTransformParamsCallback(void *);
 
 // Primary table — __ItemFnTable @0x625ae0 (sparse, indexed by absolute type).
-NUDLITEMTABLE g_nudl_dispatch_table = {nullptr};
-static NUDLITEMTABLE s_shadow_table_storage = {nullptr};
-static const NUDLITEMTABLE *s_shadow_table = &s_shadow_table_storage;
+nudl_handler_fn g_nudl_dispatch_table[0x100] = {nullptr};
+static nudl_handler_fn s_shadow_table_storage[0x100] = {nullptr};
+static const nudl_handler_fn *s_shadow_table = s_shadow_table_storage;
 
 struct NudlTableInit {
     NudlTableInit() {
-        auto *t = &g_nudl_dispatch_table;
-        auto *s = &s_shadow_table_storage;
-        (*t)[0x00] = NuIOSDLMtlCallback;
-        (*t)[0x02] = NuIOSDLGeomCallback;
-        (*t)[0x03] = NuIOSDLTransformCallback;
-        (*t)[0x0b] = NuIOSDLGeomCallback;
-        (*t)[0x0c] = NuIOSDLTransformParamsCallback;
-        (*t)[0x0f] = NuIOSDLFaceOnCallback;
-        (*t)[0x10] = NuIOSDLFaceOnTransformCallback;
-        (*t)[0x13] = NuIOSDLGeom2DCallback;
-        (*t)[0x14] = NuIOSDLLightsCallback;
-        (*t)[0x18] = NuIOSDLGeomCallback;
-        (*t)[0x19] = NuIOSDLSkinMtxCallback;
-        (*t)[0x1a] = NuIOSDLCameraCallback;
-        (*t)[0x25] = NuIOSDLKonstCallback;
-        (*t)[0x26] = NuIOSDLFogCallback;
-        (*t)[0x27] = NuIOSDLDebrisCallback;
-        (*t)[0x29] = NuIOSDLVertexGroupsCallback;
-        (*t)[0x2a] = NuIOSDLVertexOffsetsCallback;
-        (*t)[0x2b] = NuIOSDLReflectionCallback;
-        (*t)[0x2e] = NuIOSDLLightmapOld;
-        (*t)[0x2f] = NuIOSDLLightmapOffsetOld;
-        (*t)[0x30] = NuIOSDLLightmap;
+        auto *t = g_nudl_dispatch_table;
+        auto *s = s_shadow_table_storage;
+        t[0x80] = NuIOSDLMtlCallback;
+        t[0x82] = NuIOSDLGeomCallback;
+        t[0x83] = NuIOSDLTransformCallback;
+        t[0x8b] = NuIOSDLGeomCallback;
+        t[0x8c] = NuIOSDLTransformParamsCallback;
+        t[0x8f] = NuIOSDLFaceOnCallback;
+        t[0x90] = NuIOSDLFaceOnTransformCallback;
+        t[0x93] = NuIOSDLGeom2DCallback;
+        t[0x94] = NuIOSDLLightsCallback;
+        t[0x98] = NuIOSDLGeomCallback;
+        t[0x99] = NuIOSDLSkinMtxCallback;
+        t[0x9a] = NuIOSDLCameraCallback;
+        t[0xa5] = NuIOSDLKonstCallback;
+        t[0xa6] = NuIOSDLFogCallback;
+        t[0xa7] = NuIOSDLDebrisCallback;
+        t[0xa9] = NuIOSDLVertexGroupsCallback;
+        t[0xaa] = NuIOSDLVertexOffsetsCallback;
+        t[0xab] = NuIOSDLReflectionCallback;
+        t[0xae] = NuIOSDLLightmapOld;
+        t[0xaf] = NuIOSDLLightmapOffsetOld;
+        t[0xb0] = NuIOSDLLightmap;
 
-        (*s)[0x00] = NuIOSDLDeferredMtlCallback;
-        (*s)[0x02] = NuIOSDLGeomCallback;
-        (*s)[0x03] = NuIOSDLDeferredTransformCallback;
-        (*s)[0x0b] = NuIOSDLGeomCallback;
-        (*s)[0x0c] = NuIOSDLDeferredTransformParamsCallback;
-        (*s)[0x18] = NuIOSDLGeomCallback;
-        (*s)[0x19] = NuIOSDLSkinMtxCallback;
-        (*s)[0x29] = NuIOSDLVertexGroupsCallback;
-        (*s)[0x2a] = NuIOSDLVertexOffsetsCallback;
+        s[0x80] = NuIOSDLDeferredMtlCallback;
+        s[0x82] = NuIOSDLGeomCallback;
+        s[0x83] = NuIOSDLDeferredTransformCallback;
+        s[0x8b] = NuIOSDLGeomCallback;
+        s[0x8c] = NuIOSDLDeferredTransformParamsCallback;
+        s[0x98] = NuIOSDLGeomCallback;
+        s[0x99] = NuIOSDLSkinMtxCallback;
+        s[0xa9] = NuIOSDLVertexGroupsCallback;
+        s[0xaa] = NuIOSDLVertexOffsetsCallback;
     }
 };
 static NudlTableInit s_nudl_table_init;
 
 // CurrentItemTable @0x625c84 — points at entry for type 0x80.
-static const NUDLITEMTABLE *s_current_table = nullptr;
+static const nudl_handler_fn *s_current_table = nullptr;
 struct NudlCurrentTableInit {
     NudlCurrentTableInit() {
-        s_current_table = &g_nudl_dispatch_table;
+        s_current_table = &g_nudl_dispatch_table[0x80];
     }
 };
 static NudlCurrentTableInit s_nudl_current_init;
@@ -170,12 +175,19 @@ extern "C" void NuDisplayListCheckBuffer(void) {
 }
 
 extern "C" nudisplaylist_s *NuDisplayListGet2dList(void) {
-    return &global_dlist_manager.dlist_2d;
+    nudisplaylist_s *list = &global_dlist_manager.dlist_2d;
+    if (list->items == nullptr) {
+        list->items = reinterpret_cast<nudisplaylistitem_s *>(s_2d_item_scratch);
+        if (list->state == nullptr) {
+            list->state = reinterpret_cast<nurndrstate_s *>(s_2d_state_storage);
+        }
+    }
+    return list;
 }
 
 extern "C" void NuDisplayListResetBuffer(void) {
     display_list_buffer = reinterpret_cast<VARIPTR *>(&rndrstream_free);
-    display_list_buffer_end = reinterpret_cast<VARIPTR *>(rndrstream_end.void_ptr);
+    display_list_buffer_end = reinterpret_cast<VARIPTR *>(rndrstream_end.addr);
 }
 
 // Small builders used by NuDisplayListCreateMtlDlist — second args are
@@ -200,12 +212,13 @@ extern "C" void NuDisplayListAddLightState(nudisplaylistitem_s *item, void * /*m
 // Executor
 // ──────────────────────────────────────────────────────────────────────────────
 
-extern "C" void NuDisplayListExecute(nudisplaylistitem_s *item, const NUDLITEMTABLE *item_table) {
+extern "C" void NuDisplayListExecute(nudisplaylistitem_s *item, const nudl_handler_fn *item_table) {
+    // `item_table` points at the entry for type 0x80.
     for (;;) {
         // Walk the linear run until a NEXT links elsewhere.
         while (item->id != kItemId_Next) {
             if (item->id == kItemId_Call) {
-                auto handler = (*item_table)[item->type - NUDL_ITEM_TYPE_FIRST];
+                auto handler = item_table[static_cast<u32>(item->type) - kItemType_Mtl];
                 if (handler) {
                     handler(item->next);
                 }
@@ -220,15 +233,14 @@ extern "C" void NuDisplayListExecute(nudisplaylistitem_s *item, const NUDLITEMTA
 }
 
 extern "C" void NuDisplayListDrawItems(nudisplaylistitem_s *items) {
-    nudisplaylistitem_s *item = items;
     NuDisplayListExecute(items, s_current_table);
 }
 
 extern "C" void NuDisplayListSetItemTable(i32 which) {
     if (which == 0) {
-        s_current_table = &g_nudl_dispatch_table;
+        s_current_table = &g_nudl_dispatch_table[0x80];
     } else if (which == 1) {
-        s_current_table = s_shadow_table;
+        s_current_table = &s_shadow_table[0x80];
     }
 }
 
@@ -405,9 +417,9 @@ extern "C" void NuDisplaySceneAdd(NUDLDLISTSCENE *scene) {
     }
     global_dlist_manager.sort_list = sort_list;
 
-    if (scene->field_8c != nullptr) {
-        *reinterpret_cast<void **>(scene->field_8c) = global_dlist_manager.mtlanim_list;
-        global_dlist_manager.mtlanim_list = scene->field_8c;
+    if (scene->material_animations != nullptr) {
+        scene->material_animations->next = global_dlist_manager.mtlanim_list;
+        global_dlist_manager.mtlanim_list = scene->material_animations;
     }
     scene->flags &= 0xef;
     scene->render_buffer &= 0xdf;
@@ -458,17 +470,15 @@ extern "C" void NuDisplaySceneDestroy(NUDLDLISTSCENE *scene) {
     global_dlist_manager.sort_list = sort_list;
     global_dlist_manager.nused_sort_pris -= scene->nsort_pris;
 
-    if (scene->field_8c != nullptr) {
-        void *node = global_dlist_manager.mtlanim_list;
-        if (node == scene->field_8c) {
-            global_dlist_manager.mtlanim_list =
-                *reinterpret_cast<void **>(reinterpret_cast<u8 *>(scene->field_8c) + 0xc);
+    if (scene->material_animations != nullptr) {
+        NUMTLANIMSET *node = global_dlist_manager.mtlanim_list;
+        if (node == scene->material_animations) {
+            global_dlist_manager.mtlanim_list = scene->material_animations->next;
         } else {
-            while (*reinterpret_cast<void **>(reinterpret_cast<u8 *>(node) + 0xc) != scene->field_8c) {
-                node = *reinterpret_cast<void **>(reinterpret_cast<u8 *>(node) + 0xc);
+            while (node->next != scene->material_animations) {
+                node = node->next;
             }
-            *reinterpret_cast<void **>(reinterpret_cast<u8 *>(node) + 0xc) =
-                *reinterpret_cast<void **>(reinterpret_cast<u8 *>(scene->field_8c) + 0xc);
+            node->next = scene->material_animations->next;
         }
     }
 
@@ -1115,6 +1125,8 @@ extern "C" void NuDisplayListSwapBuffersEndFrame(void) {
                 // No local state or no clipping — copy geometry if needed.
                 if (dl->mtl_last != dl->first) {
                     copyMaterialGeometry(dl, dl->first, sc);
+                } else {
+                    linkSceneGeometry(dl);
                 }
                 last_local = nullptr;
             } else {

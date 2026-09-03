@@ -148,7 +148,7 @@ void GrievousA_Init(WORLDINFO_s *world) {
     GIZMOBLOWUP_s *b;
     if ((b = GizmoBlowUp_FindByName(world, "grievous_1")) != NULL) {
         nuvec_s pos = {5.42f, 2.76f, 1.79f};
-        NuSpecialSetDrawPos((char *)b->field_0xac + 0x30, &pos);
+        NuSpecialSetDrawPos(&b->type->animated_special, &pos);
         UpdateMidPos(b);
     }
     if ((b = GizmoBlowUp_FindByName(world, "grievous_2")) != NULL)
@@ -215,8 +215,8 @@ void KashyyykB_Init(WORLDINFO_s *) {
 void KashyyykC_Init(WORLDINFO_s *world) {
     GIZFORCE_s *f = GizForces_FindForce(world, "kashyyyk_boss");
     if (f != NULL) {
-        if (f->field_0x44 == 3.0f)
-            f->field_0x44 = 20.0f;
+        if (f->force_strength == 3.0f)
+            f->force_strength = 20.0f;
         f->strength_0x6c = 1.0f;
     }
 }

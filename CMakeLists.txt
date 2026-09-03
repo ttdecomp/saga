@@ -5,7 +5,6 @@ if(POLICY CMP0135)
 endif()
 
 option(BUILD_FOR_HOST "Build for host system" OFF)
-option(HOST_ENABLE_ASAN "Enable AddressSanitizer in non-Windows host builds" ON)
 
 include("${CMAKE_SOURCE_DIR}/cmake/ndk.cmake")
 
@@ -46,22 +45,12 @@ include("${CMAKE_SOURCE_DIR}/cmake/ogg-vorbis.cmake")
 include("${CMAKE_SOURCE_DIR}/cmake/squish.cmake")
 
 if (BUILD_FOR_HOST)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-stack-protector")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-stack-protector")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-stack-protector -msse2")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-stack-protector -msse2")
 
-    if(EMSCRIPTEN)
-        set(HOST_ENABLE_ASAN OFF)
-    else()
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse2")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -msse2")
-    endif()
-
-    if (NOT EMSCRIPTEN AND NOT CMAKE_HOST_WIN32 AND HOST_ENABLE_ASAN)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -march=i686 -fsanitize=address")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32 -march=i686 -fsanitize=address")
-    elseif(NOT EMSCRIPTEN AND NOT CMAKE_HOST_WIN32)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -march=i686")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32 -march=i686")
+    if (NOT CMAKE_HOST_WIN32)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m32 -march=i686 -fsanitize=address,undefined")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m32 -march=i686 -fsanitize=address,undefined")
     endif()
 else()
     message(STATUS "Using Android NDK toolchain: ${NDK_TOOLCHAIN}")
@@ -84,7 +73,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_IMPLICIT_LINK_LIBRARIES "")
 set(CMAKE_CXX_IMPLICIT_LINK_LIBRARIES "")
 
-if(CMAKE_HOST_WIN32 AND NOT EMSCRIPTEN)
+if(CMAKE_HOST_WIN32)
     # needed because msys adds incorrect flags to the linker
     set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <FLAGS> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
     set(CMAKE_C_LINK_EXECUTABLE   "<CMAKE_C_COMPILER>   <FLAGS> <CMAKE_C_LINK_FLAGS>   <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
@@ -158,6 +147,8 @@ if (BUILD_FOR_HOST)
 
         # Minimal host platform boundary: one selected input backend and
         # external API/filesystem adapters only.
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/platform/free_camera.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/host/platform/free_camera_culling.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host/platform/input.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host/platform/compressed_texture.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/host/platform/documents.cpp
@@ -167,10 +158,6 @@ if (BUILD_FOR_HOST)
 
     add_executable(saga ${SAGA_SOURCE_FILES})
     add_dependencies(saga check_host_boundary)
-
-    if(EMSCRIPTEN)
-        set_target_properties(saga PROPERTIES OUTPUT_NAME index)
-    endif()
     
     include(src/host.cmake)
 else()
@@ -194,7 +181,7 @@ target_compile_options(saga PRIVATE
     -DANDROID
     $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
 )
-if(CMAKE_HOST_WIN32 AND NOT EMSCRIPTEN)
+if(CMAKE_HOST_WIN32)
     set_target_properties(saga PROPERTIES ENABLE_EXPORTS TRUE)
     if(NOT BUILD_FOR_HOST)
         set_target_properties(saga PROPERTIES LINK_FLAGS "-rdynamic")
@@ -214,7 +201,7 @@ endforeach()
 
 # use clang-tidy if available
 find_program(CLANG_TIDY_EXE NAMES "clang-tidy")
-if(CLANG_TIDY_EXE AND NOT EMSCRIPTEN)
+if(CLANG_TIDY_EXE)
     message(STATUS "Found clang-tidy: ${CLANG_TIDY_EXE}")
 
     if(BUILD_FOR_HOST)

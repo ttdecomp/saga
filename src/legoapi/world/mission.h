@@ -21,7 +21,7 @@ typedef struct MISSIONDATA_s {
 } MISSIONDATA;
 
 struct MISSIONSYS_s {
-    i32 length;                // 0x00
+    MISSIONDATA *missions;     // mission table
     MISSIONDATA *mission;      // 0x04 (pointer to the active mission entry)
     TIMER timer;               // 0x08
     MISSIONSAVE *mission_save; // 0x18
@@ -37,6 +37,7 @@ typedef struct MISSIONSYS_s MISSIONSYS;
 
 MISSIONSYS *Missions_Configure(char *file, VARIPTR *bufferStart, VARIPTR *bufferEnd, MISSIONSAVE *save);
 MISSIONDATA *Mission_Active(MISSIONSYS *mission_system);
+i32 Missions_PickupsOff(MISSIONSYS *mission_system);
 
 extern MISSIONSYS *MissionSys;
 #endif

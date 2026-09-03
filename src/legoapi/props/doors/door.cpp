@@ -19,10 +19,14 @@ char Door_ExitCameraSplineName[64] = {0};
 char Door_ExitName[64] = {0};
 i32 Door_Start = 0;
 i32 Door_NextSock = -1;
+f32 Door_CutCamWait;
+f32 Door_CutCamWaitTime;
+f32 Door_CutCamBlendTime;
+i32 Door_CutLookAtPlayers;
 
 // ---- Hub exit-door bookkeeping ----
 void *HubStartDoor = NULL;
-void *VEHICLES_ADATA = NULL;
+AREADATA_s *VEHICLES_ADATA = NULL;
 i32 LEGOSPL_START = -1;
 i32 hub_from_superstory = -1;
 i32 hub_from_mission = -1;

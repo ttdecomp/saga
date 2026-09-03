@@ -10,6 +10,7 @@ struct HINT_s;
 #include "legoapi/world/area.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/core/config/cheat.h"
+#include "legoapi/items/base/collection.h"
 #include "legoapi/world/levels/episode.h"
 #include "legoapi/world/level.h"
 #include "legoapi/characters/core/players.h"
@@ -440,7 +441,7 @@ void PreResetCode(GameObject_s *obj) {
         *(u32 *)&b[0xd0c] = 0;
         *(u16 *)&b[0x4a] = 0xffff;
         *(u32 *)&b[0xd7c] = 0;
-        if ((*(u32 *)(*(u32 *)&b[0x54] + 4) & 0x8040) == 0) {
+        if ((obj->apiobj.character_data->model_flags & 0x8040) == 0) {
             b[0xe31] = 0;
         }
 
@@ -469,12 +470,12 @@ void PreResetCode(GameObject_s *obj) {
             }
 
             if (b[0x7a5] == 0 &&
-                sPreReset1048Scale * *(f32 *)(*(u32 *)(*(u32 *)&b[0x54] + 0x24) + 0x30) > *(f32 *)&b[0x76c]) {
+                sPreReset1048Scale * obj->apiobj.character_data->player_config->reset_scale > *(f32 *)&b[0x76c]) {
                 goto finish_dfd;
             }
 
             {
-                f32 f28v = *(f32 *)(*(u32 *)&b[0xc94] + 0x28);
+                f32 f28v = obj->pad_gamepad->input_magnitude;
                 if (f28v > 0.0f) {
                     if ((al & 2) != 0) {
                         goto finish_dfd;
@@ -544,7 +545,7 @@ void PreResetCode(GameObject_s *obj) {
             GameObjectNearFloor(obj, 1.0f, (f32 *)&b[0xda0]);
             *(f32 *)&b[0xdb8] = GetHoverPosY(obj);
             {
-                u8 v = *(u8 *)(*(u32 *)(*(u32 *)&b[0x54] + 0x24) + 0x117);
+                u8 v = obj->apiobj.character_data->player_config->variant;
                 if (v != 0xff) {
                     if (b[0x27c] == 0xff) {
                         b[0xe42] = v;
@@ -554,7 +555,7 @@ void PreResetCode(GameObject_s *obj) {
                         } else if (b[0x27c] != 0xff && Player_HasPurpleForce(obj) != 0) {
                             b[0xe42] = 0x03;
                         } else {
-                            b[0xe42] = *(u8 *)(*(u32 *)(*(u32 *)&b[0x54] + 0x24) + 0x117);
+                            b[0xe42] = obj->apiobj.character_data->player_config->variant;
                         }
                     }
                 } else {
@@ -564,7 +565,7 @@ void PreResetCode(GameObject_s *obj) {
                 {
                     u32 mask = GAMEPAD_ACTION;
                     f32 xmm0 = *(f32 *)&b[0xde4];
-                    if ((*(u32 *)(*(u32 *)&b[0xc94] + 4) & mask) != 0) {
+                    if ((obj->pad_gamepad->buttons_held & mask) != 0) {
                         *(f32 *)&b[0xde4] = xmm0 + FRAMETIME;
                     } else {
                         if (xmm0 > 0.0f && sPreResetD18Scale > xmm0) {
@@ -617,8 +618,6 @@ void SetHitPoints(GameObject_s *obj, i32 hp) {
         obj->current_hp = obj->hitpoints;
     }
 }
-
-extern i32 Collection_Got(i32 id);
 
 void RememberPlayerIDs(i32 a, i32 b, i32 c) __attribute__((force_align_arg_pointer));
 void RememberPlayerIDs(i32 a, i32 b, i32 c) {
@@ -674,13 +673,33 @@ extern "C" void rtlDynamicEnable(i32 id, i32 param) {
     (void)param;
 }
 
-float GameObjectNearFloor(GameObject_s *obj, float h, float *out) {
-    (void)obj;
-    (void)h;
-    if (out != NULL) {
-        *out = 0.0f;
+i32 GameObjectNearFloor(GameObject_s *obj, f32 h, f32 *out) {
+    // Target 0x46e7b0..0x46e862. GameShadow uses a large positive
+    // sentinel when it does not find terrain, rather than -1.
+    const f32 no_floor_height = 2000000.0f;
+    const f32 floor_height = obj->apiobj.field_0x218;
+    if (floor_height == no_floor_height) {
+        if (out != NULL) {
+            *out = no_floor_height;
+        }
+        return 0;
     }
-    return 0.0f;
+
+    i32 height_steps = static_cast<i32>(h);
+    if (height_steps < 0) {
+        height_steps = 0;
+    }
+    f32 tolerance = static_cast<f32>(height_steps) * 0.025f;
+    const f32 radius_tolerance = obj->apiobj.collision_radius / 0.225f * tolerance;
+    if (radius_tolerance > tolerance) {
+        tolerance = radius_tolerance;
+    }
+
+    const f32 floor_distance = obj->apiobj.collision_min.y - floor_height;
+    if (out != NULL) {
+        *out = floor_distance;
+    }
+    return tolerance > floor_distance;
 }
 
 float GetHoverPosY(GameObject_s *obj) {
@@ -750,13 +769,54 @@ void PlayerItemType_Find(i32) {
 void Player_ClearContext(GameObject_s *, i32) {
 }
 
-void Player_HasFastBuild(GameObject_s *) {
+i32 Player_HasFastBuild(GameObject_s *player) {
+    return Cheats_CheckFlags(0x4000) != 0 || (player != NULL && player->field_0xdec > 0.0f);
 }
 
 void PlayerItemTypes_Init(PLAYERITEMTYPE_s *) {
 }
 
-void Player_ResetContexts(PLAYERPACKET_s *) {
+void Player_ResetContexts(PLAYERPACKET_s *packet) {
+    f32 context_blend = 0.0f;
+
+    packet->context_animation_time = 0.0f;
+    packet->context_target = -1;
+    if ((packet->animation_flags & GAMEOBJECT_E22_FLAG_WEAPON_ANIMATION) != 0) {
+        context_blend = 1.0f;
+    }
+
+    packet->context_distance = 5.0f;
+    packet->field_0x670 = 0;
+    packet->field_0x678 = 0;
+    packet->field_0x668 = 0;
+    packet->field_0x77e = 0;
+    packet->context_blend = context_blend;
+    packet->build_context = -1;
+    packet->action_movement_variant = 0;
+    packet->action_movement_state = 0;
+    packet->gamepad->allocated_5a &= static_cast<u8>(~(0x04 | 0x10));
+    packet->input_state = 0;
+    packet->secondary_flags &= static_cast<u8>(~0x04);
+    packet->field_0x648 = 0;
+
+    const i32 random_context = qrand();
+    packet->field_0x6a0 = 0;
+    packet->field_0x6a4 = 0;
+    packet->field_0x674 = 0;
+    packet->field_0x6e0 = 0;
+    packet->field_0x6f8 = 0;
+    packet->field_0x710 = 0;
+    packet->field_0x724 = 0;
+    packet->field_0x730 = 0;
+    packet->field_0x734 = 0;
+    packet->context_animation = 0;
+    packet->movement_angle_0 = -1;
+    packet->context_mode = 0;
+    packet->movement_angle_2 = -1;
+    packet->random_context = static_cast<u8>(random_context / 0x8000);
+    packet->movement_angle_3 = -1;
+    packet->field_0x77d = 0;
+    packet->linked_object = NULL;
 }
 
 void Player_CopyEssentials(GameObject_s *, GameObject_s *) {
@@ -839,12 +899,8 @@ namespace {
         obj->apiobj.pos_y = position.y;
         obj->apiobj.pos_z = position.z;
 
-        obj->apiobj.start_position[0] = position.x;
-        obj->apiobj.start_position[1] = position.y;
-        obj->apiobj.start_position[2] = position.z;
-        obj->apiobj.initial_position[0] = position.x;
-        obj->apiobj.initial_position[1] = position.y;
-        obj->apiobj.initial_position[2] = position.z;
+        obj->apiobj.start_position = position;
+        obj->apiobj.initial_position = position;
 
         plr_lastpos = position;
     }
@@ -873,9 +929,7 @@ void ResetPlayer(GameObject_s *obj, i32 reset_moves, nuvec_s *position, i32 snap
         ResetPlayerMoves(obj);
         SyncPlayerSpawnPosition(obj);
 
-        obj->apiobj.field_0x68 = v000.x;
-        obj->apiobj.field_0x6c = v000.y;
-        obj->apiobj.field_0x70 = v000.z;
+        obj->apiobj.velocity = v000;
         obj->reset_velocity = v000;
 
         GetTopBot(obj);
@@ -1056,7 +1110,8 @@ void ResetPlayerMoves(GameObject_s *) {
 void SetToLastSafePos(GameObject_s *) {
 }
 
-void AvailableToPlayer(u32, i32, i32, i32) {
+i32 AvailableToPlayer(u32, i32, i32, i32) {
+    return 0;
 }
 
 void GetNumLocalPlayers() {
@@ -1071,7 +1126,36 @@ void ActivePlayerInRange(nuvec_s *, float, float *) {
 void GetOtherActivePlayer(GameObject_s *) {
 }
 
-void FindNearestPlayerToVec(nuvec_s *, GameObject_s **, float &, bool, u32) {
+bool FindNearestPlayerToVec(nuvec_s *position, GameObject_s **nearest_player, float &distance_squared,
+                            bool require_character_flags, u32 character_flags) {
+    *nearest_player = NULL;
+    distance_squared = 0.0f;
+
+    for (i32 index = 0; index < 8; ++index) {
+        GameObject_s *candidate = Player[index];
+        if (candidate == NULL || static_cast<i8>(candidate->apiobj.flags_low) >= 0) {
+            continue;
+        }
+
+        const f32 candidate_distance = NuVecDistSqr(&candidate->apiobj.position, position, NULL);
+        if (*nearest_player != NULL && candidate_distance >= distance_squared) {
+            continue;
+        }
+
+        if (require_character_flags) {
+            CHARACTERDATA *character = candidate->apiobj.character_data;
+            GAMECHARACTERDATA *game_character =
+                character == NULL ? NULL : static_cast<GAMECHARACTERDATA *>(character->field11_0x24);
+            if (game_character == NULL || (game_character->flags_090 & character_flags) == 0) {
+                continue;
+            }
+        }
+
+        distance_squared = candidate_distance;
+        *nearest_player = candidate;
+    }
+
+    return *nearest_player != NULL;
 }
 
 void SetPlayerGroupPosition(float, float, float) {

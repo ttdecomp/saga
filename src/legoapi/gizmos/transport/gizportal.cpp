@@ -216,10 +216,10 @@ ADDGIZMOTYPE *Portal_RegisterGizmo(i32 type_id) {
 }
 
 void PortalDoors_Reset(WORLDINFO *world_info) {
-    PORTALDOOR *portal_door = world_info->portal_doors;
-    if (portal_door != NULL && world_info->portal_door_count > 0) {
-        for (i32 i = 0; i < world_info->portal_door_count; i++, portal_door++) {
-            portal_door->flags &= ~(PORTALDOOR_ACTIVE | PORTALDOOR_INACTIVE);
-        }
+    if (world_info == NULL || world_info->portal_doors == NULL) {
+        return;
+    }
+    for (i32 index = 0; index < world_info->portal_door_count; ++index) {
+        world_info->portal_doors[index].flags &= static_cast<u16>(~(PORTALDOOR_OPENED | PORTALDOOR_CLOSED));
     }
 }

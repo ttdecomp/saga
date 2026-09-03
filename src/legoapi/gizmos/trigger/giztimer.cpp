@@ -89,16 +89,13 @@ void *GizTimer_ReserveBufferSpace(void *world_info) {
     world->giz_timers = NULL;
     world->giz_timers_count = 0;
 
-    // yes i know this is horrible, but it's the only way i could get it to match
-    u32 buffer = 0;
+    GIZTIMER *buffer = NULL;
     if (world->current_level->max_giz_timers != 0) {
-        buffer = ALIGN(world->giz_buffer.addr, 4);
-        world->giz_buffer.addr = buffer;
-        world->giz_timers = (GIZTIMER *)buffer;
-        world->giz_buffer.addr = buffer + (world->current_level->max_giz_timers * sizeof(GIZTIMER));
+        buffer = BUFFER_ALLOC_ARRAY(&world->giz_buffer, world->current_level->max_giz_timers, GIZTIMER);
+        world->giz_timers = buffer;
     }
 
-    return (void *)buffer;
+    return buffer;
 }
 
 i32 GizTimer_Load(void *world_info, void *) {

@@ -45,6 +45,23 @@ typedef struct numtlattrib_s {
     u32 padding : 8;
 } NUMTLATTRIB;
 
+enum NUTEXANIM_MODE : u8 {
+    NUTEXANIM_MODE_NONE = 0,
+    NUTEXANIM_MODE_LINEAR = 2,
+    NUTEXANIM_MODE_SINE = 3,
+    NUTEXANIM_MODE_COSINE = 4,
+};
+
+typedef struct nutexanimdata_s {
+    NUTEXANIM_MODE u_mode;
+    NUTEXANIM_MODE v_mode;
+    u8 padding_02[2];
+    f32 u_amplitude;
+    f32 v_amplitude;
+    f32 u_frequency;
+    f32 v_frequency;
+} NUTEXANIMDATA;
+
 typedef struct nuvertexdescriptor_s {
     union {
         struct {
@@ -93,8 +110,10 @@ typedef struct nushadermtldesc_s {
     i32 diffuse_map_tex_id[4];   // 0x004
     NUCOLOUR32 diffuse_color[4]; // 0x014
 
-    f32 unknown_24;      // 0x024
-    u8 unknown_28[0x1c]; // 0x028..0x043
+    f32 unknown_24;         // 0x024
+    u8 unknown_28[0x0c];    // 0x028..0x033
+    i32 lightmap_tex_id[2]; // 0x034
+    u8 unknown_3c[0x08];    // 0x03C..0x043
 
     u8 blend_op2;  // 0x044 (0xff = no shader retrieval)
     u8 blend_op3;  // 0x045
@@ -120,9 +139,9 @@ typedef struct nushadermtldesc_s {
     i16 shader_id;         // 0x140 — assigned by NuMtlUpdatePS
     i16 shader_variant_id; // 0x142 (-1 when unvarianted)
 
-    u8 tex_anim_desc[0x50]; // 0x144 nutexanimdata_s[4]
-    u8 unknown_194[4];      // 0x194..0x197
-    i32 unknown_198;        // 0x198
+    NUTEXANIMDATA tex_anim_desc[4]; // 0x144
+    u8 unknown_194[4];              // 0x194..0x197
+    i32 unknown_198;                // 0x198
 
     u8 unknown_19c[0x18]; // 0x19C..0x1B3
     u8 unknown_1b4;       // 0x1B4
@@ -174,9 +193,10 @@ typedef struct numtl_s {
     i16 tex_id;
     i16 sort_pri;
 
-    // Types uncertain.
-    i32 unknown_78;
-    i32 unknown_7c;
+    u8 unknown_78[3];
+    u8 disable_u_animation; // 0x7b
+    u8 disable_v_animation; // 0x7c
+    u8 unknown_7d[3];
 
     f32 delta_u;
     f32 delta_v;
@@ -200,6 +220,7 @@ typedef struct numtl_s {
 
 void DefaultMtl(NUMTL *mtl);
 void NuMtlCreatePS(NUMTL *mtl, i32 is_3d);
+void NuMtlSetUVOffsetPS(NUMTL *mtl, u32 layer, f32 u, f32 v);
 extern "C" NUMTL *NuMtlCreate3D(i32 count);
 extern "C" void NuDisplayListCreateMtl(NUMTL *mtl);
 void NuMtlUpdatePS(NUMTL *mtl);
@@ -224,5 +245,7 @@ void NuMtlInitExPS(VARIPTR *buf);
 #endif
 
 static_assert(sizeof(NUSHADERMTLDESC) == 0x208, "nushadermtldesc_s size");
+static_assert(sizeof(NUTEXANIMDATA) == 0x14, "nutexanimdata_s size");
+static_assert(offsetof(NUSHADERMTLDESC, lightmap_tex_id) == 0x34, "nushadermtldesc_s lightmap texture offset");
 static_assert(offsetof(NUSHADERMTLDESC, vtx_desc) == 0x13c, "nushadermtldesc_s vtx_desc offset");
 static_assert(offsetof(NUSHADERMTLDESC, byte4) == 0x1b9, "nushadermtldesc_s byte4 offset");

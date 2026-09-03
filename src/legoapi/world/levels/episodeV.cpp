@@ -16,11 +16,11 @@
 
 #include <string.h>
 
-extern tertype TerSurface[32];
+extern TERRAIN_SURFACE_s TerSurface[32];
 AILOCATOR_s *locator;
 GameObject_s *gameobj;
 extern u8 troopercannons_beenReset;
-extern "C" i32 FindPlatInst(void *instance_ix);
+extern "C" i32 FindPlatInst(i32 instance_ix);
 
 struct AIROW_s;
 struct nuqthdr_s;
@@ -150,8 +150,8 @@ void HothEscapeA_Reset(WORLDINFO_s *) {
 void HothEscapeB_Reset(WORLDINFO_s *world) {
     locator = AIPathFindLocator(world->ai_sys, "snow_mob");
     gameobj = GetNamedGameObject(world->ai_sys, "snowmob_1");
-    TerSurface[9].flMovement_scale = TerSurface[17].flMovement_scale;
-    TerSurface[9].dwFlags = TerSurface[17].dwFlags & ~2u;
+    TerSurface[9].movement_scale = TerSurface[17].movement_scale;
+    TerSurface[9].flags = TerSurface[17].flags & ~2u;
 }
 
 void HothEscapeC_Reset(WORLDINFO_s *) {
@@ -286,8 +286,8 @@ static void Asteroids_Reset(WORLDINFO_s *world) {
 
     if (special_count > 0) {
         for (i32 special_index = 0; special_index < special_count; ++special_index) {
-            for (i32 type_index = 0; type_index < world->blowup_type_count; ++type_index) {
-                NuSpecialCompare(&world->blowup_types[type_index].special, &specials[special_index]);
+            for (i32 type_index = 0; type_index < world->gizmo_blowup_type_count; ++type_index) {
+                NuSpecialCompare(&world->gizmo_blowup_types[type_index].special, &specials[special_index]);
             }
 
             if (NuSpecialGetVisibilityFn(&specials[special_index]) != 0) {
@@ -315,9 +315,9 @@ static void Asteroids_Reset(WORLDINFO_s *world) {
         }
     }
 
-    for (i32 blowup_index = 0; blowup_index < world->blowup_count; ++blowup_index) {
+    for (i32 blowup_index = 0; blowup_index < world->gizmo_blowup_count; ++blowup_index) {
         ASTEROID_s *asteroid = &asteroids[nasteroids];
-        GIZMOBLOWUP_s *blowup = &world->blowups[blowup_index];
+        GIZMOBLOWUP_s *blowup = &world->gizmo_blowups[blowup_index];
         char *name = blowup->name;
         i32 asteroid_type;
         if (name == NULL || NuStrIStr(name, "asteroid_a") != NULL || NuStrIStr(name, "asteroid_pop") != NULL) {

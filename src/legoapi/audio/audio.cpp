@@ -15,10 +15,21 @@ struct SHOPINPUT;
 
 extern i32 DoubleScore;
 extern i32 Paused;
-extern i32 sticky_attack __asm__("_ZL13sticky_attack");
-extern f32 sticky_attack_time __asm__("_ZL18sticky_attack_time");
 i32 (*GameAudio_ActionMusicFn)(void) = NULL;
 static f32 sticky_attack_timeout[2] = {1.0f, 6.0f};
+static i32 CurrentMusicPair_Quiet = -1;
+static i32 sticky_attack;
+static f32 sticky_attack_time;
+static i32 MusicPlrsUnderAttack;
+static i32 MusicActive = -1;
+static i32 MusicActiveReset;
+static f32 MusicSwapDelay;
+static i32 MusicSeekIndex;
+static i32 MusicInside;
+static i32 MusicFindCut;
+static i32 MusicRestoreTrack;
+static i32 MusicOnFlag = 1;
+static i32 MusicPlrsHoldAttack;
 
 struct MUSIC_CUT_STOP_INFO {
     u8 pad_00[0xec];
@@ -47,7 +58,19 @@ i16 GetMusicIndex(char *name, nusound_filename_info_s *table, i32 def) {
     return static_cast<i16>(def);
 }
 void MusicClearAll() {
-    LOG_DEBUG("MusicClearAll");
+    MusicPlrsUnderAttack = 0;
+    MusicActive = -1;
+    sticky_attack_time = 0.0f;
+    MusicActiveReset = 0;
+    MusicSwapDelay = 0.0f;
+    MusicSeekIndex = 0;
+    PlayersUnderAttack = 0;
+    MusicInside = 0;
+    MusicFindCut = 0;
+    MusicRestoreTrack = 0;
+    MusicOnFlag = 1;
+    MusicPlrsHoldAttack = 0;
+    CurrentMusicPair_Quiet = -1;
 }
 void SpaceAudioPoint() {
 }

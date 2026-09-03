@@ -1,71 +1,119 @@
 // Lightweight microsecond profiling slots used by the render thread.
-//
-// The original game created one or more "time-bar sets" via
-// NuTimeBarInit / NuTimeBarCreateSet when profiling was enabled.  Each
-// set owns N slots; every slot has:
-//   - a start timestamp  (NUTIME, written by _NuTimeBarSlotBegin)
-//   - a name pointer     (written by Begin / SlotSetName)
-//   - double-buffered microsecond accumulators so the HUD can read one
-//     buffer while the profiled code writes the other.
-//   - a per-slot toggle flag that selects which accumulator is active.
-//
-// All entry points below no-op unless a set has been created — the host
-// build never creates one (see target_android.cpp — the four
-// NuTimeBarCreateSet calls are commented out), so NuTimeBar_Initialised
-// stays 0 and the render thread's profiling calls are free.  The bodies
-// are transcribed from the original x86 lib at the addresses noted per
-// function and keep the original double-buffer / toggle semantics so
-// enabling profiling in the future behaves identically to device.
 
 #include "nu2api/nu3d/android/nutimebar_plain.h"
 
 #include "decomp.h"
+#include "nu2api/nu3d/numtl.h"
 #include "nu2api/nucore/nutime.h"
 
 #include <cstddef>
-#include <cstdint>
+#include <cstdlib>
+#include <cstring>
 
 // ---------------------------------------------------------------------------
-// Set record layout
-//
 struct TimeBarSet {
-    i32 field_00;
+    i32 uses_buffer;
     i32 slot_count;
     i32 *accumulators[2];
     NUTIME *start_times;
-    i32 field_14[3];
-    u32 *toggle_flags;
+    i32 *field_14;
+    i32 *field_18;
+    i32 *colours;
+    i32 *toggle_flags;
     const char **slot_names;
+    i32 field_28;
 };
 
-static_assert(offsetof(TimeBarSet, slot_count) == 0x04, "slot_count offset");
-static_assert(offsetof(TimeBarSet, accumulators) == 0x08, "accum offset");
-static_assert(offsetof(TimeBarSet, start_times) == 0x10, "start_times offset");
-static_assert(offsetof(TimeBarSet, toggle_flags) == 0x20, "toggle offset");
-static_assert(offsetof(TimeBarSet, slot_names) == 0x24, "names offset");
+DECOMP_ASSERT(sizeof(TimeBarSet) == 0x2c, "TimeBarSet size");
+DECOMP_ASSERT(offsetof(TimeBarSet, slot_count) == 0x04, "TimeBarSet slot count offset");
+DECOMP_ASSERT(offsetof(TimeBarSet, accumulators) == 0x08, "TimeBarSet accumulator offset");
+DECOMP_ASSERT(offsetof(TimeBarSet, start_times) == 0x10, "TimeBarSet start-time offset");
+DECOMP_ASSERT(offsetof(TimeBarSet, toggle_flags) == 0x20, "TimeBarSet toggle offset");
+DECOMP_ASSERT(offsetof(TimeBarSet, slot_names) == 0x24, "TimeBarSet name offset");
 
 // ---------------------------------------------------------------------------
-// Global state (bss in the original)
+static constexpr i32 kMaxTimeBarSets = 16;
+static TimeBarSet *NuTimeBar_SetList[kMaxTimeBarSets];
+static NUMTL *NuTimeBar_FrameOutMtl;
+static i32 NuTimeBar_Initialised;
+static const u32 NuTimeBar_DefaultColours[kMaxTimeBarSets] = {
+    0x00000040, 0x22222240, 0x00004440, 0x00008840, 0x44000040, 0x88000040, 0x44004440, 0x88008840,
+    0x00440040, 0x00880040, 0x00444440, 0x00888840, 0x44440040, 0x88880040, 0x44444440, 0x88888840,
+};
 
-static TimeBarSet *NuTimeBar_SetList[16] asm("_ZL17NuTimeBar_SetList");
-static i32 NuTimeBar_Initialised asm("_ZL21NuTimeBar_Initialised");
-
-// Table of live sets.  Index 0 is the first real set; callers pass
-// set==-1 to mean "set 0, broadcast to every slot" (only used by Reset).
-// All other callers use set+1 to skip that broadcast alias, matching the
-// original dispatch.
 // ---------------------------------------------------------------------------
-// Helpers
+static void *timebar_allocate(VARIPTR *buffer, usize size, usize alignment) {
+    if (buffer == NULL) {
+        return std::calloc(1, size);
+    }
 
-static inline TimeBarSet *get_set(int32_t set) {
-    return NuTimeBar_SetList[set];
+    usize address = ALIGN(buffer->addr, alignment);
+    buffer->addr = address + size;
+    return reinterpret_cast<void *>(address);
 }
 
-static inline int32_t *accumulator_for_slot(TimeBarSet *rec, int32_t slot) {
-    // The active accumulator is the one *not* currently selected by the
-    // toggle — the original toggles first, then writes the opposite buffer
-    // so a concurrent reader sees a stable value.
-    return &rec->accumulators[1 - (rec->toggle_flags[slot] & 1)][slot];
+template <typename T> static T *timebar_allocate_array(VARIPTR *buffer, i32 count) {
+    return static_cast<T *>(timebar_allocate(buffer, static_cast<usize>(count) * sizeof(T), alignof(T)));
+}
+
+static i32 CreateTimeBar(VARIPTR *buffer, VARIPTR unused_buffer, i32 *colours, i32 slot_count) {
+    (void)unused_buffer;
+
+    TimeBarSet *timebar = timebar_allocate_array<TimeBarSet>(buffer, 1);
+    std::memset(timebar, 0, sizeof(*timebar));
+    timebar->uses_buffer = buffer != NULL;
+    timebar->accumulators[0] = timebar_allocate_array<i32>(buffer, slot_count);
+    timebar->accumulators[1] = timebar_allocate_array<i32>(buffer, slot_count);
+    timebar->start_times = timebar_allocate_array<NUTIME>(buffer, slot_count);
+    timebar->field_14 = timebar_allocate_array<i32>(buffer, slot_count);
+    timebar->field_18 = timebar_allocate_array<i32>(buffer, slot_count);
+    timebar->colours = timebar_allocate_array<i32>(buffer, slot_count);
+    timebar->toggle_flags = timebar_allocate_array<i32>(buffer, slot_count);
+    timebar->slot_names = timebar_allocate_array<const char *>(buffer, slot_count);
+
+    std::memset(timebar->accumulators[0], 0, static_cast<usize>(slot_count) * sizeof(i32));
+    std::memset(timebar->accumulators[1], 0, static_cast<usize>(slot_count) * sizeof(i32));
+    std::memset(timebar->start_times, 0, static_cast<usize>(slot_count) * sizeof(NUTIME));
+    std::memset(timebar->field_14, 0, static_cast<usize>(slot_count) * sizeof(i32));
+    std::memset(timebar->field_18, 0, static_cast<usize>(slot_count) * sizeof(i32));
+    std::memset(timebar->colours, 0, static_cast<usize>(slot_count) * sizeof(i32));
+    std::memset(timebar->toggle_flags, 0, static_cast<usize>(slot_count) * sizeof(i32));
+    std::memset(timebar->slot_names, 0, static_cast<usize>(slot_count) * sizeof(const char *));
+
+    i32 list_index;
+    for (list_index = 0; list_index < kMaxTimeBarSets; ++list_index) {
+        if (NuTimeBar_SetList[list_index] == NULL) {
+            NuTimeBar_SetList[list_index] = timebar;
+            break;
+        }
+    }
+
+    if (colours != NULL) {
+        std::memcpy(timebar->colours, colours, static_cast<usize>(slot_count) * sizeof(i32));
+    } else {
+        std::memcpy(timebar->colours, NuTimeBar_DefaultColours, static_cast<usize>(slot_count) * sizeof(i32));
+    }
+    timebar->slot_count = slot_count;
+
+    i32 set = list_index - 1;
+    timebar->field_28 = set > 0;
+    return set;
+}
+
+extern "C" i32 NuTimeBarCreateSetEx(VARIPTR *buffer, VARIPTR unused_buffer, i32 *colours) {
+    return CreateTimeBar(buffer, unused_buffer, colours, 16);
+}
+
+extern "C" void NuTimeBarInitEx(VARIPTR *buffer, VARIPTR unused_buffer) {
+    std::memset(NuTimeBar_SetList, 0, sizeof(NuTimeBar_SetList));
+    CreateTimeBar(buffer, unused_buffer, NULL, 7);
+    NuTimeBarCreateSetEx(buffer, unused_buffer, NULL);
+
+    NuTimeBar_FrameOutMtl = NuMtlCreate(1);
+    u8 *attributes = reinterpret_cast<u8 *>(&NuTimeBar_FrameOutMtl->attribs);
+    attributes[0] = static_cast<u8>((attributes[0] & 0xf0) | 2);
+    NuMtlUpdate(NuTimeBar_FrameOutMtl);
+    NuTimeBar_Initialised = 1;
 }
 
 // ---------------------------------------------------------------------------
@@ -77,87 +125,80 @@ static inline int32_t *accumulator_for_slot(TimeBarSet *rec, int32_t slot) {
 // Reset(-1, 0) — reset every slot in set 0.  The per-slot toggle is
 // flipped so the next End/SlotSet lands in the other buffer, then the
 // newly-inactive accumulator is zeroed.
-extern "C" void NuTimeBarSlotReset(int32_t set, int32_t slot) {
+extern "C" void NuTimeBarSlotReset(i32 set, i32 slot) {
     if (NuTimeBar_Initialised == 0) {
         return;
     }
 
-    // Broadcast reset: NuRenderThread tail calls Reset(-1, 0..1) for the
-    // GPU/CPU summary slots.  The original tests slot==0 && set==-1 and
-    // then iterates the whole set.
     if (slot == 0 && set == -1) {
-        TimeBarSet *rec = get_set(0);
-        if (rec->slot_count > 0) {
-            u32 *toggle_flags = rec->toggle_flags;
-            int32_t i = 0;
+        TimeBarSet *timebar = NuTimeBar_SetList[0];
+        if (timebar->slot_count > 0) {
             do {
-                const u32 toggle = toggle_flags[i] ^= 1;
-                rec->accumulators[toggle == 0][i] = 0;
-            } while (++i < rec->slot_count);
+                timebar->toggle_flags[slot] ^= 1;
+                timebar->accumulators[timebar->toggle_flags[slot] == 0][slot] = 0;
+                ++slot;
+            } while (slot < timebar->slot_count);
         }
-        return;
+    } else {
+        TimeBarSet *timebar = NuTimeBar_SetList[set + 1];
+        timebar->toggle_flags[slot] ^= 1;
+        timebar->accumulators[timebar->toggle_flags[slot] == 0][slot] = 0;
     }
-
-    TimeBarSet *rec = get_set(set);
-    const u32 toggle = rec->toggle_flags[slot] ^= 1;
-    rec->accumulators[toggle == 0][slot] = 0;
 }
 
 // original 0x2d76b0
 // Mark the beginning of a timed region.  Records the current tick and
 // the label pointer for the slot; the matching End computes the delta.
-extern "C" void _NuTimeBarSlotBegin(int32_t set, int32_t slot, const char *name) {
-    if (NuTimeBar_Initialised == 0) {
+extern "C" void _NuTimeBarSlotBegin(i32 set, i32 slot, const char *name) {
+    const i32 initialised = NuTimeBar_Initialised;
+    if (initialised == 0) {
         return;
     }
-    TimeBarSet *rec = get_set(set);
-    NuTimeGet(&rec->start_times[slot]);
-    rec->slot_names[slot] = name;
+
+    TimeBarSet *timebar = NuTimeBar_SetList[set + 1];
+    NuTimeGet(&timebar->start_times[slot]);
+    timebar->slot_names[slot] = name;
 }
 
 // original 0x2d7710
 // Close the timed region opened by _NuTimeBarSlotBegin, accumulate the
 // elapsed microseconds into the double-buffered slot, and return the
 // updated accumulator value.  Returns 0 when profiling is disabled.
-extern "C" uint32_t _NuTimeBarSlotEnd(int32_t set, int32_t slot) {
-    if (NuTimeBar_Initialised == 0) {
-        return 0;
+extern "C" u32 _NuTimeBarSlotEnd(i32 set, i32 slot) {
+    u32 value = 0;
+    if (NuTimeBar_Initialised != 0) {
+        TimeBarSet *timebar = NuTimeBar_SetList[set + 1];
+        NUTIME now;
+        NuTimeGet(&now);
+
+        NUTIME delta;
+        NuTimeSub(&delta, &now, &timebar->start_times[slot]);
+        f32 elapsed_us = NuTimeMicroSeconds(&delta);
+
+        i32 accumulator = 1 - timebar->toggle_flags[slot];
+        timebar->accumulators[accumulator][slot] += static_cast<i32>(elapsed_us);
+        value = static_cast<u32>(timebar->accumulators[accumulator][slot]);
     }
-
-    TimeBarSet *rec = get_set(set);
-
-    NUTIME now;
-    NuTimeGet(&now);
-
-    NUTIME delta;
-    NuTimeSub(&delta, &now, &rec->start_times[slot]);
-
-    const float elapsed_us = NuTimeMicroSeconds(&delta);
-
-    rec->toggle_flags[slot] ^= 1;
-    int32_t *acc = accumulator_for_slot(rec, slot);
-    *acc += static_cast<int32_t>(elapsed_us);
-    return static_cast<uint32_t>(*acc);
+    return value;
 }
 
 // original 0x2d77c0
 // Directly overwrite the accumulator for a slot (used by the render
 // thread to publish GPU timings that come from GL queries rather than
 // CPU wall-clock).  Respects the same double-buffer selection as End.
-extern "C" void NuTimeBarSlotSet(int32_t set, int32_t slot, int32_t value) {
-    if (NuTimeBar_Initialised == 0) {
-        return;
+extern "C" void NuTimeBarSlotSet(i32 set, i32 slot, i32 value) {
+    if (NuTimeBar_Initialised != 0) {
+        TimeBarSet *timebar = NuTimeBar_SetList[set + 1];
+        i32 accumulator = 1 - timebar->toggle_flags[slot];
+        timebar->accumulators[accumulator][slot] = value;
     }
-    TimeBarSet *rec = get_set(set);
-    *accumulator_for_slot(rec, slot) = value;
 }
 
 // original 0x2d7820
 // Update the display name for a slot without touching its timing.
-extern "C" void NuTimeBarSlotSetName(int32_t set, int32_t slot, const char *name) {
-    if (NuTimeBar_Initialised == 0) {
-        return;
+extern "C" void NuTimeBarSlotSetName(i32 set, i32 slot, const char *name) {
+    if (NuTimeBar_Initialised != 0) {
+        TimeBarSet *timebar = NuTimeBar_SetList[set + 1];
+        timebar->slot_names[slot] = name;
     }
-    TimeBarSet *rec = get_set(set);
-    rec->slot_names[slot] = name;
 }

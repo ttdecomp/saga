@@ -6,9 +6,13 @@
 extern i32 ACTIVECUTCOUNT;
 extern "C" i32 CUTDRAWWORLD;
 extern "C" i32 Paused;
+extern i32 CutSceneWaiting;
+extern FadeSystem FadeSys;
 CUTSCENESYS *CutSceneSys;
 
 extern "C" {
+    void instNuGCutSceneEnd(instNUGCUTSCENE_s *instance);
+    i32 instNuGCutSceneIsFinished(instNUGCUTSCENE_s *instance);
     void instNuGCutScenePause(instNUGCUTSCENE_s *, u8);
     void instNuGCutSceneReset(instNUGCUTSCENE_s *);
     void instNuGCutSceneStart(instNUGCUTSCENE_s *);
@@ -19,12 +23,29 @@ extern "C" {
 }
 
 void SetLevelLights(void *, f32);
+void GameCam_Reset(GAMECAMERA_s *camera);
+i32 CutScenePlayer_Active(void);
 
-CUTINFO *CutScene_Find(CUTSYS *, char *) {
-    return NULL;
-}
+i32 CutInstEndCount;
+static instNUGCUTSCENE_s *CutInstEnd[4];
+static i32 CutInstEndStop;
+static i32 cutaudiopaused;
 
 void CutScenes_End() {
+    if (CutScenePlayer_Active() != 0 && NewLData != NULL && NewLData != HUB_LDATA) {
+        i32 i = 0;
+        if (CutInstEndCount > 0) {
+            do {
+                instNuGCutSceneEnd(CutInstEnd[i]);
+                if (i == CutInstEndStop) {
+                    CUTSTOPGAME = 0;
+                    CutStopInfo = NULL;
+                    GameCam_Reset(GameCam);
+                }
+                ++i;
+            } while (CutInstEndCount > i);
+        }
+    }
 }
 
 void CutScenes_Draw(WORLDINFO_s *world) {
@@ -41,6 +62,9 @@ void CutScenes_Reset(WORLDINFO_s *world) {
     ACTIVECUTCOUNT = 0;
     CUTSTOPGAME = 0;
     CUTDRAWWORLD = 0;
+    cutaudiopaused = 0;
+    CutStopInfo = NULL;
+    CutSceneWaiting = 0;
     if (world == NULL || world->cutscene_sys == NULL) {
         return;
     }
@@ -70,6 +94,9 @@ void CutScenes_Start(WORLDINFO_s *) {
 }
 
 void CutScenes_Update(WORLDINFO_s *world, i32 paused) {
+    CutInstEnd[0] = NULL;
+    CutInstEndStop = -1;
+    CutInstEndCount = 0;
     ACTIVECUTCOUNT = 0;
     CUTSTOPGAME = 0;
     CUTDRAWWORLD = 0;
@@ -95,6 +122,13 @@ void CutScenes_Update(WORLDINFO_s *world, i32 paused) {
         if ((cut->flags & 2) != 0) {
             CUTDRAWWORLD = 1;
         }
+        if (instNuGCutSceneIsFinished(instance) != 0 && CutInstEndCount < 4) {
+            if ((cut->flags & 1) != 0) {
+                CutInstEndStop = CutInstEndCount;
+            }
+            CutInstEnd[CutInstEndCount++] = instance;
+            instance->flags_88 |= 2;
+        }
     }
     NuGCutSceneSysUpdate(paused, 0, 1.0f);
 }
@@ -105,7 +139,25 @@ void CutScene_FindInst(CUTSYS *, char *) {
 void CutScenes_Destroy(CUTSYS *) {
 }
 
-void CutScene_HasPlayed(CUTINFO *) {
+i32 CutScene_HasPlayed(CUTINFO *cut) {
+    WORLDINFO_s *world = WorldInfo_CurrentlyActive();
+    CUTSYS *cutscene_system = world->cutscene_sys;
+    if (cut == NULL || cutscene_system == NULL || cutscene_system->count <= 0) {
+        return 0;
+    }
+
+    i32 cutscene_index = -1;
+    for (i32 index = 0; index < cutscene_system->count; ++index) {
+        if (cutscene_system->cuts[index] == cut) {
+            cutscene_index = index;
+        }
+    }
+    i32 has_played = 0;
+    if (cutscene_index != -1) {
+        world = WorldInfo_CurrentlyActive();
+        has_played = (world->level_progress->played_cutscene_mask & (1u << (cutscene_index & 0x1f))) != 0;
+    }
+    return has_played;
 }
 
 void CutScene_SnapToEnd(CUTINFO *) {
@@ -114,8 +166,8 @@ void CutScene_SnapToEnd(CUTINFO *) {
 void CutScene_StartAudio() {
 }
 
-bool CutScene_IsSkippable(CUTINFO *) {
-    return false;
+i32 CutScene_IsSkippable(CUTINFO *cut) {
+    return FadeSys.fade == 0.0f && cut != NULL && (CutStopInfo != cut || CutSceneWaiting == 0 || cutaudiopaused == 0);
 }
 
 void CutScene_StartFn_LSW(CUTINFO *) {
@@ -154,8 +206,8 @@ void CutScene_ReplaceCharacterModelFn_LSW(CUTINFO *, NUGCUTCHAR_s *) {
 void ResetScene(nugscn_s *, SCENEPROGRESS_s *) {
 }
 
-i32 NewCutScene(CUTINFO *, CUTSYS *, char *, i32) {
-    return 0;
+CUTINFO *NewCutScene(CUTINFO *, CUTSYS *, char *, i32) {
+    return NULL;
 }
 
 void Exit_LSW_Update(STATUS_STAGE_s *, STATUSPACKET_s *, float) {

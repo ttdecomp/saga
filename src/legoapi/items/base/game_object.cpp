@@ -72,7 +72,7 @@ GameObject_s *AddGameObject(i32 id) {
     object->apiobj.field_0x280 = 0xff;
     object->apiobj.field_0x281 = 0xff;
     object->field_0x1086 = 2;
-    object->apiobj.field_0x1f8 |= 0x1001;
+    object->apiobj.field_0x1f8 |= 0x1000 | APIOBJECT_FLAG_IN_USE;
     object->field_0x1054 = 1;
     object->apiobj.field_0x1e4 = object_index < 32 ? 1u << object_index : 0;
     object->apiobj.field_0x1e8 = object_index < 32 ? 0 : 1u << (object_index - 32);
@@ -80,12 +80,12 @@ GameObject_s *AddGameObject(i32 id) {
     object->field_0x1004 = 1.0f;
     object->field_0x1020 = 2000000.0f;
     object->apiobj.field_0x218 = 2000000.0f;
-    object->apiobj.field_0x21c = 2000000.0f;
+    object->apiobj.water_height = 2000000.0f;
     object->apiobj.field_0x220 = 2000000.0f;
 
     HIGHGAMEOBJECT = 0;
     for (i32 i = 0; i < 64; i++) {
-        if ((Obj[i].apiobj.field_0x1f8 & 1) != 0) {
+        if ((Obj[i].apiobj.field_0x1f8 & APIOBJECT_FLAG_IN_USE) != 0) {
             HIGHGAMEOBJECT = i + 1;
         }
     }
@@ -145,12 +145,8 @@ i32 InitCreature(GameObject_s *obj, i32 id, i32 param) {
     obj->ai.field_0x134 = 0xff;
     SetGameObjectCharacterData(obj);
 
-    obj->apiobj.start_position[0] = start_position->x;
-    obj->apiobj.start_position[1] = start_position->y;
-    obj->apiobj.start_position[2] = start_position->z;
-    obj->apiobj.initial_position[0] = start_position->x;
-    obj->apiobj.initial_position[1] = start_position->y;
-    obj->apiobj.initial_position[2] = start_position->z;
+    obj->apiobj.start_position = *start_position;
+    obj->apiobj.initial_position = *start_position;
     obj->apiobj.position = *start_position;
     obj->apiobj.pos_x = start_position->x;
     obj->apiobj.pos_y = start_position->y;
@@ -192,21 +188,21 @@ i32 InitCreature(GameObject_s *obj, i32 id, i32 param) {
     if (id == id_MOSEISLEYCITIZEN) {
         SetLayers_MOSEISLEYCITIZEN(&obj->field_0x1054);
     } else if (id == id_CANTINAALIEN) {
-        static const u8 head_layers[3] = {0, 31, 0};
-        static const u8 body_layers[3] = {0, 15, 63};
-        static const u8 leg_layers[3] = {0, 31, 0};
+        static const u8 head_layers[3] = {0, 3, 6};
+        static const u8 body_layers[3] = {1, 4, 7};
+        static const u8 leg_layers[3] = {2, 5, 8};
         obj->field_0x1054 = LayerBit(head_layers[qrand() / 0x5556]) | LayerBit(body_layers[qrand() / 0x5556]) |
                             LayerBit(leg_layers[qrand() / 0x5556]);
     } else if (id == id_CLOUDCITYCITIZEN) {
-        static const u8 head_layers[3] = {1, 24, 46};
-        static const u8 body_layers[3] = {0, 31, 0};
-        static const u8 leg_layers[3] = {2, 16, 62};
+        static const u8 head_layers[3] = {1, 5, 7};
+        static const u8 body_layers[3] = {2, 3, 6};
+        static const u8 leg_layers[3] = {0, 4, 8};
         obj->field_0x1054 = LayerBit(head_layers[qrand() / 0x5556]) | LayerBit(body_layers[qrand() / 0x5556]) |
                             LayerBit(leg_layers[qrand() / 0x5556]);
         obj->field_0xf01 = static_cast<u8>((obj->field_0xf01 & ~8u) | (((obj->field_0x1054 >> 7) & 1) << 3));
-    } else if (id == id_GEONOSIAN) {
-        SetLayers_BOB(obj);
     } else if (id == id_BOB) {
+        SetLayers_BOB(obj);
+    } else if (id == id_GEONOSIAN) {
         obj->field_0xefd = static_cast<u8>((obj->field_0xefd & ~2u) | ((qrand() <= 0x7fff) ? 2 : 0));
     }
 
@@ -261,7 +257,19 @@ static __used__ void TrenchKilledCallback(GameObject_s *) {
 static __used__ void SetLayers_BOB(GameObject_s *) {
 }
 
-static void SetLayers_MOSEISLEYCITIZEN(u32 *) {
+static void SetLayers_MOSEISLEYCITIZEN(u32 *layers) {
+    static const u8 hat_layers[5] = {0, 0, 0, 7, 14};
+    static const u8 head_layers[5] = {20, 20, 8, 8, 4};
+    static const u8 body_layers[3] = {3, 9, 19};
+    static const u8 arm_layers[3] = {1, 12, 15};
+    static const u8 hand_layers[3] = {2, 13, 16};
+    static const u8 waist_layers[3] = {6, 10, 17};
+    static const u8 leg_layers[3] = {5, 11, 18};
+
+    *layers = LayerBit(hat_layers[qrand() / 0x3334]) | LayerBit(head_layers[qrand() / 0x3334]) |
+              LayerBit(body_layers[qrand() / 0x5556]) | LayerBit(arm_layers[qrand() / 0x5556]) |
+              LayerBit(hand_layers[qrand() / 0x5556]) | LayerBit(waist_layers[qrand() / 0x5556]) |
+              LayerBit(leg_layers[qrand() / 0x5556]);
 }
 
 static __used__ void Tag_NoHiddenIcon(GameObject_s *) {

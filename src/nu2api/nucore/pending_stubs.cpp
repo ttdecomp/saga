@@ -3,7 +3,7 @@
 // they previously lived as anonymous extern-C stubs that shadowed real
 // transcriptions elsewhere.
 
-#include "decomp.h"
+#include "globals.h"
 #include "nu2api/nu3d/nutexanm.h"
 
 extern "C" void NuShaderManagerDestroy(void) {
@@ -141,12 +141,6 @@ extern "C" void NuTexAnimRemoveList(void *) {
 }
 
 extern "C" void NuTexAnimRestart(void) {
-}
-
-extern "C" void NuTexAnimSetMask(int) {
-}
-
-extern "C" void NuTexAnimSetSignals(void) {
 }
 
 extern "C" void _Z26DisplayListLinkDynamicMtlsv(void) {

@@ -11,7 +11,11 @@
 #include "legoapi/items/base/collection.h"
 #include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/menus/screens/store.h"
+#include "legoapi/render/fx.h"
+#include "legoapi/gizmos/object/lever.h"
+#include "legoapi/gizmos/object/technos.h"
 #include "legoapi/world/level.h"
+#include "legoapi/world/areas.h"
 #include "legoapi/world/world.h"
 #include "gameapi/edtools/edstubs.h"
 #include "nu2api/nucore/bgproc.h"
@@ -27,14 +31,13 @@
 extern "C" {
     void rtlInitDynamic(VARIPTR *, VARIPTR, i32);
     void DebrisSetup(VARIPTR *, VARIPTR, char *, i32, i32, i32);
-    void DebrisRegisterCutoffCameraVec(NUVEC *);
+    void DebrisRegisterCutoffCameraVec(void *);
     void edgraSetup(VARIPTR *, VARIPTR, i32, i32, i32);
     void InitParts(i32, VARIPTR *, VARIPTR);
     void ParticleReset(void);
     i32 NuFileExists(char *);
-    i32 NuStrCpy(char *, const char *);
-    i32 edppLoadPage(char *, i32, i32);
-    void *InitGameDebris(VARIPTR *, VARIPTR, i32, i32, char **, char);
+    void NuStrCpy(char *, char *);
+    i32 edppLoadPage(char *, i32, usize);
     void NuRndrShadowInit(u8 *);
     void NuTexAnimProgSysInit(void);
     void terrainpickupinit(char *, void **);
@@ -102,7 +105,32 @@ extern "C" {
 
 APICHARACTERMODELLIST_s PermModelList[] = {{-1, 0}};
 
+enum LegoObjectId : i16 {
+    LEGO_OBJECT_FLOOR_TARGET = 0x55,
+};
+
 void LSW_SetIndy(i32) {
+    LedgeTerrain_On = 0;
+    Grapples_Available = 0;
+    SuperCarry_Bash = 0;
+    SuperCarry_Jump = 0;
+    PUNCHGAP = 0.3f;
+    PUNCHCHARGAP = 0.3f;
+    HINTS_ON = 1;
+
+    TechnoSys.interaction_time = 0.2f;
+    TechnoSys.idle_offset = v000;
+    TechnoSys.active_offset = v000;
+    TechnoSys.active_effect_id = 0x2c;
+    TechnoSys.success_effect_id = -1;
+    TechnoSys.failure_effect_id = -1;
+    TechnoSys.complete_offset = v000;
+    TechnoSys.floor_target_object_id = LEGO_OBJECT_FLOOR_TARGET;
+    TechnoSys.activation_effect_id = 0x2d;
+    TechnoSys.completion_effect_id = 0x2e;
+
+    LeverSys.floor_target_object_id = LEGO_OBJECT_FLOOR_TARGET;
+    GameAudio_SetActionMusicTimes(1.0f, 6.0f);
 }
 
 void HairMovement(GameObject_s *) {
@@ -538,23 +566,8 @@ void LoadPerm2() {
     ExtraCharacterFixUpAfterConfig();
     apiloadcharactermodels_nopakfile = CHARPAK == 0;
     APILoadCharacterModels(PermModelList, 1, &permbuffer_ptr, permbuffer_end, 1);
+    Areas_ConfigureResidents(&permbuffer_ptr, &permbuffer_end);
 }
 
 void MapToGrid(nuvec_s *, nuvec_s *, i32 *, i32 *, nuvec_s *, nutexmanager_s *) {
 }
-
-static __used__ void SpecialRouteCharacterName(u8) {
-}
-
-static __used__ void SpecialRouteCharacterTypeID(char *) {
-}
-
-extern "C" {
-
-    void InitFn_SpecialRouteCharacterName(void) {
-    }
-
-    void InitFn_SpecialRouteCharacterTypeID(void) {
-    }
-
-} // extern "C"

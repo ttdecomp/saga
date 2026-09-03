@@ -3,6 +3,7 @@
 #include "legoapi/core/input/timer.h"
 #include "legoapi/world/mission.h"
 #include "legoapi/characters/core/players.h"
+#include "legoapi/items/base/collection.h"
 #include "legoapi/world/world_shared.h"
 
 extern "C" void PlaySfx(char *, i32);
@@ -12,8 +13,6 @@ extern void Cheats_TurnOff(i32);
 extern void SetBonusWinner(i32);
 extern void ResetGameMessages(void);
 extern GameObject_s *FindGameObject(i32, u32, i32, i32, i32);
-extern i32 Collection_Got(i32 id);
-
 void EndMission(MISSIONSYS *ms, i32 param1, i32 param2) {
     if (netclient == 0 || param2 == 0) {
         ms->field8_0x1d = (u8)param1;
@@ -33,7 +32,7 @@ void EndMission(MISSIONSYS *ms, i32 param1, i32 param2) {
 
 void InitMission(MISSIONSYS *ms, i32 idx) {
     ms->field8_0x1d = 1;
-    ms->mission = (MISSIONDATA *)(ms->length + idx * 24);
+    ms->mission = &ms->missions[idx];
     ResetTimer(&ms->timer, 0.0f);
     Cheats_TurnOff(0);
 }
@@ -59,7 +58,7 @@ void InitChallenge(i32) {
     ChallengeMode = 1;
     ResetTimer(&ChallengeTimer, 0.0f);
     Cheats_TurnOff(0);
-    *(i32 *)((char *)AreaGlobals + 0x1c) = 0;
+    AreaGlobals.values.field_0x1c = 0;
 }
 
 void Mission_Clear(MISSIONSYS *ms) {

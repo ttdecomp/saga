@@ -18,9 +18,22 @@ void NuPortalSetActiveDirect(NUPORTAL *portal, i32 active) {
     }
 
     if (active) {
-        portal->is_active |= 1;
+        portal->is_active |= NUPORTAL_FLAG_ACTIVE;
     } else {
         portal->is_active = 0;
+    }
+}
+
+void NuPortalSetActive(NUGSCN *scene, i32 portal_id, i32 active) {
+    for (u32 index = 0; index < scene->max_portals; ++index) {
+        NUPORTAL *portal = &scene->portals[index];
+        if (portal->id == portal_id) {
+            if (active != 0) {
+                portal->is_active |= NUPORTAL_FLAG_ACTIVE;
+            } else {
+                portal->is_active = 0;
+            }
+        }
     }
 }
 

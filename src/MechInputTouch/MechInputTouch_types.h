@@ -3,9 +3,11 @@
 #pragma once
 
 #include "nu2api/nucore/fixed_width.h"
+#include "nu2api/nucore/nulist.h"
 #include "legoapi/items/objects/basething.h"
 #include "legoapi/render/core/SwipeDecalRenderer.h"
 #include "nu2api/nucore/NuTouchInputElement.h"
+#include "decomp_assert.h"
 
 struct AIPATHCNX_s;
 struct AIPATH_s;
@@ -104,7 +106,10 @@ struct nuvec_s;
 struct MechAddon {
     struct ProcessStage {};
 };
-struct MechAutoJumpManager {
+struct MechAutoJumpManager : BaseThing {
+    char const *GetName() override {
+        return "MechAutoJumpManager";
+    }
     void AddAutoJumpConnection(AIPATH_s *, AIPATHCNX_s *, i32, bool, i32, bool);
     void DeleteJumpConnection(MechAutoJumpConnection *);
     void DeleteJumpConnectionsAndStreaks();
@@ -115,7 +120,13 @@ struct MechAutoJumpManager {
     void ProcessJumpConnections();
     void Render();
     virtual ~MechAutoJumpManager();
+
+    NULISTHDR streaks;
+    NULISTHDR jump_connections;
+    AISYS_s *ai_sys;
+    float streak_time;
 };
+DECOMP_ASSERT(sizeof(MechAutoJumpManager) == 0x28, "MechAutoJumpManager size");
 struct MechAutofireAddon {
     MechAutofireAddon(MechObjectInterface &);
     void OnProcess(MechAddon::ProcessStage, float);
@@ -322,6 +333,15 @@ struct MechInputTouchSystem {
     i32 control_mode;
 };
 struct MechInputTouchVirtualConsoleController {
+    static float s_defaultDPadPosX;
+    static float s_defaultDPadPosY;
+    static float s_defaultButtonsPosX;
+    static float s_defaultButtonsPosY;
+    static float s_defaultDPadPosX_SmallScreen;
+    static float s_defaultDPadPosY_SmallScreen;
+    static float s_defaultButtonsPosX_SmallScreen;
+    static float s_defaultButtonsPosY_SmallScreen;
+
     void Activate();
     void Deactivate();
     void LoadPerm();

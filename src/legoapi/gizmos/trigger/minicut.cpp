@@ -2,9 +2,10 @@
 
 #include "decomp.h"
 #include "legoapi/world/level.h"
+#include "legoapi/world/world.h"
 
-static i32 GizMiniCut_GetMaxGizmos(void *world_info) {
-    WORLDINFO *world = static_cast<WORLDINFO *>(world_info);
+static i32 GizMiniCut_GetMaxGizmos(void *world_ptr) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
     return world->current_level->max_minicuts;
 }
 
@@ -13,7 +14,8 @@ static void GizMiniCut_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
 }
 
 static char *GizMiniCut_GetGizmoName(GIZMO *gizmo) {
-    return gizmo != NULL ? static_cast<MINICUT *>(gizmo->object)->name : NULL;
+    UNIMPLEMENTED();
+    return {};
 }
 
 static i32 GizMiniCut_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -27,20 +29,22 @@ static char *GizMiniCut_GetOutputName(GIZMO *gizmo, i32 output_index) {
 }
 
 static i32 GizMiniCut_GetNumOutputs(GIZMO *gizmo) {
-    return 2;
+    UNIMPLEMENTED();
+    return {};
 }
 
 void GizMiniCut_Activate(GIZMO *gizmo, i32) {
     UNIMPLEMENTED();
 }
 
-static i32 GizMiniCut_GetPos(GIZMO *gizmo) {
+static NUVEC *GizMiniCut_GetPos(GIZMO *gizmo) {
     UNIMPLEMENTED();
     return {};
 }
 
-static void GizMiniCut_UsingSpecial(GIZMO **, void *, i32, char *) {
+static i32 GizMiniCut_UsingSpecial(GIZMO **, void *, i32, char *) {
     UNIMPLEMENTED();
+    return 0;
 }
 
 void GizMiniCut_Reset(void *, void *, void *) {

@@ -15,15 +15,15 @@ void LegoCity_Reset(WORLDINFO_s *world) {
     prevOnMoonCar = 0;
     prevOnTownCar = 0;
 
-    GIZMOPICKUP_s *pickup = world->pickup_sys->runtime.pickups;
+    GIZMOPICKUP_s *pickup = world->pickup_sys->pickups;
     if (pickup == NULL) {
         return;
     }
-    if (world->pickup_sys->runtime.pickup_count <= 0) {
+    if (world->pickup_sys->pickup_count <= 0) {
         return;
     }
 
-    for (i32 pickup_index = 0; pickup != NULL && pickup_index < world->pickup_sys->runtime.pickup_count;
+    for (i32 pickup_index = 0; pickup != NULL && pickup_index < world->pickup_sys->pickup_count;
          ++pickup_index, ++pickup) {
         if ((pickup->runtime_flags & 8) == 0) {
             switch (pickup->type_id) {

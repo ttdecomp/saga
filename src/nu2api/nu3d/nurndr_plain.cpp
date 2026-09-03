@@ -36,8 +36,12 @@
 #include "nu2api/nu3d/nuvport.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nu3d/nushader.h"
 #include "nu2api/nucore/nuapi.h"
 #include "nu2api/nuandroid/ios_graphics.h"
+
+extern "C" void NuLgtLaserDraw(i32 paused);
+void NuLgtArcLaserDraw(i32 paused);
 
 // ---------------------------------------------------------------------------
 // Scene state — mirrors original BSS layout
@@ -123,8 +127,8 @@ static_assert(sizeof(PrimStreamHeader) == 0x10, "PrimStreamHeader must be 0x10")
 
 extern "C" {
     i32 NuDisplayListAddRenderScene(void);
-    i32 NuDynamicLightIsEnabled(i32);
-    void NuDynamicLightAddRenderScene(i32, i32, i32);
+    i32 NuDynamicLightIsEnabled(void *);
+    void NuDynamicLightAddRenderScene(void *, i32, i32);
     void RndrStateSetConstAlphaTint(i32 alpha_enabled, i32 tint_enabled, f32 alpha, const NUCOLOUR3 *tint, NUMTL *mtl);
     void DisplayListUpdateRenderState(void *list, void *state);
     void NuDisplayListLinkMtl(nudisplaylist_s *list, NUMTL *mtl);
@@ -138,7 +142,7 @@ extern "C" {
     void NuRndrSwapStreamBuffers(void);
     void NuRenderThreadPrepareRender(void);
     void NuRenderThreadStartRender(void);
-    void NuShaderManagerBindShader(i32 shader);
+    void NuShaderManagerBindShader(NUSHADEROBJECT *shader);
     void NuDisplayListCheckBuffer(void);
     void NuDisplayListResetBuffer(void);
     void NuRenderThreadLock(void);
@@ -268,7 +272,7 @@ extern "C" i32 NuRndrBeginScene(i32 /*begin_flags*/) {
     return 1;
 }
 
-extern "C" i32 NuRndrBeginSceneEx(i32 begin_flags) {
+extern "C" i32 NuRndrBeginSceneEx(i32 begin_flags, i32, i32) {
     return NuRndrBeginScene(begin_flags);
 }
 
@@ -286,34 +290,26 @@ extern "C" void NuRndrClear(i32 clear_flags, i32 bg_colour, f32 alpha) {
     NuVpGetSize2(&scene->vp_w, &scene->vp_h);
 }
 
-extern "C" void NuRndrGradClear(i32 a, i32 b, i32 /*c*/, f32 d) {
-    NuRndrClear(a, b, d);
-}
-
 extern "C" void NuRndrEndScene(void) {
     auto *scn = &currentScene;
 
     scn->render_scene_id = NuDisplayListAddRenderScene();
+    i32 has_dynamic_light = scn->unknown_38;
 
     // If a dynamic light was attached to this scene, hand it to the light
     // manager now that the render-scene id is known.
-    if (scn->unknown_38 != 0 && scn->render_scene_id != -1) {
+    if (has_dynamic_light != 0 && scn->render_scene_id != -1) {
         if (NuDynamicLightIsEnabled(scn->unknown_3c)) {
             NuDynamicLightAddRenderScene(scn->unknown_3c, scn->unknown_40, scn->render_scene_id);
+        } else {
+            scn->unknown_38 = 0;
         }
-        scn->unknown_38 = 0;
         scn->render_scene_id = -1;
     }
 
-    // Queue into the ring and advance the write index with wrap-around.
-    // The render thread drains this ring in processRenderScenes; wrapping
-    // here prevents a stalled consumer from corrupting the array.
-    i32 slot = sceneParametersCount;
-    sceneParametersCount = slot + 1;
-    memcpy(&sceneParameters[slot], scn, sizeof(nudisplayscene_s));
-    if (sceneParametersCount >= kSceneRingCapacity) {
-        sceneParametersCount = 0;
-    }
+    // Queue this scene for the render thread. processRenderScenes drains the
+    // array and resets the count at the end of the frame.
+    sceneParameters[sceneParametersCount++] = *scn;
 }
 
 extern "C" void NuRndrEndSceneEx(i32) {
@@ -371,7 +367,7 @@ extern "C" void NuRndrSwapScreenEx(i32 /*mode*/, void (*callback)(void)) {
 // Originals 0x2ccb10 / ...
 // ---------------------------------------------------------------------------
 
-extern "C" void NuTexAnimProcess(void) {
+extern "C" void NuTexAnimProcess(f32) {
 }
 extern "C" void NuTexAnimProcessEx(void) {
 }
@@ -387,7 +383,7 @@ extern "C" void NuTexAnimProcessList(void) {
 // subsystem so it is obvious what is still missing.
 
 // Scene / GScn
-extern "C" void NuGScnFixupTIDsPS(void) {
+extern "C" void NuGScnFixupTIDsPS(NUGSCN *) {
 }
 extern "C" void NuGScnFromVideoMem(void) {
 }
@@ -399,17 +395,30 @@ extern "C" void NuGScnReadForMultiRender(void) {
 }
 extern "C" void NuGScnRestoreTIDsPS(void) {
 }
-extern "C" void NuGScnRndr(void) {
+extern "C" void NuGScnRndr(NUGSCN *scene) {
+    if (scene->additional_scenes != NULL && scene->rendered_additional_scene_count > 0) {
+        NuDisplaySceneRndr(scene->additional_scenes[scene->rendered_additional_scene_count - 1]->display_list);
+    } else {
+        NuDisplaySceneRndr(scene->display_list);
+    }
+    ++scene->rendered_additional_scene_count;
 }
 extern "C" void NuGScnToVideoMem(void) {
 }
 
 // Material
-extern "C" void NuMtlAnimate(void) {
+static u32 mtl_animation_mask = 0x00ffffff;
+
+extern "C" void NuDisplayListAnimateMtls(f32 frame_time);
+
+extern "C" void NuMtlAnimate(f32 frame_time) {
+    NuDisplayListAnimateMtls(frame_time * mtl_animation_speed_scale);
 }
-extern "C" void NuMtlAnimateSetMask(i32) {
+extern "C" void NuMtlAnimateSetMask(i32 mask) {
+    mtl_animation_mask = mask;
 }
-extern "C" void NuMtlAnimateSetSpeedScale(f32) {
+extern "C" void NuMtlAnimateSetSpeedScale(f32 speed_scale) {
+    mtl_animation_speed_scale = speed_scale;
 }
 extern "C" void NuMtlAnimateShaderMtlTextures(void) {
 }
@@ -450,8 +459,6 @@ extern "C" void NuRndr3dLine(void) {
 }
 extern "C" void NuRndrAddFootPrint(void) {
 }
-extern "C" void NuRndrAddShadow(void) {
-}
 extern "C" void NuRndrAddShadowPrims(void) {
 }
 extern "C" void NuRndrAnglesZX(void) {
@@ -484,13 +491,19 @@ extern "C" void NuRndrEndShadowReceiveRender(void) {
 }
 extern "C" void NuRndrFootPrints(void) {
 }
-extern "C" void NuRndrFx(i32, void *) {
+extern "C" void NuRndrFx(i32 paused, void *) {
+    if (NuRndrBeginSceneEx(-1, -2, 0) != 0) {
+        NuLgtLaserDraw(paused);
+        NuLgtArcLaserDraw(paused);
+        NuRndrEndSceneEx(0);
+    }
 }
 extern "C" void NuRndrGetCullDebug(void) {
 }
 extern "C" void NuRndrGlobalFrameCount(void) {
 }
-extern "C" void NuRndrGlobalFrameCountPause(i32) {
+extern "C" void NuRndrGlobalFrameCountPause(i32 paused) {
+    global_frame_count_paused = paused;
 }
 
 // NuRndrRect2di and NuRndrGradRect2di write the attributes for the current
@@ -594,8 +607,6 @@ extern "C" void NuRndrLine2di(void) {
 extern "C" void NuRndrLine3d(void) {
 }
 extern "C" void NuRndrLine3dDbg(void) {
-}
-extern "C" void NuRndrLine3dDbgFlush(void) {
 }
 extern "C" void NuRndrLineRect2di(void) {
 }
@@ -761,11 +772,9 @@ extern "C" void NuRndrSetWind(void) {
 }
 extern "C" void NuRndrShadPolys(void *) {
 }
-extern "C" void NuRndrShadowDirCol(void) {
+extern "C" void NuRndrShadowDirCol(const NUVEC *, u32, f32, f32) {
 }
 extern "C" void NuRndrShadowInit(u8 *) {
-}
-extern "C" void NuRndrShadowOnOff(i32) {
 }
 extern "C" void NuRndrSolidTri(void) {
 }
@@ -777,17 +786,13 @@ extern "C" void NuRndrSphereMtx(void) {
 }
 extern "C" void NuRndrSphereTRS(void) {
 }
-extern "C" void NuRndrStartReflectionRender(void) {
+extern "C" void NuRndrStartReflectionRender(i32) {
 }
 extern "C" void NuRndrStartShadowReceiveRender(void) {
 }
 extern "C" void NuRndrStateGetFogEnabled(void) {
 }
 extern "C" void NuRndrStateInit(void) {
-}
-extern "C" void NuRndrStateSetFogEnabled(void) {
-}
-extern "C" void NuRndrStateSetFogState(void) {
 }
 extern "C" void NuRndrStateSetSpecularLight(void) {
 }
@@ -929,8 +934,6 @@ extern "C" void NuTexDestroy(i32) {
 static void NuTexGenTexture(void) {
 }
 extern "C" void NuTexReserveNative(void) {
-}
-extern "C" void NuTexResolveReference(void) {
 }
 extern "C" void NuTextureBlendEffect(void) {
 }

@@ -1,4 +1,4 @@
-![Progress](https://img.shields.io/badge/matching-12.04%25-red)
+![Progress](https://img.shields.io/badge/matching-15.09%25-red)
 [![Discord](https://img.shields.io/discord/1467775700894224555?color=%235865F2&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/2HJuMtzA7q)
 
 |                 | Target (Android x86)                                                                                                                                                                                  | Host                                                                                                                                                                                  |
@@ -25,14 +25,7 @@ any game assets, media, original source code, or any other copyrighted material.
 
 ## Build Instructions
 
-The project uses CMake as its build system. Install mise, then bootstrap every
-pinned tool and the Git hooks with one command:
-
-```bash
-mise run setup
-```
-
-There are three build modes:
+The project uses CMake as its build system. There are two build modes:
 
 The Android x86 build uses the NDK r8e toolchain and targets the original
 Android platform. It is the matching build; its output is not a host-runnable
@@ -46,36 +39,27 @@ development.
 ### Android x86 build
 
 ```bash
-mise run target:build
+# configure
+cmake -B build
+# build
+cmake --build build
 ```
 
 ### Host build
 
 ```bash
-mise run host:build
+cmake -B build-host -DBUILD_FOR_HOST=ON
+cmake --build build-host
 
-# build and run
-mise run host:run
+# run the game
+./build-host/saga window
+
+# enter the Cantina and rotate the camera through 360 degrees in 10 seconds
+./build-host/saga window --camera-orbit
+
+# enter the Cantina with a free camera (numpad 8/5/4/6; hold Shift to move)
+./build-host/saga window --camera-free
 ```
-
-### WebAssembly host build
-
-Build the browser target with the pinned Emscripten SDK:
-
-```bash
-mise run wasm:build
-```
-
-Serve the result with the headers required by browser pthreads, then open
-`http://localhost:8000`:
-
-```bash
-mise run wasm:serve
-```
-
-Select a locally owned Android OBB or enter a direct OBB URL in the browser. The
-file is loaded into browser memory and is never copied into the source tree or
-build output.
 
 ## Contributing
 
@@ -105,29 +89,29 @@ See the [documentation index](doc/main.md).
 
 | Directory | Fuzzy % | Funcs % | Data % |
 |---|---|---|---|
-| `(root)` | 56.4% | 16.7% | 0.0% |
-| `MechInputTouch` | 5.8% | 3.7% | 0.8% |
-| `editor` | 3.2% | 1.7% | 89.5% |
-| `gameapi` | 7.5% | 2.6% | 62.8% |
-| `gameframework` | 68.5% | 11.8% | 100.0% |
-| `gamelib` | 6.9% | 5.6% | 5.0% |
+| `(root)` | 62.4% | 66.7% | 0.0% |
+| `MechInputTouch` | 5.8% | 3.7% | 4.6% |
+| `editor` | 3.1% | 1.7% | 100.0% |
+| `gameapi` | 8.4% | 4.8% | 61.9% |
+| `gameframework` | 76.4% | 23.5% | 100.0% |
+| `gamelib` | 7.2% | 5.9% | 12.1% |
 | `java` | 10.7% | 0.0% | 0.0% |
-| `legoapi` | 9.3% | 11.1% | 49.1% |
-| `legoapi/actions` | 2.4% | 1.4% | 99.1% |
-| `legoapi/ai` | 5.6% | 2.1% | 89.3% |
-| `legoapi/audio` | 5.3% | 8.3% | 99.3% |
-| `legoapi/characters` | 7.8% | 4.4% | 36.5% |
-| `legoapi/core` | 17.1% | 10.1% | 97.8% |
-| `legoapi/cutscenes` | 8.1% | 3.0% | 99.6% |
-| `legoapi/gizmo` | 5.6% | 6.7% | 0.2% |
-| `legoapi/gizmos` | 14.3% | 25.2% | 97.2% |
-| `legoapi/items` | 3.8% | 2.5% | 70.8% |
-| `legoapi/menus` | 10.8% | 15.5% | 97.7% |
-| `legoapi/misc` | 4.8% | 3.5% | 100.0% |
-| `legoapi/props` | 18.4% | 6.6% | 60.3% |
-| `legoapi/render` | 6.7% | 6.0% | 95.6% |
-| `legoapi/world` | 22.0% | 30.2% | 2.6% |
-| `legogame` | 6.1% | 5.3% | 81.2% |
-| `nu2api` | 32.5% | 26.3% | 9.3% |
+| `legoapi` | 14.1% | 16.3% | 50.0% |
+| `legoapi/actions` | 6.6% | 3.6% | 99.1% |
+| `legoapi/ai` | 13.0% | 5.9% | 88.7% |
+| `legoapi/audio` | 6.5% | 9.2% | 96.7% |
+| `legoapi/characters` | 11.8% | 8.5% | 36.2% |
+| `legoapi/core` | 25.3% | 14.3% | 97.8% |
+| `legoapi/cutscenes` | 10.6% | 6.8% | 99.6% |
+| `legoapi/gizmo` | 10.8% | 10.9% | 49.4% |
+| `legoapi/gizmos` | 36.0% | 34.4% | 98.2% |
+| `legoapi/items` | 7.5% | 16.1% | 23.2% |
+| `legoapi/menus` | 11.9% | 16.6% | 97.7% |
+| `legoapi/misc` | 6.1% | 6.1% | 100.0% |
+| `legoapi/props` | 30.1% | 9.9% | 59.8% |
+| `legoapi/render` | 10.7% | 13.0% | 95.2% |
+| `legoapi/world` | 22.7% | 31.5% | 3.7% |
+| `legogame` | 51.6% | 41.2% | 85.4% |
+| `nu2api` | 33.8% | 27.7% | 9.4% |
 
 <!-- matching-table-end -->

@@ -10,7 +10,8 @@ struct SHOPINPUT;
 void Techno_isReady(TECHNO_s *) {
 }
 
-void Technos_TgtPos(TECHNO_s *) {
+NUVEC *Technos_TgtPos(TECHNO_s *) {
+    return NULL;
 }
 
 void Techno_MoveCode(WORLDINFO_s *, GameObject_s *) {

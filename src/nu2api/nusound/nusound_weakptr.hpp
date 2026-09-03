@@ -97,10 +97,9 @@ template <typename T> class NuSoundWeakPtrObj {
 template <typename T> class NuSoundWeakPtr : public NuSoundWeakPtrListNode {
   public:
     NuSoundWeakPtrObj<T> *obj;
-    bool bool_value;
 
   public:
-    NuSoundWeakPtr() : obj(NULL), bool_value(false) {
+    NuSoundWeakPtr() : obj(NULL) {
     }
 
     virtual ~NuSoundWeakPtr() {

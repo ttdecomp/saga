@@ -8,7 +8,7 @@ struct AIROW_s;
 struct nufpar_s;
 
 typedef void (*PREPARINGSPECIALMOVEFN)(AIPACKET_s *, APIOBJECT_s *, i32);
-typedef void (*MIDSPECIALMOVEFN)(AISYS_s *, AIPACKET_s *, APIOBJECT_s *);
+typedef i32 (*MIDSPECIALMOVEFN)(AISYS_s *, AIPACKET_s *, APIOBJECT_s *);
 
 PREPARINGSPECIALMOVEFN PreparingForSpecialMoveFn = NULL;
 MIDSPECIALMOVEFN MidSpecialMoveFn = NULL;
@@ -31,19 +31,24 @@ static __used__ void StarWars_PrepareTakeOverJump(AIPACKET_s *, APIOBJECT_s *, i
 static __used__ void StarWars_PreparingForSpecialMove(AIPACKET_s *, APIOBJECT_s *, i32) {
 }
 
-static __used__ void StarWars_MidSpecialMove(AISYS_s *, AIPACKET_s *, APIOBJECT_s *) {
+static __used__ i32 StarWars_MidSpecialMove(AISYS_s *, AIPACKET_s *, APIOBJECT_s *) {
+    return 0;
 }
 
-static __used__ void StarWars_MidSpecialMove_BigJump(AISYS_s *, AIPACKET_s *, APIOBJECT_s *) {
+static __used__ i32 StarWars_MidSpecialMove_BigJump(AISYS_s *, AIPACKET_s *, APIOBJECT_s *) {
+    return 0;
 }
 
-static __used__ void StarWars_MidSpecialMove_Default(AISYS_s *, AIPACKET_s *, APIOBJECT_s *) {
+static __used__ i32 StarWars_MidSpecialMove_Default(AISYS_s *, AIPACKET_s *, APIOBJECT_s *) {
+    return 0;
 }
 
-static __used__ void StarWars_MidSpecialMove_UseHatch(AISYS_s *, AIPACKET_s *, APIOBJECT_s *) {
+static __used__ i32 StarWars_MidSpecialMove_UseHatch(AISYS_s *, AIPACKET_s *, APIOBJECT_s *) {
+    return 0;
 }
 
-static __used__ void StarWars_MidSpecialMove_StartJump(AISYS_s *, AIPACKET_s *, APIOBJECT_s *) {
+static __used__ i32 StarWars_MidSpecialMove_StartJump(AISYS_s *, AIPACKET_s *, APIOBJECT_s *) {
+    return 0;
 }
 
 static __used__ void SpecialMove_ConfigParticipant(nufpar_s *, i16 *, i8 *, i16 *) {

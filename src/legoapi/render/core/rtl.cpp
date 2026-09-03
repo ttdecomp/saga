@@ -1,6 +1,8 @@
 #include "decomp.h"
+#include "globals.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nu3d/android/nutimebar_plain.h"
 #include "nu2api/nu3d/nurndrstat.h"
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nucore/nulst.h"
@@ -245,7 +247,9 @@ extern "C" {
     void rtlDynamicSetType(void) {
     }
 
-    void rtlFrameUpdate(f32) {
+    void rtlFrameUpdate(f32 frame_time) {
+        rtltimer1 = static_cast<u16>(static_cast<i32>(rtltimer1adv * frame_time) + rtltimer1);
+        NuTimeBarSlotReset(0, 6);
     }
 
     void rtlFree(void) {
@@ -266,7 +270,7 @@ extern "C" {
     void rtlGetFogSet(void) {
     }
 
-    void rtlInitDynamic(VARIPTR *, VARIPTR, i32) {
+    void rtlInitDynamic(void) {
     }
 
     rtlset *rtlLoadSet(char *path, VARIPTR *buffer, i32 buffer_end) {
@@ -357,13 +361,13 @@ extern "C" {
         return rtl_dynamic_max;
     }
 
-    i32 rtlFindByUserId(i32 rtl_set, i32 user_id) {
+    i32 rtlFindByUserId(usize rtl_set, i32 user_id) {
         (void)rtl_set;
         (void)user_id;
         return -1;
     }
 
-    void rtlGetDirection(i32 rtl_set, i32 id, void **out) {
+    void rtlGetDirection(usize rtl_set, i32 id, void **out) {
         (void)rtl_set;
         (void)id;
         (void)out;

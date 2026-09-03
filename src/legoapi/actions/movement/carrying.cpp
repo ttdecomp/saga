@@ -1,3 +1,5 @@
+#include "globals.h"
+#include "legoapi/characters/motion.h"
 #include "legoapi/legoapi_types.h"
 
 void SuperCarry_Start(GameObject_s *, GIZMOBLOWUP_s *, i32) {
@@ -40,5 +42,13 @@ void ObjLandReady(GameObject_s *) {
 void LetGoOfBalloon(GameObject_s *) {
 }
 
-void MovingBackwards(GameObject_s *) {
+bool MovingBackwards(GameObject_s *object) {
+    GAMEPAD_s *pad = object->pad_gamepad;
+    if (pad == NULL || pad->operator_data == NULL || pad->input_magnitude == 0.0f) {
+        return false;
+    }
+
+    const u16 camera_yaw = GameCam != NULL ? static_cast<u16>(GameCam->input_yaw) : 0;
+    const i32 difference = RotDiff(static_cast<u16>(pad->input_angle + camera_yaw), object->apiobj.field_0x276);
+    return static_cast<u32>(difference + 0x4000) > 0x8000;
 }

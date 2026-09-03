@@ -48,7 +48,7 @@ class NuMemoryManager {
 
   private:
     struct Header {
-        u32 value;
+        usize value;
     };
 
     struct FreeHeader {

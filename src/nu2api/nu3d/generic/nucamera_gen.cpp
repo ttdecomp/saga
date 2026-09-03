@@ -132,7 +132,7 @@ NUMTX *NuCameraGetClipPlanes(void) {
     return &clip_planes;
 }
 
-i32 NuCameraClipTestSphere(NUVEC *pnt, f32 radius, NUMTX *world_mtx) {
+__attribute__((weak)) i32 NuCameraClipTestSphere(NUVEC *pnt, f32 radius, NUMTX *world_mtx) {
     NUCAMERA *cam = NuCameraGetCam();
     NUMTX *view = NuCameraGetViewMtx();
 

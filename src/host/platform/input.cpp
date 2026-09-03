@@ -18,6 +18,7 @@ namespace {
     constexpr u32 host_gamepad_device = 1;
     std::atomic<u32> host_pending_buttons[2];
     std::atomic<u32> host_held_buttons[2];
+    std::atomic<u32> host_keyboard_buttons[2];
     u32 host_frame_buttons[2];
 #ifdef __EMSCRIPTEN__
     std::atomic<i32> host_touch_x;
@@ -87,6 +88,7 @@ void HostInputReset() {
     for (i32 port = 0; port < 2; ++port) {
         host_pending_buttons[port].store(0, std::memory_order_relaxed);
         host_held_buttons[port].store(0, std::memory_order_relaxed);
+        host_keyboard_buttons[port].store(0, std::memory_order_relaxed);
         host_frame_buttons[port] = 0;
     }
 #ifdef __EMSCRIPTEN__
@@ -100,6 +102,14 @@ void HostInputSetHeld(i32 port, u32 buttons) {
     }
 
     host_held_buttons[port].store(buttons, std::memory_order_release);
+}
+
+void HostInputSetKeyboardHeld(i32 port, u32 buttons) {
+    if (port < 0 || port >= 2) {
+        return;
+    }
+
+    host_keyboard_buttons[port].store(buttons, std::memory_order_release);
 }
 
 void HostInputTap(i32 port, u32 buttons) {
@@ -138,7 +148,8 @@ namespace NuInputDevicePS {
         for (i32 port = 0; port < 2; ++port) {
             const u32 tapped = host_pending_buttons[port].exchange(0, std::memory_order_acq_rel);
             const u32 held = host_held_buttons[port].load(std::memory_order_acquire);
-            host_frame_buttons[port] = tapped | held;
+            const u32 keyboard = host_keyboard_buttons[port].load(std::memory_order_acquire);
+            host_frame_buttons[port] = tapped | held | keyboard;
 #ifdef __EMSCRIPTEN__
             if (port == 0) {
                 host_frame_buttons[port] |= host_consume_touch();
@@ -148,7 +159,12 @@ namespace NuInputDevicePS {
     }
 
     bool IsConnectedPS(u32 device) {
-        return device == host_touch_device || device == host_gamepad_device;
+        // The host harness currently supplies keyboard-backed gamepad input,
+        // but no touch events.  Advertising the placeholder touch device as
+        // connected makes NuPad initially map player 0 to that silent device;
+        // the first gamepad press is then spent remapping to device 1 instead
+        // of reaching the menu.
+        return device == host_gamepad_device;
     }
 
     bool IsInterceptedPS(u32) {

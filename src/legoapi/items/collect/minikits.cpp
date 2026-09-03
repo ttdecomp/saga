@@ -68,7 +68,7 @@ void AddStatusMiniKitParts() {
 void SpecialMiniKits_Reset(WORLDINFO_s *world) {
     WORLDINFO_s *world_info = world;
     SPECIALMINIKITSYS_s *system = world_info->special_minikits;
-    if (system == NULL || GizmoPickupSys->descriptor.gizmo_type_id == -1) {
+    if (system == NULL || GizmoPickupSys->gizmo_type_id == -1) {
         return;
     }
 

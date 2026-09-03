@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include "globals.h"
+#include "legoapi/cutscenes/minicamcut.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/numath/nuvec.h"
 

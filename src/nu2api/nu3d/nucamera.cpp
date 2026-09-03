@@ -4,7 +4,8 @@
 
 NUMTX clip_test_mtx;
 
-i32 NuCameraClipTestExtents(NUVEC *min, NUVEC *max, NUMTX *world_mtx, f32 far_clip, i32 should_clip_to_screen) {
+__attribute__((weak)) i32 NuCameraClipTestExtents(NUVEC *min, NUVEC *max, NUMTX *world_mtx, f32 far_clip,
+                                                  i32 should_clip_to_screen) {
     NUVEC extents[8];
     NUVEC clip_space_extents[8];
     char results[8];
@@ -96,11 +97,60 @@ i32 NuCameraClipTestExtents(NUVEC *min, NUVEC *max, NUMTX *world_mtx, f32 far_cl
     return 2;
 }
 
-// The original has a separately vectorised 0x665-byte implementation for
-// identity-world AABBs.  Its observable result is the same three-state clip
-// code produced by the generic extent test: 0 outside, 1 wholly inside, 2
-// intersecting.  Keep the original public ABI while sharing the already
-// transcribed scalar test.
-i32 NuCameraClipTestExtentsAxisAligned(NUVEC *min, NUVEC *max, f32 far_clip) {
-    return NuCameraClipTestExtents(min, max, &numtx_identity, far_clip, 0);
+// The display-scene format stores each axis-aligned bound as center + extent,
+// not as minimum + maximum corners.  The target tests those values directly
+// against the world-space planes built by NuCameraBuildClipPlanes.  Treating
+// them as corners makes large bounds (notably the Cantina floor and walls)
+// appear outside the camera even while the camera is inside them.
+__attribute__((weak)) i32 NuCameraClipTestExtentsAxisAligned(NUVEC *center, NUVEC *extent, f32 far_clip) {
+    auto transformPlanes = [](const NUVEC &point, const NUMTX &planes, f32 out[4]) {
+        out[0] = point.x * planes.m00 + point.y * planes.m10 + point.z * planes.m20 + planes.m30;
+        out[1] = point.x * planes.m01 + point.y * planes.m11 + point.z * planes.m21 + planes.m31;
+        out[2] = point.x * planes.m02 + point.y * planes.m12 + point.z * planes.m22 + planes.m32;
+        out[3] = point.x * planes.m03 + point.y * planes.m13 + point.z * planes.m23 + planes.m33;
+    };
+    auto projectExtent = [](const NUVEC &value, const NUMTX &absolute_planes, f32 out[4]) {
+        out[0] = value.x * absolute_planes.m00 + value.y * absolute_planes.m10 + value.z * absolute_planes.m20;
+        out[1] = value.x * absolute_planes.m01 + value.y * absolute_planes.m11 + value.z * absolute_planes.m21;
+        out[2] = value.x * absolute_planes.m02 + value.y * absolute_planes.m12 + value.z * absolute_planes.m22;
+        out[3] = value.x * absolute_planes.m03 + value.y * absolute_planes.m13 + value.z * absolute_planes.m23;
+    };
+
+    f32 distance[6];
+    f32 radius[6];
+    transformPlanes(*center, ClipPlanes.frustum_planes, distance);
+    projectExtent(*extent, ClipPlanes.abs_frustum_planes, radius);
+
+    NUMTX near_far_planes = ClipPlanes.near_far_planes;
+    if (far_clip != 0.0f) {
+        near_far_planes.m30 += far_clip - global_camera.far_clip;
+    }
+    distance[4] = center->x * near_far_planes.m00 + center->y * near_far_planes.m10 + center->z * near_far_planes.m20 +
+                  near_far_planes.m30;
+    distance[5] = center->x * near_far_planes.m01 + center->y * near_far_planes.m11 + center->z * near_far_planes.m21 +
+                  near_far_planes.m31;
+    radius[4] = extent->x * near_far_planes.m02 + extent->y * near_far_planes.m12 + extent->z * near_far_planes.m22;
+    radius[5] = extent->x * near_far_planes.m03 + extent->y * near_far_planes.m13 + extent->z * near_far_planes.m23;
+
+    for (i32 plane = 0; plane < 6; ++plane) {
+        if (distance[plane] < -radius[plane]) {
+            return 0;
+        }
+    }
+
+    for (i32 plane = 0; plane < 4; ++plane) {
+        if (radius[plane] > distance[plane]) {
+            f32 scissor_distance[4];
+            f32 scissor_radius[4];
+            transformPlanes(*center, ClipPlanes.scissor_planes, scissor_distance);
+            projectExtent(*extent, ClipPlanes.abs_scissor_planes, scissor_radius);
+            for (i32 scissor_plane = 0; scissor_plane < 4; ++scissor_plane) {
+                if (scissor_radius[scissor_plane] > scissor_distance[scissor_plane]) {
+                    return 2;
+                }
+            }
+            break;
+        }
+    }
+    return 1;
 }

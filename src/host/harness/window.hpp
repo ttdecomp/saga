@@ -7,6 +7,10 @@ struct HostWindowOptions {
     bool script_input = false;
     bool script_load = false;
     bool script_play = false;
+    bool script_action = false;
+    bool script_pause = false;
+    bool camera_orbit = false;
+    bool camera_free = false;
     bool offscreen = false;
     bool mute = false;
     u64 script_tail_ms = 8000;

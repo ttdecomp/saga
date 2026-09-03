@@ -27,14 +27,14 @@ NUMTL *FadeMtl;
 i32 FadeSystem::AddFade(FadeBase *o) {
     if (o == NULL)
         return 0;
-    i32 type = o->GetFadeType();
+    FADETYPE_VALUE type = o->GetFadeType();
     o->Init(this);
     fades[type] = o;
     return 1;
 }
 
 void FadeSystem::Draw() {
-    if (pending_type != -1 && fades[pending_type] != NULL)
+    if (pending_type != FADE_TYPE_NONE && fades[pending_type] != NULL)
         fades[pending_type]->DrawFade();
 }
 
@@ -43,32 +43,32 @@ void FadeSystem::Init() {
     fades[1] = NULL;
     fades[2] = NULL;
     fades[3] = NULL;
-    pending_type = -1;
     field_28 = 1;
+    pending_type = FADE_TYPE_NONE;
 }
 
 i32 FadeSystem::SetFade(FADETYPE const &t, u32 frames) {
-    i32 type = t.type;
-    if (type != -1 && fades[type] != NULL) {
+    FADETYPE_VALUE type = t.type;
+    if (type != FADE_TYPE_NONE && fades[type] != NULL) {
         pending_type = type;
         direction = frames;
         return 1;
     }
-    pending_type = -1;
+    pending_type = FADE_TYPE_NONE;
     return 0;
 }
 
 void FadeSystem::SetStage(char stage) {
     this->stage = stage;
     busy = 0;
-    if (pending_type != -1 && fades[pending_type] != NULL)
+    if (pending_type != FADE_TYPE_NONE && fades[pending_type] != NULL)
         fades[pending_type]->InitFade();
 }
 
 void FadeSystem::Update() {
     f32 old_fade = fade;
-    i32 type = pending_type;
-    if (type == -1)
+    FADETYPE_VALUE type = pending_type;
+    if (type == FADE_TYPE_NONE)
         return;
 
     f32 next = fade + rate * FRAMETIME;
@@ -87,20 +87,20 @@ void FadeSystem::Update() {
     if (fade == 0.0f || fade == 1.0f)
         rate = 0.0f;
     if (fade == 0.0f)
-        pending_type = -1;
+        pending_type = FADE_TYPE_NONE;
 }
 
-i32 Fade::GetFadeType() const {
-    return 0;
+FADETYPE_VALUE Fade::GetFadeType() const {
+    return FADE_TYPE_SCREEN;
 }
-i32 FadeWipe::GetFadeType() const {
-    return 1;
+FADETYPE_VALUE FadeWipe::GetFadeType() const {
+    return FADE_TYPE_WIPE;
 }
-i32 FadeStillWipe::GetFadeType() const {
-    return 2;
+FADETYPE_VALUE FadeStillWipe::GetFadeType() const {
+    return FADE_TYPE_STILL_WIPE;
 }
-i32 FadeStill::GetFadeType() const {
-    return 3;
+FADETYPE_VALUE FadeStill::GetFadeType() const {
+    return FADE_TYPE_STILL;
 }
 
 void FadeStillWipe::DrawFade() {

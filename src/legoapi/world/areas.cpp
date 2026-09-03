@@ -1,19 +1,21 @@
 
 #include <string.h>
 #include "globals.h"
+#include "legoapi/characters/core/character.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/area.h"
 #include "legoapi/world/areas.h"
 #include "legoapi/world/mission.h"
+#include "legoapi/menus/screens/store.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nucore/nustring.h"
+#include "nu2api/nufile/nufpar.h"
 
 i32 openlevels = 0;
 
 // Cross-module entry points used by this file (declared locally since they have
 // no single shared header in the reconstructed source).  The NuFPar* helpers are
 // taken as void* (untyped parser handle) to match the open/close contract.
-extern i32 Store_IsPackUnlocked(i32);
 extern void ReCalculateCompletionPoints(void);
 extern void Hub_LockUnlockDoors(struct WORLDINFO_s *);
 extern void FreeTorpedoPacket(struct TORPEDOPACKET_s **);
@@ -29,56 +31,45 @@ extern void NewAreaMusicChanges(void);
 extern void ClearTakeOverObjectSys(void);
 extern void Door_Reset(void);
 extern void ResetMinikitCounter(void);
-extern "C" void *NuFParCreate(const char *);
-extern "C" void NuFParDestroy(void *);
-extern "C" i32 NuFParGetLine(void *);
-extern "C" i32 NuFParGetWord(void *);
 
 void Areas_OpenAll(i32 mode) {
-    i32 i;
-    i32 pack;
-    i32 open;
-    u8 *comp;
-    u8 *area;
+    i32 area_index;
+    AREADATA *area;
+    AREASAVE_s *save = Game.area_save;
 
-    if (mode != 0 && Store_IsPackUnlocked(8) == 0) {
+    if (mode != 0 && !Store_IsPackUnlocked(STORE_PACK_OPEN_ALL_AREAS)) {
         return;
     }
-    if (AREACOUNT > 0) {
-        comp = (u8 *)&Game + 0x7834;
-        for (i = 0; i < AREACOUNT; i++) {
-            area = *(u8 **)&ADataList + i * 0x9c;
-            open = 1;
-            if (*(u16 *)(area + 0x7a) & AREAFLAG_MINIKIT) {
-                u8 ep = *(u8 *)(area + 0x86);
-                for (pack = 0; pack < ep; pack++) {
-                    if (Store_IsPackUnlocked(pack) == 0) {
-                        open = 0;
-                        break;
-                    }
-                }
-            } else if ((*(u16 *)(area + 0x7a) & (AREAFLAG_SUPER_BONUS_AREA | AREAFLAG_VEHICLE_AREA)) ==
-                           AREAFLAG_BONUS_AREA &&
-                       *(u8 *)(area + 0x86) != 0xff) {
-                open = (Store_IsPackUnlocked(5) != 0);
+
+    for (area_index = 0; area_index < AREACOUNT; area_index++, save++) {
+        area = &ADataList[area_index];
+
+        if ((area->flags & AREAFLAG_MINIKIT) != 0) {
+            if ((area->episode_index == AREA_EPISODE_I && !Store_IsPackUnlocked(STORE_PACK_EPISODE_I)) ||
+                (area->episode_index == AREA_EPISODE_II && !Store_IsPackUnlocked(STORE_PACK_EPISODE_II)) ||
+                (area->episode_index == AREA_EPISODE_III && !Store_IsPackUnlocked(STORE_PACK_EPISODE_III)) ||
+                (area->episode_index == AREA_EPISODE_IV && !Store_IsPackUnlocked(STORE_PACK_EPISODE_IV)) ||
+                (area->episode_index == AREA_EPISODE_V && !Store_IsPackUnlocked(STORE_PACK_EPISODE_V))) {
+                continue;
             }
-            if (open) {
-                if (mode == 0) {
-                    comp[-2] = 1;
-                    comp[-1] = 1;
-                    i16 t = *(i16 *)(area + 0x84);
-                    if (t != 0) {
-                        *(f32 *)comp = ((f32)(t >> 16) * 0.0588f) + (f32)t - 0.5f;
-                    }
-                } else {
-                    comp[-1] = 1;
-                }
+        } else if ((area->flags & (AREAFLAG_VEHICLE_AREA | AREAFLAG_SUPER_BONUS_AREA)) == AREAFLAG_BONUS_AREA &&
+                   area->episode_index != AREA_EPISODE_NONE && !Store_IsPackUnlocked(STORE_PACK_BONUS_AREA)) {
+            continue;
+        }
+
+        if (mode == 0) {
+            save->complete = 1;
+            save->area_complete = 1;
+            if (area->challenge_trial_time != 0) {
+                save->challenge_trial_time = (f32)area->challenge_trial_time - 0.5f;
             }
-            comp += 0xc;
+        } else {
+            save->area_complete = 1;
         }
     }
-    *(u8 *)((u8 *)&Game + 0x3) = 1;
-    if (WORLD != NULL && *(void **)((char *)WORLD + 0x128) == (void *)HUB_LDATA) {
+
+    Game.field_0x2[1] = 1;
+    if (WORLD != NULL && WORLD->current_level == HUB_LDATA) {
         Hub_LockUnlockDoors(WORLD);
     } else {
         ReCalculateCompletionPoints();
@@ -112,7 +103,7 @@ void Area_Configure(i32 area, i32 param, EXTRAMODEL *models, i16 *s) {
     }
     if (area != -1) {
         char path[256];
-        void *fp;
+        NUFPAR *fp;
         i32 count = 0;
         i32 in_area = 0;
         char area_buf[0x1e8];
@@ -125,11 +116,11 @@ void Area_Configure(i32 area, i32 param, EXTRAMODEL *models, i16 *s) {
         if (fp != NULL) {
             while (NuFParGetLine(fp) != 0) {
                 NuFParGetWord(fp);
-                if (*(char **)((char *)fp + 0x510) == NULL) {
+                if (fp->word_buf[0] == '\0') {
                     continue;
                 }
                 if (in_area) {
-                    if (NuStrICmp(*(char **)((char *)fp + 0x510), "area_end") == 0) {
+                    if (NuStrICmp(fp->word_buf, "area_end") == 0) {
                         in_area = 0;
                         if (*(i16 *)(area_buf + 0x1e0) != 0) {
                             count++;
@@ -137,7 +128,7 @@ void Area_Configure(i32 area, i32 param, EXTRAMODEL *models, i16 *s) {
                         continue;
                     }
                 } else {
-                    if (NuStrICmp(*(char **)((char *)fp + 0x510), "area_start") == 0) {
+                    if (NuStrICmp(fp->word_buf, "area_start") == 0) {
                         if (count <= 9) {
                             *(i16 *)(area_buf + 0x1e0) = 0;
                             *(u8 *)(area_buf + 0x1e7) &= 0xfe;
@@ -156,12 +147,12 @@ void Area_Configure(i32 area, i32 param, EXTRAMODEL *models, i16 *s) {
 }
 
 void ClearUpAreaData() {
-    i32 i;
+    i32 object_index;
 
     if (HIGHGAMEOBJECT > 0) {
-        for (i = 0; i < HIGHGAMEOBJECT; i++) {
-            GameObject_s *obj = (GameObject_s *)((u8 *)Obj + i * 0x10e4);
-            if (obj->apiobj.field_0x1f8 & 1) {
+        for (object_index = 0; object_index < HIGHGAMEOBJECT; object_index++) {
+            GameObject_s *obj = &Obj[object_index];
+            if ((obj->apiobj.field_0x1f8 & 1) != 0) {
                 FreeTorpedoPacket((TORPEDOPACKET_s **)&obj->torpedo);
                 RemoveGameObject(obj, 1);
             }
@@ -170,13 +161,10 @@ void ClearUpAreaData() {
     if (Area != -1 && Area == last_area) {
         return;
     }
-    switch (Customiser_AccessoriesLoaded) {
-        case 2:
-            Customiser_RestoreModelTextureIDs(CharacterCustomiser);
-            break;
-        case 1:
-            Customiser_DumpAccessories(CharacterCustomiser);
-            break;
+    if (Customiser_AccessoriesLoaded == 2) {
+        Customiser_RestoreModelTextureIDs(CharacterCustomiser);
+    } else if (Customiser_AccessoriesLoaded == 1) {
+        Customiser_DumpAccessories(CharacterCustomiser);
     }
     Customiser_AccessoriesLoaded = 0;
     APIDumpCharacterModels(0);
@@ -184,39 +172,40 @@ void ClearUpAreaData() {
     CharScenes_AreaDump();
     if (big_icon_scene != NULL) {
         NuGScnRemove(big_icon_scene);
-        big_icon_scene = NULL;
     }
+    big_icon_scene = NULL;
     if (area_scene != NULL) {
         NuGScnRemove(area_scene);
-        area_scene = NULL;
     }
+    area_scene = NULL;
     if (vehicle_scene != NULL) {
         NuGScnRemove(vehicle_scene);
-        vehicle_scene = NULL;
     }
+    vehicle_scene = NULL;
     Particles_DumpAreaPage();
 }
 
 void ClearAreaProgress(i32 a, i32 b) {
-    u8 *area;
-    i32 i;
-    i32 levelIdx;
+    const i32 LEVEL_SAVE_SIZE = 0x54;
 
-    for (i = 0; i < 12; i++) {
+    for (i32 i = 0; i < 12; i++) {
         ClearLevelProgress(i, NULL);
     }
-    *(i32 *)&BackupGame = *(i32 *)((u8 *)&Game + 0x7bfc);
+    areaSuitBits = Game.initial_store_pack_flags;
     if (b == 0 || a == -1) {
         return;
     }
-    *(i32 *)((u8 *)&Game + 0x14) = 0;
-    area = *(u8 **)&ADataList + a * 0x9c;
-    if (*(u8 *)(area + 0x7d) == 0) {
+    AreaGlobals.values.field_0x14 = 0;
+    Game.area_save[a] = BackupGame.area_save[a];
+
+    AREADATA *area = &ADataList[a];
+    if (area->level_count == 0) {
         return;
     }
-    for (i = 0; i < *(u8 *)(area + 0x7d); i++) {
-        levelIdx = *(i16 *)(area + 0x60 + i * 2);
-        memcpy((u8 *)&Game + levelIdx * 0x54 + 0x11, (u8 *)&BackupGame + levelIdx * 0x54 + 0x11, 0x53);
+    for (i32 i = 0; i < area->level_count; i++) {
+        i32 level_index = area->levels[i];
+        memcpy(Game.level_save + level_index * LEVEL_SAVE_SIZE, BackupGame.level_save + level_index * LEVEL_SAVE_SIZE,
+               LEVEL_SAVE_SIZE);
     }
 }
 
@@ -240,7 +229,67 @@ void Areas_CompleteAllBuildUps(AREASAVE_s *save) {
     }
 }
 
-void Areas_ConfigureResidents(variptr_u *, variptr_u *) {
+void Areas_ConfigureResidents(VARIPTR *buffer, VARIPTR *) {
+    if (ADataList == NULL) {
+        return;
+    }
+
+    buffer->addr = ALIGN(buffer->addr, 4);
+    AREADATA *area = ADataList;
+    for (i32 area_index = 0; area_index < AREACOUNT; ++area_index, ++area) {
+        area->hub_player_ids = NULL;
+
+        if ((area->flags & AREAFLAG_ENDING_AREA) != 0) {
+            continue;
+        }
+
+        char path[0x100];
+        NuStrCpy(path, "levels\\");
+        NuStrCat(path, area->dir);
+        NuStrCat(path, "\\");
+        NuStrCat(path, area->file);
+        NuStrCat(path, ".txt");
+
+        NUFPAR *parser = NuFParCreate(path);
+        if (parser == NULL) {
+            continue;
+        }
+
+        i32 resident_count = 0;
+        while (NuFParGetLine(parser) != 0) {
+            if (NuFParGetWord(parser) == 0) {
+                continue;
+            }
+            if (NuStrICmp(parser->word_buf, "character") != 0) {
+                continue;
+            }
+            if (NuFParGetWord(parser) == 0) {
+                continue;
+            }
+            i32 character_id = CharIDFromName(parser->word_buf);
+            if (character_id == -1) {
+                continue;
+            }
+            if (NuFParGetWord(parser) == 0) {
+                continue;
+            }
+            if (NuStrICmp(parser->word_buf, "resident") != 0) {
+                continue;
+            }
+
+            if (area->hub_player_ids == NULL) {
+                area->hub_player_ids = buffer->i16_ptr;
+            }
+            area->hub_player_ids[resident_count++] = static_cast<i16>(character_id);
+        }
+        NuFParDestroy(parser);
+
+        if (resident_count != 0) {
+            area->hub_player_ids[resident_count] = -1;
+            buffer->i16_ptr = &area->hub_player_ids[resident_count + 1];
+        }
+    }
+    buffer->addr = ALIGN(buffer->addr, 4);
 }
 
 void NewArea() {
@@ -275,20 +324,20 @@ have_jump:
         *(u8 *)(*(char **)((char *)WORLD + 0x130) + 0x2800) |= 1;
     }
     SuperCounters_Reset(Area);
-    *(i32 *)((char *)AreaGlobals + 0x10) = 0;
+    AreaGlobals.values.field_0x10 = 0;
     if (Area == -1) {
         area_ep = 0;
     } else {
         area_ep = *(u8 *)((char *)&Game + 0x7831 + Area * 12);
     }
-    *(u8 *)((char *)AreaGlobals + 0xc) = area_ep;
-    *(u8 *)((char *)AreaGlobals + 0x14) = area_ep;
+    AreaGlobals.bytes[0x0c] = area_ep;
+    AreaGlobals.bytes[0x14] = area_ep;
     Door_UseCutCam = 0;
-    *(i32 *)((char *)AreaGlobals + 0x0) = 0;
-    *(i32 *)((char *)AreaGlobals + 0x1c) = 0;
-    *(i32 *)((char *)AreaGlobals + 0x8) = 0;
-    *(i32 *)((char *)AreaGlobals + 0x18) = 0;
-    *(i32 *)((char *)AreaGlobals + 0x24) = 0;
+    AreaGlobals.values.field_0x00 = 0;
+    AreaGlobals.values.field_0x1c = 0;
+    AreaGlobals.values.field_0x08 = 0;
+    AreaGlobals.values.field_0x18 = 0;
+    AreaGlobals.values.field_0x24 = 0;
     BuildUpTotal = 0;
     BuildUpDone = 0;
     if (*(void **)((char *)WORLD + 0x12c) == HOTHBATTLE_ADATA) {

@@ -1,100 +1,267 @@
 #include "legoapi/gizmos/trigger/gizspecial.h"
 
+#include <string.h>
+
 #include "decomp.h"
+#include "legoapi/characters/motion/gameanim.h"
+#include "legoapi/legoapi_types.h"
 #include "legoapi/world/level.h"
+#include "legoapi/world/world.h"
+#include "nu2api/nu3d/nuspecial.h"
+#include "nu2api/nucore/nustring.h"
 
 i32 gizspecial_gizmotype_id = -1;
 
 static char *gizSpec_prefix = "Spec_";
 
-void GameAnimSet_Play(GAMEANIMSET_s *, f32, i32);
-void GameAnimSet_Stop(GAMEANIMSET_s *);
-void GameAnimSet_JumpToStart(GAMEANIMSET_s *);
-void GameAnimSet_SetVisibility(GAMEANIMSET_s *, i32);
-char *GizSpecial_GetName(GIZSPECIAL_s *);
+static const i32 GIZSPECIAL_PROGRESS_WORD_COUNT = 8;
 
-static i32 GizSpecial_GetMaxGizmos(void *world_info) {
-    WORLDINFO *world = static_cast<WORLDINFO *>(world_info);
+struct GIZSPECIALPROGRESS {
+    u32 active[GIZSPECIAL_PROGRESS_WORD_COUNT];
+    u32 reversed[GIZSPECIAL_PROGRESS_WORD_COUNT];
+};
+DECOMP_ASSERT(sizeof(GIZSPECIALPROGRESS) == 0x40, "GIZSPECIALPROGRESS ABI");
+
+static const i32 GIZSPECIAL_PROGRESS_BITS = GIZSPECIAL_PROGRESS_WORD_COUNT * 32;
+
+static i32 GizSpecial_GetMaxGizmos(void *special) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(special);
     return world->current_level->max_giz_specials;
 }
 
-static void GizSpecial_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
-    UNIMPLEMENTED();
+static void GizSpecial_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_ptr, void *) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    if (world != NULL) {
+        for (i32 i = 0; i < world->giz_special_sys->count; ++i) {
+            if (NuStrLen(world->giz_special_sys->specials[i].name) != 0) {
+                AddGizmo(gizmo_sys, type_id, NULL, &world->giz_special_sys->specials[i]);
+            }
+        }
+    }
 }
 
 static char *GizSpecial_GetGizmoName(GIZMO *gizmo) {
-    return gizmo != NULL ? GizSpecial_GetName(static_cast<GIZSPECIAL *>(gizmo->object)) : NULL;
+    if (gizmo != NULL) {
+        return GizSpecial_GetName(static_cast<GIZSPECIAL *>(gizmo->object));
+    }
+    return NULL;
 }
 
-static i32 GizSpecial_GetOutput(GIZMO *gizmo, i32, i32) {
-    UNIMPLEMENTED();
-    return {};
+static i32 GizSpecial_GetOutput(GIZMO *gizmo, i32 output_index, i32 include_inactive) {
+    if (gizmo == NULL) {
+        return 0;
+    }
+
+    GIZSPECIAL *special = static_cast<GIZSPECIAL *>(gizmo->object);
+    if (special == NULL || special->anim_set->object_count == 0 ||
+        NuSpecialExistsFn(&special->anim_set->objects->special) == 0) {
+        return 0;
+    }
+    if (special->is_active == 0 && include_inactive == 0) {
+        return 0;
+    }
+
+    if ((special->anim_set->flags & GAMEANIMSET_FLAG_IN_SYSTEM_LIST) == 0) {
+        GameAnimSet_EvaluateState(special->anim_set);
+    }
+    if (output_index == 0) {
+        return special->anim_set->state == GAMEANIMSET_STATE_AT_END;
+    } else if (output_index == 1) {
+        return special->anim_set->state != GAMEANIMSET_STATE_AT_START;
+    }
+    return 0;
 }
 
 static char *GizSpecial_GetOutputName(GIZMO *gizmo, i32 output_index) {
-    UNIMPLEMENTED();
-    return {};
+    if (output_index == 0) {
+        return "AtEnd";
+    }
+    if (output_index == 1) {
+        return "NotAtStart";
+    }
+    return NULL;
 }
 
-static i32 GizSpecial_GetNumOutputs(GIZMO *) {
+static i32 GizSpecial_GetNumOutputs(GIZMO *gizmo) {
     return 2;
 }
 
 static void GizSpecial_Activate(GIZMO *gizmo, i32 active) {
-    if (gizmo == NULL || gizmo->object == NULL) {
+    if (gizmo == NULL) {
         return;
     }
-    GIZSPECIAL_s *special = static_cast<GIZSPECIAL_s *>(gizmo->object);
+
+    GIZSPECIAL *special = static_cast<GIZSPECIAL *>(gizmo->object);
+    if (special == NULL) {
+        return;
+    }
+
     if (active != 0) {
-        GameAnimSet_JumpToStart(special->animation_set);
-        GameAnimSet_Play(special->animation_set, 1.0f, 1);
-        special->flags |= 2;
-    } else {
-        GameAnimSet_Stop(special->animation_set);
-        special->flags &= ~2;
+        GameAnimSet_JumpToStart(special->anim_set);
+        GameAnimSet_Play(special->anim_set, 1.0f, 1);
+        special->flags = static_cast<GIZSPECIAL_FLAGS>(special->flags | GIZSPECIAL_FLAG_ACTIVE);
+        return;
+    }
+
+    GameAnimSet_Stop(special->anim_set);
+    special->flags = static_cast<GIZSPECIAL_FLAGS>(special->flags & ~GIZSPECIAL_FLAG_ACTIVE);
+}
+
+static i32 GizSpecial_ActivateRev(GIZMO *gizmo, i32 reversed, i32 test_only) {
+    if (gizmo == NULL) {
+        return 0;
+    }
+
+    GIZSPECIAL *special = static_cast<GIZSPECIAL *>(gizmo->object);
+    if (special == NULL) {
+        return 0;
+    }
+
+    const i32 was_reversed = special->flags & GIZSPECIAL_FLAG_REVERSED;
+    if ((test_only & 1) != 0) {
+        return was_reversed != reversed;
+    }
+
+    if (reversed != 0) {
+        GameAnimSet_Play(special->anim_set, -1.0f, 1);
+        special->flags = static_cast<GIZSPECIAL_FLAGS>(special->flags | GIZSPECIAL_FLAG_REVERSED);
+        return 1;
+    }
+
+    GameAnimSet_Play(special->anim_set, 1.0f, 1);
+    special->flags = static_cast<GIZSPECIAL_FLAGS>(special->flags & ~GIZSPECIAL_FLAG_REVERSED);
+    return 1;
+}
+
+static void GizSpecial_SetVisibility(GIZMO *gizmo, i32 visibility) {
+    if (gizmo != NULL) {
+        GIZSPECIAL *special = static_cast<GIZSPECIAL *>(gizmo->object);
+        if (special != NULL) {
+            GameAnimSet_SetVisibility(special->anim_set, visibility);
+        }
     }
 }
 
-static i32 GizSpecial_ActivateRev(GIZMO *gizmo, i32, i32) {
-    UNIMPLEMENTED();
-    return {};
+static NUVEC *GizSpecial_GetPos(GIZMO *gizmo) {
+    if (gizmo != NULL) {
+        GIZSPECIAL *special = static_cast<GIZSPECIAL *>(gizmo->object);
+        if (special != NULL && special->anim_set->object_count != 0) {
+            if (NuSpecialExistsFn(&special->anim_set->objects->special) != 0) {
+                return NuSpecialGetPos(&special->anim_set->objects->special);
+            }
+        }
+    }
+    return NULL;
 }
 
-static void GizSpecial_SetVisibility(GIZMO *gizmo, i32 visible) {
-    if (gizmo != NULL && gizmo->object != NULL) {
-        GameAnimSet_SetVisibility(static_cast<GIZSPECIAL_s *>(gizmo->object)->animation_set, visible);
+static i32 GizSpecial_UsingSpecial(GIZMO **result, void *world_ptr, i32 result_capacity, char *name) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    i32 result_count = 0;
+
+    if (world != NULL && world->giz_special_sys->specials != NULL) {
+        for (i32 i = 0; i < world->giz_special_sys->count; ++i) {
+            GIZSPECIAL *special = &world->giz_special_sys->specials[i];
+            if (special->anim_set != NULL) {
+                char *special_name = GizSpecial_GetName(special);
+                if (NuStrICmp(name, special_name) == 0) {
+                    result[result_count++] = GizmoFindByName(world->gizmo_sys, -1, special_name);
+                    if (result_count == result_capacity) {
+                        result_count = -1;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    return result_count;
+}
+
+static void *GizSpecial_AllocateProgressData(VARIPTR *buffer, VARIPTR *buffer_end) {
+    return GizmoBufferAlloc(buffer, buffer_end, sizeof(GIZSPECIALPROGRESS));
+}
+
+static void GizSpecial_ClearProgress(void *, void *progress_ptr) {
+    GIZSPECIALPROGRESS *progress = static_cast<GIZSPECIALPROGRESS *>(progress_ptr);
+    if (progress != NULL) {
+        memset(progress->active, 0xff, sizeof(progress->active));
+        memset(progress->reversed, 0, sizeof(progress->reversed));
     }
 }
 
-static i32 GizSpecial_GetPos(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+static void GizSpecial_StoreProgress(void *world_ptr, void *, void *progress_ptr) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    GIZSPECIALPROGRESS *progress = static_cast<GIZSPECIALPROGRESS *>(progress_ptr);
+
+    if (progress == NULL) {
+        return;
+    }
+    GizSpecial_ClearProgress(NULL, progress);
+
+    if (world != NULL && world->giz_special_sys != NULL && world->giz_special_sys->count != 0) {
+        const i32 count = world->giz_special_sys->count;
+        GIZSPECIAL *special = world->giz_special_sys->specials;
+        for (i32 i = 0; i < count; ++i, ++special) {
+            const i32 word_index = i >> 5;
+            const u32 bit = 1u << (i & 31);
+            if ((special->flags & GIZSPECIAL_FLAG_ACTIVE) == 0) {
+                progress->active[word_index] &= ~bit;
+            }
+            if ((special->flags & GIZSPECIAL_FLAG_REVERSED) != 0) {
+                progress->reversed[word_index] |= bit;
+            }
+        }
+    }
 }
 
-static void GizSpecial_UsingSpecial(GIZMO **, void *, i32, char *) {
-    UNIMPLEMENTED();
+static void GizSpecial_Reset(void *world_ptr, void *, void *progress_ptr) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    GIZSPECIALPROGRESS *progress = static_cast<GIZSPECIALPROGRESS *>(progress_ptr);
+
+    if (world == NULL || world->giz_special_sys == NULL || world->giz_special_sys->count == 0) {
+        return;
+    }
+
+    GIZSPECIAL *special = world->giz_special_sys->specials;
+    for (i32 i = 0; i < world->giz_special_sys->count; ++i, ++special) {
+        special->is_active = 1;
+        special->is_reversed = 0;
+
+        if (i < GIZSPECIAL_PROGRESS_BITS && progress != NULL) {
+            const i32 word_index = i >> 5;
+            const u32 bit = 1u << (i & 31);
+            special->is_active = (progress->active[word_index] & bit) != 0;
+            special->is_reversed = (progress->reversed[word_index] & bit) != 0;
+        }
+    }
 }
 
-static void *GizSpecial_AllocateProgressData(VARIPTR *, VARIPTR *) {
-    UNIMPLEMENTED();
-    return {};
-}
+void *GizSpecial_ReserveBuffer(void *world_ptr) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
 
-static void GizSpecial_ClearProgress(void *, void *) {
-    UNIMPLEMENTED();
-}
+    if (world->current_level->max_giz_specials != 0) {
+        world->giz_buffer.addr = ALIGN(world->giz_buffer.addr, 4);
+        GIZSPECIALSYS_s *special_sys = reinterpret_cast<GIZSPECIALSYS_s *>(world->giz_buffer.addr);
+        world->giz_special_sys = special_sys;
+        world->giz_buffer.addr += sizeof(GIZSPECIALSYS_s);
 
-static void GizSpecial_StoreProgress(void *, void *, void *) {
-    UNIMPLEMENTED();
-}
+        special_sys->anim_pool = GameAnimSet_CreateObjectPool(&world->giz_buffer, &world->unknown_0108, 0,
+                                                              world->current_level->max_giz_specials);
 
-static void GizSpecial_Reset(void *, void *, void *) {
-    UNIMPLEMENTED();
-}
+        world->giz_buffer.addr = ALIGN(world->giz_buffer.addr, 4);
+        special_sys->specials = reinterpret_cast<GIZSPECIAL_s *>(world->giz_buffer.addr);
+        world->giz_buffer.addr += world->current_level->max_giz_specials * sizeof(GIZSPECIAL_s);
+        memset(special_sys->specials, 0, world->current_level->max_giz_specials * sizeof(GIZSPECIAL_s));
 
-void *GizSpecial_ReserveBuffer(void *) {
-    UNIMPLEMENTED();
-    return {};
+        for (i32 i = 0; i < world->current_level->max_giz_specials; ++i) {
+            special_sys->specials[i].anim_set = GameAnimSet_Create(&world->giz_buffer, &world->unknown_0108,
+                                                                   special_sys->anim_pool, world->game_anim_sys);
+        }
+
+        world->giz_buffer.addr = ALIGN(world->giz_buffer.addr, 4);
+    }
+
+    return world->giz_special_sys;
 }
 
 ADDGIZMOTYPE *GizSpecial_RegisterGizmo(i32 type_id) {

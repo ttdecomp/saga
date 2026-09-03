@@ -111,6 +111,9 @@ void PreResetCode(GameObject_s *obj);
 void PostResetCode(GameObject_s *obj);
 NUVEC *Player_StartPos(GameObject_s *obj);
 i32 Players_BothActive(void);
+i32 AvailableToPlayer(u32 character_flags, i32 character_id, i32 context, i32 require_all);
+bool FindNearestPlayerToVec(NUVEC *position, GameObject_s **nearest_player, f32 &distance_squared,
+                            bool require_character_flags, u32 character_flags);
 TORPEDOPACKET *GetTorpedoPacket(void);
 void SetHitPoints(GameObject_s *obj, i32 hp);
 void RememberPlayerIDs(i32 a, i32 b, i32 c);
@@ -126,9 +129,10 @@ i32 MakePlayerList(i32 count);
 
 void DrawOffsetCode(GameObject_s *obj, i32 param);
 extern "C" void rtlDynamicEnable(i32 id, i32 param);
-float GameObjectNearFloor(GameObject_s *obj, float h, float *out);
+i32 GameObjectNearFloor(GameObject_s *obj, f32 h, f32 *out);
 float GetHoverPosY(GameObject_s *obj);
 i32 Player_HasPurpleForce(GameObject_s *obj);
+i32 Player_HasFastBuild(GameObject_s *obj);
 extern u32 GAMEPAD_ACTION;
 extern u32 GAMEPAD_DDOWN;
 extern u32 GAMEPAD_DLEFT;

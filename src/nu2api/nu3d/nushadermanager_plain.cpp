@@ -15,6 +15,8 @@
 #include "nu2api/nu3d/nu2api_nu3d_types.h"
 #include "nushader.h"
 #include "nu2api/nu3d/nutex.h"
+#include "nu2api/nu3d/android/nutex_android.h"
+#include "nu2api/nu3d/android/nutex_ios_ex.h"
 
 // NuShaderObjectInit overload used by the manager.
 void NuShaderObjectInit(nushaderobject_s *, const nushaderobjectkey_s *, i32, u32, u32, eSHADERVERSION);
@@ -187,47 +189,40 @@ namespace nu2api {
 namespace nu2api {
 
     // ---------------------------------------------------------------------------
-    // Manager storage
-    //
-    // Original layout is a 0x4bc90-byte block:
-    //
-    //   [0x000 .. 0x003]  vtable placeholder
-    //   [0x004 .. ...]    401 slots, stride 0x308
-    //     slot+0x04  i32   refcount
-    //     slot+0x08  u32   program key
-    //     slot+0x10  u32   GL program name
-    //   [0x4bc84]         last-allocated slot index
-    //   [0x4bc88]         currently bound slot (stored as address)
-    // ---------------------------------------------------------------------------
+    // Manager storage. Host builds use the typed native layout so pointers and
+    // object strides follow the host ABI.
+    static constexpr u32 kSlotCount = 0x190;
+    struct ShaderManagerStorage {
+        NUSHADEROBJECT slots[kSlotCount];
+        i32 last_allocated;
+        NUSHADEROBJECT *bound_slot;
+    };
 
-    static constexpr u32 kSlotStride = 0x308;
-    static constexpr u32 kSlotCount = 0x190; // 400 shader objects; ID 400 addresses the trailing sentinel
-    static constexpr u32 kOffsetLastSlot = 0x4bc84;
-    static constexpr u32 kOffsetBoundSlot = 0x4bc88;
-    static constexpr u32 kManagerBlockSize = 0x4bc8c;
+    static ShaderManagerStorage s_managerBlock;
 
-    static u8 s_managerBlock[kManagerBlockSize];
-
-    inline u8 *SlotPtr(i32 id) {
-        return static_cast<u8 *>(g_shaderManager) + 4 + static_cast<u32>(id) * kSlotStride;
+    inline ShaderManagerStorage *Manager() {
+        return static_cast<ShaderManagerStorage *>(g_shaderManager);
     }
-    inline i32 &SlotRefCount(u8 *slot) {
-        return *reinterpret_cast<i32 *>(slot + 4);
+    inline NUSHADEROBJECT *SlotPtr(i32 id) {
+        return &Manager()->slots[id];
     }
-    inline u32 &SlotProgramKey(u8 *slot) {
-        return *reinterpret_cast<u32 *>(slot + 8);
+    inline i32 &SlotRefCount(NUSHADEROBJECT *slot) {
+        return slot->glsl.base.field1;
     }
-    inline GLuint &SlotGlProgram(u8 *slot) {
-        return *reinterpret_cast<GLuint *>(slot + 0x10);
+    inline u32 &SlotProgramKey(NUSHADEROBJECT *slot) {
+        return slot->glsl.base.key;
+    }
+    inline GLuint &SlotGlProgram(NUSHADEROBJECT *slot) {
+        return slot->glsl.program;
     }
     inline i32 &ManagerLastAllocated() {
-        return *reinterpret_cast<i32 *>(static_cast<u8 *>(g_shaderManager) + kOffsetLastSlot);
+        return Manager()->last_allocated;
     }
-    inline i32 &ManagerBoundSlotAddr() {
-        return *reinterpret_cast<i32 *>(static_cast<u8 *>(g_shaderManager) + kOffsetBoundSlot);
+    inline NUSHADEROBJECT *&ManagerBoundSlot() {
+        return Manager()->bound_slot;
     }
 
-    void *g_shaderManager = s_managerBlock;
+    void *g_shaderManager = &s_managerBlock;
 
     // ---------------------------------------------------------------------------
     // Uniform table
@@ -262,66 +257,53 @@ namespace nu2api {
 extern "C" void NuShaderManagerInit(VARIPTR *arena, VARIPTR arena_end) {
     using namespace nu2api;
 
-    if (arena->addr + kManagerBlockSize > arena_end.addr) {
+    if (arena->addr + sizeof(ShaderManagerStorage) > arena_end.addr) {
         return;
     }
 
-    u8 *manager = static_cast<u8 *>(arena->void_ptr);
-    std::memset(manager, 0, kManagerBlockSize);
+    ShaderManagerStorage *manager = static_cast<ShaderManagerStorage *>(arena->void_ptr);
+    std::memset(manager, 0, sizeof(*manager));
     g_shaderManager = manager;
-    arena->addr += kManagerBlockSize;
+    arena->addr += sizeof(*manager);
 
     for (u32 id = 0; id < kSlotCount; ++id) {
-        NuShaderObjectCreate(reinterpret_cast<nushaderobject_s *>(manager + 4 + id * kSlotStride));
+        NuShaderObjectCreate(&manager->slots[id]);
     }
 
-    SlotRefCount(manager + 4)++;
-    ManagerBoundSlotAddr() = 0;
+    SlotRefCount(&manager->slots[0])++;
+    ManagerBoundSlot() = NULL;
     ManagerLastAllocated() = -1;
 }
 
-extern "C" i32 NuShaderManagerGetShaderById(i32 id) {
-    if (static_cast<u32>(id) >= 0x191) {
-        return 0;
+extern "C" NUSHADEROBJECT *NuShaderManagerGetShaderById(i32 id) {
+    if (static_cast<u32>(id) >= nu2api::kSlotCount) {
+        return NULL;
     }
-    u8 *slot = nu2api::SlotPtr(id);
-    union {
-        u8 *ptr;
-        i32 id;
-    } conv{slot};
-    return conv.id;
+    return nu2api::SlotPtr(id);
 }
 
 // original 0x318d10 — the manager stores the address of the bound object,
 // rather than its numeric shader id.
-extern "C" i32 NuShaderManagerGetCurrentShader(void) {
-    return nu2api::ManagerBoundSlotAddr();
+extern "C" NUSHADEROBJECT *NuShaderManagerGetCurrentShader(void) {
+    return nu2api::ManagerBoundSlot();
 }
 
-extern "C" void NuShaderManagerReleaseShader(i32 slotAddr) {
-    if (slotAddr == 0) {
+extern "C" void NuShaderManagerReleaseShader(NUSHADEROBJECT *slot) {
+    if (slot == NULL) {
         return;
     }
-    union {
-        i32 id;
-        u8 *ptr;
-    } conv{slotAddr};
-    nu2api::SlotRefCount(conv.ptr)--;
+    nu2api::SlotRefCount(slot)--;
 }
 
 extern u32 g_boundShader;
 
-extern "C" void NuShaderManagerBindShader(i32 slotAddr) {
+extern "C" void NuShaderManagerBindShader(NUSHADEROBJECT *slot) {
     (void)nu2api::g_shaderManager;
-    nu2api::ManagerBoundSlotAddr() = slotAddr;
-    if (slotAddr == 0) {
+    nu2api::ManagerBoundSlot() = slot;
+    if (slot == NULL) {
         return;
     }
-    union {
-        i32 id;
-        u8 *ptr;
-    } conv{slotAddr};
-    const GLuint program = nu2api::SlotGlProgram(conv.ptr);
+    const GLuint program = nu2api::SlotGlProgram(slot);
     if (program != g_boundShader) {
         glUseProgram(program);
         g_boundShader = program;
@@ -802,11 +784,11 @@ namespace nu2api {
             programKey.key[0] = rawKey[0];
         }
 
-        u8 *base = static_cast<u8 *>(manager);
+        ShaderManagerStorage *storage = static_cast<ShaderManagerStorage *>(manager);
 
         // Cache hit: bump refcount and return existing slot.
         for (u32 id = 0; id < 0x190; ++id) {
-            u8 *slot = base + 4 + id * kSlotStride;
+            NUSHADEROBJECT *slot = &storage->slots[id];
             if (SlotProgramKey(slot) == programKey.key[0]) {
                 SlotRefCount(slot)++;
                 return slot;
@@ -817,7 +799,7 @@ namespace nu2api {
         const i32 last = ManagerLastAllocated();
         for (i32 step = 1; step <= 0x190; ++step) {
             const i32 id = (last + step) % static_cast<i32>(kSlotCount);
-            u8 *slot = base + 4 + static_cast<u32>(id) * kSlotStride;
+            NUSHADEROBJECT *slot = &storage->slots[id];
             if (SlotRefCount(slot) > 0) {
                 continue;
             }
@@ -845,17 +827,12 @@ extern "C" void *NuShaderManagerRetrieveShaderVariant(NUSHADERMTLDESC *desc, voi
     return nu2api::RetrieveShader(nu2api::g_shaderManager, desc, mtl, variant, 0, false);
 }
 
-extern "C" void NuShaderObjectGLSLSetupMaterial(i32 program, struct numtl_s *mtl) {
+extern "C" void NuShaderObjectGLSLSetupMaterial(NUSHADEROBJECT *shader, struct numtl_s *mtl) {
     extern f32 g_renderContext_viewProj[16];
     extern f32 g_renderContext_view[16];
     extern f32 g_renderContext_world[16];
     extern f32 g_renderContext_kTint[4];
-    struct ShaderObjectView {
-        u32 base[4];
-        GLuint gl_program;
-    };
-
-    const GLuint gl_program = reinterpret_cast<ShaderObjectView *>(static_cast<uintptr_t>(program))->gl_program;
+    const GLuint gl_program = shader->glsl.program;
     static const f32 fog_params[4] = {0.0f, 0.0f, 1.0f, 0.0f};
     static const f32 zero[4] = {};
 
@@ -922,12 +899,81 @@ extern "C" void NuShaderObjectGLSLSetupMaterial(i32 program, struct numtl_s *mtl
     set4fv("_fog_params", 1, fog_params);
     set4fv("_fog_color", 1, zero);
 
-    // Diffuse-map semantic (case 0 in the original texture-semantic walk at
-    // 0x31cba0). Samplers default to texture unit zero, matching the unit
-    // encoded for this semantic by the generated 2D shader.
-    const i32 texture_id = mtl->shader_desc.diffuse_map_tex_id[0];
-    if (texture_id != 0) {
-        NuTexSetTextureWithStagePS(NuTexGetNative(texture_id), 0);
+    // Target 0x31cba0 walks the active texture semantics and binds each map to
+    // the unit encoded by ProbeSemantics.  Keeping this driven by the usage
+    // mask is important for multi-sampler character materials.
+    const NUSHADERUSAGEMASK *usage = shader->usage_mask;
+    if (usage != NULL) {
+        for (i32 semantic = 0; semantic <= 20; ++semantic) {
+            if ((usage->semantics[semantic >> 5] & (1u << (semantic & 31))) == 0) {
+                continue;
+            }
+
+            const i32 texture_unit = static_cast<u16>(shader->parameters[semantic].location) & 0x7ff;
+            i32 texture_id = 0;
+            bool bind_2d = true;
+            switch (semantic) {
+                case 0:
+                case 1:
+                case 2:
+                case 3:
+                    texture_id = mtl->shader_desc.diffuse_map_tex_id[semantic];
+                    break;
+                case 4:
+                    texture_id = mtl->shader_desc.specular_map_tid;
+                    break;
+                case 5:
+                    texture_id = mtl->shader_desc.lightmap_tex_id[0];
+                    break;
+                case 6:
+                    texture_id = mtl->shader_desc.normal_map_tid;
+                    break;
+                case 7:
+                    texture_id = mtl->shader_desc.lightmap_tex_id[1];
+                    break;
+                case 9:
+                    texture_id = mtl->shader_desc.vtf_height_map_tid;
+                    break;
+                case 12:
+                    texture_id = mtl->shader_desc.vtf_normal_map_tid;
+                    break;
+                case 13:
+                    texture_id = mtl->shader_desc.unknown_198;
+                    bind_2d = false;
+                    break;
+                case 14:
+                    texture_id = mtl->shader_desc.envmap_cubic_tid;
+                    bind_2d = false;
+                    break;
+                case 16:
+                    texture_id = mtl->shader_desc.shine_map_ps2_tid;
+                    break;
+                case 19:
+                    texture_id = mtl->shader_desc.field_1e4;
+                    break;
+                case 20:
+                    texture_id = mtl->shader_desc.field_1e8;
+                    break;
+                default:
+                    continue;
+            }
+
+            glActiveTexture(GL_TEXTURE0 + texture_unit);
+            g_currentTexUnit = texture_unit;
+            GLuint gl_texture = 0;
+            if (semantic == 14 && (mtl->shader_desc.flags & 0x50000) != 0) {
+                gl_texture = g_LegoEnvTexture;
+            } else if (texture_id != 0) {
+                NUNATIVETEX *native = NuTexGetNative(texture_id);
+                if (native != NULL) {
+                    gl_texture = native->platform.gl_tex;
+                }
+            }
+            glBindTexture(bind_2d ? GL_TEXTURE_2D : GL_TEXTURE_CUBE_MAP, gl_texture);
+            if (!bind_2d && texture_unit < 16) {
+                g_lastBoundCubeTexIds[texture_unit] = gl_texture;
+            }
+        }
     }
 }
 

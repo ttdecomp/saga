@@ -24,7 +24,16 @@ struct AREADATA_s;
 struct LEVEL_PROGRESS_s {
     char data[0x2800];
     i32 flags;
+    // One bit per object slot. ResetAICreatures uses this saved mask to keep
+    // creatures that were permanently removed from being recreated.
+    u32 disabled_ai_object_mask[2];
+    u8 pad_280c[0x281c - 0x280c];
+    u32 played_cutscene_mask;
+    u8 pad_2820[0x2e24 - 0x2820];
 };
+
+DECOMP_ASSERT(offsetof(LEVEL_PROGRESS_s, played_cutscene_mask) == 0x281c, "LEVEL_PROGRESS cutscene mask offset");
+DECOMP_ASSERT(sizeof(LEVEL_PROGRESS_s) == 0x2e24, "LEVEL_PROGRESS size");
 
 typedef struct LEVELDATADISPLAY {
     f32 unknown_00;
@@ -46,18 +55,31 @@ typedef struct LEVELDATADISPLAY {
     char bg_blue_bottom;
 } LEVELDATADISPLAY;
 
-enum {
-    LEVEL_CONFIG_LOADED = 1 << 0,  // 0x1  set once level config has been (re)loaded
-    LEVEL_GAMEPLAY = 1 << 1,       // 0x2  playable level (has world: SockSys/AI loaded)
-    LEVEL_UNKNOWN_FLAG_4 = 1 << 2, // 0x4  set by default on level_start
-    LEVEL_TERRAIN = 1 << 3,        // 0x8  level has a terrain file
-    LEVEL_INTRO = 1 << 5,          // 0x20
-    LEVEL_MIDTRO = 1 << 6,         // 0x40
-    LEVEL_OUTRO = 1 << 7,          // 0x80
-    LEVEL_TEST = 1 << 9,           // 0x200
-    LEVEL_STATUS = 1 << 10,        // 0x400
-    LEVEL_NEWGAME = 1 << 16,       // 0x10000
-    LEVEL_LOADGAME = 1 << 17,      // 0x20000
+enum LEVEL_FLAGS : u32 {
+    LEVEL_CONFIG_LOADED = 1 << 0,               // 0x1  set once level config has been (re)loaded
+    LEVEL_GAMEPLAY = 1 << 1,                    // 0x2  playable level (has world: SockSys/AI loaded)
+    LEVEL_UNKNOWN_FLAG_4 = 1 << 2,              // 0x4  set by default on level_start
+    LEVEL_TERRAIN = 1 << 3,                     // 0x8  level has a terrain file
+    LEVEL_FLAT_TERRAIN = 1 << 4,                // 0x10
+    LEVEL_INTRO = 1 << 5,                       // 0x20
+    LEVEL_MIDTRO = 1 << 6,                      // 0x40
+    LEVEL_OUTRO = 1 << 7,                       // 0x80
+    LEVEL_FIX_STROBING_ANIMS = 1 << 8,          // 0x100
+    LEVEL_TEST = 1 << 9,                        // 0x200
+    LEVEL_STATUS = 1 << 10,                     // 0x400
+    LEVEL_DOUBLE_SCORE = 1 << 11,               // 0x800
+    LEVEL_METAL = 1 << 12,                      // 0x1000
+    LEVEL_SHOW_COIN_TOTAL = 1 << 13,            // 0x2000
+    LEVEL_CAMERA_RAIN = 1 << 14,                // 0x4000
+    LEVEL_TERRAIN_RAIN = 1 << 15,               // 0x8000
+    LEVEL_NEWGAME = 1 << 16,                    // 0x10000
+    LEVEL_LOADGAME = 1 << 17,                   // 0x20000
+    LEVEL_IN_SPACE = 1 << 18,                   // 0x40000
+    LEVEL_PICKUPS_TO_PANEL = 1 << 19,           // 0x80000
+    LEVEL_FORGET_TAKEOVERS = 1 << 20,           // 0x100000
+    LEVEL_NARROW_SOCKS = 1 << 21,               // 0x200000
+    LEVEL_OVERRIDE_NO_PICKUP_GRAVITY = 1 << 22, // 0x400000
+    LEVEL_HIDE_ICONS = 1 << 23,                 // 0x800000 (the config keyword is inverted)
 };
 
 typedef struct LEVELDATA_s {
@@ -92,7 +114,7 @@ typedef struct LEVELDATA_s {
 
     char blob_shadow_alpha;
     char unknown_0ae;
-    char area_index;
+    i8 area_index;
 
     f32 cam_tilt;
 
@@ -199,6 +221,16 @@ typedef struct LEVELOBJECT {
     char *name;
 } LEVELOBJECT;
 
+enum LEVEL_OBJECT_SCENE_KIND : u8 {
+    LEVEL_OBJECT_SCENE_THINGS = 0,
+    LEVEL_OBJECT_SCENE_LEVEL = 1,
+    LEVEL_OBJECT_SCENE_AREA = 2,
+    LEVEL_OBJECT_SCENE_CHARACTER_ICON = 3,
+    LEVEL_OBJECT_SCENE_SAVE_ICON = 4,
+    LEVEL_OBJECT_SCENE_VEHICLE = 5,
+    LEVEL_OBJECT_SCENE_BUTTON = 6,
+};
+
 // Runtime counterpart to an LEVELOBJECT table entry. The first twelve bytes
 // are a normal Nu special handle; the loader adds its terrain platform id and
 // the active flag consumed by Draw3DObjectMtx.
@@ -285,7 +317,7 @@ i32 KillBoss(i32, i32, float);
 void KillBossNewLevel(i32, i32, float, i32);
 void KillBossCompleteLevel(i32, i32, float);
 i32 KillBossPlayCutScene(i32, i32, float, char *name);
-extern i32 NewCutScene(CUTINFO *, CUTSYS *, char *, i32);
+extern CUTINFO *NewCutScene(CUTINFO *, CUTSYS *, char *, i32);
 void *SetLevelHack(i32);
 void ResetLevel(WORLDINFO_s *, char *, i32);
 extern i8 BoltType_FindIDByName(char *, WORLDINFO_s *);

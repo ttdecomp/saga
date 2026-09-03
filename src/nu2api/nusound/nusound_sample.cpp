@@ -84,7 +84,7 @@ NuSoundSample::ErrorState NuSoundSample::Load(void *param_1, i32 param_2, NuSoun
     return error;
 }
 
-u32 NuSoundSample::GetResourceCount() {
+i32 NuSoundSample::GetResourceCount() {
     return this->ref_count;
 }
 

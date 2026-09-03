@@ -82,7 +82,7 @@ extern "C" {
     void NuFadeObjDraw(void);
     void edGraEnableTerrainSwap(void);
     void edGraDisableTerrainSwap(void);
-    void edgraStopPage(i32);
+    void edgraStopPage(i8);
 #ifdef __cplusplus
 }
 #endif
@@ -283,7 +283,7 @@ float GameSetMusicVolume(OPTIONSSAVE_s *);
 #ifdef __cplusplus
 extern "C" {
 #endif
-    void NuSound3SetReverb(i32);
+    i32 NuSound3SetReverb(i32 mode);
     void NuSound3SetDPL(i32, i32);
     void NuSound3SetRumblePads(nupad_s *, nupad_s *);
     void NuSound3UpdateRumble(float);

@@ -57,6 +57,7 @@ extern "C" {
 
     extern NUSOUNDINFO *g_soundInfo;
     extern NUSOUNDINFO *g_revertSoundInfo;
+    extern f32 MASTERVOLUME;
     extern u16 GlobalSfxBits[100];
     extern u16 SfxBits[100];
 

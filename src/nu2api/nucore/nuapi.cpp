@@ -47,7 +47,7 @@ void NuAPIInit(void) {
     nuapi.fps = 60.0f;
     nuapi.video_mode = NUVIDEOMODE_NTSC;
     nuapi.video_swap_mode = NUVIDEO_SWAPMODE_ROLLING;
-    nuapi.field0_0x0 = 1;
+    nuapi.language = 1;
     nuapi.video_aspect = 0;
     nuapi.disable_os_menu_freeze = 0;
     nuapi.forced_frame_time = nuapi_forced_frame_time;
@@ -97,6 +97,13 @@ i32 NuInitHardware(VARIPTR *buf, VARIPTR *buf_end, i32 heap_size, ...) {
                 break;
             case NUAPI_SETUP_STREAMSIZE:
                 streamsize = va_arg(args, i32);
+                break;
+            case NUAPI_SETUP_AUDIO:
+            case NUAPI_SETUP_AUDIO_DISABLED:
+                va_arg(args, i32);
+                va_arg(args, i32);
+                va_arg(args, i32);
+                va_arg(args, i32);
                 break;
             case NUAPI_SETUP_PAD0:
                 pad0 = va_arg(args, NUPAD *);

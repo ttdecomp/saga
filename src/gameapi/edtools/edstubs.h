@@ -15,9 +15,13 @@ extern "C" {
     i32 edanimLoadPage(char *path, NUGSCN *scene);
     void edbitsRegisterBaseTerrain(void *terrain);
     void edppStartPage(i32 page);
-    void edpartStartPage(i32 page);
+    void edppStopPage(i32 page);
+    void edanimStartPage(i32 page);
+    void edanimStopPage(i32 page);
+    void edpartStartPage(i8 page);
+    void edpartStopPage(i8 page);
     void edbriStartPage(i32 page);
-    void edgraStartPage(i32 page);
+    void edgraStartPage(i8 page);
     i32 edgraLoadPage(char *path, void *gscn, i32 terrain, void *buf, void *buf_end);
     i32 edbriLoadPage(char *path, void *gscn);
     void edpartSetParticlePage(i32 page);

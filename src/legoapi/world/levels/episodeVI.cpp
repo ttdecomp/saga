@@ -9,14 +9,14 @@
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nu3d/nutex.h"
 
-extern tertype TerSurface[32];
+extern TERRAIN_SURFACE_s TerSurface[32];
 
 struct AIROW_s;
 struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
 
-extern "C" i32 FindPlatInst(void *instance_ix);
+extern "C" i32 FindPlatInst(i32 instance_ix);
 
 // Episode 6 level handlers, in the game's Episode_VI progression:
 // jabbas palace / sarlacc pit / speeder chase / endor battle / death star 2
@@ -36,18 +36,18 @@ void JabbasPalaceE_Init(WORLDINFO_s *) {
 }
 
 void JabbasPalaceA_Reset(WORLDINFO_s *) {
-    TerSurface[14].dwFlags = 0xa040;
-    TerSurface[9].dwFlags = 0x2040;
+    TerSurface[14].flags = 0xa040;
+    TerSurface[9].flags = 0x2040;
 }
 
 void JabbasPalaceB_Reset(WORLDINFO_s *) {
-    TerSurface[14].dwFlags = 0xa040;
-    TerSurface[9].dwFlags = 0x2040;
+    TerSurface[14].flags = 0xa040;
+    TerSurface[9].flags = 0x2040;
 }
 
 void JabbasPalaceD_Reset(WORLDINFO_s *world) {
-    TerSurface[14].dwFlags = 0xa040;
-    TerSurface[9].dwFlags = 0x2040;
+    TerSurface[14].flags = 0xa040;
+    TerSurface[9].flags = 0x2040;
     if (world->current_level == JABBASPALACED_LDATA && world->push_block_count > 0) {
         pushblock_s *push_block = world->push_blocks;
         NUDISPLAYSPECIAL_s *display_special = push_block->special.display_special;
@@ -65,8 +65,8 @@ void JabbasPalaceE_Reset(WORLDINFO_s *world) {
     LevArea[1] = AISysFindArea(world->ai_sys, "Alcove_2");
     LevArea[2] = AISysFindArea(world->ai_sys, "Back_Room");
     LevAIMessage[0] = CheckGizAIMessage(gizaimessagesys, "ShowHearts", NULL);
-    TerSurface[14].dwFlags = 0xa040;
-    TerSurface[9].dwFlags = 0x2040;
+    TerSurface[14].flags = 0xa040;
+    TerSurface[9].flags = 0x2040;
 }
 
 void JabbasPalaceE_Panel(WORLDINFO_s *) {

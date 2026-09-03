@@ -78,10 +78,7 @@ struct NUGCUTRIGID_s {
     void *special_object;
     nuanimdata2_s *animation;
     StateAnim *state_animation;
-    union {
-        NUGCUTLOCATOR_s *locator;
-        u32 serialized_locator_index;
-    };
+    usize locator;
     u8 flags;
     u8 locator_count;
     u8 locator_index;
@@ -109,7 +106,7 @@ struct instNUGCUTCHARSYS_s {
 
 struct NUGCUTSCENE_s {
     i32 version;
-    i32 string_delta;
+    isize string_delta;
     f32 duration;
     char *strings;
     void *camera_system;
@@ -118,7 +115,7 @@ struct NUGCUTSCENE_s {
     NUGCUTLOCATORSYS_s *locator_system;
     void *bounds;
     void *trigger_system;
-    i32 relocation_delta;
+    isize relocation_delta;
     char *filename;
     void *stream_buffer_0;
     void *stream_buffer_1;

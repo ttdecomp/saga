@@ -41,7 +41,7 @@ void *things_scene_terrain = NULL;
 LEVELDATA *PLATFORM_LDATA = NULL;
 LEVELDATA *RETAKED_LDATA = NULL;
 LEVELDATA *CREDITS_LDATA = NULL;
-u32 Text_Language = 1;
+i32 Text_Language = 1;
 nufpcomjmp_s LevelConfigKeywords_AfterLoad;
 
 // --- Players globals ---
@@ -270,7 +270,7 @@ void WorldInfo_Init(WORLDINFO *world) {
 
     TerrainPlatformOldUpdate();
     if (world->current_gscn != NULL) {
-        NuGScnUpdate(world->current_gscn, 0);
+        NuGScnUpdate(world->current_gscn, 0.0f);
     }
     TerrainPlatformNewUpdate();
 
@@ -296,7 +296,7 @@ void WorldInfo_Init(WORLDINFO *world) {
     PlayerItemTypes_Reset(world);
     Players_Init();
     rtlResetDynamic();
-    SetPartRTLSet(static_cast<i32>(reinterpret_cast<usize>(world->rtl_set)));
+    SetPartRTLSet(reinterpret_cast<usize>(world->rtl_set));
 
     WorldInfo_UpdateRoomVisibility(world, 1);
 
@@ -342,7 +342,7 @@ void WorldInfo_Init(WORLDINFO *world) {
     }
 
     reset_restart = 1;
-    *(i32 *)&world->filler1[0] = 1; // field_0x114
+    world->field_0x114 = 1;
 
     InitGameObjectLights();
 
@@ -352,6 +352,10 @@ void WorldInfo_Init(WORLDINFO *world) {
     // Init last function
     if (WorldInfo_InitLastFn != NULL) {
         WorldInfo_InitLastFn(world);
+    }
+
+    if (world->mech_auto_jump_manager != NULL) {
+        world->mech_auto_jump_manager->Init();
     }
 }
 
@@ -560,7 +564,7 @@ after_area:
         (world->area->flags & (AREAFLAG_VEHICLE_AREA | AREAFLAG_BONUS_AREA)) ==
             (AREAFLAG_VEHICLE_AREA | AREAFLAG_BONUS_AREA) &&
         (level->flags & (LEVEL_STATUS | LEVEL_OUTRO | LEVEL_MIDTRO | LEVEL_INTRO)) == 0) {
-        CharacterMiniKits_Load((COLLECTION_s *)MiniKitCollection, world, &world->giz_buffer, &world->unknown_0108);
+        CharacterMiniKits_Load(&MiniKitCollection, world, &world->giz_buffer, &world->unknown_0108);
         if (abort_load != 0)
             goto abort;
     } else {
@@ -593,7 +597,7 @@ after_area:
             (AITRIGGERSETSYS_s *)AITriggerSetSysCreate(&world->giz_buffer, &world->unknown_0108);
 
         if (world->ai_sys != NULL) {
-            world->mech_auto_jump_manager = (MechAutoJumpManager *)1; // placeholder
+            world->mech_auto_jump_manager = new MechAutoJumpManager(world->ai_sys);
         }
 
         GameAIScriptAddLevelSfx(world, &global_aiscripts);
@@ -620,11 +624,10 @@ after_area:
     } else {
         light_path = level == TITLES_LDATA ? const_cast<char *>("levels\\titles\\titles") : world->config_file;
         LoadLights(world, light_path);
-        rtl_id = rtlFindByUserId(static_cast<i32>(reinterpret_cast<usize>(world->rtl_set)), 1);
+        rtl_id = rtlFindByUserId(reinterpret_cast<usize>(world->rtl_set), 1);
         world->rtl_id = rtl_id;
         if (rtl_id != -1) {
-            rtlGetDirection(static_cast<i32>(reinterpret_cast<usize>(world->rtl_set)), rtl_id,
-                            (void **)&world->light_dir);
+            rtlGetDirection(reinterpret_cast<usize>(world->rtl_set), rtl_id, (void **)&world->light_dir);
         } else {
             world->light_dir = 0;
         }
@@ -904,7 +907,6 @@ void WorldInfo_ReArrangeBuffers(i32 area1, i32 area2) {
 }
 
 extern "C" {
-    i32 Collection_Got(i32);
     i32 InModelList(APICHARACTERMODELLIST_s *, i32, i32 *);
     extern i16 id_DARTHVADER;
     extern i16 id_THEEMPEROR;
@@ -915,8 +917,6 @@ extern "C" {
 
 i32 InModelListDataFlags(APICHARACTERMODELLIST_s *, u32, u32, i32, i32);
 i32 RandomIDFromFlags(u32, u32, i32, APICHARACTERMODELLIST_s *, i32);
-void Collection_GetIDList(COLLECTION_s *, u32, u32, i16 *, i32 *, i32 *, i32);
-
 void MakeFreePlayModelList(i32 model1, i32 model2, i32 area, i32 level, i32 param5) {
     i32 flags = 0;
     if (WORLD != NULL && WORLD->area != NULL && WORLD->area == HUB_ADATA && bonusmodearcade != 0)

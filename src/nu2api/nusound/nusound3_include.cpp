@@ -39,8 +39,16 @@ struct NuSoundStream {
     u8 field_0xd;
 };
 
-// The single stereo-stream voice shared by both stream slots.
-static NuSoundWeakPtr<NuSoundVoice> g_StereoStreamVoice;
+// The single stereo-stream voice shared by all stream slots. This is a class
+// member in the original ABI, even though the slot bookkeeping lives here.
+class NuSound3Stream {
+  public:
+    static NuSoundWeakPtr<NuSoundVoice> mVoice;
+};
+
+NuSoundWeakPtr<NuSoundVoice> NuSound3Stream::mVoice;
+
+DECOMP_ASSERT(sizeof(NuSound3Stream::mVoice) == 0x10, "NuSound3Stream voice pointer size");
 
 static NuSoundListener g_NuSoundListener;
 static NuEListNode<NuSoundListener> g_NuSoundListenerNode;
@@ -78,6 +86,8 @@ struct NuSound3Voice {
     f32 rumble;
     i32 pause_counter; // frames in the update sweep
 };
+
+DECOMP_ASSERT(sizeof(NuSound3Voice) == 0x44, "NuSound3Voice size");
 
 namespace {
 
@@ -387,23 +397,16 @@ i32 NuSound3PlayStereoV(NUSOUNDPLAYTOK token, ...) {
 // The slot's node itself is deleted by NuSound3Update once the sample has
 // fully unloaded.
 void NuSound3StopStereoStream(i32 stream_index) {
-    if (stream_index < 0 || stream_index >= 4) {
-        return;
-    }
-
     NuSoundStream *stream = g_NuSoundStreams[stream_index];
     if (stream == NULL) {
         return;
     }
 
-    if (g_StereoStreamVoice.obj != NULL) {
-        if (stream->field_0xd != 0) {
-            ((NuSoundVoice *)g_StereoStreamVoice.obj)->Stop(true);
-            NuSound.ReleaseVoice((NuSoundVoice *)g_StereoStreamVoice.obj);
-            stream->field_0xd = 0;
-        }
-        g_StereoStreamVoice.Set(NULL);
-        g_StereoStreamVoice.bool_value = false;
+    if (NuSound3Stream::mVoice.obj != NULL && stream->field_0xd != 0) {
+        ((NuSoundVoice *)NuSound3Stream::mVoice.obj)->Stop(true);
+        NuSound.ReleaseVoice((NuSoundVoice *)NuSound3Stream::mVoice.obj);
+        NuSound3Stream::mVoice.Set(NULL);
+        stream->field_0xd = 0;
     }
 
     NuSoundStreamingSample *sample = stream->stream;
@@ -414,22 +417,16 @@ void NuSound3StopStereoStream(i32 stream_index) {
 }
 
 void NuSound3PauseStereoStream(i32 stream_index) {
-    if (stream_index < 0 || stream_index >= 4) {
-        return;
-    }
     NuSoundStream *stream = g_NuSoundStreams[stream_index];
-    if (stream != NULL && stream->field_0xd != 0 && g_StereoStreamVoice.obj != NULL) {
-        ((NuSoundVoice *)g_StereoStreamVoice.obj)->Pause();
+    if (stream != NULL && NuSound3Stream::mVoice.obj != NULL) {
+        ((NuSoundVoice *)NuSound3Stream::mVoice.obj)->Pause();
     }
 }
 
 void NuSound3ResumeStereoStream(i32 stream_index) {
-    if (stream_index < 0 || stream_index >= 4) {
-        return;
-    }
     NuSoundStream *stream = g_NuSoundStreams[stream_index];
-    if (stream != NULL && stream->field_0xd != 0 && g_StereoStreamVoice.obj != NULL) {
-        ((NuSoundVoice *)g_StereoStreamVoice.obj)->Resume();
+    if (stream != NULL && NuSound3Stream::mVoice.obj != NULL) {
+        ((NuSoundVoice *)NuSound3Stream::mVoice.obj)->Resume();
     }
 }
 
@@ -476,7 +473,6 @@ void NuSound3CreateVoice(nuvec_s *pos, i32 index, f32 volume, f32 pitch, i32 fal
             ((NuSoundVoice *)oldest->data->weak_ptr.obj)->Stop(true);
             NuSound.ReleaseVoice((NuSoundVoice *)oldest->data->weak_ptr.obj);
             oldest->data->weak_ptr.Set(NULL);
-            oldest->data->weak_ptr.bool_value = false;
         }
         StreamListRemove(&g_NuSoundVoicesActive, oldest);
         delete oldest->data;
@@ -522,7 +518,6 @@ void NuSound3Update(void) {
         if (node->data->weak_ptr.obj != NULL) {
             NuSound.ReleaseVoice((NuSoundVoice *)node->data->weak_ptr.obj);
             node->data->weak_ptr.Set(NULL);
-            node->data->weak_ptr.bool_value = false;
         }
         StreamListRemove(&g_NuSoundVoicesPendingDestruction, node);
         delete node->data;
@@ -547,7 +542,6 @@ void NuSound3Update(void) {
             voice->Stop(true);
             NuSound.ReleaseVoice(voice);
             node->data->weak_ptr.Set(NULL);
-            node->data->weak_ptr.bool_value = false;
         }
 
         StreamListRemove(&g_NuSoundVoicesActive, node);
@@ -569,7 +563,6 @@ void NuSound3Update(void) {
         }
 
         node->data->weak_ptr.Set(voice);
-        node->data->weak_ptr.bool_value = true;
         voice->SetAutoDelete(true);
         voice->SetVolume(PS2VolumeToScalar(node->data->volume));
         voice->SetPitch(node->data->pitch);
@@ -596,14 +589,13 @@ void NuSound3Update(void) {
         }
 
         if (stream->loop != 0) {
-            if (g_StereoStreamVoice.obj == NULL) {
+            if (NuSound3Stream::mVoice.obj == NULL) {
                 NuSoundStreamingSample *sample = stream->stream;
-                if (sample != NULL && sample->GetLoadState() == NuSoundSample::LoadState::TWO &&
+                if (sample != NULL && sample->GetLoadState() == NuSoundSample::LoadState::STREAM_READY &&
                     sample->GetResourceCount() >= 1 && sample->GetThreadQueueCount() == 0) {
                     NuSoundVoice *voice = NuSound.CreateVoice(sample, stream->field_0xc != 0);
                     if (voice != NULL) {
-                        g_StereoStreamVoice.Set(voice);
-                        g_StereoStreamVoice.bool_value = true;
+                        NuSound3Stream::mVoice.Set(voice);
                         voice->SetAutoDelete(false);
                         voice->SetVolume(PS2VolumeToScalar(stream->ps2volume));
                         voice->Play();
@@ -613,9 +605,9 @@ void NuSound3Update(void) {
                 }
             }
         } else if (stream->field_0xd != 0) {
-            if (g_StereoStreamVoice.obj != NULL) {
-                ((NuSoundVoice *)g_StereoStreamVoice.obj)->SetVolume(PS2VolumeToScalar(stream->ps2volume));
-                if (((NuSoundVoice *)g_StereoStreamVoice.obj)->GetState() == NuSoundVoice::PLAYSTATE_STOPPED) {
+            if (NuSound3Stream::mVoice.obj != NULL) {
+                ((NuSoundVoice *)NuSound3Stream::mVoice.obj)->SetVolume(PS2VolumeToScalar(stream->ps2volume));
+                if (((NuSoundVoice *)NuSound3Stream::mVoice.obj)->GetState() == NuSoundVoice::PLAYSTATE_STOPPED) {
                     NuSound3StopStereoStream(i);
                 }
             } else {
@@ -658,36 +650,30 @@ void NuSound3Update(void) {
     NuSound.Update(NuTimeGetFrameTime());
 }
 
-// NuSound3GetStereoStreamStatus reports how many stereo streams are running.
-i32 NuSound3GetStereoStreamStatus() {
-    i32 status = 0;
-
-    for (i32 i = 0; i < 4; i++) {
-        if (g_NuSoundStreams[i] != NULL) {
-            status++;
+// Reports the state of one stereo stream slot. A ready stream is only
+// considered playing after its shared voice has actually started.
+i32 NuSound3GetStereoStreamStatus(i32 stream_index) {
+    NuSoundStream *stream = g_NuSoundStreams[stream_index];
+    if (stream != NULL && stream->stream != NULL) {
+        if (stream->stream->GetLoadState() == NuSoundSample::LoadState::STREAM_READY &&
+            NuSound3Stream::mVoice.obj != NULL && stream->field_0xd != 0) {
+            return NUSOUND_STEREO_STREAM_PLAYING;
         }
+        const i32 finished_status = NUSOUND_STEREO_STREAM_FINISHED;
+        const i32 resource_count = stream->stream->GetResourceCount();
+        if (resource_count <= 0) {
+            return NUSOUND_STEREO_STREAM_INACTIVE;
+        }
+        return finished_status;
     }
-
-    return status;
+    return NUSOUND_STEREO_STREAM_INACTIVE;
 }
 
 // Stream key status for the NuMusic voice state machine: 0 = slot empty,
 // 1 = stream loaded / playing, 2 = stream finished (the voice stopped or is
 // already gone).
 i32 NuSound3StreamKeyStatus(i32 stream_index) {
-    if (stream_index < 0 || stream_index >= 4) {
-        return 0;
-    }
-    if (g_NuSoundStreams[stream_index] == NULL) {
-        return 0;
-    }
-    NuSoundStream *stream = g_NuSoundStreams[stream_index];
-    if (stream->field_0xd != 0 &&
-        (g_StereoStreamVoice.obj == NULL ||
-         ((NuSoundVoice *)g_StereoStreamVoice.obj)->GetState() == NuSoundVoice::PLAYSTATE_STOPPED)) {
-        return 2;
-    }
-    return 1;
+    return NuSound3GetStereoStreamStatus(stream_index);
 }
 
 // Volume arrives as the PS2-style 0..16383 fixed point computed by
@@ -699,8 +685,8 @@ void NuSound3SetStereoStreamVolume(i32 stream_index, i32 volume) {
     NuSoundStream *stream = g_NuSoundStreams[stream_index];
     if (stream != NULL) {
         stream->ps2volume = volume;
-        if (stream->field_0xd != 0 && g_StereoStreamVoice.obj != NULL) {
-            ((NuSoundVoice *)g_StereoStreamVoice.obj)->SetVolume(PS2VolumeToScalar(stream->ps2volume));
+        if (stream->field_0xd != 0 && NuSound3Stream::mVoice.obj != NULL) {
+            ((NuSoundVoice *)NuSound3Stream::mVoice.obj)->SetVolume(PS2VolumeToScalar(stream->ps2volume));
         }
     }
 }
