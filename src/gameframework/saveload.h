@@ -32,9 +32,9 @@ extern "C" {
     extern f32 memcard_autosavepredelay;
     extern f32 memcard_autosavepostdelay;
 
-    void saveloadInit(VARIPTR *buf, VARIPTR buf_end, i32, char *prodcode, char *iconname, char *unicodename, i32);
+    void saveloadInit(VARIPTR *buf, VARIPTR buf_end, i32, char *prodcode, char *iconname, char *unicodename, i32 unk);
 
-    i32 saveloadLoadSlot(i32 slot, void *buffer, usize size);
+    i32 saveloadLoadSlot(i32 slot, void *buffer, i32 size);
     i32 saveloadSaveSlot(i32 slot, void *buffer, usize size);
 
     i32 TriggerExtraDataLoad(void);

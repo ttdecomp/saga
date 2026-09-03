@@ -47,12 +47,8 @@ char *slotname(i32 index) {
 char *slotfolder(i32 index) {
     static char name[4096];
 
-    char *path = NuIOS_GetDocumentsPath();
-    NuStrCpy(name, path);
-
-    i32 len = strlen(name);
-
-    strcpy(&name[len], "SavedGames");
+    NuStrCpy(name, NuIOS_GetDocumentsPath());
+    strcpy(&name[__builtin_strlen(name)], "SavedGames");
 
     return name;
 }
@@ -95,21 +91,25 @@ static i32 saveload_getinfo(void) {
     return count;
 }
 
-void saveloadInit(VARIPTR *buf, VARIPTR buf_end, i32, char *prodcode, char *iconname, char *unicodename, i32) {
+void saveloadInit(VARIPTR *buf, VARIPTR buf_end, i32, char *prodcode, char *iconname, char *unicodename, i32 unk) {
+    // The original truncates the last argument into a 4-byte stack local it
+    // never reads again. Its real type and purpose are unknown; the array is
+    // sized to reproduce the original's frame layout.
+    u16 unk_local[2];
+    unk_local[0] = unk;
+
     saveload_getinfo();
     saveload_status = 1;
     saveload_autosave = -1;
 }
 
-i32 saveloadLoadSlot(i32 slot, void *buffer, usize size) {
+i32 saveloadLoadSlot(i32 slot, void *buffer, i32 size) {
     char *filename = fullslotname(slot);
     FILE *file = fopen(filename, "rb");
 
     LOG_DEBUG("slot=%d, filename=%s, file=%p", slot, filename, file);
 
-    if (file == NULL) {
-        return 0;
-    } else {
+    if (file != NULL) {
         SaveLoad buf;
 
         fread(&buf, 0x2028, 1, file);
@@ -122,6 +122,8 @@ i32 saveloadLoadSlot(i32 slot, void *buffer, usize size) {
 
         return 1;
     }
+
+    return 0;
 }
 
 i32 saveloadSaveSlot(i32 slot, void *buffer, usize size) {
@@ -129,9 +131,7 @@ i32 saveloadSaveSlot(i32 slot, void *buffer, usize size) {
 }
 
 void createslotfolder(i32 slot) {
-    char *path = slotfolder(slot);
-
-    mkdir(path, 0777);
+    mkdir(slotfolder(slot), 0777);
 }
 
 extern "C" {
