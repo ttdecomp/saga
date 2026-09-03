@@ -16,8 +16,7 @@
 #include "nu2api/numusic/sfx.h"
 
 extern "C" {
-    void *NuSpecialGetInstanceix(void *special);
-    i16 FindPlatInst(void *instance);
+    i16 FindPlatInst(i32 instance_ix);
     i32 NuPortalWhichRoom(NUGSCN *scene, NUVEC *position);
     i32 IsSfxLooping(i32 sfx_id);
 }

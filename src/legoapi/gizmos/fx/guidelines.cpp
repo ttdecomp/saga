@@ -1,10 +1,11 @@
 #include "legoapi/gizmos/fx/guidelines.h"
 
 #include "decomp.h"
+#include "legoapi/world/level.h"
 
 static i32 GuideLines_GetMaxGizmos(void *guideline) {
-    UNIMPLEMENTED();
-    return {};
+    WORLDINFO *world = static_cast<WORLDINFO *>(guideline);
+    return world != NULL ? world->current_level->max_guidelines : 0;
 }
 
 static void GuideLines_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -16,8 +17,7 @@ static void GuideLines_Draw(void *, void *, float) {
 }
 
 static char *GuideLine_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL ? static_cast<char *>(gizmo->object) : NULL;
 }
 
 static i32 GuideLine_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -31,8 +31,7 @@ static char *GuideLine_GetOutputName(GIZMO *gizmo, i32 output_index) {
 }
 
 static i32 GuideLine_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return 1;
 }
 
 static void GuideLine_Activate(GIZMO *gizmo, i32) {
@@ -56,8 +55,27 @@ static void GuideLines_StoreProgress(void *, void *, void *) {
     UNIMPLEMENTED();
 }
 
-static void GuideLines_Reset(void *, void *, void *) {
-    UNIMPLEMENTED();
+struct GUIDELINEPROGRESS {
+    u32 state[2];
+};
+
+static void GuideLines_Reset(void *world_info, void *, void *progress_data) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_info);
+    if (world == NULL || world->guidelines == NULL || world->guideline_count <= 0) {
+        return;
+    }
+
+    GUIDELINE *guideline = world->guidelines;
+    for (i32 i = 0; i < world->guideline_count; i++, guideline++) {
+        guideline->active = 1;
+        guideline->visible = 1;
+
+        if (i <= 31 && progress_data != NULL) {
+            u32 mask = 1u << i;
+            guideline->visible = (static_cast<GUIDELINEPROGRESS *>(progress_data)->state[1] & mask) != 0;
+            guideline->active = (static_cast<GUIDELINEPROGRESS *>(progress_data)->state[0] & mask) != 0;
+        }
+    }
 }
 
 static void *GuideLines_ReserveBufferSpace(void *) {

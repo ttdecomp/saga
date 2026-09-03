@@ -134,6 +134,7 @@ i32 GizmoGetUniqueName(GIZMOSYS *gizmo_sys, char *prefix, char *name, char *resu
 i32 GizmoGetTypeIDByName(GIZMOSYS *gizmo_sys, char *name);
 void GizmoSetVisibility(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 visibility, i32 unknown);
 i32 GizmoGetVisibility(GIZMOSYS *gizmo_sys, GIZMO *gizmo);
+char *GizmoGetName(GIZMO *gizmo);
 void GizmoActivate(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 unknown1, i32 unknown2);
 char *GizmoGetOutputName(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 output_index);
 i32 GizmoGetOutput(GIZMOSYS *gizmo_sys, GIZMO *gizmo, i32 unknown1, i32 unknown2);
@@ -168,3 +169,4 @@ void InitPaintPuzzle(WORLDINFO_s *world);
 void ResetPaintPuzzle(WORLDINFO_s *world);
 GIZAIMESSAGE_s *CheckGizAIMessage(GIZAIMESSAGESYS_s *, char const *, GIZAIMESSAGE_s *);
 GIZAIMESSAGE_s *SetGizAIMessage(GIZAIMESSAGESYS_s *, char const *, float, GIZAIMESSAGE_s *);
+char *GizAIMessage_GetName(GIZAIMESSAGE_s *);

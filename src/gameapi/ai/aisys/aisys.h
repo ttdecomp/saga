@@ -3,6 +3,7 @@
 #include "gameapi/ai/aisys/aipath.h"
 #include "legoapi/items/base/apiobject.h"
 #include "nu2api/nu3d/nugscn.h"
+#include "nu2api/nu3d/nuhspecial.h"
 #include "nu2api/nu3d/nuspline.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nucore/nulist.h"
@@ -170,7 +171,7 @@ typedef struct AIPATHNODE_s {
     AIPATHCNX **connections;
     f32 distance_cache[2];
     union {
-        u8 special_handle[0xc];
+        nuhspecial_s special_handle;
         struct {
             void *special_scene;
             void *special;
@@ -482,7 +483,7 @@ struct AIANTINODE_s {
     f32 max_height;
     f32 min_height;
     union {
-        u8 special_handle[0xc];
+        nuhspecial_s special_handle;
         struct {
             void *special_scene;
             void *special;

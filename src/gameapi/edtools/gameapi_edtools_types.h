@@ -67,11 +67,29 @@ union variptr_u;
 struct ClassObjectList;
 struct EdMember {};
 struct EdObjectNotifier {};
-struct EdSubSystem {};
+struct EdSubSystem {
+    virtual ~EdSubSystem();
+    virtual void SubInitialise(variptr_u &, variptr_u &, i32);
+    virtual void SubReset();
+    virtual void SubProcess(float);
+    virtual void SubRender();
+
+    EdSubSystem *next;
+    EdSubSystem *previous;
+};
 struct MemoryBuffer;
 struct VuMtx;
 struct VuVec;
-struct burnset_s {};
+struct burnout_s {
+    i32 active;
+    u8 reserved_04[0x24 - 0x04];
+};
+struct burnset_s {
+    u8 reserved_000[0xd0];
+    burnout_s burnouts[32];
+    i32 active_count;
+    i32 selected_index;
+};
 struct eduiiattr_s {};
 struct eduiitem_s;
 struct eduimenu_s;
@@ -310,6 +328,10 @@ struct EdStringControl {
     void cbPress(eduimenu_s *, eduiitem_s *, u32);
 };
 struct EdSystem {
+    EdSubSystem *first_subsystem;
+    EdSubSystem *last_subsystem;
+    i32 subsystem_count;
+
     void Initalise(variptr_u &, variptr_u &, i32);
     void Process(float);
     void RegisterSubSystem(EdSubSystem *);

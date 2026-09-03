@@ -268,7 +268,7 @@ void LoadSingleCharacter(bgprocinfo_s *) {
                 continue;
             }
 
-            if (NuSpecialFind(icon_scene, reinterpret_cast<void **>(&object.special), ObjTab[i].name, 1) != 0) {
+            if (NuSpecialFind(icon_scene, &object.special, ObjTab[i].name, 1) != 0) {
                 object.active = 1;
             }
         }
@@ -395,6 +395,23 @@ void CharScenes_LevelDump(WORLDINFO_s *) {
 }
 
 void CollectAllCharacters(i32) {
+}
+
+extern VARIPTR characterbuffer_base;
+extern i32 CHARACTERBUFFERSIZE;
+extern i32 Area;
+extern i32 last_area;
+
+void ResetCharacterBuffer(i32 force_reset) {
+    if (force_reset == 0 && Area != -1 && Area == last_area) {
+        return;
+    }
+
+    characterbuffer_ptr = characterbuffer_base;
+    memset(characterbuffer_base.void_ptr, 0, CHARACTERBUFFERSIZE);
+    apicharsys->loaded_model_count = apicharsys->permanent_model_count;
+    apicharsys->animation_load_attempts = apicharsys->area_animation_count;
+    apicharsys->loaded_animation_count = apicharsys->area_animation_count;
 }
 
 void CollectCharcters_Draw(STATUS_STAGE_s *, STATUSPACKET_s *, i32) {

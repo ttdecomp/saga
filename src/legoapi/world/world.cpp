@@ -66,12 +66,12 @@ i32 LevelChangesInArea = 0;
 i32 bonusmodearcade = 0;
 i32 VehicleArea = 0;
 SOCKPOSITION OldPlrSPos[8];
-char Batarang[8 * 0xb4];
+BATARANG_s Batarang[8];
 void *PlayerSuit[8];
 u8 PlayerTorpedoCount[8];
 COINPACKET CoinPacket[2];
 u32 BackUpPlayers[0x872];
-char GizForceLOSInfo[0xc60];
+GizForceLOSState_s GizForceLOSInfo[2];
 i32 DEFAULT_PLAYERHITPOINTS = 8;
 u32 LEGOOBJ_DEFAULTLASTCOIN = -1;
 
@@ -520,7 +520,7 @@ after_area:
 
     // Character scenes
     aligned_buf = ALIGN((i32)world->giz_buffer.addr, 4);
-    *(i32 *)&world->minikit.field_0x18 = aligned_buf;
+    world->minikit.character_scenes = reinterpret_cast<CHARSCENE_s *>(aligned_buf);
     world->giz_buffer.addr = (usize)(aligned_buf + CHARCOUNT * 0x10);
     CharScenes_LevelLoad(world);
 

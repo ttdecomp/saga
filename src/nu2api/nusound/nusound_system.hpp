@@ -4,6 +4,7 @@
 #include "nu2api/nucore/common.h"
 #include "nu2api/nucore/nuelist.hpp"
 #include "nu2api/nucore/nuvuvec.hpp"
+#include "nu2api/nusound/nulist.hpp"
 #include "nu2api/nusound/nusound_memorymanager.hpp"
 #include "nu2api/nusound/nusound_source.hpp"
 #include "nu2api/nusound/nusound_streamdesc.hpp"
@@ -32,6 +33,7 @@ class NuSoundEffect {
         ONE = 1,
     };
     virtual ~NuSoundEffect();
+    virtual bool Initialise();
 };
 
 // --- subsystem classes without a dedicated header (definitions live in their
@@ -399,6 +401,11 @@ class NuSoundRoutingTable {
     void GetName() const;
 };
 class NuSoundHandle {
+    void *field_00;
+    i32 field_04;
+    NuSoundVoice *voice;
+    NuList<NuSoundEffect *> effects;
+
   public:
     NuSoundHandle();
     NuSoundHandle(NuSoundHandle &other);

@@ -7,9 +7,6 @@ void GizmoPickup_InBox(WORLDINFO_s *, i32, nuvec_s *, nuvec_s *) {
 void GizmoPickups_Collide(WORLDINFO_s *, GameObject_s *, i32) {
 }
 
-void GizmoPickups_InitSys(GIZMOPICKUPSYS_s *) {
-}
-
 void GizmoPickups_SetOnOff() {
 }
 

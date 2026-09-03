@@ -1,6 +1,7 @@
 #include "legoapi/gizmos/door/securitydoors.h"
 
 #include "decomp.h"
+#include "legoapi/world/level.h"
 
 struct SECURITYDOORPROGRESS {
     i32 state[2];
@@ -8,8 +9,8 @@ struct SECURITYDOORPROGRESS {
 };
 
 static i32 SecurityDoors_GetMaxGizmos(void *door) {
-    UNIMPLEMENTED();
-    return {};
+    WORLDINFO *world = static_cast<WORLDINFO *>(door);
+    return world != NULL ? world->current_level->max_security_doors : 0;
 }
 
 static void SecurityDoors_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -25,8 +26,7 @@ static void SecurityDoors_Draw(void *, void *, float) {
 }
 
 static char *SecurityDoor_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL ? static_cast<SECURITYDOOR *>(gizmo->object)->name : NULL;
 }
 
 static i32 SecurityDoor_GetOutput(GIZMO *gizmo, i32, i32) {

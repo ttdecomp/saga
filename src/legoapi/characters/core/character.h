@@ -2,6 +2,7 @@
 
 #include "decomp.h"
 #include "nu2api/nucore/common.h"
+#include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/numath/nuvec.h"
 
 struct CHARFIXUP {
@@ -81,9 +82,7 @@ enum CHARACTER_ANIMATION_CONFIG_FLAGS : u32 {
 
 struct CHARSCENE_s {
     nugscn_s *scene;
-    void *special_scene;
-    void *special;
-    void *display_special;
+    nuhspecial_s special_scene;
 };
 
 DECOMP_ASSERT(sizeof(CHARSCENE_s) == 0x10, "CHARSCENE_s size");

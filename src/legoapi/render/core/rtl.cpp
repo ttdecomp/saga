@@ -5,6 +5,7 @@
 #include "nu2api/nu3d/android/nutimebar_plain.h"
 #include "nu2api/nu3d/nurndrstat.h"
 #include "nu2api/nufile/nufile.h"
+#include "nu2api/nucore/nulst.h"
 
 #include <math.h>
 #include <string.h>
@@ -14,6 +15,10 @@ struct nuqthdr_s;
 struct rtl_s;
 struct rtlidata_s;
 struct NUFRUSTRUM;
+
+static NULSTHDR *rtl_dynamic_pool;
+static i32 rtl_dynamic_max;
+static i32 rtl_dynamic_cnt;
 
 void rtlSwapSetEndianess(rtlset *);
 
@@ -292,7 +297,8 @@ extern "C" {
     void rtlProcessLights(void *, f32) {
     }
 
-    void rtlReset(void) {
+    void rtlReset(rtldata_s *data) {
+        rtlResetEx(data, 0);
     }
 
     void rtlSaveSet(void) {
@@ -342,7 +348,17 @@ extern "C" {
     void rtlSpecularValue(void) {
     }
 
-    void rtlResetDynamic(void) {
+    i32 rtlResetDynamic(void) {
+        if (rtl_dynamic_pool != NULL) {
+            NULNKHDR *entry = NuLstGetNext(rtl_dynamic_pool, NULL);
+            while (entry != NULL) {
+                NULNKHDR *next = NuLstGetNext(rtl_dynamic_pool, entry);
+                NuLstFree(entry);
+                entry = next;
+            }
+            rtl_dynamic_cnt = 0;
+        }
+        return rtl_dynamic_max;
     }
 
     i32 rtlFindByUserId(usize rtl_set, i32 user_id) {

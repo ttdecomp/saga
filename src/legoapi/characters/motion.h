@@ -21,6 +21,7 @@ u16 SeekRot(u16 current, u16 target, float rate);
 void SeekVec(NUVEC *result, NUVEC *current, NUVEC *target, float rate);
 void GameCam_NewShake(GAMECAMERA_s *cam, float a, float b, float c);
 void GameCam_HitJudder(void);
+void GameCam_Reset(GAMECAMERA_s *camera);
 void ChrisAllocLevelStuff(WORLDINFO_s *world);
 void PodKeyReset(void);
 void PodLoseSpeed(GameObject_s *obj, i32 type, i32 unknown);

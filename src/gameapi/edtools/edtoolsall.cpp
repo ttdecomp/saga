@@ -112,12 +112,6 @@ void EdDrawLineSphere(VuVec const &, float, float, i32) {
 void EdDrawPolySector(VuVec const &, float, i32, i32, i32, i32, i32) {
 }
 
-void edGetPadDisabled() {
-}
-
-void edSetPadDisabled(i32) {
-}
-
 void edanimDrawCursor() {
 }
 
@@ -183,10 +177,15 @@ void edppPtlCreateCopy(nuvec_s *, i32) {
 void edrtlPlaceBurnout(i32, nuvec_s *) {
 }
 
-void edrtlResetBurnset(burnset_s *) {
-}
-
-void eduiSetPinnedMenu(eduimenu_s *) {
+void edrtlResetBurnset(burnset_s *burnset) {
+    if (burnset == NULL) {
+        return;
+    }
+    for (i32 i = 0; i < 32; ++i) {
+        burnset->burnouts[i].active = 0;
+    }
+    burnset->active_count = 0;
+    burnset->selected_index = -1;
 }
 
 void EdDrawPolyCylinder(VuMtx const &, float, float, float, i32, i32, i32, i32) {
@@ -297,9 +296,6 @@ void edpartMultipleCopyClear() {
 void edanimPlayerAnimDistance(i32) {
 }
 
-void edpartLookupDebrisEffect(char *) {
-}
-
 void edanimRenderSoundEmitters(i32) {
 }
 
@@ -378,16 +374,7 @@ void EdRegistry::DefunctObject(EdClassInterface *, void *, i32, i32) {
 void EdRegistry::DestroyObject(EdClassInterface *, void *, i32, i32) {
 }
 
-void EdRegistry::Flush() {
-}
-
 void EdRegistry::GetClass(char *) {
-}
-
-void EdRegistry::GetClass(i32) {
-}
-
-void EdRegistry::GetClassId(EdClass *) {
 }
 
 void EdRegistry::GetClassId(char *) {
@@ -397,9 +384,6 @@ void EdRegistry::GetStreamClassMapping(EdStream &, i32 *, i32 &, i32) {
 }
 
 void EdRegistry::GetType(char *) {
-}
-
-void EdRegistry::GetType(i32) {
 }
 
 void EdRegistry::GetTypeId(char *) {
@@ -538,12 +522,6 @@ void EdInputContext::GetHold(i32) {
 }
 
 void EdInputContext::GetPress(i32) {
-}
-
-void EdInputContext::GetRelease(i32) {
-}
-
-void EdInputContext::GetRepeat(i32) {
 }
 
 void EdInputContext::Set(i32, float, float) {
@@ -814,6 +792,21 @@ void EdSystem::Render() {
 }
 
 void EdSystem::Reset() {
+    for (EdSubSystem *subsystem = first_subsystem; subsystem != NULL; subsystem = subsystem->next) {
+        subsystem->SubReset();
+    }
+}
+
+__attribute__((weak)) void EdSubSystem::SubInitialise(variptr_u &, variptr_u &, i32) {
+}
+
+__attribute__((weak)) void EdSubSystem::SubReset() {
+}
+
+__attribute__((weak)) void EdSubSystem::SubProcess(float) {
+}
+
+__attribute__((weak)) void EdSubSystem::SubRender() {
 }
 
 void EdControl::AddMenuItem(eduimenu_s *, EdRef *, void *) {

@@ -156,12 +156,6 @@ static inline void SetItemNext(nudisplaylistitem_s *item, void *next) {
     item->next = next;
 }
 
-static void SetItemWithId(nudisplaylistitem_s *item, u8 type, u8 id, void *next) {
-    item->type = type;
-    item->next = next;
-    item->id = id;
-}
-
 static nudisplaylistitem_s *AddCallItem(nudisplaylist_s *list, u8 type, void *next) {
     nudisplaylistitem_s *item = list->items;
     item->type = type;
@@ -169,9 +163,6 @@ static nudisplaylistitem_s *AddCallItem(nudisplaylist_s *list, u8 type, void *ne
     item->next = next;
     list->items = reinterpret_cast<nudisplaylistitem_s *>(reinterpret_cast<u8 *>(list->items) + kItemSize);
     return reinterpret_cast<nudisplaylistitem_s *>(reinterpret_cast<u8 *>(list->items) - kItemSize);
-}
-
-extern "C" void NuDisplayListCheckBuffer(void) {
 }
 
 extern "C" nudisplaylist_s *NuDisplayListGet2dList(void) {
@@ -188,24 +179,6 @@ extern "C" nudisplaylist_s *NuDisplayListGet2dList(void) {
 extern "C" void NuDisplayListResetBuffer(void) {
     display_list_buffer = reinterpret_cast<VARIPTR *>(&rndrstream_free);
     display_list_buffer_end = reinterpret_cast<VARIPTR *>(rndrstream_end.addr);
-}
-
-// Small builders used by NuDisplayListCreateMtlDlist — second args are
-// ignored in this build (verified against objdump).
-extern "C" void NuDisplayListAddClut(nudisplaylistitem_s *item, i32 /*clut_id*/) {
-    SetItemWithId(item, kItemType_Nop, kItemId_Cnt, nullptr);
-}
-extern "C" void NuDisplayListAddTexture(nudisplaylistitem_s *item, i32 /*tex_id*/) {
-    SetItemWithId(item, kItemType_Nop, kItemId_Cnt, nullptr);
-}
-extern "C" void NuDisplayListAddMaterialState(nudisplaylistitem_s *item, void *mtl) {
-    SetItemWithId(item, kItemType_Mtl, kItemId_Call, mtl);
-}
-extern "C" void NuDisplayListAddMicrocode(nudisplaylistitem_s *item, void * /*mtl*/) {
-    SetItemWithId(item, kItemType_Nop, kItemId_Cnt, nullptr);
-}
-extern "C" void NuDisplayListAddLightState(nudisplaylistitem_s *item, void * /*mtl*/) {
-    SetItemWithId(item, kItemType_Nop, kItemId_Cnt, nullptr);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -242,9 +215,6 @@ extern "C" void NuDisplayListSetItemTable(i32 which) {
     } else if (which == 1) {
         s_current_table = &s_shadow_table[0x80];
     }
-}
-
-extern "C" void DisplayListSwapBuffersPS(void) {
 }
 
 extern "C" void DisplayListSetAlphaPS(nudisplaylistitem_s *prev_item, nudisplaylistitem_s *item, f32 alpha) {
@@ -429,16 +399,6 @@ extern "C" void NuDisplaySceneAdd(NUDLDLISTSCENE *scene) {
     NuThreadCriticalSectionEnd(global_dlist_manager.loading_critical_section);
 }
 
-// NuDisplaySceneAddPS @ 0x2ab7aa.  The apparently redundant assignment is
-// present in the Android original.
-extern "C" void NuDisplaySceneAddPS(NUDLDLISTSCENE *scene) {
-    for (i32 i = 0; i < scene->nitems; ++i) {
-        if (scene->items[i].type == 0x82) {
-            scene->items[i].type = 0x82;
-        }
-    }
-}
-
 // NuDisplaySceneDestroy @ 0x2f9fd0
 extern "C" void NuDisplaySceneDestroy(NUDLDLISTSCENE *scene) {
     if (scene == nullptr) {
@@ -494,10 +454,6 @@ extern "C" void NuDisplaySceneDestroy(NUDLDLISTSCENE *scene) {
     }
 
     NuThreadCriticalSectionEnd(global_dlist_manager.loading_critical_section);
-}
-
-// NuDisplaySceneDestroyPS @ 0x2ab7f9
-extern "C" void NuDisplaySceneDestroyPS(NUDLDLISTSCENE *) {
 }
 
 extern "C" void NuDisplayListSwapBuffersBeginFrame(void) {

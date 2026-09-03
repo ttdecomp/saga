@@ -156,33 +156,38 @@ extern "C" {
     // and NuDisplayListBeforeFrame @0x2a9ea0/@0x2a9ff0).
     // ---------------------------------------------------------------------------
     typedef struct nudldlistscene_s {
-        char *name;                     // 0x00 debug name (CaptureSortPriority)
-        i32 nitems;                     // 0x04
-        nudisplaylistitem_s *items;     // 0x08
-        f32 *fade_ranges;               // 0x0c per-instance near/far fade pairs
-        i32 nclip_objects;              // 0x10
-        NUCLIPOBJECT *clip_objects;     // 0x14
-        u16 *clip_counts;               // 0x18 per-clip-object item counts
-        void *field_1c;                 // 0x1c
-        void *field_20;                 // 0x20
-        void *field_24;                 // 0x24
-        f32 *lod_ranges;                // 0x28 zero-terminated LOD ranges per instance
-        f32 *far_clip_ranges;           // 0x2c per-instance camera far-clip override
-        u8 *clip_used[2];               // 0x30 double-buffered clip word bitmaps
-        u8 pad_38[0x0c];                // 0x38..0x43 unnamed in original DB
-        NUCLIPBOUNDS *clip_bounds;      // 0x44 per-instance center/extent bounds
-        char *visibility_flags;         // 0x48
-        u32 nmtls;                      // 0x4c
-        NUMTL **mtls;                   // 0x50
-        NUDISPLAYLIST **dlist_mtls;     // 0x54
-        u8 *mtl_used[2];                // 0x58 double-buffered per-material used bits
-        i32 nsort_pris;                 // 0x60
-        nusortpri_s *sort_pris;         // 0x64
-        f32 *alpha_values;              // 0x68 per-clip-object alpha (SetAlphaPS)
-        i32 nspecials;                  // 0x6c
-        void *specials;                 // 0x70
-        u8 flags;                       // 0x74 update-request bits (see enum below)
-        u8 render_buffer;               // 0x75 bit7 selects the current clip/mtl buffer
+        char *name;                 // 0x00 debug name (CaptureSortPriority)
+        i32 nitems;                 // 0x04
+        nudisplaylistitem_s *items; // 0x08
+        f32 *fade_ranges;           // 0x0c per-instance near/far fade pairs
+        i32 nclip_objects;          // 0x10
+        NUCLIPOBJECT *clip_objects; // 0x14
+        u16 *clip_counts;           // 0x18 per-clip-object item counts
+        void *field_1c;             // 0x1c
+        void *field_20;             // 0x20
+        void *field_24;             // 0x24
+        f32 *lod_ranges;            // 0x28 zero-terminated LOD ranges per instance
+        f32 *far_clip_ranges;       // 0x2c per-instance camera far-clip override
+        u8 *clip_used[2];           // 0x30 double-buffered clip word bitmaps
+        u8 pad_38[0x0c];            // 0x38..0x43 unnamed in original DB
+        NUCLIPBOUNDS *clip_bounds;  // 0x44 per-instance center/extent bounds
+        char *visibility_flags;     // 0x48
+        u32 nmtls;                  // 0x4c
+        NUMTL **mtls;               // 0x50
+        NUDISPLAYLIST **dlist_mtls; // 0x54
+        u8 *mtl_used[2];            // 0x58 double-buffered per-material used bits
+        i32 nsort_pris;             // 0x60
+        nusortpri_s *sort_pris;     // 0x64
+        f32 *alpha_values;          // 0x68 per-clip-object alpha (SetAlphaPS)
+        i32 nspecials;              // 0x6c
+        void *specials;             // 0x70
+        union {
+            struct {
+                u8 flags;         // 0x74 update-request bits (see enum below)
+                u8 render_buffer; // 0x75 bit7 selects the current clip/mtl buffer
+            };
+            u16 flags_word;
+        };
         u8 instance_visibility_enabled; // 0x76 bit0: per-instance visibility buffer is active
         u8 pad_77;
         struct nugscn_s *gscene;                 // 0x78
@@ -222,6 +227,7 @@ extern "C" {
     static_assert(offsetof(NUDLDLISTSCENE, sort_pris) == 0x64, "scene.sort_pris");
     static_assert(offsetof(NUDLDLISTSCENE, alpha_values) == 0x68, "scene.alpha_values");
     static_assert(offsetof(NUDLDLISTSCENE, flags) == 0x74, "scene.flags");
+    static_assert(offsetof(NUDLDLISTSCENE, flags_word) == 0x74, "scene.flags_word");
     static_assert(offsetof(NUDLDLISTSCENE, render_buffer) == 0x75, "scene.render_buffer");
     static_assert(offsetof(NUDLDLISTSCENE, gscene) == 0x78, "scene.gscene");
     static_assert(offsetof(NUDLDLISTSCENE, local_state) == 0x80, "scene.local_state");

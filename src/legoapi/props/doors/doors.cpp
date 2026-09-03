@@ -467,9 +467,9 @@ void PortalDoors_Update(WORLDINFO_s *world) {
 
     i32 index = 0;
     do {
-        nuinstanim_s *animation = NuSpecialGetInstAnim(reinterpret_cast<nuhspecial_s *>(door));
+        nuinstanim_s *animation = NuSpecialGetInstAnim(&door->special);
         if (animation != NULL) {
-            const f32 end_frame = NuAnimEndFrameOld(door->scene->instance_animation_data[animation->anim_ix]);
+            const f32 end_frame = NuAnimEndFrameOld(door->special.scene->instance_animation_data[animation->anim_ix]);
             const u16 flags = door->flags;
             bool closed = false;
             if ((flags & PORTALDOOR_TRIGGER_AT_END) == 0) {

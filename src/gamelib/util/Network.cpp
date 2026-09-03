@@ -6,9 +6,6 @@ void NetworkSyncPause() {
 void NetMessage::DebugPrint() const {
 }
 
-void NetMessage::RaiseError() {
-}
-
 void NetRotator2::PredictValue(EdClass const *, void *, NetPredictor::PredictorTime *, NetPredictor::PredictorData **,
                                float *, i32) {
 }
@@ -110,19 +107,10 @@ void NetworkObjectManager::ConstructObject(NetworkObject *, NetworkObjectManager
 void NetworkObjectManager::ContinuityBreak(i32, float) {
 }
 
-void NetworkObjectManager::FindNetworkObject(i32) {
-}
-
 void NetworkObjectManager::FindNetworkObject(void *) {
 }
 
-void NetworkObjectManager::FindPendingObject(NetworkObject *) {
-}
-
 void NetworkObjectManager::FlushObjects(i32) {
-}
-
-void NetworkObjectManager::GetGuid(void *) {
 }
 
 void NetworkObjectManager::GetNextGuid() {
@@ -295,6 +283,10 @@ void NetSample::Max(NetSample const &) {
 }
 
 void NetSample::Reset() {
+    values[0] = 0;
+    values[1] = 0;
+    values[2] = 0;
+    values[3] = 0;
 }
 
 void NetSample::operator+=(NetSample const &) {

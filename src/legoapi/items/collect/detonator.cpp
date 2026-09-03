@@ -1,6 +1,9 @@
 #include "decomp.h"
+#include "globals.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nu3d/nutex.h"
+
+#include <string.h>
 
 struct AIROW_s;
 struct nuqthdr_s;
@@ -11,6 +14,7 @@ void Detonators_Draw() {
 }
 
 void Detonators_Reset() {
+    memset(Detonator, 0, sizeof(Detonator));
 }
 
 void Detonators_Update() {

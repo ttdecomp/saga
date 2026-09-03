@@ -262,6 +262,7 @@ extern "C" {
 #endif
     extern char g_datfileMode;
     extern i32 NuFile_SwapEndianOnWrite;
+    extern NUFILE_DEVICE *default_device;
 
     i32 DEV_FormatName(NUFILE_DEVICE *device, char *formatted_name, char *path, i32 buf_size);
     i32 DEVHOST_Interrogate(NUFILE_DEVICE *device);
@@ -283,6 +284,10 @@ extern "C" {
     i32 NuFileLoadBuffer(char *filepath, void *buf, i32 buf_size);
     i32 NuFileLoadBufferVP(char *filepath, VARIPTR *buf, VARIPTR *buf_end);
     i32 NuFileGetLastError(void);
+    i32 NuFileGetMediaMode(void);
+    NUFILE_DEVICE *NuFileGetCurrentDevice(void);
+    i32 NuFileGetEndianSwap(void);
+    void NuFileSetCurrentDevice(NUFILE_DEVICE *device);
     i32 NuFileExists(char *name);
     i64 NuFileSize(char *filepath);
     i32 NuFileExtConvert(char *dest, char *path);
@@ -352,7 +357,7 @@ extern "C" {
 #ifdef __cplusplus
 }
 
-void NuFileNormalise(char *dst, i32 length, const char *src);
+i32 NuFileNormalise(char *dst, i32 length, const char *src);
 #endif
 
 i32 NuMemFileOpenSize(NUFILE file);

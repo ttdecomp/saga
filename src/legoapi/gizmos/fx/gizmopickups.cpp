@@ -53,7 +53,7 @@ namespace {
     };
     DECOMP_ASSERT(sizeof(GIZMOPICKUPPROGRESS_s) == 0x100, "GIZMOPICKUP progress ABI");
 
-    GIZMOPICKUPTYPESYS_s *GizmoPickupSys = &GizmoPickupSys_Game;
+    GIZMOPICKUPSYS_s *GizmoPickupSys = &GizmoPickupSys_Game;
 
     GIZMO_PICKUP_TYPE *GetPickupType(const GIZMOPICKUP_s &pickup) {
         i32 type_index = pickup.type_index;
@@ -250,7 +250,7 @@ static i32 GizmoPickups_GetMaxGizmos(void *pickup) {
 }
 
 static void GizmoPickups_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *, void *data) {
-    GIZMOPICKUPSYS_s *pickup_sys = static_cast<GIZMOPICKUPSYS_s *>(data);
+    GIZMOPICKUPRUNTIMESYS_s *pickup_sys = static_cast<GIZMOPICKUPRUNTIMESYS_s *>(data);
     if (pickup_sys == NULL || pickup_sys->pickups == NULL) {
         return;
     }
@@ -268,7 +268,7 @@ static void GizmoPickups_Update(void *world_ptr, void *, float) {
         return;
     }
 
-    GIZMOPICKUPSYS_s *pickup_sys = world->gizmo_pickup_sys;
+    GIZMOPICKUPRUNTIMESYS_s *pickup_sys = world->gizmo_pickup_sys;
     if (pickup_sys->pickups != NULL && Missions_PickupsOff(MissionSys) == 0) {
         UpdatePickupList(world, pickup_sys->pickups, pickup_sys->pickup_count, true);
     }
@@ -288,7 +288,7 @@ static void GizmoPickups_Draw(void *world_ptr, void *, float) {
         TBOPENFN(const_cast<char *>("Coins"), 5);
     }
 
-    GIZMOPICKUPSYS_s *pickup_sys = world->gizmo_pickup_sys;
+    GIZMOPICKUPRUNTIMESYS_s *pickup_sys = world->gizmo_pickup_sys;
     if (pickup_sys->pickups != NULL && Missions_PickupsOff(MissionSys) == 0) {
         DrawPickupList(world, pickup_sys->pickups, pickup_sys->pickup_count);
     }
@@ -391,7 +391,12 @@ static void GizmoPickups_ClearProgress(void *, void *progress_ptr) {
 
 static void GizmoPickups_StoreProgress(void *world_ptr, void *, void *progress_ptr) {
     GIZMOPICKUPPROGRESS_s *progress = static_cast<GIZMOPICKUPPROGRESS_s *>(progress_ptr);
-    ClearPickupProgress(progress);
+    if (progress != NULL) {
+        memset(progress->collected, 0, sizeof(progress->collected));
+        memset(progress->enabled, 0xff, sizeof(progress->enabled));
+        memset(progress->visible, 0xff, sizeof(progress->visible));
+        memset(progress->activated, 0, sizeof(progress->activated));
+    }
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
     if (progress == NULL || world == NULL || world->gizmo_pickup_sys == NULL ||
         world->gizmo_pickup_sys->pickups == NULL) {
@@ -430,7 +435,7 @@ static void GizmoPickups_Reset(void *world_ptr, void *, void *progress_ptr) {
         return;
     }
 
-    GIZMOPICKUPSYS_s *pickup_sys = world->gizmo_pickup_sys;
+    GIZMOPICKUPRUNTIMESYS_s *pickup_sys = world->gizmo_pickup_sys;
     for (i32 index = 0; index < pickup_sys->pickup_count; ++index) {
         GIZMOPICKUP_s &pickup = pickup_sys->pickups[index];
         pickup.type_index = static_cast<u8>(FindPickupTypeIndex(pickup.type_code));
@@ -486,8 +491,8 @@ static void *GizmoPickups_ReserveBufferSpace(void *world_ptr) {
         return NULL;
     }
 
-    GIZMOPICKUPSYS_s *pickup_sys = static_cast<GIZMOPICKUPSYS_s *>(
-        GameBufferAlloc(&world->giz_buffer, &world->unknown_0108, sizeof(GIZMOPICKUPSYS_s)));
+    GIZMOPICKUPRUNTIMESYS_s *pickup_sys = static_cast<GIZMOPICKUPRUNTIMESYS_s *>(
+        GameBufferAlloc(&world->giz_buffer, &world->unknown_0108, sizeof(GIZMOPICKUPRUNTIMESYS_s)));
     if (pickup_sys == NULL) {
         return NULL;
     }
@@ -508,7 +513,7 @@ static void *GizmoPickups_ReserveBufferSpace(void *world_ptr) {
 
 static i32 GizmoPickups_Load(void *world_ptr, void *data) {
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
-    GIZMOPICKUPSYS_s *pickup_sys = static_cast<GIZMOPICKUPSYS_s *>(data);
+    GIZMOPICKUPRUNTIMESYS_s *pickup_sys = static_cast<GIZMOPICKUPRUNTIMESYS_s *>(data);
     if (world == NULL || pickup_sys == NULL || pickup_sys->pickup_count != 0) {
         return 0;
     }

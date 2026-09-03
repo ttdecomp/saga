@@ -2,13 +2,18 @@
 
 #include "legoapi/gizmos/trigger/ai.h"
 #include "nu2api/nu3d/nugscn.h"
+#include "nu2api/nu3d/nuhspecial.h"
 #include "nu2api/nucore/bgproc.h"
 #include "nu2api/nucore/common.h"
 
 struct GIZFORCESYS_s;
 struct GIZOBSTACLESYS_s;
 struct GIZBUILDITSYS_s;
-struct GIZMOPICKUPSYS_s;
+struct GIZMOPICKUPRUNTIMESYS_s;
+struct FADER_s;
+struct SPECIALMINIKITSYS_s;
+struct GUIDELINE_s;
+struct SECURITYDOOR_s;
 
 struct AREADATA_s;
 struct LEVEL_PROGRESS_s;
@@ -30,6 +35,8 @@ struct AITRIGGERSETSYS_s;
 struct CLIMBOBJECTSYS_s;
 struct MechAutoJumpManager;
 struct DOOR_s;
+struct TELEPORT_s;
+struct PORTALDOOR_s;
 struct GIZOBSTACLESYS_s;
 struct GIZTURRETSYS_s;
 struct GIZSPINNER_s;
@@ -42,6 +49,7 @@ struct EDGIZSHADOW_s;
 struct GAMEANIMOBJPOOL_s;
 struct GRABBER_s;
 struct PULSESYS_s;
+struct pushblock_s;
 struct LEVER_s;
 struct GIZPANELSYS_s;
 struct TECHNO_s;
@@ -59,6 +67,19 @@ struct PLUGSYS_s;
 struct GIZTIMER_s;
 struct TIMER_s;
 struct LEVEL_OBJECT_RUNTIME_s;
+struct spacelevel_s;
+struct CHARSCENE_s;
+
+struct BOLTTYPE_s {
+    u8 data[0xa4];
+};
+DECOMP_ASSERT(sizeof(BOLTTYPE_s) == 0xa4, "BOLTTYPE_s size");
+
+struct LEVELSFXENTRY_s {
+    i16 id;
+    u8 reserved_02[0xe];
+};
+DECOMP_ASSERT(sizeof(LEVELSFXENTRY_s) == 0x10, "LEVELSFXENTRY_s size");
 
 // A portal-position spline stores camera/player points as position/target
 // pairs (six floats per point).  MoveGameCamera uses portal_places[2] for
@@ -73,19 +94,16 @@ typedef struct portalpos_s {
 typedef struct MINIKIT {
     void *gscn;
     char filler[0x14];
-    i32 field_0x18;
+    struct CHARSCENE_s *character_scenes;
 } MINIKIT;
+DECOMP_ASSERT(offsetof(MINIKIT, character_scenes) == 0x18, "MINIKIT character scenes offset");
+DECOMP_ASSERT(sizeof(MINIKIT) == 0x1c, "MINIKIT size");
 
-// A configured scene animation that opens or closes one portal.  The first
-// three pointers are the engine's 0x0c-byte special handle; keeping the
-// fields explicit here avoids coupling WORLDINFO's ABI header to legoapi_types.h.
 typedef struct PORTALDOOR_s {
-    NUGSCN *scene;
-    void *special;
-    void *display_special;
+    nuhspecial_s special;
     u16 flags;
     u8 portal_id;
-    u8 padding_0f;
+    u8 pad_0f;
 } PORTALDOOR;
 
 DECOMP_ASSERT(sizeof(PORTALDOOR) == 0x10, "PORTALDOOR size");
@@ -168,7 +186,8 @@ typedef struct WORLDINFO_s {
     CLIMBOBJECTSYS_s *climb_object_sys;
     MechAutoJumpManager *mech_auto_jump_manager;
 
-    char filler6a[0x468c - 0x4684];       // 0x4684 .. 0x468c
+    TELEPORT_s *teleports;                // 0x4684
+    i32 teleport_count;                   // 0x4688
     struct ZIPUP_s *zipups;               // 0x468c
     i32 zipup_count;                      // 0x4690
     struct TUBE_s *tubes;                 // 0x4694
@@ -190,14 +209,33 @@ typedef struct WORLDINFO_s {
 
     GRABBER_s *grabber; // 0x46f0
 
-    char filler8[0x504c - 0x46f4];
+    union {
+        struct {
+            u8 reserved_46f4[0x4720 - 0x46f4];
+            LEVELSFXENTRY_s level_sfx[64]; // 0x4720
+            u8 reserved_4b20[0x5038 - 0x4b20];
+        };
+        struct {
+            u8 reserved_to_4b14[0x4b14 - 0x46f4];
+            i32 level_sfx_count;      // 0x4b14
+            BOLTTYPE_s bolt_types[8]; // 0x4b18
+        };
+    };
+    FADER_s *faders;            // 0x5038
+    i32 fader_count;            // 0x503c
+    void *mini_trooper_packets; // 0x5040
+    void *mini_trooper_teams;   // 0x5044
+    void *mini_trooper_storage; // 0x5048
 
     PORTALDOOR *portal_doors; // 0x504c
     i32 portal_door_count;    // 0x5050
 
     PULSESYS_s *pulses_sys; // 0x5054
 
-    char filler9[0x506c - 0x5058];
+    SPECIALMINIKITSYS_s *special_minikits; // 0x5058
+    u8 reserved_505c[0x8];                 // 0x505c .. 0x5064
+    SIGNAL_s *signals;                     // 0x5064
+    i32 signal_count;                      // 0x5068
 
     LEVER_s *levers; // 0x506c
     i32 nlevers;     // 0x5070
@@ -208,8 +246,21 @@ typedef struct WORLDINFO_s {
     i32 ntechnos;                     // 0x5080
     struct GRAPPLE_s *grapples;       // 0x5084
     i32 grapple_count;                // 0x5088
-    char filler10b[0x50bc - 0x508c];
-    GIZMOPICKUPSYS_s *gizmo_pickup_sys; // 0x50bc
+    u8 reserved_508c[0x8];            // 0x508c .. 0x5094
+    void *shards;                     // 0x5094
+    i32 shard_count;                  // 0x5098
+    void *attractos;                  // 0x509c
+    i32 attracto_count;               // 0x50a0
+    GUIDELINE_s *guidelines;          // 0x50a4
+    i32 guideline_count;              // 0x50a8
+    void *ledges;                     // 0x50ac
+    i32 ledge_count;                  // 0x50b0
+    SECURITYDOOR_s *security_doors;   // 0x50b4
+    i32 security_door_count;          // 0x50b8
+    union {
+        GIZMOPICKUPRUNTIMESYS_s *gizmo_pickup_sys;
+        GIZMOPICKUPRUNTIMESYS_s *pickup_sys;
+    }; // 0x50bc
 
     i32 gizmo_blowup_type_count;           // 0x50c0
     i32 gizmo_blowup_count;                // 0x50c4
@@ -231,7 +282,11 @@ typedef struct WORLDINFO_s {
     GIZBOMBGENSYS_s *giz_bombgen_sys;     // 0x5118
     char filler14d[0x5120 - 0x511c];
 
-    void *podrace; // 0x5120  per-level PodRace state block
+    union {
+        void *level_specific_data;
+        void *podrace;
+        spacelevel_s *space_level;
+    }; // 0x5120
 
     char filler14b[0x516c - 0x5124];
 
@@ -246,6 +301,13 @@ DECOMP_ASSERT(offsetof(WORLDINFO, gizmo_blowup_types) == 0x50c8, "WORLDINFO blow
 DECOMP_ASSERT(offsetof(WORLDINFO, portal_doors) == 0x504c, "WORLDINFO portal-door array offset");
 DECOMP_ASSERT(offsetof(WORLDINFO, portal_door_count) == 0x5050, "WORLDINFO portal-door count offset");
 DECOMP_ASSERT(offsetof(WORLDINFO, pulses_sys) == 0x5054, "WORLDINFO pulse system offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, level_sfx) == 0x4720, "WORLDINFO level SFX array offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, level_sfx_count) == 0x4b14, "WORLDINFO level SFX count offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, bolt_types) == 0x4b18, "WORLDINFO bolt types offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, faders) == 0x5038, "WORLDINFO fader array offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, special_minikits) == 0x5058, "WORLDINFO special minikit system offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, signals) == 0x5064, "WORLDINFO signal array offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, guidelines) == 0x50a4, "WORLDINFO guideline array offset");
 DECOMP_ASSERT(offsetof(WORLDINFO, levers) == 0x506c, "WORLDINFO lever array offset");
 DECOMP_ASSERT(offsetof(WORLDINFO, nlevers) == 0x5070, "WORLDINFO lever count offset");
 DECOMP_ASSERT(offsetof(WORLDINFO, giz_panel_sys) == 0x5074, "WORLDINFO giz-panel system offset");
@@ -254,6 +316,8 @@ DECOMP_ASSERT(offsetof(WORLDINFO, technos) == 0x507c, "WORLDINFO techno array of
 DECOMP_ASSERT(offsetof(WORLDINFO, ntechnos) == 0x5080, "WORLDINFO techno count offset");
 DECOMP_ASSERT(offsetof(WORLDINFO, tubes) == 0x4694, "WORLDINFO tube array offset");
 DECOMP_ASSERT(offsetof(WORLDINFO, tube_count) == 0x4698, "WORLDINFO tube count offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, teleports) == 0x4684, "WORLDINFO teleport array offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, teleport_count) == 0x4688, "WORLDINFO teleport count offset");
 DECOMP_ASSERT(offsetof(WORLDINFO, zipups) == 0x468c, "WORLDINFO zip-up array offset");
 DECOMP_ASSERT(offsetof(WORLDINFO, zipup_count) == 0x4690, "WORLDINFO zip-up count offset");
 DECOMP_ASSERT(offsetof(WORLDINFO, grapples) == 0x5084, "WORLDINFO grapple array offset");

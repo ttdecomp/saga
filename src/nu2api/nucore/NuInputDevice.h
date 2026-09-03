@@ -4,6 +4,8 @@
 
 #include "nu2api/nucore/common.h"
 
+extern "C" void NuPad_Interface_ResetAllTouches(void);
+
 struct NuInputMouseData {
     // Types uncertain.
     u8 unknown_0;
@@ -137,6 +139,8 @@ class NuInputDevice {
     void SetMotors(float motor_1, float motor_2);
     void SupportsCaps(u32) const;
     ~NuInputDevice();
+
+    friend void ::NuPad_Interface_ResetAllTouches(void);
 
   private:
     void DeadZone(NUPADANALOGVALUE input, f32 dead_zone);

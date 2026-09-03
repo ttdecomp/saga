@@ -1,6 +1,7 @@
 #include "decomp.h"
 #include "globals.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/items/objects/gameobjects.h"
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nu3d/nutex.h"
 
@@ -9,6 +10,7 @@ struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
 
+extern "C" i16 FindPlatInst(i32);
 extern TERRSET *CurTerr;
 extern TERRAIN_TRACK_SLOT *CurTrackInfo;
 extern i16 castnum;
@@ -19,8 +21,7 @@ void SkinPlatform(terrsitu_s *, unsigned char *, PLATSKININFO *) {
 }
 
 void Platform_Init(WORLDINFO_s *world) {
-    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&LevHSpecial[0]), const_cast<char *>("slave1_level"),
-                  0);
+    NuSpecialFind(world->current_gscn, &LevHSpecial[0], const_cast<char *>("slave1_level"), 0);
 }
 
 i32 PlatformChecks(i32 count, nuvec_s *) {
@@ -54,7 +55,30 @@ void PlatformConnect(char *track_id, nuvec_s *position_delta, nuvec_s *movement_
 void SkinPlatformSize(i32, unsigned char *, PLATSKININFO *) {
 }
 
-void CharPlatforms_Reset(CHARPLATFORMSYS_s *) {
+void CharPlatforms_Reset(CHARPLATFORMSYS_s *system) {
+    if (system == NULL) {
+        return;
+    }
+
+    for (i32 i = 0; i < HIGHGAMEOBJECT; ++i) {
+        if ((Obj[i].apiobj.field_0x1f8 & 1) != 0) {
+            Obj[i].field_0x107c = -1;
+        }
+    }
+
+    for (i32 i = 0; i < system->platform_count; ++i) {
+        CHARPLATFORM_s *platform = &system->platforms[i];
+        NuSpecialSetVisibility(&platform->special, 0);
+        platform->platform_id = FindPlatInst(NuSpecialGetInstanceix(&platform->special));
+        platform->object = NULL;
+        if (platform->platform_id != -1) {
+            GameObject_s *object = FindGameObject(platform->object_id, 0, 1, 0, 1);
+            if (object != NULL) {
+                object->field_0x107c = platform->platform_id;
+                platform->object = object;
+            }
+        }
+    }
 }
 
 void CharPlatforms_Update(CHARPLATFORMSYS_s *) {

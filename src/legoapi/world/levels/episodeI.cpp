@@ -960,7 +960,7 @@ void PodRaceBReset(WORLDINFO_s *world) {
     LevFlag.podrace_state = 0;
     LevFlag.mushroom_state = 0;
     mushroom0_cut = CutScene_Find(world->cutscene_sys, "EP1_PODRACE_MUSHROOM0");
-    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&LevHSpecial[0]), "collapsing_mush", 1);
+    NuSpecialFind(world->current_gscn, &LevHSpecial[0], "collapsing_mush", 1);
 }
 
 void PodRaceAReset(WORLDINFO_s *world) {
@@ -1006,8 +1006,8 @@ void PodRaceInit(WORLDINFO_s *world) {
         memset(&minesys, 0, 0x1d2 * 4);
         memset(client_mines, 0, 0xc5 * 4);
         MINESYS_s *mines = &minesys;
-        if (NuSpecialFind(vehicle_scene, (void **)&mines->pad_0x00, "mine", 1) != 0) {
-            mines->mine_radius = NuSpecialGetOriginRadius(&mines->pad_0x00);
+        if (NuSpecialFind(vehicle_scene, &mines->mine_special, "mine", 1) != 0) {
+            mines->mine_radius = NuSpecialGetOriginRadius(&mines->mine_special);
             char b2[0x20];
             {
                 sprintf(b2, "nomine_%d", 0);
@@ -1063,25 +1063,25 @@ void PodRaceCInit(WORLDINFO_s *world) {
     char buf[0x20];
     nuhspecial_s *slots = LevHSpecial;
     sprintf(buf, "boost0%i", 1);
-    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&slots[0]), buf, 1);
+    NuSpecialFind(world->current_gscn, &slots[0], buf, 1);
     sprintf(buf, "boost0%i", 2);
-    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&slots[1]), buf, 1);
+    NuSpecialFind(world->current_gscn, &slots[1], buf, 1);
     sprintf(buf, "boost0%i", 3);
-    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&slots[2]), buf, 1);
+    NuSpecialFind(world->current_gscn, &slots[2], buf, 1);
     sprintf(buf, "boost0%i", 4);
-    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&slots[3]), buf, 1);
+    NuSpecialFind(world->current_gscn, &slots[3], buf, 1);
     sprintf(buf, "boost0%i", 5);
-    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&slots[4]), buf, 1);
+    NuSpecialFind(world->current_gscn, &slots[4], buf, 1);
     sprintf(buf, "boost0%i", 6);
-    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&slots[5]), buf, 1);
+    NuSpecialFind(world->current_gscn, &slots[5], buf, 1);
     sprintf(buf, "boost0%i", 7);
-    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&slots[6]), buf, 1);
+    NuSpecialFind(world->current_gscn, &slots[6], buf, 1);
     sprintf(buf, "boost0%i", 8);
-    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&slots[7]), buf, 1);
+    NuSpecialFind(world->current_gscn, &slots[7], buf, 1);
     sprintf(buf, "boost0%i", 9);
-    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&slots[8]), buf, 1);
+    NuSpecialFind(world->current_gscn, &slots[8], buf, 1);
     sprintf(buf, "boost0%i", 10);
-    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&slots[9]), buf, 1);
+    NuSpecialFind(world->current_gscn, &slots[9], buf, 1);
 
     // Pod-race boost sprite activation.
     if (FreePlay != 0 || (*(u8 *)((char *)LevelProgressData + (i16)world->current_level->idx * 0x2e24 + 0x2800) & 1)) {
@@ -1169,8 +1169,8 @@ void PodSprintA_Init(WORLDINFO_s *world) {
         PodSprint_InitAISpline(world, &ps->ai[1], "ai_general");
 
     nuhspecial_s *bigrocks = LevHSpecial;
-    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&bigrocks[50]), "bigrock_five", 1);
-    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&bigrocks[51]), "bigrock_eight", 1);
+    NuSpecialFind(world->current_gscn, &bigrocks[50], "bigrock_five", 1);
+    NuSpecialFind(world->current_gscn, &bigrocks[51], "bigrock_eight", 1);
 }
 
 void PodSprintA_Reset(WORLDINFO_s *world) {
@@ -1670,10 +1670,10 @@ void MaulA_Init(WORLDINFO_s *world) {
     MaulA_ai_message = CheckGizAIMessage(gizaimessagesys, "MaulOnTheRun", NULL);
     MaulA_hits_message = CheckGizAIMessage(gizaimessagesys, "Hits", NULL);
     nuhspecial_s *slots = LevHSpecial;
-    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&slots[4]), "engine_1c", 1);
-    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&slots[5]), "engine_2c", 1);
-    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&slots[6]), "engine_1d", 1);
-    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&slots[7]), "engine_2d", 1);
+    NuSpecialFind(world->current_gscn, &slots[4], "engine_1c", 1);
+    NuSpecialFind(world->current_gscn, &slots[5], "engine_2c", 1);
+    NuSpecialFind(world->current_gscn, &slots[6], "engine_1d", 1);
+    NuSpecialFind(world->current_gscn, &slots[7], "engine_2d", 1);
 }
 
 void MaulA_Reset(WORLDINFO_s *world) {
@@ -1724,9 +1724,9 @@ void MaulE_Update(WORLDINFO_s *) {
 void MaulF_Init(WORLDINFO_s *world) {
     MaulA_ai_message = CheckGizAIMessage(gizaimessagesys, "ShowHearts", NULL);
     nuhspecial_s *slots = LevHSpecial;
-    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&slots[0]), "throw_object1", 1);
-    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&slots[1]), "throw_object2", 1);
-    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&slots[2]), "throw_object3", 1);
+    NuSpecialFind(world->current_gscn, &slots[0], "throw_object1", 1);
+    NuSpecialFind(world->current_gscn, &slots[1], "throw_object2", 1);
+    NuSpecialFind(world->current_gscn, &slots[2], "throw_object3", 1);
 }
 
 void MaulF_Reset(WORLDINFO_s *world) {
@@ -1756,9 +1756,9 @@ void AnakinsFlightB_Init(WORLDINFO_s *world) {
     trooper_side[1] = 0;
     trooper_side[2] = 0;
     nuhspecial_s *slots = LevHSpecial;
-    i32 count = NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&slots[0]), "minifig_1_1", 1);
-    count += NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&slots[1]), "minifig_1_2", 1);
-    count += NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&slots[2]), "minifig_1_3", 1);
+    i32 count = NuSpecialFind(world->current_gscn, &slots[0], "minifig_1_1", 1);
+    count += NuSpecialFind(world->current_gscn, &slots[1], "minifig_1_2", 1);
+    count += NuSpecialFind(world->current_gscn, &slots[2], "minifig_1_3", 1);
     if (count == 3)
         hothtroopers = (nuhspecial_s *)LevHSpecial;
 }
@@ -1793,6 +1793,6 @@ void SetPodMergeAnims(ANIMPACKET_s *packet, i32 index) {
     a->frame = frame;
     float m = pod_animtime[index];
     a->time = m;
-    a->time2 = m;
+    a->time_secondary = m;
     a->field_0x44 = fabsf(pod_roll[index]);
 }

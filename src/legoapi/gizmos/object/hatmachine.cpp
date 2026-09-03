@@ -3,10 +3,16 @@
 #include "decomp.h"
 #include "globals.h"
 #include "legoapi/audio/sfx.h"
+#include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nucore/nustring.h"
+#include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nurand.h"
+#include "nu2api/numath/nuvec.h"
+
+void Hat_GetAbsTargetPos(HATMACHINE_s *machine, NUVEC *target_position);
+void FindAnglesZX(NUVEC *normal, u16 *x_rotation, u16 *z_rotation);
 
 enum HATMACHINE_ANIMATION_STATE {
     HATMACHINE_ANIMATION_IDLE = 0,
@@ -31,6 +37,8 @@ struct HATMACHINEPROGRESS {
 };
 
 i32 hatmachine_gizmotype_id = -1;
+
+static void HatMachine_Reset(HATMACHINE_s *machine);
 
 static i32 HatMachine_GetMaxGizmos(void *world_ptr) {
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
@@ -130,6 +138,7 @@ static void HatMachine_Activate(GIZMO *gizmo, i32 enabled) {
     HATMACHINE *machine = static_cast<HATMACHINE *>(gizmo->object);
     if (enabled != 0) {
         machine->flags = static_cast<HATMACHINE_FLAGS>(machine->flags | HATMACHINE_FLAG_ENABLED);
+        HatMachine_Reset(machine);
     } else {
         machine->flags = static_cast<HATMACHINE_FLAGS>(machine->flags & ~HATMACHINE_FLAG_ENABLED);
     }
@@ -199,8 +208,73 @@ static void HatMachines_StoreProgress(void *world_ptr, void *, void *progress_pt
     }
 }
 
-static void HatMachines_Reset(void *, void *, void *) {
-    UNIMPLEMENTED();
+static void HatMachine_Reset(HATMACHINE_s *machine) {
+    machine->player_position.y = 0.0f;
+    machine->player_position.x = 0.0f;
+    machine->player_position.z = 0.1441f;
+    NuVecRotateY(&machine->player_position, &machine->player_position, machine->yaw + 0x8000);
+    NuVecAdd(&machine->player_position, &machine->player_position, &machine->position);
+
+    NUVEC target_position;
+    Hat_GetAbsTargetPos(machine, &target_position);
+    target_position.y = machine->position.y;
+
+    machine->player_position.y = GameShadow(NULL, &machine->player_position, 1.0f, -1);
+    const f32 target_y = GameShadow(NULL, &target_position, 1.0f, -1);
+    if (target_y == 2000000.0f) {
+        machine->target_offset.y = target_y;
+    } else {
+        machine->target_offset.y = target_y + 0.005f;
+        FindAnglesZX(&ShadNorm, &machine->terrain_pitch, &machine->terrain_roll);
+    }
+
+    machine->animation_state = 0;
+    machine->progress_state1 = 1;
+    machine->progress_state0 = 1;
+    machine->state_bit0 = 0;
+    machine->state_bit1 = 0;
+    machine->hat_refresh_timer = 0.0f;
+    machine->animation_duration = 0.0f;
+    machine->render_animation_time = 0.0f;
+
+    if (machine->model_letter == 'r') {
+        machine->model_special_index = 0x22;
+    } else {
+        machine->model_special_index = (machine->model_letter == 'o') + 0x20;
+    }
+
+    if (machine->configured_hat != 0) {
+        machine->current_hat = machine->configured_hat;
+    } else {
+        machine->current_hat = static_cast<u8>(NuFloatRand(reinterpret_cast<NURAND *>(&GAMERAND)) * 4.0f) + 1;
+    }
+
+    NuMtxSetRotationY(&machine->matrix, machine->yaw);
+    NuMtxTranslate(&machine->matrix, &machine->position);
+}
+
+static void HatMachines_Reset(void *world_ptr, void *, void *progress_ptr) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    if (world == NULL) {
+        return;
+    }
+
+    HATMACHINESYS_s *system = world->hat_machine_sys;
+    if (system == NULL || system->machines == NULL || system->count <= 0) {
+        return;
+    }
+
+    HATMACHINEPROGRESS *progress = static_cast<HATMACHINEPROGRESS *>(progress_ptr);
+    for (i32 index = 0; index < system->count; ++index) {
+        HATMACHINE_s *machine = &system->machines[index];
+        HatMachine_Reset(machine);
+
+        if (index <= 31 && progress != NULL) {
+            const u32 mask = 1u << index;
+            machine->progress_state1 = (progress->visible_mask & mask) != 0;
+            machine->progress_state0 = (progress->enabled_mask & mask) != 0;
+        }
+    }
 }
 
 static void *HatMachines_ReserveBufferSpace(void *) {

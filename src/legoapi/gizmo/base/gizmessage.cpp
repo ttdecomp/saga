@@ -119,9 +119,9 @@ void ResetGizAIMessageSys(GIZAIMESSAGESYS_s *sys) {
     sys->free_list.tail = NULL;
     sys->active_list.head = NULL;
     sys->active_list.tail = NULL;
-    memset(sys->messages, 0, (usize)sys->count * 0x38);
+    memset(sys->messages, 0, (usize)sys->count * sizeof(GIZAIMESSAGE_s));
     for (i32 i = 0; i < sys->count; i++) {
-        NuLinkedListAppend(&sys->free_list, (NULISTLNK *)&sys->messages[i]);
+        NuLinkedListAppend(&sys->free_list, &sys->messages[i].links);
     }
 }
 

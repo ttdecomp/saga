@@ -7,6 +7,11 @@ ignore = [
 
 [extra_units]
 ogg_vorbis = [
+    "oggpackB_reset",
+    "oggpack_reset",
+    "ogg_sync_reset",
+    "ogg_stream_reset_serialno",
+    "ogg_stream_reset",
     "ov_bitrate",
     "ov_bitrate_instant",
     "ov_clear",

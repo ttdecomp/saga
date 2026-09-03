@@ -142,8 +142,8 @@ i32 NuMusic::Initialise(const char *file, char *null, VARIPTR *buffer_start, VAR
     InitVoiceManager();
     InitData(file, buffer_start, buffer_end);
     this->master_volume = 1.0f;
-    this->duck_rate = 0.5f;
     this->fader_rate = 0.0f;
+    this->duck_rate = 0.5f;
     this->album = this->albums;
     this->fader_current = 1.0f;
     this->fader_target = 1.0f;
@@ -495,21 +495,21 @@ void NuMusic::Voice::SetStatusFn(i32 status, i32 tag) {
     }
 }
 
-bool NuMusic::Voice::Load(Track *track, i32 trackIndex) {
-    bool changed = this->tracks[this->track_index] != track;
-    if (changed) {
-        // Class-8 (overlay) tracks use the voice's second sub-stream so the
-        // previous track keeps playing underneath.
-        this->track_index = (track->clazz == TRACK_CLASS_8) ? 1 : 0;
-        NuSound3StopStereoStream(this->stream_index);
-        i32 index = this->track_index;
-        this->tracks[index] = track;
-        this->track_sub[index] = trackIndex;
-        this->flags &= ~2u; // clear paused
-        SetStatusFn(VOICE_STATUS_READY, 0x123);
+i32 NuMusic::Voice::Load(Track *track, i32 trackIndex) {
+    if (this->tracks[this->track_index] == track) {
+        return 0;
     }
 
-    return changed;
+    // Class-8 (overlay) tracks use the voice's second sub-stream so the
+    // previous track keeps playing underneath.
+    this->track_index = (track->clazz == TRACK_CLASS_8) ? 1 : 0;
+    NuSound3StopStereoStream(this->stream_index);
+    i32 index = this->track_index;
+    this->tracks[index] = track;
+    this->track_sub[index] = trackIndex;
+    this->flags &= ~2u; // clear paused
+    SetStatusFn(VOICE_STATUS_READY, 0x123);
+    return 1;
 }
 
 i32 NuMusic::Voice::Play() {
@@ -609,7 +609,7 @@ i32 NuMusic::Voice::Unload() {
         // Step the class-8 voice back down to its base sub-stream.
         this->track_index = idx - 1;
         if (this->tracks[this->track_index] == NULL) {
-            SetStatusFn(VOICE_STATUS_NONE, 0x1e8);
+            SetStatusFn(VOICE_STATUS_NONE, 0x14b);
             this->tracks[this->track_index] = NULL;
         } else {
             this->gain = 0.0f;
@@ -625,7 +625,7 @@ i32 NuMusic::Voice::Unload() {
                                           NUSOUNDPLAYTOK_END);
             this->last_volume = 0.0f;
             if (res != 0) {
-                SetStatusFn(VOICE_STATUS_CUED, 0x1e9);
+                SetStatusFn(VOICE_STATUS_CUED, 0x147);
             }
         }
     }
@@ -1446,7 +1446,7 @@ void NuMusic::xIndex(nufpar_s *fpar) {
 }
 void NuMusic::xNoMusic(nufpar_s *fpar) {
     NuFParGetWord(fpar);
-    char buf[268];
+    char buf[256];
     SubstituteString(buf, fpar->word_buf, "$lang", this->language);
     this->current_track->name = AllocString(buf);
 }

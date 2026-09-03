@@ -36,7 +36,7 @@ GIZMO_PICKUP_TYPE GizmoPickupType[10] = {
      NULL, NULL, -1, 0x00d1, 0.0f, 0.0f},
 };
 
-GIZMOPICKUPTYPESYS_s GizmoPickupSys_Game = {
+GIZMOPICKUPSYS_s GizmoPickupSys_Game = {
     GizmoPickupType, CoinTab, 10, 4, 4, 2, 0, 0,
 };
 

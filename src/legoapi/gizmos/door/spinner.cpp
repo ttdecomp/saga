@@ -16,7 +16,7 @@
 extern "C" {
     void NewTerrPlatformsOff(void);
     i32 ShadowInfo(void);
-    i32 NuSpecialCompare(void *first, void *second);
+    i32 NuSpecialCompare(nuhspecial_s *first, nuhspecial_s *second);
     char *NuIToA(i32 value, char *buffer, i32 radix);
     void NuRndrStartReflectionRender(i32 clear_depth);
     void NuRndrEndReflectionRender(void);

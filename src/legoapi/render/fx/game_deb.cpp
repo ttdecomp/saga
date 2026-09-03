@@ -153,7 +153,8 @@ extern "C" {
     usize edpp_page_scene[8] = {};
     i32 edpp_page_on[8] = {};
     i32 edpp_page_used[8] = {};
-    u8 edpp_ptls[0xb000] = {};
+    edpp_particle_s edpp_ptls[512] = {};
+    i32 edpp_instances_used = 0;
     debkeydatatype_s *debkeydata = NULL;
     i16 *freedebkeys = NULL;
     i32 freedebkeyptr = 0;

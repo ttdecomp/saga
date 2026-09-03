@@ -34,6 +34,14 @@ void NuPad_Interface_InputManagerUpdate(f32 delta_time) {
     inputManager->UpdateAll(delta_time);
 }
 
+extern "C" void NuPad_Interface_ResetAllTouches(void) {
+    NuInputDevice *device = inputManager->GetDevice(0);
+
+    memset(device->touch_data.touch_events, 0, sizeof(device->touch_data.touch_events));
+    device->touch_data.touch_count = 0;
+    memset(used_touch_IDs, 0, sizeof(used_touch_IDs));
+}
+
 u32 NuPad_Interface_NuPadRead(i32 port, u8 *analog_left_x, u8 *analog_left_y, u8 *analog_right_x, u8 *analog_right_y,
                               u8 *analog_l1, u8 *analog_l2, u8 *analog_r1, u8 *analog_r2, u32 *digital_buttons,
                               u8 *unknown, i32 *analog_button_flags) {
@@ -228,4 +236,28 @@ NuTouchInputElement::NuTouchInputElement(NuTouchInputElement::TYPE, i32, u32) {
 }
 
 NuTouchInputElement::NuTouchInputElement(NuTouchInputElement::TYPE, i32, u32, float, float, float, float) {
+}
+
+__attribute__((weak)) NuTouchInputElement::~NuTouchInputElement() {
+}
+
+__attribute__((weak)) void NuTouchInputElement::UpdateButtons(i32) {
+}
+
+__attribute__((weak)) bool NuTouchInputElement::IsPressed() const {
+    return false;
+}
+
+__attribute__((weak)) float NuTouchInputElement::GetStickX() const {
+    return 0.0f;
+}
+
+__attribute__((weak)) float NuTouchInputElement::GetStickY() const {
+    return 0.0f;
+}
+
+__attribute__((weak)) void NuTouchInputElement::Deactivate() {
+}
+
+__attribute__((weak)) void NuTouchInputElement::Activate() {
 }

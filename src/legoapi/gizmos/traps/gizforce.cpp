@@ -21,8 +21,7 @@
 #include <string.h>
 
 extern "C" {
-    void *NuSpecialGetInstanceix(void *special);
-    i16 FindPlatInst(void *instance);
+    i16 FindPlatInst(i32 instance_ix);
     i32 NuPortalWhichRoom(NUGSCN *scene, NUVEC *position);
 }
 
@@ -845,8 +844,7 @@ static i32 GizForces_Load(void *world_ptr, void *data) {
                     ++name_pos;
                 }
                 NuStrCat(along_socket_name, const_cast<char *>("AlongSock"));
-                if (NuSpecialFind(object->special.scene, reinterpret_cast<void **>(&force.along_socket),
-                                  along_socket_name, 1) != 0) {
+                if (NuSpecialFind(object->special.scene, &force.along_socket, along_socket_name, 1) != 0) {
                     break;
                 }
             }

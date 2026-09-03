@@ -829,6 +829,7 @@ extern "C" void MenuRegisterSoundFX(i32 move, i32 select, i32 back, i32 no_entry
 i32 GameAudio_GetSfxId(i32 sfx);
 void GameAudio_PlaySfxById(i32 sfx_id, nuvec_s *position, i32 flags, i32 volume);
 
+static GAMEAUDIO GameAudio_Default;
 static GAMEAUDIO *GameAudio;
 
 void GameAudio_Init(GAMEAUDIO *audio) {
@@ -845,6 +846,12 @@ void GameFog_Update(WORLDINFO_s *) {
 }
 
 void GameAudio_Reset() {
+    memset(&GameAudio_Default, 0, sizeof(GameAudio_Default));
+    GameAudio = &GameAudio_Default;
+    memset(GameAudio_Default.sfx_names, 0, sizeof(GameAudio_Default.sfx_names));
+    for (i32 i = 0; i < 0x55; ++i) {
+        GameAudio_Default.sfx_ids[i] = -1;
+    }
 }
 
 void *GameBufferAlloc(variptr_u *buf, variptr_u *buf_end, i32 size) {
@@ -1641,7 +1648,27 @@ void ThingManager::RenderThings(ThingRenderData *data) {
     }
 }
 
-void ThingManager::ResetThings(ThingResetData *) {
+void ThingManager::ResetThings(ThingResetData *data) {
+    const char *name = "Res";
+
+    i32 i = 0;
+    if (this->count > 0) {
+        do {
+            BaseThing *thing = this->things[i];
+            if (thing != NULL && (thing->flags & 8) == 0) {
+                if (thing->profiling_0xc != NULL) {
+                    _NuTimeBarSlotBegin(this->timebar, 4, name);
+                }
+                thing = this->things[i];
+                thing->Reset(data);
+                thing = this->things[i];
+                if (thing->profiling_0xc != NULL) {
+                    _NuTimeBarSlotEnd(this->timebar, 4);
+                }
+            }
+            ++i;
+        } while (i < this->count);
+    }
 }
 
 // ThingManager::ThingManager @0x425870. Stores the manager in theThingManager

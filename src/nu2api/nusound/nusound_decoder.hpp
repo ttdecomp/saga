@@ -37,6 +37,7 @@ class NuSoundDecoder : public NuSoundSource {
     u32 GetMaxBufferSize() override;
     unsigned int GetNumRingBuffers() const;
     void RequestBuffer(bool loop, NuSoundWeakPtr<NuSoundBufferCallback> callback) override;
+    void Reset();
 
     // libTTapp.so @0x11e90d0: the singleton decode thread created by Initialise.
     static NuSoundDecodeThread *sDecodeThread;

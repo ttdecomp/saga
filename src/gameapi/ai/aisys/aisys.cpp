@@ -1,5 +1,6 @@
 #include "decomp.h"
 #include "gameapi/ai/aisys/aisys.h"
+#include "globals.h"
 
 #include <stdio.h>
 #include "globals.h"
@@ -2233,14 +2234,10 @@ __used__ static i32 Action_ReleaseTakeOver(AISYS *sys, AISCRIPTPROCESS *processo
 
 __used__ static i32 Action_ResetGameCamera(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,
                                            i32 param_4, i32 param_5, f32 param_6) {
-    (void)sys;
-    (void)processor;
-    (void)packet;
-    (void)params;
-    (void)param_4;
-    (void)param_5;
-    (void)param_6;
-    return 0;
+    if (param_5 != 0) {
+        GameCam_Reset(GameCam);
+    }
+    return 1;
 }
 
 __used__ static i32 Action_SetAnimSpeedMul(AISYS *sys, AISCRIPTPROCESS *processor, AIPACKET *packet, char **params,

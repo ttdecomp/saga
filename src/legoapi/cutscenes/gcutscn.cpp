@@ -1,4 +1,6 @@
+#include "globals.h"
 #include "legoapi/legoapi_types.h"
+#include "nu2api/nucore/nugcutscene.h"
 
 #include "globals.h"
 #include "legoapi/cutscenes/cutscenes.h"
@@ -15,6 +17,9 @@ struct CUTSCENEPLAYER_s {
 CUTSCENEPLAYER_s *CutScenePlayer = NULL;
 
 void CutScenePlayer_Reset() {
+    if (CutScenePlayer != NULL) {
+        CutScenePlayer->active = 0;
+    }
 }
 
 void CutScenePlayer_Start(i32, i32) {
@@ -70,7 +75,10 @@ void instNuGCutGetNextRigidInfo(instNUGCUTSCENE_s *, float, i32, numtx_s *, nuhs
 void instNuGCutSceneSwapBuffers(instNUGCUTSCENE_s *, i32) {
 }
 
-void instNuGCutSceneResetCamLock(instNUGCUTSCENE_s *) {
+void instNuGCutSceneResetCamLock(instNUGCUTSCENE_s *instance) {
+    if (instance != NULL && instance->camera_instance != NULL && instance->camera_instance->lock_state >= 0) {
+        CutSceneCameraCTRL = 0;
+    }
 }
 
 void instNuGCutSceneEndFirstFrame(instNUGCUTSCENE_s *) {

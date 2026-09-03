@@ -1789,7 +1789,17 @@ extern "C" {
     void ResetMiniAnimPacket(void *, i32) {
     }
 #else
-    void ResetMiniAnimPacket(void) {
+    void ResetMiniAnimPacket(MINIANIMPACKET_s *packet, i32 animation) {
+        if (packet != NULL) {
+            packet->requested_animation_id = static_cast<i16>(animation);
+            packet->previous_animation_id = packet->requested_animation_id;
+            packet->current_animation_id = packet->previous_animation_id;
+            packet->animation_mode = GetAnimBlendMode();
+            packet->previous_animation_mode = packet->animation_mode;
+            packet->current_animation = packet->previous_animation_mode;
+            packet->field_0x19 = 0;
+            packet->reset_state = 4;
+        }
     }
 #endif
 

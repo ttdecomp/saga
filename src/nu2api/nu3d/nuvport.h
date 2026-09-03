@@ -47,6 +47,8 @@ void NuPs2GetViewport(NUVIEWPORT *vp);
 void NuVpSetScalingMtx(void);
 
 extern NUVPREGION g_NuVpRegion;
+extern i32 PS2_VREZ_H;
+extern i32 PS2_VREZ_W;
 
 extern "C" {
 #endif

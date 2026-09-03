@@ -85,6 +85,25 @@ struct NUGCUTRIGID_s {
     u8 field_5b;
 };
 
+struct NUGCUTCHARSYS_s {
+    u8 reserved_00[0x04];
+    u16 character_count;
+    u8 reserved_06[0x14 - 0x06];
+};
+
+struct instNUGCUTCHAR_s {
+    u8 reserved_00[0x04];
+    i32 field_04;
+    u8 reserved_08[0x14 - 0x08];
+    u8 field_14;
+    u8 field_15;
+    u8 reserved_16[0x18 - 0x16];
+};
+
+struct instNUGCUTCHARSYS_s {
+    instNUGCUTCHAR_s *characters;
+};
+
 struct NUGCUTSCENE_s {
     i32 version;
     isize string_delta;
@@ -92,7 +111,7 @@ struct NUGCUTSCENE_s {
     char *strings;
     void *camera_system;
     NUGCUTRIGIDSYS_s *rigid_system;
-    void *character_system;
+    NUGCUTCHARSYS_s *character_system;
     NUGCUTLOCATORSYS_s *locator_system;
     void *bounds;
     void *trigger_system;
@@ -121,6 +140,11 @@ struct instNUGCUTRIGIDSYS_s {
     instNUGCUTRIGID_s *rigids;
 };
 
+struct instNUGCUTSCENECAMERA_s {
+    u8 pad_00[0x09];
+    i8 lock_state;
+};
+
 struct instNUGCUTSCENE_s {
     instNUGCUTSCENE_s *next;
     instNUGCUTSCENE_s *previous;
@@ -139,9 +163,9 @@ struct instNUGCUTSCENE_s {
     f32 current_frame;
     f32 render_frame;
     f32 rate;
-    void *camera_instance;
+    instNUGCUTSCENECAMERA_s *camera_instance;
     instNUGCUTRIGIDSYS_s *rigid_instance;
-    void *character_instance;
+    instNUGCUTCHARSYS_s *character_instance;
     instNUGCUTLOCATORSYS_s *locator_instance;
     void *trigger_instance;
     u8 pad_b0[0xe8 - 0xb0];
@@ -151,6 +175,11 @@ struct instNUGCUTSCENE_s {
     u8 pad_f4[4];
 };
 
+typedef void (*NUGCUTSCENERESETCHARACTERSFN)(instNUGCUTSCENE_s *);
+
+extern "C" NUGCUTSCENERESETCHARACTERSFN NuCutSceneResetCharactersFn;
+extern "C" void NuSetCutSceneResetCharactersFn(NUGCUTSCENERESETCHARACTERSFN function);
+
 DECOMP_ASSERT(sizeof(StateAnim) == 0x0c, "StateAnim must match the original x86 layout");
 DECOMP_ASSERT(sizeof(NUGCUTLOCATOR_s) == 0x64, "NUGCUTLOCATOR_s must match the original x86 layout");
 DECOMP_ASSERT(sizeof(NUGCUTLOCATORTYPE_s) == 0x0c, "NUGCUTLOCATORTYPE_s must match the original x86 layout");
@@ -158,4 +187,6 @@ DECOMP_ASSERT(sizeof(NUGCUTLOCATORSYS_s) == 0x0c, "NUGCUTLOCATORSYS_s must match
 DECOMP_ASSERT(sizeof(instNUGCUTLOCATOR_s) == 0x08, "instNUGCUTLOCATOR_s must match the original x86 layout");
 DECOMP_ASSERT(sizeof(NUGCUTLOCATORFNENTRY_s) == 0x14, "NUGCUTLOCATORFNENTRY_s must match the original x86 layout");
 DECOMP_ASSERT(sizeof(NUGCUTRIGID_s) == 0x5c, "NUGCUTRIGID_s must match the original x86 layout");
+DECOMP_ASSERT(sizeof(NUGCUTCHARSYS_s) == 0x14, "NUGCUTCHARSYS_s must match the original x86 layout");
+DECOMP_ASSERT(sizeof(instNUGCUTCHAR_s) == 0x18, "instNUGCUTCHAR_s must match the original x86 layout");
 DECOMP_ASSERT(sizeof(instNUGCUTSCENE_s) == 0xf8, "instNUGCUTSCENE_s must match the original x86 layout");

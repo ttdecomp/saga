@@ -74,15 +74,10 @@ void SetLevelSfxBits(WORLDINFO *world) {
     (void)world;
 }
 void ResetLevSfx(WORLDINFO *world) {
-    // SFX bit array and counter in the filler8 region.
-    // TODO: these offsets must be replaced with typed struct fields.
-    //   0x4720 → filler8[0x2c]: SFX bit array (0x400 bytes, stride 0x10)
-    //   0x4b14 → filler8[0x420]: SFX counter
-    i16 *sfx = (i16 *)&world->filler8[0x2c];
     for (i32 i = 0; i < 0x40; i++) {
-        sfx[i] = -1;
+        world->level_sfx[i].id = -1;
     }
-    *(i32 *)&world->filler8[0x420] = 0;
+    world->level_sfx_count = 0;
 }
 
 void InitSpecialSfx(WORLDINFO *world) {
@@ -98,9 +93,6 @@ i32 ActionMusicFn() {
 
 i32 CheckMusicOther() {
     return {};
-}
-
-static __used__ void SetSoundFadeDistCallBackFn_LSW(WORLDINFO_s *) {
 }
 
 extern "C" {
@@ -200,6 +192,14 @@ extern "C" {
     }
 
     void ResetPreSeek(void) {
+        if (Music.state == MUSIC_PLAYBACK_DUAL_STREAM) {
+            Music.current_track = -1;
+        } else {
+            Music.queued_track = -1;
+            Music.requested_track = -1;
+            Music.pause_requested = false;
+        }
+        Music.track_data = NULL;
     }
 
     void RestoreGameMusic(void) {

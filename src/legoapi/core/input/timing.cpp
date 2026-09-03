@@ -1,4 +1,5 @@
 #include "decomp.h"
+#include "globals.h"
 #include "legoapi/legoapi_types.h"
 #include "nu2api/nu3d/nutex.h"
 
@@ -7,17 +8,6 @@ struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
 
-struct MAIN_FRAME_COUNTERS_s {
-    u8 warmup_frame;
-    u8 every_frame;
-    u8 alternate_frame;
-    u8 third_frame;
-    u8 fourth_frame;
-};
-
-DECOMP_ASSERT(sizeof(MAIN_FRAME_COUNTERS_s) == 5, "MAIN_FRAME_COUNTERS_s size");
-
-MAIN_FRAME_COUNTERS_s MainFrameCounters;
 i32 do_multiframe_update;
 
 void TimingBars() {

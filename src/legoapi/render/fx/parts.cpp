@@ -34,6 +34,13 @@ extern "C" {
     extern debris_chunk_control_s **freechunkcontrols;
     extern i32 freechunkcontrolsptr;
     extern debris_chunk_control_s *debris_chunk_control_stack[2];
+    extern edpp_particle_s edpp_ptls[512];
+    extern i32 edpp_page_used[8];
+    extern i32 edpp_page_on[8];
+    extern i32 edpp_instances_used;
+    extern PART_s *Part;
+    extern i32 MAXPARTS;
+    extern i32 i_part;
 
     i32 DebAlloc(void);
     void DebrisStartOffset(i32, f32);
@@ -65,9 +72,6 @@ struct spacelevel_s;
 struct quickboltinfo;
 
 void PartObjectInterface::GetPos(VuVec &, i32) const {
-}
-
-void PartObjectInterface::GetRadius() const {
 }
 
 void PartObjectInterface::GetTargetName() const {
@@ -664,24 +668,12 @@ extern "C" {
     }
 
     void ParticleReset(void) {
-    }
-
-    i32 ParticlesPerFrame(f32 particles_per_frame, f32 frame_time) {
-        i32 scaled_count = static_cast<i32>(particles_per_frame * 65536.0f * (frame_time * 60.0f));
-        i32 count = 0;
-
-        while (scaled_count > 0xffff) {
-            scaled_count -= 0x10000;
-            ++count;
+        for (i32 i = 0; i < 512; ++i) {
+            edpp_ptls[i].instance_id = -1;
         }
-        if ((NuRandInt() >> 16) < static_cast<u32>(scaled_count)) {
-            ++count;
-        }
-        return count;
-    }
-
-    i32 ParticlesPerSecond(f32 particles_per_second, f32 frame_time) {
-        return ParticlesPerFrame(particles_per_second / 60.0f, frame_time);
+        memset(edpp_page_used, 0, sizeof(edpp_page_used));
+        memset(edpp_page_on, 0, sizeof(edpp_page_on));
+        edpp_instances_used = 0;
     }
 
     void ReassignPickupInst(void) {
@@ -691,13 +683,13 @@ extern "C" {
     }
 
     void ResetParts(void) {
+        if (Part != NULL) {
+            memset(Part, 0, static_cast<usize>(MAXPARTS) * sizeof(PART_s));
+        }
+        i_part = 0;
     }
 
     void UpdateParts(f32) {
-    }
-
-    void SetPartRTLSet(usize rtl_set) {
-        (void)rtl_set;
     }
 
 } // extern "C"
@@ -757,9 +749,6 @@ void Asteroid_PartKill(PART_s *, i32) {
 }
 
 void PartDraw_Flickerer(PART_s *) {
-}
-
-void PartStop_Flickerer(PART_s *) {
 }
 
 void PartKill_ForceThrow(PART_s *, i32) {

@@ -1,10 +1,11 @@
 #include "legoapi/gizmos/traps/shards.h"
 
 #include "decomp.h"
+#include "legoapi/world/level.h"
 
-static i32 Shards_GetMaxGizmos(void *shard) {
-    UNIMPLEMENTED();
-    return {};
+static i32 Shards_GetMaxGizmos(void *world_info) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_info);
+    return world != NULL ? world->current_level->max_shards : 0;
 }
 
 static void Shards_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -24,8 +25,7 @@ static void Shards_Draw(void *, void *, float) {
 }
 
 static char *Shard_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL ? static_cast<SHARD *>(gizmo->object)->name : NULL;
 }
 
 static i32 Shard_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -39,8 +39,7 @@ static char *Shard_GetOutputName(GIZMO *gizmo, i32 output_index) {
 }
 
 static i32 Shard_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return 1;
 }
 
 static void Shard_Activate(GIZMO *gizmo, i32) {

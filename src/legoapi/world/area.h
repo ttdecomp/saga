@@ -5,6 +5,7 @@
 
 #include "nu2api/nucore/common.h"
 
+struct SUPERCOUNTER;
 enum AREA_EPISODE_INDEX {
     AREA_EPISODE_I = 1,
     AREA_EPISODE_II = 2,
@@ -26,8 +27,8 @@ typedef struct AREADATA_s {
     byte index;
     byte level_count;
     byte cheat;
-    byte field30_0x7f;
-    i32 field31_0x80;
+    u8 super_counter_count;
+    SUPERCOUNTER *super_counters;
     u16 challenge_trial_time;
     u8 episode_index;
     byte area_index;

@@ -61,7 +61,7 @@ extern "C" {
 i32 NuGScnUploadGfxDataFromFilePS(VARIPTR *buf, VARIPTR *buf_end, i32 file);
 // The trailing flags argument is passed as 1 by every caller in the
 // original binary; the original implementation never reads it.
-i32 NuSpecialFind(NUGSCN *scene, void **dest, char *name, i32 flags);
+i32 NuSpecialFind(NUGSCN *scene, nuhspecial_s *dest, char *name, i32 flags);
 void SetCameraZoom(f32 zoom);
 
 // --- chris.cpp ---

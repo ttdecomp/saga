@@ -8,6 +8,8 @@ struct nunativegscene_s;
 struct SHOPINPUT;
 struct MENU_s;
 
+static f32 Arcade_NeedTwoPlayers_Scale = 1.0f;
+
 void Arcade_Kill(i32, i32) {
 }
 
@@ -24,6 +26,7 @@ void Arcade_AwardPoint(i32, i32, i32) {
 }
 
 void Arcade_ResetPanel() {
+    Arcade_NeedTwoPlayers_Scale = 1.0f;
 }
 
 void Arcade_DrawEndMenu(MENU_s *) {

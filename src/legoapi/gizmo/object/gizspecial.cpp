@@ -31,7 +31,7 @@ static void GizmoAppendSpecialError(GIZMOSYS *gizmo_sys, const char *text) {
 
 i32 Gizmo_FindNuSpecial(nugscn_s *scene, nuhspecial_s *special, char *name, i32 flags, GIZMOSYS *gizmo_sys,
                         char *prefix, char *suffix) {
-    if (NuSpecialFind(scene, reinterpret_cast<void **>(special), name, flags) != 0) {
+    if (NuSpecialFind(scene, special, name, flags) != 0) {
         return 1;
     }
 

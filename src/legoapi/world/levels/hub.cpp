@@ -30,7 +30,6 @@ extern void DrawShop3D(WORLDINFO_s *);
 extern void CutScenePlayer_Reset();
 extern GIZBUILDIT_s *GizBuildIt_Find(WORLDINFO_s *, char *);
 extern void GizBuildIt_SetToEnd(GIZBUILDIT_s *);
-extern "C" void NuSpecialFindMulti(NUGSCN *, void **, char *, i32, i32);
 extern i32 Episode_CountOpenAreas(i32, i32, AREASAVE_s *);
 extern void UpdateCharacterLoad();
 extern void ResetForceBack();
@@ -593,7 +592,7 @@ void Hub_UpdateFreePlaySelect() {
 }
 
 static void Hub_FindSpecial(WORLDINFO_s *world, nuhspecial_s *special, const char *name) {
-    NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(special), const_cast<char *>(name), 1);
+    NuSpecialFind(world->current_gscn, special, const_cast<char *>(name), 1);
 }
 
 void Hub_Init(WORLDINFO_s *world) {
@@ -648,19 +647,15 @@ void Hub_Init(WORLDINFO_s *world) {
         Hub_FindSpecial(world, &LevHSpecial[i], lock_names[i]);
     }
 
-    if (NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&LevHSpecial[15]), const_cast<char *>("holo"),
-                      1) != 0) {
+    if (NuSpecialFind(world->current_gscn, &LevHSpecial[15], const_cast<char *>("holo"), 1) != 0) {
         NuSpecialSetVisibility(&LevHSpecial[15], 0);
     }
-    if (NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(&LevHSpecial[16]), const_cast<char *>("lock_7_on"),
-                      1) != 0 &&
+    if (NuSpecialFind(world->current_gscn, &LevHSpecial[16], const_cast<char *>("lock_7_on"), 1) != 0 &&
         Store_IsPackUnlocked(6) == 0) {
         NuSpecialSetVisibility(&LevHSpecial[16], 0);
     }
-    NuSpecialFindMulti(world->current_gscn, reinterpret_cast<void **>(&LevHSpecial[20]),
-                       const_cast<char *>("ps2_only_"), 32, 0);
-    NuSpecialFindMulti(world->current_gscn, reinterpret_cast<void **>(&LevHSpecial[52]),
-                       const_cast<char *>("psp_only_"), 32, 0);
+    NuSpecialFindMulti(world->current_gscn, &LevHSpecial[20], const_cast<char *>("ps2_only_"), 32, 0);
+    NuSpecialFindMulti(world->current_gscn, &LevHSpecial[52], const_cast<char *>("psp_only_"), 32, 0);
     Hub_FindSpecial(world, &LevHSpecial[84], "fake_wall");
 
     Hub_ResetPanel();

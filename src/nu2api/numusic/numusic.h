@@ -72,9 +72,9 @@ class NuMusic {
         f32 last_volume;     // 0x24 last volume pushed to the stream (-1.0 = force update)
         f32 fade_rate;       // 0x28 gain change per second; negative = fading out
         f32 play_time;       // 0x2c playback seconds accumulated by Process
-        u32 flags;           // 0x30 bit0 = fade-out requested, bit1 = paused
+        u8 flags;            // 0x30 bit0 = fade-out requested, bit1 = paused
 
-        bool Load(Track *track, i32 trackIndex);
+        i32 Load(Track *track, i32 trackIndex);
         void SetStatusFn(i32 status, i32 tag);
         i32 Play();
 
@@ -95,41 +95,36 @@ class NuMusic {
     };
 
   private:
-    nusound_filename_info_s *fileinfo;
-    i32 file_count; // original field at +0x1e0, handed out by GetSoundFiles
-
-    f32 *indexes;
-    i32 index_count;
-
-    char current_path[256];
-    char *string_pool_start;
-    char *string_pool_end;
-    bool strict_mode;
-    Album *albums;
-    i32 album_count;
-    Album *current_album;
-    Track *tracks;
-    i32 track_count;
-    Track *current_track;
-    Voice voices[2];
-    char *language;
-
-    Album *album;
-    i32 track_index;
+    Album *albums;                     // +0x000
+    i32 album_count;                   // +0x004
+    Track *tracks;                     // +0x008
+    i32 track_count;                   // +0x00c
+    f32 *indexes;                      // +0x010
+    i32 index_count;                   // +0x014
+    i32 pitch_default;                 // +0x018
+    Album *current_album;              // +0x01c
+    Track *current_track;              // +0x020
+    char current_path[256];            // +0x024
+    bool strict_mode;                  // +0x124
+    char *string_pool_start;           // +0x128
+    char *string_pool_end;             // +0x12c
+    Voice voices[2];                   // +0x130
+    f32 master_volume;                 // +0x198
+    f32 fader_current;                 // +0x19c
+    f32 fader_target;                  // +0x1a0
+    f32 fader_rate;                    // +0x1a4
+    f32 duck_gain;                     // +0x1a8
+    f32 duck_current;                  // +0x1ac
+    f32 duck_rate;                     // +0x1b0
+    f32 class_volumes[6];              // +0x1b4
+    f32 global_attenuation;            // +0x1cc
+    i32 track_index;                   // +0x1d0
+    char *language;                    // +0x1d4
+    Album *album;                      // +0x1d8
+    nusound_filename_info_s *fileinfo; // +0x1dc
+    i32 file_count;                    // +0x1e0
 
     friend f32 numusicGetDuckVolume(void);
-
-    // Playback state (original offsets noted; our layout is self-consistent).
-    i32 pitch_default;      // orig +0x18: default track pitch, 0x1000 = unity
-    f32 master_volume;      // orig +0x198
-    f32 fader_current;      // orig +0x19c: ramps toward fader_target at fader_rate/second
-    f32 fader_target;       // orig +0x1a0
-    f32 fader_rate;         // orig +0x1a4: 1/fade-seconds, 0 = no fade running
-    f32 duck_gain;          // orig +0x1a8: min(1, duck_volume) of the playing tracks
-    f32 duck_current;       // orig +0x1ac: ramps toward duck_gain at duck_rate/second
-    f32 duck_rate;          // orig +0x1b0: max(1, 1/duck_fade) of the playing tracks
-    f32 class_volumes[6];   // orig +0x1b4: per-TRACK_CLASS volume, indexed by ClassToIX
-    f32 global_attenuation; // orig +0x1cc: GLOBALATTENUATION from music.cfg
 
   public:
     NuMusic();

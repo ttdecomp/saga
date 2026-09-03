@@ -61,7 +61,8 @@ extern "C" {
     }
     void NuFileGetBlkSize(void) {
     }
-    void NuFileGetCurrentDevice(void) {
+    NUFILE_DEVICE *NuFileGetCurrentDevice(void) {
+        return default_device;
     }
     void NuFileGetCurrentDirectory(void) {
     }
@@ -73,11 +74,13 @@ extern "C" {
     }
     void NuFileGetDevices(void) {
     }
-    void NuFileGetEndianSwap(void) {
+    i32 NuFileGetEndianSwap(void) {
+        return NuFile_SwapEndianOnWrite;
     }
     void NuFileGetInfo(void) {
     }
-    void NuFileGetMediaMode(void) {
+    i32 NuFileGetMediaMode(void) {
+        return 0;
     }
     void NuFileInitAddress(void) {
     }
@@ -105,7 +108,8 @@ extern "C" {
     }
     void NuFileSetBadGameDisc(void) {
     }
-    void NuFileSetCurrentDevice(void) {
+    void NuFileSetCurrentDevice(NUFILE_DEVICE *device) {
+        default_device = device;
     }
     void NuFileSetCurrentDirectory(void) {
     }

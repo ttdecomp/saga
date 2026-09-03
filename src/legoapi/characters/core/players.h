@@ -80,12 +80,13 @@ extern i32 LevelChangesInArea;
 extern i32 bonusmodearcade;
 extern i32 VehicleArea;
 extern SOCKPOSITION OldPlrSPos[8];
-extern char Batarang[8 * 0xb4];
+struct BATARANG_s;
+extern BATARANG_s Batarang[];
 extern void *PlayerSuit[8];
 extern u8 PlayerTorpedoCount[8];
 extern COINPACKET CoinPacket[2];
 extern u32 BackUpPlayers[];
-extern char GizForceLOSInfo[0xc60];
+extern GizForceLOSState_s GizForceLOSInfo[2];
 extern i32 DEFAULT_PLAYERHITPOINTS;
 extern u32 LEGOOBJ_DEFAULTLASTCOIN;
 

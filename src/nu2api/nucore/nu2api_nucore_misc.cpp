@@ -82,9 +82,6 @@ void NuFntPrintChar(char) {
 void NuQFntSetMtx2d(void *, numtx_s *) {
 }
 
-void NuRainDrawDrop(i32, i32, float, float, i32) {
-}
-
 void NuWarningPrint(char *) {
 }
 
@@ -106,9 +103,6 @@ void NuLgtArcLaserEx(i32, nuvec_s *, nuvec_s *, nuvec_s *, float, float, float, 
 void NuMemValidateFn() {
 }
 
-void NuRainDrawShape(float) {
-}
-
 void NuVpSetDestRect(float, float, float, float) {
 }
 
@@ -116,9 +110,6 @@ void NuBrdigeDrawRope(numtl_s *, nuvec_s *, nuvec_s *, i32, i32 *, i32) {
 }
 
 void NuDDSGetMipLevel(i32, i32, i32, NUTEXFORMAT, i32, bool, i32, i32, i32 &, i32 &, i32 &) {
-}
-
-void NuFadeObjFreeGrp(NuFadeObjGType *) {
 }
 
 void NuHtmlGraphArray(char **) {
@@ -313,9 +304,6 @@ void NuDisplayListCreate(nudisplayscene_s *raw_scene, variptr_u *buffer, variptr
 void NuFadeSetFxCodeMtls(nugeom_s *, unsigned char *) {
 }
 
-void NuInitHardwareFirst(i32, variptr_u *, i32 *, i32) {
-}
-
 extern NUVEC *override_campos;
 
 void NuPortalSetOverride(NUVEC *position) {
@@ -326,9 +314,6 @@ void NuSpecialGetAnimPos(nuhspecial_s *) {
 }
 
 void NuSpecialReflection(i32) {
-}
-
-void NuTerminateHardware() {
 }
 
 void NuDisplaySceneUnclip(nudisplayscene_s *) {
@@ -382,13 +367,13 @@ void NuGCutSceneSysInitVfx(i32 (*)(char const *), i32 (*)(i32, VuMtx *), void (*
 void NuIOS_GetInAppProduct(i32, NuIOS_InAppProduct *) {
 }
 
-void NuMarkSceneAsZPrePass() {
-}
-
 void NuMemBlkCheckFreeList(numemblk_s *) {
 }
 
+extern "C" i32 g_signedinUser;
+
 void NuOnlineResetProfiles() {
+    g_signedinUser = -1;
 }
 
 void NuAnimDataChunkDestroy(nuanimdatachunk_s *) {
@@ -575,9 +560,6 @@ void NuAnimBuffEvaluate_3_QuatB(numtx_s *, nuanimbuff_s *, nugscn_s *, numtx_s *
 void NuDDSSetTextureDescription(char *, NUTEXFORMAT, i32, i32, i32, i32, nutexturetype_e) {
 }
 
-void NuIOSDLDeferredMtlCallback(void *) {
-}
-
 void NuIOS_GetNumInAppPurchases() {
 }
 
@@ -622,9 +604,6 @@ void NuCameraTransformScissorClip(nuvec_s *, nuvec_s *, i32, numtx_s *) {
 
 // NuDebrisRendererFlushBuffers is transcribed in android/nuptl_flush.cpp (original 0x296f35).
 
-void NuDisplayListSetInstSurfGeom(void *) {
-}
-
 void NuIOSDLVertexOffsetsCallback(void *) {
 }
 
@@ -645,7 +624,10 @@ void NuIOS_CopyBackbufferToTexture(nunativetex_s *texture, bool) {
 void NuIOS_IsProductPurchasedByNum(i32) {
 }
 
+static i32 g_vaoRecordCount asm("_ZL16g_vaoRecordCount");
+
 void NuIOS_ResetVAODuplicateFinder() {
+    g_vaoRecordCount = 0;
 }
 
 void NuFadeObjGetAngleTerrainValues(nuvec_s *) {
@@ -869,15 +851,15 @@ NuNetEmu::EmuPacket::~EmuPacket() {
 void NuNetEmu::PackStats::Draw(float, float, float, float, NetSmallStats::eInfo) const {
 }
 
-static void NuErrorFunction(char *, ...) {
+static __used__ void NuErrorFunction(char *, ...) {
 }
 
-static void NuWarningFunction(char *, ...) {
+static __used__ void NuWarningFunction(char *, ...) {
 }
 
-static void NuDebugMsgFunction(char *, ...) {
+static __used__ void NuDebugMsgFunction(char *, ...) {
 }
 
-static i32 NuDebugMsgFunctionTTY(i32, char *, ...) {
+static __used__ i32 NuDebugMsgFunctionTTY(i32, char *, ...) {
     return 0;
 }

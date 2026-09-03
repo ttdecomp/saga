@@ -2,6 +2,13 @@
 
 #include "nu2api/nucore/common.h"
 
+typedef struct NUPADDIGITALSTATE {
+    u32 buttons;
+    u32 pressed;
+    u32 released;
+    u32 previous;
+} NUPADDIGITALSTATE;
+
 typedef struct _nugenericpad_s {
     u8 is_valid;
     i32 mapped_to_pad;
@@ -16,10 +23,15 @@ typedef struct _nugenericpad_s {
     u8 analog_r1;
     u8 analog_r2;
 
-    u32 digital_buttons;
-    u32 digital_buttons_pressed;
-    u32 digital_buttons_released;
-    u32 digital_buttons_prev;
+    union {
+        struct {
+            u32 digital_buttons;
+            u32 digital_buttons_pressed;
+            u32 digital_buttons_released;
+            u32 digital_buttons_prev;
+        };
+        NUPADDIGITALSTATE digital_state;
+    };
 
     i32 analog_button_flags;
 

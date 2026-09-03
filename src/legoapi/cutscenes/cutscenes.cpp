@@ -1,5 +1,6 @@
 #include "legoapi/legoapi_types.h"
 #include "globals.h"
+#include "legoapi/characters/motion.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nucore/nugcutscene.h"
 
@@ -23,7 +24,6 @@ extern "C" {
 }
 
 void SetLevelLights(void *, f32);
-void GameCam_Reset(GAMECAMERA_s *camera);
 i32 CutScenePlayer_Active(void);
 
 i32 CutInstEndCount;

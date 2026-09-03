@@ -6,15 +6,19 @@
 #include "legoapi/gizmo/base/gizactions.h"
 #include "legoapi/items/base/collection.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/items/collect/spacelevel.h"
 #include "legoapi/world/area.h"
 #include "legoapi/world/levels/levels.h"
 #include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nucore/nugcutscene.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nucore/nuanim3.h"
 #include "nu2api/nusound/nusound.h"
+#include "gamelib/util/gamelib_util_types.h"
 
 struct CUSTOMISER;
 struct GIZAIMESSAGESYS_s;
+NetTransporter theNetwork;
 
 // ----------------------------------------------------------------------
 // Shared game globals, grouped by subsystem. See src/globals.h.
@@ -39,6 +43,27 @@ extern const u8 CurveGroupMasks[3] = {
 u8 BitCountTable[256] = {};
 i32 isBitCountTable = 0;
 f32 MAXFRAMETIME = 0;
+i32 g_effectsRan asm("_ZL12g_effectsRan") = 0;
+u8 g_lastFrameEffect asm("_ZL17g_lastFrameEffect") = 0;
+extern "C" {
+    i32 partglobaltime = 0;
+    i32 partseed = 0;
+    i32 g_signedinUser = -1;
+}
+MAIN_FRAME_COUNTERS_s MainFrameCounters = {};
+i32 *radios_playing = NULL;
+i32 GAMERAND = 0x1f3ad27f;
+BOLT_s Bolt[32] = {};
+i32 i_bolt = 0;
+f32 BOLT_OVERRIDE_PLAYERBOLTSPEED = 0.0f;
+f32 BOLT_OVERRIDE_PLAYERBOLTDURATION = 0.0f;
+u8 CutSceneCameraCTRL = 0;
+f32 nusound_fade_start = 2.0f;
+f32 nusound_fade_end = 15.0f;
+i32 (*SetSoundFadeDistCallBackFn)(WORLDINFO_s *world) = NULL;
+NUGCUTSCENERESETCHARACTERSFN NuCutSceneResetCharactersFn = NULL;
+__attribute__((visibility("hidden"))) GameObject_s *ForceBackObj asm("_ZL12ForceBackObj") = NULL;
+__attribute__((visibility("hidden"))) NUVEC *ForceBackPos asm("_ZL12ForceBackPos") = NULL;
 
 static CHARACTER_CONTEXT_INFO_s CharacterContextInfoTable[] = {
     {"NoContext", -1, 0x00001000, 0},
@@ -256,6 +281,27 @@ i32 LevMusicAction = 0;
 i32 LevMusicAmbient = 0;
 i32 LevMusicOtherAction = 0;
 i32 LevMusicOtherAmbient = 0;
+spacelevel_action_config_s Actions_DogFightA = {
+    0.0f, 1.0f, 2, 10.0f, 0.0f, 7.5f, 1, 7.5f, 7.5f, 3, 0.0f, 0,
+};
+anakin_action_config_s Actions_AnakinA = {
+    {0.0f, 1.0f, 2, 7.5f, 0.0f, 1.5f, 2, 7.5f, 7.5f, 1, 8.0f, 0}, 4, 8.0f, 8.0f, 0, {0, 0, 0, 0},
+};
+dogfight_doors_s DogFightDoors = {
+    {
+        {"door_to_a2", 33.036f, 11.5f},
+        {"door_to_a3", 121.77f, 31.24f},
+        {"door_to_b", 196.73f, 60.332f},
+        {"door_to_b2", 334.37f, 97.5582f},
+        {"door_to_c", 435.12f, 131.43f},
+        {"door_to_c1", 508.68f, 147.05f},
+        {"door_to_c2", 583.73f, 167.5f},
+    },
+    0,
+};
+f32 SpaceRumbleTimer = 0.0f;
+EXPLOSION Explosion[8] = {};
+i32 i_explosion = 0;
 
 u16 rtltimer1 = 0;
 f32 rtltimer1adv = 2500.0f;
@@ -328,6 +374,12 @@ f32 VehicleAreaRememberSpeed = 0;
 nugspline_s *ObstacleCamSpl = NULL;
 f32 LevTime[5] = {0.0f};
 i32 Lap = 0;
+PART_s *Part = NULL;
+i32 MAXPARTS = 0x20;
+i32 i_part = -1;
+u8 minikitCounter_A = 0;
+u8 minikitCounter_C = 0;
+DETONATOR_s Detonator[10] = {};
 
 // ------------------------------------------------------------------------
 // Bonus / arcade / challenge mode
@@ -744,12 +796,12 @@ i32 Tag_DoneAny = 0;
 i32 LevSfxFlag[4] = {0};
 u8 dynamic_antinodes[0x1500] = {0};
 i32 LevInstAnim[12] = {0};
-i32 LevArea[4] = {0};
+AIAREA_s *LevArea[4] = {0};
 i32 LevPathNodes[8] = {0};
 void *LevPathCnx[16] = {0};
-i32 LevGameObject[8] = {0};
+GameObject_s *LevGameObject[8] = {0};
 i32 LevGamePart[8] = {0};
-i32 LevAIMessage[8] = {0};
+GIZAIMESSAGE_s *LevAIMessage[8] = {0};
 GIZBUILDIT_s *LevBuildIt[4] = {};
 i32 LevelLocator = 0;
 GIZOBSTACLE_s *LevGizObst[8] = {0};
@@ -1518,8 +1570,8 @@ i32 create_qfont3dz = 0;
 // ------------------------------------------------------------------------
 // Cutscene & system misc
 // ------------------------------------------------------------------------
-void *PlayerItemType = 0;
-i32 PLAYERITEMTYPECOUNT = 0;
+void *PlayerItemType __asm__("_ZL14PlayerItemType") = 0;
+i32 PLAYERITEMTYPECOUNT __asm__("_ZL19PLAYERITEMTYPECOUNT") = 0;
 u32 EXBLOWUPFLAGS = 0;
 i32 BeenAttacked = 0;
 FadeSystem FadeSys;
@@ -1658,4 +1710,3 @@ i32 NetPaused = 0;
 f32 mtl_animation_speed_scale = 1.0f;
 u16 script_mask = 0xffff;
 i32 (*GizObstacle_CheckExcludeFlagsFn)(GIZOBSTACLE_s *, GameObject_s *) = NULL;
-void (*AIPathCnxHelperSysInitFn)(WORLDINFO_s *) = NULL;

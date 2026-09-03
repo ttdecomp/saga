@@ -1,5 +1,12 @@
 #include "legoapi/legoapi_types.h"
+#include "legoapi/world/world.h"
 #include "decomp.h"
+#include <string.h>
+
+extern BOLT_s Bolt[32];
+extern i32 i_bolt;
+extern f32 BOLT_OVERRIDE_PLAYERBOLTSPEED;
+extern f32 BOLT_OVERRIDE_PLAYERBOLTDURATION;
 struct spacelevel_s;
 struct quickboltinfo;
 
@@ -13,6 +20,10 @@ void Bolts_Draw(WORLDINFO_s *) {
 }
 
 void Bolts_Reset() {
+    memset(Bolt, 0, sizeof(Bolt));
+    i_bolt = 0;
+    BOLT_OVERRIDE_PLAYERBOLTSPEED = 0.0f;
+    BOLT_OVERRIDE_PLAYERBOLTDURATION = 0.0f;
 }
 
 void BoltSys_Init(BOLTSYS *) {
@@ -27,13 +38,11 @@ void Bolts_Update(WORLDINFO_s *) {
 void Bolt_HitParts(BOLT_s *, nuvec_s *, nuvec_s *, nuvec_s *, float, i32) {
 }
 
-void BoltTypes_Reset(WORLDINFO_s *) {
+void BoltTypes_Reset(WORLDINFO_s *world) {
+    memset(world->bolt_types, 0, sizeof(world->bolt_types));
 }
 
 void Bolt_Debris_LSW(BOLT_s *, nuvec_s *, i32, nuvec_s *, i32) {
-}
-
-void Bolt_PlayHitSfx(BOLT_s *) {
 }
 
 void Bolt_HitPartMode(BOLT_s *) {
@@ -117,9 +126,6 @@ static __used__ void EndBolt_EwokTorpedo(BOLT_s *) {
 }
 
 static __used__ void ProcessSpaceLevel(spacelevel_s *) {
-}
-
-static __used__ void ResetSpaceLevel(WORLDINFO_s *, spacelevel_s *) {
 }
 
 static __used__ void ProcessStarFighter(starfighter_s *, quickboltinfo *) {

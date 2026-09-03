@@ -4,8 +4,8 @@
 #include "decomp.h"
 
 extern i32 g_effectFlags;
-extern i32 g_effectsRan;
-extern i32 g_lastFrameEffect;
+extern i32 g_effectsRan __asm__("_ZL12g_effectsRan") __attribute__((visibility("hidden")));
+extern u8 g_lastFrameEffect __asm__("_ZL17g_lastFrameEffect") __attribute__((visibility("hidden")));
 
 extern "C" bool NuPostEffectIsInitialised(u32 mask);
 extern "C" void NuPostEffectReset(void);

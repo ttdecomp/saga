@@ -187,8 +187,8 @@ static AIPATHSYS *AISysLoadPaths(AISYS *system, i32 version, NUGSCN *scene) {
                 i32 special_name_length = EdFileReadChar();
                 if (special_name_length != 0) {
                     EdFileRead(special_name, special_name_length);
-                    node->has_special = static_cast<u8>(
-                        NuSpecialFind(scene, reinterpret_cast<void **>(node->special_handle), special_name, 1) != 0);
+                    node->has_special =
+                        static_cast<u8>(NuSpecialFind(scene, &node->special_handle, special_name, 1) != 0);
                     EdFileReadNuVec(&node->special_position);
                 }
 
@@ -558,8 +558,8 @@ static void AISysLoadAntinodes(AISYS *system, i32 version, NUGSCN *scene) {
             i32 special_name_length = EdFileReadChar();
             if (special_name_length != 0) {
                 EdFileRead(special_name, special_name_length);
-                antinode->has_special = static_cast<u8>(
-                    NuSpecialFind(scene, reinterpret_cast<void **>(antinode->special_handle), special_name, 1) != 0);
+                antinode->has_special =
+                    static_cast<u8>(NuSpecialFind(scene, &antinode->special_handle, special_name, 1) != 0);
                 EdFileReadNuVec(&antinode->special_position);
                 antinode->special_type = static_cast<u8>(EdFileReadInt());
             }
@@ -773,7 +773,7 @@ extern "C" {
         }
         updated_nodes |= node_bit;
 
-        nuhspecial_s *special = reinterpret_cast<nuhspecial_s *>(node->special_handle);
+        nuhspecial_s *special = &node->special_handle;
         if ((node->runtime_flags & AIPATHNODE_RUNTIME_SPECIAL_UNAVAILABLE) == 0) {
             if (NuSpecialGetVisibilityFn(special) == 0 &&
                 (FindAlternativeSpecialObjectFn == NULL || FindAlternativeSpecialObjectFn(system, special) == 0)) {
@@ -1620,9 +1620,9 @@ extern "C" {
                 continue;
             }
 
-            void *special = antinode->special_handle;
+            nuhspecial_s *special = &antinode->special_handle;
             if (FindAlternativeSpecialObjectFn != NULL && NuSpecialGetVisibilityFn(special) == 0) {
-                FindAlternativeSpecialObjectFn(system, reinterpret_cast<nuhspecial_s *>(special));
+                FindAlternativeSpecialObjectFn(system, special);
             }
             if (NuSpecialGetVisibilityFn(special) == 0) {
                 continue;
@@ -2031,7 +2031,19 @@ extern "C" {
     void RemoveAIMessage(void) {
     }
 
-    void ResetAIMessageSys(void) {
+    void ResetAIMessageSys(AIMESSAGESYS_s *sys) {
+        if (sys == NULL) {
+            return;
+        }
+
+        sys->free_list.head = NULL;
+        sys->free_list.tail = NULL;
+        sys->active_list.head = NULL;
+        sys->active_list.tail = NULL;
+        memset(sys->messages, 0, (usize)sys->count * sizeof(AIMESSAGE_s));
+        for (i32 i = 0; i < sys->count; ++i) {
+            NuLinkedListAppend(&sys->free_list, &sys->messages[i].links);
+        }
     }
 
     void SetAIMessage(void) {

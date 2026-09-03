@@ -146,17 +146,37 @@ struct MechInputTouchBonusCavalryController {
     void Update(NuInputTouchData const *);
     virtual ~MechInputTouchBonusCavalryController();
 };
-struct MechInputTouchButton {
+struct MechInputTouchButton : NuTouchInputElement {
     void ClearTouchLocked(bool);
     void CouldTouchBeLockedBy(u32);
     void FindPossibleTriggeringIndexFromID(u32);
     MechInputTouchButton(NuTouchInputElement::TYPE, i32, i32);
     MechInputTouchButton(i32, u32, float, float, float, float, i32);
-    void Reset();
+    virtual ~MechInputTouchButton();
+    virtual void Render();
+    virtual void Update(NuInputTouchData const *);
+    virtual void Reset();
+    virtual char const *GetName();
+    virtual char const *GetDebugText();
     void SetTouchLocked(u32, bool);
+
+    bool possible_triggering_touches[10];
+    u32 possible_triggering_touch_ids[10];
+    float touch_history[44];
+    u32 touch_locked_by;
+    i32 button_id;
+    bool has_pending_touches;
+    bool is_pressed;
 };
-struct MechInputTouchButtonControlled {
+struct MechInputTouchButtonControlled : MechInputTouchButton {
     MechInputTouchButtonControlled(MechInputTouchMainController &, i32);
+    virtual ~MechInputTouchButtonControlled();
+    virtual void Reset();
+    virtual bool ControlledUpdate(NuInputTouchData const *);
+    virtual void ControlledRender();
+    virtual void ControlledReset();
+
+    i32 controller_index;
 };
 struct MechInputTouchButtonFaker {
     MechInputTouchButtonFaker(i32, u32, float, float, float, float);
@@ -215,6 +235,15 @@ struct MechInputTouchGestureTrackingSystem {
 };
 struct MechInputTouchMainController {
     struct eButtonTypes {};
+    u8 unknown_04[0x3c];
+    u32 buttons_pressed;
+    u32 buttons_were_pressed;
+    u32 buttons_repeat;
+    float buttons_repeat_timers[4];
+    i32 unknown_5c;
+    i32 player_id;
+    u8 unknown_68;
+
     MechInputTouchMainController(i32);
     void RemoveUnpressedButtons(NuInputTouchData &, NuInputTouchData const &);
     void Render();

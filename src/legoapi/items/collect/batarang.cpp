@@ -1,9 +1,17 @@
 #include "legoapi/legoapi_types.h"
 
+extern BATARANG_s Batarang[8];
+
 void Batarangs_Draw() {
 }
 
 void Batarangs_Reset() {
+    for (i32 i = 0; i < 8; ++i) {
+        Batarang[i].field_0x7d = 0;
+        Batarang[i].active = 0;
+        Batarang[i].target_id = 0;
+        Batarang[i].cooldown = 50;
+    }
 }
 
 void Batarang_Release(GameObject_s *, i32) {

@@ -90,8 +90,7 @@ void LevelObjects_InitForLevel(WORLDINFO_s *world) {
             case LEVEL_OBJECT_SCENE_CHARACTER_ICON:
                 for (i32 character_id = 0; character_id < CHARCOUNT; ++character_id) {
                     scene = IconScene_FindById(character_id);
-                    if (scene != NULL &&
-                        NuSpecialFind(scene, reinterpret_cast<void **>(&object.special), object_type.name, 1) != 0) {
+                    if (scene != NULL && NuSpecialFind(scene, &object.special, object_type.name, 1) != 0) {
                         goto object_resolved;
                     }
                 }
@@ -114,8 +113,7 @@ void LevelObjects_InitForLevel(WORLDINFO_s *world) {
             default:
                 if (area_scene != NULL && world->area != NULL &&
                     (world->area->flags & AREAFLAG_OVERRIDE_THINGS_SCENE) != 0) {
-                    if (NuSpecialFind(area_scene, reinterpret_cast<void **>(&object.special), object_type.name, 1) !=
-                        0) {
+                    if (NuSpecialFind(area_scene, &object.special, object_type.name, 1) != 0) {
                         goto object_resolved;
                     }
                 }
@@ -124,7 +122,7 @@ void LevelObjects_InitForLevel(WORLDINFO_s *world) {
         }
 
         if (scene != NULL) {
-            NuSpecialFind(scene, reinterpret_cast<void **>(&object.special), object_type.name, 1);
+            NuSpecialFind(scene, &object.special, object_type.name, 1);
         }
 
     object_resolved:

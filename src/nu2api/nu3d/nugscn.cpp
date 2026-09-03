@@ -112,7 +112,9 @@ void NuGScnRestoreTID(nugscn_s *, i32) {
 void NuGScnRestoreTIDs(nugscn_s *) {
 }
 
-void NuGScnMtlLayerMask(nugscn_s *, unsigned char) {
+void NuGScnMtlLayerMask(nugscn_s *scene, unsigned char mask) {
+    NUDLDLISTSCENE *display_list = scene->display_list;
+    display_list->flags_word = (display_list->flags_word & 0xe01f) | (static_cast<u16>(mask) << 5);
 }
 
 void NuGScnLoadShadersPS(char *, variptr_u *, variptr_u) {

@@ -1,4 +1,5 @@
 #include "nu2api/nu3d/nutex.h"
+#include "nu2api/nu3d/nutexanm.h"
 #include "nu2api/nu3d/nugscn.h"
 
 #include "decomp.h"
@@ -8,9 +9,19 @@
 #include <pthread.h>
 #include <string.h>
 
-struct nutexanimprog_s;
 struct nutextureformat_e {};
-struct nutexanim_s;
+struct nutexanimprog_s;
+
+struct nutexmanager_s {
+    u8 reserved[0x40];
+};
+
+DECOMP_ASSERT(sizeof(nutexmanager_s) == 0x40, "texture manager size");
+
+nutexmanager_s *g_texman;
+i32 streamOff;
+
+extern "C" void NuTexAnimEnvReset(nutexanimenv_s *env);
 
 void NuChecksumAsHex(u8 *checksum, char *out) {
     i32 i;
@@ -336,13 +347,17 @@ void NuTexReadTex() {
 void NuTexAssignAddr(i32, i32) {
 }
 
-void NuTexGetManager() {
+i32 NuTexReadBitmap(char *) {
+    return 0;
 }
 
-void NuTexReadBitmap(char *) {
+nutexmanager_s *NuTexGetManager() {
+    return g_texman;
 }
 
-void NuTexManagerInit(variptr_u *, variptr_u) {
+void NuTexManagerInit(VARIPTR *buf, VARIPTR) {
+    g_texman = reinterpret_cast<nutexmanager_s *>(ALIGN(buf->addr, 0x10));
+    buf->addr = reinterpret_cast<usize>(g_texman + 1);
 }
 
 void NuTexAnimProgInit(nutexanimprog_s *) {
@@ -351,10 +366,16 @@ void NuTexAnimProgInit(nutexanimprog_s *) {
 void NuTextureCreate3D(i32, i32, i32, i32, i32, nutextureformat_e) {
 }
 
-void NuTexAnimResetList(nutexanim_s *) {
+void NuTexAnimResetList(nutexanim_s *anim) {
+    for (; anim != NULL; anim = anim->next) {
+        if (anim->env != NULL) {
+            NuTexAnimEnvReset(anim->env);
+        }
+    }
 }
 
 void NuTexManagerStream(nugscn_s *) {
+    streamOff = 1;
 }
 
 void NuTexAnimProgParseFile(i32, variptr_u *, variptr_u, i32) {

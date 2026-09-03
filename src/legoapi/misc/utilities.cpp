@@ -6,15 +6,28 @@
 #include "nu2api/numath/nuvec.h"
 #include "globals.h"
 
+#include "nu2api/numath/nurand.h"
+
 struct AIROW_s;
 struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
 
+extern i32 qseed;
+extern i32 GAMERAND;
+extern "C" void DebrisSetSeed(i32);
+extern "C" void NuPartSetSeed(i32);
+
 void HashString(unsigned char *) {
 }
 
 void ResetSeeds() {
+    qseed = 0x3039;
+    GAMERAND = 0x1f3ad27f;
+    NuRandSeed(0);
+    DebrisSetSeed(0);
+    NuRandSetSeed(NULL, 0);
+    NuPartSetSeed(0);
 }
 
 void makenuvec4(float, float, float, float) {

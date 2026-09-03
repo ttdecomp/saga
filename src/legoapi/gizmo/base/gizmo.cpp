@@ -657,7 +657,14 @@ static __used__ void ProcessFlowBox(GIZFLOW_s *, FLOWBOX_s *, u8) {
 static __used__ void ResetForLoopEx(GIZFLOW_s *, FLOWBOX_s *, FLOWBOX_s *, i32) {
 }
 
-static __used__ void ResetGizmoFlowBox(GIZFLOW_s *, FLOWBOX_s *) {
+static __used__ void ResetGizmoFlowBox(GIZFLOW_s *giz_flow, FLOWBOX_s *flow_box) {
+    FLOWBOXGIZMODATA_s &data = *flow_box->data;
+    if ((flow_box->state_flags & 0x1000) != 0 || data.gizmo_count <= 0) {
+        return;
+    }
+    for (i32 i = 0; i < data.gizmo_count; ++i) {
+        GizmoActivate(giz_flow->gizmo_sys, *data.gizmos[i], 0, 1);
+    }
 }
 
 static __used__ void ProcessGizmoFlowBox(GIZFLOW_s *, FLOWBOX_s *, u8) {
@@ -687,7 +694,17 @@ i32 GizmoGetGuid(GIZMOSYS_s *, GIZMO_s *) {
     return -1;
 }
 
-void GizmoGetName(GIZMO_s *) {
+char *GizmoGetName(GIZMO *gizmo) {
+    GIZMOTYPES *types = gizmotypes;
+    if (types == NULL || gizmo == NULL || gizmo->type_id >= types->count) {
+        return NULL;
+    }
+
+    GIZMOGETGIZMONAMEFN get_name = types->types[gizmo->type_id].fns.get_gizmo_name_fn;
+    if (get_name == NULL) {
+        return NULL;
+    }
+    return get_name(gizmo);
 }
 
 void GizmoSysReset(GIZMOSYS *gizmo_sys, void *world, i32 progress_index) {

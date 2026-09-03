@@ -2,13 +2,20 @@
 
 #include "decomp.h"
 
+#include "legoapi/world/level.h"
+#include "legoapi/world/world.h"
+
 struct LEDGEPROGRESS {
     i32 state[8];
 };
 
-static i32 Ledges_GetMaxGizmos(void *ledge) {
-    UNIMPLEMENTED();
-    return {};
+static i32 Ledges_GetMaxGizmos(void *world_info) {
+    WORLDINFO *world = (WORLDINFO *)world_info;
+    if (world == NULL) {
+        return 0;
+    }
+
+    return world->current_level->max_ledges;
 }
 
 static void Ledges_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
@@ -20,8 +27,7 @@ static void Ledges_Draw(void *, void *, float) {
 }
 
 static char *Ledge_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL ? static_cast<char *>(gizmo->object) : NULL;
 }
 
 static i32 Ledge_GetOutput(GIZMO *gizmo, i32, i32) {
@@ -35,8 +41,7 @@ static char *Ledge_GetOutputName(GIZMO *gizmo, i32 output_index) {
 }
 
 static i32 Ledge_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return 1;
 }
 
 static void Ledge_Activate(GIZMO *gizmo, i32) {

@@ -38,7 +38,7 @@ void PortalDoors_Configure(WORLDINFO_s *world, char *config) {
 
         *portal_door = {};
         if (NuFParGetWord(parser) == 0 ||
-            NuSpecialFind(world->current_gscn, reinterpret_cast<void **>(portal_door), parser->word_buf, 1) == 0) {
+            NuSpecialFind(world->current_gscn, &portal_door->special, parser->word_buf, 1) == 0) {
             continue;
         }
 

@@ -77,6 +77,10 @@ struct CRC16 {
     void hashInverse(unsigned char const *, i32);
 };
 struct FtpFile {
+    u8 reserved_00[0xa0];
+    NetworkObject *network_object; // 0xa0
+    u8 reserved_a4[0x8];
+    void *transfer; // 0xac
     void Accept();
     void Accept(i32);
     void Accept(i32, void *);
@@ -96,6 +100,7 @@ struct NetConstReplicator {
     void AllowPush(EdClass const *, void const *, ReplicatorData &, i32, i32);
 };
 struct NetFtpManager {
+    FtpFile files[32];
     void Abort(char const *, NetAddress const &, i32, i32);
     void FindTransfer(char const *, NetAddress const &, i32);
     void FindTransfer(char const *, NetAddress const &, i32) const;
@@ -153,6 +158,7 @@ struct NetRotator2 {
                       i32);
 };
 struct NetSample {
+    i32 values[4];
     void Max(NetSample const &);
     void Reset();
     void operator+=(NetSample const &);
@@ -170,6 +176,7 @@ struct NetStats {
     void Update();
 };
 struct NetTransporter {
+    u8 reserved_00[0x110f4];
     void AddListener(NetListenerInterface *, unsigned char, char *);
     void Distribute(NetMessage const &, unsigned char, NetPeer const &) const;
     void FtpComplete(FtpFile *, i32) const;
@@ -187,10 +194,13 @@ struct NetTransporter {
     void StatsUpdate();
 };
 struct NetworkObject {
+    u8 reserved_00[0x4b0];
+    i32 reference_count; // 0x4b0
     void Destroy();
     void Initialise(i32, void *, EdClass *, NetPeer const &, i32);
 };
 struct NetworkObjectManager {
+    // The manager reset routine is an intentional no-op in the original.
     struct NetPeerPush {
         void FlushMessages();
         void GetMessage(i32);
@@ -321,6 +331,22 @@ struct TouchHacks {
     void TriggerVehicleSmartBomb(GameObject_s &);
 };
 struct V2SessionManager {
+    u8 reserved_00[0x4];
+    i32 field_04;
+    u8 reserved_08[0x2c - 0x8];
+    i32 field_2c;
+    u8 reserved_30[0x34 - 0x30];
+    i32 field_34;
+    u8 reserved_38[0x44 - 0x38];
+    i32 fields_44[9];
+    i32 field_68;
+    i32 field_6c;
+    u8 reserved_70[0x74 - 0x70];
+    i32 field_74;
+    u8 reserved_78[0x90 - 0x78];
+    i32 field_90;
+    u8 reserved_94[0x9c - 0x94];
+    i32 field_9c;
     void Log(char *, ...);
     void RemoveAllPeers(ePeerLeftReason);
     void RemovePeer(NetPeer *, ePeerLeftReason);

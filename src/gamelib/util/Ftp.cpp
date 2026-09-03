@@ -1,4 +1,8 @@
+#include <stddef.h>
+
 #include "gamelib_util_types.h"
+
+extern NetTransporter theNetwork;
 
 void NetFtpManager::Abort(char const *, NetAddress const &, i32, i32) {
 }
@@ -28,6 +32,24 @@ void NetFtpManager::Receive(NetMessage, unsigned char, NetAddress const &) {
 }
 
 void NetFtpManager::Reset() {
+    FtpFile *file = files;
+    FtpFile *end = file + 32;
+    NetTransporter *network = &theNetwork;
+    do {
+        if (file->transfer != NULL) {
+            network->FtpComplete(file, static_cast<i32>(0xa0200001));
+            file->Term();
+            if (file->transfer != NULL && file->network_object != NULL) {
+                if (file->network_object->reference_count > 1) {
+                    --file->network_object->reference_count;
+                } else {
+                    file->network_object->reference_count = 0;
+                }
+            }
+            file->transfer = NULL;
+        }
+        ++file;
+    } while (file != end);
 }
 
 void NetFtpManager::Send(char const *, void const *, i32, NetAddress const &) {
@@ -40,9 +62,6 @@ void NetFtpManager::Update() {
 }
 
 NetFtpManager::~NetFtpManager() {
-}
-
-void FtpFile::Accept() {
 }
 
 void FtpFile::Accept(i32) {

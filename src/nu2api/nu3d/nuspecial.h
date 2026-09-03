@@ -4,11 +4,11 @@
 #include "decomp.h"
 #include "nu2api/nu3d/nugscn.h"
 #include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/nuhspecial.h"
 #include "nu2api/numath/nuvec.h"
 #include "nu2api/numath/nuvec4.h"
 #include "nu2api/numath/numtx.h"
 
-struct nuhspecial_s;
 struct nuinstanim_s;
 
 enum NULEGACYINSTANCE_FLAGS : u8 {
@@ -44,6 +44,7 @@ struct NUDISPLAYSPECIAL {
     };
     u8 pad_c8[8];
 };
+typedef NUDISPLAYSPECIAL NUDISPLAYSPECIAL_s;
 
 DECOMP_ASSERT(sizeof(NUDISPLAYSPECIAL) == 0xd0, "display special size");
 DECOMP_ASSERT(offsetof(NUDISPLAYSPECIAL, draw_mtx) == 0x40, "display special draw matrix offset");
@@ -54,7 +55,9 @@ DECOMP_ASSERT(offsetof(NUDISPLAYSPECIAL, flags) == 0xb8, "display special flags 
 // instead of hand-declaring these C-linkage helpers.
 
 extern "C" {
-    i32 NuSpecialFind(NUGSCN *scene, void **dest, char *name, i32 flags);
+    i32 NuSpecialFind(NUGSCN *scene, nuhspecial_s *dest, char *name, i32 flags);
+    i32 NuSpecialFindMulti(NUGSCN *scene, nuhspecial_s *dest, char *name, i32 capacity, i32 flags);
+    i32 NuSpecialCompare(nuhspecial_s *first, nuhspecial_s *second);
     i32 NuSpecialExistsFn(void *special);
     void NuSpecialClear(void *special);
     void NuSpecialGetBounds(void *special, NUVEC *minimum, NUVEC *maximum);
@@ -62,6 +65,7 @@ extern "C" {
     f32 NuSpecialGetAnimEndFrame(nuhspecial_s *special);
     nuinstanim_s *NuSpecialGetInstAnim(nuhspecial_s *special);
     NUMTX *NuSpecialGetInstanceMtx(nuhspecial_s *special);
+    i32 NuSpecialGetInstanceix(nuhspecial_s *special);
     char *NuSpecialGetName(nuhspecial_s *special);
     void NuSpecialUpdate(nuhspecial_s *special);
     void NuSpecialSetVisibility(void *special, i32 visible);

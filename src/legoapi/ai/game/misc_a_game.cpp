@@ -7,9 +7,6 @@ struct nuvisiboxtreenode_s;
 struct rtl_s;
 struct rtlidata_s;
 
-static __used__ void Asteroids_Reset(WORLDINFO_s *) {
-}
-
 static __used__ double DistanceToPlane(nuvec_s *, nuvec_s *, nuvec_s *) {
     return {};
 }

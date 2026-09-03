@@ -2,10 +2,16 @@
 #define GAME_TIMER_H
 
 #include "decomp.h"
+#include "nu2api/numath/nuvec.h"
 struct TIMER_s {
-    f32 time_elapsed;
-    f32 last_time_elapsed;
-    f32 time_elapsed_mod_seconds;
+    union {
+        struct {
+            f32 time_elapsed;
+            f32 last_time_elapsed;
+            f32 time_elapsed_mod_seconds;
+        };
+        NUVEC elapsed_components;
+    };
     i32 update_count;
 };
 

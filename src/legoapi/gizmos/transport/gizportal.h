@@ -1,6 +1,8 @@
 #pragma once
 
 #include "legoapi/gizmo/base/gizmo.h"
+#include "legoapi/legoapi_types.h"
+
 #include "legoapi/world/world.h"
 
 extern i32 portal_gizmotype_id;

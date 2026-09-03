@@ -75,6 +75,8 @@ void NuCopyFilter::render(nuframebuffer_s *) {
 }
 
 void NuCopyFilter::reset() {
+    input_fbo = copy_fbo;
+    copy_texture = NULL;
 }
 
 void NuMainFilter::initResources() {
@@ -225,6 +227,11 @@ void NuMainFilterGen::render() {
 }
 
 void NuMainFilterGen::reset() {
+    enabled = false;
+    blur_enabled = false;
+    dof_enabled = false;
+    motion_blur_enabled = false;
+    active_filter_count = 0;
 }
 
 void NuPostFilterGen::GetSampleOffsets_GaussBlur5x5(i32, i32, VuVec *, float) {
@@ -283,6 +290,13 @@ void NuPostFilterGen::renderQuad() {
 void NuPostFilterGen::renderQuadGrid() {
 }
 
+__attribute__((weak)) void NuPostFilterGen::reset() {
+    enabled = false;
+}
+
+__attribute__((weak)) void NuPostFilterGen::resetAll() {
+}
+
 void NuDeferredFilter::initResources() {
 }
 
@@ -331,6 +345,11 @@ void NuDeferredFilterGen::renderStencilMask(NuDynamicLight &) {
 }
 
 void NuDeferredFilterGen::resetAll() {
+    for (i32 i = 0; i < layout.dynamic_light_count; ++i) {
+        layout.dynamic_lights[i]->resetGeometry();
+    }
+    layout.dynamic_light_count = 0;
+    layout.deferred_geometry_count = 0;
 }
 
 void NuMotionAccumFilter::initResources() {

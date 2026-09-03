@@ -46,6 +46,73 @@ void GizmoPushBlockInitAndReset(WORLDINFO_s *world, void *progress);
 extern NUFPCOMJMP LevelConfigKeywords_BeforeLoad[];
 extern NUFPCOMJMP LevelConfigKeywords_AfterLoad;
 extern i32 (*GamePads_IgnoreInputFn)(void);
+extern AREADATA *GUNSHIP_ADATA;
+extern AREADATA *BONUS_GUNSHIP_ADATA;
+extern AREADATA *DOGFIGHT_ADATA;
+extern AREADATA *DEATHSTARESCAPE_ADATA;
+extern AREADATA *ASTEROIDCHASE_ADATA;
+extern AREADATA *JABBASPALACE_ADATA;
+extern AREADATA *SPEEDERCHASE_ADATA;
+extern AREADATA *DEATHSTARBATTLE2_ADATA;
+extern AREADATA *E1CHARACTER_ADATA;
+extern AREADATA *E2CHARACTER_ADATA;
+extern AREADATA *E3CHARACTER_ADATA;
+
+static i32 SetSoundFadeDistCallBackFn_LSW(WORLDINFO_s *) {
+    LEVELDATA *level = WORLD->current_level;
+    AREADATA *area = WORLD->area;
+
+    if (level == KAMINOE_LDATA) {
+        nusound_fade_start = 3.0f;
+        nusound_fade_end = 22.5f;
+    } else if (area != NULL && (area == GUNSHIP_ADATA || area == BONUS_GUNSHIP_ADATA)) {
+        nusound_fade_start = 25.0f;
+        nusound_fade_end = 125.0f;
+    } else if (area != NULL && area == DOGFIGHT_ADATA) {
+        nusound_fade_start = 100.0f;
+        nusound_fade_end = 250.0f;
+    } else if (level == DEATHSTARRESCUEE_LDATA) {
+        nusound_fade_start = 5.0f;
+        nusound_fade_end = 50.0f;
+    } else if (area != NULL && area == DEATHSTARESCAPE_ADATA) {
+        nusound_fade_start = 3.0f;
+        nusound_fade_end = 15.0f;
+    } else if (area != NULL && area == ASTEROIDCHASE_ADATA) {
+        nusound_fade_start = 25.0f;
+        nusound_fade_end = 150.0f;
+    } else if (area != NULL && area == JABBASPALACE_ADATA) {
+        nusound_fade_start = 3.0f;
+        nusound_fade_end = 20.0f;
+    } else if (level == SARLACCPITA_LDATA) {
+        nusound_fade_start = 7.5f;
+        nusound_fade_end = 20.0f;
+    } else if (level == SARLACCPITC_LDATA) {
+        nusound_fade_start = 7.5f;
+        nusound_fade_end = 55.0f;
+    } else if (area != NULL && area == SPEEDERCHASE_ADATA) {
+        nusound_fade_start = 15.0f;
+        nusound_fade_end = 50.0f;
+    } else if (level == ENDORBATTLEA_LDATA) {
+        nusound_fade_start = 4.0f;
+        nusound_fade_end = 12.0f;
+    } else if (level == ENDORBATTLEB_LDATA || level == ENDORBATTLEC_LDATA) {
+        nusound_fade_start = 15.0f;
+        nusound_fade_end = 45.0f;
+    } else if (level == ENDORBATTLED_LDATA) {
+        nusound_fade_start = 3.0f;
+        nusound_fade_end = 12.0f;
+    } else if (area != NULL && area == DEATHSTARBATTLE2_ADATA) {
+        nusound_fade_start = 50.0f;
+        nusound_fade_end = 200.0f;
+    } else if (area != NULL && (area == E1CHARACTER_ADATA || area == E2CHARACTER_ADATA || area == E3CHARACTER_ADATA ||
+                                area == BONUSKAMINO_ADATA || area == BONUSDAGOBAH_ADATA)) {
+        nusound_fade_start = 4.0f;
+        nusound_fade_end = 40.0f;
+    } else {
+        return 0;
+    }
+    return 1;
+}
 
 u16 MakeSaveHash(void) {
     return Game.completion;
@@ -481,7 +548,7 @@ void InitGameAfterConfig(void) {
     //  Punch_GetDamageFn = Punch_GetDamage_LSW;
     //  Punch_HitHoldFn = Punch_HitHold;
     //  Punch_HitExtraCodeFn = Punch_HitExtraCode_LSW;
-    //  SetSoundFadeDistCallBackFn = SetSoundFadeDistCallBackFn_LSW;
+    SetSoundFadeDistCallBackFn = SetSoundFadeDistCallBackFn_LSW;
     //  PlayerItemTypes_Init((PLAYERITEMTYPE_s *)PlayerItemType_INDY);
     //  DisguiseAdjustFn = DisguiseAdjust_LSW;
     //  SUPERCARRY_THROWSPEED_XZ = 0x40000000;

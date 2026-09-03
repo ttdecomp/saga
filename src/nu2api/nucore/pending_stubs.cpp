@@ -4,6 +4,7 @@
 // transcriptions elsewhere.
 
 #include "globals.h"
+#include "nu2api/nu3d/nutexanm.h"
 
 extern "C" void NuShaderManagerDestroy(void) {
 }
@@ -89,7 +90,18 @@ extern "C" void NuTexAnimEnvDestroy(void) {
 extern "C" void NuTexAnimEnvProc(void) {
 }
 
-extern "C" void NuTexAnimEnvReset(void) {
+extern "C" void NuTexAnimEnvReset(nutexanimenv_s *env) {
+    if (env == NULL) {
+        return;
+    }
+
+    env->texture = NULL;
+    env->program = NULL;
+    env->field_cc = NULL;
+    env->field_d0 = NULL;
+    env->field_d4 = NULL;
+    env->field_d8 = NULL;
+    env->field_e4 = NULL;
 }
 
 extern "C" void NuTexAnimFind(void) {

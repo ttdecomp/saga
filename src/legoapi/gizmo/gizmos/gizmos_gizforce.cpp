@@ -34,7 +34,7 @@ i32 GizForce_Complete(GIZFORCE_s *force) {
 
 void GizForce_ResetLOS(GameObject_s *object) {
     if (object != NULL && object->gizforce_los_info != NULL) {
-        memset(object->gizforce_los_info, 0, 0x630);
+        memset(object->gizforce_los_info, 0, sizeof(*object->gizforce_los_info));
     }
 }
 

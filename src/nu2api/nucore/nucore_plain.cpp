@@ -38,6 +38,8 @@ extern "C" NUGCUTLOCATORFNENTRY_s *locatorfns;
 #include "nu2api/nucore/nuanim3.h"
 #include "nu2api/nucore/nuapi.h"
 #include "nu2api/nucore/nuhgobj.h"
+#include "nu2api/nucore/nugcutscene.h"
+#include "nu2api/nucore/nupad.h"
 #include "nu2api/nucore/nuptrblock.h"
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nu3d/nudlist.h"
@@ -45,15 +47,16 @@ extern "C" NUGCUTLOCATORFNENTRY_s *locatorfns;
 #include "nu2api/nu3d/numtl.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/nurndrstat.h"
+#include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nu3d/nuvport.h"
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/numath/nutrig.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/nu3d/NuRenderDevice.h"
+#include "nu2api/nucore/NuDynamicLight.h"
 #include "nu2api/numath/numtx.h"
 #include "globals.h"
 
-struct nuhspecial_s;
 struct ani3_animheader_s;
 
 extern "C" {
@@ -100,6 +103,8 @@ namespace {
     struct NuPlainLegacySceneLayout {
         u8 pad_00[0x18];
         void **objects;
+        i32 instance_count;
+        u8 *instances;
     };
 
     struct NuPlainLegacyInstanceBoundsLayout {
@@ -2261,7 +2266,8 @@ extern "C" {
     i32 NuSpecialClipTestShadowLights(NUVEC *, NUVEC *, i32) {
         return 0;
     }
-    void NuSpecialCompare(void) {
+    i32 NuSpecialCompare(nuhspecial_s *, nuhspecial_s *) {
+        return 0;
     }
     void NuSpecialConstAlpha(i32 enabled, f32 alpha) {
         nuspecial_const_alpha_enabled = enabled;
@@ -2303,7 +2309,8 @@ extern "C" {
     }
     void NuSpecialDrawWith(void) {
     }
-    void NuSpecialFindMulti(void) {
+    i32 NuSpecialFindMulti(NUGSCN *, nuhspecial_s *, char *, i32, i32) {
+        return 0;
     }
     void NuSpecialFindMultiWC(void) {
     }
@@ -2377,7 +2384,21 @@ extern "C" {
     }
     void NuSpecialGetFirst(void) {
     }
-    void NuSpecialGetInstanceix(void) {
+    i32 NuSpecialGetInstanceix(nuhspecial_s *special) {
+        NuPlainSpecialHandleLayout *handle = reinterpret_cast<NuPlainSpecialHandleLayout *>(special);
+        NuPlainLegacySpecialLayout *legacy = static_cast<NuPlainLegacySpecialLayout *>(handle->special);
+        if (legacy != NULL) {
+            NuPlainLegacySceneLayout *scene = reinterpret_cast<NuPlainLegacySceneLayout *>(handle->scene);
+            for (i32 i = 0; i < scene->instance_count; ++i) {
+                if (scene->instances + i * 0x50 == legacy->instance) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        NuPlainDisplaySpecialLayout *display = static_cast<NuPlainDisplaySpecialLayout *>(handle->display_special);
+        return display != NULL ? display->instance_ix : -1;
     }
     void NuSpecialGetMtl(void) {
     }
@@ -2532,7 +2553,8 @@ extern "C" {
     }
     void NuDynamicLightLookAt(void) {
     }
-    void NuDynamicLightResetGeometry(void) {
+    void NuDynamicLightResetGeometry(NuDynamicLight *light) {
+        light->resetGeometry();
     }
     void NuDynamicLightSetDirectional(void) {
     }
@@ -2586,9 +2608,11 @@ extern "C" {
     }
     void NuPartGetSeed(void) {
     }
+    extern "C" i32 partglobaltime;
     void NuPartResetGlobalTime(void) {
+        partglobaltime = 0;
     }
-    void NuPartSetSeed(void) {
+    void NuPartSetSeed(i32) {
     }
     void NuPolyShadowInit(void) {
     }
@@ -2904,8 +2928,6 @@ extern "C" {
     }
     void NuPadRecordInit(void) {
     }
-    void NuPadResetState(void) {
-    }
     void NuPadSetDirectMappingState(void) {
     }
     void NuPadSetMaxGamePads(void) {
@@ -2919,8 +2941,6 @@ extern "C" {
     void NuPadUseCorrectDeadZoning(void) {
     }
     void NuPad_Interface_Render(void) {
-    }
-    void NuPad_Interface_ResetAllTouches(void) {
     }
     void NuPad_Interface_TouchScreenInput(i32, i32, i32, i32, i32, i32, i32, i32) {
     }
@@ -3366,7 +3386,9 @@ extern "C" {
     }
     void NuTimeBarInit(void) {
     }
+    static i32 NuTimeBar_PeakReset asm("_ZL19NuTimeBar_PeakReset");
     void NuTimeBarResetPeaks(void) {
+        NuTimeBar_PeakReset = 1;
     }
     void NuTimeBarSetRender(void) {
     }
@@ -3448,7 +3470,8 @@ extern "C" {
     }
     void NuSetCutSceneRequestSFXFn(void) {
     }
-    void NuSetCutSceneResetCharactersFn(void) {
+    void NuSetCutSceneResetCharactersFn(NUGCUTSCENERESETCHARACTERSFN function) {
+        NuCutSceneResetCharactersFn = function;
     }
     void NuSetCutSceneRigidCollisionCheckFn(void) {
     }

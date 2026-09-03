@@ -7,6 +7,7 @@
 struct nunativetex_s;
 struct nudldlistscene_s;
 struct nuinstanim_s;
+struct nuhspecial_s;
 struct numtx_s;
 struct NUFRUSTRUM;
 typedef struct nuanimdata_s nuanimdata_s;
@@ -373,7 +374,7 @@ extern "C" {
     void NuGScnFixupTIDsPS(NUGSCN *scene);
     // The trailing flags argument is passed as 1 by every caller in the
     // original binary; the original implementation never reads it.
-    i32 NuSpecialFind(NUGSCN *scene, void **dest, char *name, i32 flags);
+    i32 NuSpecialFind(NUGSCN *scene, struct nuhspecial_s *dest, char *name, i32 flags);
 
 #ifdef __cplusplus
 }

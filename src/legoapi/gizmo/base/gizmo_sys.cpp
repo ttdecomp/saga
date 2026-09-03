@@ -5,7 +5,6 @@
 
 #include <stdio.h>
 #include <string.h>
-
 struct FLOWBOX_s;
 void ResetGizFlowPointers(GIZFLOW_s *giz_flow);
 
@@ -103,7 +102,12 @@ void LoadEditorSplines(char *path, VARIPTR *buf, VARIPTR *buf_end) {
     (void)buf;
     (void)buf_end;
 }
+static u32 gizmoblowupnametable[256];
+static i32 gizmoblowupnametable_numids;
+
 void GizmoBlowupResetNameTable(void) {
+    gizmoblowupnametable_numids = 0;
+    memset(gizmoblowupnametable, 0, sizeof(gizmoblowupnametable));
 }
 void Hub_LoadAndFixUpMiniKits(WORLDINFO *world, VARIPTR *buf, VARIPTR *buf_end) {
     (void)world;
