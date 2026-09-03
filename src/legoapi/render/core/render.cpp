@@ -1642,7 +1642,7 @@ static NUGSCN *s_backdrop_scene = nullptr;
 
 static nuhspecial_s s_backdrop_hspecial[4];
 
-static f32 s_backdrop_back_wait = 0.0f;
+static f32 backdrop_back_wait = 0.0f;
 
 f32 backdrop_top_r = 0.0f;
 f32 backdrop_top_g = 0.0f;
@@ -1667,7 +1667,7 @@ static __used__ void BackDrop_Alpha(float *alpha) {
         return;
     if (backdrop_black) {
         *alpha *= 0.0f;
-    } else if (s_backdrop_back_wait > 0.0f) {
+    } else if (backdrop_back_wait > 0.0f) {
         *alpha *= 0.5f;
     }
 }
@@ -1706,14 +1706,13 @@ void BackDrop_ResetColours() {
     backdrop_bot_r = 0.0f;
     backdrop_bot_g = 0.0f;
     backdrop_bot_b = 0.0f;
-    s_backdrop_back_wait = 0.0001f;
+    backdrop_back_wait = 0.0001f;
     backdrop_top_tr = 0.0f;
     backdrop_top_tg = 0.0f;
     backdrop_top_tb = 0.0f;
     backdrop_bot_tr = 0.0f;
     backdrop_bot_tg = 0.0f;
     backdrop_bot_tb = 0.0f;
-    backdrop_black = 0;
 }
 
 void BackDrop_UpdateColours(i32 instant) {

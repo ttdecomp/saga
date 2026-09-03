@@ -114,8 +114,8 @@ void HothBattleA_Reset(WORLDINFO_s *world) {
         return;
     }
 
-    GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(gizmo->object);
-    if (minikitCounter_A == 10 && (blowup->state_flags & 8) == 0) {
+    GIZMOPICKUP_s *pickup = static_cast<GIZMOPICKUP_s *>(gizmo->object);
+    if (minikitCounter_A == 10 && (pickup->state_flags & 8) == 0) {
         GizmoActivate(world->gizmo_sys, gizmo, 1, 1);
         return;
     }
@@ -133,8 +133,8 @@ void HothBattleC_Reset(WORLDINFO_s *world) {
         return;
     }
 
-    GIZMOBLOWUP_s *blowup = static_cast<GIZMOBLOWUP_s *>(gizmo->object);
-    if (minikitCounter_C == 10 && (blowup->state_flags & 8) == 0) {
+    GIZMOPICKUP_s *pickup = static_cast<GIZMOPICKUP_s *>(gizmo->object);
+    if (minikitCounter_C == 10 && (pickup->state_flags & 8) == 0) {
         GizmoActivate(world->gizmo_sys, gizmo, 1, 1);
         return;
     }

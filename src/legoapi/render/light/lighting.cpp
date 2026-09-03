@@ -28,7 +28,7 @@ void SetFlicker(GameObject_s *, float) {
 
 void ResetLights(nuvec_s *position, rtldata_s *data, void *set) {
     rtlResetEx(data, 1);
-    if (set != NULL) {
+    if (position != NULL) {
         rtlApplySetScale(set, data, position, NULL, -1, 1.0f);
     }
 }

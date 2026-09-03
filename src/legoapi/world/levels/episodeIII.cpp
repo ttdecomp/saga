@@ -344,7 +344,7 @@ void VaderA_GoneThroughDoor(WORLDINFO_s *, DOOR_s *door) {
         door->active = 1;
 }
 
-static __used__ void VaderA_StartCollapseStage(WORLDINFO_s *world) {
+static void VaderA_StartCollapseStage(WORLDINFO_s *world) {
     i32 path_index;
     nuhspecial_s specials[100];
     u32 *path_connection = (u32 *)AIPAthFindPathCnx(world->ai_sys, (i32)(usize)world->ai_sys->path_sys->active_path,

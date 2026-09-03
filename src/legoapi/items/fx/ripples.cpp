@@ -39,6 +39,7 @@ void ResetRippleSet(ripple_set_s *set) {
             nodes[i].previous = &nodes[i - 1];
         }
         nodes[0].next = &nodes[1];
+        nodes[0].previous = &nodes[count - 1];
         nodes[count - 1].next = &nodes[0];
         nodes[count - 1].previous = &nodes[count - 2];
     }
