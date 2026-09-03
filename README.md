@@ -104,7 +104,7 @@ See the [documentation index](doc/main.md).
 | `legoapi/core` | 25.3% | 14.3% | 97.8% |
 | `legoapi/cutscenes` | 10.6% | 6.8% | 99.6% |
 | `legoapi/gizmo` | 10.8% | 11.1% | 49.4% |
-| `legoapi/gizmos` | 36.2% | 34.4% | 98.2% |
+| `legoapi/gizmos` | 36.3% | 34.6% | 98.2% |
 | `legoapi/items` | 7.5% | 16.9% | 23.2% |
 | `legoapi/menus` | 11.9% | 16.6% | 97.7% |
 | `legoapi/misc` | 8.5% | 7.0% | 100.0% |
