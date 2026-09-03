@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "gamelib_util_types.h"
 
 extern NetTransporter theNetwork;

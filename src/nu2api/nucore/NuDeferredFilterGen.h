@@ -1,5 +1,6 @@
 #pragma once
 
+#include "decomp_assert.h"
 #include "nu2api/nucore/common.h"
 
 struct NuDynamicLight;
@@ -11,7 +12,7 @@ struct NuDeferredFilterGenLayout {
     i32 deferred_geometry_count;
     u8 reserved_dc[0x2f8 - 0xdc];
 };
-static_assert(sizeof(NuDeferredFilterGenLayout) == 0x2f8, "NuDeferredFilterGenLayout size");
+DECOMP_ASSERT(sizeof(NuDeferredFilterGenLayout) == 0x2f8, "NuDeferredFilterGenLayout size");
 
 struct NuDeferredFilterGen {
     NuDeferredFilterGenLayout layout;

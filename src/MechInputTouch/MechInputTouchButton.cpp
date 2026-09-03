@@ -1,3 +1,5 @@
+#include <stddef.h>
+
 #include "MechInputTouch_types.h"
 
 void MechInputTouchButton::ClearTouchLocked(bool force) {

@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "decomp.h"
 #include "globals.h"
 #include "legoapi/legoapi_types.h"
