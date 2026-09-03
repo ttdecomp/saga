@@ -156,12 +156,6 @@ static inline void SetItemNext(nudisplaylistitem_s *item, void *next) {
     item->next = next;
 }
 
-static void SetItemWithId(nudisplaylistitem_s *item, u8 type, u8 id, void *next) {
-    item->type = type;
-    item->next = next;
-    item->id = id;
-}
-
 static nudisplaylistitem_s *AddCallItem(nudisplaylist_s *list, u8 type, void *next) {
     nudisplaylistitem_s *item = list->items;
     item->type = type;
@@ -185,24 +179,6 @@ extern "C" nudisplaylist_s *NuDisplayListGet2dList(void) {
 extern "C" void NuDisplayListResetBuffer(void) {
     display_list_buffer = reinterpret_cast<VARIPTR *>(&rndrstream_free);
     display_list_buffer_end = reinterpret_cast<VARIPTR *>(rndrstream_end.addr);
-}
-
-// Small builders used by NuDisplayListCreateMtlDlist — second args are
-// ignored in this build (verified against objdump).
-extern "C" void NuDisplayListAddClut(nudisplaylistitem_s *item, i32 /*clut_id*/) {
-    SetItemWithId(item, kItemType_Nop, kItemId_Cnt, nullptr);
-}
-extern "C" void NuDisplayListAddTexture(nudisplaylistitem_s *item, i32 /*tex_id*/) {
-    SetItemWithId(item, kItemType_Nop, kItemId_Cnt, nullptr);
-}
-extern "C" void NuDisplayListAddMaterialState(nudisplaylistitem_s *item, void *mtl) {
-    SetItemWithId(item, kItemType_Mtl, kItemId_Call, mtl);
-}
-extern "C" void NuDisplayListAddMicrocode(nudisplaylistitem_s *item, void * /*mtl*/) {
-    SetItemWithId(item, kItemType_Nop, kItemId_Cnt, nullptr);
-}
-extern "C" void NuDisplayListAddLightState(nudisplaylistitem_s *item, void * /*mtl*/) {
-    SetItemWithId(item, kItemType_Nop, kItemId_Cnt, nullptr);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

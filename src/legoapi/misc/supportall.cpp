@@ -4,6 +4,7 @@
 #include "decomp.h"
 #include "globals.h"
 #include "gameapi/ai/aisys/aisys.h"
+#include "legoapi/characters/motion.h"
 #include "legoapi/gizmo/base/gizmo.h"
 #include "legoapi/items/base/apiobject.h"
 #include "legoapi/items/objects/gameobjects.h"
@@ -32,7 +33,6 @@ void Detonators_Reset(void);
 void ResetExplosions(void);
 void ShoveObjectSysReset(void);
 void Panel_Clear(void);
-void GameCam_Reset(GAMECAMERA_s *);
 void ResetGameMessages(void);
 void Tag_ResetTransfers(void);
 void Hint_Reset(void);

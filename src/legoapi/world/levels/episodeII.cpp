@@ -48,7 +48,7 @@ extern "C" {
 // that KaminoC_Init clears via memset of the enclosing disco struct, which is
 // why readers cannot be constant-folded.
 static u8 kaminodisco;
-static i32 dooku_c; // _ZL7dooku_c
+static GIZAIMESSAGE_s *dooku_c; // _ZL7dooku_c
 struct dooku_state_s {
     i32 hit_message;
     nuhspecial_s node;
@@ -579,7 +579,7 @@ void DookuC_Reset(WORLDINFO_s *world) {
     dooku_c = 0;
     dooku_state = {};
     if (netclient == 0) {
-        dooku_c = (i32)(usize)SetGizAIMessage(gizaimessagesys, "dooku_total", 0.0f, NULL);
+        dooku_c = SetGizAIMessage(gizaimessagesys, "dooku_total", 0.0f, NULL);
         dooku_state.hit_message = (i32)(usize)CheckGizAIMessage(gizaimessagesys, "dooku_hits", NULL);
     }
     NuSpecialFind(world->current_gscn, &dooku_state.node, "dooku_node", 1);

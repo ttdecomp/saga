@@ -2,8 +2,6 @@
 #include "gameapi/ai/aisys/aisys.h"
 #include "globals.h"
 
-void GameCam_Reset(GAMECAMERA_s *camera);
-
 #include <stdio.h>
 #include "globals.h"
 #include "legoapi/characters/core/character.h"
