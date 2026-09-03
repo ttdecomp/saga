@@ -1,4 +1,11 @@
+#include "legoapi/legoapi_types.h"
+#include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nurand.h"
+#include "nu2api/numath/nuvec.h"
+
+#include <float.h>
+#include <math.h>
+#include <string.h>
 
 extern "C" {
     i32 ParticlesPerFrame(f32 particles_per_frame, f32 frame_time) {
@@ -18,4 +25,15 @@ extern "C" {
     i32 ParticlesPerSecond(f32 particles_per_second, f32 frame_time) {
         return ParticlesPerFrame(particles_per_second / 60.0f, frame_time);
     }
+
+    void SetPartRTLSet(usize rtl_set) {
+        (void)rtl_set;
+    }
+
+} // extern "C"
+
+void PartObjectInterface::GetRadius() const {
+}
+
+void PartStop_Flickerer(PART_s *) {
 }

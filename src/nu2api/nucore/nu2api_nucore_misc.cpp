@@ -112,9 +112,6 @@ void NuBrdigeDrawRope(numtl_s *, nuvec_s *, nuvec_s *, i32, i32 *, i32) {
 void NuDDSGetMipLevel(i32, i32, i32, NUTEXFORMAT, i32, bool, i32, i32, i32 &, i32 &, i32 &) {
 }
 
-void NuFadeObjFreeGrp(NuFadeObjGType *) {
-}
-
 void NuHtmlGraphArray(char **) {
 }
 
@@ -307,9 +304,6 @@ void NuDisplayListCreate(nudisplayscene_s *raw_scene, variptr_u *buffer, variptr
 void NuFadeSetFxCodeMtls(nugeom_s *, unsigned char *) {
 }
 
-void NuInitHardwareFirst(i32, variptr_u *, i32 *, i32) {
-}
-
 extern NUVEC *override_campos;
 
 void NuPortalSetOverride(NUVEC *position) {
@@ -371,9 +365,6 @@ void NuGCutSceneSysInitVfx(i32 (*)(char const *), i32 (*)(i32, VuMtx *), void (*
 // NuIOSDLGeom2DCallback is transcribed in android/nuiosdl_gl.cpp (original 0x29d1a0).
 
 void NuIOS_GetInAppProduct(i32, NuIOS_InAppProduct *) {
-}
-
-void NuMarkSceneAsZPrePass() {
 }
 
 void NuMemBlkCheckFreeList(numemblk_s *) {
@@ -612,9 +603,6 @@ void NuCameraTransformScissorClip(nuvec_s *, nuvec_s *, i32, numtx_s *) {
 }
 
 // NuDebrisRendererFlushBuffers is transcribed in android/nuptl_flush.cpp (original 0x296f35).
-
-void NuDisplayListSetInstSurfGeom(void *) {
-}
 
 void NuIOSDLVertexOffsetsCallback(void *) {
 }

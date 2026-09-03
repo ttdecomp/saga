@@ -85,9 +85,6 @@ void MechInputTouchButtonFaker::Update(NuInputTouchData const *) {
 MechInputTouchMainDummyStick::MechInputTouchMainDummyStick(MechInputTouchMainController &, NuTouchInputElement::TYPE) {
 }
 
-void MechInputTouchMainDummyButton::IsPressed() const {
-}
-
 MechInputTouchMainDummyButton::MechInputTouchMainDummyButton(MechInputTouchMainController &, u32,
                                                              MechInputTouchMainController::eButtonTypes) {
 }

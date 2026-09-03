@@ -64,9 +64,6 @@ void NetFtpManager::Update() {
 NetFtpManager::~NetFtpManager() {
 }
 
-void FtpFile::Accept() {
-}
-
 void FtpFile::Accept(i32) {
 }
 

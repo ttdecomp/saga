@@ -45,9 +45,6 @@ void BoltTypes_Reset(WORLDINFO_s *world) {
 void Bolt_Debris_LSW(BOLT_s *, nuvec_s *, i32, nuvec_s *, i32) {
 }
 
-void Bolt_PlayHitSfx(BOLT_s *) {
-}
-
 void Bolt_HitPartMode(BOLT_s *) {
 }
 

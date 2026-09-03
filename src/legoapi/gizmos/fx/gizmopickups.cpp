@@ -391,7 +391,12 @@ static void GizmoPickups_ClearProgress(void *, void *progress_ptr) {
 
 static void GizmoPickups_StoreProgress(void *world_ptr, void *, void *progress_ptr) {
     GIZMOPICKUPPROGRESS_s *progress = static_cast<GIZMOPICKUPPROGRESS_s *>(progress_ptr);
-    ClearPickupProgress(progress);
+    if (progress != NULL) {
+        memset(progress->collected, 0, sizeof(progress->collected));
+        memset(progress->enabled, 0xff, sizeof(progress->enabled));
+        memset(progress->visible, 0xff, sizeof(progress->visible));
+        memset(progress->activated, 0, sizeof(progress->activated));
+    }
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
     if (progress == NULL || world == NULL || world->gizmo_pickup_sys == NULL ||
         world->gizmo_pickup_sys->pickups == NULL) {

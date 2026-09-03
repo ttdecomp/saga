@@ -74,9 +74,6 @@ struct quickboltinfo;
 void PartObjectInterface::GetPos(VuVec &, i32) const {
 }
 
-void PartObjectInterface::GetRadius() const {
-}
-
 void PartObjectInterface::GetTargetName() const {
 }
 
@@ -695,10 +692,6 @@ extern "C" {
     void UpdateParts(f32) {
     }
 
-    void SetPartRTLSet(usize rtl_set) {
-        (void)rtl_set;
-    }
-
 } // extern "C"
 
 void TargetPart(GameObject_s *, nuvec_s *, nuvec_s *, float, float, i32, i32) {
@@ -756,9 +749,6 @@ void Asteroid_PartKill(PART_s *, i32) {
 }
 
 void PartDraw_Flickerer(PART_s *) {
-}
-
-void PartStop_Flickerer(PART_s *) {
 }
 
 void PartKill_ForceThrow(PART_s *, i32) {

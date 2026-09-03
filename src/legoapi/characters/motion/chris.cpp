@@ -272,9 +272,6 @@ set_door_timer:
 void ChrisRadialCam(nuvec_s *, nuvec_s *) {
 }
 
-void ChrisAnakinADraw() {
-}
-
 void ChrisAnakinAInit(WORLDINFO_s *) {
 }
 
@@ -285,9 +282,6 @@ void ChrisAnakinBInit() {
 }
 
 void ChrisAnakinCInit() {
-}
-
-void ChrisAnakinDDraw() {
 }
 
 void ChrisAnakinDInit(WORLDINFO_s *) {
@@ -313,9 +307,6 @@ void ChrisAnakinDReset(WORLDINFO_s *world) {
     ResetSpaceLevel(world, world->space_level);
 }
 
-void ChrisAnakinAUpdate(WORLDINFO_s *) {
-}
-
 void ChrisAnakinBUpdate() {
 }
 
@@ -332,9 +323,6 @@ void ChrisAllocLevelStuff(WORLDINFO_s *) {
 }
 
 void DidBoltHitChrisJobby(WORLDINFO_s *, BOLT_s *) {
-}
-
-void ChrisUnallocLevelStuff(WORLDINFO_s *) {
 }
 
 void ChrisExtraBoltCollision(BOLT_s *, nuvec_s *) {

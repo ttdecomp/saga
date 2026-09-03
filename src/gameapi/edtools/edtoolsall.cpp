@@ -112,12 +112,6 @@ void EdDrawLineSphere(VuVec const &, float, float, i32) {
 void EdDrawPolySector(VuVec const &, float, i32, i32, i32, i32, i32) {
 }
 
-void edGetPadDisabled() {
-}
-
-void edSetPadDisabled(i32) {
-}
-
 void edanimDrawCursor() {
 }
 
@@ -192,9 +186,6 @@ void edrtlResetBurnset(burnset_s *burnset) {
     }
     burnset->active_count = 0;
     burnset->selected_index = -1;
-}
-
-void eduiSetPinnedMenu(eduimenu_s *) {
 }
 
 void EdDrawPolyCylinder(VuMtx const &, float, float, float, i32, i32, i32, i32) {
@@ -305,9 +296,6 @@ void edpartMultipleCopyClear() {
 void edanimPlayerAnimDistance(i32) {
 }
 
-void edpartLookupDebrisEffect(char *) {
-}
-
 void edanimRenderSoundEmitters(i32) {
 }
 
@@ -386,16 +374,7 @@ void EdRegistry::DefunctObject(EdClassInterface *, void *, i32, i32) {
 void EdRegistry::DestroyObject(EdClassInterface *, void *, i32, i32) {
 }
 
-void EdRegistry::Flush() {
-}
-
 void EdRegistry::GetClass(char *) {
-}
-
-void EdRegistry::GetClass(i32) {
-}
-
-void EdRegistry::GetClassId(EdClass *) {
 }
 
 void EdRegistry::GetClassId(char *) {
@@ -405,9 +384,6 @@ void EdRegistry::GetStreamClassMapping(EdStream &, i32 *, i32 &, i32) {
 }
 
 void EdRegistry::GetType(char *) {
-}
-
-void EdRegistry::GetType(i32) {
 }
 
 void EdRegistry::GetTypeId(char *) {
@@ -546,12 +522,6 @@ void EdInputContext::GetHold(i32) {
 }
 
 void EdInputContext::GetPress(i32) {
-}
-
-void EdInputContext::GetRelease(i32) {
-}
-
-void EdInputContext::GetRepeat(i32) {
 }
 
 void EdInputContext::Set(i32, float, float) {

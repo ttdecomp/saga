@@ -1,8 +1,5 @@
 #include "legoapi/legoapi_types.h"
 
-void BaseEditor::Initialise(variptr_u &, variptr_u &, i32) {
-}
-
 void BaseEditor::ReadBuffer(void **, void *, i32) {
 }
 
@@ -129,9 +126,6 @@ void ClassEditor::PreLoadInitialisation(MemoryBuffer *, MemoryBuffer *) {
 void ClassEditor::PreSaveInitialisation() {
 }
 
-void ClassEditor::RegisterTool(EdTool &) {
-}
-
 void ClassEditor::SelectLED(i32) {
 }
 
@@ -154,9 +148,6 @@ void ClassEditor::UpdateLists(MemoryBuffer *, MemoryBuffer *) {
 }
 
 void ClassEditor::UpdateSelectedObjects(EdInputContext &) {
-}
-
-void ClassEditor::UpdateSnapRay(VuVec &) {
 }
 
 void ClassEditor::ViewSelected() {
@@ -300,9 +291,6 @@ void LevelEditor::GetEdScene(i32) {
 void LevelEditor::GetScene(char *) {
 }
 
-void LevelEditor::GetScene(i32) {
-}
-
 void LevelEditor::Initalise(variptr_u &, variptr_u &, i32) {
 }
 
@@ -327,9 +315,6 @@ void LevelEditor::ProcessEvenWhenPaused(ThingProcessData *) {
 void LevelEditor::ReadStream(EdFileInputStream &) {
 }
 
-void LevelEditor::RegisterEditor(BaseEditor &) {
-}
-
 void LevelEditor::Reset() {
     reset_pending = 0;
 }
@@ -341,9 +326,6 @@ void LevelEditor::SaveState(i32, variptr_u *, variptr_u *) {
 }
 
 void LevelEditor::SaveState(variptr_u *, variptr_u *) {
-}
-
-void LevelEditor::SetNextMenu(eduimenu_s *) {
 }
 
 void LevelEditor::SetPadText(i32, char *) {
@@ -362,9 +344,6 @@ void PropertyMenu::ClearObjecs() {
 }
 
 void PropertyMenu::ContainsObject(ClassObject &) {
-}
-
-void PropertyMenu::ContainsObject(void *) {
 }
 
 void PropertyMenu::Destroy() {
@@ -403,9 +382,6 @@ void PropertyTool::GetNextDefaultActiveMenu(eduimenu_s *) {
 void PropertyTool::GetTypeName(EdRef *, char *) {
 }
 
-void PropertyTool::HasActiveMenu() {
-}
-
 void PropertyTool::Initialise(variptr_u &, variptr_u &, i32) {
 }
 
@@ -439,9 +415,6 @@ void PropertyTool::SelectAttr(i32) {
 void PropertyTool::SetDefaultActiveMenu(PropertyMenu *) {
 }
 
-void PropertyTool::SetMenuControl(eduimenu_s *, EdControl *) {
-}
-
 void PropertyTool::ToggleActiveMenu() {
 }
 
@@ -458,12 +431,6 @@ void ClassObjectList::GetAveragePosition(VuVec &) {
 }
 
 void ClassObjectList::GetAveragePosition(VuVec &, float &) {
-}
-
-void ClassObjectList::IsInList(ClassObject) {
-}
-
-void ClassObjectList::IsInList(EdClass *) {
 }
 
 void ClassObjectList::IsInList(void *, EdRef *) {
@@ -496,13 +463,7 @@ void cbEdLevelToggleInt(eduimenu_s *, eduiitem_s *, u32) {
 void cbCEDeleteConfirmed(eduimenu_s *, eduiitem_s *, u32) {
 }
 
-void cbEdLevelSetSliderInt(eduimenu_s *, eduiitem_s *, u32) {
-}
-
 void LightEverythingInEditor(void *) {
-}
-
-void cbEdLevelSetSliderFloat(eduimenu_s *, eduiitem_s *, u32) {
 }
 
 void cbEdLevelDestroyOnSelect(eduimenu_s *, eduiitem_s *, u32) {

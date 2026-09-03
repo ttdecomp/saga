@@ -9,9 +9,6 @@ struct nuqthdr_s;
 struct nunativegscene_s;
 struct SHOPINPUT;
 
-void AITriggerSetCreate(AITRIGGERSETSYS_s *, FLOWBOX_s *) {
-}
-
 void AITriggerSetSysReset(AITRIGGERSETSYS_s *system) {
     if (system == NULL) {
         return;

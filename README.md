@@ -1,4 +1,4 @@
-![Progress](https://img.shields.io/badge/matching-15.10%25-red)
+![Progress](https://img.shields.io/badge/matching-15.17%25-red)
 [![Discord](https://img.shields.io/discord/1467775700894224555?color=%235865F2&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/2HJuMtzA7q)
 
 |                 | Target (Android x86)                                                                                                                                                                                  | Host                                                                                                                                                                                  |
@@ -94,24 +94,24 @@ See the [documentation index](doc/main.md).
 | `editor` | 3.1% | 1.7% | 100.0% |
 | `gameapi` | 8.4% | 4.8% | 61.9% |
 | `gameframework` | 76.4% | 23.5% | 100.0% |
-| `gamelib` | 7.2% | 5.9% | 12.1% |
+| `gamelib` | 7.3% | 5.9% | 12.1% |
 | `java` | 10.7% | 0.0% | 0.0% |
-| `legoapi` | 14.1% | 16.3% | 50.0% |
-| `legoapi/actions` | 6.6% | 3.6% | 99.1% |
-| `legoapi/ai` | 13.0% | 5.9% | 88.7% |
+| `legoapi` | 14.2% | 16.4% | 50.0% |
+| `legoapi/actions` | 6.6% | 4.0% | 99.1% |
+| `legoapi/ai` | 13.1% | 5.9% | 88.7% |
 | `legoapi/audio` | 6.5% | 9.2% | 96.7% |
 | `legoapi/characters` | 11.8% | 8.9% | 36.2% |
 | `legoapi/core` | 25.3% | 14.3% | 97.8% |
 | `legoapi/cutscenes` | 10.6% | 6.8% | 99.6% |
 | `legoapi/gizmo` | 10.8% | 10.9% | 49.4% |
-| `legoapi/gizmos` | 36.0% | 34.4% | 98.2% |
+| `legoapi/gizmos` | 36.2% | 34.4% | 98.2% |
 | `legoapi/items` | 7.5% | 16.1% | 23.2% |
 | `legoapi/menus` | 11.9% | 16.6% | 97.7% |
-| `legoapi/misc` | 6.1% | 6.1% | 100.0% |
+| `legoapi/misc` | 8.5% | 6.5% | 100.0% |
 | `legoapi/props` | 30.1% | 9.9% | 59.8% |
-| `legoapi/render` | 10.7% | 13.0% | 95.2% |
+| `legoapi/render` | 10.8% | 13.0% | 95.2% |
 | `legoapi/world` | 22.7% | 31.5% | 3.7% |
 | `legogame` | 51.6% | 41.2% | 85.4% |
-| `nu2api` | 33.8% | 28.0% | 9.4% |
+| `nu2api` | 33.9% | 28.0% | 9.4% |
 
 <!-- matching-table-end -->

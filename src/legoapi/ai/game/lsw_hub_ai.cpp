@@ -79,20 +79,6 @@ f32 Condition_InHubArea(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, vo
     return argument.value == hub_ai.area ? 1.0f : 0.0f;
 }
 
-void *Condition_InHubAreaInit(AISYS_s *, char *argument, AISCRIPT_s *) {
-    AI_HUB_AREA_ARGUMENT result = {};
-    result.value = -1;
-    if (argument != NULL) {
-        for (isize area = 0; area < HUB_AREA_COUNT; ++area) {
-            if (NuStrICmp(argument, hub_areas[area]) == 0) {
-                result.value = area;
-                break;
-            }
-        }
-    }
-    return result.pointer;
-}
-
 static inline void Hub_MarkCharacterUnavailable(i16 *characters, i16 character) {
     if (character != -1) {
         characters[character] = -1;

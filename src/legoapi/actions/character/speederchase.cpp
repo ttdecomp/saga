@@ -16,9 +16,6 @@ static i32 PodRaceKey[8] __attribute__((aligned(16))) = {-1, -1, -1, -1, -1, -1,
 u8 troopercannons_beenReset = 0;
 i32 players_going_forward = 0;
 
-void getPodRoll(i32) {
-}
-
 void ObjOpponent(GameObject_s *, float, float, i32, i32, i32) {
 }
 
