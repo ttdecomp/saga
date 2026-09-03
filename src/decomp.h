@@ -54,6 +54,13 @@ enum AREA_FLAGS {
 
 #define __used__ __attribute__((used)) // NOLINT(readability-identifier-naming)
 
+// regparm only exists on 32-bit x86; 64-bit host builds compile it out.
+#if defined(__i386__)
+#define __regparm__(n) __attribute__((regparm(n)))
+#else
+#define __regparm__(n)
+#endif
+
 #ifdef HOST_BUILD
 #include <stdio.h>
 #include <time.h>
