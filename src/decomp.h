@@ -56,9 +56,9 @@ enum AREA_FLAGS {
 
 // regparm only exists on 32-bit x86; 64-bit host builds compile it out.
 #if defined(__i386__)
-#define __regparm__(n) __attribute__((regparm(n)))
+#define SAGA_REGPARM(n) __attribute__((regparm(n)))
 #else
-#define __regparm__(n)
+#define SAGA_REGPARM(n)
 #endif
 
 #ifdef HOST_BUILD

@@ -23,6 +23,14 @@ extern "C" void NuPartSetSeed(i32);
 void HashString(unsigned char *) {
 }
 
+#ifdef _WIN32
+// MinGW lacks the POSIX srand48 family; nothing in the tree reads drand48
+// state, so seed the C RNG instead.
+static void srand48(long seed) {
+    srand(static_cast<unsigned int>(seed));
+}
+#endif
+
 void ResetSeeds() {
     srand48(0);
     qseed = 0x3039;
