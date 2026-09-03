@@ -1,4 +1,5 @@
 #include "decomp.h"
+#include "legoapi/ai/game/lsw_hub_ai.h"
 #include "nu2api/nucore/nustring.h"
 
 struct AISYS_s;
@@ -6,11 +7,6 @@ struct AISCRIPT_s;
 
 enum {
     HUB_AREA_COUNT = 10,
-};
-
-union AI_HUB_AREA_ARGUMENT {
-    void *pointer;
-    isize value;
 };
 
 extern char *hub_areas[HUB_AREA_COUNT];

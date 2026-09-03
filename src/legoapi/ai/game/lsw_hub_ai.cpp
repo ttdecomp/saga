@@ -1,6 +1,7 @@
 #include "decomp.h"
 #include "gameapi/ai/aisys/aisys.h"
 #include "globals.h"
+#include "legoapi/ai/game/lsw_hub_ai.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/gizmo/base/GizObstacleObjectInterface.h"
@@ -66,11 +67,6 @@ enum HUB_AI_CONSTANTS {
     HUB_TABLE_COUNT = 8,
     HUB_CHARACTER_CAPACITY = 340,
     HUB_BARMAN_CREATURE_SET = 2,
-};
-
-union AI_HUB_AREA_ARGUMENT {
-    void *pointer;
-    isize value;
 };
 
 f32 Condition_InHubArea(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *area_argument) {
