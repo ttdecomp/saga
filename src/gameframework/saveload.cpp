@@ -7,7 +7,6 @@
 #include "gameframework/saveload.h"
 
 #include "nu2api/nuandroid/ios_graphics.h"
-#include "nu2api/nucore/numemory.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nucore/nuthread.h"
 #include "nu2api/nucore/nutime.h"
@@ -44,12 +43,8 @@ char *slotname(i32 index) {
 char *slotfolder(i32 index) {
     static char name[4096];
 
-    char *path = NuIOS_GetDocumentsPath();
-    NuStrCpy(name, path);
-
-    i32 len = strlen(name);
-
-    strcpy(&name[len], "SavedGames");
+    NuStrCpy(name, NuIOS_GetDocumentsPath());
+    strcpy(&name[__builtin_strlen(name)], "SavedGames");
 
     return name;
 }
@@ -57,8 +52,7 @@ char *slotfolder(i32 index) {
 char *fullslotname(i32 index) {
     static char name[4096];
 
-    char *folder = slotfolder(index);
-    strcpy(name, folder);
+    strcpy(name, slotfolder(index));
     strcat(name, "/");
     strcat(name, slotname(index));
 
@@ -66,10 +60,12 @@ char *fullslotname(i32 index) {
 }
 
 static i32 saveload_getinfo(void) {
+    i32 i;
+
     saveload_savepresent = 0;
     i32 count = 0;
 
-    for (i32 i = 0; i < 6; i = i + 1) {
+    for (i = 0; i < 6; i = i + 1) {
         saveload_slotused[i] = 0;
         saveload_slotcode[i] = 0;
 
@@ -92,21 +88,25 @@ static i32 saveload_getinfo(void) {
     return count;
 }
 
-void saveloadInit(VARIPTR *buf, VARIPTR buf_end, i32, char *prodcode, char *iconname, char *unicodename, i32) {
+void saveloadInit(VARIPTR *buf, VARIPTR buf_end, i32, char *prodcode, char *iconname, char *unicodename, i32 unk) {
+    // The original truncates the last argument into a 4-byte stack local it
+    // never reads again. Its real type and purpose are unknown; the array is
+    // sized to reproduce the original's frame layout.
+    u16 unk_local[2];
+    unk_local[0] = unk;
+
     saveload_getinfo();
     saveload_status = 1;
     saveload_autosave = -1;
 }
 
-i32 saveloadLoadSlot(i32 slot, void *buffer, usize size) {
+i32 saveloadLoadSlot(i32 slot, void *buffer, i32 size) {
     char *filename = fullslotname(slot);
     FILE *file = fopen(filename, "rb");
 
     LOG_DEBUG("slot=%d, filename=%s, file=%p", slot, filename, file);
 
-    if (file == NULL) {
-        return 0;
-    } else {
+    if (file != NULL) {
         SaveLoad buf;
 
         fread(&buf, 0x2028, 1, file);
@@ -119,74 +119,16 @@ i32 saveloadLoadSlot(i32 slot, void *buffer, usize size) {
 
         return 1;
     }
+
+    return 0;
 }
 
-i32 saveloadSaveSlot(i32 slot, void *buffer, usize size) {
-    return PCSaveSlot(slot, buffer, static_cast<i32>(size), static_cast<u32>(-1));
-}
-
-typedef i16 (*hashfn_t)(void);
-
-i32 SAVESLOTS = 3;
-
-void *memcard_savedata = NULL;
-i32 memcard_savedatasize = 0;
-void *memcard_savedatabuffer = NULL;
-
-void *memcard_extra_savedata = NULL;
-i32 memcard_extra_savedatasize = 0;
-void *memcard_extra_savedatabuffer = NULL;
-
-hashfn_t memcard_hashfn = NULL;
-void (*memcard_drawasiconfn)(void) = NULL;
-i32 memcard_autosave = 0;
-i32 memcard_autosavestarted = 0;
-f32 memcard_autosavepredelay = 0.0f;
-f32 memcard_autosavepostdelay = 0.0f;
-
-void SaveSystemInitialise(i32 slots, void *makeSaveHash, void *save, i32 saveSize, i32 saveCount,
-                          void (*drawSaveIcon)(void), void *extradata, i32 extradataSize) {
-    if (extradata == NULL) {
-        SAVESLOTS = 6;
-        if (slots < 7) {
-            SAVESLOTS = slots;
-        }
-    } else {
-        SAVESLOTS = 5;
-        if (slots < 6) {
-            SAVESLOTS = slots;
-        }
-    }
-
-    memcard_hashfn = (hashfn_t)makeSaveHash;
-    memcard_savedata = save;
-    memcard_savedatasize = saveSize;
-    memcard_extra_savedata = extradata;
-    memcard_extra_savedatasize = extradataSize;
-
-    memcard_savedatabuffer = NU_ALLOC(saveSize + 4, 4, 1, "", NUMEMORY_CATEGORY_NONE);
-    memcard_extra_savedatabuffer = NU_ALLOC(extradataSize + 4, 4, 1, "", NUMEMORY_CATEGORY_NONE);
-
-    memcard_autosave = saveCount;
-    memcard_drawasiconfn = drawSaveIcon;
-}
-
-i32 ChecksumSaveData(void *buffer, i32 size) {
-    i32 n = size / 4;
-
-    i32 sum = 0x5c0999;
-
-    for (i32 i = 0; i < n; i++) {
-        sum += ((i32 *)buffer)[i];
-    }
-
-    return sum;
+i32 saveloadSaveSlot(i32 slot, void *buffer, i32 size) {
+    return PCSaveSlot(slot, buffer, size, static_cast<u32>(-1));
 }
 
 void createslotfolder(i32 slot) {
-    char *path = slotfolder(slot);
-
-    mkdir(path, 0777);
+    mkdir(slotfolder(slot), 0777);
 }
 
 extern "C" {
@@ -210,35 +152,38 @@ i32 PCSaveSlot(i32 slot, void *extradata, i32 extradataSize, u32 hash) {
     NuStrCat(buf, ".incomplete");
 
     FILE *file = fopen(buf, "wb");
-    if (file != NULL) {
-        SaveLoad save;
-
-        memset(&save, 0, sizeof(SaveLoad));
-        save.field0_0x0 = 0x52474d48;
-        save.field1_0x4 = 1;
-        save.size = sizeof(SaveLoad);
-        save.field3_0xc = 0;
-        save.field4_0x10 = 0;
-        save.extradata_offset = 0;
-        memset(save.field6_0x18, 0, 0x10);
-        save.field11_0x1028 = 0;
-        save.field13_0x1828 = 0;
-        save.field7_0x28 = 0;
-        save.field9_0x828 = 0;
-
-        fwrite(&save, sizeof(SaveLoad), 1, file);
-        fwrite(extradata, extradataSize, 1, file);
-        fwrite(&hash, 4, 1, file);
-
-        fflush(file);
-        fclose(file);
-
-        rename(buf, path);
+    if (file == NULL) {
+        NuThreadCriticalSectionEnd(g_writingSaveCriticalSection);
+        return 0;
     }
+
+    SaveLoad save;
+
+    memset(&save, 0, sizeof(SaveLoad));
+    save.field0_0x0 = 0x52474d48;
+    save.field1_0x4 = 1;
+    save.size = sizeof(SaveLoad);
+    save.field3_0xc = 0;
+    save.field4_0x10 = 0;
+    save.extradata_offset = 0;
+    memset(save.field6_0x18, 0, 0x10);
+    save.field11_0x1028 = 0;
+    save.field13_0x1828 = 0;
+    save.field7_0x28 = 0;
+    save.field9_0x828 = 0;
+
+    fwrite(&save, sizeof(SaveLoad), 1, file);
+    fwrite(extradata, extradataSize, 1, file);
+    fwrite(&hash, 4, 1, file);
+
+    fflush(file);
+    fclose(file);
+
+    rename(buf, path);
 
     NuThreadCriticalSectionEnd(g_writingSaveCriticalSection);
 
-    return file != NULL;
+    return 1;
 }
 
 static i32 statuswait;
@@ -260,7 +205,7 @@ void saveloadASLoad(i32 slot, void *buffer, i32 size) {
     statuswait = 1;
     NuTimeGet(&savetimer);
     saveload_slotid = slot;
-    saveload_autosave = slot;
+    saveload_autosave = saveload_slotid;
 }
 
 void saveloadASDelete(i32 slot) {

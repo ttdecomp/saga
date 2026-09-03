@@ -6,7 +6,6 @@ set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/ai/aisys/ais
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/ai/aisys/aisys.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/edtools/edfile.cpp PROPERTIES COMPILE_OPTIONS "-O3")
-set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gameframework/saveload_extra.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gameapi/gui/apimenu.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/menus/core/panel.cpp PROPERTIES COMPILE_OPTIONS "-O2")
@@ -231,6 +230,8 @@ set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusou
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_system.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_voice.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/nu2api/nusound/nusound_weakptr.cpp PROPERTIES COMPILE_OPTIONS "-O3")
+
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/gameframework/savesystem.cpp PROPERTIES COMPILE_OPTIONS "-O3")
 
 # link platform-specific dependencies
 add_ogg_vorbis()
