@@ -8,8 +8,6 @@
 
 #include "nu2api/numath/nurand.h"
 
-#include <stdlib.h>
-
 struct AIROW_s;
 struct nuqthdr_s;
 struct nunativegscene_s;
@@ -24,7 +22,6 @@ void HashString(unsigned char *) {
 }
 
 void ResetSeeds() {
-    srand48(0);
     qseed = 0x3039;
     GAMERAND = 0x1f3ad27f;
     NuRandSeed(0);

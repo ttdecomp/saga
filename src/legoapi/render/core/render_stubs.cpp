@@ -212,7 +212,7 @@ extern "C" {
     void DisplayListSetShadowCasterFlagPS(NUDISPLAYLISTITEM *, NUDISPLAYLISTITEM *, i32) {
     }
 
-    // DisplayListSwapBuffersPS is fully transcribed in nu3d/nudlist.cpp (original 0x29b8c0 / 0x29b77e).
+    // DisplayListSwapBuffersPS is fully transcribed in nu3d/nudlist_stubs.cpp (original 0x29b8c0 / 0x29b77e).
     void DisplayListUpdateRenderStateShadow(void) {
     }
 

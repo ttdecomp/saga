@@ -43,16 +43,7 @@ extern i16 id_BODYGUARD;
 extern i16 id_IMPERIALGUARD;
 extern i16 id_YODA;
 extern i16 id_YODAGHOST;
-
-static i32 AnimBlendMode = 1;
-
-extern "C" i32 GetAnimBlendMode(void) {
-    return AnimBlendMode;
-}
-
-extern "C" void SetAnimBlendMode(i32 mode) {
-    AnimBlendMode = mode;
-}
+extern "C" i32 GetAnimBlendMode(void);
 
 enum CHARACTER_ANIMATION : i16 {
     CHARACTER_ANIMATION_WALK = 0,
@@ -1803,7 +1794,7 @@ extern "C" {
             packet->requested_animation_id = static_cast<i16>(animation);
             packet->previous_animation_id = packet->requested_animation_id;
             packet->current_animation_id = packet->previous_animation_id;
-            packet->animation_mode = AnimBlendMode;
+            packet->animation_mode = GetAnimBlendMode();
             packet->previous_animation_mode = packet->animation_mode;
             packet->current_animation = packet->previous_animation_mode;
             packet->field_0x19 = 0;

@@ -82,9 +82,6 @@ void NuFntPrintChar(char) {
 void NuQFntSetMtx2d(void *, numtx_s *) {
 }
 
-void NuRainDrawDrop(i32, i32, float, float, i32) {
-}
-
 void NuWarningPrint(char *) {
 }
 
@@ -104,9 +101,6 @@ void NuLgtArcLaserEx(i32, nuvec_s *, nuvec_s *, nuvec_s *, float, float, float, 
 }
 
 void NuMemValidateFn() {
-}
-
-void NuRainDrawShape(float) {
 }
 
 void NuVpSetDestRect(float, float, float, float) {
@@ -326,9 +320,6 @@ void NuSpecialGetAnimPos(nuhspecial_s *) {
 }
 
 void NuSpecialReflection(i32) {
-}
-
-void NuTerminateHardware() {
 }
 
 void NuDisplaySceneUnclip(nudisplayscene_s *) {
@@ -576,9 +567,6 @@ void NuAnimBuffEvaluate_3_QuatB(numtx_s *, nuanimbuff_s *, nugscn_s *, numtx_s *
 }
 
 void NuDDSSetTextureDescription(char *, NUTEXFORMAT, i32, i32, i32, i32, nutexturetype_e) {
-}
-
-void NuIOSDLDeferredMtlCallback(void *) {
 }
 
 void NuIOS_GetNumInAppPurchases() {

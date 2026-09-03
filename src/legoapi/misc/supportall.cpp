@@ -785,9 +785,6 @@ void DebrisCleanUpDmaDebTypeTables() {
 void DebrisReleaseControlStackLock() {
 }
 
-void DisplayListGenerateTransforms(nudisplayscene_s *) {
-}
-
 void RndrStateBuildReflectionState(nuglobalrndrstate_s *) {
 }
 

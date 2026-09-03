@@ -171,9 +171,6 @@ static nudisplaylistitem_s *AddCallItem(nudisplaylist_s *list, u8 type, void *ne
     return reinterpret_cast<nudisplaylistitem_s *>(reinterpret_cast<u8 *>(list->items) - kItemSize);
 }
 
-extern "C" void NuDisplayListCheckBuffer(void) {
-}
-
 extern "C" nudisplaylist_s *NuDisplayListGet2dList(void) {
     nudisplaylist_s *list = &global_dlist_manager.dlist_2d;
     if (list->items == nullptr) {
@@ -242,9 +239,6 @@ extern "C" void NuDisplayListSetItemTable(i32 which) {
     } else if (which == 1) {
         s_current_table = &s_shadow_table[0x80];
     }
-}
-
-extern "C" void DisplayListSwapBuffersPS(void) {
 }
 
 extern "C" void DisplayListSetAlphaPS(nudisplaylistitem_s *prev_item, nudisplaylistitem_s *item, f32 alpha) {
@@ -429,16 +423,6 @@ extern "C" void NuDisplaySceneAdd(NUDLDLISTSCENE *scene) {
     NuThreadCriticalSectionEnd(global_dlist_manager.loading_critical_section);
 }
 
-// NuDisplaySceneAddPS @ 0x2ab7aa.  The apparently redundant assignment is
-// present in the Android original.
-extern "C" void NuDisplaySceneAddPS(NUDLDLISTSCENE *scene) {
-    for (i32 i = 0; i < scene->nitems; ++i) {
-        if (scene->items[i].type == 0x82) {
-            scene->items[i].type = 0x82;
-        }
-    }
-}
-
 // NuDisplaySceneDestroy @ 0x2f9fd0
 extern "C" void NuDisplaySceneDestroy(NUDLDLISTSCENE *scene) {
     if (scene == nullptr) {
@@ -494,10 +478,6 @@ extern "C" void NuDisplaySceneDestroy(NUDLDLISTSCENE *scene) {
     }
 
     NuThreadCriticalSectionEnd(global_dlist_manager.loading_critical_section);
-}
-
-// NuDisplaySceneDestroyPS @ 0x2ab7f9
-extern "C" void NuDisplaySceneDestroyPS(NUDLDLISTSCENE *) {
 }
 
 extern "C" void NuDisplayListSwapBuffersBeginFrame(void) {

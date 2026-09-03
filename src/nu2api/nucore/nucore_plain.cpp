@@ -2928,20 +2928,6 @@ extern "C" {
     }
     void NuPadRecordInit(void) {
     }
-    void NuPadResetState(i32 preserve_scanned_state) {
-        g_atLeastOnePadBeenActivated = 0;
-        g_profilePlayerPad = -1;
-        g_nupadMapping[0].port = -1;
-        g_nupadMapping[1].port = -1;
-
-        if (preserve_scanned_state == 0) {
-            for (i32 i = 0; i <= 3; i++) {
-                g_nupadScannedPads[i].digital_state.pressed = 0;
-                g_nupadScannedPads[i].digital_state.previous = g_nupadScannedPads[i].digital_state.pressed;
-                g_nupadScannedPads[i].digital_state.buttons = g_nupadScannedPads[i].digital_state.previous;
-            }
-        }
-    }
     void NuPadSetDirectMappingState(void) {
     }
     void NuPadSetMaxGamePads(void) {

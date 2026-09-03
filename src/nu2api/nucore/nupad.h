@@ -208,8 +208,6 @@ typedef struct nupadrec_s {
 extern "C" {
 #endif
     extern NUPADMAPPING g_nupadMapping[];
-    extern NUGENERICPAD g_nupadScannedPads[4] __attribute__((visibility("hidden")));
-    extern i32 g_atLeastOnePadBeenActivated __attribute__((visibility("hidden")));
     extern i32 g_profilePlayerPad;
     extern i32 MaxGamePads;
     extern char UseCorrectDeadZoning;

@@ -2167,7 +2167,7 @@ struct nupad_s;
 struct nushadermtldesc_s;
 struct nusound_filename_info_s;
 struct nutex_s;
-struct nutexmanager_s {};
+struct nutexmanager_s;
 struct particlechunkrendertype_s {
     dma_particle_chunk_s *particle_chunk;
     debinftype *effect;

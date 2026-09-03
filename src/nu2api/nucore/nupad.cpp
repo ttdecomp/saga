@@ -10,12 +10,11 @@
 #include "nu2api/numath/nufloat.h"
 
 #define MAX_GAME_PAD_COUNT 2
-#define MAX_SCANNED_PAD_COUNT 4
 
 #define ANALOG_CENTER 0x80
 
-NUGENERICPAD g_nupadScannedPads[MAX_SCANNED_PAD_COUNT] __attribute__((visibility("hidden")));
-i32 g_atLeastOnePadBeenActivated __attribute__((visibility("hidden")));
+static NUGENERICPAD g_nupadScannedPads[MAX_GAME_PAD_COUNT];
+static i32 g_atLeastOnePadBeenActivated;
 static i32 g_directpadMapping;
 
 NUPADMAPPING g_nupadMapping[MAX_GAME_PAD_COUNT];
@@ -39,7 +38,7 @@ void NuPadInit() {
 
     memset(g_nupadScannedPads, 0, sizeof(g_nupadScannedPads));
 
-    for (i = 0; i < MAX_SCANNED_PAD_COUNT; i++) {
+    for (i = 0; i < MAX_GAME_PAD_COUNT; i++) {
         g_nupadScannedPads[i].mapped_to_pad = -1;
 
         NuPadInitPS(g_nupadScannedPads + i);
@@ -52,6 +51,21 @@ void NuPadInit() {
     }
 
     g_atLeastOnePadBeenActivated = 0;
+}
+
+extern "C" void NuPadResetState(i32 preserve_scanned_state) {
+    g_atLeastOnePadBeenActivated = 0;
+    g_profilePlayerPad = -1;
+    g_nupadMapping[0].port = -1;
+    g_nupadMapping[1].port = -1;
+
+    if (preserve_scanned_state == 0) {
+        for (i32 i = 0; i <= 3; i++) {
+            g_nupadScannedPads[i].digital_state.pressed = 0;
+            g_nupadScannedPads[i].digital_state.previous = g_nupadScannedPads[i].digital_state.pressed;
+            g_nupadScannedPads[i].digital_state.buttons = g_nupadScannedPads[i].digital_state.previous;
+        }
+    }
 }
 
 NUPAD *NuPadOpen(i32 port, i32 slot) {
