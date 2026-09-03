@@ -1,7 +1,3 @@
-// This file has functions from what appear to be several different TUs in the original.
-// Getting a match, especially with optimization levels, may require splitting out functions
-// into new TUs.
-
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -56,8 +52,7 @@ char *slotfolder(i32 index) {
 char *fullslotname(i32 index) {
     static char name[4096];
 
-    char *folder = slotfolder(index);
-    strcpy(name, folder);
+    strcpy(name, slotfolder(index));
     strcat(name, "/");
     strcat(name, slotname(index));
 
@@ -65,10 +60,12 @@ char *fullslotname(i32 index) {
 }
 
 static i32 saveload_getinfo(void) {
+    i32 i;
+
     saveload_savepresent = 0;
     i32 count = 0;
 
-    for (i32 i = 0; i < 6; i = i + 1) {
+    for (i = 0; i < 6; i = i + 1) {
         saveload_slotused[i] = 0;
         saveload_slotcode[i] = 0;
 
@@ -126,8 +123,8 @@ i32 saveloadLoadSlot(i32 slot, void *buffer, i32 size) {
     return 0;
 }
 
-i32 saveloadSaveSlot(i32 slot, void *buffer, usize size) {
-    return PCSaveSlot(slot, buffer, static_cast<i32>(size), static_cast<u32>(-1));
+i32 saveloadSaveSlot(i32 slot, void *buffer, i32 size) {
+    return PCSaveSlot(slot, buffer, size, static_cast<u32>(-1));
 }
 
 void createslotfolder(i32 slot) {
@@ -155,35 +152,38 @@ i32 PCSaveSlot(i32 slot, void *extradata, i32 extradataSize, u32 hash) {
     NuStrCat(buf, ".incomplete");
 
     FILE *file = fopen(buf, "wb");
-    if (file != NULL) {
-        SaveLoad save;
-
-        memset(&save, 0, sizeof(SaveLoad));
-        save.field0_0x0 = 0x52474d48;
-        save.field1_0x4 = 1;
-        save.size = sizeof(SaveLoad);
-        save.field3_0xc = 0;
-        save.field4_0x10 = 0;
-        save.extradata_offset = 0;
-        memset(save.field6_0x18, 0, 0x10);
-        save.field11_0x1028 = 0;
-        save.field13_0x1828 = 0;
-        save.field7_0x28 = 0;
-        save.field9_0x828 = 0;
-
-        fwrite(&save, sizeof(SaveLoad), 1, file);
-        fwrite(extradata, extradataSize, 1, file);
-        fwrite(&hash, 4, 1, file);
-
-        fflush(file);
-        fclose(file);
-
-        rename(buf, path);
+    if (file == NULL) {
+        NuThreadCriticalSectionEnd(g_writingSaveCriticalSection);
+        return 0;
     }
+
+    SaveLoad save;
+
+    memset(&save, 0, sizeof(SaveLoad));
+    save.field0_0x0 = 0x52474d48;
+    save.field1_0x4 = 1;
+    save.size = sizeof(SaveLoad);
+    save.field3_0xc = 0;
+    save.field4_0x10 = 0;
+    save.extradata_offset = 0;
+    memset(save.field6_0x18, 0, 0x10);
+    save.field11_0x1028 = 0;
+    save.field13_0x1828 = 0;
+    save.field7_0x28 = 0;
+    save.field9_0x828 = 0;
+
+    fwrite(&save, sizeof(SaveLoad), 1, file);
+    fwrite(extradata, extradataSize, 1, file);
+    fwrite(&hash, 4, 1, file);
+
+    fflush(file);
+    fclose(file);
+
+    rename(buf, path);
 
     NuThreadCriticalSectionEnd(g_writingSaveCriticalSection);
 
-    return file != NULL;
+    return 1;
 }
 
 static i32 statuswait;
@@ -205,7 +205,7 @@ void saveloadASLoad(i32 slot, void *buffer, i32 size) {
     statuswait = 1;
     NuTimeGet(&savetimer);
     saveload_slotid = slot;
-    saveload_autosave = slot;
+    saveload_autosave = saveload_slotid;
 }
 
 void saveloadASDelete(i32 slot) {

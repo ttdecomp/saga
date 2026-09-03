@@ -1,4 +1,4 @@
-![Progress](https://img.shields.io/badge/matching-14.51%25-red)
+![Progress](https://img.shields.io/badge/matching-14.53%25-red)
 [![Discord](https://img.shields.io/discord/1467775700894224555?color=%235865F2&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/2HJuMtzA7q)
 
 |                 | Target (Android x86)                                                                                                                                                                                  | Host                                                                                                                                                                                  |
@@ -93,7 +93,7 @@ See the [documentation index](doc/main.md).
 | `MechInputTouch` | 5.0% | 0.0% | 5.1% |
 | `editor` | 2.6% | 0.0% | - |
 | `gameapi` | 8.1% | 3.9% | 92.6% |
-| `gameframework` | 76.4% | 23.5% | 100.0% |
+| `gameframework` | 99.9% | 58.8% | 100.0% |
 | `gamelib` | 5.8% | 0.8% | 12.1% |
 | `java` | 10.7% | 0.0% | 0.0% |
 | `legoapi` | 13.5% | 14.5% | 32.6% |
