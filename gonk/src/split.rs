@@ -239,6 +239,14 @@ fn build_data_sections<'data, E: object::Endian>(
         orig_sym_idx_to_new_offset.insert(orig_sym.index(), new_offset as u32);
     }
 
+    sections.entry(".rodata").or_insert_with(|| {
+        obj.add_section(
+            Vec::new(),
+            ".rodata".as_bytes().to_vec(),
+            SectionKind::ReadOnlyData,
+        )
+    });
+
     Ok(orig_sym_idx_to_new_offset)
 }
 
@@ -255,7 +263,7 @@ enum Rewrite<'data, 'file> {
 #[derive(Debug)]
 enum OffsetTarget<'data, 'file> {
     Symbol(read::elf::ElfSymbol<'data, 'file, FileHeader32<Endianness>>),
-    Section(read::elf::ElfSection32<'data, 'file, Endianness>),
+    Section(&'file str),
 }
 
 #[derive(Debug)]
@@ -291,6 +299,7 @@ fn rewrite_text_symbol<'data, 'file, E: object::Endian>(
 
     let orig_plt_section = lib.file.section_by_name(".plt").unwrap();
     let orig_got_plt_section = lib.file.section_by_name(".got.plt").unwrap();
+    let orig_rodata_section = lib.file.section_by_name(".rodata").unwrap();
 
     // The register which holds the address of the _GLOBAL_OFFSET_TABLE_ symbol.
     let mut thunk_reg = None;
@@ -407,6 +416,7 @@ fn rewrite_text_symbol<'data, 'file, E: object::Endian>(
                 lib,
                 orig_sym_idx_to_new_offset,
                 &orig_got_section,
+                &orig_rodata_section,
                 orig_addr,
             );
 
@@ -419,9 +429,9 @@ fn rewrite_text_symbol<'data, 'file, E: object::Endian>(
                             (R_386_GOTOFF, RelocTarget::Symbol(orig_sym), new_addr)
                         }
 
-                        OffsetTarget::Section(orig_section) => (
+                        OffsetTarget::Section(orig_section_name) => (
                             R_386_GOTOFF,
-                            RelocTarget::Section(orig_section.name().unwrap()),
+                            RelocTarget::Section(orig_section_name),
                             new_addr,
                         ),
                     },
@@ -523,6 +533,7 @@ fn generate_rewrite<'data, 'file: 'data>(
     lib: &Lib<'_, 'file>,
     orig_sym_idx_to_new_offset: &HashMap<read::SymbolIndex, u32>,
     orig_got_section: &read::elf::ElfSection<'_, '_, FileHeader32<Endianness>>,
+    orig_rodata_section: &read::elf::ElfSection<'file, '_, FileHeader32<Endianness>>,
     orig_addr: u64,
 ) -> Option<Rewrite<'data, 'file>> {
     if let Some(orig_sym) = lib.symbols_by_address.get(&orig_addr) {
@@ -535,7 +546,10 @@ fn generate_rewrite<'data, 'file: 'data>(
                 .section_by_index(orig_sym.section_index().unwrap())
                 .unwrap();
 
-            Rewrite::GotOffset(new_addr, OffsetTarget::Section(orig_section))
+            Rewrite::GotOffset(
+                new_addr,
+                OffsetTarget::Section(orig_section.name().unwrap()),
+            )
         } else {
             Rewrite::Got(*orig_sym)
         };
@@ -564,6 +578,17 @@ fn generate_rewrite<'data, 'file: 'data>(
         let orig_sym = lib.symbols_by_address.get(&sym_addr).unwrap();
 
         Some(Rewrite::Got(*orig_sym))
+    } else if (orig_rodata_section.address()
+        ..orig_rodata_section.address() + orig_rodata_section.size())
+        .contains(&orig_addr)
+    {
+        // The address falls within the .rodata section
+        let offset = orig_addr - orig_rodata_section.address();
+
+        Some(Rewrite::GotOffset(
+            Some(offset as u32),
+            OffsetTarget::Section(orig_rodata_section.name().unwrap()),
+        ))
     } else {
         None
     }
