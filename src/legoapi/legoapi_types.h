@@ -515,7 +515,8 @@ struct CUTSYS {
 struct ClassItem {};
 struct DETONATOR_s {
     u8 field_0x00[0xc];
-    u8 action_data[0x18];
+    NUVEC field_0x0c;
+    NUVEC field_0x18;
     GameObject_s *object;
     u8 active;
     u8 field_0x29[7];
