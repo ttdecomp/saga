@@ -1658,7 +1658,7 @@ static f32 backdrop_bot_tr = 0.0f;
 static f32 backdrop_bot_tg = 0.0f;
 static f32 backdrop_bot_tb = 0.0f;
 
-static i32 backdrop_black = 0;
+i32 backdrop_black = 0;
 
 void (*BackDrop_AlphaFn)(float *) = nullptr;
 
