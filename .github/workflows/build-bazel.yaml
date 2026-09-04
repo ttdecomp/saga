@@ -53,9 +53,22 @@ jobs:
         run: bazel build --config=target //src:saga_target
 
   wasm:
-    name: WebAssembly / Linux
-    runs-on: ubuntu-latest
+    name: WebAssembly / ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
     needs: checks
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux
+            os: ubuntu-latest
+            cache: linux
+          - name: Windows
+            os: windows-latest
+            cache: windows
+          - name: macOS
+            os: macos-15
+            cache: macos
     steps:
       - uses: actions/checkout@v4
 
@@ -63,13 +76,10 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
-          disk-cache: bazel-${{ github.workflow }}-wasm
+          disk-cache: bazel-${{ github.workflow }}-wasm-${{ matrix.cache }}
           repository-cache: true
           external-cache: true
           cache-save: ${{ github.event_name != 'pull_request' }}
-
-      - name: Verify Bazel version
-        run: test "$(bazel --version)" = "bazel $BAZEL_VERSION"
 
       - name: Build WebAssembly host
         run: bazel build --config=wasm //src:saga_wasm

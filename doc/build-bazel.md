@@ -77,4 +77,5 @@ isolation headers required by pthread-enabled WebAssembly.
 
 `.github/workflows/build-bazel.yaml` keeps all build variants in one workflow.
 The shared checks gate the platform jobs, while each job has its own cache key.
-This also gives the README one workflow-level build-matrix badge.
+WASM is verified on Linux, Windows, and macOS. This also gives the README one
+workflow-level build-matrix badge.
