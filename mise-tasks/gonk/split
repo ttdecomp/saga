@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-#MISE description="Split the original library into objdiff objects"
-#MISE depends=["target:build", "gonk:build"]
-#MISE hide=true
-set -euo pipefail
-
-./gonk/target/release/gonk split

@@ -30,8 +30,8 @@ jobs:
       - name: Run Bazel migration checks
         run: bazel test //scripts:checks
 
-  android-linux:
-    name: Android-x86 / Linux
+  target-linux:
+    name: Target / Linux
     runs-on: ubuntu-latest
     needs: checks
     steps:
@@ -41,7 +41,7 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
-          disk-cache: bazel-${{ github.workflow }}-android-linux
+          disk-cache: bazel-${{ github.workflow }}-target-linux
           repository-cache: true
           external-cache: true
           cache-save: ${{ github.event_name != 'pull_request' }}
@@ -49,8 +49,8 @@ jobs:
       - name: Verify Bazel version
         run: test "$(bazel --version)" = "bazel $BAZEL_VERSION"
 
-      - name: Build Android-x86 target
-        run: bazel build --config=android-x86 //src:saga_android_x86
+      - name: Build target
+        run: bazel build --config=target //src:saga_target
 
   wasm:
     name: WebAssembly / Linux
@@ -74,8 +74,8 @@ jobs:
       - name: Build WebAssembly host
         run: bazel build --config=wasm //src:saga_wasm
 
-  android-windows:
-    name: Android-x86 / Windows MSYS2
+  target-windows:
+    name: Target / Windows MSYS2
     runs-on: windows-latest
     needs: checks
     steps:
@@ -95,7 +95,7 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
-          disk-cache: bazel-${{ github.workflow }}-android-windows
+          disk-cache: bazel-${{ github.workflow }}-target-windows
           repository-cache: true
           external-cache: true
           cache-save: ${{ github.event_name != 'pull_request' }}
@@ -106,14 +106,15 @@ jobs:
           BAZEL_SH: "${{ steps.msys2.outputs.msys2-location }}/usr/bin/bash.exe"
         run: test "$(bazel --version)" = "bazel $BAZEL_VERSION"
 
-      - name: Build Android-x86 target
+      - name: Build target
         shell: msys2 {0}
         env:
           BAZEL_SH: "${{ steps.msys2.outputs.msys2-location }}/usr/bin/bash.exe"
-        run: bazel build --config=android-x86 //src:saga_android_x86
+          MSYS2_ARG_CONV_EXCL: "*"
+        run: bazel build --config=target //src:saga_target
 
-  android-macos:
-    name: Android-x86 / macOS Intel
+  target-macos:
+    name: Target / macOS Intel
     runs-on: macos-15-intel
     needs: checks
     steps:
@@ -123,7 +124,7 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
-          disk-cache: bazel-${{ github.workflow }}-android-macos
+          disk-cache: bazel-${{ github.workflow }}-target-macos
           repository-cache: true
           external-cache: true
           cache-save: ${{ github.event_name != 'pull_request' }}
@@ -131,11 +132,11 @@ jobs:
       - name: Verify Bazel version
         run: test "$(bazel --version)" = "bazel $BAZEL_VERSION"
 
-      - name: Build Android-x86 target
-        run: bazel build --config=android-x86 //src:saga_android_x86
+      - name: Build target
+        run: bazel build --config=target //src:saga_target
 
-  host-linux:
-    name: Native host / Linux i686 (Ubuntu 26.04)
+  native-linux:
+    name: Native / Linux i686 (Ubuntu 26.04)
     runs-on: ubuntu-latest
     container: ubuntu:26.04
     needs: checks
@@ -145,9 +146,17 @@ jobs:
           dpkg --add-architecture i386
           apt-get -y update
           DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            ca-certificates git gcc-multilib g++-multilib pkg-config \
+            ca-certificates curl git gcc-multilib g++-multilib pkg-config \
             libegl-dev:i386 libgles-dev:i386 libsdl3-dev:i386 \
             libvorbis-dev:i386
+          bazel_binary="bazel-$BAZEL_VERSION-linux-x86_64"
+          curl -fsSLo "/tmp/$bazel_binary" \
+            "https://releases.bazel.build/$BAZEL_VERSION/release/$bazel_binary"
+          curl -fsSLo "/tmp/$bazel_binary.sha256" \
+            "https://releases.bazel.build/$BAZEL_VERSION/release/$bazel_binary.sha256"
+          cd /tmp
+          sha256sum -c "$bazel_binary.sha256"
+          install -m 0755 "$bazel_binary" /usr/local/bin/bazel
 
       - uses: actions/checkout@v4
 
@@ -155,7 +164,7 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
-          disk-cache: bazel-${{ github.workflow }}-host-linux
+          disk-cache: bazel-${{ github.workflow }}-native-linux
           repository-cache: true
           external-cache: true
           cache-save: ${{ github.event_name != 'pull_request' }}
@@ -163,13 +172,13 @@ jobs:
       - name: Verify Bazel version
         run: test "$(bazel --version)" = "bazel $BAZEL_VERSION"
 
-      - name: Build native host
+      - name: Build native
         env:
           PKG_CONFIG_PATH: /usr/lib/i386-linux-gnu/pkgconfig
-        run: bazel build --config=host //src:saga_host
+        run: bazel build --config=native //src:saga_native
 
-  host-windows:
-    name: Native host / Windows MINGW64
+  native-windows:
+    name: Native / Windows MINGW64
     runs-on: windows-latest
     needs: checks
     steps:
@@ -193,7 +202,7 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
-          disk-cache: bazel-${{ github.workflow }}-host-windows
+          disk-cache: bazel-${{ github.workflow }}-native-windows
           repository-cache: true
           external-cache: true
           cache-save: ${{ github.event_name != 'pull_request' }}
@@ -204,15 +213,16 @@ jobs:
           BAZEL_SH: "${{ steps.msys2.outputs.msys2-location }}/usr/bin/bash.exe"
         run: test "$(bazel --version)" = "bazel $BAZEL_VERSION"
 
-      - name: Build native host
+      - name: Build native
         shell: msys2 {0}
         env:
           BAZEL_SH: "${{ steps.msys2.outputs.msys2-location }}/usr/bin/bash.exe"
+          MSYS2_ARG_CONV_EXCL: "*"
           PKG_CONFIG_PATH: /mingw64/lib/pkgconfig
-        run: bazel build --config=host --compiler=mingw-gcc //src:saga_host
+        run: bazel build --config=native --compiler=mingw-gcc //src:saga_native
 
-  host-macos:
-    name: Native host / macOS ${{ matrix.architecture }}
+  native-macos:
+    name: Native / macOS ${{ matrix.architecture }}
     needs: checks
     strategy:
       fail-fast: false
@@ -229,6 +239,7 @@ jobs:
       - name: Install requirements
         run: |
           brew install sdl3 libvorbis
+          brew tap startergo/gn
           brew tap startergo/angle
           brew install startergo/angle/angle
 
@@ -240,7 +251,7 @@ jobs:
         with:
           bazelisk-cache: true
           disk-cache: >-
-            bazel-${{ github.workflow }}-host-macos-${{ matrix.architecture }}
+            bazel-${{ github.workflow }}-native-macos-${{ matrix.architecture }}
           repository-cache: true
           external-cache: true
           cache-save: ${{ github.event_name != 'pull_request' }}
@@ -248,5 +259,5 @@ jobs:
       - name: Verify Bazel version
         run: test "$(bazel --version)" = "bazel $BAZEL_VERSION"
 
-      - name: Build native host
-        run: bazel build --config=host //src:saga_host
+      - name: Build native
+        run: bazel build --config=native //src:saga_native

@@ -225,13 +225,9 @@ def is_noise_symbol(name):
     return False
 
 
-def find_nm(script_dir):
-    """Locate the NDK nm binary: prefer $NM, else the bundled NDK path."""
-    root = os.path.dirname(os.path.abspath(script_dir))
-    candidate = find_ndk_tool(root, "nm")
-    if os.path.isfile(candidate):
-        return candidate
-    return None
+def find_nm():
+    """Locate nm, preferring the $NM override."""
+    return find_ndk_tool("nm")
 
 
 def collect_defined_symbols(object_file, nm):
@@ -263,16 +259,11 @@ def collect_defined_symbols(object_file, nm):
 def check_duplicate_symbols(build_dir, nm):
     """Find symbols defined in more than one object file under ``build_dir``.
 
-    Returns (symbol -> [object_file, ...]) for every duplicated symbol. The
-    original split objects (build/split) are skipped -- they are the reference,
-    not our compilation.
+    Returns (symbol -> [object_file, ...]) for every duplicated symbol.
     """
     objects = []
     for dirpath, _dirnames, filenames in os.walk(build_dir):
-        # Skip the reference split objects, third-party external test builds,
-        # and compiler-id probe objects (not part of any real target).
-        if os.sep + "split" + os.sep in dirpath + os.sep:
-            continue
+        # Skip third-party external builds and compiler probes.
         if os.sep + "external" + os.sep in dirpath + os.sep:
             continue
         if "CompilerId" in dirpath:
@@ -378,8 +369,7 @@ def main():
         if not os.path.isdir(build_dir):
             print(f"error: --build is not a directory: {build_dir}", file=sys.stderr)
             return 2
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        nm = find_nm(script_dir)
+        nm = find_nm()
         if nm is None:
             print("warning: could not find NDK nm; skipping duplicate-symbol check",
                   file=sys.stderr)

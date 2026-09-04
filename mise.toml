@@ -1,8 +1,0 @@
-[settings]
-idiomatic_version_file_enable_tools = ["rust"]
-
-[tools]
-clang-format = "23.1.0"
-prek = "0.5.0"
-python = "3.14.7"
-"cargo:https://github.com/ttdecomp/objdiff.git" = { version = "rev:66c879a95d45c1170a0834071cab58655fd9773b", crate = "objdiff-cli", depends = ["rust"] }

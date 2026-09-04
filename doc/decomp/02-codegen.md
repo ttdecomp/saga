@@ -1,6 +1,7 @@
 # 02 — GCC 4.7 (Android NDK r8e) x86-32 codegen encyclopedia
 
-Toolchain: `ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/linux-x86_64/bin/i686-linux-android-g++`
+Toolchain: the checksum-pinned Android NDK r8e x86 GCC 4.7 compiler downloaded
+by Bazel.
 Results were measured with temporary compile/disassembly experiments using
 canonical flags:
 `-fno-exceptions -fno-rtti -Wno-write-strings -std=gnu++11 -g -fno-function-sections -fno-data-sections`,
@@ -224,7 +225,7 @@ verified: `g++ -O0/-O3 -c int.cpp; objdump -d; nm -a`
 ```
 doubles: `movsd/addsd/mulsd/ucomisd`. Return convention: result stored to a stack temp and reloaded with `flds`/`fldl` → **returned in x87 st(0)** (i386 SysV ABI), both -O0 and -O3. The compiler keeps a 4/8/12-byte frame (`lea -4/-0xc(%esp),%esp`) for the roundtrip.
 
-Re-verified 2026-08: the SSE2 default is the fork's `-mfpmath=sse` default (`__SSE_MATH__`/`__SSE2_MATH__` = 1, from `-dM -E`), NOT upstream's documented `-mfpmath=387`. With explicit `-mfpmath=387` the same source compiles to pure x87: `fldl a; fldl b; fmul %st(1),%st; faddp; ret`, loop acc = `fldz; faddl (%eax)` (no 12-byte frame, no fldl-return roundtrip), compare = `fldl; fldl; fxch; fucomip %st(1),%st; fstp %st(0); seta %al` (ucomisd → fucomip). The real original is overwhelmingly SSE2. **Agents should expect SSE2 (`movsd`/`addsd`/`ucomisd`) for double arithmetic; x87 primarily appears in int64↔double conversions (`fildll`/`fisttpll`) and st(0) return roundtrips.** Search recursively under `build/split/` when recensing instructions.
+Re-verified 2026-08: the SSE2 default is the fork's `-mfpmath=sse` default (`__SSE_MATH__`/`__SSE2_MATH__` = 1, from `-dM -E`), NOT upstream's documented `-mfpmath=387`. With explicit `-mfpmath=387` the same source compiles to pure x87: `fldl a; fldl b; fmul %st(1),%st; faddp; ret`, loop acc = `fldz; faddl (%eax)` (no 12-byte frame, no fldl-return roundtrip), compare = `fldl; fldl; fxch; fucomip %st(1),%st; fstp %st(0); seta %al` (ucomisd → fucomip). The real original is overwhelmingly SSE2. **Agents should expect SSE2 (`movsd`/`addsd`/`ucomisd`) for double arithmetic; x87 primarily appears in int64↔double conversions (`fildll`/`fisttpll`) and st(0) return roundtrips.** Re-census instructions directly in `res/libTTapp.so` and `bazel-bin/src/libTTapp.so`.
 
 **Comparisons:** `movss arg,%xmm0; ucomiss arg2,%xmm0; setcc %al` (ucomiss/ucomisd; `a<b` → `seta` since operand order puts b in xmm0). Compare-against-float-constant (`a>0.0f`) loads the constant from `.rodata` via the PIC base (`movss .LC@GOTOFF(%ecx),%xmm1` — no imm-broadcast), then `ucomiss`.
 
@@ -338,8 +339,9 @@ verified: `g++ -O0/-O3 -c misc.cpp; objdump -d`
 
 ## Cross-checks against real project artifacts
 
-- Carved examples now live at directory-preserving paths such as
-  `build/split/nu2api/nufile/nufile.cpp.o` and
-  `build/split/legoapi/world/level.cpp.o`. Resolve the exact current path
-  through `objdiff.json` before repeating a cross-check.
-- `build/CMakeFiles/saga.dir/src/batman.cpp.o` (-O0 rebuild): `NuMain` = `push ebp; mov esp,ebp; push ebx; lea -0x14(%esp),%esp; thunk; addl; mov args to (%esp); call @PLT; lea 0x14(%esp),%esp; pop ebx; pop ebp; ret` — matches §1/§9 exactly.
+- Build the current shared object with
+  `bazel build --config=target //src:saga_target` and compare functions in
+  `bazel-bin/src/libTTapp.so` directly with `res/libTTapp.so`.
+- The rebuilt `NuMain` shape is `push ebp; mov esp,ebp; push ebx; lea
+  -0x14(%esp),%esp; thunk; addl; mov args to (%esp); call @PLT; lea
+  0x14(%esp),%esp; pop ebx; pop ebp; ret` — matching §1/§9.

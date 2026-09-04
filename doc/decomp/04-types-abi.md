@@ -1,9 +1,9 @@
 # 04 — Types & ABI: mangling, layout, calling conventions, vtables, thunks
 
 Agent-oriented cheat sheet for matching `res/libTTapp.so` (Android x86, i686).
-Everything below was verified with the repo's toolchain
-(`ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/linux-x86_64/bin/i686-linux-android-g++`,
-GCC 4.7, `-fno-exceptions -fno-rtti`, C++11 — the flags in `CMakeLists.txt:424`)
+Everything below was verified with the repo's Bazel-managed Android NDK r8e
+GCC 4.7 toolchain (`-fno-exceptions -fno-rtti`, C++11 — the flags in
+`.bazelrc` and `src/BUILD.bazel`)
 against the original binary via `nm`/`objdump`. When in doubt, re-verify: mangling
 only matters when the function/symbol is exported (or vtable-referenced), so the
 golden rule is *the binary's mangled name is the spec*.
@@ -253,13 +253,9 @@ vcaller(VBase*, int):            # p->f1(v)
 - `_ZTvNN…` — virtual-base (construction-vtable) thunks; `vb.o` emitted
   `_ZTv0_n12_…` for a virtual-base dtor. None in the original binary → no
   virtual bases in this codebase.
-- The original has exactly 39 `_ZThn*` (all grouped into
-  `build/split/remaining.c.o`). The build once provisioned 26 of them in a
-  `MechInputTouchThunks.cpp` TU (stale object
-  `build/CMakeFiles/saga.dir/src/MechInputTouch/MechInputTouchThunks.cpp.o`,
-  since removed from the tree). The other 13 belong to classes not yet
-  implemented (SceneObjectHelper ×3, TTNetwork ×5, NuSoundDecoderOGG ×3,
-  NetworkObjectManager ×2).
+- The original has exactly 39 `_ZThn*`. Some belong to classes not yet
+  implemented (including SceneObjectHelper, TTNetwork, NuSoundDecoderOGG, and
+  NetworkObjectManager).
 - Policy (`scripts/check_symbols.py:70-73`): `_ZThn` thunks are filtered from
   the missing-symbol report — the compiler emits them automatically, so
   **never hand-write a thunk stub**; when you implement a real class with the
@@ -304,8 +300,7 @@ variable named `_ZGVZ<func>E<var>` (verified: `_ZGVZ7get_foovE3foo`, local
 
 ## 9. long long / i64 policy
 
-`google-runtime-int` (clang-tidy, wired in `CMakeLists.txt:444-457` with
-`--warnings-as-errors="*"`) flags raw `long long`. The current tree has two
+The project convention avoids raw `long long`. The current tree has two
 raw occurrences: the third-party `java/jni.h` typedef and one format-argument
 cast in `ios_graphics.cpp`; normal engine code uses `i64`/`u64`. **Do not
 "fix" `i64` signatures back to `long long`** to

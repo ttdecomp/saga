@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-#MISE description="Build the native host with Bazel"
-set -euo pipefail
-
-bazel build --config=host //src:saga_host

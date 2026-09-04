@@ -29,14 +29,13 @@ Defaults:
 
 import argparse
 import os
-import re
 import subprocess
 import sys
 
 from ndk_tools import find_ndk_tool
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-NM = find_ndk_tool(ROOT, "nm")
+NM = find_ndk_tool("nm")
 
 
 def defined_text_symbols(binary, include_weak=False, include_local=False):
@@ -47,6 +46,9 @@ def defined_text_symbols(binary, include_weak=False, include_local=False):
     weakly because they are inline or implicit special members. Local/file-static
     symbols (type t) are matched when include_local=True.
     """
+    if NM is None:
+        sys.stderr.write("nm was not found; install it or set the NM environment variable\n")
+        sys.exit(2)
     proc = subprocess.run(
         [NM, "--defined-only", binary], capture_output=True, text=True
     )
@@ -105,14 +107,6 @@ def load_ignore(path):
             if not line or line.startswith("#"):
                 continue
             out.add(line)
-    # Also fold in the gonk.toml ignore list (mangled symbols we don't need
-    # to replicate: console/platform glue, compiler runtime, etc.).
-    gonk = os.path.join(ROOT, "gonk.toml")
-    if os.path.exists(gonk):
-        for raw in open(gonk):
-            m = re.search(r'"([^"]+)"', raw)
-            if m:
-                out.add(m.group(1))
     return out
 
 
@@ -218,7 +212,7 @@ def main():
         sys.stderr.write(
             "\nERROR: extra symbols (%d) exceed baseline (%d).\n"
             "New extra symbols must be documented; add them to the ignore list\n"
-            "(scripts/symbols_ignore.txt / gonk.toml) or bump the baseline\n"
+            "(scripts/symbols_ignore.txt) or bump the baseline\n"
             "(scripts/symbols_extra_baseline.txt) before they can be merged.\n"
             % (len(extras), args.baseline_extra)
         )

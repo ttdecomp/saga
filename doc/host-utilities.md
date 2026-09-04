@@ -10,7 +10,7 @@ Use the window utility in hidden, muted mode when running alongside other deskto
 applications:
 
 ```sh
-bazel-bin/src/saga_host window --offscreen --mute --capture
+bazel-bin/src/saga_native window --offscreen --mute --capture
 ```
 
 - `--offscreen` creates a hidden, non-focusable SDL window and ignores desktop
@@ -26,7 +26,7 @@ bazel-bin/src/saga_host window --offscreen --mute --capture
 The standard unattended menu check is therefore:
 
 ```sh
-timeout 38s bazel-bin/src/saga_host window --offscreen --mute --script-input --capture
+timeout 38s bazel-bin/src/saga_native window --offscreen --mute --script-input --capture
 ```
 
 The command implementations belong under `src/host/harness/`. Actual platform

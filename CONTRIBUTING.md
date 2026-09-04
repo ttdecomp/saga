@@ -7,8 +7,6 @@ There are many ways to contribute to the project.
   impacting percentage matched, e.g. naming or documentation.
 - Adding doxygen documentation to methods to describe their purpose and
   parameters.
-- Improvements to the `gonk` tool. Several ideas for improvements can be found
-  in the project's GitHub issues.
 - Encouragement and enthusiasm! It's always nice to know that one's work is
   appreciated.
 
@@ -38,24 +36,15 @@ copy of the game.
 The contents of the .apk can be extracted with a zip tool. The file
 `lib/x86/libTTapp.so` must then be placed in the project's `res/` directory.
 
-Once you have placed the shared object in the `res/` directory, mise installs
-the pinned Rust toolchain, builds `gonk`, and runs the full matching pipeline:
+Build the matching target directly with Bazel:
 
 ```bash
-mise run match
+bazel build --config=target //src:saga_target
 ```
 
-This generates ELF objects from the original shared object corresponding to the
-structure of our source tree, as well as a configuration for the `objdiff` tool.
-
-The mise configuration installs the pinned project fork of `objdiff-cli`.
-
-The upstream `objdiff` GUI remains useful for interactive inspection, but the
-command-line workflows documented in `doc/decomp/` assume `objdiff-cli 3.6.x`.
-
-Split objects mirror the source-tree hierarchy under `build/split/`; they are
-not a flat directory. Prefer `scripts/objdiff-cli.py SYMBOL` for one function,
-or query `objdiff.json` for the exact target/base object paths.
+The output is `bazel-bin/src/libTTapp.so`. Compare one function against the
+original with `python3 scripts/objdiff-cli.py SYMBOL`; the helper compares the
+two shared objects directly. See `doc/decomp/09-objdiff-cli.md` for details.
 
 ## Development Scripts
 
@@ -67,8 +56,8 @@ The `scripts/` directory contains a few small helpers:
   the original diverge, aligned with context and decompiling hints (resolved
   call/jump targets, string and float constants, referenced data). It is aimed
   at automated/agent use — one mangled symbol at a time. For manual and
-  whole-repository work (aggregate `report.json`, the interactive UI), use the
-  `objdiff` GUI/CLI directly. See `doc/decomp/09-objdiff-cli.md`.
+  whole-repository work or the interactive UI, use the `objdiff` GUI/CLI
+  directly. See `doc/decomp/09-objdiff-cli.md`.
 - `check_duplicate_definitions.py` — scans the source tree for duplicate type
   (struct/class/union/enum) definitions. Given `--build <dir>` it also runs
   `nm` over the compiled objects to report duplicate symbols (local and global,
@@ -77,13 +66,11 @@ The `scripts/` directory contains a few small helpers:
   `--fail-on-symbols` to make it an error.
 - `check_symbols.py` — diffs the defined text symbols of the build against the
   original binary, so you can see exactly which functions are still missing.
-- `matching_report.py` — turns an objdiff `report.json` into per-directory
-  matching-progress tables and can write them back into `README.md`.
-- `objdiffdiff.py` — compares two objdiff `report.json` files and reports
-  regressions.
+- `matching_report.py` and `objdiffdiff.py` — optional helpers for externally
+  generated objdiff reports; reports are not part of the build.
 
-`check_duplicate_definitions.py` and `check_symbols.py` are run automatically as
-part of the `lint` build target.
+Fast repository checks run with `bazel test //scripts:checks`. Bazel downloads
+the pinned Python 3.12.12 runtime used by those tests, so no venv is needed.
 
 ## Style Guidelines
 
@@ -134,13 +121,15 @@ personal tastes in readability, the following guidelines apply:
 
 ## Git hooks
 
-Run `mise run setup` once after cloning. It installs all pinned development
-tools and uses prek to install the repository hook.
+An optional non-mutating hook runs staged whitespace checks and
+`bazel test //scripts:checks`:
 
-The hook formats changed C/C++ source files, builds the target, regenerates
-`objdiff.json`/`report.json`, updates the README matching table and badge, and
-runs the symbol check when `res/libTTapp.so` is available. Review and stage any
-generated changes before committing again.
+```bash
+git config core.hooksPath .githooks
+```
+
+The hook never formats files or regenerates artifacts. Run clang-format
+explicitly when changing C/C++ sources.
 
 For repository-specific agent guidance, see
 `skills/saga-decomp/SKILL.md`. The package uses the Codex `SKILL.md` format and

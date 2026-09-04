@@ -21,49 +21,48 @@ any game assets, media, original source code, or any other copyrighted material.
 
 ## Build Instructions
 
-The project uses Bazel for the matching Android x86 target, native
-Linux/Windows/macOS hosts, and WebAssembly. Bazel 9.2.0 is pinned through
+The project uses Bazel for the matching `target`, `native`
+Linux/Windows/macOS builds, and `wasm`. Bazel 9.2.0 is pinned through
 `.bazelversion`; Bazelisk is the recommended launcher.
 
-The Android x86 build uses the NDK r8e toolchain and targets the original
-Android platform. It is the matching build; its output is not a host-runnable
-game executable.
+The `target` build uses the Android x86 NDK r8e toolchain and matches the
+original Android platform. Its output is not a host-runnable game executable.
 
-A host build uses the configured host C/C++ compiler. Linux builds 32-bit i686
-code with AddressSanitizer and UndefinedBehaviorSanitizer; Windows and macOS
-use their native architecture.
+The `native` build uses the configured host C/C++ compiler. Linux builds
+32-bit i686 code with AddressSanitizer and UndefinedBehaviorSanitizer; Windows
+and macOS use their native architecture.
 
 See [the Bazel build guide](doc/build-bazel.md) for prerequisites, platform
 details, dependency versions, and build-mode behavior.
 
 ```bash
-# matching Android x86 target (NDK r8e is fetched automatically)
-bazel build --config=android-x86 //src:saga_android_x86
+# matching target (Android x86; NDK r8e is fetched automatically)
+bazel build --config=target //src:saga_target
 
-# native host
-bazel build --config=host //src:saga_host
+# native executable
+bazel build --config=native //src:saga_native
 
 # WebAssembly host
 bazel build --config=wasm //src:saga_wasm
+
+# build and serve WebAssembly at http://127.0.0.1:8000/
+bazel run --config=wasm //scripts:wasm_server
 ```
 
-The equivalent mise tasks are `mise run bazel:android`,
-`mise run bazel:host`, and `mise run bazel:wasm`.
+The target produces `bazel-bin/src/libTTapp.so`; native and WebAssembly builds
+remain executables.
 
-The Android target produces `bazel-bin/src/libTTapp.so`; native host and
-WebAssembly builds remain executables.
-
-To run the native host after building:
+To run the native build:
 
 ```bash
 # run the game
-bazel-bin/src/saga_host window
+bazel-bin/src/saga_native window
 
 # enter the Cantina and rotate the camera through 360 degrees in 10 seconds
-bazel-bin/src/saga_host window --camera-orbit
+bazel-bin/src/saga_native window --camera-orbit
 
 # enter the Cantina with a free camera (numpad 8/5/4/6; hold Shift to move)
-bazel-bin/src/saga_host window --camera-free
+bazel-bin/src/saga_native window --camera-free
 ```
 
 ## Contributing

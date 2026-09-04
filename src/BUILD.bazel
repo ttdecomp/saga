@@ -72,7 +72,7 @@ filegroup(
 )
 
 cc_library(
-    name = "saga_android_x86_objects",
+    name = "saga_target_objects",
     srcs = _ENGINE_SRCS,
     hdrs = _PUBLIC_HEADERS,
     copts = [
@@ -104,11 +104,11 @@ cc_binary(
     linkshared = True,
     linkstatic = True,
     target_compatible_with = ["@platforms//os:android"],
-    deps = [":saga_android_x86_objects"],
+    deps = [":saga_target_objects"],
 )
 
 alias(
-    name = "saga_android_x86",
+    name = "saga_target",
     actual = ":libTTapp.so",
 )
 
@@ -132,7 +132,7 @@ _HOST_PLATFORM_DEPS = select({
 }) + ["@libsquish//:squish"]
 
 cc_library(
-    name = "saga_host_objects",
+    name = "saga_native_objects",
     srcs = _HOST_SRCS,
     hdrs = _PUBLIC_HEADERS,
     copts = ["-fno-stack-protector"] + _HOST_PLATFORM_COPTS,
@@ -149,7 +149,7 @@ cc_library(
 )
 
 cc_binary(
-    name = "saga_host",
+    name = "saga_native",
     linkopts = select({
         "//bazel/platforms:linux": [
             "-m32",
@@ -167,7 +167,7 @@ cc_binary(
         "//conditions:default": [],
     }),
     linkstatic = False,
-    deps = [":saga_host_objects"],
+    deps = [":saga_native_objects"],
 )
 
 cc_library(

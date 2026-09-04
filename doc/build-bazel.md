@@ -1,23 +1,25 @@
 # Bazel builds
 
 Bazel is SAGA's build system. Version 9.2.0 is pinned in `.bazelversion`, so
-Bazelisk is the recommended launcher.
+Bazelisk is the recommended launcher. Repository Python tests and tools run on
+Python 3.12.12 downloaded by `rules_python`; no virtual environment or separate
+Python installation is required for Bazel targets.
 
 ## Build matrix
 
 | Build | Command | Output | Supported build hosts |
 |---|---|---|---|
-| Matching Android x86 | `bazel build --config=android-x86 //src:saga_android_x86` | `bazel-bin/src/libTTapp.so` | Linux x86-64, Windows x86-64, macOS Intel |
-| Native host | `bazel build --config=host //src:saga_host` | `bazel-bin/src/saga_host` (`.exe` on Windows) | Linux, Windows, macOS 15 Intel and Apple Silicon |
-| WebAssembly host | `bazel build --config=wasm //src:saga_wasm` | `bazel-bin/src/saga.html`, `.js`, and `.wasm` | Any host supported by emsdk 6.0.8 |
+| Target (Android x86) | `bazel build --config=target //src:saga_target` | `bazel-bin/src/libTTapp.so` | Linux x86-64, Windows x86-64, macOS Intel |
+| Native | `bazel build --config=native //src:saga_native` | `bazel-bin/src/saga_native` (`.exe` on Windows) | Linux, Windows, macOS 15 Intel and Apple Silicon |
+| WASM | `bazel build --config=wasm //src:saga_wasm` | `bazel-bin/src/saga.html`, `.js`, and `.wasm` | Any host supported by emsdk 6.0.8 |
 
 The legacy Android NDK r8e contains x86-64 host tools only. On Apple Silicon,
 run the Android build under an Intel/Rosetta environment or use one of the
 other listed hosts. This restriction does not apply to the native macOS build.
 
-The Android output is a 32-bit x86 ELF shared object named `libTTapp.so`; it
-does not define `main`. Native host and WebAssembly outputs use the host harness
-and are executable applications.
+The target output is a 32-bit Android x86 ELF shared object named
+`libTTapp.so`; it does not define `main`. Native and WASM outputs use the host
+harness and are executable applications.
 
 ## Prerequisites
 
@@ -25,7 +27,7 @@ The Android build fetches NDK r8e automatically. To use an existing checkout,
 set `SAGA_NDK_R8E` to its absolute path. Ogg 1.2.1, Vorbis 1.3.2, and Squish
 1.10 are fetched and built hermetically for this target.
 
-The native host uses pkg-config for SDL3, Vorbis/Vorbisfile, and EGL/GLES2
+The native build uses pkg-config for SDL3, Vorbis/Vorbisfile, and EGL/GLES2
 (ANGLE on Windows). Windows uses the MSYS2 MINGW64 environment and Bazel's
 `mingw-gcc` toolchain. Squish 1.10 is built hermetically. Install 32-bit
 variants of the Linux libraries because the Linux host intentionally remains
@@ -37,7 +39,7 @@ The WebAssembly build is hermetic after repository download. It uses emsdk
 
 ## Preserved build behavior
 
-- `--config=host` and `--config=wasm` define both `HOST_BUILD` and `ANDROID`.
+- `--config=native` and `--config=wasm` define both `HOST_BUILD` and `ANDROID`.
 - All modes use C11/C++11, disable C++ exceptions and RTTI, and retain the
   existing writable-string warning policy.
 - The matching target uses NDK r8e GCC 4.7, Android API 9, x86, the system STL
@@ -57,14 +59,14 @@ settings:
 bazel test //scripts:checks
 ```
 
-## Convenience tasks
+## Running tools
 
 ```bash
-mise run bazel:android
-mise run bazel:host
-mise run bazel:wasm
-mise run host:run -- window
-mise run wasm:serve
+# run the native executable after building it
+bazel-bin/src/saga_native window
+
+# build and serve the WASM output with the required isolation headers
+bazel run --config=wasm //scripts:wasm_server
 ```
 
 The WebAssembly server exposes `http://127.0.0.1:8000/` with the cross-origin

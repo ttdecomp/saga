@@ -17,14 +17,14 @@ build:saga-common --conlyopt=-std=gnu11
 build:saga-common --cxxopt=-std=gnu++11
 build:saga-common --cxxopt=-fno-rtti
 
-build:android-x86 --config=saga-common
-build:android-x86 --platforms=//bazel/platforms:android_x86
-build:android-x86 --extra_toolchains=@android_ndk_r8e//:toolchain
-build:android-x86 --define=SAGA_BUILD=android_x86
+build:target --config=saga-common
+build:target --platforms=//bazel/platforms:android_x86
+build:target --extra_toolchains=@android_ndk_r8e//:toolchain
+build:target --define=SAGA_BUILD=target
 try-import %workspace%/bazel/android_per_file_copts.bazelrc
 
-build:host --config=saga-common
-build:host --define=SAGA_BUILD=host
+build:native --config=saga-common
+build:native --define=SAGA_BUILD=native
 
 build:wasm --config=saga-common
 build:wasm --define=SAGA_BUILD=wasm

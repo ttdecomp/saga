@@ -3,17 +3,13 @@
 The primary tool for drilling into **one symbol's** mismatch is
 `scripts/objdiff-cli.py`, not the raw `objdiff` tools. Use it whenever you are
 reviewing or fixing a single function against the original. The human-facing
-`objdiff` CLI/GUI is for **manual** and **whole-repository** work (generating
-`report.json`, scanning for regressions, eyeballing the interactive UI).
+`objdiff` CLI/GUI remains useful for manual exploration and broader analysis.
 
 > Rule of thumb:
 > - **Agents / one symbol at a time → `scripts/objdiff-cli.py`** (dense, already
 >   stripped of objdiff's json noise, printed with decompiling hints).
-> - **Manual / broad look → `objdiff`** (`objdiff-cli report generate -o
->   report.json` for the aggregate numbers; `objdiff-gui` for interactive
->   browsing). In this project that is the per-directory progress table in
->   `report.json`/`README.md`, plus the `scripts/objdiffdiff.py` regression
->   report.
+> - **Manual / broad look → `objdiff`** or `objdiff-gui`. Generated report
+>   files are optional local artifacts and are not part of the Bazel build.
 
 ## What it does
 
@@ -54,7 +50,7 @@ A symbol that is essentially matched (objdiff ≥ 99.999 %) prints a short
 
 ```bash
 # prerequisite: build the matching Android x86 shared object
-bazel build --config=android-x86 //src:saga_android_x86
+bazel build --config=target //src:saga_target
 
 python scripts/objdiff-cli.py SYMBOL
 ```
@@ -75,9 +71,8 @@ and re-run until only context (`' '`/`..`) remains.
 
 ## Relationship to the other docs
 
-- **`03-matching.md`** covers pairing by name, `report.json` interpretation and
-  the whole-repo numbers; this doc is the funnel for the *one function you are
-  actually fixing*.
+- **`03-matching.md`** covers the current build, symbol checks, and authoring
+  loop; this doc is the funnel for the *one function you are actually fixing*.
 - **`08-asm-review.md`** gives the full command-line review workflow (symbol →
   TU → classified list → text diff → source interleave) and is the extraction
   half of a mismatch investigation. `objdiff-cli.py` automates the "get the

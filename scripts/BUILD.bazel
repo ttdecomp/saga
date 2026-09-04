@@ -1,9 +1,20 @@
-load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
+
+_PYTHON_ENV = {"PYTHONDONTWRITEBYTECODE": "1"}
+
+py_binary(
+    name = "wasm_server",
+    srcs = ["wasm_server.py"],
+    data = ["//src:saga_wasm"],
+    env = _PYTHON_ENV,
+    main = "wasm_server.py",
+)
 
 py_test(
     name = "check_host_boundary",
     srcs = ["check_host_boundary.py"],
     data = ["//src:all_source_files"],
+    env = _PYTHON_ENV,
     main = "check_host_boundary.py",
     size = "small",
 )
@@ -15,6 +26,7 @@ py_test(
         "//bazel:android_optimization_map",
         "//src:all_source_files",
     ],
+    env = _PYTHON_ENV,
     main = "check_bazel_optimization_map.py",
     size = "small",
 )
