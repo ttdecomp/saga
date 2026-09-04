@@ -123,9 +123,10 @@ extern "C" void NuRenderThreadPrepareRender(void) {
     display_list_buffer->addr = (usize)((display_list_buffer->addr + 0xf) & ~(usize)0xf);
 
     nuspecial_vertex_noffsets_safe = nuspecial_vertex_noffsets;
-    nuspecial_vertex_offsets_safe.addr = nuspecial_vertex_offsets.addr;
-    memcpy(nuspecial_vertex_offsets_safe.void_ptr, nuspecial_vertex_offsets.void_ptr,
-           (usize)nuspecial_vertex_noffsets << 4);
+    nuspecial_vertex_offsets_safe.addr = display_list_buffer->addr;
+    display_list_buffer->addr += (usize)nuspecial_vertex_noffsets << 4;
+    memmove(nuspecial_vertex_offsets_safe.void_ptr, nuspecial_vertex_offsets.void_ptr,
+            (usize)nuspecial_vertex_noffsets << 4);
 
     dynamicLightsCount_safe = 0;
     sceneParametersCount_safe = sceneParametersCount;

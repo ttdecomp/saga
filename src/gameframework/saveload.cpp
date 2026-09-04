@@ -171,18 +171,6 @@ void SaveSystemInitialise(i32 slots, void *makeSaveHash, void *save, i32 saveSiz
     memcard_drawasiconfn = drawSaveIcon;
 }
 
-i32 ChecksumSaveData(void *buffer, i32 size) {
-    i32 n = size / 4;
-
-    i32 sum = 0x5c0999;
-
-    for (i32 i = 0; i < n; i++) {
-        sum += ((i32 *)buffer)[i];
-    }
-
-    return sum;
-}
-
 void createslotfolder(i32 slot) {
     char *path = slotfolder(slot);
 

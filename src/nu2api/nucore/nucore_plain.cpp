@@ -63,7 +63,7 @@ extern "C" {
     u8 CutSceneBoundingBoxTrackRoot = 0;
 }
 
-extern "C" void ANI_FixUpAddrs(ani3_animheader_s *, isize);
+extern "C" void ANI_FixUpAddrs(ani3_animheader_s *, isize, i32);
 extern "C" void ANI_Ani3ExtractAllNodeCurves(ani3_animheader_s *, f32, f32 *, i32, char *);
 
 namespace {
@@ -1505,7 +1505,7 @@ extern "C" {
         time->time_byte = static_cast<u32>((byte_frame >> 3) & 0xff);
         time->time_mask = (1u << ((chunk_frame & 7) + 1)) - 1u;
     }
-    void *NuAnimData2FixPtrs(void *data, isize delta, isize external_delta, i32) {
+    void *NuAnimData2FixPtrs(void *data, isize delta, isize external_delta, i32 flags) {
         extern void buildBitCountTable(void);
         buildBitCountTable();
 
@@ -1515,7 +1515,7 @@ extern "C" {
         nuanimdata2_s *anim = reinterpret_cast<nuanimdata2_s *>(reinterpret_cast<u8 *>(data) + delta);
         if (*reinterpret_cast<u32 *>(&anim->duration) + 0xbeb1b6ccU < 2) {
             ANI_FixUpAddrs(reinterpret_cast<ani3_animheader_s *>(anim),
-                           external_delta == 0 ? static_cast<isize>(reinterpret_cast<usize>(anim)) : delta);
+                           external_delta == 0 ? static_cast<isize>(reinterpret_cast<usize>(anim)) : delta, flags);
             return anim;
         }
 
@@ -1553,20 +1553,24 @@ extern "C" {
     }
     void *NuAnimData2Fixup(i32 file_size, void **data) {
         u32 *header = static_cast<u32 *>(*data);
+        u32 magic = header[0];
         if (static_cast<i32>(header[1]) > static_cast<i32>(0x414e4934)) {
             return NuPtrBlockFix(header);
         }
 
-        if (header[0] == 0x414e4933 || header[0] == 0x414e4934) {
+        if (magic == 0x414e4933 || magic == 0x414e4934) {
             ANI_FixUpAddrs(reinterpret_cast<ani3_animheader_s *>(header),
-                           static_cast<isize>(reinterpret_cast<usize>(header)));
+                           static_cast<isize>(reinterpret_cast<usize>(header)), 0);
             return header;
         }
 
         header[0] = static_cast<u32>(file_size);
-        const isize relocation_delta =
-            static_cast<isize>(reinterpret_cast<usize>(header)) - static_cast<isize>(header[1]);
-        return NuAnimData2FixPtrs(reinterpret_cast<void *>(static_cast<usize>(header[2])), relocation_delta, 0, 0);
+        const usize relocation_delta = reinterpret_cast<usize>(header) - static_cast<usize>(header[1]);
+        header[2] = reinterpret_cast<usize>(
+            NuAnimData2FixPtrs(reinterpret_cast<void *>(static_cast<usize>(header[2])), (isize)relocation_delta, 0, 0));
+        header = static_cast<u32 *>(*data);
+        header[1] = reinterpret_cast<usize>(header);
+        return reinterpret_cast<void *>(static_cast<usize>(header[2]));
     }
 
     void *NuAnimData2LoadBuffEx(char *path, VARIPTR *buf, VARIPTR *buf_end, void **result) {

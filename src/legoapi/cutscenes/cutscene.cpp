@@ -211,20 +211,21 @@ void NuGCutRigidCalcMtx(NUGCUTRIGID_s *, f32, numtx_s *);
 static instNUGCUTSCENE_s *active_cutscene_instances;
 
 static void NuGCutSceneFixPtrs_Title(NUGCUTSCENE_s *cutscene, isize anim_delta) {
-    isize data_delta = cutscene->string_delta;
+    usize data_delta = (usize)cutscene->string_delta;
     if (cutscene->strings != NULL) {
-        cutscene->strings = reinterpret_cast<char *>(reinterpret_cast<u8 *>(cutscene->strings) + data_delta);
+        cutscene->strings = reinterpret_cast<char *>(reinterpret_cast<usize>(cutscene->strings) + data_delta);
     }
     if (cutscene->rigid_system != NULL) {
         cutscene->rigid_system =
-            reinterpret_cast<NUGCUTRIGIDSYS_s *>(reinterpret_cast<u8 *>(cutscene->rigid_system) + data_delta);
+            reinterpret_cast<NUGCUTRIGIDSYS_s *>(reinterpret_cast<usize>(cutscene->rigid_system) + data_delta);
         NUGCUTRIGIDSYS_s *system = cutscene->rigid_system;
         if (system->rigids != NULL) {
-            system->rigids = reinterpret_cast<NUGCUTRIGID_s *>(reinterpret_cast<u8 *>(system->rigids) + data_delta);
+            system->rigids = reinterpret_cast<NUGCUTRIGID_s *>(reinterpret_cast<usize>(system->rigids) + data_delta);
             for (u32 i = 0; i < system->count; ++i) {
                 NUGCUTRIGID_s *rigid = &system->rigids[i];
                 if (rigid->name != NULL) {
-                    rigid->name += reinterpret_cast<usize>(cutscene->strings) - 1;
+                    rigid->name = reinterpret_cast<char *>(reinterpret_cast<usize>(rigid->name) +
+                                                           reinterpret_cast<usize>(cutscene->strings) - 1);
                 }
                 rigid->animation = static_cast<nuanimdata2_s *>(NuAnimData2FixPtrs(rigid->animation, anim_delta, 0, 0));
                 rigid->state_animation = StateAnimFixPtrs(rigid->state_animation, anim_delta);
@@ -233,11 +234,11 @@ static void NuGCutSceneFixPtrs_Title(NUGCUTSCENE_s *cutscene, isize anim_delta) 
     }
     if (cutscene->locator_system != NULL) {
         cutscene->locator_system =
-            reinterpret_cast<NUGCUTLOCATORSYS_s *>(reinterpret_cast<u8 *>(cutscene->locator_system) + data_delta);
+            reinterpret_cast<NUGCUTLOCATORSYS_s *>(reinterpret_cast<usize>(cutscene->locator_system) + data_delta);
         NUGCUTLOCATORSYS_s *system = cutscene->locator_system;
         if (system->locators != NULL) {
             system->locators =
-                reinterpret_cast<NUGCUTLOCATOR_s *>(reinterpret_cast<u8 *>(system->locators) + data_delta);
+                reinterpret_cast<NUGCUTLOCATOR_s *>(reinterpret_cast<usize>(system->locators) + data_delta);
             for (u32 i = 0; i < system->locator_count; ++i) {
                 NUGCUTLOCATOR_s *locator = &system->locators[i];
                 locator->animation =
@@ -245,19 +246,21 @@ static void NuGCutSceneFixPtrs_Title(NUGCUTSCENE_s *cutscene, isize anim_delta) 
             }
         }
         if (system->types != NULL) {
-            system->types = reinterpret_cast<NUGCUTLOCATORTYPE_s *>(reinterpret_cast<u8 *>(system->types) + data_delta);
+            system->types = reinterpret_cast<NUGCUTLOCATORTYPE_s *>(reinterpret_cast<usize>(system->types) + data_delta);
             for (u32 i = 0; i < system->type_count; ++i) {
                 if (system->types[i].name != NULL) {
-                    system->types[i].name += reinterpret_cast<usize>(cutscene->strings) - 1;
+                    system->types[i].name = reinterpret_cast<char *>(reinterpret_cast<usize>(system->types[i].name) +
+                                                                    reinterpret_cast<usize>(cutscene->strings) - 1);
                 }
             }
         }
     }
     if (cutscene->bounds != NULL) {
-        cutscene->bounds = reinterpret_cast<u8 *>(cutscene->bounds) + data_delta;
+        cutscene->bounds = reinterpret_cast<void *>(reinterpret_cast<usize>(cutscene->bounds) + data_delta);
     }
     if (cutscene->trigger_system != NULL) {
-        cutscene->trigger_system = reinterpret_cast<u8 *>(cutscene->trigger_system) + data_delta;
+        cutscene->trigger_system =
+            reinterpret_cast<void *>(reinterpret_cast<usize>(cutscene->trigger_system) + data_delta);
     }
 }
 
@@ -277,11 +280,11 @@ extern "C" {
         if (bytes == 0) {
             return NULL;
         }
-        isize anim_delta = static_cast<isize>(reinterpret_cast<usize>(cutscene)) - cutscene->relocation_delta;
-        cutscene->string_delta = static_cast<isize>(reinterpret_cast<usize>(cutscene)) - cutscene->string_delta;
-        cutscene->relocation_delta = anim_delta;
+        usize anim_delta = reinterpret_cast<usize>(cutscene) - (usize)cutscene->relocation_delta;
+        cutscene->string_delta = (isize)(reinterpret_cast<usize>(cutscene) - (usize)cutscene->string_delta);
+        cutscene->relocation_delta = (isize)anim_delta;
         cutscene->loaded_size = bytes;
-        NuGCutSceneFixPtrs_Title(cutscene, anim_delta);
+        NuGCutSceneFixPtrs_Title(cutscene, (isize)anim_delta);
         buf->addr += bytes;
         return cutscene;
     }

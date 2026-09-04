@@ -12,6 +12,7 @@ build:target --per_file_copt=^src/gameapi/ai/aisys/aistate\.cpp$@-O3
 build:target --per_file_copt=^src/gameapi/ai/aisys/aisys\.cpp$@-O3
 build:target --per_file_copt=^src/gameapi/edtools/edfile\.cpp$@-O3
 build:target --per_file_copt=^src/gameframework/saveload_extra\.cpp$@-O2
+build:target --per_file_copt=^src/gameframework/saveload_checksum\.cpp$@-O3
 build:target --per_file_copt=^src/gameapi/gui/apimenu\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/menus/core/panel\.cpp$@-O2
 build:target --per_file_copt=^src/legoapi/menus/core/text\.cpp$@-O2
