@@ -27,15 +27,22 @@ whole-binary objdiff match percentage. Duplicate symbols whose unit cannot be
 chosen safely are kept in `ambiguous_functions`; symbols absent from every
 Bazel object are kept in `unassigned_functions`.
 
+It also rewrites the marker-delimited matching table and overall progress badge
+in the repository `README.md`. Directory fuzzy percentages are weighted by
+original function size; function percentages count exact 100% matches. The new
+whole-binary report cannot attribute data symbols to source directories, so it
+does not reproduce the old CMake table's per-directory data column.
+
 The report also stores the original binary's global, local, and weak text
 symbol names in `original_text_symbols`. CI uses that derived symbol surface to
 run `check_symbols` without requiring the copyrighted reference binary.
 
-The second script embeds this data in `index.html`. The Pages workflow deploys
-this directory without a separate site build.
+The second script embeds this data in `index.html`. The Pages workflow runs it
+with the pinned Bazel Python toolchain, then deploys `doc/pages/`.
 
 The pre-commit hook is a small shim for the `//scripts:pre_commit` Bazel
-`py_binary`. That target runs the build, symbol check, and both Bazel Python
-generators when the ignored original binary is available, then stages
-`matching.json` and `doc/pages/index.html` automatically. It skips these
-binary-dependent steps on checkouts that do not have `res/libTTapp.so`.
+`py_binary`. That target runs the build, symbol check, and Bazel report
+generator when the ignored original binary is available, then stages
+`matching.json` and `README.md` automatically. It skips these binary-dependent
+steps on checkouts that do not have `res/libTTapp.so`; Pages HTML generation
+belongs to the GitHub Actions runner.

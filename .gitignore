@@ -26,4 +26,3 @@ opencode.jsonc
 .host_scratch/
 *.ppm
 /bazel-*
-MODULE.bazel.lock

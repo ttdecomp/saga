@@ -197,7 +197,171 @@ void FinishWeirdoNames(i32) {
 void NewPlayerCharacter(GameObject_s *, i32, i32, i32) {
 }
 
-void ResetCharacterIdle(GameObject_s *, i32, i32) {
+extern "C" f32 AnimDuration(i32 character_id, i32 animation, f32 start_frame, f32 end_frame,
+                              i32 subtract_frame_time);
+i32 GetDefaultIdle(GameObject_s *object);
+
+static i32 IdleRepetitionCount(u8 minimum, u8 maximum) {
+    if (maximum <= minimum) {
+        return minimum;
+    }
+
+    const i32 bucket_size = 0xffff / (maximum - minimum) + 1;
+    return minimum + qrand() / bucket_size;
+}
+
+void ResetCharacterIdle(GameObject_s *object, i32 mode, i32 animation) {
+    // Animation 151 belongs to the held-batarang override and deliberately
+    // leaves the ordinary idle scheduler untouched.
+    if (animation == 151) {
+        return;
+    }
+
+    object->idle_animation = static_cast<i16>(animation);
+    object->idle_animation_time = 0.0f;
+
+    CHARACTERMODEL_s *model = object->apiobj.character_model;
+    CHARACTERANIM_s *animation_info = NULL;
+    if (model != NULL && model->model_data_b != NULL && model->model_data_b[animation] != NULL &&
+        model->model_data_a != NULL) {
+        animation_info = static_cast<CHARACTERANIM_s *>(model->model_data_a[animation]);
+    }
+
+    const u8 minimum = animation_info != NULL ? static_cast<u8>(animation_info->minimum_repetitions) : 0;
+    if (minimum == 0) {
+        object->idle_animation_limit = static_cast<f32>(qrand()) * (1.0f / 65535.0f) * 7.0f + 8.0f;
+    } else {
+        const u8 maximum = static_cast<u8>(animation_info->maximum_repetitions);
+        const i32 repetitions = IdleRepetitionCount(minimum, maximum);
+        object->idle_animation_limit = AnimDuration(object->id, animation, 0.0f, 0.0f, 0) * repetitions - FRAMETIME;
+    }
+
+    if (mode > 0) {
+        object->idle_total_time = 0.0f;
+        if (mode != 1) {
+            object->previous_idle_animation = -1;
+        }
+    }
+}
+
+static __attribute__((used, noinline)) void NewCharacterIdle(GameObject_s *object, i32 default_idle) {
+    CHARACTERDATA *character = object->apiobj.character_data;
+    GAMECHARACTERDATA *game_character = static_cast<GAMECHARACTERDATA *>(character->field11_0x24);
+    const i32 alternate_idle =
+        game_character->field275_0x116 == 0 && (character->model_flags & 0x80) != 0 ? 118 : 25;
+
+    i32 candidates[233];
+    i32 candidate_count = 0;
+    CHARACTERMODEL_s *model = object->apiobj.character_model;
+    const bool select_alternate_group = alternate_idle == default_idle;
+    for (i32 animation = 0; animation < 233; ++animation) {
+        if (model->model_data_b[animation] == NULL) {
+            continue;
+        }
+        CHARACTERANIM_s *info = static_cast<CHARACTERANIM_s *>(model->model_data_a[animation]);
+        if ((info->flags & 0x10) == 0) {
+            continue;
+        }
+        const bool alternate_group = (info->flags & 0x800) != 0;
+        if (alternate_group == select_alternate_group) {
+            candidates[candidate_count++] = animation;
+        }
+    }
+
+    if (candidate_count == 0) {
+        ResetCharacterIdle(object, 0, default_idle);
+        return;
+    }
+
+    i32 animation;
+    if (candidate_count == 1) {
+        animation = candidates[0];
+    } else {
+        do {
+            const i32 bucket_size = 0xffff / candidate_count + 1;
+            animation = candidates[qrand() / bucket_size];
+            object->idle_animation = static_cast<i16>(animation);
+        } while (animation == object->previous_idle_animation);
+    }
+    object->idle_animation = static_cast<i16>(animation);
+
+    CHARACTERANIM_s *info = static_cast<CHARACTERANIM_s *>(model->model_data_a[animation]);
+    i32 repetitions = static_cast<u8>(info->minimum_repetitions);
+    const u8 maximum = static_cast<u8>(info->maximum_repetitions);
+    object->previous_idle_animation = static_cast<i16>(animation);
+    if (repetitions > 1 && (info->flags & 2) == 0) {
+        repetitions = 1;
+    }
+    if (repetitions == 0) {
+        repetitions = 1;
+    } else if (maximum > repetitions) {
+        repetitions = IdleRepetitionCount(static_cast<u8>(repetitions), maximum);
+    }
+
+    object->idle_animation_time = 0.0f;
+    object->idle_animation_limit = AnimDuration(object->id, animation, 0.0f, 0.0f, 0) * repetitions - FRAMETIME;
+}
+
+void UpdateCharacterIdle(GameObject_s *object) {
+    if (object->apiobj.character_model == NULL) {
+        return;
+    }
+
+    CHARACTERDATA *character = object->apiobj.character_data;
+    GAMECHARACTERDATA *game_character = static_cast<GAMECHARACTERDATA *>(character->field11_0x24);
+    const i16 alternate_idle = static_cast<i16>(
+        game_character->field275_0x116 == 0 && (character->model_flags & 0x80) != 0 ? 118 : 25);
+    ANIMPACKET_s &packet = object->apiobj.anim_packet;
+    const i16 requested = packet.requested_animation;
+
+    if (requested != 1 && requested != alternate_idle) {
+        const i32 default_idle = GetDefaultIdle(object);
+        if (default_idle != -1) {
+            ResetCharacterIdle(object, 1, default_idle);
+            return;
+        }
+    }
+
+    if (requested == 1) {
+        if (packet.previous_animation == alternate_idle) {
+            ResetCharacterIdle(object, 1, 1);
+        } else {
+            object->idle_total_time += FRAMETIME;
+            object->idle_animation_time += FRAMETIME;
+            if (object->idle_animation_time >= object->idle_animation_limit) {
+                if (object->idle_animation == 1) {
+                    NewCharacterIdle(object, 1);
+                } else {
+                    ResetCharacterIdle(object, 1, 1);
+                }
+            }
+        }
+        packet.requested_animation = object->idle_animation;
+        return;
+    }
+
+    if (requested == alternate_idle) {
+        if (packet.previous_animation == 1) {
+            ResetCharacterIdle(object, 1, alternate_idle);
+        } else {
+            object->idle_total_time += FRAMETIME;
+            object->idle_animation_time += FRAMETIME;
+            if (object->idle_animation_time >= object->idle_animation_limit) {
+                if (object->idle_animation == alternate_idle) {
+                    NewCharacterIdle(object, alternate_idle);
+                } else {
+                    ResetCharacterIdle(object, 1, alternate_idle);
+                }
+            }
+        }
+        packet.requested_animation = object->idle_animation;
+        return;
+    }
+
+    const i32 default_idle = GetDefaultIdle(object);
+    if (default_idle != -1) {
+        ResetCharacterIdle(object, 1, default_idle);
+    }
 }
 
 void UpdateCharacterIDs() {
@@ -278,9 +442,6 @@ void LoadSingleCharacter(bgprocinfo_s *) {
     hub_character_ready = waiting_for_character;
     waiting_for_character = -1;
     g_loadingCharacterInHub = 0;
-}
-
-void UpdateCharacterIdle(GameObject_s *) {
 }
 
 void UpdateCharacterLoad() {

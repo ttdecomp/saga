@@ -17,20 +17,20 @@ git commit
   -> bazel build --config=target //src:saga_target
   -> bazel run //scripts/checks:check_symbols
   -> bazel run //scripts:generate_bazel_objdiff_report
-  -> bazel run //scripts:plot_binary_match_map
 ```
 
-The build and Pages steps are skipped when the locally supplied
-`res/libTTapp.so` is absent. The hook writes `matching.json` and
-`doc/pages/index.html`, then stages both generated files automatically.
-`.github/workflows/plot-pages.yaml` only deploys those committed files; it does
-not regenerate them.
+The binary-dependent steps are skipped when the locally supplied
+`res/libTTapp.so` is absent. The hook writes and automatically stages
+`matching.json` and the marked matching table in `README.md`.
+`.github/workflows/plot-pages.yaml` runs
+`//scripts:plot_binary_match_map` against that committed report and deploys the
+generated `doc/pages/index.html`.
 
 ## Current tools
 
 | Tool | Invocation | Purpose and dependencies |
 |---|---|---|
-| `generate_bazel_objdiff_report.py` | `bazel run //scripts:generate_bazel_objdiff_report` | Generates the custom whole-binary matching data. Calls Bazel and external `objdiff-cli`; writes `matching.json`. |
+| `generate_bazel_objdiff_report.py` | `bazel run //scripts:generate_bazel_objdiff_report` | Generates the custom whole-binary matching data and README progress table. Calls Bazel and external `objdiff-cli`; writes `matching.json` and the marked section of `README.md`. |
 | `plot_binary_match_map.py` | `bazel run //scripts:plot_binary_match_map` | Turns `matching.json` into the static Pages application at `doc/pages/index.html`. Standard library only. |
 | `objdiff-cli.py` | `bazel run //scripts:objdiff_cli -- SYMBOL` | Primary compact diff for one symbol. Calls external `objdiff-cli` and resolves the target-config library through Bazel. |
 | `wasm_server.py` | `bazel run --config=wasm //scripts:wasm_server` | Serves the WASM build with isolation headers, the local OBB endpoint, and an HTTP(S) proxy. Standard library only. |

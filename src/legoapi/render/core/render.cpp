@@ -1417,6 +1417,9 @@ void DrawGameObjectsProcess() {
         NuMtxMulVU0(&matrix, &matrix, &orientation);
 
         NUVEC position = object->apiobj.position;
+        if ((object->apiobj.field_0x1f4 & 0x100) != 0) {
+            position.y += object->character_bottom * object->apiobj.field_0xa8;
+        }
         NuMtxTranslate(&matrix, &position);
         object->apiobj.field_0xb8 = matrix;
 

@@ -441,51 +441,56 @@ void GetNativeTextureFormat(NUTEXFORMAT inFormat, i32 &outBpp, u32 &outInternalF
 }
 
 void GetTextureFormatInfo(NUTEXFORMAT texture, u32 &param_2, u32 &param_3) {
-    // I need to figure out these cases before I put enums
     param_2 = 1;
     switch (texture) {
-        case 1:
-        case 2:
+        case NUTEX_DXT1:
+        case NUTEX_DX1A:
             param_2 = 4;
             param_3 = 4;
             return;
-        case 3:
-        case 4:
-        case 5:
+        case NUTEX_DXT2:
+        case NUTEX_DXT3:
+        case NUTEX_DXT4:
+        case NUTEX_ETC1:
             param_2 = 4;
             param_3 = 8;
             return;
-        case 6:
+        case NUTEX_DXT5:
             param_2 = 4;
             param_3 = 8;
             return;
-        case 7:
+        case NUTEX_RGBA32:
+        case 0x72:
+        case 0x74:
             param_3 = 0x20;
             return;
-        case 8:
+        case NUTEX_FLOAT16:
+        case 0x6e:
+        case 0x75:
+        case 0x76:
             param_3 = 0x40;
             return;
-        case 9:
+        case NUTEX_FLOAT32:
+        case 0x13:
             param_3 = 0x80;
             return;
         case 0x10:
             param_3 = 8;
             return;
-        case 0x14:
-        case 0x15:
+        case NUTEX_PVRTC2:
+        case NUTEX_PVRTC2A:
             param_2 = 8;
             param_3 = 2;
             return;
-        case 0x16:
-        case 0x17:
+        case NUTEX_PVRTC4:
+        case NUTEX_PVRTC4A:
             param_2 = 8;
             param_3 = 4;
             return;
         case 0x6c:
-        case 0x76:
             param_3 = 0x10;
+            return;
     }
-    return;
 }
 
 i32 GetMipLevelSize(NUTEXFORMAT param_1, i32 unclamped_width, i32 unclamped_height) {

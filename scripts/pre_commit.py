@@ -23,7 +23,7 @@ def main() -> int:
     root = Path(workspace)
 
     for command in (
-        ["git", "diff", "--cached", "--check"],
+        ["git", "--no-pager", "diff", "--cached", "--check"],
         ["bazel", "test", "//scripts/checks:checks"],
     ):
         status = run(command, root)
@@ -38,20 +38,19 @@ def main() -> int:
         ["bazel", "build", "--config=target", "//src:saga_target"],
         ["bazel", "run", "//scripts/checks:check_symbols"],
         ["bazel", "run", "//scripts:generate_bazel_objdiff_report"],
-        ["bazel", "run", "//scripts:plot_binary_match_map"],
     ):
         status = run(command, root)
         if status:
             return status
 
-    generated = ["matching.json", "doc/pages/index.html"]
+    generated = ["matching.json", "README.md"]
     status = run(["git", "add", "--", *generated], root)
     if status:
         return status
     print("Staged generated files:")
     for relative_path in generated:
         print(f"  {relative_path}")
-    return run(["git", "diff", "--cached", "--check"], root)
+    return run(["git", "--no-pager", "diff", "--cached", "--check"], root)
 
 
 if __name__ == "__main__":

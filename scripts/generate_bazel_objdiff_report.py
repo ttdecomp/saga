@@ -14,6 +14,7 @@ from collections import Counter, defaultdict
 import json
 import os
 from pathlib import Path
+import re
 import shlex
 import struct
 import subprocess
@@ -26,6 +27,10 @@ SHF_WRITE = 0x1
 SHT_NOBITS = 8
 SHT_SYMTAB = 2
 STT_FUNC = 2
+
+MATCHING_TABLE_START = "<!-- matching-table-start -->"
+MATCHING_TABLE_END = "<!-- matching-table-end -->"
+ROOT_LABEL = "(root)"
 
 
 def workspace_root() -> Path:
@@ -260,6 +265,101 @@ def _section_kind(section: dict) -> str:
     return "read"
 
 
+def _badge_color(progress: float) -> str:
+    if progress >= 90:
+        return "brightgreen"
+    if progress >= 70:
+        return "green"
+    if progress >= 50:
+        return "yellow"
+    if progress >= 30:
+        return "orange"
+    return "red"
+
+
+def _matching_table(report: dict) -> list[str]:
+    """Aggregate assigned function scores by source directory."""
+    stats = defaultdict(
+        lambda: {
+            "code_size": 0,
+            "weighted_score": 0.0,
+            "functions": 0,
+            "matched_functions": 0,
+        }
+    )
+    for unit in report["units"]:
+        source_parts = Path(unit["source"]).parts
+        if not source_parts or source_parts[0] != "src" or len(source_parts) < 2:
+            continue
+        relative_parts = source_parts[1:]
+        top_level = relative_parts[0] if len(relative_parts) > 1 else ROOT_LABEL
+        if top_level == "host":
+            continue
+        keys = [top_level]
+        if top_level == "legoapi" and len(relative_parts) > 2:
+            keys.append(f"legoapi/{relative_parts[1]}")
+
+        for function in unit["functions"]:
+            size = int(function["size"])
+            score = float(function["match_percent"] or 0.0)
+            for key in keys:
+                row = stats[key]
+                row["code_size"] += size
+                row["weighted_score"] += score * size
+                row["functions"] += 1
+                if score == 100.0:
+                    row["matched_functions"] += 1
+
+    lines = [
+        "| Directory | Fuzzy % | Funcs % |",
+        "|---|---:|---:|",
+    ]
+    for key in sorted(stats):
+        row = stats[key]
+        fuzzy = (
+            row["weighted_score"] / row["code_size"] if row["code_size"] else 0.0
+        )
+        functions = (
+            100.0 * row["matched_functions"] / row["functions"]
+            if row["functions"]
+            else 0.0
+        )
+        lines.append(f"| `{key}` | {fuzzy:.1f}% | {functions:.1f}% |")
+    return lines
+
+
+def update_readme(path: Path, report: dict) -> None:
+    """Replace the marked matching table and overall progress badge."""
+    content = path.read_text(encoding="utf-8")
+    start = content.find(MATCHING_TABLE_START)
+    end = content.find(MATCHING_TABLE_END)
+    if start == -1 or end == -1 or end <= start:
+        raise ValueError(f"{path}: matching table markers are missing or invalid")
+
+    section = "\n".join(
+        [
+            MATCHING_TABLE_START,
+            "",
+            "## Matching progress",
+            "",
+            *_matching_table(report),
+            "",
+            MATCHING_TABLE_END,
+        ]
+    )
+    content = content[:start] + section + content[end + len(MATCHING_TABLE_END) :]
+
+    progress = float(report.get("measures", {}).get("fuzzy_match_percent", 0.0))
+    badge = (
+        f"https://img.shields.io/badge/matching-{progress:.2f}%25-"
+        f"{_badge_color(progress)}"
+    )
+    content = re.sub(
+        r"https://img\.shields\.io/badge/matching-[^)]*", badge, content
+    )
+    path.write_text(content, encoding="utf-8")
+
+
 def build_custom_report(original: Path, report: dict, units: list[dict]) -> dict:
     """Combine whole-binary scores, original addresses, and Bazel ownership."""
     sections, original_symbols = read_elf32(original)
@@ -388,6 +488,12 @@ def main() -> int:
         help="current binary (default: target-config output of //src:libTTapp.so)",
     )
     parser.add_argument("--output", default="matching.json")
+    parser.add_argument("--readme", default="README.md")
+    parser.add_argument(
+        "--no-readme",
+        action="store_true",
+        help="do not update the marked matching table in README.md",
+    )
     parser.add_argument("--target", default="//src:saga_target")
     parser.add_argument("--bazel", default="bazel")
     parser.add_argument("--objdiff", default="objdiff-cli")
@@ -396,6 +502,7 @@ def main() -> int:
     root = workspace_root()
     original = (root / args.original).resolve()
     output = (root / args.output).resolve()
+    readme = (root / args.readme).resolve()
 
     try:
         current = (
@@ -411,6 +518,8 @@ def main() -> int:
         custom_report = build_custom_report(original, report, units)
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(json.dumps(custom_report, indent=2) + "\n", encoding="utf-8")
+        if not args.no_readme:
+            update_readme(readme, custom_report)
     except (OSError, ValueError, RuntimeError, json.JSONDecodeError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
@@ -420,9 +529,16 @@ def main() -> int:
         output_display = output.relative_to(root)
     except ValueError:
         output_display = output
+    readme_message = ""
+    if not args.no_readme:
+        try:
+            readme_display = readme.relative_to(root)
+        except ValueError:
+            readme_display = readme
+        readme_message = f" and updated {readme_display}"
     print(
         f"Wrote {summary['functions']} functions in {summary['bazel_units']} "
-        f"Bazel units to {output_display} "
+        f"Bazel units to {output_display}{readme_message} "
         f"({summary['ambiguous_functions']} ambiguous, "
         f"{summary['unassigned_functions']} unassigned)"
     )

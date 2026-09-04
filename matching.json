@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 14.920194,
+    "fuzzy_match_percent": 14.93415,
     "total_code": "4722419",
     "matched_code": "36430",
     "matched_code_percent": 0.7714267,
@@ -45747,14 +45747,6 @@
           "match_percent": 2.2
         },
         {
-          "name": "_ZL16NewCharacterIdleP12GameObject_si",
-          "demangled_name": "NewCharacterIdle(GameObject_s*, int)",
-          "address": 1038000,
-          "offset": 148032,
-          "size": 650,
-          "match_percent": 2.083333
-        },
-        {
           "name": "_ZL24DrawCharacterAttachmentsP12GameObject_sP7numtx_s",
           "demangled_name": "DrawCharacterAttachments(GameObject_s*, numtx_s*)",
           "address": 1082560,
@@ -46103,7 +46095,7 @@
           "address": 1037632,
           "offset": 147664,
           "size": 357,
-          "match_percent": 5.121951
+          "match_percent": 37.487804
         },
         {
           "name": "_Z17ActivateCharacterPcP7nuvec_si",
@@ -46127,7 +46119,7 @@
           "address": 1050000,
           "offset": 160032,
           "size": 494,
-          "match_percent": 3.716814
+          "match_percent": 36.061947
         },
         {
           "name": "_Z19UpdateCharacterLoadv",
@@ -46383,7 +46375,7 @@
           "address": 4588480,
           "offset": 3698512,
           "size": 101,
-          "match_percent": 78.02702
+          "match_percent": 77.62162
         },
         {
           "name": "_Z12HeadMovementP12GameObject_s",
@@ -47988,7 +47980,7 @@
           "address": 1486432,
           "offset": 596464,
           "size": 1535,
-          "match_percent": 1.441441
+          "match_percent": 28.996998
         },
         {
           "name": "_Z15Animate_VEHICLEP12GameObject_s",
@@ -48340,7 +48332,7 @@
           "address": 3986157,
           "offset": 3096189,
           "size": 641,
-          "match_percent": 2.258065
+          "match_percent": null
         },
         {
           "name": "EvalModelAnim",
@@ -48380,7 +48372,7 @@
           "address": 3989376,
           "offset": 3099408,
           "size": 164,
-          "match_percent": 29.16
+          "match_percent": 28.96
         },
         {
           "name": "GetAnimTimeRandom",
@@ -72278,7 +72270,7 @@
           "address": 1071808,
           "offset": 181840,
           "size": 7204,
-          "match_percent": 5.701357
+          "match_percent": 6.157617
         },
         {
           "name": "_ZL17DrawParaphernaliaP12GameObject_s",
@@ -97468,7 +97460,7 @@
           "address": 3093312,
           "offset": 2203344,
           "size": 3273,
-          "match_percent": 18.977865
+          "match_percent": 17.240885
         },
         {
           "name": "NuDynamicLightAddShadowCasterScene",
@@ -113574,6 +113566,18 @@
       ]
     },
     {
+      "name": "_ZL16NewCharacterIdleP12GameObject_si",
+      "demangled_name": "NewCharacterIdle(GameObject_s*, int)",
+      "address": 1038000,
+      "offset": 148032,
+      "size": 650,
+      "match_percent": 2.083333,
+      "candidate_units": [
+        "legoapi/characters/core/character.cpp.o",
+        "legoapi/characters/core/characters.cpp.o"
+      ]
+    },
+    {
       "name": "_ZL19Credits_Update_GameP11WORLDINFO_s",
       "demangled_name": "Credits_Update_Game(WORLDINFO_s*)",
       "address": 1194240,
@@ -126762,8 +126766,8 @@
   "summary": {
     "bazel_units": 496,
     "functions": 13454,
-    "assigned_functions": 11956,
-    "ambiguous_functions": 165,
+    "assigned_functions": 11955,
+    "ambiguous_functions": 166,
     "unassigned_functions": 1333
   }
 }

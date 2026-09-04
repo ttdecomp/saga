@@ -5,8 +5,6 @@ There are many ways to contribute to the project.
 - Adding or modifying core code to increase the percentage matching.
 - Changes to existing code which improve the overall health of the code without
   impacting percentage matched, e.g. naming or documentation.
-- Adding doxygen documentation to methods to describe their purpose and
-  parameters.
 - Encouragement and enthusiasm! It's always nice to know that one's work is
   appreciated.
 
@@ -135,10 +133,10 @@ git config core.hooksPath .githooks
 ```
 
 When `res/libTTapp.so` is present, the hook also builds the target, checks its
-symbol surface, and regenerates `matching.json` and
-`doc/pages/index.html`; it stages those generated files automatically. It does
-not format source files, so run clang-format explicitly when changing C/C++
-sources.
+symbol surface, regenerates `matching.json`, and stages that generated report
+and the README matching table automatically. GitHub Actions renders
+`doc/pages/index.html` from the committed report. The hook does not format
+source files, so run clang-format explicitly when changing C/C++ sources.
 
 For repository-specific agent guidance, see
 `skills/saga-decomp/SKILL.md`. The package uses the Codex `SKILL.md` format and
