@@ -44,29 +44,14 @@ def main() -> int:
         if status:
             return status
 
-    stale = []
-    for relative_path in ("matching.json", "doc/pages/index.html"):
-        tracked = subprocess.run(
-            ["git", "ls-files", "--error-unmatch", "--", relative_path],
-            cwd=root,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            check=False,
-        ).returncode == 0
-        unchanged = subprocess.run(
-            ["git", "diff", "--quiet", "--", relative_path],
-            cwd=root,
-            check=False,
-        ).returncode == 0
-        if not tracked or not unchanged:
-            stale.append(relative_path)
-
-    if stale:
-        print("Generated GitHub Pages files changed; stage them and retry:")
-        for relative_path in stale:
-            print(f"  git add {relative_path}")
-        return 1
-    return 0
+    generated = ["matching.json", "doc/pages/index.html"]
+    status = run(["git", "add", "--", *generated], root)
+    if status:
+        return status
+    print("Staged generated files:")
+    for relative_path in generated:
+        print(f"  {relative_path}")
+    return run(["git", "diff", "--cached", "--check"], root)
 
 
 if __name__ == "__main__":

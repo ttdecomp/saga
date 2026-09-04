@@ -36,7 +36,6 @@ this directory without a separate site build.
 
 The pre-commit hook is a small shim for the `//scripts:pre_commit` Bazel
 `py_binary`. That target runs the build, symbol check, and both Bazel Python
-generators when the ignored original binary is available. If either generated
-file changes, it asks for the refreshed files to be staged and the commit
-retried. It skips these binary-dependent steps on checkouts that do not have
-`res/libTTapp.so`.
+generators when the ignored original binary is available, then stages
+`matching.json` and `doc/pages/index.html` automatically. It skips these
+binary-dependent steps on checkouts that do not have `res/libTTapp.so`.

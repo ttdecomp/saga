@@ -22,9 +22,9 @@ git commit
 
 The build and Pages steps are skipped when the locally supplied
 `res/libTTapp.so` is absent. The hook writes `matching.json` and
-`doc/pages/index.html`, then stops the commit if either generated file needs
-to be staged. `.github/workflows/plot-pages.yaml` only deploys those committed
-files; it does not regenerate them.
+`doc/pages/index.html`, then stages both generated files automatically.
+`.github/workflows/plot-pages.yaml` only deploys those committed files; it does
+not regenerate them.
 
 ## Current tools
 

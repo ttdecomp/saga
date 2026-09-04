@@ -136,9 +136,9 @@ git config core.hooksPath .githooks
 
 When `res/libTTapp.so` is present, the hook also builds the target, checks its
 symbol surface, and regenerates `matching.json` and
-`doc/pages/index.html`; it asks you to stage those files when they changed. It
-does not format source files, so run clang-format explicitly when changing
-C/C++ sources.
+`doc/pages/index.html`; it stages those generated files automatically. It does
+not format source files, so run clang-format explicitly when changing C/C++
+sources.
 
 For repository-specific agent guidance, see
 `skills/saga-decomp/SKILL.md`. The package uses the Codex `SKILL.md` format and
