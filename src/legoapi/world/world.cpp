@@ -613,7 +613,8 @@ after_area:
         goto abort;
 
     // API object system
-    world->api_object_sys = (APIOBJECTSYS_s *)APIObjectSysInit(0x10e4, &world->giz_buffer, &world->unknown_0108);
+    world->api_object_sys =
+        (APIOBJECTSYS_s *)APIObjectSysInit(sizeof(GameObject_s), &world->giz_buffer, &world->unknown_0108);
     if (abort_load != 0)
         goto abort;
 
