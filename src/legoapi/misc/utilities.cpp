@@ -186,7 +186,8 @@ void CalculateInterceptVector(nuvec_s *, nuvec_s *, nuvec_s *, float, nuvec_s *,
 void LineToSphereIntersection(VuVec &, VuVec &, VuVec &, float, VuVec *, VuVec *) {
 }
 
-void MatrixReflectionVU0_AXISY(numtx_s *, float, float, numtx_s *) {
+i32 MatrixReflectionVU0_AXISY(numtx_s *, float, float, numtx_s *) {
+    return 0;
 }
 
 void SphereSphereOverlapScaleY(nuvec_s *, float, float, nuvec_s *, float, float) {

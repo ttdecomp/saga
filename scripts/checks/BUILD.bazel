@@ -1,0 +1,55 @@
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
+
+_PYTHON_ENV = {"PYTHONDONTWRITEBYTECODE": "1"}
+
+py_test(
+    name = "check_duplicate_definitions",
+    size = "small",
+    srcs = ["check_duplicate_definitions.py"],
+    data = ["//src:all_source_files"],
+    env = _PYTHON_ENV,
+    main = "check_duplicate_definitions.py",
+    deps = ["//scripts/lib:ndk_tools"],
+)
+
+py_binary(
+    name = "check_symbols",
+    srcs = ["check_symbols.py"],
+    data = [
+        "symbols_extra_baseline.txt",
+        "symbols_ignore.txt",
+    ],
+    env = _PYTHON_ENV,
+    main = "check_symbols.py",
+    deps = ["//scripts/lib:ndk_tools"],
+)
+
+py_test(
+    name = "check_host_boundary",
+    size = "small",
+    srcs = ["check_host_boundary.py"],
+    data = ["//src:all_source_files"],
+    env = _PYTHON_ENV,
+    main = "check_host_boundary.py",
+)
+
+py_test(
+    name = "check_bazel_optimization_map",
+    size = "small",
+    srcs = ["check_bazel_optimization_map.py"],
+    data = [
+        "//bazel:android_optimization_map",
+        "//src:all_source_files",
+    ],
+    env = _PYTHON_ENV,
+    main = "check_bazel_optimization_map.py",
+)
+
+test_suite(
+    name = "checks",
+    tests = [
+        ":check_bazel_optimization_map",
+        ":check_duplicate_definitions",
+        ":check_host_boundary",
+    ],
+)

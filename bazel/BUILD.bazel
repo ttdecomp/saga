@@ -1,0 +1,12 @@
+exports_files([
+    "android_cc_toolchain_config.bzl",
+    "android_ndk_repository.bzl",
+    "saga_components.bzl",
+    "system_deps.bzl",
+])
+
+filegroup(
+    name = "android_optimization_map",
+    srcs = ["android_per_file_copts.bazelrc"],
+    visibility = ["//visibility:public"],
+)

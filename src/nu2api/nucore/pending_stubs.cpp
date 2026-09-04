@@ -30,9 +30,6 @@ extern "C" void NuShaderManagerSetCurrentShader(void) {
 extern "C" void NuShaderManagerSetElementfv(void) {
 }
 
-extern "C" void NuShaderManagerSetElementsfv(void) {
-}
-
 extern "C" void NuShaderManagerSetElementsfv_transpose(void) {
 }
 

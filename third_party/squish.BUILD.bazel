@@ -1,0 +1,63 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])
+
+# libsquish 1.10. This is the exact SRC list from the release Makefile;
+# no Makefile/configure action is needed at Bazel build time.
+cc_library(
+    name = "squish",
+    srcs = [
+        "alpha.cpp",
+        "clusterfit.cpp",
+        "colourblock.cpp",
+        "colourfit.cpp",
+        "colourset.cpp",
+        "maths.cpp",
+        "rangefit.cpp",
+        "singlecolourfit.cpp",
+        "squish.cpp",
+    ],
+    hdrs = [
+        "alpha.h",
+        "clusterfit.h",
+        "colourblock.h",
+        "colourfit.h",
+        "colourset.h",
+        "config.h",
+        "maths.h",
+        "rangefit.h",
+        "simd.h",
+        "simd_float.h",
+        "simd_sse.h",
+        "simd_ve.h",
+        "singlecolourfit.h",
+        "squish.h",
+    ],
+    copts = [
+        "-include",
+        "climits",
+        "-fno-exceptions",
+        "-fno-rtti",
+    ] + select({
+        "@saga//bazel/platforms:linux": [
+            "-m32",
+            "-march=i686",
+        ],
+        "//conditions:default": [],
+    }) + select({
+        "@saga//bazel/platforms:x86_64": ["-msse2"],
+        "//conditions:default": [],
+    }),
+    features = select({
+        "@platforms//os:android": [
+            "-ndk_system_stl",
+            "ndk_gnu_stl",
+        ],
+        "//conditions:default": [],
+    }),
+    includes = ["."],
+    linkstatic = True,
+    textual_hdrs = ["singlecolourlookup.inl"],
+)

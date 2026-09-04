@@ -23,7 +23,7 @@ void *NuSoundSystem::sSampleMemory = NULL;
 void *NuSoundSystem::sDecoderMemory = NULL;
 NuSoundMemoryManager *NuSoundSystem::s_mmSample = NULL;
 NuSoundMemoryManager *NuSoundSystem::s_mmDecoder = NULL;
-typeof(NuSoundSystem::g_handler) NuSoundSystem::g_handler = {};
+decltype(NuSoundSystem::g_handler) NuSoundSystem::g_handler = {};
 const char *NuSoundSystem::sFileExtensions[12] = {"wav", "adp", "ima", "caf", "xma", "ogg",
                                                   "dsp", "msf", "vag", "gcm", "wua", "cbx"};
 NuSoundSystem *NuSoundSystem::s_staticInstance = NULL;

@@ -5,10 +5,6 @@ There are many ways to contribute to the project.
 - Adding or modifying core code to increase the percentage matching.
 - Changes to existing code which improve the overall health of the code without
   impacting percentage matched, e.g. naming or documentation.
-- Adding doxygen documentation to methods to describe their purpose and
-  parameters.
-- Improvements to the `gonk` tool. Several ideas for improvements can be found
-  in the project's GitHub issues.
 - Encouragement and enthusiasm! It's always nice to know that one's work is
   appreciated.
 
@@ -38,24 +34,17 @@ copy of the game.
 The contents of the .apk can be extracted with a zip tool. The file
 `lib/x86/libTTapp.so` must then be placed in the project's `res/` directory.
 
-Once you have placed the shared object in the `res/` directory, mise installs
-the pinned Rust toolchain, builds `gonk`, and runs the full matching pipeline:
+Build the matching target directly with Bazel:
 
 ```bash
-mise run match
+bazel build --config=target //src:saga_target
 ```
 
-This generates ELF objects from the original shared object corresponding to the
-structure of our source tree, as well as a configuration for the `objdiff` tool.
-
-The mise configuration installs the pinned project fork of `objdiff-cli`.
-
-The upstream `objdiff` GUI remains useful for interactive inspection, but the
-command-line workflows documented in `doc/decomp/` assume `objdiff-cli 3.6.x`.
-
-Split objects mirror the source-tree hierarchy under `build/split/`; they are
-not a flat directory. Prefer `scripts/objdiff-cli.py SYMBOL` for one function,
-or query `objdiff.json` for the exact target/base object paths.
+The output is `bazel-bin/src/libTTapp.so`. Compare one function against the
+original with `bazel run //scripts:objdiff_cli -- SYMBOL`; the helper compares
+the two shared objects directly using Bazel's pinned Python and requires
+`objdiff-cli` on `PATH`. See
+`doc/decomp/09-objdiff-cli.md` for details.
 
 ## Development Scripts
 
@@ -67,23 +56,25 @@ The `scripts/` directory contains a few small helpers:
   the original diverge, aligned with context and decompiling hints (resolved
   call/jump targets, string and float constants, referenced data). It is aimed
   at automated/agent use — one mangled symbol at a time. For manual and
-  whole-repository work (aggregate `report.json`, the interactive UI), use the
-  `objdiff` GUI/CLI directly. See `doc/decomp/09-objdiff-cli.md`.
-- `check_duplicate_definitions.py` — scans the source tree for duplicate type
+  whole-repository work or the interactive UI, use the `objdiff` GUI/CLI
+  directly. See `doc/decomp/09-objdiff-cli.md`.
+- `checks/check_duplicate_definitions.py` — scans the source tree for duplicate type
   (struct/class/union/enum) definitions. Given `--build <dir>` it also runs
   `nm` over the compiled objects to report duplicate symbols (local and global,
   text and data), which catches static (file-local) functions/variables that the
   linker silently allows. The symbol check is advisory by default; pass
   `--fail-on-symbols` to make it an error.
-- `check_symbols.py` — diffs the defined text symbols of the build against the
+- `checks/check_symbols.py` — diffs the defined text symbols of the build against the
   original binary, so you can see exactly which functions are still missing.
-- `matching_report.py` — turns an objdiff `report.json` into per-directory
-  matching-progress tables and can write them back into `README.md`.
-- `objdiffdiff.py` — compares two objdiff `report.json` files and reports
-  regressions.
+- `generate_bazel_objdiff_report.py` — combines a whole-binary objdiff report,
+  Bazel's source-to-object mapping, and original symbol addresses into
+  `matching.json`. `scripts/plot_binary_match_map.py` renders the
+  committed `doc/pages/index.html` visualization from that data.
 
-`check_duplicate_definitions.py` and `check_symbols.py` are run automatically as
-part of the `lint` build target.
+Fast repository checks run with `bazel test //scripts/checks:checks`. Bazel downloads
+the pinned Python 3.12.12 runtime used by those targets, so no venv or installed
+Python packages are needed for them. The complete tool inventory and call graph
+are in `scripts/README.md`.
 
 ## Style Guidelines
 
@@ -134,13 +125,18 @@ personal tastes in readability, the following guidelines apply:
 
 ## Git hooks
 
-Run `mise run setup` once after cloning. It installs all pinned development
-tools and uses prek to install the repository hook.
+An optional hook runs staged whitespace checks and
+`bazel test //scripts/checks:checks`:
 
-The hook formats changed C/C++ source files, builds the target, regenerates
-`objdiff.json`/`report.json`, updates the README matching table and badge, and
-runs the symbol check when `res/libTTapp.so` is available. Review and stage any
-generated changes before committing again.
+```bash
+git config core.hooksPath .githooks
+```
+
+When `res/libTTapp.so` is present, the hook also builds the target, checks its
+symbol surface, regenerates `matching.json`, and stages that generated report
+and the README matching table automatically. GitHub Actions renders
+`doc/pages/index.html` from the committed report. The hook does not format
+source files, so run clang-format explicitly when changing C/C++ sources.
 
 For repository-specific agent guidance, see
 `skills/saga-decomp/SKILL.md`. The package uses the Codex `SKILL.md` format and

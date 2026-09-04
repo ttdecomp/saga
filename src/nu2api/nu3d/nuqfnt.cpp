@@ -859,8 +859,68 @@ f32 NuQFntPrintLenW(NUQFNT *font, u16 *text) {
     return length * qfnt_len_scale * *vufnt->x_scale;
 }
 
+void NuQFntUTF8toQCode(NUQFNT *font, char *text, u16 *encoded) {
+    if (font == NULL)
+        font = system_qfont;
+    if (font == NULL)
+        return;
+
+    NUWCHAR8 *cursor = reinterpret_cast<NUWCHAR8 *>(text);
+    while (*cursor != '\0') {
+        NUWCHAR16 character;
+        cursor = NuUnicodeCharFromUTF8(&character, cursor);
+        u16 qcode = NuQFntEncodeUnicodeChar(font, character);
+        if (qcode == 0xffff)
+            qcode = NuQFntEncodeUnicodeChar(font, '?');
+        *encoded++ = qcode;
+    }
+    *encoded = 0;
+}
+
+f32 NuQFntPrintLenU(NUQFNT *font, char *text) {
+    if (font == NULL)
+        font = system_qfont;
+    if (font == NULL)
+        return 0.0f;
+
+    VUFNT *vufnt = static_cast<VUFNT *>(font);
+    const f32 x_scale = *vufnt->x_scale;
+    f32 length = 0.0f;
+    NUWCHAR8 *cursor = reinterpret_cast<NUWCHAR8 *>(text);
+    while (*cursor != '\0') {
+        NUWCHAR16 character;
+        cursor = NuUnicodeCharFromUTF8(&character, cursor);
+        u16 qcode = NuQFntEncodeUnicodeChar(font, character);
+        if (qcode == 0xffff)
+            qcode = NuQFntEncodeUnicodeChar(font, '?');
+
+        f32 width;
+        if (character == ' ' && nuqfnt_space_width != 0.0f) {
+            width = nuqfnt_space_width;
+        } else {
+            if (character >= '0' && character <= '9' && (NuQFntMode & 1) != 0)
+                qcode = NuQFntEncodeUnicodeChar(font, '0');
+            width = vufnt->glyphs[qcode].width;
+        }
+        length += width + vufnt->ic_gap;
+    }
+    return length * qfnt_len_scale * x_scale;
+}
+
 void NuQFntPrintRSW(RNDRSTREAM *, NUQFNT *font, u16 *text, u32 flags) {
     NuQFntPrintCharW(font, text, flags);
+}
+
+void NuQFntPrintU(NUQFNT *font, char *text) {
+    if (font == NULL)
+        font = system_qfont;
+    if (font != NULL) {
+        if (text != NULL) {
+            u16 encoded[1024];
+            NuQFntUTF8toQCode(font, text, encoded);
+            NuQFntPrintRSW(NULL, font, encoded, NuQFntMode);
+        }
+    }
 }
 
 void NuQFntPrintCharW(NUQFNT *font, u16 *text, u32 flags) {

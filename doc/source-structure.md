@@ -4,21 +4,21 @@ This document explains how the reconstructed source tree relates to the
 original Android x86 binary. It is the restructuring reference, but generated
 artifacts—not copied counts in prose—are the source of truth.
 
-Snapshot checked on 2026-08-29:
+Snapshot checked on 2026-09-04:
 
 | item | current value |
 |---|---:|
-| target compile commands | 464 |
+| target source translation units | 496 |
 | target C translation units | 13 |
-| target C++ translation units | 451 |
-| objdiff units | 466 (464 TUs, `ogg_vorbis`, `remaining`) |
-| optimization levels | 342 default `-O0`, 25 `-O2`, 97 `-O3` |
-| special compile mode | one of the 97 `-O3` TUs also uses `-fPIE` |
+| target C++ translation units | 483 |
+| generated matching-report units | 496 |
+| optimization levels | 242 default `-O0`, 2 `-O1`, 88 `-O2`, 164 `-O3` |
+| special compile mode | one of the 164 `-O3` TUs also uses `-fPIE` |
 | original `_GLOBAL__sub_I_` symbols | 325 occurrences, 320 unique basenames |
 
 These counts describe the current generated files and will change as the tree
 is reorganized. Recompute them with the recipes below rather than updating
-code or CMake merely to make the table agree.
+code or build configuration merely to make the table agree.
 
 ## Ground truth and its limits
 
@@ -34,8 +34,7 @@ needs no runtime initialization. Do not infer a TU boundary from ordinary
 zero-initialized data.
 
 ```bash
-NDK_BIN=ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/linux-x86_64/bin
-$NDK_BIN/i686-linux-android-nm res/libTTapp.so \
+nm res/libTTapp.so \
   | rg '_GLOBAL__sub_I_' \
   | sed 's/.*_GLOBAL__sub_I_//' \
   | sort -u
@@ -79,8 +78,8 @@ their current equivalents include `src/legoapi/core/input/qrand.cpp` and
 
 ## Per-file optimization is part of the ABI contract
 
-Optimization is assigned per source file in `src/target.cmake`. The effective
-command is recorded in `build/compile_commands.json`; that JSON is the final
+Optimization is assigned per source file in
+`bazel/android_per_file_copts.bazelrc`. A Bazel action query is the final
 authority for an existing build.
 
 Moving a function between files can change its optimization level and code
@@ -88,21 +87,13 @@ generation even when its source is unchanged. Before moving code, compare the
 source and destination commands.
 
 ```bash
-# Count current target commands.
-jq 'length' build/compile_commands.json
+# Show compile actions and their effective arguments.
+bazel aquery --config=target \
+  'mnemonic("CppCompile", //src:saga_target)' --include_commandline
 
-# Show the effective command for a path or basename.
-jq -r --arg needle 'qrand.cpp' \
-  '.[] | select(.file | contains($needle)) | .command' \
-  build/compile_commands.json
-
-# Recompute the current optimization distribution.
-jq -r '.[].command' build/compile_commands.json \
-  | awk '/-O3/{o3++; next} /-O2/{o2++; next} {o0++}
-         END {print "-O0", o0, "-O2", o2, "-O3", o3}'
-
-# Review declared overrides.
-rg -n 'COMPILE_OPTIONS' src/target.cmake
+# Review and validate declared overrides.
+rg -n -- '--per_file_copt' bazel/android_per_file_copts.bazelrc
+bazel test //scripts/checks:check_bazel_optimization_map
 ```
 
 Absence of an `-O` flag means `-O0`. `src/legoapi/core/config/cheat.cpp` is
@@ -110,39 +101,23 @@ currently the sole `-O3 -fPIE` file.
 
 ## Symbol-to-TU lookup
 
-`gonk split` now preserves the source hierarchy below `build/split/`. Do not
-use `nm build/split/*.o`: that glob examines only the handful of top-level
-objects and misses nested TUs.
-
-For one symbol, the preferred interface is:
+The target is compared as a complete shared object. For one symbol, use:
 
 ```bash
-python3 scripts/objdiff-cli.py _Z5qrandv
+bazel run //scripts:objdiff_cli -- _Z5qrandv
 ```
 
-To obtain exact paths without guessing, query `objdiff.json`:
+To find its source owner, search declarations/definitions first, then inspect
+the Bazel compile action if the basename is ambiguous:
 
 ```bash
-jq -r --arg path_part 'qrand' '
-  .units[]
-  | select(.name | contains($path_part))
-  | [.name, .target_path, .base_path]
-  | @tsv
-' objdiff.json
+rg -n 'qrand' src
+bazel aquery --config=target \
+  'mnemonic("CppCompile", //src:saga_target)' --include_commandline
 ```
 
-If only the symbol name is known, search recursively:
-
-```bash
-find build/split -type f -name '*.o' -print0 \
-  | xargs -0 ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/linux-x86_64/bin/i686-linux-android-nm -A \
-  | rg ' T _Z5qrandv$'
-```
-
-Current unit names are relative object paths and include the `.o` suffix, for
-example `legoapi/core/input/qrand.cpp.o` and
-`nu2api/nucore/deflate.cpp.o`. Use the exact `name` from `objdiff.json` with
-`objdiff-cli -u`.
+The action query is authoritative for source membership, effective options,
+and the object emitted for each source file.
 
 ## File-role conventions
 
@@ -160,17 +135,15 @@ example `legoapi/core/input/qrand.cpp.o` and
 
 ## Restructuring checklist
 
-1. Resolve the symbol's current unit through `objdiff.json` or recursive `nm`.
+1. Resolve the symbol's current source file with `rg` and, if needed, Bazel
+   `aquery`.
 2. Record the current source and destination compile commands, especially
    `-O2`, `-O3`, and `-fPIE`.
 3. Preserve exported names, linkage, signatures, and function definition order.
-4. Check for same-named local symbols; gonk's original-symbol lookup is
-   name-based and duplicate local names remain a known ambiguity.
-5. After the code change, use the normal project verification pipeline from
-   `doc/decomp/03-matching.md`. A file move can cause unit-level pairing churn,
-   so inspect exact-match totals as well as fuzzy percentages.
+4. Check for same-named local symbols before moving a static definition.
+5. Rebuild the target, run the repository checks, and compare the affected
+   symbol directly against `res/libTTapp.so`.
 
 Do not maintain a hand-written 320-row TU map in this document. The current
-source path is already encoded in `objdiff.json`, while the original basename
-inventory is mechanically recoverable from the binary. A copied table becomes
+source list and compile actions come directly from Bazel. A copied table becomes
 misleading as soon as the domain hierarchy changes.

@@ -1,0 +1,34 @@
+load("@@//third_party:ogg_crc_table.bzl", "ogg_crc_table")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])
+
+ogg_crc_table(
+    name = "crctable_h",
+    out = "crctable.h",
+)
+
+# libogg 1.2.1. config_types.h is supplied by the accompanying portable
+# patch because the release tarball only contains config_types.h.in.
+cc_library(
+    name = "ogg",
+    srcs = [
+        "src/bitwise.c",
+        "src/framing.c",
+    ],
+    hdrs = [
+        "include/ogg/config_types.h",
+        "include/ogg/ogg.h",
+        "include/ogg/os_types.h",
+    ],
+    includes = [
+        ".",
+        "include",
+    ],
+    textual_hdrs = [":crctable_h"] + glob(
+        ["src/crctable.h"],
+        allow_empty = True,
+    ),
+)

@@ -1,60 +1,17 @@
 #include "nu2api/nucore/common.h"
 
 #include "host/platform/graphics.hpp"
-#ifdef __EMSCRIPTEN__
-#include "nu2api/nu3d/NuRenderDevice.h"
-#include "nu2api/nu3d/android/nutex_ios_ex.h"
-#include "nu2api/nuandroid/ios_graphics.h"
-#endif
 
 #include <EGL/egl.h>
 #include <GLES2/gl2.h>
+#include <SDL3/SDL_timer.h>
 #include <pthread.h>
 
 #include <algorithm>
 #include <atomic>
+#include <cstdio>
 #include <cstring>
 #include <vector>
-
-#if !defined(_WIN32) && !defined(__EMSCRIPTEN__)
-#include <dlfcn.h>
-#endif
-
-#ifdef __EMSCRIPTEN__
-void NuIOS_AllocateSystemFramebuffers(void) {
-    BeginCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nuandroid/ios_graphics.cpp", 106);
-
-    memset(g_lastBound2DTexIds, 0, sizeof(g_lastBound2DTexIds));
-    memset(g_lastBoundCubeTexIds, 0, sizeof(g_lastBoundCubeTexIds));
-
-    glGenFramebuffers(1, &g_earlyColorFramebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, g_earlyColorFramebuffer);
-
-    glGenTextures(1, &g_earlyColorTexture);
-    glBindTexture(GL_TEXTURE_2D, g_earlyColorTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, g_backingWidth, g_backingHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g_earlyColorTexture, 0);
-
-    GLuint depth_buffer = 0;
-    glGenRenderbuffers(1, &depth_buffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, depth_buffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, g_backingWidth, g_backingHeight);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depth_buffer);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-    g_defaultFramebuffer = 0;
-    g_currentFramebuffer = g_earlyColorFramebuffer;
-
-    EndCriticalSectionGL("i:/SagaTouch-Android_9176564/nu2api.saga/nuandroid/ios_graphics.cpp", 260);
-}
-#endif
 
 // Frame capture belongs at the external EGL boundary. It must not replace the
 // game's render device, framebuffer allocation, or presentation path.
@@ -64,9 +21,36 @@ namespace {
     i32 host_readback_width;
     i32 host_readback_height;
     std::atomic<bool> host_readback_enabled{false};
+    std::atomic<bool> host_fps_overlay_enabled{false};
 
-    void host_capture_current_surface(EGLDisplay display, EGLSurface surface) {
-        if (!host_readback_enabled.load(std::memory_order_relaxed)) {
+    // Three-by-five glyphs, stored one three-bit row at a time. This keeps the
+    // host overlay independent of the game's shaders and font resources.
+    const u8 *host_fps_glyph(char character) {
+        static const u8 digits[][5] = {
+            {7, 5, 5, 5, 7}, {2, 6, 2, 2, 7}, {7, 1, 7, 4, 7}, {7, 1, 7, 1, 7}, {5, 5, 7, 1, 1},
+            {7, 4, 7, 1, 7}, {7, 4, 7, 5, 7}, {7, 1, 1, 1, 1}, {7, 5, 7, 5, 7}, {7, 5, 7, 1, 7},
+        };
+        static const u8 f[] = {7, 4, 6, 4, 4};
+        static const u8 p[] = {6, 5, 6, 4, 4};
+        static const u8 s[] = {7, 4, 7, 1, 7};
+        static const u8 space[] = {0, 0, 0, 0, 0};
+        if (character >= '0' && character <= '9') {
+            return digits[character - '0'];
+        }
+        if (character == 'F') {
+            return f;
+        }
+        if (character == 'P') {
+            return p;
+        }
+        if (character == 'S') {
+            return s;
+        }
+        return space;
+    }
+
+    void host_draw_fps_overlay(EGLDisplay display, EGLSurface surface) {
+        if (!host_fps_overlay_enabled.load(std::memory_order_relaxed)) {
             return;
         }
 
@@ -77,23 +61,100 @@ namespace {
             return;
         }
 
-        std::vector<u8> pixels(static_cast<usize>(width) * static_cast<usize>(height) * 4);
-        GLint old_pack_alignment = 4;
-        glGetIntegerv(GL_PACK_ALIGNMENT, &old_pack_alignment);
-        glPixelStorei(GL_PACK_ALIGNMENT, 1);
-        glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
-        glPixelStorei(GL_PACK_ALIGNMENT, old_pack_alignment);
+        static Uint64 interval_start_ns;
+        static u32 interval_frames;
+        static u32 displayed_fps;
+        const Uint64 now_ns = SDL_GetTicksNS();
+        if (interval_start_ns == 0) {
+            interval_start_ns = now_ns;
+        }
+        ++interval_frames;
+        const Uint64 elapsed_ns = now_ns - interval_start_ns;
+        if (elapsed_ns >= 500000000) {
+            displayed_fps = static_cast<u32>((interval_frames * 1000000000ULL + elapsed_ns / 2) / elapsed_ns);
+            interval_frames = 0;
+            interval_start_ns = now_ns;
+        }
 
-        pthread_mutex_lock(&host_readback_mutex);
-        host_readback_pixels.swap(pixels);
-        host_readback_width = width;
-        host_readback_height = height;
-        pthread_mutex_unlock(&host_readback_mutex);
+        char text[16];
+        std::snprintf(text, sizeof(text), "%u FPS", displayed_fps);
+        constexpr GLint scale = 3;
+        constexpr GLint margin = 6;
+        constexpr GLint glyph_height = 5 * scale;
+        constexpr GLint advance = 4 * scale;
+        const GLint text_width = static_cast<GLint>(std::strlen(text)) * advance - scale;
+        const GLint baseline = height - margin - glyph_height;
+
+        const GLboolean scissor_enabled = glIsEnabled(GL_SCISSOR_TEST);
+        GLint old_scissor[4];
+        GLfloat old_clear_color[4];
+        GLboolean old_color_mask[4];
+        glGetIntegerv(GL_SCISSOR_BOX, old_scissor);
+        glGetFloatv(GL_COLOR_CLEAR_VALUE, old_clear_color);
+        glGetBooleanv(GL_COLOR_WRITEMASK, old_color_mask);
+        glEnable(GL_SCISSOR_TEST);
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+        glScissor(margin - 3, baseline - 3, text_width + 6, glyph_height + 6);
+        glClearColor(0.0f, 0.0f, 0.0f, 0.75f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+        for (i32 glyph_index = 0; text[glyph_index] != '\0'; ++glyph_index) {
+            const u8 *glyph = host_fps_glyph(text[glyph_index]);
+            for (i32 row = 0; row < 5; ++row) {
+                for (i32 column = 0; column < 3; ++column) {
+                    if ((glyph[row] & (1u << (2 - column))) == 0) {
+                        continue;
+                    }
+                    glScissor(margin + glyph_index * advance + column * scale,
+                              baseline + (4 - row) * scale, scale, scale);
+                    glClear(GL_COLOR_BUFFER_BIT);
+                }
+            }
+        }
+
+        glClearColor(old_clear_color[0], old_clear_color[1], old_clear_color[2], old_clear_color[3]);
+        glColorMask(old_color_mask[0], old_color_mask[1], old_color_mask[2], old_color_mask[3]);
+        glScissor(old_scissor[0], old_scissor[1], old_scissor[2], old_scissor[3]);
+        if (!scissor_enabled) {
+            glDisable(GL_SCISSOR_TEST);
+        }
     }
 } // namespace
 
+void HostCaptureCurrentSurface(EGLDisplay display, EGLSurface surface) {
+    host_draw_fps_overlay(display, surface);
+    if (!host_readback_enabled.load(std::memory_order_relaxed)) {
+        return;
+    }
+
+    EGLint width = 0;
+    EGLint height = 0;
+    if (!eglQuerySurface(display, surface, EGL_WIDTH, &width) ||
+        !eglQuerySurface(display, surface, EGL_HEIGHT, &height) || width <= 0 || height <= 0) {
+        return;
+    }
+
+    std::vector<u8> pixels(static_cast<usize>(width) * static_cast<usize>(height) * 4);
+    GLint old_pack_alignment = 4;
+    glGetIntegerv(GL_PACK_ALIGNMENT, &old_pack_alignment);
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+    glPixelStorei(GL_PACK_ALIGNMENT, old_pack_alignment);
+
+    pthread_mutex_lock(&host_readback_mutex);
+    host_readback_pixels.swap(pixels);
+    host_readback_width = width;
+    host_readback_height = height;
+    pthread_mutex_unlock(&host_readback_mutex);
+}
+
 void HostSetReadbackEnabled(bool enabled) {
     host_readback_enabled.store(enabled, std::memory_order_relaxed);
+}
+
+void HostSetFpsOverlayEnabled(bool enabled) {
+    host_fps_overlay_enabled.store(enabled, std::memory_order_relaxed);
 }
 
 i32 HostReadbackPixels(u32 max_w, u32 max_h, u8 *rgba) {
@@ -113,14 +174,3 @@ i32 HostReadbackPixels(u32 max_w, u32 max_h, u8 *rgba) {
     pthread_mutex_unlock(&host_readback_mutex);
     return width * 1000 + height;
 }
-
-#if !defined(_WIN32) && !defined(__EMSCRIPTEN__)
-extern "C" EGLBoolean eglSwapBuffers(EGLDisplay display, EGLSurface surface) {
-    typedef EGLBoolean (*HostEglSwapBuffers)(EGLDisplay, EGLSurface);
-    static HostEglSwapBuffers host_real_egl_swap_buffers =
-        reinterpret_cast<HostEglSwapBuffers>(dlsym(RTLD_NEXT, "eglSwapBuffers"));
-
-    host_capture_current_surface(display, surface);
-    return host_real_egl_swap_buffers != nullptr ? host_real_egl_swap_buffers(display, surface) : EGL_FALSE;
-}
-#endif

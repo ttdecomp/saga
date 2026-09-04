@@ -1,0 +1,299 @@
+load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:objc_library.bzl", "objc_library")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
+load("//bazel:saga_components.bzl", "saga_component_libraries")
+
+package(default_visibility = ["//visibility:public"])
+
+_ENGINE_DIRS = [
+    "MechInputTouch",
+    "editor",
+    "gameapi",
+    "gameframework",
+    "gamelib",
+    "legoapi",
+    "legogame",
+    "nu2api",
+]
+
+_ENGINE_ROOT_SRCS = [
+    "batman.cpp",
+    "globals.cpp",
+    "java/jni_stub.cpp",
+]
+
+_ENGINE_SRCS = _ENGINE_ROOT_SRCS + glob(
+    [directory + "/**/*.c" for directory in _ENGINE_DIRS] +
+    [directory + "/**/*.cpp" for directory in _ENGINE_DIRS],
+    allow_empty = True,
+)
+
+_HOST_EXCLUDES = [
+    "nu2api/nucore/android/NuInputDevice_android.cpp",
+    "nu2api/nucore/nunew.cpp",
+]
+
+_HOST_COMMON_SRCS = [source for source in _ENGINE_SRCS if source not in _HOST_EXCLUDES] + [
+    "host/harness/audio.cpp",
+    "host/harness/load.cpp",
+    "host/harness/main.cpp",
+    "host/harness/window.cpp",
+    "host/platform/compressed_texture.cpp",
+    "host/platform/documents.cpp",
+    "host/platform/egl.cpp",
+    "host/platform/free_camera.cpp",
+    "host/platform/free_camera_culling.cpp",
+    "host/platform/input.cpp",
+    "host/platform/opensl.cpp",
+    "host/platform/runtime.cpp",
+]
+
+_NATIVE_PLATFORM_SRCS = ["host/platform/native_render_device.cpp"] + select({
+    "//bazel/platforms:linux": [
+        "host/platform/linux/runtime.cpp",
+        "host/platform/posix/compressed_texture.cpp",
+        "host/platform/posix/egl.cpp",
+    ],
+    "//bazel/platforms:macos": [
+        "host/platform/posix/compressed_texture.cpp",
+        "host/platform/posix/egl.cpp",
+    ],
+    "//bazel/platforms:windows": [
+        "host/platform/windows/runtime.cpp",
+    ],
+    "//conditions:default": [],
+})
+
+_WASM_PLATFORM_SRCS = [
+    "host/platform/wasm/compatibility.cpp",
+    "host/platform/wasm/graphics.cpp",
+    "host/platform/wasm/input.cpp",
+    "host/platform/wasm/render_device.cpp",
+    "host/platform/wasm/runtime.cpp",
+]
+
+_PUBLIC_HEADERS = glob(
+    [
+        "**/*.h",
+        "**/*.hh",
+        "**/*.hpp",
+    ],
+    allow_empty = True,
+)
+
+_TEXTUAL_HEADERS = [
+    "legoapi/menus/core/lsw_text_data.inc",
+    "nu2api/nu3d/android/nuios_shader_sources.inc",
+    "nu2api/nu3d/nudlist_tables_gen.inc",
+    "uberShader2.array",
+]
+
+filegroup(
+    name = "all_source_files",
+    srcs = glob(
+        ["**"],
+        exclude = ["BUILD.bazel"],
+    ),
+)
+
+_TARGET_COMPONENTS = saga_component_libraries(
+    copts = [
+        "-fno-data-sections",
+        "-fno-function-sections",
+    ],
+    defines = ["ANDROID"],
+    engine_dirs = _ENGINE_DIRS,
+    headers = _PUBLIC_HEADERS,
+    name_prefix = "saga_target",
+    root_sources = _ENGINE_ROOT_SRCS,
+    sources = _ENGINE_SRCS,
+    target_compatible_with = ["@platforms//os:android"],
+    textual_headers = _TEXTUAL_HEADERS,
+    deps = [
+        "@libogg//:ogg",
+        "@libsquish//:squish",
+        "@libvorbis//:vorbis",
+        "@libvorbis//:vorbisfile",
+    ],
+)
+
+cc_library(
+    name = "saga_target_objects",
+    target_compatible_with = ["@platforms//os:android"],
+    deps = _TARGET_COMPONENTS,
+)
+
+cc_binary(
+    name = "libTTapp.so",
+    linkopts = [
+        "-lGLESv2",
+        "-lEGL",
+        "-lOpenSLES",
+        "-lstdc++",
+    ],
+    linkshared = True,
+    linkstatic = True,
+    target_compatible_with = ["@platforms//os:android"],
+    deps = [":saga_target_objects"],
+)
+
+alias(
+    name = "saga_target",
+    actual = ":libTTapp.so",
+)
+
+_HOST_PLATFORM_COPTS = select({
+    "//bazel/platforms:linux": [
+        "-m32",
+        "-march=i686",
+        "-fsanitize=address,undefined",
+    ],
+    "//conditions:default": [],
+}) + select({
+    "//bazel/platforms:x86_64": ["-msse2"],
+    "//conditions:default": [],
+})
+
+_HOST_PLATFORM_DEPS = select({
+    "//bazel/platforms:linux": ["@system_host_deps_linux//:host_deps"],
+    "//bazel/platforms:macos": [
+        ":saga_macos_platform",
+        "@system_host_deps_macos//:host_deps",
+    ],
+    "//bazel/platforms:windows": ["@system_host_deps_windows//:host_deps"],
+    "//conditions:default": [],
+}) + ["@libsquish//:squish"]
+
+objc_library(
+    name = "saga_macos_platform",
+    srcs = ["host/platform/darwin/runtime.mm"],
+    hdrs = ["host/platform/runtime.hpp"],
+    includes = ["."],
+    target_compatible_with = ["@platforms//os:macos"],
+    deps = ["@system_host_deps_macos//:host_deps"],
+    alwayslink = True,
+)
+
+_NATIVE_COMPONENTS = saga_component_libraries(
+    copts = ["-fno-stack-protector"] + _HOST_PLATFORM_COPTS,
+    defines = [
+        "ANDROID",
+        "HOST_BUILD",
+    ],
+    engine_dirs = _ENGINE_DIRS,
+    headers = _PUBLIC_HEADERS,
+    name_prefix = "saga_native",
+    root_sources = _ENGINE_ROOT_SRCS,
+    sources = _HOST_COMMON_SRCS,
+    textual_headers = _TEXTUAL_HEADERS,
+    deps = _HOST_PLATFORM_DEPS,
+)
+
+cc_library(
+    name = "saga_native_platform",
+    srcs = _NATIVE_PLATFORM_SRCS,
+    hdrs = _PUBLIC_HEADERS,
+    copts = ["-fno-stack-protector"] + _HOST_PLATFORM_COPTS,
+    defines = [
+        "ANDROID",
+        "HOST_BUILD",
+    ],
+    includes = ["."],
+    linkstatic = True,
+    local_defines = ["__FILENAME__=__FILE__"],
+    textual_hdrs = _TEXTUAL_HEADERS,
+    deps = _HOST_PLATFORM_DEPS,
+    alwayslink = True,
+)
+
+cc_library(
+    name = "saga_native_objects",
+    deps = _NATIVE_COMPONENTS + [":saga_native_platform"],
+)
+
+cc_binary(
+    name = "saga_native",
+    linkopts = select({
+        "//bazel/platforms:linux": [
+            "-m32",
+            "-fsanitize=address,undefined",
+        ],
+        "//bazel/platforms:macos": [
+            "-framework",
+            "Cocoa",
+            "-framework",
+            "QuartzCore",
+        ],
+        "//bazel/platforms:windows": [
+            "-Wl,--export-all-symbols",
+        ],
+        "//conditions:default": [],
+    }),
+    linkstatic = False,
+    deps = [":saga_native_objects"],
+)
+
+sh_binary(
+    name = "run_native",
+    srcs = ["host/harness/run_native.sh"],
+    args = ["$(location :saga_native)"],
+    data = [":saga_native"],
+)
+
+cc_library(
+    name = "saga_wasm_objects",
+    srcs = _HOST_COMMON_SRCS + _WASM_PLATFORM_SRCS,
+    hdrs = _PUBLIC_HEADERS,
+    defines = [
+        "ANDROID",
+        "HOST_BUILD",
+    ],
+    includes = ["."],
+    local_defines = ["__FILENAME__=__FILE__"],
+    textual_hdrs = _TEXTUAL_HEADERS,
+    deps = [
+        "@emscripten_cache//:port_headers",
+        "@libogg_wasm//:ogg",
+        "@libsquish//:squish",
+        "@libvorbis_wasm//:vorbis",
+        "@libvorbis_wasm//:vorbisfile",
+    ],
+    alwayslink = True,
+)
+
+cc_binary(
+    name = "saga",
+    additional_linker_inputs = ["host-wasm-shell.html"],
+    features = ["-output_format_js"],
+    linkopts = [
+        "--use-port=sdl3",
+        "--oformat=html",
+        "-sPROXY_TO_PTHREAD=1",
+        "-sOFFSCREEN_FRAMEBUFFER=1",
+        "-sFULL_ES2=1",
+        "-sMAX_WEBGL_VERSION=2",
+        "-sALLOW_MEMORY_GROWTH=1",
+        "-sINITIAL_MEMORY=268435456",
+        "-sSTACK_SIZE=5242880",
+        "-sASSERTIONS=1",
+        "-sEXPORTED_RUNTIME_METHODS=FS,callMain",
+        "--shell-file",
+        "$(location host-wasm-shell.html)",
+        "--emrun",
+    ],
+    linkstatic = True,
+    deps = [":saga_wasm_objects"],
+)
+
+wasm_cc_binary(
+    name = "saga_wasm",
+    cc_target = ":saga",
+    outputs = [
+        "saga.html",
+        "saga.js",
+        "saga.wasm",
+    ],
+    threads = "emscripten",
+)

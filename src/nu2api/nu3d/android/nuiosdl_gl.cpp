@@ -113,6 +113,15 @@ static inline const void *usizeToPtr(usize value) {
     return reinterpret_cast<const void *>(value);
 }
 
+__attribute__((weak)) GLenum NuIOS_PlatformVertexAttributeType(GLenum type) {
+    return type;
+}
+
+__attribute__((weak)) isize NuIOS_PlatformPrepareImmediateVertexData(isize data_address, usize) {
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    return data_address;
+}
+
 NUNATIVETEX *NuTexGetNative(i32 tex_id);
 void NuTexSetTextureWithStagePS(NUNATIVETEX *tex, u32 stage);
 i32 NuTexGenTexture(NUNATIVETEX *tex);
@@ -359,11 +368,7 @@ static void NuIOS_BindVertexAttributesInternal(isize dataAddr, usize baseVertex,
                 glEnableVertexAttribArray(loc);
             }
             const VertexAttribRecord *rec = reinterpret_cast<const VertexAttribRecord *>(recordsBase + loc * 6);
-#ifdef __EMSCRIPTEN__
-            const GLenum type = rec->gl_type == 0x8d61 ? 0x140b : static_cast<GLenum>(rec->gl_type);
-#else
-            const GLenum type = static_cast<GLenum>(rec->gl_type);
-#endif
+            const GLenum type = NuIOS_PlatformVertexAttributeType(static_cast<GLenum>(rec->gl_type));
             glVertexAttribPointer(loc, (GLint)rec->comp_count, type, (GLboolean)rec->normalized, (GLsizei)rec->stride,
                                   (const void *)(dataAddr + rec->byte_offset + baseVertex * rec->stride));
         }
@@ -719,7 +724,7 @@ void NuIOSDLGeom2DCallback(void *arg) {
 // original 0x2a430d — 3D geometry callback
 void NuIOSDLGeomCallback(void *arg) {
     auto *geom = static_cast<NUDISPLAYLISTGEOM *>(arg);
-    const isize immediate_vertices = PtrToArgInt(geom + 1);
+    const isize immediate_vertices = reinterpret_cast<isize>(geom + 1);
     NUSHADEROBJECT *shader = NuShaderManagerGetCurrentShader();
     if (shader == NULL || shader->glsl.program == 0) {
         return;
@@ -761,18 +766,9 @@ void NuIOSDLGeomCallback(void *arg) {
                 NuIOS_BindVertexAttributes(0, geom->base_vertex);
             } else if (geom->dynamic_vertex_data == nullptr) {
                 NuIOSBindVAO(0);
-#ifdef __EMSCRIPTEN__
-                static GLuint immediate_vertex_buffer = 0;
-                if (immediate_vertex_buffer == 0) {
-                    glGenBuffers(1, &immediate_vertex_buffer);
-                }
-                glBindBuffer(GL_ARRAY_BUFFER, immediate_vertex_buffer);
-                glBufferData(GL_ARRAY_BUFFER, geom->vertex_stride * geom->vertex_count,
-                             u32ToPtr(geom->vertex_buffer + geom->vertex_stride * geom->base_vertex), GL_STREAM_DRAW);
-                NuIOS_BindVertexAttributes(0, 0);
-#else
-                NuIOS_BindVertexAttributesImmediate(0, geom->vertex_buffer + geom->vertex_stride * geom->base_vertex);
-#endif
+                const isize data_address = geom->vertex_buffer + geom->vertex_stride * geom->base_vertex;
+                const usize data_size = geom->vertex_stride * geom->vertex_count;
+                NuIOS_BindVertexAttributes(NuIOS_PlatformPrepareImmediateVertexData(data_address, data_size), 0);
             } else {
                 NuIOSBindVAO(0);
                 glBindBuffer(GL_ARRAY_BUFFER, geom->vertex_format);

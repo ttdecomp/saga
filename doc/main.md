@@ -4,8 +4,14 @@
 
 [source-structure.md](source-structure.md) explains the original filename
 evidence, current source hierarchy, generated TU mapping, and per-file `-O`
-contract. Start there before moving any file or function. `objdiff.json` and
-`build/compile_commands.json` are the live mapping/count authorities.
+contract. Start there before moving any file or function. `src/BUILD.bazel`
+and `bazel/android_per_file_copts.bazelrc` are the live source and optimization
+authorities.
+
+## Building
+
+[build-bazel.md](build-bazel.md) documents target, native, and WASM builds,
+including prerequisites and output locations.
 
 ## Decompiling with GCC 4.7 (knowledge base)
 
@@ -20,6 +26,11 @@ Start at [decomp/00-index.md](decomp/00-index.md).
 [host-utilities.md](host-utilities.md) documents interactive and unattended
 host utilities, including hidden framebuffer capture and dummy audio. These
 diagnostics do not replace original-binary evidence.
+
+## Matching report
+
+[pages/README.md](pages/README.md) documents the generated whole-binary
+matching data and the static GitHub Pages visualization.
 
 ## Codex skill
 

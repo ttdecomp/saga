@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-#MISE description="Build the native host"
-#MISE depends=["host:configure"]
-set -euo pipefail
-
-cmake --build build-host --parallel

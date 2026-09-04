@@ -5,6 +5,8 @@
 #include "nu2api/nu3d/nuprim.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufpar.h"
+#include "nu2api/numath/nufloat.h"
+#include <stdio.h>
 #include <string.h>
 extern char **TTab;
 extern i32 MenuDrawDropShadows;
@@ -44,7 +46,43 @@ extern "C" void Text3DEx(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_sca
                          u8 green, u8 blue, i32 alpha);
 extern "C" void Text3DEx2(char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, f32 z_scale, u8 alignment, u8 red,
                           u8 green, u8 blue, i32 alpha);
-void Text_MakeTime(float, i32, i32, i32, char *) {
+void Text_MakeTime(float time, i32 show_hours, i32 show_minutes, i32 show_centiseconds, char *text) {
+    time = MAX(0.0f, time);
+
+    i32 hours = 0;
+    i32 minutes;
+    if (show_hours != 0) {
+        hours = static_cast<i32>(time / 3600.0f);
+        minutes = static_cast<i32>(NuFmod(time / 60.0f, 60.0f));
+    } else {
+        minutes = static_cast<i32>(time / 60.0f);
+    }
+
+    i32 seconds;
+    if (show_minutes != 0 || show_centiseconds != 0) {
+        seconds = static_cast<i32>(NuFmod(time, 60.0f));
+    } else {
+        seconds = static_cast<i32>(time);
+    }
+    const i32 centiseconds = static_cast<i32>(NuFmod(time, 1.0f) * 100.0f);
+
+    if (show_hours != 0) {
+        if (show_centiseconds != 0) {
+            sprintf(text, "%i:%.2i:%.2i.%.2i", hours, minutes, seconds, centiseconds);
+        } else {
+            sprintf(text, "%i:%.2i:%.2i", hours, minutes, seconds);
+        }
+    } else if (show_minutes != 0) {
+        if (show_centiseconds != 0) {
+            sprintf(text, "%i:%.2i.%.2i", minutes, seconds, centiseconds);
+        } else {
+            sprintf(text, "%i:%.2i", minutes, seconds);
+        }
+    } else if (show_centiseconds != 0) {
+        sprintf(text, "%i.%.2i", seconds, centiseconds);
+    } else {
+        sprintf(text, "%i", seconds);
+    }
 }
 
 static TEXTCRAWL_s *s_crawlPtr = nullptr;

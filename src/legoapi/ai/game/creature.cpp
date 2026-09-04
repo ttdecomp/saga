@@ -32,7 +32,7 @@ void ResetPlayerMoves(GameObject_s *object);
 void Player_ClearContext(GameObject_s *object, i32 context);
 void Player_ResetContexts(PLAYERPACKET_s *packet);
 void InitSurfaceInfo(GameObject_s *object);
-void SetObjOnSurface(GameObject_s *object, i32 mode);
+i32 SetObjOnSurface(GameObject_s *object, i32 mode);
 void PortalGameObject(GameObject_s *object, i32 enable, i32 immediate, i16 portal, nugscn_s *scene);
 
 enum AI_CREATURE_FLAGS : i32 {

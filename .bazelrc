@@ -1,0 +1,38 @@
+common --enable_bzlmod
+common --announce_rc
+common --repo_contents_cache=
+
+# Keep the checked-in lock file authoritative in CI while allowing developers
+# to refresh it explicitly after dependency changes.
+common --lockfile_mode=error
+
+build --show_timestamps
+build --verbose_failures
+build --incompatible_strict_action_env
+
+build:saga-common --compilation_mode=dbg
+build:saga-common --copt=-fno-exceptions
+build:saga-common --copt=-Wno-write-strings
+build:saga-common --conlyopt=-std=gnu11
+build:saga-common --cxxopt=-std=gnu++11
+build:saga-common --cxxopt=-fno-rtti
+
+build:target --config=saga-common
+build:target --platforms=//bazel/platforms:android_x86
+build:target --extra_toolchains=@android_ndk_r8e//:toolchain
+build:target --define=SAGA_BUILD=target
+try-import %workspace%/bazel/android_per_file_copts.bazelrc
+
+build:native --config=saga-common
+build:native --define=SAGA_BUILD=native
+
+# Bazel 9's detected Windows toolchains auto-register MSVC only. This explicit
+# platform activates the MinGW toolchain supplied by rules_cc.
+build:windows-mingw --host_platform=//bazel/platforms:windows_mingw
+build:windows-mingw --platforms=//bazel/platforms:windows_mingw
+build:windows-mingw --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows_mingw
+
+build:wasm --config=saga-common
+build:wasm --define=SAGA_BUILD=wasm
+
+test --test_output=errors

@@ -664,7 +664,88 @@ i32 GameAnimSet_Stop(GAMEANIMSET_s *set) {
 void Animate_ASTROMECH(GameObject_s *) {
 }
 
-void Animate_CHARACTER(GameObject_s *) {
+void Animate_CHARACTER(GameObject_s *object) {
+    ANIMPACKET_s &packet = object->apiobj.anim_packet;
+    bool check_movement_animation = false;
+
+    if ((CInfo[object->character_context].flags & CHARACTER_CONTEXT_INFO_FLAG_OWNS_ANIMATION) != 0) {
+        packet.requested_animation = object->context_animation;
+    } else if (object->context_target_position != NULL) {
+        if (object->apiobj.character_model->model_data_b[43] != NULL) {
+            packet.requested_animation = 43;
+        } else {
+            const i32 target_state = *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(object->context_target_position) +
+                                                              0x14);
+            packet.requested_animation = target_state == 1 ? CHARACTER_ANIMATION_IDLE : CHARACTER_ANIMATION_FALL;
+        }
+    } else if (object->character_context == CHARACTER_CONTEXT_FORCE) {
+        packet.requested_animation = CHARACTER_ANIMATION_WEAPON_IDLE;
+    } else {
+        packet.requested_animation = CHARACTER_ANIMATION_FALL;
+
+        if (object->character_context != CHARACTER_CONTEXT_DOOMED) {
+            bool use_default_idle = object->apiobj.field_0x27d != 0;
+            if (!use_default_idle) {
+                const bool has_fall_animation =
+                    object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_FALL] != NULL;
+                if (object->ground_contact_grace_timer > 0.0f) {
+                    const GAMECHARACTERDATA *game_character =
+                        static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
+                    use_default_idle = game_character->field_0x28 <= 0.0f || !has_fall_animation;
+                } else if (!has_fall_animation) {
+                    use_default_idle = true;
+                } else if (object->fall_animation_timer < 0.2f && object->nearby_floor_distance != 2000000.0f &&
+                           object->nearby_floor_distance < 0.25f && object->apiobj.velocity.y < 0.0f) {
+                    use_default_idle = true;
+                }
+            }
+            if (use_default_idle) {
+                packet.requested_animation = static_cast<i16>(GetDefaultIdle(object));
+            }
+        }
+
+        if (object->character_context == CHARACTER_CONTEXT_JUMP) {
+            JumpAnimCode(object);
+        } else if (UseFallAnim(object)) {
+            packet.requested_animation = CHARACTER_ANIMATION_FALL;
+        } else if (object->character_context == CHARACTER_CONTEXT_DOOMED) {
+            // The doomed context retains the fall choice unless the model's
+            // context handler supplied another action above.
+        } else if (packet.requested_animation != CHARACTER_ANIMATION_FALL) {
+            GAMEPAD_s *pad = object->pad_gamepad;
+            if ((pad->allocated_5a & GAMEPAD_RUNTIME_SUPPRESS_MOVEMENT) == 0 && pad->input_magnitude > 0.0f) {
+                const GAMECHARACTERDATA *game_character =
+                    static_cast<GAMECHARACTERDATA *>(object->apiobj.character_data->field11_0x24);
+                if ((object->apiobj.field_0x1f8 & 0x80) == 0 && game_character->field275_0x116 == 1) {
+                    MoveAnim_Manage(object, pad->input_magnitude, 0, 1);
+                } else {
+                    const i32 allow_tiptoe =
+                        (game_character->flags_090 & GAMECHARACTER_FLAG_DISABLE_TIPTOE) == 0 ? 1 : 0;
+                    MoveAnim_Manage(object, pad->input_magnitude, allow_tiptoe, 1);
+                }
+            } else if (((object->field_0xe22 & GAMEOBJECT_E22_FLAG_WEAPON_ANIMATION) != 0 ||
+                        object->field_0xe32 == 1) &&
+                       object->apiobj.character_model->model_data_b[CHARACTER_ANIMATION_ALT_IDLE] != NULL) {
+                packet.requested_animation = CHARACTER_ANIMATION_ALT_IDLE;
+            }
+        }
+        check_movement_animation = true;
+    }
+
+    if (check_movement_animation) {
+        MoveAnim_Check(object);
+    }
+    UpdateCharacterIdle(object);
+
+    const i16 animation = packet.requested_animation;
+    if (animation == CHARACTER_ANIMATION_FALL ||
+        ((object->apiobj.character_data->model_flags & CHARACTER_MODEL_FLAG_HIGH_JUMP) != 0 &&
+         (animation == CHARACTER_ANIMATION_FALL_VARIANT_75 || animation == CHARACTER_ANIMATION_FALL_VARIANT_40 ||
+          animation == CHARACTER_ANIMATION_FALL_VARIANT_76))) {
+        object->fall_animation_timer += FRAMETIME;
+    } else {
+        object->fall_animation_timer = 0.0f;
+    }
 }
 
 void Animate_GEONOSIAN(GameObject_s *) {
@@ -1081,7 +1162,38 @@ GAMEANIMOBJPOOL_s *GameAnimSet_CreateObjectPool(variptr_u *buf, variptr_u *buf_e
     return pool;
 }
 
-void GameAnimSet_IsAnimationReset(GAMEANIMSET_s *) {
+i32 GameAnimSet_IsAnimationReset(GAMEANIMSET_s *set) {
+    if (set == NULL || set->objects == NULL) {
+        return 1;
+    }
+
+    i32 repeating_count = 0;
+    i32 animated_count = 0;
+    for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
+        nuinstanim_s *animation = object->instance_animation;
+        if (animation == NULL) {
+            continue;
+        }
+
+        ++animated_count;
+        if (animation->repeating != 0) {
+            ++repeating_count;
+            continue;
+        }
+        if (animation->playing != 0) {
+            return 0;
+        }
+
+        const f32 direction = object->end_frame < object->start_frame ? -1.0f : 1.0f;
+        if (animation->ltime * direction > object->start_frame * direction) {
+            return 0;
+        }
+    }
+
+    if (animated_count == 0) {
+        return 1;
+    }
+    return animated_count != repeating_count;
 }
 
 void GameAnimSet_RemoveAllObjects(GAMEANIMSET_s *) {
@@ -1603,7 +1715,45 @@ extern "C" {
     void AnimBlendingFromTo(void) {
     }
 
-    void AnimDuration(void) {
+    f32 animduration_blendouttime;
+
+    f32 AnimDuration(i32 character_id, i32 animation, f32 start_frame, f32 end_frame, i32 subtract_frame_time) {
+        if (apicharsys == NULL || character_id < 0 || character_id >= apicharsys->character_count || animation < 0 ||
+            animation >= apicharsys->model_id_capacity) {
+            return 0.0f;
+        }
+
+        const i16 model_index = apicharsys->playermodelids[character_id];
+        if (model_index == -1) {
+            return 0.0f;
+        }
+
+        CHARACTERMODEL_s *model = &apicharsys->models[model_index];
+        if (model->model_data_b == NULL || model->model_data_b[animation] == NULL || model->model_data_a == NULL ||
+            model->model_data_a[animation] == NULL) {
+            return 0.0f;
+        }
+
+        f32 duration = NuAnimEndFrame(model->model_data_b[animation]);
+        if (start_frame >= 1.0f && duration > start_frame) {
+            if (end_frame >= 1.0f && duration > end_frame && end_frame > start_frame) {
+                duration = end_frame - start_frame;
+            } else {
+                duration -= start_frame;
+            }
+        } else if (end_frame >= 1.0f && duration > end_frame && end_frame > start_frame) {
+            duration = end_frame - 1.0f;
+        } else {
+            duration -= 1.0f;
+        }
+
+        CHARACTERANIM_s *animation_info = static_cast<CHARACTERANIM_s *>(model->model_data_a[animation]);
+        duration *= 1.0f / animation_info->playback_rate;
+        animduration_blendouttime = animation_info->blend_out_time;
+        if (subtract_frame_time != 0) {
+            duration -= FRAMETIME;
+        }
+        return duration;
     }
 
     float AnimEndFrame(void *, i32) {
@@ -1785,23 +1935,19 @@ extern "C" {
         packet->blend_target_reversed = 0;
     }
 
-#ifdef __EMSCRIPTEN__
-    void ResetMiniAnimPacket(void *, i32) {
-    }
-#else
-    void ResetMiniAnimPacket(MINIANIMPACKET_s *packet, i32 animation) {
+    void __attribute__((weak, optimize("O0"))) ResetMiniAnimPacket(void *raw_packet, i32 animation) {
+        MINIANIMPACKET_s *packet = static_cast<MINIANIMPACKET_s *>(raw_packet);
         if (packet != NULL) {
             packet->requested_animation_id = static_cast<i16>(animation);
             packet->previous_animation_id = packet->requested_animation_id;
             packet->current_animation_id = packet->previous_animation_id;
-            packet->animation_mode = GetAnimBlendMode();
-            packet->previous_animation_mode = packet->animation_mode;
-            packet->current_animation = packet->previous_animation_mode;
+            packet->target_time = 1.0f;
+            packet->previous_time = packet->target_time;
+            packet->current_time = packet->previous_time;
             packet->field_0x19 = 0;
             packet->reset_state = 4;
         }
     }
-#endif
 
     void RootFn(NUMTX *matrix, void *data, NUVEC *source_root, NUVEC *target_root, NUVEC *root_delta, f32 blend) {
         RootFnEx(matrix, data, source_root, target_root, root_delta, blend, 0);

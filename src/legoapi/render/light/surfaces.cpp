@@ -30,6 +30,15 @@ extern "C" {
 
 extern TERRSET *CurTerr;
 extern TerrainQuery_s *TerI;
+extern NUVEC ShadNorm;
+
+f32 GameShadow(GameObject_s *object, NUVEC *position, f32 probe_height, i32 terrain_mask);
+i32 UnderWater(GameObject_s *object);
+void FindAnglesZX(NUVEC *normal, u16 *x_rotation, u16 *z_rotation);
+extern "C" i32 NewShadowOnPlatform();
+extern "C" i32 ShadowInfo();
+
+void (*SurfaceInfo_ExtraReflectFn)(GameObject_s *object);
 
 TERRAIN_TRACK_SLOT *AllocTerrId() {
     TERRSET *terrain = CurTerr;
@@ -74,7 +83,45 @@ void SurfaceMaskOn(u32 *surface_mask) {
     *surface_mask = 0x20;
 }
 
-void GetSurfaceInfo(GameObject_s *, i32, float) {
+void GetSurfaceInfo(GameObject_s *object, i32 update_surface, f32 shadow_height) {
+    APIOBJECT &api = object->apiobj;
+    if (shadow_height == 2000000.0f) {
+        object->field_0x1020 = 2000000.0f;
+        object->field_0x1087 = 0;
+        object->field_0x1078 = -1;
+    } else {
+        i32 surface = ShadowInfo();
+        if (surface < 0 || surface > 31) {
+            surface = 0;
+        }
+        object->field_0x1087 = 2;
+        object->field_0x1020 = shadow_height;
+        object->field_0x1078 = static_cast<i16>(NewShadowOnPlatform());
+
+        if (update_surface != 0) {
+            object->field_0xe41 = static_cast<u8>(surface);
+            api.field_0x281 = static_cast<u8>(surface);
+            object->surface_normal = ShadNorm;
+        }
+    }
+
+    if (update_surface != 0 && shadow_height == 2000000.0f) {
+        object->field_0xe41 = 0;
+        api.field_0x281 = 0;
+        object->surface_normal = v010;
+    }
+
+    // The extended shadow casts populate water/roof information in the target.
+    // Until that cast path is reconstructed, preserve its no-hit state rather
+    // than manufacturing a surface from the ordinary floor result.
+    api.water_height = 2000000.0f;
+    api.field_0x220 = 2000000.0f;
+    api.field_0x27f = 0xff;
+    api.field_0x280 = 0xff;
+
+    if (SurfaceInfo_ExtraReflectFn != NULL) {
+        SurfaceInfo_ExtraReflectFn(object);
+    }
 }
 
 i32 IntersectWater(GameObject_s *object) {
@@ -155,7 +202,34 @@ void DeRotateTerrain(tertype *surface) {
     }
 }
 
-void InitSurfaceInfo(GameObject_s *) {
+void InitSurfaceInfo(GameObject_s *object) {
+    APIOBJECT &api = object->apiobj;
+    const f32 shadow_height = GameShadow(object, &api.position, 5.0f, -1);
+    api.field_0x218 = shadow_height;
+
+    if (shadow_height == 2000000.0f) {
+        GetSurfaceInfo(object, 0, 2000000.0f);
+        object->field_0xd6c = 0.0f;
+        api.field_0x281 = 0;
+        object->field_0xe41 = 0;
+        object->surface_normal = v010;
+    } else {
+        GetSurfaceInfo(object, 1, shadow_height);
+        object->field_0xd6c = (TerSurface[api.field_0x281].flags & 8) != 0 ? 1.0f : 0.0f;
+        FindAnglesZX(&object->surface_normal, NULL, NULL);
+        object->field_0x105e = static_cast<u16>(temp_xrot);
+        object->field_0x1062 = static_cast<u16>(temp_xrot);
+        object->field_0x1060 = static_cast<u16>(temp_zrot);
+        object->field_0x1064 = static_cast<u16>(temp_zrot);
+    }
+
+    api.is_underwater = static_cast<u8>(UnderWater(object));
+    api.intersects_water = static_cast<u8>(IntersectWater(object));
+    api.water_height = 2000000.0f;
+    api.field_0x220 = 2000000.0f;
+    api.field_0x27f = 0xff;
+    api.field_0x280 = 0xff;
+    GetSurfaceInfo(object, 1, shadow_height);
 }
 
 enum SurfaceDeflectMode : i32 {

@@ -10,13 +10,8 @@ __pycache__/
 # Binary resources.
 res/*
 
-build/
 .cache/
-ndk/
-gonk/target/
-gonk/Cargo.lock
 objdiff.json
-build-*/
 vgcore.*
 *.bin
 *.pvr
@@ -27,7 +22,7 @@ report_old.json
 report.md
 opencode.jsonc
 
-.build/.work/
 .work/
 .host_scratch/
 *.ppm
+/bazel-*

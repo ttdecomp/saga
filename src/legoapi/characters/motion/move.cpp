@@ -6,6 +6,7 @@
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/props/system/socksys.h"
+#include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nucore/nupad.h"
 #include "nu2api/nu3d/nucamera.h"
@@ -876,7 +877,42 @@ void ForcedBackCode(GameObject_s *) {
 void Glide_MoveCode(GameObject_s *) {
 }
 
-void SetObjOnSurface(GameObject_s *, i32) {
+i32 SetObjOnSurface(GameObject_s *object, i32 mode) {
+    APIOBJECT &api = object->apiobj;
+    if (api.field_0x218 == 2000000.0f ||
+        (WorldInfo_CurrentlyActive()->current_level->flags & LEVEL_IN_SPACE) != 0) {
+        return 0;
+    }
+
+    const f32 lower_bound = object->character_bottom * api.field_0xa8;
+    f32 position_y;
+    if (mode == 2) {
+        position_y = api.collision_min.y - lower_bound + 0.1f - 0.0999f;
+        api.position.y = position_y;
+        api.initial_position.y = position_y;
+        api.collision_position.y = position_y;
+    } else if (mode == 0) {
+        position_y = api.field_0x218 - lower_bound + 0.1f - 0.0999f;
+        api.position.y = position_y;
+        api.initial_position.y = position_y;
+        api.collision_position.y = position_y;
+        api.velocity.y = -1.0f;
+        return 1;
+    } else {
+        position_y = api.position.y;
+    }
+
+    if (position_y + lower_bound <= api.field_0x218 + 0.1f) {
+        position_y = api.field_0x218 - lower_bound + 0.1f - 0.0999f;
+        api.position.y = position_y;
+        api.initial_position.y = position_y;
+        api.collision_position.y = position_y;
+        api.velocity.y = -1.0f;
+        return 1;
+    }
+
+    api.velocity.y = -1.0f;
+    return 0;
 }
 
 void TurnCodeCamSafe(GameObject_s *, numtx_s *) {

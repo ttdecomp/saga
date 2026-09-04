@@ -559,13 +559,13 @@ void DookuC_Init(WORLDINFO_s *world) {
     LevGizForce[0] = GizForce_FindByName(world->giz_force_sys, "dooku");
     LevGizForce[1] = GizForce_FindByName(world->giz_force_sys, "dooku1");
     LevGizForce[2] = GizForce_FindByName(world->giz_force_sys, "dooku2");
-    void *path1 = AIPathFindNode(world->ai_sys, "path1", 0);
+    void *path1 = AIPathFindNode(world->ai_sys, NULL, "path1");
     LevAIPathNode[0] = path1;
-    void *path2 = AIPathFindNode(world->ai_sys, "path2", 0);
+    void *path2 = AIPathFindNode(world->ai_sys, NULL, "path2");
     LevAIPathNode[1] = path2;
-    void *path3 = AIPathFindNode(world->ai_sys, "path3", 0);
+    void *path3 = AIPathFindNode(world->ai_sys, NULL, "path3");
     LevAIPathNode[2] = path3;
-    void *path4 = AIPathFindNode(world->ai_sys, "path4", 0);
+    void *path4 = AIPathFindNode(world->ai_sys, NULL, "path4");
     LevAIPathNode[3] = path4;
     char buf[0x40];
     LevPathCnx[0] = AIPAthFindPathCnx(world->ai_sys, 0, path1, path2, buf);

@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+
+workspace=$(git rev-parse --show-toplevel)
+cd "$workspace"
+exec bazel run //scripts:pre_commit -- "$@"

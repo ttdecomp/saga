@@ -13,6 +13,7 @@
 #include "globals.h"
 #include "host/harness/audio.hpp"
 #include "host/platform/opensl.hpp"
+#include "host/platform/runtime.hpp"
 #include "nu2api/nu3d/NuRenderDevice.h"
 #include "nu2api/nu3d/nuscreen.hpp"
 #include "nu2api/nuplatform/nuplatform.h"
@@ -20,18 +21,10 @@
 
 extern "C" i32 NuMain(i32 argc, char **argv);
 
-#ifdef __EMSCRIPTEN__
-constexpr const char *host_audio_video_driver = "emscripten";
-#elif defined(_WIN32)
-constexpr const char *host_audio_video_driver = "windows";
-#else
-constexpr const char *host_audio_video_driver = "x11";
-#endif
-
 namespace {
 
     void host_audio_sdl_init() {
-        SDL_SetHint(SDL_HINT_VIDEO_DRIVER, host_audio_video_driver);
+        SDL_SetHint(SDL_HINT_VIDEO_DRIVER, HostPlatformVideoDriver());
         // The audio driver can be overridden for headless runs (SDL_AUDIODRIVER
         // via env is honoured by SDL itself; this only pins video).
         if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO)) {
@@ -45,16 +38,7 @@ namespace {
             return;
         }
 
-        const SDL_PropertiesID props = SDL_GetWindowProperties(window);
-#ifdef __EMSCRIPTEN__
-        g_renderDevice.OnWindowCreated(nullptr);
-#elif defined(_WIN32)
-        HWND handle = static_cast<HWND>(SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
-        g_renderDevice.OnWindowCreated(reinterpret_cast<ANativeWindow *>(handle));
-#else
-        auto handle = static_cast<i32>(SDL_GetNumberProperty(props, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0));
-        g_renderDevice.OnWindowCreated(reinterpret_cast<ANativeWindow *>(handle));
-#endif
+        g_renderDevice.OnWindowCreated(HostPlatformNativeWindow(window));
     }
 
     SDL_Thread *host_audio_numain_thread = nullptr;

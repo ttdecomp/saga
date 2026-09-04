@@ -1,8 +1,8 @@
 # 05 — Source conventions
 
 Guide to placing and authoring reconstructed code in the current `src/` tree.
-The tree is actively reorganized, so use live paths and generated unit metadata
-instead of a copied basename map.
+The tree is actively reorganized, so use live paths and Bazel actions instead
+of a copied basename map.
 
 ## 1. Source layout
 
@@ -14,7 +14,7 @@ The major roots are:
 | `src/gameapi/` | AI, editor-tool, and GUI APIs |
 | `src/gameframework/` | framework systems such as save/load |
 | `src/gamelib/` | utilities and supporting engine systems |
-| `src/legoapi/` | gameplay, grouped into `actions`, `ai`, `audio`, `characters`, `core`, `cutscenes`, `episodes`, `gizmo`, `gizmos`, `items`, `menus`, `misc`, `props`, `render`, and `world` |
+| `src/legoapi/` | gameplay, grouped into `actions`, `ai`, `audio`, `characters`, `core`, `cutscenes`, `gizmo`, `gizmos`, `items`, `menus`, `misc`, `props`, `render`, and `world` |
 | `src/legogame/` | startup and platform entry points |
 | `src/MechInputTouch/` | Android touch controls |
 | `src/nu2api/` | core engine modules (`nu3d`, `nucore`, `nufile`, `numath`, `numusic`, `nuplatform`, `nusound`, and platform glue) |
@@ -22,9 +22,8 @@ The major roots are:
 | `src/host/harness/` | host command runner and diagnostic commands |
 | `src/host/platform/` | minimal host implementations of external/platform APIs |
 
-At the 2026-08-29 snapshot, the target build has 464 TUs: 451 C++ and 13 C.
-Run `jq 'length' build/compile_commands.json` and inspect `.file` values for the
-current set.
+`src/BUILD.bazel` is the source-membership authority. Use `bazel aquery` for the
+current set and effective command lines.
 
 The detailed restructuring rules and current commands live in
 [`../source-structure.md`](../source-structure.md).
@@ -33,39 +32,26 @@ The detailed restructuring rules and current commands live in
 
 Prefix heuristics are useful for narrowing a search (`NuSound*` generally
 belongs under `nu2api/nusound`, `Mech*` under `MechInputTouch`, and so on), but
-they are not authoritative. Current gonk output preserves directories, and
-same basenames can legitimately exist in different modules.
+they are not authoritative. Same basenames can legitimately exist in different
+modules.
 
 Preferred one-symbol workflow:
 
 ```bash
-python3 scripts/objdiff-cli.py SYMBOL
+bazel run //scripts:objdiff_cli -- SYMBOL
 ```
 
-To inspect exact unit paths:
+Locate the source definition and inspect its compile action:
 
 ```bash
-jq -r --arg part 'deflate' '
-  .units[]
-  | select(.name | contains($part))
-  | [.name, .target_path, .base_path]
-  | @tsv
-' objdiff.json
+rg -n 'SYMBOL_OR_DEMANGLED_NAME' src
+bazel aquery --config=target \
+  'mnemonic("CppCompile", //src:saga_target)' --include_commandline
 ```
 
-Current unit names include `.o`, for example
-`nu2api/nucore/deflate.cpp.o`. Do not use `nm build/split/*.o`; it misses the
-nested split objects. If raw recursive lookup is needed:
-
-```bash
-find build/split -type f -name '*.o' -print0 \
-  | xargs -0 ndk/android-ndk-r8e/toolchains/x86-4.7/prebuilt/linux-x86_64/bin/i686-linux-android-nm -A \
-  | rg ' T SYMBOL$'
-```
-
-If a target symbol has no claimed TU, it may be in `remaining`, deliberately
-ignored, or supplied by an extra/library unit. Absence from a glob is not proof
-that it is external library code.
+If the original symbol has no source definition, classify it as missing game
+code, compiler/runtime support, or third-party library code before adding a
+stub.
 
 ## 3. File-role patterns
 
@@ -128,7 +114,7 @@ class name can change mangling even when layout is unchanged. See
   runtime allocation, iteration, or access: use typed fields and `sizeof` so
   the host ABI remains correct when pointers are wider.
 - Prefer a forward declaration over a second empty definition. Run
-  `scripts/check_duplicate_definitions.py` when changing shared types.
+  `bazel run //scripts/checks:check_duplicate_definitions` when changing shared types.
 
 ## 6. Stub and diagnostic conventions
 
@@ -142,13 +128,15 @@ builds. `__FILENAME__` is currently a correct repository-relative path such as
 
 `SAGA_NOMATCH` places a function in `.text.nomatch`. It does **not** by itself
 hide the symbol from `nm` or exempt it from `check_symbols.py`; a global symbol
-can still count toward the extra-symbol baseline. Use the attribute only for
+can still appear in the extra-symbol baseline. Use the attribute only for
 its section-placement purpose, not as a symbol-filtering mechanism.
 
 Host-only diagnostic commands belong under `src/host/harness/`. Keep asset tools
-general: `./build-host/saga load list [filter]` lists DAT entries and
-`./build-host/saga load extract <dat-path> <output>` extracts any entry. Do not
-add sequence- or level-specific extraction code to target translation units.
+general: `bazel run --config=native //src:run_native -- load list [filter]`
+lists DAT entries and `bazel run --config=native //src:run_native -- load
+extract <dat-path> <output>` extracts any entry
+(`saga_native.exe` on Windows). Do not add sequence- or level-specific
+extraction code to target translation units.
 
 Platform adapters belong under `src/host/platform/`. Prefer implementing an
 imported API (`slCreateEngine`, `eglSwapBuffers`, or
@@ -182,14 +170,11 @@ constructing a minimal table for whichever script or host path happens to run to
 ## 8. Authoring checklist
 
 1. Find the exact target symbol and demangle it if needed.
-2. Resolve its current objdiff unit and target/base paths.
-3. Check the effective compile command in `build/compile_commands.json`.
+2. Resolve its current source owner with `rg`.
+3. Check the effective target command with `bazel aquery`.
 4. Preserve linkage and mangling; use ABI types deliberately.
 5. Reconstruct the body using the codegen patterns in `02-codegen.md` and the
    mismatch catalog in `07-diagnostics.md`.
 6. For a provisional body, use the local stub convention and correct return type.
-7. Use `scripts/objdiff-cli.py SYMBOL` for the focused diff.
-8. Run the project's normal format/lint/matching checks before commit.
-
-The prek hook formats changed source files and regenerates matching artifacts.
-Review and stage its changes before committing again.
+7. Use `bazel run //scripts:objdiff_cli -- SYMBOL` for the focused diff.
+8. Run `bazel test //scripts/checks:checks` before commit.

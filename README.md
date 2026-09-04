@@ -1,11 +1,7 @@
-![Progress](https://img.shields.io/badge/matching-15.23%25-red)
+![Progress](https://img.shields.io/badge/matching-14.96%25-red)
 [![Discord](https://img.shields.io/discord/1467775700894224555?color=%235865F2&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/2HJuMtzA7q)
 
-|                 | Target (Android x86)                                                                                                                                                                                  | Host                                                                                                                                                                                  |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Linux           | [![Linux target](https://github.com/ttdecomp/saga/actions/workflows/build-linux-target.yaml/badge.svg)](https://github.com/ttdecomp/saga/actions/workflows/build-linux-target.yaml)                   | [![Linux host](https://github.com/ttdecomp/saga/actions/workflows/build-linux-i686.yaml/badge.svg)](https://github.com/ttdecomp/saga/actions/workflows/build-linux-i686.yaml)         |
-| Windows (MSYS2) | [![Windows target](https://github.com/ttdecomp/saga/actions/workflows/build-windows_msys2-target.yaml/badge.svg)](https://github.com/ttdecomp/saga/actions/workflows/build-windows_msys2-target.yaml) | [![Windows host](https://github.com/ttdecomp/saga/actions/workflows/build-windows_msys2.yaml/badge.svg)](https://github.com/ttdecomp/saga/actions/workflows/build-windows_msys2.yaml) |
-| MacOS | [![macOS Target build](https://github.com/ttdecomp/saga/actions/workflows/build-macos-target.yaml/badge.svg)](https://github.com/ttdecomp/saga/actions/workflows/build-macos-target.yaml) | - |
+[![Bazel build matrix](https://github.com/ttdecomp/saga/actions/workflows/build-bazel.yaml/badge.svg)](https://github.com/ttdecomp/saga/actions/workflows/build-bazel.yaml)
 
 # _saga_
 
@@ -25,41 +21,62 @@ any game assets, media, original source code, or any other copyrighted material.
 
 ## Build Instructions
 
-The project uses CMake as its build system. There are two build modes:
+The project uses Bazel for the matching `target`, `native` Linux/Windows
+builds, and `wasm`. Bazel 9.2.0 is pinned through
+`.bazelversion`; Bazelisk is the recommended launcher.
 
-The Android x86 build uses the NDK r8e toolchain and targets the original
-Android platform. It is the matching build; its output is not a host-runnable
-game executable.
+The `target` build uses the Android x86 NDK r8e toolchain and matches the
+original Android platform. Its output is not a host-runnable game executable.
 
-A host build uses the configured host C/C++ compiler. On non-Windows systems it
-builds 32-bit i686 code with AddressSanitizer and is used for testing and
-development.
+The `native` build uses the configured host C/C++ compiler. Linux builds
+32-bit i686 code with AddressSanitizer and UndefinedBehaviorSanitizer; Windows
+uses MinGW64.
 
-
-### Android x86 build
+See [the Bazel build guide](doc/build-bazel.md) for prerequisites, platform
+details, dependency versions, and build-mode behavior.
 
 ```bash
-# configure
-cmake -B build
-# build
-cmake --build build
+# matching target (Android x86; NDK r8e is fetched automatically)
+bazel build --config=target //src:saga_target
+
+# build and run the native executable from the current directory
+bazel run --config=native //src:run_native -- window
+
+# native executable on Windows (from an MSYS2 MINGW64 shell)
+bazel run --config=native --config=windows-mingw //src:run_native -- window
+
+# WebAssembly host
+bazel build --config=wasm //src:saga_wasm
+
+# build and serve WebAssembly at http://127.0.0.1:8000/
+bazel run --config=wasm //scripts:wasm_server
 ```
 
-### Host build
+The WebAssembly server automatically exposes
+`res/main.1060.com.wb.lego.tcs.obb` to the page when it is present. Use
+`-- --obb /path/to/file.obb` to serve a different copy; without one, the page
+keeps its local-file and remote-URL controls available.
+
+The target produces the shared object `bazel-bin/src/libTTapp.so`; the native
+build produces `saga_native` (or `saga_native.exe` on Windows), and the
+WebAssembly build produces the `saga.html`, `saga.js`, and `saga.wasm` browser
+bundle under `bazel-bin/src/`.
+
+To run the native build:
 
 ```bash
-cmake -B build-host -DBUILD_FOR_HOST=ON
-cmake --build build-host
-
 # run the game
-./build-host/saga window
+bazel run --config=native //src:run_native -- window
 
 # enter the Cantina and rotate the camera through 360 degrees in 10 seconds
-./build-host/saga window --camera-orbit
+bazel run --config=native //src:run_native -- window --camera-orbit
 
 # enter the Cantina with a free camera (numpad 8/5/4/6; hold Shift to move)
-./build-host/saga window --camera-free
+bazel run --config=native //src:run_native -- window --camera-free
 ```
+
+`//src:run_native` restores the directory where `bazel run` was invoked before
+starting the executable, so relative asset and output paths behave normally.
 
 ## Contributing
 
@@ -87,31 +104,31 @@ See the [documentation index](doc/main.md).
 
 ## Matching progress
 
-| Directory | Fuzzy % | Funcs % | Data % |
-|---|---|---|---|
-| `(root)` | 62.4% | 66.7% | 0.0% |
-| `MechInputTouch` | 5.8% | 3.7% | 4.6% |
-| `editor` | 3.1% | 1.7% | 100.0% |
-| `gameapi` | 8.4% | 4.8% | 61.9% |
-| `gameframework` | 76.4% | 23.5% | 100.0% |
-| `gamelib` | 7.3% | 5.9% | 12.1% |
-| `java` | 10.7% | 0.0% | 0.0% |
-| `legoapi` | 14.3% | 16.7% | 50.0% |
-| `legoapi/actions` | 6.6% | 4.0% | 99.1% |
-| `legoapi/ai` | 13.1% | 5.9% | 88.7% |
-| `legoapi/audio` | 6.5% | 9.2% | 96.7% |
-| `legoapi/characters` | 11.9% | 9.3% | 36.2% |
-| `legoapi/core` | 25.3% | 14.3% | 97.8% |
-| `legoapi/cutscenes` | 10.6% | 6.8% | 99.6% |
-| `legoapi/gizmo` | 10.8% | 11.1% | 49.4% |
-| `legoapi/gizmos` | 36.3% | 34.6% | 98.2% |
-| `legoapi/items` | 8.5% | 17.0% | 23.2% |
-| `legoapi/menus` | 11.9% | 16.6% | 97.7% |
-| `legoapi/misc` | 8.5% | 7.0% | 100.0% |
-| `legoapi/props` | 30.1% | 9.9% | 59.8% |
-| `legoapi/render` | 10.8% | 13.3% | 95.2% |
-| `legoapi/world` | 22.7% | 31.7% | 3.7% |
-| `legogame` | 51.6% | 41.2% | 85.4% |
-| `nu2api` | 33.9% | 28.0% | 9.4% |
+| Directory            | Fuzzy % | Funcs % | Data % |
+| -------------------- | ------- | ------- | ------ |
+| `(root)`             | 62.4%   | 66.7%   | 0.0%   |
+| `MechInputTouch`     | 5.8%    | 3.7%    | 4.6%   |
+| `editor`             | 3.1%    | 1.7%    | 100.0% |
+| `gameapi`            | 8.4%    | 4.8%    | 61.9%  |
+| `gameframework`      | 76.4%   | 23.5%   | 100.0% |
+| `gamelib`            | 7.3%    | 5.9%    | 12.1%  |
+| `java`               | 10.7%   | 0.0%    | 0.0%   |
+| `legoapi`            | 14.3%   | 16.7%   | 50.0%  |
+| `legoapi/actions`    | 6.6%    | 4.0%    | 99.1%  |
+| `legoapi/ai`         | 13.1%   | 5.9%    | 88.7%  |
+| `legoapi/audio`      | 6.5%    | 9.2%    | 96.7%  |
+| `legoapi/characters` | 11.9%   | 9.3%    | 36.2%  |
+| `legoapi/core`       | 25.3%   | 14.3%   | 97.8%  |
+| `legoapi/cutscenes`  | 10.6%   | 6.8%    | 99.6%  |
+| `legoapi/gizmo`      | 10.8%   | 11.1%   | 49.4%  |
+| `legoapi/gizmos`     | 36.3%   | 34.6%   | 98.2%  |
+| `legoapi/items`      | 8.5%    | 17.0%   | 23.2%  |
+| `legoapi/menus`      | 11.9%   | 16.6%   | 97.7%  |
+| `legoapi/misc`       | 8.5%    | 7.0%    | 100.0% |
+| `legoapi/props`      | 30.1%   | 9.9%    | 59.8%  |
+| `legoapi/render`     | 10.8%   | 13.3%   | 95.2%  |
+| `legoapi/world`      | 22.7%   | 31.7%   | 3.7%   |
+| `legogame`           | 51.6%   | 41.2%   | 85.4%  |
+| `nu2api`             | 33.9%   | 28.0%   | 9.4%   |
 
 <!-- matching-table-end -->

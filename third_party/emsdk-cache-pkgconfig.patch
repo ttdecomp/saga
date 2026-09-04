@@ -1,0 +1,46 @@
+diff --git a/emscripten_cache.bzl b/emscripten_cache.bzl
+index 3d2f995..463f067 100644
+--- a/emscripten_cache.bzl
++++ b/emscripten_cache.bzl
+@@ -13,9 +13,17 @@ BUILD_FILE_USE_SECONDARY_CACHE = """
+ BUILD_FILE_USE_SECONDARY_CACHE = """
++load("@rules_cc//cc:cc_library.bzl", "cc_library")
++
+ filegroup(
+     name = "emscripten_cache",
+     srcs = glob(["cache/**"]),
+     visibility = ["//visibility:public"],
+ )
++
++cc_library(
++    name = "port_headers",
++    hdrs = glob(["cache/sysroot/include/SDL3/**"]),
++    strip_include_prefix = "cache/sysroot/include",
++)
+ """
+ 
+ EMBUILDER_CONFIG_TEMPLATE = """
+@@ -91,6 +91,11 @@ def _emscripten_cache_repository_impl(repository_ctx):
+         root, script_ext = get_root_and_script_ext(repository_ctx)
+         llvm_root = root.get_child("bin")
+         cache = repository_ctx.path("cache")
++
++        # Emscripten ports write pkg-config metadata but do not create this
++        # directory when a secondary cache starts with port-only targets.
++        repository_ctx.file("cache/sysroot/lib/pkgconfig/.keep", "")
++
+ 
+         # Create configuration file
+         embuilder_config_content = EMBUILDER_CONFIG_TEMPLATE.format(
+diff --git a/remote_emscripten_repository.bzl b/remote_emscripten_repository.bzl
+index 5b05583..af08f49 100644
+--- a/remote_emscripten_repository.bzl
++++ b/remote_emscripten_repository.bzl
+@@ -17,5 +17,7 @@ def remote_emscripten_repository(
+     http_archive(
+         name = name,
+         build_file_content = EMSCRIPTEN_BUILD_FILE_CONTENT_TEMPLATE.format(bin_extension = bin_extension),
++        patch_args = ["-p1"],
++        patches = [Label("@@//third_party:emscripten-sdl3-3.4.10.patch")],
+         **kwargs
+     )

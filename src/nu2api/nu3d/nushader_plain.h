@@ -51,5 +51,6 @@ extern "C" void NuShaderManagerBindShader(NUSHADEROBJECT *slot);
 extern "C" void *NuShaderManagerRetrieveShader(NUSHADERMTLDESC *desc, void *mtl);
 extern "C" void *NuShaderManagerRetrieveShaderVariant(NUSHADERMTLDESC *desc, void *mtl, i32 variant);
 extern "C" void NuShaderManagerSetfv(i32 semantic, const f32 *values);
+extern "C" void NuShaderManagerSetElementsfv(i32 semantic, i32 first_element, i32 count, const f32 *values);
 extern "C" NUSHADEROBJECT *NuShaderManagerGetCurrentShader(void);
 extern "C" void NuShaderManagerInit(VARIPTR *arena, VARIPTR arena_end);

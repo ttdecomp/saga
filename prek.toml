@@ -1,8 +1,0 @@
-minimum_prek_version = "0.5.0"
-
-[[repos]]
-repo = "local"
-hooks = [
-    { id = "clang-format", name = "clang-format", language = "system", entry = "clang-format -i", files = "\\.(c|cpp|h|hpp)$" },
-    { id = "matching-regression", name = "matching regression", language = "system", entry = "mise run match", always_run = true, pass_filenames = false },
-]

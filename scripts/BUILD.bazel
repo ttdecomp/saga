@@ -1,0 +1,39 @@
+load("@rules_python//python:defs.bzl", "py_binary")
+
+_PYTHON_ENV = {"PYTHONDONTWRITEBYTECODE": "1"}
+
+py_binary(
+    name = "wasm_server",
+    srcs = ["wasm_server.py"],
+    data = ["//src:saga_wasm"],
+    env = _PYTHON_ENV,
+    main = "wasm_server.py",
+)
+
+py_binary(
+    name = "generate_bazel_objdiff_report",
+    srcs = ["generate_bazel_objdiff_report.py"],
+    env = _PYTHON_ENV,
+    main = "generate_bazel_objdiff_report.py",
+)
+
+py_binary(
+    name = "plot_binary_match_map",
+    srcs = ["plot_binary_match_map.py"],
+    env = _PYTHON_ENV,
+    main = "plot_binary_match_map.py",
+)
+
+py_binary(
+    name = "objdiff_cli",
+    srcs = ["objdiff-cli.py"],
+    env = _PYTHON_ENV,
+    main = "objdiff-cli.py",
+)
+
+py_binary(
+    name = "pre_commit",
+    srcs = ["pre_commit.py"],
+    env = _PYTHON_ENV,
+    main = "pre_commit.py",
+)

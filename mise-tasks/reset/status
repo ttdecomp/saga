@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-#MISE description="Show reset-function matching status from the current objdiff report"
-#MISE raw_args=true
-set -euo pipefail
-
-python3 scripts/function_status.py --regex reset "$@"

@@ -7,6 +7,7 @@
 #include "legoapi/gizmos/object/gizobstacles.h"
 #include "legoapi/items/base/collection.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/menus/core/text.h"
 #include "legoapi/menus/screens/store.h"
 #include "legoapi/menus/screens/gamemenuall.h"
 #include "legoapi/props/doors/door.h"
@@ -14,8 +15,13 @@
 #include "legoapi/world/levels/episode.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nuspecial.h"
+#include "nu2api/nu3d/nuqfnt.h"
 #include "nu2api/nu3d/nuspline.h"
+#include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/numtx.h"
+#include "nu2api/numath/nutrig.h"
+
+#include <stdio.h>
 
 extern void Customiser_LoadAll(CUSTOMISER *, WORLDINFO_s *);
 extern void Customiser_Init(CUSTOMISER *);
@@ -97,6 +103,29 @@ static f32 freeplaytime = 0.0f;
 static f32 freeplayduration = 0.0f;
 static i32 fpcount = 0;
 static APICHARACTERMODELLIST_s fplist[341] = {};
+
+static const NUVEC Hub_PercentPos = {-26.713f, 0.7f, -48.777f};
+
+static inline void Hub_SetStatsTextMtx(NUMTX *mtx, i32 angle) {
+    const f32 sine = NU_SIN_LUT(angle);
+    const f32 cosine = NU_COS_LUT(angle);
+    mtx->m00 = cosine;
+    mtx->m01 = 0.0f;
+    mtx->m02 = -sine;
+    mtx->m03 = 0.0f;
+    mtx->m10 = 0.0f;
+    mtx->m11 = 1.0f;
+    mtx->m12 = 0.0f;
+    mtx->m13 = 0.0f;
+    mtx->m20 = sine;
+    mtx->m21 = 0.0f;
+    mtx->m22 = cosine;
+    mtx->m23 = 0.0f;
+    mtx->m30 = 0.0f;
+    mtx->m31 = 0.0f;
+    mtx->m32 = 0.0f;
+    mtx->m33 = 1.0f;
+}
 
 void Hub_ClearStats();
 void Hub_UpdateMiniKits(WORLDINFO_s *);
@@ -237,6 +266,50 @@ void Hub_Draw3D(WORLDINFO_s *world) {
     Customiser_Draw3D(CharacterCustomiser);
     DrawShop3D(world);
     Hub_DrawMiniKits(world);
+
+    if (GameCam != NULL && GameCam->sock_position.location.sock != 0 && QFont3DZ != NULL) {
+        const i32 spin = static_cast<i32>(NuFmod(GameTimer.time_elapsed, 5.0f) / 5.0f * 65536.0f);
+        const i32 angle = static_cast<i32>(NU_SIN_LUT(spin) * 2730.0f + 8192.0f);
+        const i32 pulse = static_cast<i32>(NuFmod(GameTimer.time_elapsed, 3.21f) / 3.21f * 65536.0f);
+        const f32 bob = NU_SIN_LUT(pulse) * 0.01f;
+        const i32 alpha = static_cast<i32>(Hub_HologramAlpha * 15.0f + 56.0f);
+        const u32 colour = (static_cast<u32>(alpha) << 24) | 0xff7f00;
+
+        NUMTX text_mtx;
+        Hub_SetStatsTextMtx(&text_mtx, angle);
+        NuMtxTranslate(&text_mtx, const_cast<NUVEC *>(&Hub_PercentPos));
+        text_mtx.m31 += bob;
+
+        char text[128];
+        sprintf(text, "%.1f%%", static_cast<f32>(Game.completion * 100) / COMPLETIONPOINTS);
+        Text_LocaliseDecimalPoint(text);
+
+        NuQFntPushPrintMode(NUQFNT_CSMODE_ABSOLUTE);
+        NuQFntSet(QFont3DZ);
+        NuQFntSetMtx(QFont3DZ, &text_mtx);
+        NuQFntSetCoordinateSystem(NUQFNT_CSMODE_ABSOLUTE);
+        NuQFntSetColour(QFont3DZ, colour);
+        NuQFntSetScale(QFont3DZ, 0.00375f, 0.005f);
+        NuQFntMove(QFont3DZ, NuQFntPrintLenU(QFont3DZ, text) * -0.5f, 0.0f, 0.0f);
+        NuQFntPrintU(QFont3DZ, text);
+        NuQFntPopPrintMode();
+
+        Text_MakeTime(Game.field30_0x7c2c, 1, 1, 1, text);
+        Text_LocaliseDecimalPoint(text);
+        Hub_SetStatsTextMtx(&text_mtx, angle);
+        NuMtxTranslate(&text_mtx, const_cast<NUVEC *>(&Hub_PercentPos));
+        text_mtx.m31 += bob + 0.16f;
+
+        NuQFntPushPrintMode(NUQFNT_CSMODE_ABSOLUTE);
+        NuQFntSet(QFont3DZ);
+        NuQFntSetMtx(QFont3DZ, &text_mtx);
+        NuQFntSetCoordinateSystem(NUQFNT_CSMODE_ABSOLUTE);
+        NuQFntSetColour(QFont3DZ, colour);
+        NuQFntSetScale(QFont3DZ, 0.0028124998f, 0.00375f);
+        NuQFntMove(QFont3DZ, NuQFntPrintLenU(QFont3DZ, text) * -0.5f, 0.0f, 0.0f);
+        NuQFntPrintU(QFont3DZ, text);
+        NuQFntPopPrintMode();
+    }
 
     nuhspecial_s *display = NULL;
     if (Store_IsPackUnlocked(6) == 0) {

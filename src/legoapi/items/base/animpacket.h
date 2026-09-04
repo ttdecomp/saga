@@ -68,10 +68,10 @@ struct ANIMPACKET_s {
 DECOMP_ASSERT(sizeof(ANIMPACKET_s) == 0x48, "ANIMPACKET_s size");
 
 struct MINIANIMPACKET_s {
-    i32 current_animation; // 0x00
-    i32 animation_mode;    // 0x04
+    f32 current_time; // 0x00
+    f32 target_time;  // 0x04
     u8 data_0x08[0x14 - 0x08];
-    i32 previous_animation_mode; // 0x14
+    f32 previous_time; // 0x14
     u8 reset_state;              // 0x18
     u8 field_0x19;               // 0x19
     u8 data_0x1a[0x1e - 0x1a];
@@ -87,7 +87,7 @@ struct MINIANIMPACKET_s {
 };
 
 DECOMP_ASSERT(sizeof(MINIANIMPACKET_s) == 0x24, "MINIANIMPACKET_s size");
-DECOMP_ASSERT(offsetof(MINIANIMPACKET_s, previous_animation_mode) == 0x14, "MINIANIMPACKET_s previous mode offset");
+DECOMP_ASSERT(offsetof(MINIANIMPACKET_s, previous_time) == 0x14, "MINIANIMPACKET_s previous time offset");
 DECOMP_ASSERT(offsetof(MINIANIMPACKET_s, animation_index) == 0x1e, "MINIANIMPACKET_s animation offset");
 DECOMP_ASSERT(offsetof(MINIANIMPACKET_s, requested_animation_id) == 0x22,
               "MINIANIMPACKET_s requested animation offset");

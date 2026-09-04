@@ -142,15 +142,19 @@ static void GizTorp_SetVisibility(GIZMO *gizmo, i32 visible) {
     }
 }
 
-static void GizTorps_Reset(void *, void *world_ptr, void *) {
+static void GizTorps_Reset(void *world_ptr, void *, void *) {
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
-    if (world == NULL || world->giz_torp_machine_sys == NULL || world->giz_torp_machine_sys->machines == NULL ||
-        world->giz_torp_machine_sys->count <= 0) {
+    if (world == NULL) {
         return;
     }
 
-    for (i32 index = 0; index < world->giz_torp_machine_sys->count; ++index) {
-        world->giz_torp_machine_sys->machines[index].flags |= GIZTORPMACHINE_FLAG_ACTIVE | GIZTORPMACHINE_FLAG_VISIBLE;
+    GIZTORPMACHINESYS *system = world->giz_torp_machine_sys;
+    if (system == NULL || system->machines == NULL || system->count <= 0) {
+        return;
+    }
+
+    for (i32 index = 0; index < system->count; ++index) {
+        system->machines[index].flags |= GIZTORPMACHINE_FLAG_ACTIVE | GIZTORPMACHINE_FLAG_VISIBLE;
     }
 }
 
@@ -161,22 +165,22 @@ static void *GizTorps_ReserveBufferSpace(void *world_ptr) {
         return NULL;
     }
 
-    GIZTORPMACHINESYS *system = static_cast<GIZTORPMACHINESYS *>(
-        GameBufferAlloc(&world->giz_buffer, &world->unknown_0108, sizeof(GIZTORPMACHINESYS)));
-    system->machines = NULL;
-    system->count = 0;
-    system->scale = 0.0f;
+    GIZTORPMACHINESYS *system = reinterpret_cast<GIZTORPMACHINESYS *>((world->giz_buffer.addr + 3) & ~3u);
     world->giz_torp_machine_sys = system;
+    world->giz_buffer.addr = reinterpret_cast<usize>(system + 1);
+    memset(system, 0, sizeof(*system));
 
-    system->machines = static_cast<GIZTORPMACHINE *>(
-        GameBufferAlloc(&world->giz_buffer, &world->unknown_0108,
-                        world->current_level->max_torp_machines * static_cast<i32>(sizeof(GIZTORPMACHINE))));
-    memset(system->machines, 0, world->current_level->max_torp_machines * static_cast<i32>(sizeof(GIZTORPMACHINE)));
+    world->giz_buffer.addr = (world->giz_buffer.addr + 3) & ~3u;
+    system->machines = reinterpret_cast<GIZTORPMACHINE *>(world->giz_buffer.addr);
+    world->giz_buffer.addr +=
+        world->current_level->max_torp_machines * static_cast<i32>(sizeof(GIZTORPMACHINE));
+    memset(system->machines, 0,
+           world->current_level->max_torp_machines * static_cast<i32>(sizeof(GIZTORPMACHINE)));
     system->scale = 1.0f;
-    return system;
+    return world->giz_torp_machine_sys;
 }
 
-static i32 GizTorp_Load(void *, void *world_ptr) {
+static i32 GizTorp_Load(void *world_ptr, void *) {
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
     if (world == NULL || world->giz_torp_machine_sys == NULL || world->giz_torp_machine_sys->count != 0) {
         return 0;

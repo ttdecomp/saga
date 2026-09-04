@@ -463,7 +463,9 @@ extern "C" {
     void ShadowDir(void) {
     }
 
-    void ShadowInfo(void) {
+    i32 ShadowInfo(void) {
+        extern TERRAIN_SHAPE *ShadPoly;
+        return ShadPoly != NULL ? ShadPoly->material[0] : -1;
     }
 
     void ShadowIntensityInfo(void) {
