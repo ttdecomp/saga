@@ -125,4 +125,5 @@ pkg_config_repository(
         "vorbis",
         "vorbisfile",
     ],
+    pkg_config = "pkgconf",
 )

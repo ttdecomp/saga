@@ -241,6 +241,7 @@ jobs:
           brew install sdl3 libvorbis
           brew tap startergo/gn
           brew tap startergo/angle
+          brew trust --formula startergo/gn/gn
           brew install startergo/angle/angle
 
       - name: Verify ANGLE pkg-config metadata

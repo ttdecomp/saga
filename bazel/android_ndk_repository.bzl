@@ -71,6 +71,8 @@ toolchain(
 
 def _android_ndk_repository_impl(ctx):
     host_name = ctx.os.name.lower()
+    if host_name.startswith("windows"):
+        host_name = "windows"
     if host_name not in _NDK_ARCHIVES:
         fail("Android NDK r8e is not available for Bazel host OS %r" % ctx.os.name)
 
