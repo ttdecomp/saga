@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Detect multiple definitions of the same struct/class/union/enum tag,
+"""Repository check for duplicate struct/class/union/enum definitions,
 and (optionally, when given a build directory) duplicate object symbols.
 
 A type is a DEFINITION (as opposed to a forward declaration) when its tag is
@@ -42,7 +42,7 @@ import re
 import subprocess
 import sys
 
-from ndk_tools import find_ndk_tool
+from scripts.lib.ndk_tools import find_ndk_tool
 
 SRC_EXTENSIONS = {".h", ".hh", ".hpp", ".hxx", ".c", ".cc", ".cpp", ".cxx"}
 
@@ -284,7 +284,12 @@ def check_duplicate_symbols(build_dir, nm):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("src", help="source root directory to scan (e.g. src/)")
+    ap.add_argument(
+        "src",
+        nargs="?",
+        default="src",
+        help="source root directory to scan (default: src/)",
+    )
     ap.add_argument(
         "--build",
         default=None,
@@ -306,7 +311,12 @@ def main():
     )
     args = ap.parse_args()
 
-    root = os.path.abspath(args.src)
+    invocation_dir = os.environ.get("BUILD_WORKING_DIRECTORY", os.getcwd())
+
+    def argument_path(value):
+        return value if os.path.isabs(value) else os.path.join(invocation_dir, value)
+
+    root = os.path.abspath(argument_path(args.src))
     if not os.path.isdir(root):
         print(f"error: not a directory: {root}", file=sys.stderr)
         return 2
@@ -361,11 +371,11 @@ def main():
     # Duplicate object symbols (local + global, text + data).
     build_dir = args.build
     if build_dir is None:
-        default_build = os.path.join(os.path.dirname(os.path.dirname(root)), "build")
+        default_build = os.path.join(os.path.dirname(root), "build")
         if os.path.isdir(default_build):
             build_dir = default_build
     if build_dir is not None:
-        build_dir = os.path.abspath(build_dir)
+        build_dir = os.path.abspath(argument_path(build_dir))
         if not os.path.isdir(build_dir):
             print(f"error: --build is not a directory: {build_dir}", file=sys.stderr)
             return 2

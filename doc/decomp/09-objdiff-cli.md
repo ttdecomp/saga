@@ -13,13 +13,16 @@ reviewing or fixing a single function against the original. The human-facing
 
 ## What it does
 
-It shells out to `objdiff-cli diff -1 res/libTTapp.so -2
-bazel-bin/src/libTTapp.so <symbol> -o -`, keeps **only the instructions where
+It resolves the target-config `//src:libTTapp.so` output, then shells out to
+`objdiff-cli diff`, keeping **only the instructions where
 the recompiled code and the original diverge**, and prints them aligned, with
 context, colours, and trailing `#` hints (string / float constants, named
 `.LC` rodata refs, resolved jump/call targets such as `-> 4e12c0
 <_Z17Cheats_CheckFlagsj>`). Resolved rodata values appear inline at the end of
-the referencing line, on changed and context lines alike.
+the referencing line, on changed and context lines alike. Target/original and
+base/current instructions resolve against their own symbol tables. Whenever
+objdiff supplies relocation metadata, the hint includes its symbol name and
+signed addend, not only `.LC` constants.
 
 The two sides are objdiff's fixed order (target on the left, base on the
 right); the explicit `-1` and `-2` paths fix the direction:
@@ -27,7 +30,7 @@ right); the explicit `-1` and `-2` paths fix the direction:
 | | side | source | meaning |
 |---|---|---|---|
 | left  | **target** | `res/libTTapp.so` | the ORIGINAL, our goal |
-| right | **base**   | `bazel-bin/src/libTTapp.so` | the CURRENT code |
+| right | **base**   | target-config `//src:libTTapp.so` | the CURRENT code |
 
 Marker letters are counterintuitive — they name *which side* a line comes
 from, then you act:
@@ -52,8 +55,11 @@ A symbol that is essentially matched (objdiff ≥ 99.999 %) prints a short
 # prerequisite: build the matching Android x86 shared object
 bazel build --config=target //src:saga_target
 
-python scripts/objdiff-cli.py SYMBOL
+bazel run //scripts:objdiff_cli -- SYMBOL
 ```
+
+The command uses Bazel's pinned Python 3.12.12 runtime and requires the
+external `objdiff-cli` executable on `PATH`.
 
 Arguments (see also `--help`, which carries the full legend):
 
@@ -61,7 +67,7 @@ Arguments (see also `--help`, which carries the full legend):
 |---|---|
 | `SYMBOL` | mangled symbol to diff, e.g. `_Z13ResetPodStuffv` |
 | `-b FILE` / `--base-path FILE` | original binary (default `res/libTTapp.so`) |
-| `-t FILE` / `--target-path FILE` | current build (default `bazel-bin/src/libTTapp.so`) |
+| `-t FILE` / `--target-path FILE` | current build (default target-config `//src:libTTapp.so`) |
 | `-C N` / `--context N` | unchanged context lines shown around each change (default 4) |
 | `--full` | print the entire base instruction listing, no `..` collapsing |
 | `--no-color` | disable ANSI colours |

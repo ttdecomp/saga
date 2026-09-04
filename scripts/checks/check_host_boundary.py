@@ -6,7 +6,7 @@ import re
 import sys
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 SRC = ROOT / "src"
 HOST_ROOTS = (SRC / "host" / "harness", SRC / "host" / "platform")
 HOST_BUILD_ALLOWLIST = {

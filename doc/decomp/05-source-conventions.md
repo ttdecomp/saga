@@ -14,7 +14,7 @@ The major roots are:
 | `src/gameapi/` | AI, editor-tool, and GUI APIs |
 | `src/gameframework/` | framework systems such as save/load |
 | `src/gamelib/` | utilities and supporting engine systems |
-| `src/legoapi/` | gameplay, grouped into `actions`, `ai`, `audio`, `characters`, `core`, `cutscenes`, `episodes`, `gizmo`, `gizmos`, `items`, `menus`, `misc`, `props`, `render`, and `world` |
+| `src/legoapi/` | gameplay, grouped into `actions`, `ai`, `audio`, `characters`, `core`, `cutscenes`, `gizmo`, `gizmos`, `items`, `menus`, `misc`, `props`, `render`, and `world` |
 | `src/legogame/` | startup and platform entry points |
 | `src/MechInputTouch/` | Android touch controls |
 | `src/nu2api/` | core engine modules (`nu3d`, `nucore`, `nufile`, `numath`, `numusic`, `nuplatform`, `nusound`, and platform glue) |
@@ -38,7 +38,7 @@ modules.
 Preferred one-symbol workflow:
 
 ```bash
-python3 scripts/objdiff-cli.py SYMBOL
+bazel run //scripts:objdiff_cli -- SYMBOL
 ```
 
 Locate the source definition and inspect its compile action:
@@ -114,7 +114,7 @@ class name can change mangling even when layout is unchanged. See
   runtime allocation, iteration, or access: use typed fields and `sizeof` so
   the host ABI remains correct when pointers are wider.
 - Prefer a forward declaration over a second empty definition. Run
-  `scripts/check_duplicate_definitions.py` when changing shared types.
+  `bazel run //scripts/checks:check_duplicate_definitions` when changing shared types.
 
 ## 6. Stub and diagnostic conventions
 
@@ -128,13 +128,15 @@ builds. `__FILENAME__` is currently a correct repository-relative path such as
 
 `SAGA_NOMATCH` places a function in `.text.nomatch`. It does **not** by itself
 hide the symbol from `nm` or exempt it from `check_symbols.py`; a global symbol
-can still count toward the extra-symbol baseline. Use the attribute only for
+can still appear in the extra-symbol baseline. Use the attribute only for
 its section-placement purpose, not as a symbol-filtering mechanism.
 
 Host-only diagnostic commands belong under `src/host/harness/`. Keep asset tools
-general: `bazel-bin/src/saga_native load list [filter]` lists DAT entries and
-`bazel-bin/src/saga_native load extract <dat-path> <output>` extracts any entry. Do not
-add sequence- or level-specific extraction code to target translation units.
+general: `bazel run --config=native //src:run_native -- load list [filter]`
+lists DAT entries and `bazel run --config=native //src:run_native -- load
+extract <dat-path> <output>` extracts any entry
+(`saga_native.exe` on Windows). Do not add sequence- or level-specific
+extraction code to target translation units.
 
 Platform adapters belong under `src/host/platform/`. Prefer implementing an
 imported API (`slCreateEngine`, `eglSwapBuffers`, or
@@ -174,5 +176,5 @@ constructing a minimal table for whichever script or host path happens to run to
 5. Reconstruct the body using the codegen patterns in `02-codegen.md` and the
    mismatch catalog in `07-diagnostics.md`.
 6. For a provisional body, use the local stub convention and correct return type.
-7. Use `scripts/objdiff-cli.py SYMBOL` for the focused diff.
-8. Run `bazel test //scripts:checks` before commit.
+7. Use `bazel run //scripts:objdiff_cli -- SYMBOL` for the focused diff.
+8. Run `bazel test //scripts/checks:checks` before commit.

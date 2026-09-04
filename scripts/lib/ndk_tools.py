@@ -1,3 +1,5 @@
+"""Locate NDK-compatible command-line tools used by repository checks."""
+
 import os
 import shutil
 

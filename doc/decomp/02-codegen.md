@@ -8,7 +8,8 @@ canonical flags:
 and cross-checked against carved and rebuilt objects. The original `/tmp`
 experiment files were ephemeral and are not part of the repository; reproduce
 a claim from the inline source/assembly description before relying on it for a
-new edge case.
+new edge case. In the compact `verified:` recipes below, `g++` denotes the
+NDK's `i686-linux-android-g++`, never the host compiler.
 
 Toolchain personality (verified): `__PIC__ 2` (PIC ON by default — no -fPIC needed), `__SSE__/__SSE2__/__SSE3__ 1`,
 `__SSE_MATH__/__SSE2_MATH__ 1` (SSE2 math applies to float **and** double), `__tune_atom__ 1` (Atom tuning).

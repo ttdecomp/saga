@@ -43,8 +43,10 @@ bazel build --config=target //src:saga_target
 ```
 
 The output is `bazel-bin/src/libTTapp.so`. Compare one function against the
-original with `python3 scripts/objdiff-cli.py SYMBOL`; the helper compares the
-two shared objects directly. See `doc/decomp/09-objdiff-cli.md` for details.
+original with `bazel run //scripts:objdiff_cli -- SYMBOL`; the helper compares
+the two shared objects directly using Bazel's pinned Python and requires
+`objdiff-cli` on `PATH`. See
+`doc/decomp/09-objdiff-cli.md` for details.
 
 ## Development Scripts
 
@@ -58,19 +60,23 @@ The `scripts/` directory contains a few small helpers:
   at automated/agent use — one mangled symbol at a time. For manual and
   whole-repository work or the interactive UI, use the `objdiff` GUI/CLI
   directly. See `doc/decomp/09-objdiff-cli.md`.
-- `check_duplicate_definitions.py` — scans the source tree for duplicate type
+- `checks/check_duplicate_definitions.py` — scans the source tree for duplicate type
   (struct/class/union/enum) definitions. Given `--build <dir>` it also runs
   `nm` over the compiled objects to report duplicate symbols (local and global,
   text and data), which catches static (file-local) functions/variables that the
   linker silently allows. The symbol check is advisory by default; pass
   `--fail-on-symbols` to make it an error.
-- `check_symbols.py` — diffs the defined text symbols of the build against the
+- `checks/check_symbols.py` — diffs the defined text symbols of the build against the
   original binary, so you can see exactly which functions are still missing.
-- `matching_report.py` and `objdiffdiff.py` — optional helpers for externally
-  generated objdiff reports; reports are not part of the build.
+- `generate_bazel_objdiff_report.py` — combines a whole-binary objdiff report,
+  Bazel's source-to-object mapping, and original symbol addresses into
+  `matching.json`. `scripts/plot_binary_match_map.py` renders the
+  committed `doc/pages/index.html` visualization from that data.
 
-Fast repository checks run with `bazel test //scripts:checks`. Bazel downloads
-the pinned Python 3.12.12 runtime used by those tests, so no venv is needed.
+Fast repository checks run with `bazel test //scripts/checks:checks`. Bazel downloads
+the pinned Python 3.12.12 runtime used by those targets, so no venv or installed
+Python packages are needed for them. The complete tool inventory and call graph
+are in `scripts/README.md`.
 
 ## Style Guidelines
 
@@ -121,15 +127,18 @@ personal tastes in readability, the following guidelines apply:
 
 ## Git hooks
 
-An optional non-mutating hook runs staged whitespace checks and
-`bazel test //scripts:checks`:
+An optional hook runs staged whitespace checks and
+`bazel test //scripts/checks:checks`:
 
 ```bash
 git config core.hooksPath .githooks
 ```
 
-The hook never formats files or regenerates artifacts. Run clang-format
-explicitly when changing C/C++ sources.
+When `res/libTTapp.so` is present, the hook also builds the target, checks its
+symbol surface, and regenerates `matching.json` and
+`doc/pages/index.html`; it asks you to stage those files when they changed. It
+does not format source files, so run clang-format explicitly when changing
+C/C++ sources.
 
 For repository-specific agent guidance, see
 `skills/saga-decomp/SKILL.md`. The package uses the Codex `SKILL.md` format and

@@ -39,11 +39,11 @@ details, dependency versions, and build-mode behavior.
 # matching target (Android x86; NDK r8e is fetched automatically)
 bazel build --config=target //src:saga_target
 
-# native executable
-bazel build --config=native //src:saga_native
+# build and run the native executable from the current directory
+bazel run --config=native //src:run_native -- window
 
 # native executable on Windows (from an MSYS2 MINGW64 shell)
-bazel build --config=native --config=windows-mingw //src:saga_native
+bazel run --config=native --config=windows-mingw //src:run_native -- window
 
 # WebAssembly host
 bazel build --config=wasm //src:saga_wasm
@@ -52,21 +52,31 @@ bazel build --config=wasm //src:saga_wasm
 bazel run --config=wasm //scripts:wasm_server
 ```
 
-The target produces `bazel-bin/src/libTTapp.so`; native and WebAssembly builds
-remain executables.
+The WebAssembly server automatically exposes
+`res/main.1060.com.wb.lego.tcs.obb` to the page when it is present. Use
+`-- --obb /path/to/file.obb` to serve a different copy; without one, the page
+keeps its local-file and remote-URL controls available.
+
+The target produces the shared object `bazel-bin/src/libTTapp.so`; the native
+build produces `saga_native` (or `saga_native.exe` on Windows), and the
+WebAssembly build produces the `saga.html`, `saga.js`, and `saga.wasm` browser
+bundle under `bazel-bin/src/`.
 
 To run the native build:
 
 ```bash
 # run the game
-bazel-bin/src/saga_native window
+bazel run --config=native //src:run_native -- window
 
 # enter the Cantina and rotate the camera through 360 degrees in 10 seconds
-bazel-bin/src/saga_native window --camera-orbit
+bazel run --config=native //src:run_native -- window --camera-orbit
 
 # enter the Cantina with a free camera (numpad 8/5/4/6; hold Shift to move)
-bazel-bin/src/saga_native window --camera-free
+bazel run --config=native //src:run_native -- window --camera-free
 ```
+
+`//src:run_native` restores the directory where `bazel run` was invoked before
+starting the executable, so relative asset and output paths behave normally.
 
 ## Contributing
 

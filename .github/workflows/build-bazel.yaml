@@ -1,5 +1,8 @@
+---
 name: Bazel build
 
+# GitHub Actions requires this key even though YAML 1.1 treats it as truthy.
+# yamllint disable-line rule:truthy
 on:
   push:
   pull_request:
@@ -28,7 +31,7 @@ jobs:
           cache-save: ${{ github.event_name != 'pull_request' }}
 
       - name: Run Bazel migration checks
-        run: bazel test //scripts:checks
+        run: bazel test //scripts/checks:checks
 
   target-linux:
     name: Target / Linux
@@ -51,6 +54,11 @@ jobs:
 
       - name: Build target
         run: bazel build --config=target //src:saga_target
+
+      - name: Check target symbols
+        run: >-
+          bazel run //scripts/checks:check_symbols --
+          --original-symbols matching.json
 
   wasm:
     name: WebAssembly / ${{ matrix.name }}
@@ -229,4 +237,6 @@ jobs:
           BAZEL_SH: "${{ steps.msys2.outputs.msys2-location }}/usr/bin/bash.exe"
           MSYS2_ARG_CONV_EXCL: "*"
           PKG_CONFIG_PATH: /mingw64/lib/pkgconfig
-        run: bazel build --config=native --config=windows-mingw //src:saga_native
+        run: >-
+          bazel build --config=native --config=windows-mingw
+          //src:saga_native

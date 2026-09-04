@@ -11,7 +11,7 @@ original `res/libTTapp.so`.
 | target | matching Android x86 shared object | `bazel build --config=target //src:saga_target` |
 | native | Linux diagnostic executable | `bazel build --config=native //src:saga_native` |
 | native | Windows diagnostic executable | `bazel build --config=native --config=windows-mingw //src:saga_native` |
-| wasm | browser diagnostic executable | `bazel build --config=wasm //src:saga_wasm` |
+| wasm | browser diagnostic bundle | `bazel build --config=wasm //src:saga_wasm` |
 
 The target is `bazel-bin/src/libTTapp.so` and deliberately has no `main`.
 Native and WASM builds define `HOST_BUILD` and use the host harness.
@@ -48,14 +48,15 @@ Native and WASM builds define `HOST_BUILD` and use the host harness.
 
 ```bash
 bazel build --config=target //src:saga_target
-bazel test //scripts:checks
-python3 scripts/objdiff-cli.py _Z5qrandv
-python3 scripts/check_symbols.py
+bazel test //scripts/checks:checks
+bazel run //scripts:objdiff_cli -- _Z5qrandv
+bazel run //scripts/checks:check_symbols
 ```
 
-`objdiff-cli.py` requires `objdiff-cli` on `PATH`. `check_symbols.py` requires
-the original binary. The Bazel test suite uses a downloaded, pinned Python
-3.12.12 runtime and does not need a venv.
+`objdiff-cli.py` requires `objdiff-cli` on `PATH`. `checks/check_symbols.py` requires
+the original binary. These direct `python3` commands use the system interpreter.
+The Bazel test suite uses a downloaded, pinned Python 3.12.12 runtime, does not
+use system site-packages, and does not need a venv.
 
 ## Key repository paths
 
@@ -77,4 +78,4 @@ the original binary. The Bazel test suite uses a downloaded, pinned Python
 3. Confirm the source file's optimization options with `bazel aquery`.
 4. Preserve the ABI and use the GCC 4.7 patterns documented here.
 5. Rebuild the target and compare the symbol directly.
-6. Run `bazel test //scripts:checks` before committing.
+6. Run `bazel test //scripts/checks:checks` before committing.

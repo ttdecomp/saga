@@ -95,15 +95,13 @@ typedef unsigned long abi_ulong; // NOLINT
   through `decomp.h` (`decomp.h` itself pulls in `common.h`).
   Defines the engine's `variptr_u` union
   (a real union of `void*`/`char*`/`i16*`/`u8*`/`u32*`/`usize` members, used by
-  `VARIPTR`, `src/globals.h:200-205`).
+  `VARIPTR` and the buffer globals declared in `src/globals.h`).
 - `fixed_width.h` — used by the generated `*_types.h` scaffolding headers
   (nine current headers, including `legoapi_types.h`, `nu2api_*_types.h`, and
   `MechInputTouch_types.h`).
-  It deliberately does NOT declare `variptr_u`, because the scaffolding
-  forward-declares the tag itself: see
-  `src/gameapi/edtools/gameapi_edtools_types.h:65,84` (`struct variptr_u;` /
-  empty `struct variptr_u {};` placeholder). Including `common.h` in the same
-  TU as that scaffolding would be a tag-type clash.
+  It deliberately does not define `variptr_u`; scaffolding that needs the type,
+  such as `src/gameapi/edtools/gameapi_edtools_types.h`, forward-declares it as
+  a union. The complete definition still comes from `common.h`.
 
 ## 3. Calling conventions (i686, plain GCC cdecl — no fastcall/thiscall)
 
@@ -194,9 +192,10 @@ bodies**: `_ZN15NuSoundListenerC1Ev` @ 0x4e0 and `C2` @ 0x4a0 are 0x3d (61)
 bytes of identical code, 0x40 apart (the identical run extends 64 bytes incl.
 padding; re-verified byte-for-byte). Our rebuild
 aliases them to one address, so at most one of the two split functions can
-byte-match; both symbol names exist, so `scripts/check_symbols.py` stays green.
+byte-match; both symbol names exist, so `scripts/checks/check_symbols.py` stays green.
 Counts: original has 77 `C1Ev` + 77 `C2Ev` + 178 `D0Ev` + 224 `D1Ev` + 221
-`D2Ev`; build/saga provides all variants (e.g. `_ZN10NuFileBaseD0/D1/D2`).
+`D2Ev`; the current Bazel target provides the compiler-emitted variants (for
+example `_ZN10NuFileBaseD0/D1/D2`).
 There is **no C3, no `_ZTT` (construction vtable), no `_ZTc`** in the original
 (0/0/0) → the original has no virtual-base classes; don't invent any.
 
@@ -207,7 +206,7 @@ virtual (`D0` calls `operator delete`).
 ### Vtables
 
 - Section `.data.rel.ro._ZTV<class>` (relocated read-only), symbol type `V`
-  (weak) in BOTH our build (80 in build/saga) and the original
+  (weak) in both the current Bazel target and the original
   (`00669da0 V _ZTV13NuSoundEffect`) — this NDK GCC uses weak vtables, so the
   vtable appears in every TU that needs it and the linker keeps one copy.
   `check_symbols.py` only compares `T`/`W` text symbols, so vtables (`V`) are
@@ -256,7 +255,7 @@ vcaller(VBase*, int):            # p->f1(v)
 - The original has exactly 39 `_ZThn*`. Some belong to classes not yet
   implemented (including SceneObjectHelper, TTNetwork, NuSoundDecoderOGG, and
   NetworkObjectManager).
-- Policy (`scripts/check_symbols.py:70-73`): `_ZThn` thunks are filtered from
+- Policy (`scripts/checks/check_symbols.py:91-94`): `_ZThn` thunks are filtered from
   the missing-symbol report — the compiler emits them automatically, so
   **never hand-write a thunk stub**; when you implement a real class with the
   matching multiple-inheritance layout the thunk appears by itself. If a
@@ -268,12 +267,12 @@ Rule: a symbol with a plain (unmangled) name → `extern "C"`; anything mangled
 (`_Z…`) → plain C++. Verified: `extern "C" int c_fn(int)` → `c_fn`,
 C++ `cpp_fn` → `_Z6cpp_fni`.
 
-The repo uses `extern "C"` pervasively for the C-flavored engine surface:
-`src/globals.h:11` (all the globals), `legoapi/level.h:206`, `mission.h`,
-`character.h`, `world.h`, the gizmo headers, `edtools/edstubs.*`,
-`gameframework/saveload.h:8`, `nuwind.h`, `nucore/nuapi.c` side, plus
-one-off definitions like `src/legoapi/render/core/terrain.cpp` and
-`src/batman.cpp:22` `NuMain`. JNI glue is `extern "C"` too (`java/jni.h:1151`).
+The repo uses `extern "C"` pervasively for the C-flavored engine surface,
+including selected globals in `src/globals.h`, the world headers under
+`src/legoapi/world/`, `src/legoapi/characters/core/character.h`, gizmo and
+editor-tool headers, `src/gameframework/saveload.h`, and
+`src/gamelib/nuwind/nuwind.h`. One-off definitions include terrain functions
+and `NuMain` in `src/batman.cpp`; JNI glue in `src/java/jni.h` uses it too.
 When a plain C-looking name appears in the binary's symbol table, wrap it;
 `i686-linux-android-nm res/libTTapp.so | grep ' T [A-Za-z_]'` lists candidates.
 
@@ -319,7 +318,7 @@ same symbol and the same codegen.
 - **`usize`/`isize`**: `usize` (=`size_t`, mangles `_j`) for sizes/counts,
   `isize` (=`int32_t` on target, mangles `_i`) for signed sizes. Never raw
   `ssize_t` (`_l` trap, `common.h:16-27`).
-- **`char` is signed** on this target (`-fno-unsigned-char`): `char` → `_c`,
+- **`char` is signed** by this GCC target's default: `char` → `_c`,
   `signed char` → `_a`, `unsigned char` → `_h`. If the binary demangles a
   parameter as `signed char` you must write `i8`/`signed char`, not `char`
   (they are distinct types and mangle differently).

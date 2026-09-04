@@ -55,7 +55,7 @@ Unlisted sources compile at `-O0`.
 
 ```bash
 rg -n -- '--per_file_copt' bazel/android_per_file_copts.bazelrc
-bazel test //scripts:check_bazel_optimization_map
+bazel test //scripts/checks:check_bazel_optimization_map
 ```
 
 Moving a function between files can therefore change its code generation even
@@ -124,9 +124,11 @@ The source archives and overlay BUILD files live in `MODULE.bazel` and
 
 ```bash
 bazel build --config=native //src:saga_native
+bazel run --config=native //src:run_native -- window
 
 # Windows, from an MSYS2 MINGW64 shell
 bazel build --config=native --config=windows-mingw //src:saga_native
+bazel run --config=native --config=windows-mingw //src:run_native -- window
 ```
 
 Native builds use the platform compiler and system SDL3, Vorbis, EGL/GLES2 (or
@@ -135,6 +137,8 @@ and `ANDROID` and include `src/host/harness/` and `src/host/platform/`.
 
 - Linux remains i686 with `-m32 -march=i686 -msse2`, ASan, and UBSan.
 - Windows uses MINGW64 and exports executable symbols.
+- macOS-specific native rules exist, but native macOS is not currently
+  supported or exercised in CI.
 - Native builds do not inherit the target's per-file optimization map.
 
 The native executable is a diagnostic environment, not a matching artifact.

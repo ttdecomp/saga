@@ -118,13 +118,14 @@ The build compares complete shared objects. To investigate one symbol:
 
 ```bash
 bazel build --config=target //src:saga_target
-python3 scripts/objdiff-cli.py _Z5qrandv
+bazel run //scripts:objdiff_cli -- _Z5qrandv
 rg -n 'qrand' src
 ```
 
 Use `bazel aquery --config=target` when source membership or effective compile
-options are uncertain. There is no generated split-object ownership map in the
-repository.
+options are uncertain. The optional Pages report maps symbols to Bazel
+translation units for presentation, but matching still compares the two
+complete shared objects and does not generate split target binaries.
 
 ## Facts to preserve
 

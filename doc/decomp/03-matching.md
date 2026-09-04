@@ -1,8 +1,10 @@
 # 03 — Matching and verification
 
 The matching workflow compares the original Android x86 shared object with the
-shared object produced by Bazel. There is no generated split-object or report
-pipeline in the repository.
+shared object produced by Bazel. Matching remains a whole-binary comparison;
+the repository also generates a GitHub Pages summary by mapping Bazel compile
+actions and object symbols back to translation units. It does not require or
+generate split target binaries.
 
 ## Terminology
 
@@ -17,7 +19,7 @@ pipeline in the repository.
 
 ```bash
 bazel build --config=target //src:saga_target
-bazel test //scripts:checks
+bazel test //scripts/checks:checks
 ```
 
 The target build preserves the NDK r8e compiler, API 9 sysroot, source list,
@@ -35,7 +37,7 @@ The repository test suite currently checks:
 With `objdiff-cli` available on `PATH`:
 
 ```bash
-python3 scripts/objdiff-cli.py _Z5qrandv
+bazel run //scripts:objdiff_cli -- _Z5qrandv
 ```
 
 The helper runs objdiff directly against the two complete shared objects. Its
@@ -44,27 +46,35 @@ left side is the original and its right side is the current build. Read `-` and
 emitted by the current build.
 
 For a dependency-free symbol-table or raw-disassembly check, use the NDK tools
-described in [08-asm-review.md](08-asm-review.md). `disasm_diff.py` is another
-option when the Python `capstone` package is installed.
+described in [08-asm-review.md](08-asm-review.md).
 
 ## Check symbol coverage
 
 When the original binary is present:
 
 ```bash
-python3 scripts/check_symbols.py
+bazel run //scripts/checks:check_symbols
 ```
 
 This compares defined text symbols in the original and current shared objects,
-applies `scripts/symbols_ignore.txt`, and enforces the documented extra-symbol
-baseline. It is a diagnostic for symbol coverage; byte matching still requires
-instruction comparison.
+applies `scripts/checks/symbols_ignore.txt`, and enforces the documented exact
+extra-symbol baseline. It is a diagnostic for symbol coverage; byte matching
+still requires instruction comparison.
 
-## Optional external reports
+## Matching reports
 
-`matching_report.py` and `objdiffdiff.py` remain available for reports generated
-outside the build. Bazel does not generate or commit `objdiff.json`,
-`report.json`, split objects, or README progress updates.
+With `res/libTTapp.so` present and `objdiff-cli` on `PATH`, regenerate the
+committed Pages data and visualization with:
+
+```bash
+bazel build --config=target //src:saga_target
+bazel run //scripts:generate_bazel_objdiff_report
+bazel run //scripts:plot_binary_match_map
+```
+
+The first generator runs one whole-binary objdiff comparison and writes
+`matching.json`; the second renders `doc/pages/index.html`.
+Bazel does not generate split objects, `objdiff.json`, or `report.json`.
 
 ## Common pitfalls
 
@@ -88,4 +98,4 @@ outside the build. Bazel does not generate or commit `objdiff.json`,
 4. Implement the smallest source change that matches the ABI and expected
    code-generation pattern.
 5. Rebuild `//src:saga_target`, compare the symbol, and run
-   `bazel test //scripts:checks`.
+   `bazel test //scripts/checks:checks`.

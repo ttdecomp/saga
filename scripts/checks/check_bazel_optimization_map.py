@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the checked-in Android per-file optimization map."""
+"""Validate the repository's checked-in Android per-file optimization map."""
 
 from __future__ import annotations
 

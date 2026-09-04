@@ -4,16 +4,16 @@ This document explains how the reconstructed source tree relates to the
 original Android x86 binary. It is the restructuring reference, but generated
 artifacts—not copied counts in prose—are the source of truth.
 
-Snapshot checked on 2026-08-29:
+Snapshot checked on 2026-09-04:
 
 | item | current value |
 |---|---:|
-| target compile commands | 464 |
+| target source translation units | 496 |
 | target C translation units | 13 |
-| target C++ translation units | 451 |
-| objdiff units | 466 (464 TUs, `ogg_vorbis`, `remaining`) |
-| optimization levels | 342 default `-O0`, 25 `-O2`, 97 `-O3` |
-| special compile mode | one of the 97 `-O3` TUs also uses `-fPIE` |
+| target C++ translation units | 483 |
+| generated matching-report units | 496 |
+| optimization levels | 242 default `-O0`, 2 `-O1`, 88 `-O2`, 164 `-O3` |
+| special compile mode | one of the 164 `-O3` TUs also uses `-fPIE` |
 | original `_GLOBAL__sub_I_` symbols | 325 occurrences, 320 unique basenames |
 
 These counts describe the current generated files and will change as the tree
@@ -93,7 +93,7 @@ bazel aquery --config=target \
 
 # Review and validate declared overrides.
 rg -n -- '--per_file_copt' bazel/android_per_file_copts.bazelrc
-bazel test //scripts:check_bazel_optimization_map
+bazel test //scripts/checks:check_bazel_optimization_map
 ```
 
 Absence of an `-O` flag means `-O0`. `src/legoapi/core/config/cheat.cpp` is
@@ -104,7 +104,7 @@ currently the sole `-O3 -fPIE` file.
 The target is compared as a complete shared object. For one symbol, use:
 
 ```bash
-python3 scripts/objdiff-cli.py _Z5qrandv
+bazel run //scripts:objdiff_cli -- _Z5qrandv
 ```
 
 To find its source owner, search declarations/definitions first, then inspect

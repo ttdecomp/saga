@@ -9,33 +9,66 @@ compiler-runtime, platform glue, or ABI-special thunks/templates we
 intentionally skip). Prints a summary and the missing list.
 
 Exit codes:
-    0  all original symbols provided, and extras within baseline
+    0  all original symbols provided, and extras exactly match the baseline
     1  at least one original symbol is still missing
-    2  no symbols missing, but the build implements more extra symbols than
-       the baseline (scripts/symbols_extra_baseline.txt by default)
+    2  no symbols missing, but the extra-symbol set differs from the baseline
 
 The extra-symbol baseline is enforced so the build cannot keep gaining
-unreplicated symbols; new ones must be documented in the ignore list or the
-baseline bumped. Disable with --no-baseline, or override with --baseline-extra.
+unreplicated symbols. It contains one exact symbol per line, so newly added and
+newly removed extras both require a deliberate baseline update. Disable with
+--no-baseline, or override the file with --extra-baseline.
 
 Usage:
-    python3 scripts/check_symbols.py [BUILD_BIN] [ORIG_BIN] [--ignore FILE]
+    bazel run //scripts/checks:check_symbols -- [BUILD_BIN] [ORIG_BIN]
 Defaults:
-    BUILD_BIN = bazel-bin/src/libTTapp.so
+    BUILD_BIN = target-config Bazel //src:libTTapp.so output
     ORIG_BIN  = res/libTTapp.so
-    --ignore  = scripts/symbols_ignore.txt   (one mangled symbol per line;
+    --ignore  = scripts/checks/symbols_ignore.txt (one mangled symbol per line;
                blank lines and '#' comments ignored)
 """
 
 import argparse
+import json
 import os
 import subprocess
 import sys
 
-from ndk_tools import find_ndk_tool
+from scripts.lib.ndk_tools import find_ndk_tool
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+ROOT = os.environ.get("BUILD_WORKSPACE_DIRECTORY")
+if ROOT is None:
+    ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 NM = find_ndk_tool("nm")
+
+
+def default_build_path():
+    """Resolve the target-config library without trusting the bazel-bin link."""
+    result = subprocess.run(
+        [
+            "bazel",
+            "cquery",
+            "--config=target",
+            "//src:libTTapp.so",
+            "--output=files",
+            "--noshow_progress",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    outputs = [
+        os.path.join(ROOT, line) for line in result.stdout.splitlines() if line.strip()
+    ]
+    files = [output for output in outputs if os.path.isfile(output)]
+    if result.returncode or len(files) != 1:
+        detail = result.stderr.strip()
+        suffix = f": {detail}" if detail else ""
+        raise RuntimeError(
+            "could not resolve the target build; run "
+            "'bazel build --config=target //src:saga_target' first" + suffix
+        )
+    return os.path.realpath(files[0])
 
 
 def defined_text_symbols(binary, include_weak=False, include_local=False):
@@ -99,15 +132,35 @@ def is_local_label(name):
     return name.startswith(".L") and name[2:].isdigit()
 
 
-def load_ignore(path):
+def load_symbol_list(path):
     out = set()
-    if os.path.exists(path):
-        for raw in open(path):
+    with open(path) as source:
+        for line_number, raw in enumerate(source, start=1):
             line = raw.strip()
             if not line or line.startswith("#"):
                 continue
+            if line in out:
+                raise ValueError(f"{path}:{line_number}: duplicate symbol {line}")
             out.add(line)
     return out
+
+
+def load_original_symbols(path):
+    """Load the original ELF symbol surface embedded in the Pages report."""
+    with open(path, encoding="utf-8") as source:
+        report = json.load(source)
+    surface = report.get("original_text_symbols")
+    if not isinstance(surface, dict):
+        raise ValueError(f"{path}: missing original_text_symbols")
+    result = {}
+    for binding in ("global", "local", "weak"):
+        symbols = surface.get(binding)
+        if not isinstance(symbols, list) or not all(
+            isinstance(symbol, str) for symbol in symbols
+        ):
+            raise ValueError(f"{path}: invalid original_text_symbols.{binding}")
+        result[binding] = set(symbols)
+    return result
 
 
 def main():
@@ -115,11 +168,15 @@ def main():
     ap.add_argument(
         "build",
         nargs="?",
-        default=os.path.join(ROOT, "bazel-bin/src/libTTapp.so"),
+        help="build binary (default: target-config //src:libTTapp.so)",
     )
     ap.add_argument("orig", nargs="?", default=os.path.join(ROOT, "res/libTTapp.so"))
     ap.add_argument(
-        "--ignore", default=os.path.join(ROOT, "scripts/symbols_ignore.txt")
+        "--original-symbols",
+        help="Pages JSON containing the original symbol surface instead of an ELF",
+    )
+    ap.add_argument(
+        "--ignore", default=os.path.join(ROOT, "scripts/checks/symbols_ignore.txt")
     )
     ap.add_argument(
         "--list", action="store_true", help="print the full missing-symbol list"
@@ -130,10 +187,9 @@ def main():
         help="also list the missing symbols that were ignored via the ignore list",
     )
     ap.add_argument(
-        "--baseline-extra",
-        type=int,
-        default=None,
-        help="fail (exit 2) if the number of extra symbols exceeds this count",
+        "--extra-baseline",
+        default=os.path.join(ROOT, "scripts/checks/symbols_extra_baseline.txt"),
+        help="file containing the exact allowed extra-symbol set",
     )
     ap.add_argument(
         "--no-baseline",
@@ -142,12 +198,47 @@ def main():
     )
     args = ap.parse_args()
 
-    build = defined_text_symbols(args.build, include_weak=True, include_local=True)
-    orig_strong = defined_text_symbols(args.orig, include_weak=False)
-    orig_local = defined_text_symbols(args.orig, include_weak=False, include_local=True) - orig_strong
-    orig_any = orig_strong | orig_local | defined_text_symbols(args.orig, include_weak=True)
-    build_strong = defined_text_symbols(args.build, include_weak=False)
-    ignore = load_ignore(args.ignore)
+    try:
+        invocation_dir = os.environ.get("BUILD_WORKING_DIRECTORY", os.getcwd())
+
+        def argument_path(value):
+            return value if os.path.isabs(value) else os.path.join(invocation_dir, value)
+
+        build_path = argument_path(args.build) if args.build else default_build_path()
+        orig_path = argument_path(args.orig)
+        original_symbols_path = (
+            argument_path(args.original_symbols) if args.original_symbols else None
+        )
+        ignore_path = argument_path(args.ignore)
+        baseline_path = argument_path(args.extra_baseline)
+    except RuntimeError as error:
+        sys.stderr.write(f"error: {error}\n")
+        return 2
+
+    build = defined_text_symbols(build_path, include_weak=True, include_local=True)
+    build_strong = defined_text_symbols(build_path, include_weak=False)
+    try:
+        if original_symbols_path:
+            original = load_original_symbols(original_symbols_path)
+            orig_strong = original["global"]
+            orig_local = original["local"] - orig_strong
+            orig_any = orig_strong | orig_local | original["weak"]
+        else:
+            orig_strong = defined_text_symbols(orig_path, include_weak=False)
+            orig_local = (
+                defined_text_symbols(orig_path, include_weak=False, include_local=True)
+                - orig_strong
+            )
+            orig_any = (
+                orig_strong
+                | orig_local
+                | defined_text_symbols(orig_path, include_weak=True)
+            )
+        ignore = load_symbol_list(ignore_path)
+        baseline = None if args.no_baseline else load_symbol_list(baseline_path)
+    except (OSError, ValueError, json.JSONDecodeError) as error:
+        sys.stderr.write(f"error: {error}\n")
+        return 2
 
     candidate = sorted(
         s
@@ -197,25 +288,27 @@ def main():
 
     code = 1 if missing else 0
 
-    if args.no_baseline:
-        args.baseline_extra = None
-    elif args.baseline_extra is None:
-        baseline_file = os.path.join(ROOT, "scripts/symbols_extra_baseline.txt")
-        if os.path.exists(baseline_file):
-            for raw in open(baseline_file):
-                line = raw.strip()
-                if line and not line.startswith("#"):
-                    args.baseline_extra = int(line.split()[0])
-                    break
+    if baseline is not None:
+        extra_set = set(extras)
+        unexpected_extras = sorted(extra_set - baseline)
+        stale_baseline = sorted(baseline - extra_set)
+    else:
+        unexpected_extras = []
+        stale_baseline = []
 
-    if args.baseline_extra is not None and len(extras) > args.baseline_extra:
+    if unexpected_extras or stale_baseline:
         sys.stderr.write(
-            "\nERROR: extra symbols (%d) exceed baseline (%d).\n"
-            "New extra symbols must be documented; add them to the ignore list\n"
-            "(scripts/symbols_ignore.txt) or bump the baseline\n"
-            "(scripts/symbols_extra_baseline.txt) before they can be merged.\n"
-            % (len(extras), args.baseline_extra)
+            "\nERROR: the build's extra-symbol set differs from "
+            f"{baseline_path}.\n"
         )
+        if unexpected_extras:
+            sys.stderr.write("\nnew extra symbols (add deliberately to the baseline):\n")
+            for symbol in unexpected_extras:
+                sys.stderr.write(f"  {symbol}\n")
+        if stale_baseline:
+            sys.stderr.write("\nstale baseline symbols (remove from the baseline):\n")
+            for symbol in stale_baseline:
+                sys.stderr.write(f"  {symbol}\n")
         if code == 0:
             code = 2
     return code

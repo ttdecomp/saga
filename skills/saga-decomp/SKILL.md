@@ -24,8 +24,8 @@ work.
 
 ```bash
 bazel build --config=target //src:saga_target
-python3 scripts/objdiff-cli.py MANGLED_SYMBOL
-bazel test //scripts:checks
+bazel run //scripts:objdiff_cli -- MANGLED_SYMBOL
+bazel test //scripts/checks:checks
 ```
 
 The objdiff helper reports the original on the left and current build on the
@@ -62,16 +62,17 @@ Read `doc/decomp/02-codegen.md`, `04-types-abi.md`, and
 - Use `/tmp` for isolated compiler experiments.
 - Use the NDK r8e driver and documented target options for codegen experiments.
 - Use `apply_patch` for edits and preserve concurrent modifications.
-- The optional repository hook is non-mutating; do not run unrelated formatters
-  or generators automatically.
+- The optional repository hook runs the checks and, when the reference binary
+  is present, regenerates the committed Pages report. Do not run unrelated
+  formatters or generators automatically.
 
 ## Verification
 
 - documentation: scan for stale paths and test documented commands;
 - one symbol: `scripts/objdiff-cli.py`, `nm`, and `objdump -dr`;
-- symbol surface: `python3 scripts/check_symbols.py --list`;
+- symbol surface: `bazel run //scripts/checks:check_symbols -- --list`;
 - source/build changes: rebuild `//src:saga_target` and run
-  `bazel test //scripts:checks`;
+  `bazel test //scripts/checks:checks`;
 - native-specific changes: also build `//src:saga_native` on the relevant host;
 - browser changes: also build `//src:saga_wasm`.
 

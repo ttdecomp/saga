@@ -10,7 +10,7 @@ Use the window utility in hidden, muted mode when running alongside other deskto
 applications:
 
 ```sh
-bazel-bin/src/saga_native window --offscreen --mute --capture
+bazel run --config=native //src:run_native -- window --offscreen --mute --capture
 ```
 
 - `--offscreen` creates a hidden, non-focusable SDL window and ignores desktop
@@ -23,11 +23,16 @@ bazel-bin/src/saga_native window --offscreen --mute --capture
 - `--script-input` adds the host-only deterministic touch sequence used to
   reach the load/save flow. It may be combined with all three flags above.
 
-The standard unattended menu check is therefore:
+On Linux (or an MSYS2 environment that provides GNU `timeout`), the standard
+unattended menu check is therefore:
 
 ```sh
-timeout 38s bazel-bin/src/saga_native window --offscreen --mute --script-input --capture
+timeout 38s bazel run --config=native //src:run_native -- window --offscreen --mute --script-input --capture
 ```
+
+On Windows the executable is `bazel-bin/src/saga_native.exe`. macOS users can
+install GNU coreutils and invoke the equivalent `gtimeout`; native macOS is not
+currently part of the supported CI matrix.
 
 The command implementations belong under `src/host/harness/`. Actual platform
 adapters belong under `src/host/platform/` and are limited to imported APIs,

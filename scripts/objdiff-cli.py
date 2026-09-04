@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Dense, AI-ready per-symbol diff from ``objdiff-cli diff``.
 
-Runs ``objdiff-cli diff -1 res/libTTapp.so -2 bazel-bin/src/libTTapp.so
-<symbol> -o -`` (megabytes of noisy JSON: sections, label-only symbols, full
+Runs ``objdiff-cli diff`` on ``res/libTTapp.so`` and the target-config Bazel
+``//src:libTTapp.so`` output (megabytes of noisy JSON: sections, label-only symbols, full
 opcode/operand detail), keeps only the instructions where the two sides
 diverge, and prints them aligned with context hints.
 
@@ -10,7 +10,7 @@ There are exactly two sides, in objdiff's fixed order (target on the left, base
 on the right, exactly as shown in the objdiff GUI):
 
   left  == target == the ORIGINAL - ``res/libTTapp.so``, our goal.
-  right == base   == the CURRENT - ``bazel-bin/src/libTTapp.so``, compiled
+  right == base   == the CURRENT - Bazel ``//src:libTTapp.so``, compiled
                      from our current ``src/`` tree.
 
 The explicit ``-1``/``-2`` paths fix this direction. Hint attribution follows:
@@ -23,12 +23,14 @@ instructions you are missing) must be ADDED to your code, and '+' (extra
 instructions your current build emits) must be REMOVED. Note the diff glyphs
 are counterintuitive: a '-' does NOT mean "delete from your code".
 
-Usage:  python scripts/objdiff-cli.py SYMBOL [-b FILE] [-t FILE] [-C N]
-                                          [--full] [--no-color]
+Usage:  bazel run //scripts:objdiff_cli -- SYMBOL [-b FILE] [-t FILE] [-C N]
+                                                    [--full] [--no-color]
 """
 import argparse
 import base64
 import json
+import os
+from pathlib import Path
 import re
 import struct
 import subprocess
@@ -40,7 +42,7 @@ Two sides (objdiff's fixed order; target on the left, base on the right - same
 as the objdiff GUI):
 
   left  = target = the ORIGINAL, ``res/libTTapp.so`` - our goal.
-  right = base   = the CURRENT, ``bazel-bin/src/libTTapp.so`` - compiled from
+  right = base   = the CURRENT, Bazel ``//src:libTTapp.so`` - compiled from
           our current ``src/`` tree.
 
 The marker letters are counterintuitive but fixed by the side, so read first
@@ -87,6 +89,52 @@ def _hex(addr):
         except ValueError:
             return None
     return addr
+
+
+def workspace_root() -> Path:
+    return Path(
+        os.environ.get("BUILD_WORKSPACE_DIRECTORY", Path(__file__).resolve().parents[1])
+    ).resolve()
+
+
+def command_directory() -> Path:
+    """Directory in which the user invoked Bazel, or the direct-script cwd."""
+    return Path(os.environ.get("BUILD_WORKING_DIRECTORY", os.getcwd())).resolve()
+
+
+def user_path(value: str) -> str:
+    path = Path(value)
+    if not path.is_absolute():
+        path = command_directory() / path
+    return str(path.resolve())
+
+
+def default_target_path(root: Path) -> str:
+    """Resolve the target-config library without trusting the bazel-bin link."""
+    result = subprocess.run(
+        [
+            "bazel",
+            "cquery",
+            "--config=target",
+            "//src:libTTapp.so",
+            "--output=files",
+            "--noshow_progress",
+        ],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    outputs = [root / line for line in result.stdout.splitlines() if line.strip()]
+    files = [output for output in outputs if output.is_file()]
+    if result.returncode or len(files) != 1:
+        detail = result.stderr.strip()
+        suffix = f": {detail}" if detail else ""
+        raise RuntimeError(
+            "could not resolve the target build; run "
+            "'bazel build --config=target //src:saga_target' first" + suffix
+        )
+    return str(files[0].resolve())
 
 
 def _c(text, kind, on):
@@ -219,17 +267,22 @@ _LC_RE = re.compile(r"\.LC(\d+)")
 # --------------------------------------------------------------------------- #
 # rendering
 # --------------------------------------------------------------------------- #
-def render_function(lsym, rsym, color, context, full=False, resolver=None,
-                    rightsyms=None, sym_map=None):
+def render_function(lsym, rsym, color, context, full=False,
+                    left_resolver=None, right_resolver=None,
+                    leftsyms=None, rightsyms=None,
+                    left_sym_map=None, right_sym_map=None):
     """One symbol's position-aligning instruction diff.
 
     The two sides' ``instructions`` arrays are positionally aligned by objdiff
     and carry the same ``diff_kind`` at each index. Unchanged runs longer than
     ``context`` collapse to a single ``⋯`` marker. With ``full`` every
-    instruction is printed and no runs collapse. Every base-side line that
-    references a resolved ``.LC`` rodata value carries that value as a
-    trailing '#' comment, on changed and context lines alike; jump/call
-    targets resolve to the instruction or callee they point at.
+    instruction is printed and no runs collapse. Every line that references a
+    resolved ``.LC`` rodata value carries that value as a trailing '#' comment,
+    on changed and context lines alike; jump/call targets resolve to the
+    instruction or callee they point at. Resolution is side-specific: target
+    instructions use target symbols and base instructions use base symbols. Any
+    objdiff relocation is rendered as its target symbol plus addend; ``.LC``
+    relocations may additionally show their decoded value.
     """
     il = lsym.get("instructions", [])
     ir = rsym.get("instructions", [])
@@ -247,32 +300,34 @@ def render_function(lsym, rsym, color, context, full=False, resolver=None,
     left_ins = _ins_map(il)
     right_ins = _ins_map(ir)
 
-    rows = []  # (kind, target_text, base_text, addr, base_elem)
+    rows = []  # (kind, target_text, base_text, addr, target_elem, base_elem)
     n = max(len(il), len(ir))
     for i in range(n):
-        kind = (il[i].get("diff_kind", "") if i < len(il) else "") or ""
-        lt = first_formatted(il[i]) if i < len(il) else None
-        rt = first_formatted(ir[i]) if i < len(ir) else None
+        le = il[i] if i < len(il) else {}
         be = ir[i] if i < len(ir) else {}
+        kind = le.get("diff_kind", "") or ""
+        lt = first_formatted(le) if le else None
+        rt = first_formatted(be) if be else None
         addr = None
-        for s in (il[i] if i < len(il) else {}, be):
+        for s in (le, be):
             inner = s.get("instruction")
             if isinstance(inner, dict) and inner.get("address") is not None:
                 addr = inner.get("address")
                 break
         if kind == "DIFF_DELETE":
-            rows.append(("del", lt, None, addr, be))
+            rows.append(("del", lt, None, addr, le, be))
         elif kind == "DIFF_INSERT":
-            rows.append(("add", None, rt, addr, be))
+            rows.append(("add", None, rt, addr, le, be))
         elif kind in ("DIFF_REPLACE", "DIFF_OP_MISMATCH", "DIFF_ARG_MISMATCH"):
-            rows.append(("mod", lt, rt, addr, be))
+            rows.append(("mod", lt, rt, addr, le, be))
         else:
-            rows.append(("ctx", lt or rt, None, addr, be))
+            rows.append(("ctx", lt or rt, None, addr, le, be))
 
-    rows = [(k, lt, rt, _hex(a), be) for (k, lt, rt, a, be) in rows]
+    rows = [(k, lt, rt, _hex(a), le, be)
+            for (k, lt, rt, a, le, be) in rows]
     addr_w = max((len("%x" % (r[3] or 0)) for r in rows), default=0)
 
-    def branch_hint(text, ins_map, sym_map):
+    def branch_hint(text, elem, ins_map, sym_map):
         """Resolve a jump/call target to the instruction or callee it points at."""
         if not text:
             return None
@@ -281,11 +336,20 @@ def render_function(lsym, rsym, color, context, full=False, resolver=None,
                 ("call", "loop", "loope", "loopne", "loopz", "loopnz",
                  "jcxz", "jecxz")):
             return None
-        mo = re.search(r"\b0x[0-9a-fA-F]+\b(?:-\d+)?", text)
-        if not mo:
-            return None
-        raw = mo.group(0)
-        tgt = int(raw.split("-")[0], 16)
+        inner = elem.get("instruction") if elem else None
+        tgt = _hex((inner or {}).get("branch_dest")) \
+            if isinstance(inner, dict) else None
+        if tgt is None and isinstance(inner, dict):
+            for part in inner.get("parts") or []:
+                arg = part.get("arg") if isinstance(part, dict) else None
+                if isinstance(arg, dict) and arg.get("branch_dest") is not None:
+                    tgt = _hex(arg["branch_dest"])
+                    break
+        if tgt is None:
+            mo = re.search(r"\b0x[0-9a-fA-F]+\b(?:-\d+)?", text)
+            if not mo:
+                return None
+            tgt = int(mo.group(0).split("-")[0], 16)
         if head == "call":
             if sym_map and tgt in sym_map:
                 return "→ " + sym_map[tgt]
@@ -299,34 +363,51 @@ def render_function(lsym, rsym, color, context, full=False, resolver=None,
             return "→ " + sym_map[tgt]
         return None
 
-    def base_comment(be):
-        """Source comment for one base-side element's resolved rodata ref."""
-        if resolver is None or not be:
+    def relocation_hint(elem, syms, resolver):
+        """Resolve an objdiff relocation on one side to symbol plus addend."""
+        if not elem or syms is None:
             return None
-        inner = be.get("instruction")
+        inner = elem.get("instruction")
         rel = (inner or {}).get("relocation") if isinstance(inner, dict) else None
         if not rel:
             return None
         ts = rel.get("target_symbol")
-        if ts is None or rightsyms is None or ts >= len(rightsyms):
+        try:
+            ts = int(ts)
+        except (TypeError, ValueError):
             return None
-        sym = rightsyms[ts]
-        addr = sym.get("address")
-        if not _LC_RE.match(sym.get("name", "")) or addr is None:
+        if not 0 <= ts < len(syms):
             return None
-        comment = resolver.resolve(addr, (inner or {}).get("formatted", "") or "")
-        if comment is None:
-            return None
-        return comment
+        sym = syms[ts]
+        name = sym.get("demangled_name") or sym.get("name") or f"symbol[{ts}]"
+        try:
+            addend = int(rel.get("addend") or 0, 0) \
+                if isinstance(rel.get("addend"), str) \
+                else int(rel.get("addend") or 0)
+        except (TypeError, ValueError):
+            addend = 0
+        if addend > 0:
+            name += f"+0x{addend:x}"
+        elif addend < 0:
+            name += f"-0x{-addend:x}"
 
-    def comment(text, is_base, data_cm):
-        """Aggregate data + flow hints into one trailing '#' comment."""
+        value = None
+        addr = sym.get("address")
+        if resolver is not None and _LC_RE.fullmatch(sym.get("name") or "") \
+                and addr is not None:
+            value = resolver.resolve(addr, (inner or {}).get("formatted", "") or "")
+        return f"reloc → {name}" + (f" = {value}" if value is not None else "")
+
+    def comment(text, elem, ins_map, sym_map, syms, resolver):
+        """Aggregate same-side relocation and flow hints into one comment."""
         parts = []
-        if data_cm:
-            parts.append(data_cm)
-        br = branch_hint(text,
-                         right_ins if is_base else left_ins,
-                         sym_map if is_base else None)
+        rel = relocation_hint(elem, syms, resolver)
+        if rel:
+            parts.append(rel)
+        # A relocation is authoritative. Its encoded branch destination can
+        # merely be the unresolved immediate (often the fallthrough address),
+        # so interpreting that value as a real target would add a false hint.
+        br = None if rel else branch_hint(text, elem, ins_map, sym_map)
         if br:
             parts.append(br)
         return "  # " + " ; ".join(parts) if parts else None
@@ -336,7 +417,7 @@ def render_function(lsym, rsym, color, context, full=False, resolver=None,
     last_change = -99
     i = 0
     while i < n:
-        kind, lt, rt, addr, be = rows[i]
+        kind, lt, rt, addr, le, be = rows[i]
         a = ("%*x" % (addr_w, addr)) if addr is not None else " " * addr_w
         if kind == "ctx":
             run = 1
@@ -354,27 +435,39 @@ def render_function(lsym, rsym, color, context, full=False, resolver=None,
                     aa = ("%*x" % (addr_w, rows[j][3])) if rows[j][3] is not None \
                         else " " * addr_w
                     txt = rows[j][1]
-                    cbe = rows[j][4]
-                    c = comment(txt, True, base_comment(cbe))
+                    cle, cbe = rows[j][4], rows[j][5]
+                    if cle and first_formatted(cle) is not None:
+                        c = comment(txt, cle, left_ins, left_sym_map,
+                                    leftsyms, left_resolver)
+                    else:
+                        c = comment(txt, cbe, right_ins, right_sym_map,
+                                    rightsyms, right_resolver)
                     if c:
                         txt = f"{txt}{c}"
                     lines.append(f"{_c(' ', 'ctx', color)} {aa}  {txt}")
             i += run
             continue
         changed += 1
-        cm = base_comment(be)
         if kind == "mod":
-            lt_c = comment(lt, False, None)
+            lt_c = comment(lt, le, left_ins, left_sym_map,
+                           leftsyms, left_resolver)
             lines.append(f"{_c('~', 'mod', color)} {a}  "
                          f"{(lt + lt_c) if lt_c else lt}")
-            if rt is not None and rt != lt:
-                rt_c = comment(rt, True, cm)
+            rt_c = comment(rt, be, right_ins, right_sym_map,
+                           rightsyms, right_resolver) if rt is not None else None
+            if rt is not None and (rt != lt or rt_c != lt_c):
                 body = f"{rt}{rt_c}" if rt_c else rt
                 lines.append(f"{_c('>', 'mod', color)} {a}  {body}")
         else:
             mark = "-" if kind == "del" else "+"
-            txt, isbase = (lt, False) if kind == "del" else (rt, True)
-            c = comment(txt, isbase, cm if isbase else None)
+            if kind == "del":
+                txt = lt
+                c = comment(txt, le, left_ins, left_sym_map,
+                            leftsyms, left_resolver)
+            else:
+                txt = rt
+                c = comment(txt, be, right_ins, right_sym_map,
+                            rightsyms, right_resolver)
             if c:
                 txt = f"{txt}{c}"
             lines.append(f"{_c(mark, kind, color)} {a}  {txt}")
@@ -383,9 +476,9 @@ def render_function(lsym, rsym, color, context, full=False, resolver=None,
     return lines, changed
 
 
-def base_sym_map(right):
-    """Base object: function address -> demangled name (for callee hints)."""
-    syms = right["symbols"]
+def function_sym_map(side):
+    """One objdiff side: function address -> demangled name."""
+    syms = side["symbols"]
     names = [s.get("name") for s in syms
              if s.get("kind") == "SYMBOL_FUNCTION" and s.get("name")]
     dec = {}
@@ -436,11 +529,13 @@ def main():
         epilog=_LEGEND,
     )
     ap.add_argument("symbol", help="mangled symbol to diff, e.g. _Z13ResetPodStuffv")
-    ap.add_argument("-b", "--base-path", default="res/libTTapp.so",
-                    help="path to the base binary (default: res/libTTapp.so)")
-    ap.add_argument("-t", "--target-path", default="bazel-bin/src/libTTapp.so",
-                    help="path to the target binary "
-                         "(default: bazel-bin/src/libTTapp.so)")
+    ap.add_argument("-b", "--base-path",
+                    help="path to the original binary (default: res/libTTapp.so)")
+    ap.add_argument(
+        "-t",
+        "--target-path",
+        help="path to the current binary (default: target-config //src:libTTapp.so)",
+    )
     ap.add_argument("-C", "--context", type=int, default=4,
                     help="unchanged context lines around changes (default: 4)")
     ap.add_argument("--full", action="store_true",
@@ -448,8 +543,20 @@ def main():
     ap.add_argument("--no-color", action="store_true", help="disable ANSI colors")
     args = ap.parse_args()
 
+    try:
+        root = workspace_root()
+        base_path = user_path(args.base_path) if args.base_path else str(root / "res/libTTapp.so")
+        target_path = (
+            user_path(args.target_path)
+            if args.target_path
+            else default_target_path(root)
+        )
+    except RuntimeError as error:
+        sys.stderr.write(f"error: {error}\n")
+        return 2
+
     proc = subprocess.run(
-        ["objdiff-cli", "diff", "-o", "-", "-1", args.base_path, "-2", args.target_path, args.symbol],
+        ["objdiff-cli", "diff", "-o", "-", "-1", base_path, "-2", target_path, args.symbol],
         capture_output=True, text=True)
     if proc.returncode != 0:
         sys.stderr.write("objdiff-cli failed:\n" + proc.stderr + "\n")
@@ -485,8 +592,11 @@ def main():
 
     ins_lines, n_ins = render_function(
         lsym or {}, rsym or {}, color, args.context, full=args.full,
-        resolver=RoDataResolver(right), rightsyms=right["symbols"],
-        sym_map=base_sym_map(right))
+        left_resolver=RoDataResolver(left),
+        right_resolver=RoDataResolver(right),
+        leftsyms=left["symbols"], rightsyms=right["symbols"],
+        left_sym_map=function_sym_map(left),
+        right_sym_map=function_sym_map(right))
     data_lines, n_data = render_data(rsym or lsym, color)
 
     if not n_ins and not n_data:

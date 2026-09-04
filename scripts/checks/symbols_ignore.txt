@@ -1,4 +1,4 @@
-# Symbols intentionally not replicated by the build.
+# Symbols intentionally excluded by this directory's symbol-surface check.
 #
 # These are file-static (local) helper functions from statically-linked
 # third-party libraries that are baked into the original libTTapp.so, but are
@@ -6,6 +6,42 @@
 # the linked static libraries at link time:
 #   - libvorbis / libogg (floor0_/floor1_/vorbisfile/_ov_*/_fetch_* internals)
 #   - zlib implode/explode (make_code, make_leni)
+_Z10ov_bitrateP14OggVorbis_Filei
+_Z10ov_commentP14OggVorbis_Filei
+_Z10ov_streamsP14OggVorbis_File
+_Z11ov_crosslapP14OggVorbis_FileS0_
+_Z11ov_halfrateP14OggVorbis_Filei
+_Z11ov_pcm_seekP14OggVorbis_Filex
+_Z11ov_pcm_tellP14OggVorbis_File
+_Z11ov_raw_seekP14OggVorbis_Filex
+_Z11ov_raw_tellP14OggVorbis_File
+_Z11ov_seekableP14OggVorbis_File
+_Z12ov_pcm_totalP14OggVorbis_Filei
+_Z12ov_raw_totalP14OggVorbis_Filei
+_Z12ov_test_openP14OggVorbis_File
+_Z12ov_time_seekP14OggVorbis_Filed
+_Z12ov_time_tellP14OggVorbis_File
+_Z13ov_halfrate_pP14OggVorbis_File
+_Z13ov_read_floatP14OggVorbis_FilePPPfiPi
+_Z13ov_time_totalP14OggVorbis_Filei
+_Z14ov_read_filterP14OggVorbis_FilePciiiiPiPFvPPfllPvES5_
+_Z15ov_pcm_seek_lapP14OggVorbis_Filex
+_Z15ov_raw_seek_lapP14OggVorbis_Filex
+_Z15ov_serialnumberP14OggVorbis_Filei
+_Z16ov_pcm_seek_pageP14OggVorbis_Filex
+_Z16ov_time_seek_lapP14OggVorbis_Filed
+_Z17ov_open_callbacksPvP14OggVorbis_FilePKcl12ov_callbacks
+_Z17ov_test_callbacksPvP14OggVorbis_FilePKcl12ov_callbacks
+_Z17ov_time_seek_pageP14OggVorbis_Filed
+_Z18ov_bitrate_instantP14OggVorbis_File
+_Z20ov_pcm_seek_page_lapP14OggVorbis_Filex
+_Z21ov_time_seek_page_lapP14OggVorbis_Filed
+_Z7ov_infoP14OggVorbis_Filei
+_Z7ov_openP7__sFILEP14OggVorbis_FilePKcl
+_Z7ov_readP14OggVorbis_FilePciiiiPi
+_Z7ov_testP7__sFILEP14OggVorbis_FilePKcl
+_Z8ov_clearP14OggVorbis_File
+_Z8ov_fopenPKcP14OggVorbis_File
 _ZL10_01inverseP12vorbis_blockPvPPfiPFlP8codebookS2_P14oggpack_bufferiE
 _ZL11_encodepartP14oggpack_bufferPiiP8codebookPl
 _ZL11floor0_lookP16vorbis_dsp_statePv
@@ -157,3 +193,8 @@ _ZL35GizObstacle_SatisfyingTerrainChecksP13GIZOBSTACLE_sP12GameObject_s
 sprintf
 strstr
 rand
+
+# Compiler runtime and third-party libogg symbols supplied under a different
+# linkage surface by the reconstructed build.
+__umoddi3
+ogg_stream_flush_fill

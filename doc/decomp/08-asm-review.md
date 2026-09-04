@@ -1,7 +1,9 @@
 # 08 — Assembly review workflow
 
 Use the complete original and rebuilt shared objects for review. The repository
-does not require generated split objects or a generated objdiff project.
+does not require generated split objects or a generated objdiff project. The
+optional Pages report described in [03-matching.md](03-matching.md) summarizes
+the same whole-binary comparison.
 
 ## Prerequisites
 
@@ -19,17 +21,10 @@ directory on `PATH`, or use its absolute path.
 For one symbol and a compact classified diff:
 
 ```bash
-python3 scripts/objdiff-cli.py _Z5qrandv
+bazel run //scripts:objdiff_cli -- _Z5qrandv
 ```
 
-For a text disassembly diff without objdiff, install Python `capstone` and run:
-
-```bash
-python3 scripts/disasm_diff.py _Z5qrandv
-```
-
-Both helpers default to `res/libTTapp.so` and
-`bazel-bin/src/libTTapp.so`.
+The helper compares `res/libTTapp.so` with the target-config Bazel output.
 
 ## Raw symbol checks
 
@@ -46,7 +41,7 @@ studying instructions.
 To compare the complete symbol surface:
 
 ```bash
-python3 scripts/check_symbols.py --list
+bazel run //scripts/checks:check_symbols -- --list
 ```
 
 ## Raw disassembly
@@ -95,4 +90,4 @@ i686-linux-android-objdump -S \
 3. Run the compact diff.
 4. Apply the mismatch catalog in [07-diagnostics.md](07-diagnostics.md).
 5. Rebuild and repeat.
-6. Finish with `bazel test //scripts:checks`.
+6. Finish with `bazel test //scripts/checks:checks`.

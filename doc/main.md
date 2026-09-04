@@ -27,6 +27,11 @@ Start at [decomp/00-index.md](decomp/00-index.md).
 host utilities, including hidden framebuffer capture and dummy audio. These
 diagnostics do not replace original-binary evidence.
 
+## Matching report
+
+[pages/README.md](pages/README.md) documents the generated whole-binary
+matching data and the static GitHub Pages visualization.
+
 ## Codex skill
 
 Codex-compatible agents can load the repository-local `saga-decomp` skill from

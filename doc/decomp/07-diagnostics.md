@@ -7,8 +7,8 @@ Scope: diagnosing differences between `res/libTTapp.so` and the Bazel target
 
 ```bash
 bazel build --config=target //src:saga_target
-python3 scripts/objdiff-cli.py SYMBOL
-bazel test //scripts:checks
+bazel run //scripts:objdiff_cli -- SYMBOL
+bazel test //scripts/checks:checks
 ```
 
 For the affected source file, also confirm its effective optimization options:
@@ -88,7 +88,7 @@ Confirm exact mangling, C/C++ linkage, namespace/class ownership, constness,
 parameter signedness, and whether the function became local or inline. Use:
 
 ```bash
-python3 scripts/check_symbols.py --list
+bazel run //scripts/checks:check_symbols -- --list
 ```
 
 ### Extra symbol appears
@@ -119,4 +119,4 @@ the experiment narrow enough to answer one code-generation question.
 2. The affected symbol's diff improves or disappears.
 3. Its symbol name and linkage remain correct.
 4. The source file still has the intended optimization level.
-5. `bazel test //scripts:checks` passes.
+5. `bazel test //scripts/checks:checks` passes.
