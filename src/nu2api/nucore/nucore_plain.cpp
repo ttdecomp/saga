@@ -1975,11 +1975,7 @@ extern "C" {
     }
     void NuQFntPrintEx(void) {
     }
-    void NuQFntPrintLenU(void) {
-    }
     void NuQFntPrintLenV(void) {
-    }
-    void NuQFntPrintU(void) {
     }
     void NuQFntPrintV(void) {
     }
@@ -1994,8 +1990,6 @@ extern "C" {
     void NuQFntSetPrintMode(void) {
     }
     void NuQFntSetScale2d(void) {
-    }
-    void NuQFntUTF8toQCode(void) {
     }
     void NuQFntWrite(void) {
     }

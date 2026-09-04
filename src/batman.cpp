@@ -695,7 +695,7 @@ giz_freeplay:
                     NuWaterSpeed(0);
                 }
                 NuWaterReset();
-                GameTiming(world, (f32 *)&Game.field30_0x7c2c);
+                GameTiming(world, &Game.field30_0x7c2c);
                 UpdateStats();
                 GameDisplaySettings(&world->current_level->data_display, (i32 *)&back_rgba);
 

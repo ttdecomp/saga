@@ -157,17 +157,20 @@ static void StoreCharacterAnimations(CHARACTERDATA &character, CHARACTERANIM_s *
     permbuffer_ptr.addr = allocation_end;
 }
 
-static void CharConfig(i32 character_id, NUFPAR *parser, i32 permanent) {
-    CHARACTERDATA &character = CDataList[character_id];
-    GAMECHARACTERDATA &game_character = GCDataList[character_id];
-
+struct CharacterConfigParseState {
     CHARACTERANIM_s animations[100];
     char animation_names[100][40];
-    i32 animation_count = 0;
-    bool bsa_default = false;
-    bool in_animation = false;
-    CHARACTERANIM_s animation = DefaultCharacterAnimation(false);
-    char animation_name[40] = {};
+    i32 animation_count;
+    bool bsa_default;
+    bool in_animation;
+    CHARACTERANIM_s animation;
+    char animation_name[40];
+};
+
+static void ParseCharacterConfig(i32 character_id, NUFPAR *parser, i32 permanent, const char *directory,
+                                 i32 include_depth, CharacterConfigParseState &state) {
+    CHARACTERDATA &character = CDataList[character_id];
+    GAMECHARACTERDATA &game_character = GCDataList[character_id];
 
     while (NuFParGetLine(parser) != 0) {
         if (NuFParGetWord(parser) == 0) {
@@ -179,62 +182,74 @@ static void CharConfig(i32 character_id, NUFPAR *parser, i32 permanent) {
             continue;
         }
         NuStrCpy(key, parser->word_buf);
-        if (in_animation) {
+        if (state.in_animation) {
             if (NuStrICmp(key, "action") == 0) {
                 if (NuFParGetWord(parser) != 0) {
-                    animation.animation_id = static_cast<i16>(ActionFromName(parser->word_buf));
+                    state.animation.animation_id = static_cast<i16>(ActionFromName(parser->word_buf));
                 }
             } else if (NuStrICmp(key, "blend_in") == 0) {
-                animation.blend_in_time = NuFParGetFloat(parser);
+                state.animation.blend_in_time = NuFParGetFloat(parser);
             } else if (NuStrICmp(key, "blend_out") == 0) {
-                animation.blend_out_time = NuFParGetFloat(parser);
+                state.animation.blend_out_time = NuFParGetFloat(parser);
             } else if (NuStrICmp(key, "fpsec") == 0) {
-                animation.playback_rate = NuFParGetFloat(parser);
+                state.animation.playback_rate = NuFParGetFloat(parser);
             } else if (NuStrICmp(key, "speed") == 0) {
-                animation.action_speed = NuFParGetFloat(parser);
+                state.animation.action_speed = NuFParGetFloat(parser);
             } else if (NuStrICmp(key, "frame") == 0 || NuStrICmp(key, "frame1") == 0) {
-                animation.event_frame_1 = NuFParGetFloat(parser);
+                state.animation.event_frame_1 = NuFParGetFloat(parser);
             } else if (NuStrICmp(key, "frame2") == 0) {
-                animation.event_frame_2 = NuFParGetFloat(parser);
+                state.animation.event_frame_2 = NuFParGetFloat(parser);
             } else if (NuStrICmp(key, "frame3") == 0) {
-                animation.event_frame_3 = NuFParGetFloat(parser);
+                state.animation.event_frame_3 = NuFParGetFloat(parser);
             } else if (NuStrICmp(key, "frame4") == 0) {
-                animation.event_frame_4 = NuFParGetFloat(parser);
+                state.animation.event_frame_4 = NuFParGetFloat(parser);
             } else if (NuStrICmp(key, "cycle") == 0) {
                 if (ReadOnOff(parser, true)) {
-                    animation.flags |= CHARACTER_ANIMATION_FLAG_CYCLING;
+                    state.animation.flags |= CHARACTER_ANIMATION_FLAG_CYCLING;
                 } else {
-                    animation.flags &= ~CHARACTER_ANIMATION_FLAG_CYCLING;
+                    state.animation.flags &= ~CHARACTER_ANIMATION_FLAG_CYCLING;
                 }
             } else if (NuStrICmp(key, "bsa") == 0) {
                 if (ReadOnOff(parser, true)) {
-                    animation.flags |= CHARACTER_ANIMATION_FLAG_BSA;
+                    state.animation.flags |= CHARACTER_ANIMATION_FLAG_BSA;
                 } else {
-                    animation.flags &= ~CHARACTER_ANIMATION_FLAG_BSA;
+                    state.animation.flags &= ~CHARACTER_ANIMATION_FLAG_BSA;
                 }
             } else if (NuStrICmp(key, "no_headturn") == 0 || NuStrICmp(key, "headturn_off") == 0) {
-                animation.flags |= CHARACTER_ANIMATION_FLAG_NO_HEAD_TURN;
+                state.animation.flags |= CHARACTER_ANIMATION_FLAG_NO_HEAD_TURN;
             } else if (NuStrICmp(key, "footsteps") == 0) {
-                animation.flags |= CHARACTER_ANIMATION_FLAG_FOOTSTEPS;
+                state.animation.flags |= CHARACTER_ANIMATION_FLAG_FOOTSTEPS;
             } else if (NuStrICmp(key, "anim_end") == 0) {
-                if (animation.animation_id != -1 && animation_count < 100) {
-                    animations[animation_count] = animation;
-                    NuStrCpy(animation_names[animation_count], animation_name);
-                    ++animation_count;
+                if (state.animation.animation_id != -1 && state.animation_count < 100) {
+                    state.animations[state.animation_count] = state.animation;
+                    NuStrCpy(state.animation_names[state.animation_count], state.animation_name);
+                    ++state.animation_count;
                 }
-                in_animation = false;
+                state.in_animation = false;
             }
             continue;
         }
 
-        if (NuStrICmp(key, "anim_start") == 0) {
+        if (NuStrICmp(key, "txt_file") == 0) {
+            if (include_depth < 8 && NuFParGetWord(parser) != 0 && NuStrLen(parser->word_buf) < 128) {
+                char path[256];
+                snprintf(path, sizeof(path), "chars\\%s\\%s.txt", directory, parser->word_buf);
+                NUFPAR *included_parser = NuFParCreate(path);
+                if (included_parser != NULL) {
+                    included_parser->separator_list = const_cast<char *>("=");
+                    ParseCharacterConfig(character_id, included_parser, permanent, directory, include_depth + 1,
+                                         state);
+                    NuFParDestroy(included_parser);
+                }
+            }
+        } else if (NuStrICmp(key, "anim_start") == 0) {
             if (NuFParGetWord(parser) != 0 && NuStrLen(parser->word_buf) < 40) {
-                NuStrCpy(animation_name, parser->word_buf);
-                animation = DefaultCharacterAnimation(bsa_default);
-                in_animation = true;
+                NuStrCpy(state.animation_name, parser->word_buf);
+                state.animation = DefaultCharacterAnimation(state.bsa_default);
+                state.in_animation = true;
             }
         } else if (NuStrICmp(key, "bsa_default") == 0) {
-            bsa_default = ReadOnOff(parser, bsa_default);
+            state.bsa_default = ReadOnOff(parser, state.bsa_default);
         } else if (NuStrICmp(key, "jedi") == 0) {
             if (ReadOnOff(parser, true)) {
                 character.model_flags |= CHARACTER_MODEL_FLAG_JEDI;
@@ -286,6 +301,15 @@ static void CharConfig(i32 character_id, NUFPAR *parser, i32 permanent) {
             ConfigureCharacterLayers(game_character, parser);
         }
     }
+}
+
+static void CharConfig(i32 character_id, NUFPAR *parser, i32 permanent, const char *directory) {
+    CHARACTERDATA &character = CDataList[character_id];
+    GAMECHARACTERDATA &game_character = GCDataList[character_id];
+
+    CharacterConfigParseState state = {};
+    state.animation = DefaultCharacterAnimation(false);
+    ParseCharacterConfig(character_id, parser, permanent, directory, 0, state);
 
     character.model_flags |= CHARACTER_MODEL_FLAG_CONFIGURED;
     CharConfig_CalculateJumpStats(game_character.jump_speed, game_character.gravity, &game_character.jump_duration,
@@ -293,7 +317,7 @@ static void CharConfig(i32 character_id, NUFPAR *parser, i32 permanent) {
     CharConfig_CalculateJumpStats(game_character.second_jump_speed, game_character.gravity,
                                   &game_character.second_jump_duration, &game_character.second_jump_height);
     if (permanent != 0) {
-        StoreCharacterAnimations(character, animations, animation_names, animation_count);
+        StoreCharacterAnimations(character, state.animations, state.animation_names, state.animation_count);
     }
 }
 
@@ -316,7 +340,7 @@ void CharConfig_ConfigureAll(i32 permanent, nufpcomjmp_s *) {
         }
 
         parser->separator_list = const_cast<char *>("=");
-        CharConfig(character_id, parser, permanent);
+        CharConfig(character_id, parser, permanent, character.dir);
         NuFParDestroy(parser);
     }
 }

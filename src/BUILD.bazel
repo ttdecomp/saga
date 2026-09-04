@@ -50,7 +50,7 @@ _HOST_COMMON_SRCS = [source for source in _ENGINE_SRCS if source not in _HOST_EX
     "host/platform/runtime.cpp",
 ]
 
-_NATIVE_PLATFORM_SRCS = select({
+_NATIVE_PLATFORM_SRCS = ["host/platform/native_render_device.cpp"] + select({
     "//bazel/platforms:linux": [
         "host/platform/linux/runtime.cpp",
         "host/platform/posix/compressed_texture.cpp",

@@ -305,7 +305,7 @@ void NuRenderDevice::OnWindowCreated(ANativeWindow *window) {
 // EGL config selection + backbuffer sizing
 // ---------------------------------------------------------------------------
 
-EGLConfig NuRenderDevice::SelectEGLConfig() {
+EGLConfig __attribute__((weak)) NuRenderDevice::SelectEGLConfig() {
     // Preferred EGL config: 565 colour, 24-bit depth, GLES2 conformant,
     // pbuffer + window capable.
     static const EGLint kPreferredAttribs[] = {

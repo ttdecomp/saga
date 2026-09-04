@@ -177,7 +177,7 @@ struct GAMESAVE_s {
     u32 coins;
     u16 completion;
     u8 field_0x7c26[6];
-    u32 field30_0x7c2c;
+    f32 field30_0x7c2c;
     CUSTOMISESAVE customizer;
     u8 field_0x7c9f;
     MISSIONSAVE mission_save;

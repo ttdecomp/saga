@@ -106,8 +106,10 @@ extern "C" {
     void NuQFntMoveRS(RNDRSTREAM *stream, NUQFNT *font, f32 x, f32 y, f32 z);
     f32 NuQFntHeight(NUQFNT *font);
     f32 NuQFntPrintLenW(NUQFNT *font, u16 *text);
+    f32 NuQFntPrintLenU(NUQFNT *font, char *text);
     void NuQFntPrintCharW(NUQFNT *font, u16 *text, u32 flags);
     void NuQFntPrintRSW(RNDRSTREAM *stream, NUQFNT *font, u16 *text, u32 flags);
+    void NuQFntUTF8toQCode(NUQFNT *font, char *text, u16 *encoded);
 
     f32 NuQFntBaseline(NUQFNT *font);
     void NuQFntSet(NUQFNT *font);
@@ -115,6 +117,7 @@ extern "C" {
     void NuQFntSetScale(NUQFNT *font, f32 x_scale, f32 y_scale);
     void NuQFntMove(NUQFNT *font, f32 x, f32 y, f32 z);
     void NuQFntPrintW(NUQFNT *font, u16 *text);
+    void NuQFntPrintU(NUQFNT *font, char *text);
     void NuQFntPushPrintMode(u32 mode);
     void NuQFntPopPrintMode(void);
     void NuQFntSetSpaceWidth(NUQFNT *font, f32 width);

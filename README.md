@@ -1,4 +1,4 @@
-![Progress](https://img.shields.io/badge/matching-14.93%25-red)
+![Progress](https://img.shields.io/badge/matching-14.96%25-red)
 [![Discord](https://img.shields.io/discord/1467775700894224555?color=%235865F2&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/2HJuMtzA7q)
 
 [![Bazel build matrix](https://github.com/ttdecomp/saga/actions/workflows/build-bazel.yaml/badge.svg)](https://github.com/ttdecomp/saga/actions/workflows/build-bazel.yaml)

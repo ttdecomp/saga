@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 14.93415,
+    "fuzzy_match_percent": 14.964605,
     "total_code": "4722419",
     "matched_code": "36430",
     "matched_code_percent": 0.7714267,
@@ -46486,7 +46486,7 @@
           "address": 4626976,
           "offset": 3737008,
           "size": 1736,
-          "match_percent": 9.265356
+          "match_percent": 10.518428
         },
         {
           "name": "_Z21CanWearHatsInFreePlayi",
@@ -66863,7 +66863,7 @@
           "address": 4777072,
           "offset": 3887104,
           "size": 590,
-          "match_percent": 3.230769
+          "match_percent": 57.592308
         },
         {
           "name": "_Z27Text_ExpandAllButtonStringsPcS_",
@@ -78993,7 +78993,7 @@
           "address": 1213776,
           "offset": 323808,
           "size": 5414,
-          "match_percent": 15.322491
+          "match_percent": 18.148699
         },
         {
           "name": "_Z10FixUpAreasv",
@@ -83250,7 +83250,7 @@
           "address": 1761824,
           "offset": 871856,
           "size": 4330,
-          "match_percent": 8.864654
+          "match_percent": 20.778524
         },
         {
           "name": "_Z10Hub_InMenuv",
@@ -85690,12 +85690,28 @@
           "match_percent": null
         },
         {
+          "name": "NuQFntUTF8toQCode",
+          "demangled_name": "NuQFntUTF8toQCode",
+          "address": 2924448,
+          "offset": 2034480,
+          "size": 156,
+          "match_percent": 41.245613
+        },
+        {
           "name": "NuQFntPrintLenW",
           "demangled_name": "NuQFntPrintLenW",
           "address": 2924608,
           "offset": 2034640,
           "size": 316,
           "match_percent": 42.829544
+        },
+        {
+          "name": "NuQFntPrintLenU",
+          "demangled_name": "NuQFntPrintLenU",
+          "address": 2924928,
+          "offset": 2034960,
+          "size": 335,
+          "match_percent": 76.358696
         },
         {
           "name": "NuQFntHeight",
@@ -85840,6 +85856,14 @@
           "offset": 2223920,
           "size": 50,
           "match_percent": 99.92857
+        },
+        {
+          "name": "NuQFntPrintU",
+          "demangled_name": "NuQFntPrintU",
+          "address": 3113952,
+          "offset": 2223984,
+          "size": 158,
+          "match_percent": 99.91428
         },
         {
           "name": "NuQFntPrintW",
@@ -95895,22 +95919,6 @@
           "match_percent": 9.130435
         },
         {
-          "name": "NuQFntUTF8toQCode",
-          "demangled_name": "NuQFntUTF8toQCode",
-          "address": 2924448,
-          "offset": 2034480,
-          "size": 156,
-          "match_percent": 9.473684
-        },
-        {
-          "name": "NuQFntPrintLenU",
-          "demangled_name": "NuQFntPrintLenU",
-          "address": 2924928,
-          "offset": 2034960,
-          "size": 335,
-          "match_percent": 5.217391
-        },
-        {
           "name": "NuQFntPrintLenV",
           "demangled_name": "NuQFntPrintLenV",
           "address": 2926112,
@@ -97509,14 +97517,6 @@
           "offset": 2212400,
           "size": 1122,
           "match_percent": 53.963577
-        },
-        {
-          "name": "NuQFntPrintU",
-          "demangled_name": "NuQFntPrintU",
-          "address": 3113952,
-          "offset": 2223984,
-          "size": 158,
-          "match_percent": 12.0
         },
         {
           "name": "NuQFntPrint3DU",
