@@ -219,20 +219,12 @@ jobs:
           BAZEL_SH: "${{ steps.msys2.outputs.msys2-location }}/usr/bin/bash.exe"
           MSYS2_ARG_CONV_EXCL: "*"
           PKG_CONFIG_PATH: /mingw64/lib/pkgconfig
-        run: bazel build --config=native --compiler=mingw-gcc //src:saga_native
+        run: bazel build --config=native --config=windows-mingw //src:saga_native
 
   native-macos:
-    name: Native / macOS ${{ matrix.architecture }}
+    name: Native / macOS Apple Silicon
     needs: checks
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runner: macos-15-intel
-            architecture: Intel
-          - runner: macos-15
-            architecture: Apple Silicon
-    runs-on: ${{ matrix.runner }}
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
 
@@ -251,8 +243,7 @@ jobs:
         uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
-          disk-cache: >-
-            bazel-${{ github.workflow }}-native-macos-${{ matrix.architecture }}
+          disk-cache: bazel-${{ github.workflow }}-native-macos
           repository-cache: true
           external-cache: true
           cache-save: ${{ github.event_name != 'pull_request' }}

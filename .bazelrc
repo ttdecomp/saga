@@ -26,6 +26,12 @@ try-import %workspace%/bazel/android_per_file_copts.bazelrc
 build:native --config=saga-common
 build:native --define=SAGA_BUILD=native
 
+# Bazel 9's detected Windows toolchains auto-register MSVC only. This explicit
+# platform activates the MinGW toolchain supplied by rules_cc.
+build:windows-mingw --host_platform=//bazel/platforms:windows_mingw
+build:windows-mingw --platforms=//bazel/platforms:windows_mingw
+build:windows-mingw --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows_mingw
+
 build:wasm --config=saga-common
 build:wasm --define=SAGA_BUILD=wasm
 

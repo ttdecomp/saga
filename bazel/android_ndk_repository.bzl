@@ -50,7 +50,7 @@ cc_toolchain(
     linker_files = ":toolchain_files",
     objcopy_files = ":toolchain_files",
     strip_files = ":toolchain_files",
-    supports_param_files = 0,
+    supports_param_files = 1,
     toolchain_config = ":config",
 )
 

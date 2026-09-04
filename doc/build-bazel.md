@@ -10,7 +10,8 @@ Python installation is required for Bazel targets.
 | Build | Command | Output | Supported build hosts |
 |---|---|---|---|
 | Target (Android x86) | `bazel build --config=target //src:saga_target` | `bazel-bin/src/libTTapp.so` | Linux x86-64, Windows x86-64, macOS Intel |
-| Native | `bazel build --config=native //src:saga_native` | `bazel-bin/src/saga_native` (`.exe` on Windows) | Linux, Windows, macOS 15 Intel and Apple Silicon |
+| Native | `bazel build --config=native //src:saga_native` | `bazel-bin/src/saga_native` (`.exe` on Windows) | Linux, macOS Apple Silicon |
+| Native (Windows) | `bazel build --config=native --config=windows-mingw //src:saga_native` | `bazel-bin/src/saga_native.exe` | Windows MINGW64 |
 | WASM | `bazel build --config=wasm //src:saga_wasm` | `bazel-bin/src/saga.html`, `.js`, and `.wasm` | Any host supported by emsdk 6.0.8 |
 
 The legacy Android NDK r8e contains x86-64 host tools only. On Apple Silicon,
@@ -29,7 +30,8 @@ set `SAGA_NDK_R8E` to its absolute path. Ogg 1.2.1, Vorbis 1.3.2, and Squish
 
 The native build uses pkg-config for SDL3, Vorbis/Vorbisfile, and EGL/GLES2
 (ANGLE on Windows). Windows uses the MSYS2 MINGW64 environment and Bazel's
-`mingw-gcc` toolchain. Squish 1.10 is built hermetically. Install 32-bit
+MinGW toolchain; `--config=windows-mingw` selects it instead of the MSVC
+toolchain Bazel registers by default. Squish 1.10 is built hermetically. Install 32-bit
 variants of the Linux libraries because the Linux host intentionally remains
 i686. CI uses an Ubuntu 26.04 container, whose repositories provide SDL3 for
 i386.
@@ -46,8 +48,8 @@ The WebAssembly build is hermetic after repository download. It uses emsdk
   for SAGA, GNU libstdc++ headers for Squish, and disabled function/data
   sections.
 - Linux host keeps `-m32 -march=i686 -msse2`, ASan, and UBSan. The Windows
-  host retains exported executable symbols. Windows and Intel macOS keep
-  SSE2, while Apple Silicon remains native. Android builds driven from
+  host retains exported executable symbols and SSE2, while Apple Silicon
+  remains native. Android builds driven from
   Windows retain the former static GCC/libstdc++ runtime flags.
 - Android per-file `-O1`, `-O2`, `-O3`, and `-fPIE` assignments live in
   `bazel/android_per_file_copts.bazelrc`.

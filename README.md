@@ -42,6 +42,9 @@ bazel build --config=target //src:saga_target
 # native executable
 bazel build --config=native //src:saga_native
 
+# native executable on Windows (from an MSYS2 MINGW64 shell)
+bazel build --config=native --config=windows-mingw //src:saga_native
+
 # WebAssembly host
 bazel build --config=wasm //src:saga_wasm
 

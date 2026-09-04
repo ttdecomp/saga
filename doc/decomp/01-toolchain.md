@@ -124,6 +124,9 @@ The source archives and overlay BUILD files live in `MODULE.bazel` and
 
 ```bash
 bazel build --config=native //src:saga_native
+
+# Windows, from an MSYS2 MINGW64 shell
+bazel build --config=native --config=windows-mingw //src:saga_native
 ```
 
 Native builds use the platform compiler and system SDL3, Vorbis, EGL/GLES2 (or
@@ -132,7 +135,7 @@ and `ANDROID` and include `src/host/harness/` and `src/host/platform/`.
 
 - Linux remains i686 with `-m32 -march=i686 -msse2`, ASan, and UBSan.
 - Windows uses MINGW64 and exports executable symbols.
-- Intel macOS uses SSE2; Apple Silicon remains native ARM64.
+- macOS remains native Apple Silicon/ARM64.
 - Native builds do not inherit the target's per-file optimization map.
 
 The native executable is a diagnostic environment, not a matching artifact.

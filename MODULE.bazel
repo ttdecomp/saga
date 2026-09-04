@@ -8,6 +8,11 @@ bazel_dep(name = "emsdk", version = "6.0.8")
 bazel_dep(name = "rules_cc", version = "0.2.22")
 bazel_dep(name = "rules_python", version = "1.8.4")
 
+# Expose rules_cc's detected host toolchain repository so Windows can opt into
+# its MinGW toolchain. Bazel otherwise auto-registers only MSVC on Windows.
+cc_configure = use_extension("@rules_cc//cc:extensions.bzl", "cc_configure_extension")
+use_repo(cc_configure, "local_config_cc")
+
 # Python-based checks and tools use this downloaded runtime on every host.
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 python.toolchain(python_version = "3.12.12")

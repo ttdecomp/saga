@@ -1,6 +1,7 @@
 load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:objc_library.bzl", "objc_library")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -42,10 +43,7 @@ _HOST_SRCS = [source for source in _ENGINE_SRCS if source not in _HOST_EXCLUDES]
     "host/platform/free_camera_culling.cpp",
     "host/platform/input.cpp",
     "host/platform/opensl.cpp",
-] + select({
-    "//bazel/platforms:macos": ["host/platform/cocoa.mm"],
-    "//conditions:default": [],
-})
+]
 
 _PUBLIC_HEADERS = glob(
     [
@@ -126,10 +124,22 @@ _HOST_PLATFORM_COPTS = select({
 
 _HOST_PLATFORM_DEPS = select({
     "//bazel/platforms:linux": ["@system_host_deps_linux//:host_deps"],
-    "//bazel/platforms:macos": ["@system_host_deps_macos//:host_deps"],
+    "//bazel/platforms:macos": [
+        ":saga_macos_platform",
+        "@system_host_deps_macos//:host_deps",
+    ],
     "//bazel/platforms:windows": ["@system_host_deps_windows//:host_deps"],
     "//conditions:default": [],
 }) + ["@libsquish//:squish"]
+
+objc_library(
+    name = "saga_macos_platform",
+    srcs = ["host/platform/cocoa.mm"],
+    hdrs = ["host/platform/cocoa.hpp"],
+    includes = ["."],
+    target_compatible_with = ["@platforms//os:macos"],
+    deps = ["@system_host_deps_macos//:host_deps"],
+)
 
 cc_library(
     name = "saga_native_objects",

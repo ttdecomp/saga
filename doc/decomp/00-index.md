@@ -9,7 +9,8 @@ original `res/libTTapp.so`.
 | mode | purpose | command |
 |---|---|---|
 | target | matching Android x86 shared object | `bazel build --config=target //src:saga_target` |
-| native | Linux/Windows/macOS diagnostic executable | `bazel build --config=native //src:saga_native` |
+| native | Linux/macOS diagnostic executable | `bazel build --config=native //src:saga_native` |
+| native | Windows diagnostic executable | `bazel build --config=native --config=windows-mingw //src:saga_native` |
 | wasm | browser diagnostic executable | `bazel build --config=wasm //src:saga_wasm` |
 
 The target is `bazel-bin/src/libTTapp.so` and deliberately has no `main`.
