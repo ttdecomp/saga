@@ -27,5 +27,8 @@ cc_library(
         ".",
         "include",
     ],
-    textual_hdrs = [":crctable_h"],
+    textual_hdrs = [":crctable_h"] + glob(
+        ["src/crctable.h"],
+        allow_empty = True,
+    ),
 )
