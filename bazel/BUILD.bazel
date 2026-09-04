@@ -1,6 +1,7 @@
 exports_files([
     "android_cc_toolchain_config.bzl",
     "android_ndk_repository.bzl",
+    "saga_components.bzl",
     "system_deps.bzl",
 ])
 

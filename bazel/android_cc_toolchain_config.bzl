@@ -25,6 +25,10 @@ def _android_cc_toolchain_config_impl(ctx):
     ]
     features = [
         feature(
+            name = "archive_param_file",
+            enabled = True,
+        ),
+        feature(
             name = "force_c_language",
             enabled = True,
             flag_sets = [

@@ -2,6 +2,7 @@ load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:objc_library.bzl", "objc_library")
+load("//bazel:saga_components.bzl", "saga_component_libraries")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -16,11 +17,13 @@ _ENGINE_DIRS = [
     "nu2api",
 ]
 
-_ENGINE_SRCS = [
+_ENGINE_ROOT_SRCS = [
     "batman.cpp",
     "globals.cpp",
     "java/jni_stub.cpp",
-] + glob(
+]
+
+_ENGINE_SRCS = _ENGINE_ROOT_SRCS + glob(
     [directory + "/**/*.c" for directory in _ENGINE_DIRS] +
     [directory + "/**/*.cpp" for directory in _ENGINE_DIRS],
     allow_empty = True,
@@ -69,26 +72,31 @@ filegroup(
     ),
 )
 
-cc_library(
-    name = "saga_target_objects",
-    srcs = _ENGINE_SRCS,
-    hdrs = _PUBLIC_HEADERS,
+_TARGET_COMPONENTS = saga_component_libraries(
+    engine_dirs = _ENGINE_DIRS,
+    headers = _PUBLIC_HEADERS,
+    name_prefix = "saga_target",
+    root_sources = _ENGINE_ROOT_SRCS,
+    sources = _ENGINE_SRCS,
     copts = [
         "-fno-data-sections",
         "-fno-function-sections",
     ],
     defines = ["ANDROID"],
-    includes = ["."],
-    local_defines = ["__FILENAME__=__FILE__"],
     target_compatible_with = ["@platforms//os:android"],
-    textual_hdrs = _TEXTUAL_HEADERS,
+    textual_headers = _TEXTUAL_HEADERS,
     deps = [
         "@libogg//:ogg",
         "@libsquish//:squish",
         "@libvorbis//:vorbis",
         "@libvorbis//:vorbisfile",
     ],
-    alwayslink = True,
+)
+
+cc_library(
+    name = "saga_target_objects",
+    target_compatible_with = ["@platforms//os:android"],
+    deps = _TARGET_COMPONENTS,
 )
 
 cc_binary(
@@ -141,21 +149,24 @@ objc_library(
     deps = ["@system_host_deps_macos//:host_deps"],
 )
 
-cc_library(
-    name = "saga_native_objects",
-    srcs = _HOST_SRCS,
-    hdrs = _PUBLIC_HEADERS,
+_NATIVE_COMPONENTS = saga_component_libraries(
+    engine_dirs = _ENGINE_DIRS,
+    headers = _PUBLIC_HEADERS,
+    name_prefix = "saga_native",
+    root_sources = _ENGINE_ROOT_SRCS,
+    sources = _HOST_SRCS,
     copts = ["-fno-stack-protector"] + _HOST_PLATFORM_COPTS,
     defines = [
         "ANDROID",
         "HOST_BUILD",
     ],
-    includes = ["."],
-    linkstatic = True,
-    local_defines = ["__FILENAME__=__FILE__"],
-    textual_hdrs = _TEXTUAL_HEADERS,
     deps = _HOST_PLATFORM_DEPS,
-    alwayslink = True,
+    textual_headers = _TEXTUAL_HEADERS,
+)
+
+cc_library(
+    name = "saga_native_objects",
+    deps = _NATIVE_COMPONENTS,
 )
 
 cc_binary(
