@@ -1,0 +1,10 @@
+exports_files([
+    "emsdk-cache-pkgconfig.patch",
+    "emscripten-sdl3-3.4.10.patch",
+    "ogg-config-types.patch",
+    "ogg.BUILD.bazel",
+    "ogg_crc_table.bzl",
+    "squish.BUILD.bazel",
+    "vorbis.BUILD.bazel",
+    "vorbis_wasm.BUILD.bazel",
+])

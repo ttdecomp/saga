@@ -26,11 +26,6 @@ char uberShader2[] = {
 // Trailer videos played after the intro.
 char *Trailer[3] = {"demointro", "", NULL};
 
-SAGA_NOMATCH __attribute__((weak)) i32 main(i32 argc, char **argv) {
-    UNIMPLEMENTED();
-    return 0;
-}
-
 extern "C" i32 NuMain(i32 argc, char **argv) {
     static i32 frameCount = 0;
     static f32 pastFrameTimes[8] = {-1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f, -1.0f};

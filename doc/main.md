@@ -4,8 +4,14 @@
 
 [source-structure.md](source-structure.md) explains the original filename
 evidence, current source hierarchy, generated TU mapping, and per-file `-O`
-contract. Start there before moving any file or function. `objdiff.json` and
-`build/compile_commands.json` are the live mapping/count authorities.
+contract. Start there before moving any file or function. `objdiff.json`,
+`src/BUILD.bazel`, and `bazel/android_per_file_copts.bazelrc` are the live
+mapping and build authorities.
+
+## Building
+
+[build-bazel.md](build-bazel.md) documents Android x86, native host, and
+WebAssembly builds, including prerequisites and output locations.
 
 ## Decompiling with GCC 4.7 (knowledge base)
 

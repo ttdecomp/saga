@@ -21,7 +21,7 @@ baseline bumped. Disable with --no-baseline, or override with --baseline-extra.
 Usage:
     python3 scripts/check_symbols.py [BUILD_BIN] [ORIG_BIN] [--ignore FILE]
 Defaults:
-    BUILD_BIN = build/saga
+    BUILD_BIN = bazel-bin/src/libTTapp.so
     ORIG_BIN  = res/libTTapp.so
     --ignore  = scripts/symbols_ignore.txt   (one mangled symbol per line;
                blank lines and '#' comments ignored)
@@ -118,7 +118,11 @@ def load_ignore(path):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("build", nargs="?", default=os.path.join(ROOT, "build/saga"))
+    ap.add_argument(
+        "build",
+        nargs="?",
+        default=os.path.join(ROOT, "bazel-bin/src/libTTapp.so"),
+    )
     ap.add_argument("orig", nargs="?", default=os.path.join(ROOT, "res/libTTapp.so"))
     ap.add_argument(
         "--ignore", default=os.path.join(ROOT, "scripts/symbols_ignore.txt")

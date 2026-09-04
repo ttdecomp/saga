@@ -35,7 +35,7 @@ def main() -> int:
         text = path.read_text(encoding="utf-8", errors="replace")
         if not is_under(path, HOST_ROOTS) and HOST_INCLUDE.search(text):
             errors.append(f"{path.relative_to(ROOT)} includes host-only code")
-        if "HOST_BUILD" in text and path not in HOST_BUILD_ALLOWLIST and path != SRC / "host.cmake":
+        if "HOST_BUILD" in text and path not in HOST_BUILD_ALLOWLIST:
             errors.append(f"{path.relative_to(ROOT)} contains a behavioral HOST_BUILD fork")
 
     if errors:

@@ -768,7 +768,7 @@ void NuIOSDLGeomCallback(void *arg) {
                 }
                 glBindBuffer(GL_ARRAY_BUFFER, immediate_vertex_buffer);
                 glBufferData(GL_ARRAY_BUFFER, geom->vertex_stride * geom->vertex_count,
-                             u32ToPtr(geom->vertex_buffer + geom->vertex_stride * geom->base_vertex), GL_STREAM_DRAW);
+                             usizeToPtr(geom->vertex_buffer + geom->vertex_stride * geom->base_vertex), GL_STREAM_DRAW);
                 NuIOS_BindVertexAttributes(0, 0);
 #else
                 NuIOS_BindVertexAttributesImmediate(0, geom->vertex_buffer + geom->vertex_stride * geom->base_vertex);

@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Build the WebAssembly host with Bazel"
+set -euo pipefail
+
+bazel build --config=wasm //src:saga_wasm

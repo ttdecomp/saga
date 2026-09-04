@@ -270,7 +270,7 @@ def check_duplicate_symbols(build_dir, nm):
     objects = []
     for dirpath, _dirnames, filenames in os.walk(build_dir):
         # Skip the reference split objects, third-party external test builds,
-        # and CMake's compiler-id probe objects (not part of any real target).
+        # and compiler-id probe objects (not part of any real target).
         if os.sep + "split" + os.sep in dirpath + os.sep:
             continue
         if os.sep + "external" + os.sep in dirpath + os.sep:

@@ -6,7 +6,7 @@ import { Readable } from "node:stream";
 
 const host = "127.0.0.1";
 const port = 8000;
-const root = resolve("build-wasm");
+const root = resolve("bazel-bin/src");
 const contentTypes = new Map([
   [".css", "text/css; charset=utf-8"],
   [".html", "text/html; charset=utf-8"],
@@ -88,7 +88,7 @@ async function serveFile(request, response, url) {
     return;
   }
   if (pathname === "/") {
-    pathname = "/index.html";
+    pathname = "/saga.html";
   }
 
   const path = resolve(root, `.${pathname}`);

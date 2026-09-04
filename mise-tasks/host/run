@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 #MISE description="Build and run the native host"
-#MISE depends=["host:build"]
+#MISE depends=["bazel:host"]
 #MISE raw_args=true
 set -euo pipefail
 
-if [[ -x build-host/saga.exe ]]; then
-    exec build-host/saga.exe "$@"
+if [[ -x bazel-bin/src/saga_host.exe ]]; then
+    exec bazel-bin/src/saga_host.exe "$@"
 fi
-exec build-host/saga "$@"
+exec bazel-bin/src/saga_host "$@"

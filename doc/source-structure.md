@@ -18,7 +18,7 @@ Snapshot checked on 2026-08-29:
 
 These counts describe the current generated files and will change as the tree
 is reorganized. Recompute them with the recipes below rather than updating
-code or CMake merely to make the table agree.
+code or build configuration merely to make the table agree.
 
 ## Ground truth and its limits
 
@@ -79,8 +79,8 @@ their current equivalents include `src/legoapi/core/input/qrand.cpp` and
 
 ## Per-file optimization is part of the ABI contract
 
-Optimization is assigned per source file in `src/target.cmake`. The effective
-command is recorded in `build/compile_commands.json`; that JSON is the final
+Optimization is assigned per source file in
+`bazel/android_per_file_copts.bazelrc`. A Bazel action query is the final
 authority for an existing build.
 
 Moving a function between files can change its optimization level and code
@@ -88,21 +88,13 @@ generation even when its source is unchanged. Before moving code, compare the
 source and destination commands.
 
 ```bash
-# Count current target commands.
-jq 'length' build/compile_commands.json
+# Show compile actions and their effective arguments.
+bazel aquery --config=android-x86 \
+  'mnemonic("CppCompile", //src:saga_android_x86)' --include_commandline
 
-# Show the effective command for a path or basename.
-jq -r --arg needle 'qrand.cpp' \
-  '.[] | select(.file | contains($needle)) | .command' \
-  build/compile_commands.json
-
-# Recompute the current optimization distribution.
-jq -r '.[].command' build/compile_commands.json \
-  | awk '/-O3/{o3++; next} /-O2/{o2++; next} {o0++}
-         END {print "-O0", o0, "-O2", o2, "-O3", o3}'
-
-# Review declared overrides.
-rg -n 'COMPILE_OPTIONS' src/target.cmake
+# Review and validate declared overrides.
+rg -n -- '--per_file_copt' bazel/android_per_file_copts.bazelrc
+bazel test //scripts:check_bazel_optimization_map
 ```
 
 Absence of an `-O` flag means `-O0`. `src/legoapi/core/config/cheat.cpp` is

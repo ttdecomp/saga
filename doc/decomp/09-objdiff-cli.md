@@ -17,21 +17,21 @@ reviewing or fixing a single function against the original. The human-facing
 
 ## What it does
 
-It shells out to `objdiff-cli diff -p . <symbol> -o -`, keeps **only the
-instructions where the recompiled code and the original diverge**, and prints
-them aligned, with context, colours, and trailing `#` hints (string / float
-constants, named `.LC` rodata refs, resolved jump/call targets such as
-`-> 4e12c0 <_Z17Cheats_CheckFlagsj>`). A `referenced data (base)` list is
-appended when the symbol touches data, so you can see what the current build
-points at without decoding addresses by hand.
+It shells out to `objdiff-cli diff -1 res/libTTapp.so -2
+bazel-bin/src/libTTapp.so <symbol> -o -`, keeps **only the instructions where
+the recompiled code and the original diverge**, and prints them aligned, with
+context, colours, and trailing `#` hints (string / float constants, named
+`.LC` rodata refs, resolved jump/call targets such as `-> 4e12c0
+<_Z17Cheats_CheckFlagsj>`). Resolved rodata values appear inline at the end of
+the referencing line, on changed and context lines alike.
 
 The two sides are objdiff's fixed order (target on the left, base on the
-right), and the direction is **verified from the object files**, not guessed:
+right); the explicit `-1` and `-2` paths fix the direction:
 
 | | side | source | meaning |
 |---|---|---|---|
-| left  | **target** | `build/split` (carved from `res/libTTapp.so`) | the ORIGINAL, our goal |
-| right | **base**   | `build/CMakeFiles` (our `src/` compiled)      | the CURRENT code |
+| left  | **target** | `res/libTTapp.so` | the ORIGINAL, our goal |
+| right | **base**   | `bazel-bin/src/libTTapp.so` | the CURRENT code |
 
 Marker letters are counterintuitive — they name *which side* a line comes
 from, then you act:
@@ -53,9 +53,8 @@ A symbol that is essentially matched (objdiff ≥ 99.999 %) prints a short
 ## Usage
 
 ```bash
-# prerequisite: build + carve the original
-cmake -B build . && cmake --build build
-./gonk/target/release/gonk split          # (or the pre-commit hook / CI)
+# prerequisite: build the matching Android x86 shared object
+bazel build --config=android-x86 //src:saga_android_x86
 
 python scripts/objdiff-cli.py SYMBOL
 ```
@@ -65,7 +64,8 @@ Arguments (see also `--help`, which carries the full legend):
 | flag | effect |
 |---|---|
 | `SYMBOL` | mangled symbol to diff, e.g. `_Z13ResetPodStuffv` |
-| `-p DIR` / `--project DIR` | project dir passed through to `objdiff-cli` (default `.`) |
+| `-b FILE` / `--base-path FILE` | original binary (default `res/libTTapp.so`) |
+| `-t FILE` / `--target-path FILE` | current build (default `bazel-bin/src/libTTapp.so`) |
 | `-C N` / `--context N` | unchanged context lines shown around each change (default 4) |
 | `--full` | print the entire base instruction listing, no `..` collapsing |
 | `--no-color` | disable ANSI colours |

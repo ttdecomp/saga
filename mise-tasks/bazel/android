@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#MISE description="Build the matching Android x86 target with Bazel"
+set -euo pipefail
+
+bazel build --config=android-x86 //src:saga_android_x86

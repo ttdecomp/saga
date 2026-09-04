@@ -31,3 +31,4 @@ opencode.jsonc
 .work/
 .host_scratch/
 *.ppm
+/bazel-*

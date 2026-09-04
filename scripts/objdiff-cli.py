@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
 """Dense, AI-ready per-symbol diff from ``objdiff-cli diff``.
 
-Runs ``objdiff-cli diff -p . <symbol> -o -`` (megabytes of noisy JSON: sections,
-label-only symbols, full opcode/operand detail), keeps only the instructions
-where the two sides diverge, and prints them aligned with context hints.
+Runs ``objdiff-cli diff -1 res/libTTapp.so -2 bazel-bin/src/libTTapp.so
+<symbol> -o -`` (megabytes of noisy JSON: sections, label-only symbols, full
+opcode/operand detail), keeps only the instructions where the two sides
+diverge, and prints them aligned with context hints.
 
 There are exactly two sides, in objdiff's fixed order (target on the left, base
 on the right, exactly as shown in the objdiff GUI):
 
-  left  == target == the ORIGINAL - where we want to end up, the goal. In this
-                     project these are the per-function 'build/split' objects.
-  right == base   == the CURRENT - our own src/ as it compiles right now (the
-                     full 'build/CMakeFiles' build).
+  left  == target == the ORIGINAL - ``res/libTTapp.so``, our goal.
+  right == base   == the CURRENT - ``bazel-bin/src/libTTapp.so``, compiled
+                     from our current ``src/`` tree.
 
-Direction is verified from the object files, not guessed: left bytes match
-'build/split' (target), right bytes match 'build/CMakeFiles' (base); and src/
-is the current code that base_path builds. Hint attribution follows:
+The explicit ``-1``/``-2`` paths fix this direction. Hint attribution follows:
 
   the '-' and '~' lines come from the TARGET (the original/goal).
   the '+' and '>' lines come from the BASE  (our current code).
@@ -25,7 +23,8 @@ instructions you are missing) must be ADDED to your code, and '+' (extra
 instructions your current build emits) must be REMOVED. Note the diff glyphs
 are counterintuitive: a '-' does NOT mean "delete from your code".
 
-Usage:  python scripts/objdiff-cli.py SYMBOL  [-p DIR] [-C N] [--full] [--no-color]
+Usage:  python scripts/objdiff-cli.py SYMBOL [-b FILE] [-t FILE] [-C N]
+                                          [--full] [--no-color]
 """
 import argparse
 import base64
@@ -38,12 +37,11 @@ import sys
 #: Canonical legend, shared verbatim by the module docstring and the --help text.
 _LEGEND = """\
 Two sides (objdiff's fixed order; target on the left, base on the right - same
-as the objdiff GUI; direction verified from the object files):
+as the objdiff GUI):
 
-  left  = target = the ORIGINAL, where we want to end up (the goal). In this
-          project: the per-function 'build/split' objects.
-  right = base   = the CURRENT, our src/ as it compiles right now. In this
-          project: the full 'build/CMakeFiles' build.
+  left  = target = the ORIGINAL, ``res/libTTapp.so`` - our goal.
+  right = base   = the CURRENT, ``bazel-bin/src/libTTapp.so`` - compiled from
+          our current ``src/`` tree.
 
 The marker letters are counterintuitive but fixed by the side, so read first
 WHICH SIDE a line is from, then act:
@@ -67,9 +65,8 @@ ADD every '-' you lack, REMOVE every '+', and make every '>' line equal its '~'.
 Context hints: many lines carry a trailing '#' comment with decompiling signal:
 string / float constants ('MaulOnTheRun', 1.0), named '.LC' rodata refs, and
 resolved jump/call targets ('-> <instruction or callee>'), so control flow is
-readable without tracking branch addresses by hand. Referenced data is also
-summarized in a "referenced data (base)" list. Use --full to print the entire
-base listing with no context collapsing.
+readable without tracking branch addresses by hand. Use --full to print the
+entire base listing with no context collapsing.
 """
 
 __doc__ += "\n\n" + _LEGEND
@@ -229,9 +226,10 @@ def render_function(lsym, rsym, color, context, full=False, resolver=None,
     The two sides' ``instructions`` arrays are positionally aligned by objdiff
     and carry the same ``diff_kind`` at each index. Unchanged runs longer than
     ``context`` collapse to a single ``⋯`` marker. With ``full`` every
-    instruction is printed and no runs collapse. Lines get trailing '#' hints:
-    base-side ``.LC`` references resolve to their string/float values, and
-    jump/call targets resolve to the instruction or callee they point at.
+    instruction is printed and no runs collapse. Every base-side line that
+    references a resolved ``.LC`` rodata value carries that value as a
+    trailing '#' comment, on changed and context lines alike; jump/call
+    targets resolve to the instruction or callee they point at.
     """
     il = lsym.get("instructions", [])
     ir = rsym.get("instructions", [])
@@ -269,7 +267,7 @@ def render_function(lsym, rsym, color, context, full=False, resolver=None,
         elif kind in ("DIFF_REPLACE", "DIFF_OP_MISMATCH", "DIFF_ARG_MISMATCH"):
             rows.append(("mod", lt, rt, addr, be))
         else:
-            rows.append(("ctx", lt or rt, None, addr, None))
+            rows.append(("ctx", lt or rt, None, addr, be))
 
     rows = [(k, lt, rt, _hex(a), be) for (k, lt, rt, a, be) in rows]
     addr_w = max((len("%x" % (r[3] or 0)) for r in rows), default=0)
@@ -333,7 +331,6 @@ def render_function(lsym, rsym, color, context, full=False, resolver=None,
             parts.append(br)
         return "  # " + " ; ".join(parts) if parts else None
 
-    refs = {}
     lines = []
     changed = 0
     last_change = -99
@@ -357,7 +354,8 @@ def render_function(lsym, rsym, color, context, full=False, resolver=None,
                     aa = ("%*x" % (addr_w, rows[j][3])) if rows[j][3] is not None \
                         else " " * addr_w
                     txt = rows[j][1]
-                    c = comment(txt, True, None)
+                    cbe = rows[j][4]
+                    c = comment(txt, True, base_comment(cbe))
                     if c:
                         txt = f"{txt}{c}"
                     lines.append(f"{_c(' ', 'ctx', color)} {aa}  {txt}")
@@ -365,8 +363,6 @@ def render_function(lsym, rsym, color, context, full=False, resolver=None,
             continue
         changed += 1
         cm = base_comment(be)
-        if cm is not None and rt is not None:
-            refs[_lc_label(be, rightsyms) or rt] = cm
         if kind == "mod":
             lt_c = comment(lt, False, None)
             lines.append(f"{_c('~', 'mod', color)} {a}  "
@@ -384,18 +380,7 @@ def render_function(lsym, rsym, color, context, full=False, resolver=None,
             lines.append(f"{_c(mark, kind, color)} {a}  {txt}")
         last_change = i
         i += 1
-    return lines, changed, refs
-
-
-def _lc_label(be, rightsyms):
-    if not be:
-        return None
-    inner = be.get("instruction")
-    rel = (inner or {}).get("relocation") if isinstance(inner, dict) else None
-    ts = (rel or {}).get("target_symbol")
-    if ts is not None and rightsyms is not None and ts < len(rightsyms):
-        return rightsyms[ts].get("name")
-    return None
+    return lines, changed
 
 
 def base_sym_map(right):
@@ -451,8 +436,11 @@ def main():
         epilog=_LEGEND,
     )
     ap.add_argument("symbol", help="mangled symbol to diff, e.g. _Z13ResetPodStuffv")
-    ap.add_argument("-p", "--project", default=".",
-                    help="project dir passed to objdiff-cli (default: '.')")
+    ap.add_argument("-b", "--base-path", default="res/libTTapp.so",
+                    help="path to the base binary (default: res/libTTapp.so)")
+    ap.add_argument("-t", "--target-path", default="bazel-bin/src/libTTapp.so",
+                    help="path to the target binary "
+                         "(default: bazel-bin/src/libTTapp.so)")
     ap.add_argument("-C", "--context", type=int, default=4,
                     help="unchanged context lines around changes (default: 4)")
     ap.add_argument("--full", action="store_true",
@@ -461,7 +449,7 @@ def main():
     args = ap.parse_args()
 
     proc = subprocess.run(
-        ["objdiff-cli", "diff", "-p", args.project, args.symbol, "-o", "-"],
+        ["objdiff-cli", "diff", "-o", "-", "-1", args.base_path, "-2", args.target_path, args.symbol],
         capture_output=True, text=True)
     if proc.returncode != 0:
         sys.stderr.write("objdiff-cli failed:\n" + proc.stderr + "\n")
@@ -495,7 +483,7 @@ def main():
         print("\n".join(out))
         return 0
 
-    ins_lines, n_ins, refs = render_function(
+    ins_lines, n_ins = render_function(
         lsym or {}, rsym or {}, color, args.context, full=args.full,
         resolver=RoDataResolver(right), rightsyms=right["symbols"],
         sym_map=base_sym_map(right))
@@ -516,12 +504,6 @@ def main():
         P()
         for ln in ins_lines + data_lines:
             P(ln)
-
-    if refs:
-        P()
-        P("    referenced data (base):")
-        for label, val in sorted(refs.items()):
-            P(f"      {label:<10} = {val}")
 
     print("\n".join(out))
     return 0

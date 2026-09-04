@@ -1,11 +1,7 @@
 ![Progress](https://img.shields.io/badge/matching-15.23%25-red)
 [![Discord](https://img.shields.io/discord/1467775700894224555?color=%235865F2&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/2HJuMtzA7q)
 
-|                 | Target (Android x86)                                                                                                                                                                                  | Host                                                                                                                                                                                  |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Linux           | [![Linux target](https://github.com/ttdecomp/saga/actions/workflows/build-linux-target.yaml/badge.svg)](https://github.com/ttdecomp/saga/actions/workflows/build-linux-target.yaml)                   | [![Linux host](https://github.com/ttdecomp/saga/actions/workflows/build-linux-i686.yaml/badge.svg)](https://github.com/ttdecomp/saga/actions/workflows/build-linux-i686.yaml)         |
-| Windows (MSYS2) | [![Windows target](https://github.com/ttdecomp/saga/actions/workflows/build-windows_msys2-target.yaml/badge.svg)](https://github.com/ttdecomp/saga/actions/workflows/build-windows_msys2-target.yaml) | [![Windows host](https://github.com/ttdecomp/saga/actions/workflows/build-windows_msys2.yaml/badge.svg)](https://github.com/ttdecomp/saga/actions/workflows/build-windows_msys2.yaml) |
-| MacOS | [![macOS Target build](https://github.com/ttdecomp/saga/actions/workflows/build-macos-target.yaml/badge.svg)](https://github.com/ttdecomp/saga/actions/workflows/build-macos-target.yaml) | - |
+[![Bazel build matrix](https://github.com/ttdecomp/saga/actions/workflows/build-bazel.yaml/badge.svg)](https://github.com/ttdecomp/saga/actions/workflows/build-bazel.yaml)
 
 # _saga_
 
@@ -25,40 +21,49 @@ any game assets, media, original source code, or any other copyrighted material.
 
 ## Build Instructions
 
-The project uses CMake as its build system. There are two build modes:
+The project uses Bazel for the matching Android x86 target, native
+Linux/Windows/macOS hosts, and WebAssembly. Bazel 9.2.0 is pinned through
+`.bazelversion`; Bazelisk is the recommended launcher.
 
 The Android x86 build uses the NDK r8e toolchain and targets the original
 Android platform. It is the matching build; its output is not a host-runnable
 game executable.
 
-A host build uses the configured host C/C++ compiler. On non-Windows systems it
-builds 32-bit i686 code with AddressSanitizer and is used for testing and
-development.
+A host build uses the configured host C/C++ compiler. Linux builds 32-bit i686
+code with AddressSanitizer and UndefinedBehaviorSanitizer; Windows and macOS
+use their native architecture.
 
-
-### Android x86 build
+See [the Bazel build guide](doc/build-bazel.md) for prerequisites, platform
+details, dependency versions, and build-mode behavior.
 
 ```bash
-# configure
-cmake -B build
-# build
-cmake --build build
+# matching Android x86 target (NDK r8e is fetched automatically)
+bazel build --config=android-x86 //src:saga_android_x86
+
+# native host
+bazel build --config=host //src:saga_host
+
+# WebAssembly host
+bazel build --config=wasm //src:saga_wasm
 ```
 
-### Host build
+The equivalent mise tasks are `mise run bazel:android`,
+`mise run bazel:host`, and `mise run bazel:wasm`.
+
+The Android target produces `bazel-bin/src/libTTapp.so`; native host and
+WebAssembly builds remain executables.
+
+To run the native host after building:
 
 ```bash
-cmake -B build-host -DBUILD_FOR_HOST=ON
-cmake --build build-host
-
 # run the game
-./build-host/saga window
+bazel-bin/src/saga_host window
 
 # enter the Cantina and rotate the camera through 360 degrees in 10 seconds
-./build-host/saga window --camera-orbit
+bazel-bin/src/saga_host window --camera-orbit
 
 # enter the Cantina with a free camera (numpad 8/5/4/6; hold Shift to move)
-./build-host/saga window --camera-free
+bazel-bin/src/saga_host window --camera-free
 ```
 
 ## Contributing

@@ -12,6 +12,7 @@
 #include "decomp.h"
 #include "globals.h"
 #include "host/harness/audio.hpp"
+#include "host/platform/cocoa.hpp"
 #include "host/platform/opensl.hpp"
 #include "nu2api/nu3d/NuRenderDevice.h"
 #include "nu2api/nu3d/nuscreen.hpp"
@@ -24,6 +25,8 @@ extern "C" i32 NuMain(i32 argc, char **argv);
 constexpr const char *host_audio_video_driver = "emscripten";
 #elif defined(_WIN32)
 constexpr const char *host_audio_video_driver = "windows";
+#elif defined(__APPLE__)
+constexpr const char *host_audio_video_driver = "cocoa";
 #else
 constexpr const char *host_audio_video_driver = "x11";
 #endif
@@ -51,6 +54,9 @@ namespace {
 #elif defined(_WIN32)
         HWND handle = static_cast<HWND>(SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
         g_renderDevice.OnWindowCreated(reinterpret_cast<ANativeWindow *>(handle));
+#elif defined(__APPLE__)
+        g_renderDevice.OnWindowCreated(
+            reinterpret_cast<ANativeWindow *>(HostCocoaGetEGLNativeWindow(window)));
 #else
         auto handle = static_cast<i32>(SDL_GetNumberProperty(props, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0));
         g_renderDevice.OnWindowCreated(reinterpret_cast<ANativeWindow *>(handle));

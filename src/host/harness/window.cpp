@@ -13,6 +13,7 @@
 #include "gameapi/gui/apimenu.h"
 #include "gameframework/saveload.h"
 #include "host/harness/window.hpp"
+#include "host/platform/cocoa.hpp"
 #include "host/platform/free_camera.hpp"
 #include "host/platform/graphics.hpp"
 #include "host/platform/input.hpp"
@@ -75,6 +76,8 @@ namespace {
     constexpr const char *host_video_driver = "emscripten";
 #elif defined(_WIN32)
     constexpr const char *host_video_driver = "windows";
+#elif defined(__APPLE__)
+    constexpr const char *host_video_driver = "cocoa";
 #else
     constexpr const char *host_video_driver = "x11";
 #endif
@@ -484,6 +487,9 @@ namespace {
 #elif defined(_WIN32)
         HWND handle = static_cast<HWND>(SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
         g_renderDevice.OnWindowCreated(reinterpret_cast<ANativeWindow *>(handle));
+#elif defined(__APPLE__)
+        g_renderDevice.OnWindowCreated(
+            reinterpret_cast<ANativeWindow *>(HostCocoaGetEGLNativeWindow(window)));
 #else
         auto handle = static_cast<i32>(SDL_GetNumberProperty(props, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0));
         g_renderDevice.OnWindowCreated(reinterpret_cast<ANativeWindow *>(handle));

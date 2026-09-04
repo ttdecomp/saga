@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #MISE description="Build and serve the WebAssembly host"
-#MISE depends=["wasm:build"]
+#MISE depends=["bazel:wasm"]
 set -euo pipefail
 
 exec node scripts/wasm_server.mjs

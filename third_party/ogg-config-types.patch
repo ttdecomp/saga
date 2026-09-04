@@ -1,0 +1,26 @@
+diff --git a/include/ogg/config_types.h b/include/ogg/config_types.h
+new file mode 100644
+index 0000000..c5f7f1a
+--- /dev/null
++++ b/include/ogg/config_types.h
+@@ -0,0 +1,20 @@
++#ifndef __CONFIG_TYPES_H__
++#define __CONFIG_TYPES_H__
++
++/*
++ * The 1.2.1 release ships config_types.h.in and normally generates this
++ * header from configure. These are the fixed-width types used by the
++ * release's non-Windows os_types.h fallback and are valid for the Android
++ * x86 and native Unix-like toolchains supported by this overlay.
++ */
++#include <stdint.h>
++#include <sys/types.h>
++
++typedef int16_t ogg_int16_t;
++typedef uint16_t ogg_uint16_t;
++typedef int32_t ogg_int32_t;
++typedef uint32_t ogg_uint32_t;
++typedef int64_t ogg_int64_t;
++typedef uint64_t ogg_uint64_t;
++
++#endif

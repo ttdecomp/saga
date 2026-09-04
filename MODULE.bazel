@@ -1,0 +1,124 @@
+module(
+    name = "saga",
+    version = "0.1.0",
+)
+
+bazel_dep(name = "platforms", version = "1.1.0")
+bazel_dep(name = "emsdk", version = "6.0.8")
+bazel_dep(name = "rules_cc", version = "0.2.22")
+bazel_dep(name = "rules_python", version = "1.8.4")
+
+single_version_override(
+    module_name = "emsdk",
+    patch_strip = 1,
+    patches = ["//third_party:emsdk-cache-pkgconfig.patch"],
+    version = "6.0.8",
+)
+
+# Emscripten's built-in cache is immutable under Bazel. Prebuild the exact
+# pthread/debug runtime and SDL3 variants selected by the WASM link.
+emscripten_cache = use_extension("@emsdk//:emscripten_cache.bzl", "emscripten_cache")
+emscripten_cache.targets(targets = [
+    "crt1_proxy_main",
+    "crtbegin-mt",
+    "libc++-debug-mt-noexcept",
+    "libc++abi-debug-mt-noexcept",
+    "libc-mt-debug",
+    "libclang_rt.builtins-mt",
+    "libdlmalloc-mt-debug",
+    "libGL-mt-webgl2-ofb-getprocaddr",
+    "libal",
+    "libhtml5",
+    "libnoexit",
+    "libprintf_long_double-mt-debug",
+    "libsockets-mt",
+    "libstubs-debug",
+    "sdl3-mt",
+])
+use_repo(emscripten_cache, "emscripten_cache")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "libogg",
+    build_file = "//third_party:ogg.BUILD.bazel",
+    patch_args = ["-p1"],
+    patches = ["//third_party:ogg-config-types.patch"],
+    sha256 = "21e0a61e15e9dd294587bcd39d81fbe1998b27b1c525e15ecfaba94344f921b4",
+    strip_prefix = "libogg-1.2.1",
+    urls = ["https://ftp.osuosl.org/pub/xiph/releases/ogg/libogg-1.2.1.tar.xz"],
+)
+
+http_archive(
+    name = "libvorbis",
+    build_file = "//third_party:vorbis.BUILD.bazel",
+    sha256 = "43242e7c10253c0697da52dd0799bbad3ee1c392b99568f6c56a610712f1b916",
+    strip_prefix = "libvorbis-1.3.2",
+    urls = ["https://ftp.osuosl.org/pub/xiph/releases/vorbis/libvorbis-1.3.2.tar.xz"],
+)
+
+# The WASM host intentionally uses newer Xiph releases than the matching
+# Android target. Keep those source versions distinct.
+http_archive(
+    name = "libogg_wasm",
+    build_file = "//third_party:ogg.BUILD.bazel",
+    patch_args = ["-p1"],
+    patches = ["//third_party:ogg-config-types.patch"],
+    sha256 = "83e6704730683d004d20e21b8f7f55dcb3383cdf84c0daedf30bde175f774638",
+    strip_prefix = "libogg-1.3.6",
+    urls = ["https://github.com/xiph/ogg/releases/download/v1.3.6/libogg-1.3.6.tar.gz"],
+)
+
+http_archive(
+    name = "libvorbis_wasm",
+    build_file = "//third_party:vorbis_wasm.BUILD.bazel",
+    sha256 = "b33cc4934322bcbf6efcbacf49e3ca01aadbea4114ec9589d1b1e9d20f72954b",
+    strip_prefix = "libvorbis-1.3.7",
+    urls = ["https://ftp.osuosl.org/pub/xiph/releases/vorbis/libvorbis-1.3.7.tar.xz"],
+)
+
+http_archive(
+    name = "libsquish",
+    build_file = "//third_party:squish.BUILD.bazel",
+    sha256 = "aec3428badafdbb3b0ed1ea3a385a8029e65694282459f61b4a538963e8cada3",
+    strip_prefix = "squish-1.10",
+    urls = ["https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/libsquish/squish-1.10.tar.gz"],
+)
+
+android_ndk_repository = use_repo_rule("//bazel:android_ndk_repository.bzl", "android_ndk_repository")
+
+android_ndk_repository(name = "android_ndk_r8e")
+
+pkg_config_repository = use_repo_rule("//bazel:system_deps.bzl", "pkg_config_repository")
+
+pkg_config_repository(
+    name = "system_host_deps_linux",
+    packages = [
+        "egl",
+        "glesv2",
+        "sdl3",
+        "vorbis",
+        "vorbisfile",
+    ],
+)
+
+pkg_config_repository(
+    name = "system_host_deps_macos",
+    packages = [
+        "egl",
+        "glesv2",
+        "sdl3",
+        "vorbis",
+        "vorbisfile",
+    ],
+)
+
+pkg_config_repository(
+    name = "system_host_deps_windows",
+    packages = [
+        "angleproject",
+        "sdl3",
+        "vorbis",
+        "vorbisfile",
+    ],
+)
