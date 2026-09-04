@@ -31,7 +31,7 @@
 extern "C" {
     void *NuTimeBarCreateSet(i32);
     void _NuTimeBarSlotBegin(void *, i32, char const *);
-    void _NuTimeBarSlotEnd(void *, i32);
+    u32 _NuTimeBarSlotEnd(void *, i32);
     void AddToAIGroup(AIGROUP_s *group, APIOBJECT_s *object);
     extern NUVEC plr_lastpos;
 }
@@ -54,7 +54,7 @@ void ResetRumble(RUMBLEPACKET *packet);
 void ResetLights(NUVEC *position, rtldata_s *data, void *set);
 void LightGameObject(GameObject_s *object, void *set);
 void InitSurfaceInfo(GameObject_s *object);
-void SetObjOnSurface(GameObject_s *object, i32 mode);
+i32 SetObjOnSurface(GameObject_s *object, i32 mode);
 void PortalGameObject(GameObject_s *object, i32 enable, i32 immediate, i16 portal, nugscn_s *scene);
 void Arcade_GetMode(u32 *mode);
 void StarWars_GameAISysInit();

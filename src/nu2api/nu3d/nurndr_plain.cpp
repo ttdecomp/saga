@@ -383,7 +383,33 @@ extern "C" void NuTexAnimProcessList(void) {
 // subsystem so it is obvious what is still missing.
 
 // Scene / GScn
-extern "C" void NuGScnFixupTIDsPS(NUGSCN *) {
+// Original 0x2fe1a1. Display-list lightmap packets retain scene-local texture
+// indices after loading, so fix them alongside the material texture ids.
+extern "C" __attribute__((optimize("O0"))) void NuGScnFixupTIDsPS(NUGSCN *scene) {
+    if (scene->display_list == NULL) {
+        return;
+    }
+
+    for (i32 i = 0; i < scene->display_list->nitems; ++i) {
+        NUDISPLAYLISTITEM *item = &scene->display_list->items[i];
+        if (item->type == 0xb0) {
+            i32 *packet = static_cast<i32 *>(item->next);
+            if (packet[0] == 2) {
+                packet[0] = 1;
+                for (i32 texture = 0; texture < 3; ++texture) {
+                    packet[texture + 2] = NuGScnFixupTID(scene, packet[texture + 2]);
+                }
+            }
+            packet[1] = NuGScnFixupTID(scene, packet[1]);
+        } else if (item->type == 0xae || item->type == 0xaf) {
+            i32 *packet = static_cast<i32 *>(item->next);
+            if (packet != NULL) {
+                for (i32 texture = 0; texture < 3; ++texture) {
+                    packet[texture] = NuGScnFixupTID(scene, packet[texture]);
+                }
+            }
+        }
+    }
 }
 extern "C" void NuGScnFromVideoMem(void) {
 }

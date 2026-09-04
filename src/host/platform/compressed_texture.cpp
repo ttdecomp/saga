@@ -1,12 +1,13 @@
 #include "nu2api/nucore/common.h"
 
+#include "host/platform/compressed_texture.hpp"
+
 // Host implementation of compressed formats unavailable from host GLES.
 
 #include <GLES2/gl2.h>
 
 #include <algorithm>
 #include <string.h>
-#include <string>
 #include <vector>
 
 // Compatibility for compressed formats supported by the original device but
@@ -401,18 +402,21 @@ static void host_etc1_decode_block(const u8 *blk, u8 out[16][3]) {
     }
 }
 
-#ifdef __EMSCRIPTEN__
-extern "C" void HostWasmUploadCompressedTexture(GLenum target, GLint level, GLenum internal_format, GLsizei width,
-                                                GLsizei height, GLint border, GLsizei image_size, const void *data) {
+bool HostDecodeCompressedTexture(GLenum internal_format, GLsizei width, GLsizei height, GLsizei image_size,
+                                 const void *data, std::vector<u8> &rgba) {
+    if (width <= 0 || height <= 0 || image_size < 0 || data == nullptr) {
+        return false;
+    }
+
     if (internal_format == 0x8d64) {
         const usize block_width = (static_cast<usize>(width) + 3) / 4;
         const usize block_height = (static_cast<usize>(height) + 3) / 4;
         const usize required_size = block_width * block_height * 8;
-        if (data == nullptr || image_size < 0 || static_cast<usize>(image_size) < required_size) {
-            return;
+        if (static_cast<usize>(image_size) < required_size) {
+            return false;
         }
 
-        std::vector<u8> rgba(static_cast<usize>(width) * static_cast<usize>(height) * 4);
+        rgba.resize(static_cast<usize>(width) * static_cast<usize>(height) * 4);
         const u8 *source = static_cast<const u8 *>(data);
         for (usize by = 0; by < block_height; ++by) {
             for (usize bx = 0; bx < block_width; ++bx) {
@@ -434,111 +438,19 @@ extern "C" void HostWasmUploadCompressedTexture(GLenum target, GLint level, GLen
                 }
             }
         }
-        glTexImage2D(target, level, GL_RGBA, width, height, border, GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
-        return;
+        return true;
     }
 
     if (internal_format == 0x8c00 || internal_format == 0x8c02) {
-        std::vector<u8> rgba(static_cast<usize>(width) * static_cast<usize>(height) * 4);
-        host_pvr_decode_4bpp(static_cast<const u8 *>(data), static_cast<usize>(image_size), width, height, rgba.data());
-        glTexImage2D(target, level, GL_RGBA, width, height, border, GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
-        return;
-    }
-
-    glCompressedTexImage2D(target, level, internal_format, width, height, border, image_size, data);
-}
-#endif
-
-#if !defined(_WIN32) && !defined(__EMSCRIPTEN__)
-#include <dlfcn.h>
-
-namespace {
-    typedef void (*HostCompressedTexImage2D)(GLenum, GLint, GLenum, GLsizei, GLsizei, GLint, GLsizei, const void *);
-    typedef const GLubyte *(*HostGlGetString)(GLenum);
-
-    HostGlGetString host_real_gl_get_string() {
-        static HostGlGetString host_real = reinterpret_cast<HostGlGetString>(dlsym(RTLD_NEXT, "glGetString"));
-        return host_real;
-    }
-
-    HostCompressedTexImage2D host_real_compressed_tex_image_2d() {
-        static HostCompressedTexImage2D host_real =
-            reinterpret_cast<HostCompressedTexImage2D>(dlsym(RTLD_NEXT, "glCompressedTexImage2D"));
-        return host_real;
-    }
-
-    void host_upload_etc1(GLenum target, GLint level, GLsizei width, GLsizei height, GLsizei image_size,
-                          const void *data) {
-        const usize block_width = (static_cast<usize>(width) + 3) / 4;
-        const usize block_height = (static_cast<usize>(height) + 3) / 4;
-        const usize required_size = block_width * block_height * 8;
-        if (data == nullptr || image_size < 0 || static_cast<usize>(image_size) < required_size) {
-            return;
+        const usize required_size = static_cast<usize>(width) * static_cast<usize>(height) / 2;
+        if (!host_pvr_is_pow2(static_cast<u32>(width)) || !host_pvr_is_pow2(static_cast<u32>(height)) ||
+            static_cast<usize>(image_size) < required_size) {
+            return false;
         }
-
-        std::vector<u8> rgba(static_cast<usize>(width) * static_cast<usize>(height) * 4);
-        const u8 *source = static_cast<const u8 *>(data);
-        for (usize by = 0; by < block_height; ++by) {
-            for (usize bx = 0; bx < block_width; ++bx) {
-                u8 decoded[16][3];
-                host_etc1_decode_block(source + (by * block_width + bx) * 8, decoded);
-                for (i32 y = 0; y < 4; ++y) {
-                    for (i32 x = 0; x < 4; ++x) {
-                        const usize dst_x = bx * 4 + static_cast<usize>(x);
-                        const usize dst_y = by * 4 + static_cast<usize>(y);
-                        if (dst_x >= static_cast<usize>(width) || dst_y >= static_cast<usize>(height)) {
-                            continue;
-                        }
-                        u8 *pixel = rgba.data() + (dst_y * static_cast<usize>(width) + dst_x) * 4;
-                        pixel[0] = decoded[y * 4 + x][0];
-                        pixel[1] = decoded[y * 4 + x][1];
-                        pixel[2] = decoded[y * 4 + x][2];
-                        pixel[3] = 0xff;
-                    }
-                }
-            }
-        }
-        glTexImage2D(target, level, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
-    }
-} // namespace
-
-extern "C" const GLubyte *glGetString(GLenum name) {
-    HostGlGetString host_real = host_real_gl_get_string();
-    const GLubyte *value = host_real != nullptr ? host_real(name) : nullptr;
-    if (name != GL_EXTENSIONS || value == nullptr) {
-        return value;
-    }
-
-    // Expose precisely the compressed format emulated below. This keeps the
-    // reconstructed capability selection and texture format validation intact.
-    static std::string host_extensions;
-    host_extensions.assign(reinterpret_cast<const char *>(value));
-    if (host_extensions.find("GL_OES_compressed_ETC1_RGB8_texture") == std::string::npos) {
-        host_extensions.append(" GL_OES_compressed_ETC1_RGB8_texture");
-    }
-    return reinterpret_cast<const GLubyte *>(host_extensions.c_str());
-}
-
-// Host drivers commonly lack the Android device's ETC1/PVRTC formats. Wrap the
-// external GLES upload itself so all target parsing, mip selection, texture
-// registry, and scene-loading code remains unchanged.
-extern "C" void glCompressedTexImage2D(GLenum target, GLint level, GLenum internal_format, GLsizei width,
-                                       GLsizei height, GLint border, GLsizei image_size, const void *data) {
-    if (internal_format == 0x8d64) { // GL_ETC1_RGB8_OES
-        host_upload_etc1(target, level, width, height, image_size, data);
-        return;
-    }
-
-    if (internal_format == 0x8c00 || internal_format == 0x8c02) { // PVRTC1 RGB/RGBA 4bpp
-        std::vector<u8> rgba(static_cast<usize>(width) * static_cast<usize>(height) * 4);
+        rgba.resize(static_cast<usize>(width) * static_cast<usize>(height) * 4);
         host_pvr_decode_4bpp(static_cast<const u8 *>(data), static_cast<usize>(image_size), width, height, rgba.data());
-        glTexImage2D(target, level, GL_RGBA, width, height, border, GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
-        return;
+        return true;
     }
 
-    HostCompressedTexImage2D host_real = host_real_compressed_tex_image_2d();
-    if (host_real != nullptr) {
-        host_real(target, level, internal_format, width, height, border, image_size, data);
-    }
+    return false;
 }
-#endif

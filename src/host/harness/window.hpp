@@ -13,6 +13,7 @@ struct HostWindowOptions {
     bool camera_free = false;
     bool offscreen = false;
     bool mute = false;
+    bool show_fps = false;
     u64 script_tail_ms = 8000;
     u64 timeout_ms = 90000;
 };

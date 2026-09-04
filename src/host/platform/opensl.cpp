@@ -26,6 +26,7 @@
 
 #include "nu2api/nucore/fixed_width.h"
 #include "nu2api/nusound/opensles_abi.hpp"
+#include "host/platform/runtime.hpp"
 #include "decomp.h"
 #include <stdlib.h>
 #include <string.h>
@@ -505,7 +506,7 @@ namespace hostsl {
             // far larger, which lets one mix pass consume the whole queued
             // buffer and breaks the real-time consumption cadence the game's
             // streaming refill depends on.
-            if (host_device_stream == NULL) {
+            if (HostPlatformAudioOutputEnabled() && host_device_stream == NULL) {
                 SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES, "1024");
                 host_device_stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &host_device_spec,
                                                                host_device_mix_callback, NULL);

@@ -1081,7 +1081,38 @@ GAMEANIMOBJPOOL_s *GameAnimSet_CreateObjectPool(variptr_u *buf, variptr_u *buf_e
     return pool;
 }
 
-void GameAnimSet_IsAnimationReset(GAMEANIMSET_s *) {
+i32 GameAnimSet_IsAnimationReset(GAMEANIMSET_s *set) {
+    if (set == NULL || set->objects == NULL) {
+        return 1;
+    }
+
+    i32 repeating_count = 0;
+    i32 animated_count = 0;
+    for (GAMEANIMOBJ_s *object = set->objects; object != NULL; object = object->next) {
+        nuinstanim_s *animation = object->instance_animation;
+        if (animation == NULL) {
+            continue;
+        }
+
+        ++animated_count;
+        if (animation->repeating != 0) {
+            ++repeating_count;
+            continue;
+        }
+        if (animation->playing != 0) {
+            return 0;
+        }
+
+        const f32 direction = object->end_frame < object->start_frame ? -1.0f : 1.0f;
+        if (animation->ltime * direction > object->start_frame * direction) {
+            return 0;
+        }
+    }
+
+    if (animated_count == 0) {
+        return 1;
+    }
+    return animated_count != repeating_count;
 }
 
 void GameAnimSet_RemoveAllObjects(GAMEANIMSET_s *) {
@@ -1785,23 +1816,19 @@ extern "C" {
         packet->blend_target_reversed = 0;
     }
 
-#ifdef __EMSCRIPTEN__
-    void ResetMiniAnimPacket(void *, i32) {
-    }
-#else
-    void ResetMiniAnimPacket(MINIANIMPACKET_s *packet, i32 animation) {
+    void __attribute__((weak, optimize("O0"))) ResetMiniAnimPacket(void *raw_packet, i32 animation) {
+        MINIANIMPACKET_s *packet = static_cast<MINIANIMPACKET_s *>(raw_packet);
         if (packet != NULL) {
             packet->requested_animation_id = static_cast<i16>(animation);
             packet->previous_animation_id = packet->requested_animation_id;
             packet->current_animation_id = packet->previous_animation_id;
-            packet->animation_mode = GetAnimBlendMode();
-            packet->previous_animation_mode = packet->animation_mode;
-            packet->current_animation = packet->previous_animation_mode;
+            packet->target_time = 1.0f;
+            packet->previous_time = packet->target_time;
+            packet->current_time = packet->previous_time;
             packet->field_0x19 = 0;
             packet->reset_state = 4;
         }
     }
-#endif
 
     void RootFn(NUMTX *matrix, void *data, NUVEC *source_root, NUVEC *target_root, NUVEC *root_delta, f32 blend) {
         RootFnEx(matrix, data, source_root, target_root, root_delta, blend, 0);

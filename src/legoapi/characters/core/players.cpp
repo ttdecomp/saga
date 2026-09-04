@@ -46,7 +46,7 @@ extern void ResetRumble(RUMBLEPACKET *packet);
 extern void ResetLights(NUVEC *position, rtldata_s *data, void *set);
 extern void CurrentStart(GameObject_s *obj, i32 mode, i32 start);
 extern void InitSurfaceInfo(GameObject_s *obj);
-extern void SetObjOnSurface(GameObject_s *obj, i32 mode);
+extern i32 SetObjOnSurface(GameObject_s *obj, i32 mode);
 extern void GizForce_ResetLOS(GameObject_s *obj);
 extern void PortalGameObject(GameObject_s *obj, i32 enable, i32 immediate, i16 portal, nugscn_s *scene);
 

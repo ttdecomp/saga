@@ -463,7 +463,8 @@ extern "C" {
     void ShadowDir(void) {
     }
 
-    void ShadowInfo(void) {
+    i32 ShadowInfo(void) {
+        return 0;
     }
 
     void ShadowIntensityInfo(void) {

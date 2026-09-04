@@ -3,55 +3,258 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>LEGO Star Wars: The Complete Saga</title>
+    <title>SAGA WebAssembly</title>
     <style>
+      :root {
+        color-scheme: dark;
+        font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #111318;
+        color: #f2f3f5;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-width: 20rem;
+        min-height: 100vh;
+        margin: 0;
+        background: #111318;
+      }
+
+      button,
+      input {
+        font: inherit;
+      }
+
+      button {
+        border: 1px solid #7d8798;
+        border-radius: 0.45rem;
+        background: #e8ebef;
+        color: #17191d;
+        cursor: pointer;
+        font-weight: 650;
+        padding: 0.7rem 1rem;
+      }
+
+      button:hover {
+        background: #fff;
+      }
+
+      button:focus-visible,
+      input:focus-visible {
+        outline: 2px solid #87a8ff;
+        outline-offset: 2px;
+      }
+
+      button:disabled,
+      input:disabled {
+        cursor: wait;
+        opacity: 0.55;
+      }
+
       #launcher[hidden] {
         display: none;
       }
-      #status.error {
-        color: red;
+
+      .shell {
+        width: min(44rem, calc(100% - 2rem));
+        margin: 0 auto;
+        padding: clamp(2.5rem, 8vw, 6rem) 0 2rem;
       }
+
+      header {
+        margin-bottom: 1.75rem;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(2rem, 7vw, 3.5rem);
+        letter-spacing: -0.04em;
+      }
+
+      header p,
+      .hint {
+        color: #a8afb9;
+        line-height: 1.6;
+      }
+
+      header p {
+        margin: 0.55rem 0 0;
+      }
+
+      .panel {
+        border: 1px solid #303641;
+        border-radius: 0.7rem;
+        background: #191c22;
+        padding: clamp(1.1rem, 4vw, 1.6rem);
+      }
+
+      .status {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.7rem;
+        margin-bottom: 1.4rem;
+        line-height: 1.45;
+      }
+
+      .status-dot {
+        width: 0.65rem;
+        height: 0.65rem;
+        flex: 0 0 auto;
+        margin-top: 0.35rem;
+        border: 2px solid #91a9ef;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 800ms linear infinite;
+      }
+
+      #status.ready .status-dot {
+        border: 0;
+        background: #69c98f;
+        animation: none;
+      }
+
+      #status.error {
+        color: #ff9e9e;
+      }
+
+      #status.error .status-dot {
+        border: 0;
+        background: #e76b6b;
+        animation: none;
+      }
+
+      .field {
+        margin-top: 1.2rem;
+      }
+
+      .field label {
+        display: block;
+        margin-bottom: 0.45rem;
+        font-size: 0.85rem;
+        font-weight: 650;
+      }
+
+      input[type="file"] {
+        width: 100%;
+        color: #cdd2da;
+      }
+
+      input[type="file"]::file-selector-button {
+        margin-right: 0.8rem;
+        border: 1px solid #535c6c;
+        border-radius: 0.4rem;
+        background: #272c35;
+        color: #f2f3f5;
+        cursor: pointer;
+        padding: 0.6rem 0.8rem;
+      }
+
+      .url-form {
+        display: flex;
+        gap: 0.55rem;
+      }
+
+      .url-form input {
+        min-width: 0;
+        flex: 1;
+        border: 1px solid #404754;
+        border-radius: 0.45rem;
+        background: #101217;
+        color: #f2f3f5;
+        padding: 0.7rem 0.8rem;
+      }
+
+      .hint {
+        margin: 1.4rem 0 0;
+        font-size: 0.8rem;
+      }
+
       #game {
         display: none;
         position: fixed;
         inset: 0;
-        background: black;
+        background: #000;
       }
+
       #game.running {
         display: flex;
         align-items: center;
         justify-content: center;
       }
+
       #canvas {
         max-width: 100%;
         max-height: 100%;
+        outline: 0;
       }
+
       #runtime-error {
         position: fixed;
-        top: 0;
-        left: 0;
-        z-index: 1;
-        color: red;
-        background: white;
+        right: 1rem;
+        bottom: 1rem;
+        z-index: 2;
+        max-width: min(34rem, calc(100% - 2rem));
+        border: 1px solid #7d4148;
+        border-radius: 0.5rem;
+        background: #321a1e;
+        color: #ffd7da;
+        padding: 0.9rem 1rem;
+        white-space: pre-wrap;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+
+      @media (max-width: 34rem) {
+        .url-form {
+          flex-direction: column;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .status-dot {
+          animation: none;
+        }
       }
     </style>
   </head>
   <body>
-    <main id="launcher">
-      <h1>LEGO Star Wars: The Complete Saga</h1>
-      <p>Choose your Android OBB. It stays in browser memory and is not uploaded.</p>
-      <p><input id="obb-file" type="file" accept=".obb,application/octet-stream"></p>
-      <p>or</p>
-      <form id="url-form">
-        <label for="obb-url">OBB URL:</label>
-        <input id="obb-url" type="url" size="60" required>
-        <button type="submit">Load</button>
-      </form>
-      <p id="status" role="status" aria-live="polite">Preparing runtime...</p>
+    <main id="launcher" class="shell">
+      <header>
+        <h1>SAGA</h1>
+        <p>WebAssembly development build</p>
+      </header>
+
+      <section class="panel" aria-label="Game data">
+        <div id="status" class="status" role="status" aria-live="polite">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="status-text">Preparing runtime…</span>
+        </div>
+
+        <div class="field">
+          <label for="obb-file">Local OBB</label>
+          <input id="obb-file" type="file" accept=".obb,application/octet-stream">
+        </div>
+
+        <form id="url-form" class="field">
+          <label for="obb-url">Remote OBB or Archive.org item</label>
+          <div class="url-form">
+            <input id="obb-url" type="url" inputmode="url" autocomplete="url" placeholder="https://…" required>
+            <button id="url-submit" type="submit">Load</button>
+          </div>
+        </form>
+
+        <p class="hint">When the development server finds the expected OBB under <code>res/</code>, it loads it
+          automatically. Files selected here remain in browser memory.</p>
+      </section>
     </main>
 
-    <div id="game">
-      <canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
+    <div id="game" aria-label="Game viewport">
+      <canvas id="canvas" tabindex="-1" aria-label="SAGA game" oncontextmenu="event.preventDefault()"></canvas>
     </div>
     <div id="runtime-error" role="alert" hidden></div>
 
@@ -62,17 +265,29 @@
       const fileInput = document.getElementById("obb-file");
       const urlForm = document.getElementById("url-form");
       const urlInput = document.getElementById("obb-url");
+      const urlSubmit = document.getElementById("url-submit");
       const status = document.getElementById("status");
+      const statusText = document.getElementById("status-text");
       const runtimeError = document.getElementById("runtime-error");
       let resolveRuntime;
+      let rejectRuntime;
       let started = false;
-      const runtimeReady = new Promise((resolve) => {
+      let webglPreflightContext = null;
+      const runtimeReady = new Promise((resolve, reject) => {
         resolveRuntime = resolve;
+        rejectRuntime = reject;
       });
 
-      function setStatus(message, isError = false) {
-        status.textContent = message;
+      function setStatus(message, isError = false, isReady = false) {
+        statusText.textContent = message;
         status.classList.toggle("error", isError);
+        status.classList.toggle("ready", isReady);
+      }
+
+      function setBusy(busy) {
+        fileInput.disabled = busy;
+        urlInput.disabled = busy;
+        urlSubmit.disabled = busy;
       }
 
       function showRuntimeError(error) {
@@ -82,76 +297,30 @@
         console.error(error);
       }
 
+      function prepareGraphics() {
+        // Create this before the large OBB enters memory. Emscripten registers
+        // and reuses the same browser context when the game starts.
+        webglPreflightContext = canvas.getContext("webgl2", {
+          alpha: false,
+          depth: true,
+          stencil: false,
+          antialias: true,
+          preserveDrawingBuffer: true,
+        });
+        if (!webglPreflightContext) {
+          throw new Error("WebGL 2 could not be started. Enable browser hardware acceleration and reload the page.");
+        }
+        canvas.addEventListener("webglcontextlost", (event) => {
+          event.preventDefault();
+          showRuntimeError("The WebGL context was lost. Reload the page to restart the game.");
+        });
+      }
+
       function proxyUrl(url) {
         return `/proxy?url=${encodeURIComponent(url)}`;
       }
 
-      async function startGame(buffer) {
-        if (started) {
-          return;
-        }
-
-        if (!buffer.byteLength) {
-          throw new Error("The selected OBB is empty.");
-        }
-
-        started = true;
-        setStatus("Preparing game...");
-
-        try {
-          await runtimeReady;
-          Module.FS.mkdirTree("/res");
-          Module.FS.writeFile(
-            "/res/main.1060.com.wb.lego.tcs.obb",
-            new Uint8Array(buffer),
-            { canOwn: true },
-          );
-          launcher.hidden = true;
-          game.classList.add("running");
-          canvas.focus();
-          Module.callMain([]);
-        } catch (error) {
-          started = false;
-          setStatus(error instanceof Error ? error.message : String(error), true);
-          throw error;
-        }
-      }
-
-      async function resolveObbUrl(value) {
-        const url = new URL(value);
-        const pathParts = url.pathname.split("/").filter(Boolean);
-        if (url.hostname.endsWith("archive.org") && pathParts[0] === "details" && pathParts[1]) {
-          const identifier = decodeURIComponent(pathParts[1]);
-          setStatus("Finding OBB in Archive.org item...");
-          const metadataUrl = `https://archive.org/metadata/${encodeURIComponent(identifier)}`;
-          const metadataResponse = await fetch(proxyUrl(metadataUrl));
-          if (!metadataResponse.ok) {
-            throw new Error(`Archive.org metadata failed: HTTP ${metadataResponse.status}`);
-          }
-
-          const metadata = await metadataResponse.json();
-          const obb = metadata.files.find((file) => file.name.toLowerCase().endsWith(".obb"));
-          if (!obb) {
-            throw new Error("The Archive.org item does not contain an OBB.");
-          }
-
-          const encodedName = obb.name.split("/").map(encodeURIComponent).join("/");
-          return `https://archive.org/download/${encodeURIComponent(identifier)}/${encodedName}`;
-        }
-        return url.href;
-      }
-
-      async function downloadObb(value) {
-        const url = await resolveObbUrl(value);
-        setStatus("Downloading OBB...");
-        const response = await fetch(proxyUrl(url));
-        if (!response.ok) {
-          throw new Error(`OBB download failed: HTTP ${response.status}`);
-        }
-        if ((response.headers.get("content-type") || "").includes("text/html")) {
-          throw new Error("The URL returned a web page instead of an OBB.");
-        }
-
+      async function readResponse(response, label) {
         const size = Number(response.headers.get("content-length"));
         if (!response.body || !Number.isSafeInteger(size) || size <= 0) {
           return response.arrayBuffer();
@@ -166,16 +335,104 @@
             break;
           }
           if (offset + chunk.byteLength > data.byteLength) {
-            throw new Error("The OBB download was larger than the server reported.");
+            throw new Error("The OBB was larger than the server reported.");
           }
           data.set(chunk, offset);
           offset += chunk.byteLength;
-          setStatus(`Downloading OBB... ${Math.floor(offset * 100 / size)}%`);
+          setStatus(`${label} ${Math.floor(offset * 100 / size)}%`);
         }
         if (offset !== size) {
-          throw new Error("The OBB download was incomplete.");
+          throw new Error("The OBB transfer was incomplete.");
         }
         return data.buffer;
+      }
+
+      async function startGame(buffer) {
+        if (started) {
+          return;
+        }
+        if (!buffer.byteLength) {
+          throw new Error("The selected OBB is empty.");
+        }
+
+        started = true;
+        setBusy(true);
+        setStatus("Starting game…");
+        try {
+          await runtimeReady;
+          Module.FS.mkdirTree("/res");
+          Module.FS.writeFile(
+            "/res/main.1060.com.wb.lego.tcs.obb",
+            new Uint8Array(buffer),
+            { canOwn: true },
+          );
+          launcher.hidden = true;
+          game.classList.add("running");
+          canvas.focus();
+          Module.callMain([]);
+        } catch (error) {
+          started = false;
+          setBusy(false);
+          setStatus(error instanceof Error ? error.message : String(error), true);
+          throw error;
+        }
+      }
+
+      async function resolveObbUrl(value) {
+        const url = new URL(value);
+        const pathParts = url.pathname.split("/").filter(Boolean);
+        if (url.hostname.endsWith("archive.org") && pathParts[0] === "details" && pathParts[1]) {
+          const identifier = decodeURIComponent(pathParts[1]);
+          setStatus("Finding OBB in Archive.org item…");
+          const metadataUrl = `https://archive.org/metadata/${encodeURIComponent(identifier)}`;
+          const metadataResponse = await fetch(proxyUrl(metadataUrl));
+          if (!metadataResponse.ok) {
+            throw new Error(`Archive.org metadata failed: HTTP ${metadataResponse.status}`);
+          }
+          const metadata = await metadataResponse.json();
+          const obb = metadata.files.find((file) => file.name.toLowerCase().endsWith(".obb"));
+          if (!obb) {
+            throw new Error("The Archive.org item does not contain an OBB.");
+          }
+          const encodedName = obb.name.split("/").map(encodeURIComponent).join("/");
+          return `https://archive.org/download/${encodeURIComponent(identifier)}/${encodedName}`;
+        }
+        return url.href;
+      }
+
+      async function downloadRemoteObb(value) {
+        const url = await resolveObbUrl(value);
+        const response = await fetch(proxyUrl(url));
+        if (!response.ok) {
+          throw new Error(`OBB download failed: HTTP ${response.status}`);
+        }
+        if ((response.headers.get("content-type") || "").includes("text/html")) {
+          throw new Error("The URL returned a web page instead of an OBB.");
+        }
+        return readResponse(response, "Downloading OBB…");
+      }
+
+      async function loadServerObb() {
+        try {
+          const available = await fetch("/local-obb", { method: "HEAD" });
+          if (!available.ok) {
+            setStatus("Runtime ready — choose an OBB to start.", false, true);
+            return;
+          }
+
+          setBusy(true);
+          setStatus("Loading OBB from res/…");
+          const response = await fetch("/local-obb");
+          if (!response.ok) {
+            throw new Error(`Local OBB failed: HTTP ${response.status}`);
+          }
+          await startGame(await readResponse(response, "Loading local OBB…"));
+        } catch (error) {
+          started = false;
+          setBusy(false);
+          setStatus(`Automatic load failed: ${error instanceof Error ? error.message : String(error)}`, true);
+          console.error(error);
+        }
       }
 
       fileInput.addEventListener("change", async () => {
@@ -183,8 +440,7 @@
         if (!file) {
           return;
         }
-
-        setStatus(`Reading ${file.name}...`);
+        setStatus(`Reading ${file.name}…`);
         try {
           await startGame(await file.arrayBuffer());
         } catch (error) {
@@ -194,11 +450,12 @@
 
       urlForm.addEventListener("submit", async (event) => {
         event.preventDefault();
-
+        setBusy(true);
         try {
-          await startGame(await downloadObb(urlInput.value));
+          await startGame(await downloadRemoteObb(urlInput.value));
         } catch (error) {
           started = false;
+          setBusy(false);
           setStatus(error instanceof Error ? error.message : String(error), true);
           console.error(error);
         }
@@ -215,8 +472,15 @@
           }
         },
         onRuntimeInitialized() {
-          setStatus("Choose an OBB to start.");
-          resolveRuntime();
+          try {
+            prepareGraphics();
+            resolveRuntime();
+            void loadServerObb();
+          } catch (error) {
+            setBusy(true);
+            setStatus(error instanceof Error ? error.message : String(error), true);
+            rejectRuntime(error);
+          }
         },
         onAbort: showRuntimeError,
       };

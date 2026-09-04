@@ -36,7 +36,7 @@ extern "C" {
     void InitParts(i32, VARIPTR *, VARIPTR);
     void ParticleReset(void);
     i32 NuFileExists(char *);
-    void NuStrCpy(char *, char *);
+    i32 NuStrCpy(char *, const char *);
     i32 edppLoadPage(char *, i32, usize);
     void NuRndrShadowInit(u8 *);
     void NuTexAnimProgSysInit(void);

@@ -2,6 +2,7 @@ load("@emsdk//emscripten_toolchain:wasm_rules.bzl", "wasm_cc_binary")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:objc_library.bzl", "objc_library")
+load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("//bazel:saga_components.bzl", "saga_component_libraries")
 
 package(default_visibility = ["//visibility:public"])
@@ -34,7 +35,7 @@ _HOST_EXCLUDES = [
     "nu2api/nucore/nunew.cpp",
 ]
 
-_HOST_SRCS = [source for source in _ENGINE_SRCS if source not in _HOST_EXCLUDES] + [
+_HOST_COMMON_SRCS = [source for source in _ENGINE_SRCS if source not in _HOST_EXCLUDES] + [
     "host/harness/audio.cpp",
     "host/harness/load.cpp",
     "host/harness/main.cpp",
@@ -46,6 +47,31 @@ _HOST_SRCS = [source for source in _ENGINE_SRCS if source not in _HOST_EXCLUDES]
     "host/platform/free_camera_culling.cpp",
     "host/platform/input.cpp",
     "host/platform/opensl.cpp",
+    "host/platform/runtime.cpp",
+]
+
+_NATIVE_PLATFORM_SRCS = select({
+    "//bazel/platforms:linux": [
+        "host/platform/linux/runtime.cpp",
+        "host/platform/posix/compressed_texture.cpp",
+        "host/platform/posix/egl.cpp",
+    ],
+    "//bazel/platforms:macos": [
+        "host/platform/posix/compressed_texture.cpp",
+        "host/platform/posix/egl.cpp",
+    ],
+    "//bazel/platforms:windows": [
+        "host/platform/windows/runtime.cpp",
+    ],
+    "//conditions:default": [],
+})
+
+_WASM_PLATFORM_SRCS = [
+    "host/platform/wasm/compatibility.cpp",
+    "host/platform/wasm/graphics.cpp",
+    "host/platform/wasm/input.cpp",
+    "host/platform/wasm/render_device.cpp",
+    "host/platform/wasm/runtime.cpp",
 ]
 
 _PUBLIC_HEADERS = glob(
@@ -73,16 +99,16 @@ filegroup(
 )
 
 _TARGET_COMPONENTS = saga_component_libraries(
-    engine_dirs = _ENGINE_DIRS,
-    headers = _PUBLIC_HEADERS,
-    name_prefix = "saga_target",
-    root_sources = _ENGINE_ROOT_SRCS,
-    sources = _ENGINE_SRCS,
     copts = [
         "-fno-data-sections",
         "-fno-function-sections",
     ],
     defines = ["ANDROID"],
+    engine_dirs = _ENGINE_DIRS,
+    headers = _PUBLIC_HEADERS,
+    name_prefix = "saga_target",
+    root_sources = _ENGINE_ROOT_SRCS,
+    sources = _ENGINE_SRCS,
     target_compatible_with = ["@platforms//os:android"],
     textual_headers = _TEXTUAL_HEADERS,
     deps = [
@@ -142,31 +168,49 @@ _HOST_PLATFORM_DEPS = select({
 
 objc_library(
     name = "saga_macos_platform",
-    srcs = ["host/platform/cocoa.mm"],
-    hdrs = ["host/platform/cocoa.hpp"],
+    srcs = ["host/platform/darwin/runtime.mm"],
+    hdrs = ["host/platform/runtime.hpp"],
     includes = ["."],
     target_compatible_with = ["@platforms//os:macos"],
     deps = ["@system_host_deps_macos//:host_deps"],
+    alwayslink = True,
 )
 
 _NATIVE_COMPONENTS = saga_component_libraries(
-    engine_dirs = _ENGINE_DIRS,
-    headers = _PUBLIC_HEADERS,
-    name_prefix = "saga_native",
-    root_sources = _ENGINE_ROOT_SRCS,
-    sources = _HOST_SRCS,
     copts = ["-fno-stack-protector"] + _HOST_PLATFORM_COPTS,
     defines = [
         "ANDROID",
         "HOST_BUILD",
     ],
-    deps = _HOST_PLATFORM_DEPS,
+    engine_dirs = _ENGINE_DIRS,
+    headers = _PUBLIC_HEADERS,
+    name_prefix = "saga_native",
+    root_sources = _ENGINE_ROOT_SRCS,
+    sources = _HOST_COMMON_SRCS,
     textual_headers = _TEXTUAL_HEADERS,
+    deps = _HOST_PLATFORM_DEPS,
+)
+
+cc_library(
+    name = "saga_native_platform",
+    srcs = _NATIVE_PLATFORM_SRCS,
+    hdrs = _PUBLIC_HEADERS,
+    copts = ["-fno-stack-protector"] + _HOST_PLATFORM_COPTS,
+    defines = [
+        "ANDROID",
+        "HOST_BUILD",
+    ],
+    includes = ["."],
+    linkstatic = True,
+    local_defines = ["__FILENAME__=__FILE__"],
+    textual_hdrs = _TEXTUAL_HEADERS,
+    deps = _HOST_PLATFORM_DEPS,
+    alwayslink = True,
 )
 
 cc_library(
     name = "saga_native_objects",
-    deps = _NATIVE_COMPONENTS,
+    deps = _NATIVE_COMPONENTS + [":saga_native_platform"],
 )
 
 cc_binary(
@@ -191,9 +235,16 @@ cc_binary(
     deps = [":saga_native_objects"],
 )
 
+sh_binary(
+    name = "run_native",
+    srcs = ["host/harness/run_native.sh"],
+    args = ["$(location :saga_native)"],
+    data = [":saga_native"],
+)
+
 cc_library(
     name = "saga_wasm_objects",
-    srcs = _HOST_SRCS,
+    srcs = _HOST_COMMON_SRCS + _WASM_PLATFORM_SRCS,
     hdrs = _PUBLIC_HEADERS,
     defines = [
         "ANDROID",
@@ -213,7 +264,7 @@ cc_library(
 )
 
 cc_binary(
-    name = "saga_wasm_link",
+    name = "saga",
     additional_linker_inputs = ["host-wasm-shell.html"],
     features = ["-output_format_js"],
     linkopts = [
@@ -238,7 +289,7 @@ cc_binary(
 
 wasm_cc_binary(
     name = "saga_wasm",
-    cc_target = ":saga_wasm_link",
+    cc_target = ":saga",
     outputs = [
         "saga.html",
         "saga.js",

@@ -9,10 +9,12 @@ void GizSpinner_Push(GIZSPINNER_s *, i32) {
 void GizSpinner_Spin(GIZSPINNER_s *, i32) {
 }
 
-void GizSpinner_Update(GIZSPINNER_s *) {
+int GizSpinner_Update(GIZSPINNER_s *) {
+    return 0;
 }
 
-void GizSpinner_GetState(GIZSPINNER_s *) {
+int GizSpinner_GetState(GIZSPINNER_s *) {
+    return 0;
 }
 
 void GizSpinner_PushFail(GameObject_s *, GIZSPINNER_s *) {

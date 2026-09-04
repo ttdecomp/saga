@@ -13,10 +13,10 @@
 #include "gameapi/gui/apimenu.h"
 #include "gameframework/saveload.h"
 #include "host/harness/window.hpp"
-#include "host/platform/cocoa.hpp"
 #include "host/platform/free_camera.hpp"
 #include "host/platform/graphics.hpp"
 #include "host/platform/input.hpp"
+#include "host/platform/runtime.hpp"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/area.h"
@@ -71,16 +71,6 @@ namespace {
         i16 wind_scale;
         u32 pad_cc;
     };
-
-#ifdef __EMSCRIPTEN__
-    constexpr const char *host_video_driver = "emscripten";
-#elif defined(_WIN32)
-    constexpr const char *host_video_driver = "windows";
-#elif defined(__APPLE__)
-    constexpr const char *host_video_driver = "cocoa";
-#else
-    constexpr const char *host_video_driver = "x11";
-#endif
 
     constexpr i32 host_window_width = 1280;
     constexpr i32 host_window_height = 720;
@@ -457,7 +447,8 @@ namespace {
     }
 
     static void host_sdl_init(bool offscreen, bool mute) {
-        SDL_SetHint(SDL_HINT_VIDEO_DRIVER, host_video_driver);
+        const char *video_driver = HostPlatformVideoDriver();
+        SDL_SetHint(SDL_HINT_VIDEO_DRIVER, video_driver);
         if (mute) {
             SDL_SetHint(SDL_HINT_AUDIO_DRIVER, "dummy");
         }
@@ -476,24 +467,12 @@ namespace {
             return;
         }
 
-        if (strcmp(SDL_GetCurrentVideoDriver(), host_video_driver) != 0) {
+        if (strcmp(SDL_GetCurrentVideoDriver(), video_driver) != 0) {
             LOG_ERR("unexpected video driver: %s", SDL_GetCurrentVideoDriver());
             return;
         }
 
-        const SDL_PropertiesID props = SDL_GetWindowProperties(window);
-#ifdef __EMSCRIPTEN__
-        g_renderDevice.OnWindowCreated(nullptr);
-#elif defined(_WIN32)
-        HWND handle = static_cast<HWND>(SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
-        g_renderDevice.OnWindowCreated(reinterpret_cast<ANativeWindow *>(handle));
-#elif defined(__APPLE__)
-        g_renderDevice.OnWindowCreated(
-            reinterpret_cast<ANativeWindow *>(HostCocoaGetEGLNativeWindow(window)));
-#else
-        auto handle = static_cast<i32>(SDL_GetNumberProperty(props, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0));
-        g_renderDevice.OnWindowCreated(reinterpret_cast<ANativeWindow *>(handle));
-#endif
+        g_renderDevice.OnWindowCreated(HostPlatformNativeWindow(window));
     }
 
     static SDL_Thread *host_numain_thread = nullptr;
@@ -523,6 +502,7 @@ namespace {
 
 i32 host_run_window(const HostWindowOptions &options) {
     HostSetReadbackEnabled(options.capture);
+    HostSetFpsOverlayEnabled(options.show_fps);
     HostFreeCameraConfigure(options.camera_free);
     host_sdl_init(options.offscreen, options.mute);
     const char *documents_path = ".work/host-documents/";
@@ -540,7 +520,13 @@ i32 host_run_window(const HostWindowOptions &options) {
 
     void *buffer = malloc(0x1000000);
     VARIPTR ptr = VARIPTR{.void_ptr = buffer};
-    NuDatSet(NuDatOpen("res/main.1060.com.wb.lego.tcs.obb", &ptr, 0));
+    NUDATHDR *dat = NuDatOpen("res/main.1060.com.wb.lego.tcs.obb", &ptr, 0);
+    if (dat == nullptr) {
+        LOG_ERR("failed to open res/main.1060.com.wb.lego.tcs.obb");
+        free(buffer);
+        return 1;
+    }
+    NuDatSet(dat);
 
     if (options.capture) {
         // Try to remove .work/capture/* before starting, but don't fail if it
@@ -620,21 +606,7 @@ i32 host_run_window(const HostWindowOptions &options) {
             }
             if (event.type == SDL_EVENT_QUIT) {
                 quit_requested = true;
-#ifdef __EMSCRIPTEN__
-            } else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) {
-                HostInputTouch(static_cast<i32>(event.button.x), static_cast<i32>(event.button.y), host_window_width,
-                               host_window_height);
-            } else if (event.type == SDL_EVENT_FINGER_DOWN) {
-                HostInputTouch(static_cast<i32>(event.tfinger.x * host_window_width),
-                               static_cast<i32>(event.tfinger.y * host_window_height), host_window_width,
-                               host_window_height);
-#endif
             } else if (event.type == SDL_EVENT_KEY_DOWN) {
-#ifdef __EMSCRIPTEN__
-                if (event.key.key == SDLK_RETURN || event.key.key == SDLK_SPACE) {
-                    HostInputTap(0, GAMEPAD_START | GAMEPAD_JUMP);
-                }
-#else
                 if (event.key.key == SDLK_ESCAPE) {
                     if (escape_held_button == 0) {
                         const i32 menu_id = host_menu_id();
@@ -643,7 +615,6 @@ i32 host_run_window(const HostWindowOptions &options) {
                         escape_held_button = opens_pause || resumes_pause ? GAMEPAD_START : GAMEPAD_TAG;
                     }
                 }
-#endif
             } else if (event.type == SDL_EVENT_KEY_UP) {
                 if (event.key.key == SDLK_ESCAPE) {
                     escape_held_button = 0;
@@ -651,6 +622,7 @@ i32 host_run_window(const HostWindowOptions &options) {
             } else if (event.type == SDL_EVENT_WINDOW_FOCUS_LOST) {
                 escape_held_button = 0;
             }
+            HostPlatformHandleInputEvent(event, host_window_width, host_window_height);
         }
         if (quit_requested) {
             break;
@@ -659,12 +631,7 @@ i32 host_run_window(const HostWindowOptions &options) {
         u32 keyboard_buttons = escape_held_button;
         if (!options.offscreen) {
             const bool *keyboard = SDL_GetKeyboardState(nullptr);
-#ifndef __EMSCRIPTEN__
-            // On WebAssembly RETURN/SPACE arrive as taps from the key events
-            // above, so they must not also be polled as held buttons.
-            keyboard_buttons |= keyboard[SDL_SCANCODE_RETURN] ? GAMEPAD_START | GAMEPAD_JUMP : 0;
-            keyboard_buttons |= keyboard[SDL_SCANCODE_SPACE] ? GAMEPAD_JUMP : 0;
-#endif
+            keyboard_buttons |= HostPlatformKeyboardButtons(keyboard);
             keyboard_buttons |= keyboard[SDL_SCANCODE_UP] || keyboard[SDL_SCANCODE_W] ? GAMEPAD_DUP : 0;
             keyboard_buttons |= keyboard[SDL_SCANCODE_DOWN] || keyboard[SDL_SCANCODE_S] ? GAMEPAD_DDOWN : 0;
             keyboard_buttons |= keyboard[SDL_SCANCODE_LEFT] || keyboard[SDL_SCANCODE_A] ? GAMEPAD_DLEFT : 0;

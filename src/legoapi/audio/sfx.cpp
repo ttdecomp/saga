@@ -112,7 +112,8 @@ extern "C" {
     void GetSfxName(void) {
     }
 
-    void IsSfxLooping(void) {
+    i32 IsSfxLooping(i32) {
+        return 0;
     }
 
     void PauseGameAudio(void) {
@@ -152,7 +153,8 @@ extern "C" {
     void PlaySfxByIdAndSetPitch(void) {
     }
 
-    void PlaySfxByIdAndSetVolume(void) {
+    void PlaySfxByIdAndSetVolume(i32 sfx_id, nuvec_s *position, f32 volume) {
+        PlaySfxByIdEx(sfx_id, position, volume, 1.0f);
     }
 
     void PlaySfxByIdAndSetVolumeAndPitch(void) {

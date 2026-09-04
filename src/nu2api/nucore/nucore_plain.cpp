@@ -1168,7 +1168,7 @@ extern "C" {
                 NuMtxMulVU0(&matrices[joint_index], &local_matrix, &matrices[parent_index]);
             }
 
-            if ((parent_index & 0x40) != 0) {
+            if ((flags & 0x40) != 0) {
                 scale_array[joint_index] = {1.0f, 1.0f, 1.0f};
             }
         }
@@ -2891,7 +2891,8 @@ extern "C" {
     }
     void NuKey_simple(void) {
     }
-    void NuKeyboard(void) {
+    i32 NuKeyboard(i32) {
+        return 0;
     }
     i32 NuKeyboard_db(i32) {
         return 0;
@@ -3187,7 +3188,28 @@ extern "C" {
     }
     void NuAToIW(void) {
     }
-    void NuIToA(void) {
+    char *NuIToA(i32 value, char *buffer, i32 radix) {
+        if (buffer == NULL || radix < 2 || radix > 36) {
+            return buffer;
+        }
+
+        static const char digits[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+        char reversed[34];
+        i32 length = 0;
+        const bool negative = value < 0 && radix == 10;
+        u32 magnitude = negative ? 0u - static_cast<u32>(value) : static_cast<u32>(value);
+        do {
+            reversed[length++] = digits[magnitude % static_cast<u32>(radix)];
+            magnitude /= static_cast<u32>(radix);
+        } while (magnitude != 0);
+        if (negative) {
+            reversed[length++] = '-';
+        }
+        for (i32 i = 0; i < length; ++i) {
+            buffer[i] = reversed[length - i - 1];
+        }
+        buffer[length] = '\0';
+        return buffer;
     }
     void NuIToAW(void) {
     }

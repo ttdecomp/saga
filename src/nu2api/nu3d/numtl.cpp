@@ -6,6 +6,7 @@
 #include "nu2api/nu3d/android/nuvertexformat_android.h"
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nu3d/nushader.h"
+#include "nu2api/nu3d/nutex.h"
 #include "nu2api/nucore/common.h"
 #include "nu2api/nufile/nufile.h"
 
@@ -33,6 +34,11 @@ void NuMtlInitEx(VARIPTR *buf, i32 mtl_count) {
     max_materials = mtl_count;
     material_list = (NUMTL *)ALIGN(buf->addr, 0x10);
     buf->addr = (usize)material_list + mtl_count * sizeof(NUMTL);
+
+    // Original 0x2f2773: platform texture setup is part of material-system
+    // initialization.  Besides the two environment maps this creates the
+    // 1x1 white fallback used whenever a display-list texture is absent.
+    NuTexInitExPS(buf);
 }
 
 void DefaultMtl(NUMTL *mtl) {

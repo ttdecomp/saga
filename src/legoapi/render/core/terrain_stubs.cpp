@@ -779,7 +779,7 @@ extern "C" {
         }
     }
 
-    void DebrisRegisterCutoffCameraVec(void) {
+    void DebrisRegisterCutoffCameraVec(void *) {
     }
 
     void DebrisReserveTrashableSpace(void) {

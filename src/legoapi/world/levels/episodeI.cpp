@@ -53,9 +53,7 @@ extern struct LEVFLAGBYTES_s LevFlag;
 // only consumer within the levels module.
 
 extern "C" {
-    // AIPAthFindPathCnx is called with a different arity here than in
-    // episodeII (both byte-matched), so it stays local rather than in a header.
-    void *AIPAthFindPathCnx(AISYS_s *, i32, char *, void *); // original name keeps the typo
+    void *AIPAthFindPathCnx(AISYS_s *, i32, char *, void *, void *); // original name keeps the typo
 }
 
 // --- Cross-file entry points (C++ linkage) ---------------------------------
@@ -1588,15 +1586,15 @@ void RetakeG_Init(WORLDINFO_s *world) {
     RetakeG_TotalGuards_msg = CheckGizAIMessage(gizaimessagesys, "TotalGuards", NULL);
     RetakeG_GuardsToRescue_msg = CheckGizAIMessage(gizaimessagesys, "GuardsToRescue", NULL);
     LevGizForce[0] = GizForce_FindByName(world->giz_force_sys, "force6");
-    LevPathCnx[0] = AIPAthFindPathCnx(world->ai_sys, 0, "stack1_b", buf);
-    LevPathCnx[1] = AIPAthFindPathCnx(world->ai_sys, 0, "stack1_a", buf);
-    LevPathCnx[2] = AIPAthFindPathCnx(world->ai_sys, 0, "stack1_c", buf);
-    LevPathCnx[3] = AIPAthFindPathCnx(world->ai_sys, 0, "stack1_d", buf);
+    LevPathCnx[0] = AIPAthFindPathCnx(world->ai_sys, 0, "stack1_b", NULL, buf);
+    LevPathCnx[1] = AIPAthFindPathCnx(world->ai_sys, 0, "stack1_a", NULL, buf);
+    LevPathCnx[2] = AIPAthFindPathCnx(world->ai_sys, 0, "stack1_c", NULL, buf);
+    LevPathCnx[3] = AIPAthFindPathCnx(world->ai_sys, 0, "stack1_d", NULL, buf);
     LevGizForce[1] = GizForce_FindByName(world->giz_force_sys, "force3");
-    LevPathCnx[4] = AIPAthFindPathCnx(world->ai_sys, 0, "stack2_b", buf);
-    LevPathCnx[5] = AIPAthFindPathCnx(world->ai_sys, 0, "stack2_a", buf);
-    LevPathCnx[6] = AIPAthFindPathCnx(world->ai_sys, 0, "stack2_c", buf);
-    LevPathCnx[7] = AIPAthFindPathCnx(world->ai_sys, 0, "stack2_d", buf);
+    LevPathCnx[4] = AIPAthFindPathCnx(world->ai_sys, 0, "stack2_b", NULL, buf);
+    LevPathCnx[5] = AIPAthFindPathCnx(world->ai_sys, 0, "stack2_a", NULL, buf);
+    LevPathCnx[6] = AIPAthFindPathCnx(world->ai_sys, 0, "stack2_c", NULL, buf);
+    LevPathCnx[7] = AIPAthFindPathCnx(world->ai_sys, 0, "stack2_d", NULL, buf);
     GIZFORCE_s *f = GizForce_FindByName(world->giz_force_sys, "Force18");
     if (f != NULL)
         f->strength_0x6c = 0.85f;

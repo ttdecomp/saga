@@ -22,7 +22,7 @@ extern "C" {
     AILOCATOR_s *AIPathFindLocator(AISYS_s *aisys, char *name);
     AIAREA_s *AISysFindArea(AISYS_s *ai_sys, char *name);
     AIPATH_s *AISysFindPath(AISYS_s *ai_sys, char *name);
-    void *AIPathFindNode(AISYS_s *aisys, char *name, i32 unknown);
+    AIPATHNODE_s *AIPathFindNode(AISYS_s *aisys, AIPATH_s *path, char *name);
     void AIPathNodeUpdatePos(AISYS_s *system, AIPATH_s *path, AIPATHNODE_s *node);
 
 #ifdef __cplusplus

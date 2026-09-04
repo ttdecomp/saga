@@ -15,6 +15,7 @@
 #include "nu2api/nu3d/nu2api_nu3d_types.h"
 #include "nushader.h"
 #include "nu2api/nu3d/nutex.h"
+#include "nu2api/nu3d/android/nuiosdl_gl.h"
 #include "nu2api/nu3d/android/nutex_android.h"
 #include "nu2api/nu3d/android/nutex_ios_ex.h"
 
@@ -297,6 +298,10 @@ extern "C" void NuShaderManagerReleaseShader(NUSHADEROBJECT *slot) {
 
 extern u32 g_boundShader;
 
+extern "C" {
+    extern void (*g_glConstantSetterTable[4])(u32 location, i32 count, const void *values);
+}
+
 extern "C" void NuShaderManagerBindShader(NUSHADEROBJECT *slot) {
     (void)nu2api::g_shaderManager;
     nu2api::ManagerBoundSlot() = slot;
@@ -330,6 +335,13 @@ extern "C" void NuShaderManagerSetfv(i32 semantic, const f32 *values) {
     if (vec4Count < 5) {
         std::memcpy(g_shaderUniforms[semantic].raw + 0x1c, values, static_cast<size_t>(vec4Count) << 4);
     }
+}
+
+// Original 0x308ec0. Array-valued constants are applied immediately to the
+// shader which is active while the display-list callback is being consumed.
+extern "C" void NuShaderManagerSetElementsfv(i32 semantic, i32 first_element, i32 count, const f32 *values) {
+    NUSHADEROBJECT *shader = NuShaderManagerGetCurrentShader();
+    NuShaderObjectSetElementsfv(shader, semantic, first_element, count, values);
 }
 
 namespace nu2api {
@@ -828,82 +840,208 @@ extern "C" void *NuShaderManagerRetrieveShaderVariant(NUSHADERMTLDESC *desc, voi
 }
 
 extern "C" void NuShaderObjectGLSLSetupMaterial(NUSHADEROBJECT *shader, struct numtl_s *mtl) {
-    extern f32 g_renderContext_viewProj[16];
-    extern f32 g_renderContext_view[16];
-    extern f32 g_renderContext_world[16];
-    extern f32 g_renderContext_kTint[4];
-    const GLuint gl_program = shader->glsl.program;
-    static const f32 fog_params[4] = {0.0f, 0.0f, 1.0f, 0.0f};
-    static const f32 zero[4] = {};
-
-    auto set4fv = [gl_program](const char *name, i32 count, const f32 *value) {
-        const GLint location = glGetUniformLocation(gl_program, name);
-        if (location >= 0) {
-            glUniform4fv(location, count, value);
-        }
-    };
-    auto set3fv = [gl_program](const char *name, i32 count, const f32 *value) {
-        const GLint location = glGetUniformLocation(gl_program, name);
-        if (location >= 0) {
-            glUniform3fv(location, count, value);
-        }
-    };
-
-    // These are the generated GLSL names for the original material semantics
-    // consumed by the legal/intro 2D shaders.
-    set4fv("_world", 4, g_renderContext_world);
-    set4fv("_viewProj", 4, g_renderContext_viewProj);
-    set4fv("_vs_view", 4, g_renderContext_view);
-    set4fv("_kTint", 1, g_renderContext_kTint);
-    set4fv("_vs_sceneAmbientColor", 1, reinterpret_cast<const f32 *>(nu2api::g_shaderUniforms[0x35].raw + 0x1c));
-    set4fv("_vs_lightColor0", 1, reinterpret_cast<const f32 *>(nu2api::g_shaderUniforms[0x36].raw + 0x1c));
-    set4fv("_vs_lightColor1", 1, reinterpret_cast<const f32 *>(nu2api::g_shaderUniforms[0x37].raw + 0x1c));
-    set4fv("_vs_lightPosition0", 1, reinterpret_cast<const f32 *>(nu2api::g_shaderUniforms[0x39].raw + 0x1c));
-    set4fv("_vs_lightPosition1", 1, reinterpret_cast<const f32 *>(nu2api::g_shaderUniforms[0x3a].raw + 0x1c));
-    set4fv("_averageLightColor", 1, reinterpret_cast<const f32 *>(nu2api::g_shaderUniforms[0x4d].raw + 0x1c));
-    set4fv("_averageLightDir", 1, reinterpret_cast<const f32 *>(nu2api::g_shaderUniforms[0x4e].raw + 0x1c));
     auto unpackColour = [](u32 packed, f32 *colour) {
         colour[0] = static_cast<f32>(packed & 0xff) / 255.0f;
         colour[1] = static_cast<f32>((packed >> 8) & 0xff) / 255.0f;
         colour[2] = static_cast<f32>((packed >> 16) & 0xff) / 255.0f;
         colour[3] = static_cast<f32>(packed >> 24) / 255.0f;
     };
-    const u8 *material = reinterpret_cast<const u8 *>(mtl);
-    f32 ambient[4];
-    f32 incandescent[4];
-    f32 specular[4];
-    f32 specularParams[4] = {
-        *reinterpret_cast<const f32 *>(material + 0x130),
-        *reinterpret_cast<const f32 *>(material + 0x12c),
-        *reinterpret_cast<const f32 *>(material + 0x144),
-        *reinterpret_cast<const f32 *>(material + 0x148),
-    };
-    unpackColour(*reinterpret_cast<const u32 *>(material + 0x11c), ambient);
-    unpackColour(*reinterpret_cast<const u32 *>(material + 0x120), incandescent);
-    incandescent[3] = *reinterpret_cast<const f32 *>(material + 0x1b4);
-    unpackColour(*reinterpret_cast<const u32 *>(material + 0x128), specular);
-    set4fv("_ambientColor", 1, ambient);
-    set4fv("_incandescentGlow", 1, incandescent);
-    set4fv("_specular_params", 1, specularParams);
-    set3fv("_specular_specular", 1, specular);
-    const u32 diffuse = *reinterpret_cast<const u32 *>(&mtl->shader_desc.diffuse_color[0]);
-    const f32 layer0Diffuse[4] = {
-        static_cast<f32>(diffuse & 0xff) / 255.0f,
-        static_cast<f32>((diffuse >> 8) & 0xff) / 255.0f,
-        static_cast<f32>((diffuse >> 16) & 0xff) / 255.0f,
-        static_cast<f32>(diffuse >> 24) / 255.0f,
-    };
-    const f32 layerOpacities[4] = {mtl->opacity, 1.0f, 1.0f, 1.0f};
-    set4fv("_layer0_diffuse", 1, layer0Diffuse);
-    set4fv("_layer_kOpacities", 1, layerOpacities);
-    set4fv("_fog_params", 1, fog_params);
-    set4fv("_fog_color", 1, zero);
 
     // Target 0x31cba0 walks the active texture semantics and binds each map to
     // the unit encoded by ProbeSemantics.  Keeping this driven by the usage
     // mask is important for multi-sampler character materials.
     const NUSHADERUSAGEMASK *usage = shader->usage_mask;
     if (usage != NULL) {
+        const u8 *material = reinterpret_cast<const u8 *>(mtl);
+        auto materialFloat = [material](usize offset) {
+            return *reinterpret_cast<const f32 *>(material + offset);
+        };
+        auto materialU32 = [material](usize offset) {
+            return *reinterpret_cast<const u32 *>(material + offset);
+        };
+
+        // Original 0x309da0.  Material semantics are not part of the global
+        // uniform table: every active one is rebuilt from NUMTL immediately
+        // before drawing.  In particular the four layer colours/opacities and
+        // the surface parameters must not be left at OpenGL's zero defaults.
+        for (i32 semantic = 21; semantic <= 52; ++semantic) {
+            if ((usage->semantics[semantic >> 5] & (1u << (semantic & 31))) == 0) {
+                continue;
+            }
+
+            const GLint location = shader->parameters[semantic].location;
+            if (location < 0) {
+                continue;
+            }
+
+            f32 values[16] = {};
+            i32 components = 4;
+            i32 count = 1;
+            switch (semantic) {
+                case 21:
+                    unpackColour(materialU32(0x11c), values);
+                    break;
+                case 22:
+                    unpackColour(materialU32(0x120), values);
+                    values[3] = materialFloat(0x1b4);
+                    break;
+                case 23:
+                    values[0] = material[0xfb] == 0 ? 1.0f : -1.0f;
+                    components = (shader->parameters[semantic].element_count_and_setter & 3) + 1;
+                    break;
+                case 24:
+                    values[0] = materialFloat(0x134);
+                    values[1] = 1.0f;
+                    values[2] = 0.035f * materialFloat(0x138);
+                    values[3] = materialFloat(0x14c);
+                    break;
+                case 25:
+                    values[0] = materialFloat(0xf0);
+                    values[1] = materialFloat(0x284) / materialFloat(0x274);
+                    break;
+                case 26:
+                    values[0] = materialFloat(0x130);
+                    values[1] = materialFloat(0x12c);
+                    values[2] = materialFloat(0x144);
+                    values[3] = materialFloat(0x148);
+                    break;
+                case 27:
+                    values[0] = materialFloat(0x140);
+                    values[1] = materialFloat(0x13c);
+                    values[2] = materialFloat(0x248);
+                    break;
+                case 28:
+                    values[0] = materialFloat(0x114);
+                    components = (shader->parameters[semantic].element_count_and_setter & 3) + 1;
+                    break;
+                case 29:
+                    values[0] = materialFloat(0x118);
+                    components = (shader->parameters[semantic].element_count_and_setter & 3) + 1;
+                    break;
+                case 30:
+                    values[0] = materialFloat(0x1b8);
+                    values[1] = materialFloat(0x1bc);
+                    break;
+                case 31:
+                    // NuShaderObjectBaseUpdateWaterTable owns this upload.
+                    continue;
+                case 32:
+                case 33:
+                case 34:
+                case 35:
+                    unpackColour(materialU32(0xc8 + (semantic - 32) * 4), values);
+                    break;
+                case 36:
+                    values[0] = materialFloat(0xd8);
+                    values[1] = materialFloat(0xdc);
+                    values[2] = materialFloat(0xe0);
+                    values[3] = materialFloat(0xe4);
+                    break;
+                case 37:
+                    unpackColour(materialU32(0x128), values);
+                    components = 3;
+                    break;
+                case 38:
+                    unpackColour(materialU32(0xf4), values);
+                    components = 3;
+                    break;
+                case 39:
+                    unpackColour(materialU32(0x124), values);
+                    values[3] = materialFloat(0x158);
+                    break;
+                case 40:
+                    values[0] = (materialFloat(0x150) - 1.0f) * 0.1f;
+                    components = (shader->parameters[semantic].element_count_and_setter & 3) + 1;
+                    break;
+                case 41:
+                case 42:
+                case 43:
+                case 44:
+                    values[0] = materialFloat(0x1d0 + (semantic - 41) * 8);
+                    values[1] = materialFloat(0x1d4 + (semantic - 41) * 8);
+                    components = 2;
+                    break;
+                case 45:
+                    values[0] = 0.05f;
+                    values[1] = 0.32f * materialFloat(0x60);
+                    values[2] = 0.2f;
+                    values[3] = 0.8f;
+                    break;
+                case 46:
+                    values[0] = materialFloat(0x60);
+                    values[1] = materialFloat(0x64);
+                    values[2] = materialFloat(0x68);
+                    values[3] = 0.2f * values[1] * values[2];
+                    break;
+                case 47:
+                    values[0] = materialFloat(0x154);
+                    components = (shader->parameters[semantic].element_count_and_setter & 3) + 1;
+                    break;
+                case 48:
+                    values[0] = materialFloat(0x260);
+                    values[1] = materialFloat(0x264);
+                    break;
+                case 49:
+                    for (i32 colour = 0; colour < 4; ++colour) {
+                        unpackColour(materialU32(0x250 + colour * 4), values + colour * 4);
+                    }
+                    count = 4;
+                    break;
+                case 50:
+                    values[0] = 1.0f / materialFloat(0x290);
+                    values[1] = materialFloat(0x288);
+                    values[2] = materialFloat(0x28c);
+                    values[3] = materialFloat(0x294);
+                    break;
+                case 51:
+                    values[0] = 0.1f * materialFloat(0x274);
+                    values[1] = materialFloat(0x27c);
+                    values[2] = materialFloat(0x280);
+                    values[3] = materialFloat(0x278);
+                    break;
+                case 52: {
+                    // Original .L35 at 0x30a8d8.  GLES has no fixed-function
+                    // alpha test, so generated shaders consume the current
+                    // render-state comparison as (sign, adjusted reference).
+                    const f32 alpha_ref = static_cast<f32>(g_alphaRef) * (1.0f / 255.0f);
+                    components = 2;
+                    if (g_alphaTestEnabled == 0) {
+                        values[0] = 0.0f;
+                        values[1] = -1.0f;
+                    } else if (g_alphaFunc == 2) {
+                        values[0] = -1.0f;
+                        values[1] = -alpha_ref - (1.0f / 255.0f);
+                        if (values[1] <= 0.0f) {
+                            values[1] = 0.0f;
+                        }
+                    } else if (g_alphaFunc == 3) {
+                        values[0] = -1.0f;
+                        values[1] = -alpha_ref;
+                    } else if (g_alphaFunc == 5) {
+                        values[0] = 1.0f;
+                        values[1] = alpha_ref;
+                    } else if (g_alphaFunc == 6) {
+                        values[0] = 1.0f;
+                        values[1] = alpha_ref + (1.0f / 255.0f);
+                    } else {
+                        values[0] = 0.0f;
+                        values[1] = -1.0f;
+                    }
+                    break;
+                }
+            }
+
+            if (components == 1) {
+                glUniform1fv(location, count, values);
+            } else if (components == 2) {
+                glUniform2fv(location, count, values);
+            } else if (components == 3) {
+                glUniform3fv(location, count, values);
+            } else {
+                glUniform4fv(location, count, values);
+            }
+        }
+
         for (i32 semantic = 0; semantic <= 20; ++semantic) {
             if ((usage->semantics[semantic >> 5] & (1u << (semantic & 31))) == 0) {
                 continue;
@@ -972,6 +1110,43 @@ extern "C" void NuShaderObjectGLSLSetupMaterial(NUSHADEROBJECT *shader, struct n
             glBindTexture(bind_2d ? GL_TEXTURE_2D : GL_TEXTURE_CUBE_MAP, gl_texture);
             if (!bind_2d && texture_unit < 16) {
                 g_lastBoundCubeTexIds[texture_unit] = gl_texture;
+            }
+        }
+
+        // The original continues through the non-material shader semantics
+        // (0x35..0x59) and uploads the values accumulated by
+        // NuShaderManagerSetfv.  These include the world/view/projection
+        // matrices and the current light state.  Use the locations and setter
+        // classes recorded by NuShaderObjectGLSLProbeSemantics rather than
+        // looking up a hand-picked set of generated GLSL names.
+        for (i32 semantic = 0x35; semantic <= 0x59; ++semantic) {
+            if ((usage->semantics[semantic >> 5] & (1u << (semantic & 31))) == 0) {
+                continue;
+            }
+
+            GLSLParameter &parameter = shader->parameters[semantic];
+            if (parameter.location < 0) {
+                continue;
+            }
+
+            const nu2api::ShaderUniformRecord &uniform = nu2api::g_shaderUniforms[semantic];
+            const i32 count = *reinterpret_cast<const i32 *>(uniform.raw + 8);
+            if (count <= 0) {
+                continue;
+            }
+            const f32 *values = reinterpret_cast<const f32 *>(uniform.raw + 0x1c);
+
+            switch (parameter.type_and_flags & 0x0f) {
+                case 1:
+                    g_glConstantSetterTable[parameter.element_count_and_setter & 3](parameter.location, count,
+                                                                                    values);
+                    break;
+                case 2:
+                    glUniform4fv(parameter.location, count, values);
+                    break;
+                case 3:
+                    parameter.setElementsMatrix(0, count, values);
+                    break;
             }
         }
     }

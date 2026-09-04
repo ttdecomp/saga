@@ -270,7 +270,12 @@ extern "C" {
     void rtlGetFogSet(void) {
     }
 
-    void rtlInitDynamic(void) {
+    void rtlInitDynamic(VARIPTR *, VARIPTR, i32 max_lights) {
+        // Dynamic lights are not reconstructed yet, but callers still rely on
+        // the original ABI. Keeping the limit makes reset/query behaviour
+        // consistent without trapping WebAssembly on a signature mismatch.
+        rtl_dynamic_max = max_lights;
+        rtl_dynamic_cnt = 0;
     }
 
     rtlset *rtlLoadSet(char *path, VARIPTR *buffer, i32 buffer_end) {
@@ -348,7 +353,7 @@ extern "C" {
     void rtlSpecularValue(void) {
     }
 
-    i32 rtlResetDynamic(void) {
+    void rtlResetDynamic(void) {
         if (rtl_dynamic_pool != NULL) {
             NULNKHDR *entry = NuLstGetNext(rtl_dynamic_pool, NULL);
             while (entry != NULL) {
@@ -358,7 +363,6 @@ extern "C" {
             }
             rtl_dynamic_cnt = 0;
         }
-        return rtl_dynamic_max;
     }
 
     i32 rtlFindByUserId(usize rtl_set, i32 user_id) {

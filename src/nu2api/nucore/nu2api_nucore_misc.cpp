@@ -1,5 +1,6 @@
 #include "nu2api_nucore_types.h"
 #include "nu2api/nu3d/android/nutex_ios_ex.h"
+#include "nu2api/nu3d/android/nutex_android.h"
 #include "nu2api/nu3d/nudlist.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/numtl.h"
@@ -94,7 +95,36 @@ void NuBez3EvaluateX(nuvec4_s *, float) {
 void NuDebugMsgPrint(char *) {
 }
 
-void NuIOSDLLightmap(void *) {
+// original 0x2955ee -- lightmap display-list packet.  Mode 1 installs one
+// lightmap; mode 2 walks the packet's three lightmap ids.  The latter really
+// does select texture unit zero for each entry in the target binary.
+__attribute__((optimize("O0"))) void NuIOSDLLightmap(void *arg) {
+    i32 *packet = static_cast<i32 *>(arg);
+    const i32 mode = packet[0];
+
+    if (mode == 1) {
+        const i32 texture_id = packet[1] > 0 ? packet[1] : 1;
+        NUNATIVETEX *texture = NuTexGetNative(texture_id);
+        glActiveTexture(GL_TEXTURE0);
+        g_currentTexUnit = 0;
+        glBindTexture(GL_TEXTURE_2D,
+                      texture->platform.gl_tex != 0 ? texture->platform.gl_tex : g_whiteTexture);
+    } else if (mode == 2) {
+        for (i32 index = 0; index < 3; ++index) {
+            const i32 texture_id = packet[index + 2] > 0 ? packet[index + 2] : 1;
+            NUNATIVETEX *texture = NuTexGetNative(texture_id);
+            glActiveTexture(GL_TEXTURE0);
+            g_currentTexUnit = 0;
+            glBindTexture(GL_TEXTURE_2D,
+                          texture->platform.gl_tex != 0 ? texture->platform.gl_tex : g_whiteTexture);
+        }
+    } else {
+        return;
+    }
+
+    const f32 *offset = reinterpret_cast<const f32 *>(packet + 5);
+    const f32 shader_offset[4] = {offset[0], -offset[1], 0.0f, 0.0f};
+    NuShaderManagerSetfv(0x58, shader_offset);
 }
 
 void NuLgtArcLaserEx(i32, nuvec_s *, nuvec_s *, nuvec_s *, float, float, float, float, i32, i32) {
@@ -218,7 +248,20 @@ void NuGCutRigidCalcMtx(NUGCUTRIGID_s *rigid, float frame, numtx_s *mtx) {
 void NuIOSDLFogCallback(void *) {
 }
 
-void NuIOSDLLightmapOld(void *) {
+// original 0x295420 -- legacy packet containing three texture ids.
+__attribute__((optimize("O0"))) void NuIOSDLLightmapOld(void *arg) {
+    const i32 *texture_ids = static_cast<const i32 *>(arg);
+    for (i32 index = 0; index < 3; ++index) {
+        const i32 texture_id = texture_ids[index] > 0 ? texture_ids[index] : 1;
+        NUNATIVETEX *texture = NuTexGetNative(texture_id);
+        glActiveTexture(GL_TEXTURE0 + index);
+        g_currentTexUnit = index;
+        glBindTexture(GL_TEXTURE_2D,
+                      texture->platform.gl_tex != 0 ? texture->platform.gl_tex : g_whiteTexture);
+    }
+
+    const f32 shader_offset[4] = {0.0f, 0.0f, 0.0f, 0.0f};
+    NuShaderManagerSetfv(0x58, shader_offset);
 }
 
 // NuIOSDLMtlCallback is transcribed in android/nuiosdl_gl.cpp (original 0x29c480).
@@ -525,7 +568,21 @@ void NuPortalEnableDebugDraw(i32 enabled) {
 void NuTimeGetMicrosecondsPS(u32 *, u32 *) {
 }
 
-void NuIOSDLLightmapOffsetOld(void *) {
+// original 0x2954f0 -- legacy three-lightmap packet followed by a UV offset.
+__attribute__((optimize("O0"))) void NuIOSDLLightmapOffsetOld(void *arg) {
+    const i32 *texture_ids = static_cast<const i32 *>(arg);
+    for (i32 index = 0; index < 3; ++index) {
+        const i32 texture_id = texture_ids[index] > 0 ? texture_ids[index] : 1;
+        NUNATIVETEX *texture = NuTexGetNative(texture_id);
+        glActiveTexture(GL_TEXTURE0 + index);
+        g_currentTexUnit = index;
+        glBindTexture(GL_TEXTURE_2D,
+                      texture->platform.gl_tex != 0 ? texture->platform.gl_tex : g_whiteTexture);
+    }
+
+    const f32 *offset = reinterpret_cast<const f32 *>(texture_ids + 3);
+    const f32 shader_offset[4] = {offset[0], -offset[1], 0.0f, 0.0f};
+    NuShaderManagerSetfv(0x58, shader_offset);
 }
 
 void NuIOS_DisplaySystemAlert(char const *) {
@@ -604,7 +661,15 @@ void NuCameraTransformScissorClip(nuvec_s *, nuvec_s *, i32, numtx_s *) {
 
 // NuDebrisRendererFlushBuffers is transcribed in android/nuptl_flush.cpp (original 0x296f35).
 
-void NuIOSDLVertexOffsetsCallback(void *) {
+// Original 0x294d93. The packet stores a count followed by up to eight vec4
+// vertex-offset entries for semantic 0x50.
+void NuIOSDLVertexOffsetsCallback(void *arg) {
+    const i32 *packet = static_cast<const i32 *>(arg);
+    i32 count = packet[0];
+    if (count > 8) {
+        count = 8;
+    }
+    NuShaderManagerSetElementsfv(0x50, 0, count, reinterpret_cast<const f32 *>(packet + 1));
 }
 
 void NuOnlineSetPropertyProfilePS(i32, i32, i32, void *) {

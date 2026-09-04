@@ -670,7 +670,23 @@ extern "C" {
         return NULL;
     }
 
-    void AIPathFindNode(void) {
+    AIPATHNODE *AIPathFindNode(AISYS *system, AIPATH *path, char *name) {
+        if (path == NULL) {
+            if (system == NULL || system->path_sys == NULL || system->path_sys->path_count == 0) {
+                return NULL;
+            }
+            path = system->path_sys->active_path;
+            if (path == NULL) {
+                return NULL;
+            }
+        }
+
+        for (i32 index = 0; index < path->node_count; ++index) {
+            if (path->nodes[index].name != NULL && NuStrICmp(path->nodes[index].name, name) == 0) {
+                return &path->nodes[index];
+            }
+        }
+        return NULL;
     }
 
     void AIPathFindPathCnxFromIX(void) {

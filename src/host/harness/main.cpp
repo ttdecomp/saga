@@ -1,6 +1,7 @@
 #include "host/harness/audio.hpp"
 #include "host/harness/load.hpp"
 #include "host/harness/window.hpp"
+#include "host/platform/runtime.hpp"
 
 #include <cerrno>
 #include <cstdio>
@@ -58,6 +59,7 @@ namespace {
         printf("  --camera-free          Free camera: numpad 8/5/4/6 rotate; hold Shift to move\n");
         printf("  --offscreen            Create a hidden, non-focusable window\n");
         printf("  --mute                 Use SDL's dummy audio driver\n");
+        printf("  --fps                  Show a top-left FPS counter\n");
         printf("  --script-tail-ms <ms>  Wait after scripted input completes (default: 8000)\n");
         printf("  --timeout-ms <ms>      Stop the window utility after this time (default: 90000)\n");
     }
@@ -146,6 +148,8 @@ namespace {
                 options.offscreen = true;
             } else if (strcmp(argument, "--mute") == 0) {
                 options.mute = true;
+            } else if (strcmp(argument, "--fps") == 0) {
+                options.show_fps = true;
             } else if (strcmp(argument, "--script-tail-ms") == 0 || strcmp(argument, "--timeout-ms") == 0) {
                 if (++i == argc) {
                     fprintf(stderr, "Missing value for %s\n", argument);
@@ -252,13 +256,7 @@ namespace {
 } // namespace
 
 i32 main(i32 argc, char **argv) {
-#ifdef __EMSCRIPTEN__
-    char *wasm_argv[] = {argv[0], const_cast<char *>("window"), nullptr};
-    if (argc < 2) {
-        argc = 2;
-        argv = wasm_argv;
-    }
-#endif
+    HostPlatformPrepareArguments(&argc, &argv);
 
     HostHarnessOptions options;
     const HostParseResult result = host_parse_arguments(argc, argv, options);
