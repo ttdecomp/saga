@@ -10,7 +10,7 @@ pipeline in the repository.
 - **original**: the reference binary at `res/libTTapp.so`.
 - **base/current**: the newly built `bazel-bin/src/libTTapp.so` in objdiff
   terminology.
-- **native build**: the Linux, Windows, or macOS executable used for runtime
+- **native build**: the Linux or Windows executable used for runtime
   diagnostics. It is not the matching artifact.
 
 ## Build and repository checks

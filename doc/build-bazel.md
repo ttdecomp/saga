@@ -10,13 +10,13 @@ Python installation is required for Bazel targets.
 | Build | Command | Output | Supported build hosts |
 |---|---|---|---|
 | Target (Android x86) | `bazel build --config=target //src:saga_target` | `bazel-bin/src/libTTapp.so` | Linux x86-64, Windows x86-64, macOS Intel |
-| Native | `bazel build --config=native //src:saga_native` | `bazel-bin/src/saga_native` (`.exe` on Windows) | Linux, macOS Apple Silicon |
+| Native | `bazel build --config=native //src:saga_native` | `bazel-bin/src/saga_native` | Linux |
 | Native (Windows) | `bazel build --config=native --config=windows-mingw //src:saga_native` | `bazel-bin/src/saga_native.exe` | Windows MINGW64 |
 | WASM | `bazel build --config=wasm //src:saga_wasm` | `bazel-bin/src/saga.html`, `.js`, and `.wasm` | Any host supported by emsdk 6.0.8 |
 
 The legacy Android NDK r8e contains x86-64 host tools only. On Apple Silicon,
 run the Android build under an Intel/Rosetta environment or use one of the
-other listed hosts. This restriction does not apply to the native macOS build.
+other listed hosts.
 
 The target output is a 32-bit Android x86 ELF shared object named
 `libTTapp.so`; it does not define `main`. Native and WASM outputs use the host
@@ -48,9 +48,8 @@ The WebAssembly build is hermetic after repository download. It uses emsdk
   for SAGA, GNU libstdc++ headers for Squish, and disabled function/data
   sections.
 - Linux host keeps `-m32 -march=i686 -msse2`, ASan, and UBSan. The Windows
-  host retains exported executable symbols and SSE2, while Apple Silicon
-  remains native. Android builds driven from
-  Windows retain the former static GCC/libstdc++ runtime flags.
+  host retains exported executable symbols and SSE2. Android builds driven
+  from Windows retain the former static GCC/libstdc++ runtime flags.
 - Android per-file `-O1`, `-O2`, `-O3`, and `-fPIE` assignments live in
   `bazel/android_per_file_copts.bazelrc`.
 

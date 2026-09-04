@@ -220,36 +220,3 @@ jobs:
           MSYS2_ARG_CONV_EXCL: "*"
           PKG_CONFIG_PATH: /mingw64/lib/pkgconfig
         run: bazel build --config=native --config=windows-mingw //src:saga_native
-
-  native-macos:
-    name: Native / macOS Apple Silicon
-    needs: checks
-    runs-on: macos-15
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install requirements
-        run: |
-          brew install sdl3 libvorbis
-          brew tap startergo/gn
-          brew tap startergo/angle
-          brew trust --formula startergo/gn/gn
-          brew install startergo/angle/angle
-
-      - name: Verify ANGLE pkg-config metadata
-        run: pkg-config --exists egl glesv2
-
-      - name: Setup Bazel
-        uses: bazel-contrib/setup-bazel@0.19.0
-        with:
-          bazelisk-cache: true
-          disk-cache: bazel-${{ github.workflow }}-native-macos
-          repository-cache: true
-          external-cache: true
-          cache-save: ${{ github.event_name != 'pull_request' }}
-
-      - name: Verify Bazel version
-        run: test "$(bazel --version)" = "bazel $BAZEL_VERSION"
-
-      - name: Build native
-        run: bazel build --config=native //src:saga_native

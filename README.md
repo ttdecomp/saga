@@ -21,8 +21,8 @@ any game assets, media, original source code, or any other copyrighted material.
 
 ## Build Instructions
 
-The project uses Bazel for the matching `target`, `native`
-Linux/Windows/macOS builds, and `wasm`. Bazel 9.2.0 is pinned through
+The project uses Bazel for the matching `target`, `native` Linux/Windows
+builds, and `wasm`. Bazel 9.2.0 is pinned through
 `.bazelversion`; Bazelisk is the recommended launcher.
 
 The `target` build uses the Android x86 NDK r8e toolchain and matches the
@@ -30,7 +30,7 @@ original Android platform. Its output is not a host-runnable game executable.
 
 The `native` build uses the configured host C/C++ compiler. Linux builds
 32-bit i686 code with AddressSanitizer and UndefinedBehaviorSanitizer; Windows
-and macOS use their native architecture.
+uses MinGW64.
 
 See [the Bazel build guide](doc/build-bazel.md) for prerequisites, platform
 details, dependency versions, and build-mode behavior.

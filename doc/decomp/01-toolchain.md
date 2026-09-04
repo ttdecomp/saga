@@ -135,7 +135,6 @@ and `ANDROID` and include `src/host/harness/` and `src/host/platform/`.
 
 - Linux remains i686 with `-m32 -march=i686 -msse2`, ASan, and UBSan.
 - Windows uses MINGW64 and exports executable symbols.
-- macOS remains native Apple Silicon/ARM64.
 - Native builds do not inherit the target's per-file optimization map.
 
 The native executable is a diagnostic environment, not a matching artifact.
