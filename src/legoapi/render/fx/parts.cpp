@@ -684,7 +684,8 @@ extern "C" {
 
     void ResetParts(void) {
         if (Part != NULL) {
-            memset(Part, 0, static_cast<usize>(MAXPARTS) * sizeof(PART_s));
+            // Original multiplies by 0x224; PART_s layout is still opaque here.
+            memset(Part, 0, static_cast<usize>(MAXPARTS) * 0x224);
         }
         i_part = 0;
     }

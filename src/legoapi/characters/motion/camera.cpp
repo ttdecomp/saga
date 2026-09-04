@@ -68,11 +68,11 @@ void GameCam_Reset(GAMECAMERA_s *camera) {
     camera->blend_time = 0.0f;
     camera->position_seek = static_cast<f32>(static_cast<u8>(WORLD->current_level->cam_pos_seek));
     camera->field_0x1b8 = 0.0f;
+    camera->angle_seek = static_cast<f32>(static_cast<u8>(WORLD->current_level->cam_angle_seek));
     camera->field_0x1ec = 0.0f;
     camera->field_0x1e8 = 0.0f;
     camera->field_0x1f4 = 0.0f;
     camera->field_0x1f0 = 0.0f;
-    camera->angle_seek = static_cast<f32>(static_cast<u8>(WORLD->current_level->cam_angle_seek));
     GameCam_ResetLookRot(camera);
     Minicam_InitSystem();
 }

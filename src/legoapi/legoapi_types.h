@@ -513,10 +513,37 @@ struct CUTSYS {
     u32 *character_bits;
 };
 struct ClassItem {};
-struct DETONATOR_s {};
+struct DETONATOR_s {
+    u8 field_0x00[0xc];
+    NUVEC field_0x0c;
+    NUVEC field_0x18;
+    GameObject_s *object;
+    u8 active;
+    u8 field_0x29[7];
+    f32 timer;
+    void *field_0x34;
+};
+DECOMP_ASSERT(sizeof(DETONATOR_s) == 0x38, "DETONATOR_s size");
 struct EDCREATURE_s {};
 struct EPISODEDATA;
-struct EXPLOSION {};
+struct EXPLOSION {
+    i32 field_0x00;
+    i32 field_0x04;
+    GameObject_s *object;
+    NUVEC position;
+    f32 field_0x18;
+    i32 field_0x1c;
+    f32 field_0x20;
+    i32 field_0x24;
+    u16 field_0x28;
+    u16 field_0x2a;
+    u16 field_0x2c;
+    u16 field_0x2e;
+    u16 field_0x30;
+    u8 field_0x32;
+    u8 field_0x33;
+};
+DECOMP_ASSERT(sizeof(EXPLOSION) == 0x34, "EXPLOSION size");
 struct EXTRAMODEL {
     i16 *model_list;
     void *field_04;

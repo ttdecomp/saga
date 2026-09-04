@@ -16,16 +16,13 @@ void Pulses_Reset(PULSESYS_s *pulse_sys) {
     if (current_pulse_sys == NULL) {
         return;
     }
-    if (current_pulse_sys->pulse_count == 0) {
-        return;
-    }
     for (i32 i = 0; i < current_pulse_sys->pulse_count; i++) {
         NuSpecialSetVisibility(&current_pulse_sys->pulses[i].special, 0);
 
         PULSE_s *pulse = &current_pulse_sys->pulses[i];
-        pulse->timer = pulse->start_wait;
         pulse->disabled = 0;
         pulse->active = 0;
+        pulse->timer = pulse->start_wait;
         if (pulse->gizmo_name[0] != '\0') {
             pulse->gizmo = GizmoFindByName(WorldInfo_CurrentlyActive()->gizmo_sys, -1, pulse->gizmo_name);
         }

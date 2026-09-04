@@ -256,6 +256,7 @@ set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai/core/game
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/ai/game/lsw_hub_ai.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/cutscenes/minicamcut.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/collect/detonator.cpp PROPERTIES COMPILE_OPTIONS "-O2")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/collect/thermaldetonators.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/fx/explosions.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/fx/pulses.cpp PROPERTIES COMPILE_OPTIONS "-O2")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/src/legoapi/items/objects/placeable.cpp PROPERTIES COMPILE_OPTIONS "-O2")
