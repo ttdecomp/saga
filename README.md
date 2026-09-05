@@ -1,6 +1,6 @@
 # _saga_
 
-![Progress](https://img.shields.io/badge/matching-15.35%25-red)
+![Progress](https://img.shields.io/badge/matching-15.36%25-red)
 [![Bazel build](https://github.com/ttdecomp/saga/actions/workflows/build-bazel.yaml/badge.svg)](https://github.com/ttdecomp/saga/actions/workflows/build-bazel.yaml)
 [![Discord](https://img.shields.io/discord/1467775700894224555?color=%235865F2&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/2HJuMtzA7q)
 
@@ -74,7 +74,7 @@ See https://ttdecomp.github.io/saga/
 | `legoapi/gizmo` | 11.5% | 3.0% |
 | `legoapi/gizmos` | 36.4% | 26.8% |
 | `legoapi/items` | 8.7% | 4.0% |
-| `legoapi/menus` | 12.9% | 6.3% |
+| `legoapi/menus` | 13.1% | 6.6% |
 | `legoapi/misc` | 8.8% | 3.6% |
 | `legoapi/props` | 28.2% | 2.4% |
 | `legoapi/render` | 11.0% | 6.3% |

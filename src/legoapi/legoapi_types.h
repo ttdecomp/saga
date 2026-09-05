@@ -1457,15 +1457,21 @@ struct STATUSPACKET_s {
     undefined field_0xa0[0xa4 - 0xa0];
     u8 player0_active; // 0xa4
     u8 player1_active; // 0xa5
-    undefined field_0xa6[0xb1 - 0xa6];
+    undefined field_0xa6[0xb0 - 0xa6];
+    u8 field_0xb0;
     u8 mode_flags;   // 0xb1
     u8 status_flags; // 0xb2
-    undefined field_0xb3[0xb6 - 0xb3];
+    undefined field_0xb3[0xb5 - 0xb3];
+    u8 stage_count;        // 0xb5
     i8 current_gold_brick; // 0xb6
-    undefined field_0xb7[0xee - 0xb7];
-    u8 gold_brick_enabled[0x124 - 0xee]; // 0xee
-    struct STATUS_STAGE_s *stage;        // 0x124
-    undefined field_0x128[0x14c - 0x128];
+    undefined field_0xb7[0xc6 - 0xb7];
+    i8 stage_types[0xee - 0xc6];             // 0xc6
+    u8 gold_brick_enabled[0x11c - 0xee];     // 0xee
+    struct STATUS_STAGE_s *previous_stage_2; // 0x11c
+    struct STATUS_STAGE_s *previous_stage;   // 0x120
+    struct STATUS_STAGE_s *stage;            // 0x124
+    struct STATUS_STAGE_s *next_stage;       // 0x128
+    undefined field_0x12c[0x14c - 0x12c];
 };
 DECOMP_ASSERT(sizeof(STATUSPACKET_s) == 0x14c, "STATUSPACKET_s size");
 struct STATUSPACKET_LSW_s {

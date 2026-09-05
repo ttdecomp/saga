@@ -492,6 +492,7 @@ extern f32 VehicleAreaRememberSpeed;
 extern nugspline_s *ObstacleCamSpl;
 extern GAMECAMERA_s *GameCam;
 extern i32 (*GameCam_ObjLookingWithLeftStick)(GameObject_s *object);
+extern i32 LookAtBoth;
 extern PLAYPLANE_s PlayPlane[6];
 extern i32 KEEPONSCREEN_SIDESONLY;
 extern NUVEC GunshipANorm;

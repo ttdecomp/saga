@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 15.353579,
+    "fuzzy_match_percent": 15.362069,
     "total_code": "4722419",
-    "matched_code": "37547",
-    "matched_code_percent": 0.79507977,
+    "matched_code": "37595",
+    "matched_code_percent": 0.7960962,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 950,
-    "matched_functions_percent": 7.0584736,
+    "matched_functions": 951,
+    "matched_functions_percent": 7.065904,
     "total_units": 1
   },
   "text": {
@@ -68833,7 +68833,7 @@
           "address": 1174656,
           "offset": 284688,
           "size": 86,
-          "match_percent": 22.105263
+          "match_percent": 99.789474
         },
         {
           "name": "_Z11UpdateStatsv",
@@ -69145,7 +69145,7 @@
           "address": 2427808,
           "offset": 1537840,
           "size": 70,
-          "match_percent": 16.153847
+          "match_percent": 46.0
         },
         {
           "name": "_Z17StatusStage_ResetP14STATUS_STAGE_s",
@@ -69169,7 +69169,7 @@
           "address": 2428304,
           "offset": 1538336,
           "size": 451,
-          "match_percent": 5.142857
+          "match_percent": 54.55238
         },
         {
           "name": "_Z14AddStatusStageP14STATUSPACKET_sii",
@@ -69177,7 +69177,7 @@
           "address": 2428848,
           "offset": 1538880,
           "size": 48,
-          "match_percent": 35.0
+          "match_percent": 100.0
         },
         {
           "name": "_Z17StatusPacketResetP14STATUSPACKET_s",
@@ -69201,7 +69201,7 @@
           "address": 2436048,
           "offset": 1546080,
           "size": 92,
-          "match_percent": 21.0
+          "match_percent": 85.3
         },
         {
           "name": "_Z21Status_DrawPromptMenuP14STATUSPACKET_sif",

@@ -314,6 +314,7 @@ NUCAMERA *pNuCam = NULL;
 static GAMECAMERA_s GameCamera;
 GAMECAMERA_s *GameCam = &GameCamera;
 i32 (*GameCam_ObjLookingWithLeftStick)(GameObject_s *object) = nullptr;
+i32 LookAtBoth = 0;
 PLAYPLANE_s PlayPlane[6] = {};
 i32 KEEPONSCREEN_SIDESONLY = 0;
 NUVEC GunshipANorm = {};
