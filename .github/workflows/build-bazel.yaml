@@ -58,7 +58,7 @@ jobs:
 
       - name: Run target clang-tidy
         run: >-
-          bazel build --config=target --config=clang-tidy
+          bazel build --config=target
           //src:clang_tidy_target
 
       - name: Check target symbols
@@ -101,7 +101,7 @@ jobs:
       - name: Run WebAssembly clang-tidy
         if: matrix.os == 'ubuntu-latest'
         run: >-
-          bazel build --config=wasm --config=clang-tidy
+          bazel build --config=wasm
           //src:clang_tidy_wasm
 
   target-windows:
@@ -211,7 +211,7 @@ jobs:
         env:
           PKG_CONFIG_PATH: /usr/lib/i386-linux-gnu/pkgconfig
         run: >-
-          bazel build --config=native --config=clang-tidy
+          bazel build --config=native
           //src:clang_tidy_native
 
   native-windows:

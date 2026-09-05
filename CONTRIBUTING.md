@@ -252,9 +252,9 @@ The clang-tidy targets are separate because they are slower than the fast
 suite. They are build targets rather than executable tests: each one attaches
 clang-tidy actions to the C/C++ targets for its selected build configuration,
 so Bazel supplies the correct defines, headers, and toolchain flags. The
-`clang-tidy` config makes any reported violation fail the build. The symbol
-check is separate because it needs the built target library. CI uses the
-original symbol list stored in `matching.json`. If
+targets make any reported violation fail the build. The symbol check is
+separate because it needs the built target library. CI uses the original
+symbol list stored in `matching.json`. If
 `res/libTTapp.so` is available locally, omit `--original-symbols matching.json`
 to read the expected symbols directly from that library. Add `--list` to print
 individual missing symbols.
