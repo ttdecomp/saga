@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 15.032526,
+    "fuzzy_match_percent": 15.034684,
     "total_code": "4722419",
     "matched_code": "36886",
     "matched_code_percent": 0.78108275,
@@ -27845,7 +27845,7 @@
           "address": 3936859,
           "offset": 3046891,
           "size": 85,
-          "match_percent": 14.814815
+          "match_percent": 99.92593
         },
         {
           "name": "_ZL14SockParTurnOffP8nufpar_sPv",
@@ -27853,7 +27853,7 @@
           "address": 3936944,
           "offset": 3046976,
           "size": 43,
-          "match_percent": 30.76923
+          "match_percent": 99.76923
         },
         {
           "name": "_ZL11SockParNameP8nufpar_sPv",

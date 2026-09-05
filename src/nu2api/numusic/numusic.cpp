@@ -440,8 +440,8 @@ bool NuMusic::SelectTrackByHandle(TRACK_CLASS clazz, i32 trackHandle) {
                 Album *album = this->album;
                 // Validate the album encoded in the handle's high bits against
                 // the album being selected (see header note on handle packing).
-                if ((((i32)((char *)album - (char *)this->albums) >> 2) * (u32)0x38e38e39 -
-                     (trackHandle >> 0xb) == 0) &&
+                if ((((i32)((char *)album - (char *)this->albums) >> 2) * (u32)0x38e38e39 - (trackHandle >> 0xb) ==
+                     0) &&
                     ((trackHandle & 0x7ff) < (u32)album->tracks_count)) {
                     album->tracks[index] = &album->tracks_source[trackHandle & 0x7ff];
                     return true;
@@ -470,9 +470,7 @@ i32 NuMusic::GetTrackHandle(TRACK_CLASS clazz, const char *name) {
             for (i32 i = 0; i < this->album->tracks_count; i++) {
                 if (this->album->tracks_source[i].clazz == clazz && this->album->tracks_source[i].ident != NULL) {
                     if (NuStrICmp(this->album->tracks_source[i].ident, name) == 0) {
-                        return ((((i32)((char *)this->album - (char *)this->albums) >> 2) * (u32)0x38e38e39)
-                                << 11) |
-                               i;
+                        return ((((i32)((char *)this->album - (char *)this->albums) >> 2) * (u32)0x38e38e39) << 11) | i;
                     }
                 }
             }

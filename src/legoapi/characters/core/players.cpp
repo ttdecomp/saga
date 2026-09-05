@@ -306,8 +306,8 @@ void Players_InitPositions(WORLDINFO *world) {
                         PlayerStart[1].angle = 0x6e38;
                     } else {
                         if ((area_data->flags & 4) != 0 && area_data->episode_index != AREA_EPISODE_NONE) {
-                            i32 episode_area = (i32)Episode_FindAreaFromFlags(
-                                &EDataList[area_data->episode_index], 5, 5);
+                            i32 episode_area =
+                                (i32)Episode_FindAreaFromFlags(&EDataList[area_data->episode_index], 5, 5);
                             if (episode_area != -1) {
                                 area = episode_area;
                             }

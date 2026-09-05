@@ -944,14 +944,12 @@ static inline u16 NuQFntFloatToHalf(f32 value) {
         if (exponent < 0x20)
             half_exponent = static_cast<u16>(exponent << 10);
     }
-    return static_cast<u16>((conversion.bits & 0x7fffff) >> 13) |
-           static_cast<u16>((conversion.bits >> 31) << 15) | half_exponent;
+    return static_cast<u16>((conversion.bits & 0x7fffff) >> 13) | static_cast<u16>((conversion.bits >> 31) << 15) |
+           half_exponent;
 }
 
 static inline void NuQFntSetVertexAttributes(NuQFntVertex *vertex, u32 colour, f32 u, f32 v) {
-    vertex->colour = g_NuPrim_NeedsOverbrightening == 0
-                         ? ((colour >> 1) & 0x7f7f7f) | (colour & 0xff000000)
-                         : colour;
+    vertex->colour = g_NuPrim_NeedsOverbrightening == 0 ? ((colour >> 1) & 0x7f7f7f) | (colour & 0xff000000) : colour;
     if (g_NuPrim_NeedsHalfUVs != 0) {
         u16 *uv = reinterpret_cast<u16 *>(&vertex->u);
         uv[0] = NuQFntFloatToHalf(u);

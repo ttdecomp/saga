@@ -668,10 +668,11 @@ extern "C" {
     // Lightmapped geometry carries an AE/AF/B0 setup command two entries before
     // its geometry command. Keep that setup command adjacent to the dynamic
     // transform and geometry entries when the special is submitted.
-    static __attribute__((optimize("O3"))) void
-    DisplayListProcessLightmapped(NUMTL *, NUDISPLAYLIST *list, NUDISPLAYLISTITEM *geometry,
-                                  NUDISPLAYLISTITEM **first_and_last, NUMTX *world_matrix,
-                                  void **transform_packet, f32 alpha) {
+    static __attribute__((optimize("O3"))) void DisplayListProcessLightmapped(NUMTL *, NUDISPLAYLIST *list,
+                                                                              NUDISPLAYLISTITEM *geometry,
+                                                                              NUDISPLAYLISTITEM **first_and_last,
+                                                                              NUMTX *world_matrix,
+                                                                              void **transform_packet, f32 alpha) {
         display_list_buffer->addr = ALIGN(display_list_buffer->addr, 0x10);
         VARIPTR *buffer = NuDisplayListLinkItems(list, 3);
 
@@ -813,19 +814,18 @@ extern "C" {
                 } else {
                     const isize geometry_index = geometry - scene->items;
                     const bool has_lightmap_command =
-                        geometry_index > 1 && (geometry[-2].type == 0xae || geometry[-2].type == 0xaf ||
-                                               geometry[-2].type == 0xb0);
+                        geometry_index > 1 &&
+                        (geometry[-2].type == 0xae || geometry[-2].type == 0xaf || geometry[-2].type == 0xb0);
                     if (static_cast<i32>(material->shader_desc.flags) < 0 && has_lightmap_command) {
                         NUDISPLAYLISTITEM *first_and_last[3];
-                        DisplayListProcessLightmapped(material, list, geometry, first_and_last, mtx,
-                                                      &transform_packet, distance_alpha);
+                        DisplayListProcessLightmapped(material, list, geometry, first_and_last, mtx, &transform_packet,
+                                                      distance_alpha);
                     } else {
                         VARIPTR *buffer = NuDisplayListLinkItems(list, 2);
                         NUDISPLAYLISTITEM *items = list->items;
                         items[0].type = 0x8c;
                         items[0].id = 3;
-                        items[0].next =
-                            DisplayListCreateGeomTransformPS(buffer, mtx, material, geometry->next, NULL);
+                        items[0].next = DisplayListCreateGeomTransformPS(buffer, mtx, material, geometry->next, NULL);
                         items[1].type = 0x82;
                         items[1].id = 3;
                         items[1].next = geometry->next;

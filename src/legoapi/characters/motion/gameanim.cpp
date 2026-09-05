@@ -674,8 +674,8 @@ void Animate_CHARACTER(GameObject_s *object) {
         if (object->apiobj.character_model->model_data_b[43] != NULL) {
             packet.requested_animation = 43;
         } else {
-            const i32 target_state = *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(object->context_target_position) +
-                                                              0x14);
+            const i32 target_state =
+                *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(object->context_target_position) + 0x14);
             packet.requested_animation = target_state == 1 ? CHARACTER_ANIMATION_IDLE : CHARACTER_ANIMATION_FALL;
         }
     } else if (object->character_context == CHARACTER_CONTEXT_FORCE) {

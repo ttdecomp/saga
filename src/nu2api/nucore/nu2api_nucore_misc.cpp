@@ -107,16 +107,14 @@ __attribute__((optimize("O0"))) void NuIOSDLLightmap(void *arg) {
         NUNATIVETEX *texture = NuTexGetNative(texture_id);
         glActiveTexture(GL_TEXTURE0);
         g_currentTexUnit = 0;
-        glBindTexture(GL_TEXTURE_2D,
-                      texture->platform.gl_tex != 0 ? texture->platform.gl_tex : g_whiteTexture);
+        glBindTexture(GL_TEXTURE_2D, texture->platform.gl_tex != 0 ? texture->platform.gl_tex : g_whiteTexture);
     } else if (mode == 2) {
         for (i32 index = 0; index < 3; ++index) {
             const i32 texture_id = packet[index + 2] > 0 ? packet[index + 2] : 1;
             NUNATIVETEX *texture = NuTexGetNative(texture_id);
             glActiveTexture(GL_TEXTURE0);
             g_currentTexUnit = 0;
-            glBindTexture(GL_TEXTURE_2D,
-                          texture->platform.gl_tex != 0 ? texture->platform.gl_tex : g_whiteTexture);
+            glBindTexture(GL_TEXTURE_2D, texture->platform.gl_tex != 0 ? texture->platform.gl_tex : g_whiteTexture);
         }
     } else {
         return;
@@ -256,8 +254,7 @@ __attribute__((optimize("O0"))) void NuIOSDLLightmapOld(void *arg) {
         NUNATIVETEX *texture = NuTexGetNative(texture_id);
         glActiveTexture(GL_TEXTURE0 + index);
         g_currentTexUnit = index;
-        glBindTexture(GL_TEXTURE_2D,
-                      texture->platform.gl_tex != 0 ? texture->platform.gl_tex : g_whiteTexture);
+        glBindTexture(GL_TEXTURE_2D, texture->platform.gl_tex != 0 ? texture->platform.gl_tex : g_whiteTexture);
     }
 
     const f32 shader_offset[4] = {0.0f, 0.0f, 0.0f, 0.0f};
@@ -576,8 +573,7 @@ __attribute__((optimize("O0"))) void NuIOSDLLightmapOffsetOld(void *arg) {
         NUNATIVETEX *texture = NuTexGetNative(texture_id);
         glActiveTexture(GL_TEXTURE0 + index);
         g_currentTexUnit = index;
-        glBindTexture(GL_TEXTURE_2D,
-                      texture->platform.gl_tex != 0 ? texture->platform.gl_tex : g_whiteTexture);
+        glBindTexture(GL_TEXTURE_2D, texture->platform.gl_tex != 0 ? texture->platform.gl_tex : g_whiteTexture);
     }
 
     const f32 *offset = reinterpret_cast<const f32 *>(texture_ids + 3);

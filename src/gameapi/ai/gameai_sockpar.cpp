@@ -101,7 +101,10 @@ static __used__ void SockParCircuit(nufpar_s *, void *) {
 }
 static __used__ void SockParCurSpeed(nufpar_s *, void *) {
 }
-static __used__ void SockParIgnore(nufpar_s *, void *) {
+static __used__ void SockParIgnore(nufpar_s *parser, void *) {
+    while (NuFParGetWord(parser) != 0) {
+        SetSockBit(sockpar_sock, NuAToI(parser->word_buf));
+    }
 }
 static __used__ void SockParMidforce(nufpar_s *, void *) {
 }
@@ -146,6 +149,7 @@ static __used__ void SockParPullbackRatioXZ(nufpar_s *parser, void *) {
     sockpar_sock->flags |= SOCK_FLAG_TWO_PLAYER_PLANAR_PULLBACK;
 }
 static __used__ void SockParTurnOff(nufpar_s *, void *) {
+    sockpar_sock->flags |= 0x100;
 }
 static __used__ void SockParYLimits(nufpar_s *, void *) {
     sockpar_sock->flags |= SOCK_FLAG_CLAMP_TARGET_Y;

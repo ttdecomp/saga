@@ -15,6 +15,7 @@ The configured Git hook has one short call chain:
 git commit
   -> .githooks/pre-commit
   -> bazel run //scripts:pre_commit
+  -> clang-format -i (all C/C++ files under src/)
   -> git diff --cached --check
   -> bazel test //scripts/checks:checks
   -> bazel build --config=target //src:saga_target
@@ -22,9 +23,11 @@ git commit
   -> bazel run //scripts:generate_bazel_objdiff_report
 ```
 
-The binary-dependent steps are skipped when the locally supplied
-`res/libTTapp.so` is absent. The hook writes and automatically stages
-`matching.json` and the marked matching table in `README.md`.
+Safe formatter changes are staged automatically; files with pre-existing
+unstaged or untracked edits stop the hook for review. The binary-dependent
+steps are skipped when the locally supplied `res/libTTapp.so` is absent. The
+hook writes and automatically stages `matching.json` and the marked matching
+table in `README.md`.
 `.github/workflows/plot-pages.yaml` runs
 `//scripts:plot_binary_match_map` against that committed report and deploys the
 generated `doc/pages/index.html`.

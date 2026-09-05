@@ -246,11 +246,12 @@ static void NuGCutSceneFixPtrs_Title(NUGCUTSCENE_s *cutscene, isize anim_delta) 
             }
         }
         if (system->types != NULL) {
-            system->types = reinterpret_cast<NUGCUTLOCATORTYPE_s *>(reinterpret_cast<usize>(system->types) + data_delta);
+            system->types =
+                reinterpret_cast<NUGCUTLOCATORTYPE_s *>(reinterpret_cast<usize>(system->types) + data_delta);
             for (u32 i = 0; i < system->type_count; ++i) {
                 if (system->types[i].name != NULL) {
                     system->types[i].name = reinterpret_cast<char *>(reinterpret_cast<usize>(system->types[i].name) +
-                                                                    reinterpret_cast<usize>(cutscene->strings) - 1);
+                                                                     reinterpret_cast<usize>(cutscene->strings) - 1);
                 }
             }
         }

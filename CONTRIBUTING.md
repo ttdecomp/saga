@@ -17,6 +17,9 @@ Run repository Python tools through `bazel run` or `bazel test`. Bazel then
 uses the pinned Python 3.12.12 runtime. Running the files directly with
 `python3` bypasses that environment.
 
+The pre-commit workflow also expects `clang-format` on `PATH`. How that tool is
+provided depends on the operating system.
+
 ### Linux
 
 Linux supports all three builds: `target`, `native`, and `wasm`.
@@ -246,13 +249,16 @@ Enable the repository hook once per clone:
 git config core.hooksPath .githooks
 ```
 
-Every commit then checks the staged diff for whitespace errors and runs the
-three fast Bazel tests. If `res/libTTapp.so` is present, the hook also builds
+Every commit first runs `clang-format` over all C and C++ files under `src/`.
+Formatting changes are staged automatically unless a file already contained
+unstaged or untracked work; those files are left for review and the commit is
+stopped. The hook then checks the staged diff for whitespace errors and runs
+the three fast Bazel tests. If `res/libTTapp.so` is present, it also builds
 `target`, checks its symbols, regenerates the full matching report, and stages
 the generated `matching.json` and README progress table for the same commit.
 
 Without `res/libTTapp.so`, the binary-dependent steps are skipped. The hook
-does not run `clang-format` and does not generate `doc/pages/index.html`.
+does not run `clang-tidy` and does not generate `doc/pages/index.html`.
 
 Run the same workflow without creating a commit with:
 

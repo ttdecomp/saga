@@ -22,8 +22,8 @@ void NuRenderInspectEGLConfig(EGLDisplay display, EGLConfig config) {
     eglGetConfigAttrib(display, config, EGL_STENCIL_SIZE, &stencil);
     eglGetConfigAttrib(display, config, EGL_SAMPLE_BUFFERS, &sample_buffers);
     eglGetConfigAttrib(display, config, EGL_SAMPLES, &samples);
-    LOG_INFO("EGL framebuffer: rgba=%d/%d/%d/%d depth=%d stencil=%d sample-buffers=%d samples=%d", red, green,
-             blue, alpha, depth, stencil, sample_buffers, samples);
+    LOG_INFO("EGL framebuffer: rgba=%d/%d/%d/%d depth=%d stencil=%d sample-buffers=%d samples=%d", red, green, blue,
+             alpha, depth, stencil, sample_buffers, samples);
 }
 
 EGLConfig NuRenderDevice::SelectEGLConfig() {

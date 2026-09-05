@@ -1208,24 +1208,24 @@ i32 host_run_window(const HostWindowOptions &options) {
             const CHARACTERMODEL_s *model = object.apiobj.character_model;
             void **animations = model != nullptr ? model->model_data_b : nullptr;
             const PLAYERCHARACTERCONFIG_s *config = character != nullptr ? character->player_config : nullptr;
-            LOG_INFO("scripted object[%d]: id=%d file=%s pos=(%.3f,%.3f,%.3f) matrix=(%.3f,%.3f,%.3f) "
-                     "collision-y=(%.3f..%.3f) floor=%.3f bounds=(%.3f..%.3f) scale=%.3f "
-                     "mode=%u origin=%u context=%d target=%p layer=0x%x anim=%d/%d idle=(%d,%d,%.3f/%.3f) "
-                     "available=(0:%d,1:%d,25:%d,118:%d) flags=(0x%x,0x%x) origin-joints=(%d,%d)",
-                     index, object.id, character != nullptr && character->file != nullptr ? character->file : "-",
-                     object.apiobj.position.x, object.apiobj.position.y, object.apiobj.position.z,
-                     object.apiobj.field_0xb8.m30, object.apiobj.field_0xb8.m31, object.apiobj.field_0xb8.m32,
-                     object.apiobj.collision_min.y, object.apiobj.collision_max.y, object.apiobj.field_0x218,
-                     object.character_bottom, object.character_top, object.apiobj.field_0xa8, object.field_0x1086,
-                     object.use_model_origin, object.character_context, object.context_target_position,
-                     object.field_0x1054, object.apiobj.anim_packet.animation_index,
-                     object.apiobj.anim_packet.requested_animation, object.idle_animation,
-                     object.previous_idle_animation, object.idle_animation_time, object.idle_animation_limit,
-                     animations != nullptr && animations[0] != nullptr, animations != nullptr && animations[1] != nullptr,
-                     animations != nullptr && animations[25] != nullptr,
-                     animations != nullptr && animations[118] != nullptr, object.apiobj.field_0x1f8,
-                     object.apiobj.field_0x1f4, config != nullptr ? config->model_origin_joint : -2,
-                     config != nullptr ? config->collision_origin_joint : -2);
+            LOG_INFO(
+                "scripted object[%d]: id=%d file=%s pos=(%.3f,%.3f,%.3f) matrix=(%.3f,%.3f,%.3f) "
+                "collision-y=(%.3f..%.3f) floor=%.3f bounds=(%.3f..%.3f) scale=%.3f "
+                "mode=%u origin=%u context=%d target=%p layer=0x%x anim=%d/%d idle=(%d,%d,%.3f/%.3f) "
+                "available=(0:%d,1:%d,25:%d,118:%d) flags=(0x%x,0x%x) origin-joints=(%d,%d)",
+                index, object.id, character != nullptr && character->file != nullptr ? character->file : "-",
+                object.apiobj.position.x, object.apiobj.position.y, object.apiobj.position.z,
+                object.apiobj.field_0xb8.m30, object.apiobj.field_0xb8.m31, object.apiobj.field_0xb8.m32,
+                object.apiobj.collision_min.y, object.apiobj.collision_max.y, object.apiobj.field_0x218,
+                object.character_bottom, object.character_top, object.apiobj.field_0xa8, object.field_0x1086,
+                object.use_model_origin, object.character_context, object.context_target_position, object.field_0x1054,
+                object.apiobj.anim_packet.animation_index, object.apiobj.anim_packet.requested_animation,
+                object.idle_animation, object.previous_idle_animation, object.idle_animation_time,
+                object.idle_animation_limit, animations != nullptr && animations[0] != nullptr,
+                animations != nullptr && animations[1] != nullptr, animations != nullptr && animations[25] != nullptr,
+                animations != nullptr && animations[118] != nullptr, object.apiobj.field_0x1f8,
+                object.apiobj.field_0x1f4, config != nullptr ? config->model_origin_joint : -2,
+                config != nullptr ? config->collision_origin_joint : -2);
         }
         if (Player[0] != nullptr) {
             const CHARACTERMODEL_s *model = Player[0]->apiobj.character_model;

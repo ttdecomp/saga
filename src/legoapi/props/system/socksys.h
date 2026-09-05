@@ -168,6 +168,7 @@ extern "C" {
     SOCKSYS *SockSysInit(VARIPTR *buf, VARIPTR buf_end, NUGSCN *gscn);
     void SockSys_GenerateData(SOCKSYS *sock_sys, VARIPTR *buf, VARIPTR *buf_end);
     void SockSysPointAlongSpline(NUVEC *result, NUGSPLINE *spline, i32 segment, i32 next_segment, f32 ratio);
+    void SetSockBit(SOCK *sock, i32 index);
     void ComplexSockPosition(SOCKSYS *sock_sys, NUVEC *position, i32 prior_sock, i32 prior_segment,
                              SOCKPOSITION *result);
     i32 SockSysCamera(SOCKSYS *sock_sys, NUVEC *fallback_camera_position, i32 socket_changed,

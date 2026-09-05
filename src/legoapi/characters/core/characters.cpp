@@ -197,8 +197,7 @@ void FinishWeirdoNames(i32) {
 void NewPlayerCharacter(GameObject_s *, i32, i32, i32) {
 }
 
-extern "C" f32 AnimDuration(i32 character_id, i32 animation, f32 start_frame, f32 end_frame,
-                              i32 subtract_frame_time);
+extern "C" f32 AnimDuration(i32 character_id, i32 animation, f32 start_frame, f32 end_frame, i32 subtract_frame_time);
 i32 GetDefaultIdle(GameObject_s *object);
 
 static i32 IdleRepetitionCount(u8 minimum, u8 maximum) {
@@ -247,8 +246,7 @@ void ResetCharacterIdle(GameObject_s *object, i32 mode, i32 animation) {
 static __attribute__((used, noinline)) void NewCharacterIdle(GameObject_s *object, i32 default_idle) {
     CHARACTERDATA *character = object->apiobj.character_data;
     GAMECHARACTERDATA *game_character = static_cast<GAMECHARACTERDATA *>(character->field11_0x24);
-    const i32 alternate_idle =
-        game_character->field275_0x116 == 0 && (character->model_flags & 0x80) != 0 ? 118 : 25;
+    const i32 alternate_idle = game_character->field275_0x116 == 0 && (character->model_flags & 0x80) != 0 ? 118 : 25;
 
     i32 candidates[233];
     i32 candidate_count = 0;
@@ -309,8 +307,8 @@ void UpdateCharacterIdle(GameObject_s *object) {
 
     CHARACTERDATA *character = object->apiobj.character_data;
     GAMECHARACTERDATA *game_character = static_cast<GAMECHARACTERDATA *>(character->field11_0x24);
-    const i16 alternate_idle = static_cast<i16>(
-        game_character->field275_0x116 == 0 && (character->model_flags & 0x80) != 0 ? 118 : 25);
+    const i16 alternate_idle =
+        static_cast<i16>(game_character->field275_0x116 == 0 && (character->model_flags & 0x80) != 0 ? 118 : 25);
     ANIMPACKET_s &packet = object->apiobj.anim_packet;
     const i16 requested = packet.requested_animation;
 

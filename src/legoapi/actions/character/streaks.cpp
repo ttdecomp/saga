@@ -70,8 +70,8 @@ void InitStreaks(variptr_u *, variptr_u, char *) {
     for (i32 i = 0; i < 32; i++) {
         streakhdrs[i].index = i;
         streakhdrs[i].next = &streakhdrs[i + 1];
-        streakhdrs[i].prev = reinterpret_cast<STREAKHDR_s *>(reinterpret_cast<usize>(&streakhdrs[i]) -
-                                                            sizeof(STREAKHDR_s));
+        streakhdrs[i].prev =
+            reinterpret_cast<STREAKHDR_s *>(reinterpret_cast<usize>(&streakhdrs[i]) - sizeof(STREAKHDR_s));
     }
 
     streakhdrs_free = streakhdrs;
@@ -79,8 +79,7 @@ void InitStreaks(variptr_u *, variptr_u, char *) {
 
     for (i32 i = 0; i < 128; i++) {
         streaks[i].next = &streaks[i + 1];
-        streaks[i].prev =
-            reinterpret_cast<STREAK_s *>(reinterpret_cast<usize>(&streaks[i]) - sizeof(STREAK_s));
+        streaks[i].prev = reinterpret_cast<STREAK_s *>(reinterpret_cast<usize>(&streaks[i]) - sizeof(STREAK_s));
     }
 
     streaks_free = streaks;
