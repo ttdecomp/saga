@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 15.10495,
+    "fuzzy_match_percent": 15.114894,
     "total_code": "4722419",
     "matched_code": "36903",
     "matched_code_percent": 0.7814427,
@@ -65860,7 +65860,7 @@
           "address": 5140720,
           "offset": 4250752,
           "size": 43,
-          "match_percent": 35.0
+          "match_percent": 99.75
         },
         {
           "name": "_Z13Hint_FindHinti",
@@ -65868,7 +65868,7 @@
           "address": 5140768,
           "offset": 4250800,
           "size": 60,
-          "match_percent": 21.818182
+          "match_percent": 99.90909
         },
         {
           "name": "_Z16Hint_isAvailablei",
@@ -65884,7 +65884,7 @@
           "address": 5140960,
           "offset": 4250992,
           "size": 72,
-          "match_percent": 18.26087
+          "match_percent": 99.21739
         },
         {
           "name": "_Z15Hint_isCompleteP6HINT_s",
@@ -65892,7 +65892,7 @@
           "address": 5141040,
           "offset": 4251072,
           "size": 29,
-          "match_percent": 20.0
+          "match_percent": 99.71429
         },
         {
           "name": "_Z19RegisterWithHintSysPFvP6HINT_siES0_Pji",
@@ -66438,7 +66438,7 @@
           "address": 1332288,
           "offset": 442320,
           "size": 70,
-          "match_percent": 22.105263
+          "match_percent": 99.8421
         },
         {
           "name": "_Z14TextPulseTimerf",
@@ -66542,7 +66542,7 @@
           "address": 4368752,
           "offset": 3478784,
           "size": 28,
-          "match_percent": 35.0
+          "match_percent": 99.75
         },
         {
           "name": "TextRegisterPulseTimerFn",
@@ -66550,7 +66550,7 @@
           "address": 4368784,
           "offset": 3478816,
           "size": 28,
-          "match_percent": 35.0
+          "match_percent": 99.75
         },
         {
           "name": "_Z18TextDecodeCodewordPcS_",
@@ -66582,7 +66582,7 @@
           "address": 4371936,
           "offset": 3481968,
           "size": 3480,
-          "match_percent": 8.938088
+          "match_percent": 8.858681
         },
         {
           "name": "Text3D",
@@ -66654,7 +66654,7 @@
           "address": 4398016,
           "offset": 3508048,
           "size": 24,
-          "match_percent": null
+          "match_percent": 99.666664
         },
         {
           "name": "SmartTextSetFont",
@@ -66662,7 +66662,7 @@
           "address": 4398048,
           "offset": 3508080,
           "size": 24,
-          "match_percent": null
+          "match_percent": 99.666664
         },
         {
           "name": "SetGameFont",
@@ -66670,7 +66670,7 @@
           "address": 4398080,
           "offset": 3508112,
           "size": 24,
-          "match_percent": null
+          "match_percent": 99.666664
         },
         {
           "name": "Set3DGameFont",
@@ -66678,7 +66678,7 @@
           "address": 4398112,
           "offset": 3508144,
           "size": 24,
-          "match_percent": null
+          "match_percent": 99.666664
         },
         {
           "name": "LoadGameFont",
@@ -66830,7 +66830,7 @@
           "address": 4775344,
           "offset": 3885376,
           "size": 22,
-          "match_percent": 12.5
+          "match_percent": 99.75
         },
         {
           "name": "_Z24Text_LoadAndFixUpStringsPhPS_PPci",
@@ -68354,7 +68354,7 @@
           "address": 4358256,
           "offset": 3468288,
           "size": 22,
-          "match_percent": null
+          "match_percent": 99.71429
         },
         {
           "name": "MenuInMemoryCard",
@@ -68378,7 +68378,7 @@
           "address": 4358496,
           "offset": 3468528,
           "size": 34,
-          "match_percent": 42.0
+          "match_percent": 99.7
         },
         {
           "name": "MenuInMemoryCardWarning",
@@ -68386,7 +68386,7 @@
           "address": 4358544,
           "offset": 3468576,
           "size": 34,
-          "match_percent": 42.0
+          "match_percent": 99.7
         },
         {
           "name": "MenuCurrentID",
@@ -68394,7 +68394,7 @@
           "address": 4358592,
           "offset": 3468624,
           "size": 45,
-          "match_percent": 42.0
+          "match_percent": 99.6
         },
         {
           "name": "MenuDrawBackground",
@@ -68418,7 +68418,7 @@
           "address": 4371904,
           "offset": 3481936,
           "size": 24,
-          "match_percent": null
+          "match_percent": 99.666664
         },
         {
           "name": "MessageBoxInitMtl",

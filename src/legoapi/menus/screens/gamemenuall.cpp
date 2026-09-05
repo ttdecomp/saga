@@ -104,7 +104,9 @@ extern "C" void Draw_NOTENOUGHSPACE(void);
 extern "C" void Draw_SPACENEEDED(void);
 
 i32 memcard_cardchanged;
+i32 ButtonScaleMode;
 i32 Menu_InLoadFlow;
+i32 Menu_InWarningFlow;
 i32 Menu_LastFlow;
 i32 MenuLoadStarted;
 i32 memcard_slot;
@@ -1372,13 +1374,15 @@ extern "C" {
     void FlushMenuHighlights(void) {
     }
 
-    void MenuCurrentID(void) {
+    i32 MenuCurrentID(void) {
+        return MenuInfo[GameMenu[GameMenuLevel].menu].id;
     }
 
     void MenuDrawBackground(void) {
     }
 
-    void MenuGetSlotNum(void) {
+    i32 MenuGetSlotNum(void) {
+        return memcard_slot;
     }
 
     void MenuInCriticalMemoryCard(void) {
@@ -1393,10 +1397,18 @@ extern "C" {
                (LEGO_MENU_MEMORY_CARD_LAST - LEGO_MENU_MEMORY_CARD_FIRST);
     }
 
-    void MenuInMemoryCardLoad(void) {
+    i32 MenuInMemoryCardLoad(void) {
+        if (MenuValidated == 0) {
+            return 0;
+        }
+        return Menu_InLoadFlow;
     }
 
-    void MenuInMemoryCardWarning(void) {
+    i32 MenuInMemoryCardWarning(void) {
+        if (MenuValidated == 0) {
+            return 0;
+        }
+        return Menu_InWarningFlow;
     }
 
     void MenuRegisterSoundFX(i32 move, i32 select, i32 back, i32 no_entry) {
@@ -1489,7 +1501,8 @@ extern "C" {
     void RenderFileSel2(void) {
     }
 
-    void SetButtonScaleMode(void) {
+    void SetButtonScaleMode(i32 mode) {
+        ButtonScaleMode = mode;
     }
 
     void StartFileSel(void) {

@@ -50,13 +50,30 @@ void Hint_Process(float) {
 void Hint_SetHint(HINT_s *, i32, i32) {
 }
 
-void Hint_FindHint(i32) {
+HINT_s *Hint_FindHint(i32 hint_id) {
+    HINT_s *hint = hintsys.hints;
+    if (hint == NULL) {
+        return NULL;
+    }
+
+    while (hint->control_mode_ids[0] != -1) {
+        if (hint->control_mode_ids[0] == hint_id || hint->control_mode_ids[1] == hint_id) {
+            return hint;
+        }
+        ++hint;
+    }
+    return NULL;
 }
 
 void Hint_SaveBits(i32, i32) {
 }
 
-void Hint_CurrentId() {
+i32 Hint_CurrentId() {
+    HINT_s *hint = hintsys.active_hint;
+    if (hint == NULL) {
+        return -1;
+    }
+    return hint->control_mode_ids[MechInputTouchSystem::s_baseControlMode];
 }
 
 void Hint_ResetHint(i32 hint_id, i32 reset_completed) {
@@ -79,10 +96,21 @@ void Hint_ResetHint(i32 hint_id, i32 reset_completed) {
     hintsys.current_hint = 0;
 }
 
-void Hint_isComplete(HINT_s *) {
+i32 Hint_isComplete(HINT_s *hint) {
+    return hint->completion_flags[MechInputTouchSystem::s_baseControlMode];
 }
 
-void Hint_isComplete(i32) {
+i32 Hint_isComplete(i32 hint_id) {
+    HINT_s *hint = hintsys.hints;
+    if (hint == NULL) {
+        return 0;
+    }
+
+    hint = Hint_FindHint(hint_id);
+    if (hint == NULL) {
+        return 0;
+    }
+    return hint->completion_flags[MechInputTouchSystem::s_baseControlMode];
 }
 
 void Hint_SetComplete(HINT_s *) {

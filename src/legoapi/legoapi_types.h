@@ -1189,8 +1189,9 @@ struct HINT_s {
 DECOMP_ASSERT(sizeof(HINT_s) == 0x24, "HINT_s size");
 struct HINTSYS_s {
     u8 pad_0x00[0x04];
-    HINT_s *hints; // 0x04
-    u8 pad_0x08[0x0d - 0x08];
+    HINT_s *hints;       // 0x04
+    HINT_s *active_hint; // 0x08
+    u8 pad_0x0c[0x0d - 0x0c];
     u8 state; // 0x0d
     u8 pad_0x0e[0x18 - 0x0e];
     i32 current_hint; // 0x18
