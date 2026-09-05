@@ -56,6 +56,11 @@ jobs:
       - name: Build target
         run: bazel build --config=target //src:saga_target
 
+      - name: Run target clang-tidy
+        run: >-
+          bazel build --config=target --config=clang-tidy
+          //src:clang_tidy_target
+
       - name: Check target symbols
         run: >-
           bazel run //scripts/checks:check_symbols --
@@ -92,6 +97,12 @@ jobs:
 
       - name: Build WebAssembly host
         run: bazel build --config=wasm //src:saga_wasm
+
+      - name: Run WebAssembly clang-tidy
+        if: matrix.os == 'ubuntu-latest'
+        run: >-
+          bazel build --config=wasm --config=clang-tidy
+          //src:clang_tidy_wasm
 
   target-windows:
     name: Target / Windows MSYS2
@@ -195,6 +206,13 @@ jobs:
         env:
           PKG_CONFIG_PATH: /usr/lib/i386-linux-gnu/pkgconfig
         run: bazel build --config=native //src:saga_native
+
+      - name: Run native clang-tidy
+        env:
+          PKG_CONFIG_PATH: /usr/lib/i386-linux-gnu/pkgconfig
+        run: >-
+          bazel build --config=native --config=clang-tidy
+          //src:clang_tidy_native
 
   native-windows:
     name: Native / Windows MINGW64

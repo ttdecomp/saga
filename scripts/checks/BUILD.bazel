@@ -1,3 +1,4 @@
+load("@bazel_skylib//rules:native_binary.bzl", "native_binary")
 load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 
 _PYTHON_ENV = {"PYTHONDONTWRITEBYTECODE": "1"}
@@ -22,6 +23,39 @@ py_binary(
     env = _PYTHON_ENV,
     main = "check_symbols.py",
     deps = ["//scripts/lib:ndk_tools"],
+)
+
+py_binary(
+    name = "run_clang_tidy",
+    srcs = ["run_clang_tidy.py"],
+    env = _PYTHON_ENV,
+    main = "run_clang_tidy.py",
+)
+
+native_binary(
+    name = "clang_format",
+    src = select({
+        "@platforms//os:windows": "@llvm_tools_llvm//:bin/clang-format.exe",
+        "//conditions:default": "@llvm_tools_llvm//:bin/clang-format",
+    }),
+    out = select({
+        "@platforms//os:windows": "clang-format.exe",
+        "//conditions:default": "clang-format",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+native_binary(
+    name = "clang_tidy",
+    src = select({
+        "@platforms//os:windows": "@llvm_tools_llvm//:bin/clang-tidy.exe",
+        "//conditions:default": "@llvm_tools_llvm//:bin/clang-tidy",
+    }),
+    out = select({
+        "@platforms//os:windows": "clang-tidy.exe",
+        "//conditions:default": "clang-tidy",
+    }),
+    visibility = ["//visibility:public"],
 )
 
 py_test(

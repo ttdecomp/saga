@@ -1,6 +1,6 @@
 # _saga_
 
-![Progress](https://img.shields.io/badge/matching-15.03%25-red)
+![Progress](https://img.shields.io/badge/matching-15.10%25-red)
 [![Bazel build](https://github.com/ttdecomp/saga/actions/workflows/build-bazel.yaml/badge.svg)](https://github.com/ttdecomp/saga/actions/workflows/build-bazel.yaml)
 [![Discord](https://img.shields.io/discord/1467775700894224555?color=%235865F2&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/2HJuMtzA7q)
 
@@ -58,7 +58,7 @@ bazel run --config=wasm //scripts:wasm_server
 | `gameframework` | 84.0% | 5.9% |
 | `gamelib` | 6.7% | 4.3% |
 | `java` | 10.5% | 0.0% |
-| `legoapi` | 14.0% | 7.0% |
+| `legoapi` | 14.1% | 7.1% |
 | `legoapi/actions` | 6.3% | 1.4% |
 | `legoapi/ai` | 12.8% | 0.0% |
 | `legoapi/audio` | 6.6% | 5.0% |
@@ -68,11 +68,11 @@ bazel run --config=wasm //scripts:wasm_server
 | `legoapi/gizmo` | 10.7% | 3.0% |
 | `legoapi/gizmos` | 35.6% | 26.6% |
 | `legoapi/items` | 8.3% | 4.0% |
-| `legoapi/menus` | 11.9% | 5.7% |
+| `legoapi/menus` | 11.9% | 5.9% |
 | `legoapi/misc` | 8.0% | 3.6% |
 | `legoapi/props` | 28.2% | 2.4% |
 | `legoapi/render` | 10.2% | 6.2% |
-| `legoapi/world` | 22.7% | 6.4% |
+| `legoapi/world` | 23.7% | 6.4% |
 | `legogame` | 50.4% | 0.0% |
 | `nu2api` | 33.0% | 14.8% |
 

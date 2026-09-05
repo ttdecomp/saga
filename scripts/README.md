@@ -15,9 +15,10 @@ The configured Git hook has one short call chain:
 git commit
   -> .githooks/pre-commit
   -> bazel run //scripts:pre_commit
-  -> clang-format -i (all C/C++ files under src/)
+  -> Bazel-provided clang-format -i (all C/C++ files under src/)
   -> git diff --cached --check
   -> bazel test //scripts/checks:checks
+  -> bazel build --config=<mode> //src:clang_tidy_<mode>
   -> bazel build --config=target //src:saga_target
   -> bazel run //scripts/checks:check_symbols
   -> bazel run //scripts:generate_bazel_objdiff_report
@@ -27,7 +28,8 @@ Safe formatter changes are staged automatically; files with pre-existing
 unstaged or untracked edits stop the hook for review. The binary-dependent
 steps are skipped when the locally supplied `res/libTTapp.so` is absent. The
 hook writes and automatically stages `matching.json` and the marked matching
-table in `README.md`.
+table in `README.md`. Unsupported clang-tidy modes are omitted: macOS has no
+native mode, and Apple Silicon has no direct target mode.
 `.github/workflows/plot-pages.yaml` runs
 `//scripts:plot_binary_match_map` against that committed report and deploys the
 generated `doc/pages/index.html`.

@@ -199,7 +199,22 @@ void BossKilled(i32) {
 void CountOpenEpisodes() {
 }
 
-void Episode_IsComplete(EPISODEDATA *, i32 *) {
+i32 Episode_IsComplete(EPISODEDATA *episode, i32 *completed_area_count) {
+    if (Game_AreaSave == NULL) {
+        return 0;
+    }
+
+    i32 complete = 0;
+    for (i32 i = 0; i < episode->regular_areas; i++) {
+        if (Game_AreaSave[episode->area_ids[i]].area_complete != 0) {
+            complete++;
+        }
+    }
+
+    if (completed_area_count != NULL) {
+        *completed_area_count = complete;
+    }
+    return complete == episode->regular_areas;
 }
 
 void Episodes_Completed() {

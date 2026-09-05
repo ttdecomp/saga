@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 15.034684,
+    "fuzzy_match_percent": 15.10495,
     "total_code": "4722419",
-    "matched_code": "36886",
-    "matched_code_percent": 0.78108275,
+    "matched_code": "36903",
+    "matched_code_percent": 0.7814427,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 945,
-    "matched_functions_percent": 7.021324,
+    "matched_functions": 946,
+    "matched_functions_percent": 7.028754,
     "total_units": 1
   },
   "text": {
@@ -67666,7 +67666,7 @@
           "address": 2926464,
           "offset": 2036496,
           "size": 17,
-          "match_percent": null
+          "match_percent": 100.0
         },
         {
           "name": "cbInteractMenuTitle",
@@ -80384,7 +80384,7 @@
           "address": 4690896,
           "offset": 3800928,
           "size": 151,
-          "match_percent": 9.473684
+          "match_percent": 99.70175
         },
         {
           "name": "_Z18Episodes_Completedv",
@@ -83257,7 +83257,7 @@
           "address": 1761824,
           "offset": 871856,
           "size": 4330,
-          "match_percent": 20.778524
+          "match_percent": 90.73266
         },
         {
           "name": "_Z10Hub_InMenuv",
@@ -85822,7 +85822,7 @@
           "address": 3092352,
           "offset": 2202384,
           "size": 373,
-          "match_percent": 81.543686
+          "match_percent": 99.99029
         },
         {
           "name": "NuQFntReadBuffer",
@@ -109561,7 +109561,7 @@
           "address": 3343232,
           "offset": 2453264,
           "size": 71,
-          "match_percent": 24.705883
+          "match_percent": 99.94118
         },
         {
           "name": "_ZN13NuSoundLoader17GetChannelAddressEP13NuSoundBufferP17NuSoundStreamDescN13NuSoundSystem12AudioChannelE",
@@ -111736,7 +111736,7 @@
           "address": 3297696,
           "offset": 2407728,
           "size": 375,
-          "match_percent": 80.59036
+          "match_percent": 84.26506
         },
         {
           "name": "_ZN22NuSoundStreamingSample5ReCueEfb",

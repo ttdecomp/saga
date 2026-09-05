@@ -6,8 +6,8 @@ from __future__ import annotations
 import hashlib
 import os
 from pathlib import Path
+import platform
 import shlex
-import shutil
 import subprocess
 import sys
 
@@ -34,6 +34,33 @@ MAX_COMMAND_LENGTH = 7000
 def run(command: list[str], root: Path) -> int:
     print("+", shlex.join(command), flush=True)
     return subprocess.run(command, cwd=root, check=False).returncode
+
+
+def resolve_runfile(path: Path) -> Path:
+    if path.is_absolute():
+        return path
+
+    runfiles_dir = os.environ.get("RUNFILES_DIR")
+    if runfiles_dir:
+        runfiles_root = Path(runfiles_dir)
+        for candidate in (runfiles_root / "_main" / path, runfiles_root / path):
+            if candidate.exists():
+                return candidate
+
+    manifest_path = os.environ.get("RUNFILES_MANIFEST_FILE")
+    if manifest_path:
+        suffix = path.as_posix()
+        with Path(manifest_path).open(encoding="utf-8") as manifest:
+            for line in manifest:
+                logical_path, separator, physical_path = line.rstrip("\n").partition(
+                    " "
+                )
+                if separator and (
+                    logical_path == suffix or logical_path.endswith("/" + suffix)
+                ):
+                    return Path(physical_path)
+
+    return path
 
 
 def git_paths(root: Path, arguments: list[str]) -> set[Path]:
@@ -67,12 +94,7 @@ def command_batches(files: list[Path]) -> list[list[str]]:
     return batches
 
 
-def format_sources(root: Path) -> int:
-    clang_format = shutil.which("clang-format")
-    if clang_format is None:
-        print("error: clang-format is required by the pre-commit hook", file=sys.stderr)
-        return 1
-
+def format_sources(root: Path, clang_format: Path) -> int:
     files = sorted(
         path.relative_to(root)
         for path in (root / "src").rglob("*")
@@ -126,14 +148,49 @@ def format_sources(root: Path) -> int:
     return 0
 
 
+def clang_tidy_commands() -> list[list[str]]:
+    system = platform.system()
+    commands = []
+    if system != "Darwin" or platform.machine().lower() in {"amd64", "x86_64"}:
+        commands.append(
+            [
+                "bazel",
+                "build",
+                "--config=target",
+                "//src:clang_tidy_target",
+            ]
+        )
+    if system != "Darwin":
+        native_command = ["bazel", "build", "--config=native"]
+        if system == "Windows":
+            native_command.append("--config=windows-mingw")
+        native_command.extend(
+            ["//src:clang_tidy_native"]
+        )
+        commands.append(native_command)
+    commands.append(
+        [
+            "bazel",
+            "build",
+            "--config=wasm",
+            "//src:clang_tidy_wasm",
+        ]
+    )
+    return commands
+
+
 def main() -> int:
     workspace = os.environ.get("BUILD_WORKSPACE_DIRECTORY")
     if not workspace:
         print("error: pre_commit must be run with bazel run", file=sys.stderr)
         return 2
     root = Path(workspace)
+    if len(sys.argv) != 2:
+        print("error: Bazel did not provide clang-format", file=sys.stderr)
+        return 2
+    clang_format = resolve_runfile(Path(sys.argv[1]))
 
-    status = format_sources(root)
+    status = format_sources(root, clang_format)
     if status:
         return status
 
@@ -141,6 +198,11 @@ def main() -> int:
         ["git", "--no-pager", "diff", "--cached", "--check"],
         ["bazel", "test", "//scripts/checks:checks"],
     ):
+        status = run(command, root)
+        if status:
+            return status
+
+    for command in clang_tidy_commands():
         status = run(command, root)
         if status:
             return status

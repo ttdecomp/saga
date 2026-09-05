@@ -450,6 +450,8 @@ u32 NuQFntMode;
 
 static i32 g_buttonsFont;
 
+extern "C" void RemapAddr(void *new_base, void *old_base, void **address);
+
 VUFNT *NuQFntDuplicate(VUFNT *font, i32 flags, i32 render_plane, VARIPTR *buf, VARIPTR *buf_end) {
     VUFNT *duplicate = reinterpret_cast<VUFNT *>(ALIGN(buf->addr, 0x10));
     buf->void_ptr = duplicate;
@@ -458,26 +460,22 @@ VUFNT *NuQFntDuplicate(VUFNT *font, i32 flags, i32 render_plane, VARIPTR *buf, V
     if (buf->addr < buf_end->addr) {
         memmove(duplicate, font, font->size);
         duplicate->flags |= 1;
-        duplicate->glyphs =
-            reinterpret_cast<VUFNTCHAR *>(reinterpret_cast<usize>(duplicate) +
-                                          (reinterpret_cast<usize>(font->glyphs) - reinterpret_cast<usize>(font)));
-        duplicate->unicode_map =
-            reinterpret_cast<VUCHARIDX *>(reinterpret_cast<usize>(duplicate) +
-                                          (reinterpret_cast<usize>(font->unicode_map) - reinterpret_cast<usize>(font)));
+        RemapAddr(duplicate, font, reinterpret_cast<void **>(&duplicate->glyphs));
+        RemapAddr(duplicate, font, reinterpret_cast<void **>(&duplicate->unicode_map));
     }
 
     i32 previous_render_plane = NuMtlSetCurrentRenderPlane(render_plane);
     NUMTL *material = (flags & 8) != 0 ? NuMtlCreate3D(1) : NuMtlCreate(1);
     duplicate->mtl = material;
     material->attribs = font->mtl->attribs;
-    material->sort_pri = font->mtl->sort_pri;
     material->tex_id = font->mtl->tex_id;
-    material->attribs.cull_mode = 2;
+    material->sort_pri = font->mtl->sort_pri;
+    material->attribs.unknown_2_1_2 = 2;
     if ((flags & 8) != 0) {
         material->attribs.unknown_6_128 = 0;
     }
     if ((flags & 0x40) != 0) {
-        material->attribs.cull_mode = 0;
+        material->attribs.z_mode = 0;
     }
     NuMtlUpdate(material);
     NuMtlSetCurrentRenderPlane(previous_render_plane);

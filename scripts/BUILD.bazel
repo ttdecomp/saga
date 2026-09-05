@@ -43,6 +43,8 @@ py_binary(
 py_binary(
     name = "pre_commit",
     srcs = ["pre_commit.py"],
+    args = ["$(location //scripts/checks:clang_format)"],
+    data = ["//scripts/checks:clang_format"],
     env = _PYTHON_ENV,
     main = "pre_commit.py",
 )

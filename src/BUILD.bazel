@@ -4,6 +4,12 @@ load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_cc//cc:objc_library.bzl", "objc_library")
 load("@rules_shell//shell:sh_binary.bzl", "sh_binary")
 load("//bazel:saga_components.bzl", "saga_component_libraries")
+load(
+    "//scripts/checks:linters.bzl",
+    "clang_tidy_android_check",
+    "clang_tidy_check",
+    "clang_tidy_wasm_check",
+)
 
 package(default_visibility = ["//visibility:public"])
 
@@ -125,6 +131,13 @@ cc_library(
     deps = _TARGET_COMPONENTS,
 )
 
+clang_tidy_android_check(
+    name = "clang_tidy_target",
+    srcs = _TARGET_COMPONENTS,
+    tags = ["manual"],
+    target_compatible_with = ["@platforms//os:android"],
+)
+
 cc_binary(
     name = "libTTapp.so",
     linkopts = [
@@ -213,6 +226,12 @@ cc_library(
     deps = _NATIVE_COMPONENTS + [":saga_native_platform"],
 )
 
+clang_tidy_check(
+    name = "clang_tidy_native",
+    srcs = _NATIVE_COMPONENTS + [":saga_native_platform"],
+    tags = ["manual"],
+)
+
 cc_binary(
     name = "saga_native",
     linkopts = select({
@@ -261,6 +280,12 @@ cc_library(
         "@libvorbis_wasm//:vorbisfile",
     ],
     alwayslink = True,
+)
+
+clang_tidy_wasm_check(
+    name = "clang_tidy_wasm",
+    srcs = [":saga_wasm_objects"],
+    tags = ["manual"],
 )
 
 cc_binary(

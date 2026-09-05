@@ -1,20 +1,20 @@
 Checks: >
-    -*,
-    readability-avoid-unfixed-integer-types,
-    readability-identifier-naming,
-    google-runtime-int
+  -*,
+  readability-identifier-naming,
+  google-runtime-int
+WarningsAsErrors: "*"
 
 CheckOptions:
-    - key: readability-identifier-naming.MemberCase
-      value: lower_case
-    - key: readability-identifier-naming.MacroDefinitionCase
-      value: UPPER_CASE
+  - key: readability-identifier-naming.MemberCase
+    value: lower_case
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE
 
-    - key: google-runtime-int.UnsignedTypePrefix
-      value: "u"
-    - key: google-runtime-int.SignedTypePrefix
-      value: "i"
-    - key: google-runtime-int.TypeSuffix
-      value: ""
+  - key: google-runtime-int.UnsignedTypePrefix
+    value: "u"
+  - key: google-runtime-int.SignedTypePrefix
+    value: "i"
+  - key: google-runtime-int.TypeSuffix
+    value: ""
 
-HeaderFilterRegex: ".*"
+HeaderFilterRegex: "^src/"

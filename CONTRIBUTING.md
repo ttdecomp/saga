@@ -17,8 +17,8 @@ Run repository Python tools through `bazel run` or `bazel test`. Bazel then
 uses the pinned Python 3.12.12 runtime. Running the files directly with
 `python3` bypasses that environment.
 
-The pre-commit workflow also expects `clang-format` on `PATH`. How that tool is
-provided depends on the operating system.
+Bazel downloads the pinned `clang-format` and `clang-tidy` binaries. They do
+not need to be installed separately or added to `PATH`.
 
 ### Linux
 
@@ -206,7 +206,8 @@ test pass. Shared behavior should still reconstruct the original game.
 1. Format changed C and C++ files with the repository configuration:
 
    ```sh
-   clang-format -i src/path/to/changed.cpp src/path/to/changed.h
+   bazel run //scripts/checks:clang_format -- \
+     -i src/path/to/changed.cpp src/path/to/changed.h
    ```
 
 2. Run the source-level checks:
@@ -215,11 +216,23 @@ test pass. Shared behavior should still reconstruct the original game.
    bazel test //scripts/checks:checks
    ```
 
-3. Build `target` after shared game or engine changes. Also build `native`
+3. Run clang-tidy for each build available on the current host:
+
+   ```sh
+   bazel build --config=target //src:clang_tidy_target
+   bazel build --config=native //src:clang_tidy_native
+   bazel build --config=wasm //src:clang_tidy_wasm
+   ```
+
+   macOS skips the unsupported `native` check. Apple Silicon also skips
+   `target`, whose old Android toolchain requires an Intel environment.
+   On Windows, add `--config=windows-mingw` to the native command.
+
+4. Build `target` after shared game or engine changes. Also build `native`
    after desktop runtime changes and `wasm` after browser or portable-host
    changes. The commands and platform differences are in the Build section.
 
-4. After building `target`, verify that it still defines every function
+5. After building `target`, verify that it still defines every function
    expected by the original library:
 
    ```sh
@@ -235,8 +248,13 @@ The fast test target contains:
 | `check_duplicate_definitions`  | C and C++ types do not have conflicting definitions                          |
 | `check_host_boundary`          | Host-only behavior does not leak into shared game or engine code             |
 
-The symbol check is separate because it needs the built target library. CI
-uses the original symbol list stored in `matching.json`. If
+The clang-tidy targets are separate because they are slower than the fast
+suite. They are build targets rather than executable tests: each one attaches
+clang-tidy actions to the C/C++ targets for its selected build configuration,
+so Bazel supplies the correct defines, headers, and toolchain flags. The
+`clang-tidy` config makes any reported violation fail the build. The symbol
+check is separate because it needs the built target library. CI uses the
+original symbol list stored in `matching.json`. If
 `res/libTTapp.so` is available locally, omit `--original-symbols matching.json`
 to read the expected symbols directly from that library. Add `--list` to print
 individual missing symbols.
@@ -252,13 +270,14 @@ git config core.hooksPath .githooks
 Every commit first runs `clang-format` over all C and C++ files under `src/`.
 Formatting changes are staged automatically unless a file already contained
 unstaged or untracked work; those files are left for review and the commit is
-stopped. The hook then checks the staged diff for whitespace errors and runs
-the three fast Bazel tests. If `res/libTTapp.so` is present, it also builds
-`target`, checks its symbols, regenerates the full matching report, and stages
-the generated `matching.json` and README progress table for the same commit.
+stopped. The hook then checks the staged diff for whitespace errors, runs the
+three fast Bazel tests, and runs each clang-tidy target supported by the host.
+If `res/libTTapp.so` is present, it also builds `target`, checks its symbols,
+regenerates the full matching report, and stages the generated `matching.json`
+and README progress table for the same commit.
 
 Without `res/libTTapp.so`, the binary-dependent steps are skipped. The hook
-does not run `clang-tidy` and does not generate `doc/pages/index.html`.
+does not generate `doc/pages/index.html`.
 
 Run the same workflow without creating a commit with:
 
@@ -381,6 +400,7 @@ dispatch.
 `.github/workflows/build-bazel.yaml` runs:
 
 - the three source-level checks;
+- clang-tidy for the `target`, `native`, and `wasm` source modes on Linux;
 - `target` on Linux, Windows, and Intel macOS;
 - `wasm` on Linux, Windows, and macOS;
 - the i686 `native` build on Linux;
