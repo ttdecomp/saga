@@ -512,6 +512,8 @@ void Hub_ClearStats() {
     goldbricktime = 0.0f;
 }
 
+i32 hub_forceshopsave = 0;
+
 void Hub_ResetPanel() {
     hub_episode = -1;
     hub_episode_time = 0.0f;

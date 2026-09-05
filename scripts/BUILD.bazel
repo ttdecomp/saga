@@ -27,6 +27,13 @@ py_binary(
 )
 
 py_binary(
+    name = "matching_diff",
+    srcs = ["matching_diff.py"],
+    env = _PYTHON_ENV,
+    main = "matching_diff.py",
+)
+
+py_binary(
     name = "plot_binary_match_map",
     srcs = ["plot_binary_match_map.py"],
     env = _PYTHON_ENV,

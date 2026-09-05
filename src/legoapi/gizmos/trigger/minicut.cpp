@@ -1,16 +1,30 @@
 #include "legoapi/gizmos/trigger/minicut.h"
 
 #include "decomp.h"
+#include "gameapi/ai/aisys/aisys.h"
+#include "gameapi/edtools/edfile.h"
+#include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
+#include "nu2api/nu3d/nuspecial.h"
+
+#include <stdio.h>
+#include <string.h>
 
 static i32 GizMiniCut_GetMaxGizmos(void *world_ptr) {
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
     return world->current_level->max_minicuts;
 }
 
-static void GizMiniCut_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
-    UNIMPLEMENTED();
+static void GizMiniCut_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_ptr, void *) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    if (world->minicuts == NULL || world->minicut_count <= 0) {
+        return;
+    }
+
+    for (i32 index = 0; index < world->minicut_count; ++index) {
+        AddGizmo(gizmo_sys, type_id, NULL, &world->minicuts[index]);
+    }
 }
 
 static char *GizMiniCut_GetGizmoName(GIZMO *gizmo) {
@@ -47,18 +61,101 @@ static i32 GizMiniCut_UsingSpecial(GIZMO **, void *, i32, char *) {
     return 0;
 }
 
-void GizMiniCut_Reset(void *, void *, void *) {
-    UNIMPLEMENTED();
+void GizMiniCut_Reset(void *world_ptr, void *, void *) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    for (i32 minicut_index = 0; minicut_index < world->minicut_count; ++minicut_index) {
+        MINICUT *minicut = &world->minicuts[minicut_index];
+        for (i32 part_index = 0; part_index < minicut->part_count; ++part_index) {
+            MINICUTPART *part = &minicut->parts[part_index];
+            GameObject_s *object = GetNamedGameObject(world->ai_sys, part->name);
+            if (object != NULL) {
+                part->resolved_position = &object->apiobj.collision_position;
+                continue;
+            }
+
+            nuhspecial_s special;
+            NuSpecialFind(world->current_gscn, &special, part->name, 0);
+            if (NuSpecialExistsFn(&special) != 0) {
+                part->resolved_position = NuSpecialGetDrawPos(&special);
+            } else {
+                AILOCATOR *locator = AIPathFindLocator(world->ai_sys, part->name);
+                if (locator != NULL) {
+                    part->resolved_position = &locator->position;
+                }
+            }
+            if (part->resolved_position == NULL) {
+                part->resolved_position = &part->position;
+            }
+        }
+    }
 }
 
-static void *GizMiniCut_ReserveBufferSpace(void *) {
-    UNIMPLEMENTED();
-    return {};
+static void *GizMiniCut_ReserveBufferSpace(void *world_ptr) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    world->minicuts = NULL;
+    world->minicut_count = 0;
+    if (world->current_level->max_minicuts == 0) {
+        return NULL;
+    }
+
+    world->giz_buffer.addr = ALIGN(world->giz_buffer.addr, 4);
+    world->minicuts = static_cast<MINICUT *>(world->giz_buffer.void_ptr);
+    world->giz_buffer.addr += world->current_level->max_minicuts * sizeof(MINICUT);
+    memset(world->minicuts, 0, world->current_level->max_minicuts * sizeof(MINICUT));
+
+    world->giz_buffer.addr = ALIGN(world->giz_buffer.addr, 4);
+    world->minicut_parts = static_cast<MINICUTPART *>(world->giz_buffer.void_ptr);
+    const i32 part_capacity = world->current_level->max_minicuts * world->current_level->max_minicut_parts;
+    world->giz_buffer.addr += part_capacity * sizeof(MINICUTPART);
+    memset(world->minicut_parts, 0, part_capacity * sizeof(MINICUTPART));
+
+    for (i32 index = 0; index < world->current_level->max_minicuts; ++index) {
+        MINICUT *minicut = &world->minicuts[index];
+        minicut->field_0x24 = 2.5f;
+        minicut->field_0x28 = 2.5f;
+        minicut->field_0x20 = 10.0f;
+        minicut->field_0x2c = 10.0f;
+        minicut->field_0x1c = 0.0f;
+        minicut->parts = &world->minicut_parts[index * world->current_level->max_minicut_parts];
+        minicut->part_count = 0;
+        sprintf(minicut->name, "Minicut %i", index + 1);
+    }
+    return world->minicuts;
 }
 
-i32 GizMiniCut_Load(void *, void *) {
-    UNIMPLEMENTED();
-    return {};
+i32 GizMiniCut_Load(void *world_ptr, void *) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    EdFileReadInt();
+    world->minicut_count = EdFileReadInt();
+    if (world->minicut_count > world->current_level->max_minicuts) {
+        world->minicut_count = world->current_level->max_minicuts;
+    }
+
+    for (i32 minicut_index = 0; minicut_index < world->minicut_count; ++minicut_index) {
+        MINICUT *minicut = &world->minicuts[minicut_index];
+        EdFileRead(minicut->name, static_cast<i8>(EdFileReadChar()));
+        minicut->field_0x1c = EdFileReadFloat();
+        minicut->field_0x20 = EdFileReadFloat();
+        minicut->field_0x24 = EdFileReadFloat();
+        minicut->field_0x28 = EdFileReadFloat();
+        minicut->field_0x2c = EdFileReadFloat();
+        minicut->part_count = static_cast<i8>(EdFileReadChar());
+
+        for (i32 part_index = 0; part_index < minicut->part_count; ++part_index) {
+            MINICUTPART *part = &minicut->parts[part_index];
+            EdFileRead(part->name, static_cast<i8>(EdFileReadChar()));
+            part->position.x = EdFileReadFloat();
+            part->position.y = EdFileReadFloat();
+            part->position.z = EdFileReadFloat();
+            part->field_0x30 = EdFileReadFloat();
+            part->field_0x34 = EdFileReadShort();
+            part->field_0x36 = EdFileReadShort();
+            part->field_0x38 = EdFileReadShort();
+            part->field_0x3c = EdFileReadFloat();
+            part->field_0x40 = EdFileReadFloat();
+        }
+    }
+    return 1;
 }
 
 ADDGIZMOTYPE *MiniCut_RegisterGizmo(i32 type_id) {

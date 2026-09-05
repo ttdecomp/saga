@@ -3,14 +3,17 @@
 #include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
 #include <squish.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "decomp.h"
 #include "nu2api/nu3d/NuRenderDevice.h"
 #include "nu2api/nuandroid/ios_graphics.h"
 #include "nu2api/nucore/bgproc.h"
 #include "nu2api/nucore/numemory.h"
+#include "nu2api/nucore/nustring.h"
 #include "nu2api/nucore/nuthread.h"
 #include "nu2api/nufile/nufile.h"
 #include "nu2api/nuplatform/nuplatform.h"
@@ -32,6 +35,7 @@ const char *g_textureName;
 i32 g_fileSize;
 
 extern i32 g_loadingCharacterInHub;
+extern "C" const i16 *_toupper_tab_;
 
 extern "C" __attribute__((weak)) void NuIOS_UploadCompressedTexture(GLenum target, GLint level, GLenum internal_format,
                                                                     GLsizei width, GLsizei height, GLint border,
@@ -158,8 +162,47 @@ GLuint NuIOS_CreateGLTexFromHash(u32 hash) {
 }
 
 GLuint NuIOS_CreateGLTexFromFile(const char *filename) {
-    UNIMPLEMENTED();
-    return {};
+    const i32 platform = NuPlatform::Get()->GetCurrentPlatform();
+    if (platform == ANDROID_ATITC_PLATFORM) {
+        goto load_android_texture;
+    }
+    if (platform >= ANDROID_ATITC_PLATFORM) {
+        if (platform == ANDROID_PVRTC_PLATFORM) {
+            return NuIOS_CreateGLTexFromPlatfomSpecificFile(filename);
+        }
+        if (platform <= ANDROID_ETC1_PLATFORM) {
+            goto load_android_texture;
+        }
+    }
+    return 0;
+
+load_android_texture:
+    char fixed_filename[0x200];
+    char extension[0x200];
+    NuStrCpy(extension, NuPlatform::Get()->GetCurrentTextureExtension());
+    NuStrFixExtPlatform(fixed_filename, const_cast<char *>(filename), extension, sizeof(fixed_filename),
+                        const_cast<char *>("MOB"));
+
+    if (g_datfileMode == 0) {
+        char external_filename[0x200] = "mnt/sdcard/TTGames/com.tt.LegoStarWarsSaga/files/androidTextures/";
+        const usize path_length = strlen(external_filename);
+        strcpy(&external_filename[path_length], fixed_filename);
+        for (usize index = path_length; index < strlen(external_filename); ++index) {
+            i32 character = external_filename[index];
+            SAGA_UPPERCASE_CHAR(character, _toupper_tab_);
+            external_filename[index] = static_cast<char>(character);
+            if (external_filename[index] == '\\') {
+                external_filename[index] = '/';
+            }
+        }
+        NuStrCpy(fixed_filename, external_filename);
+    }
+
+    GLuint texture = NuIOS_CreateGLTexFromPlatfomSpecificFile(fixed_filename);
+    if (texture != 0) {
+        return texture;
+    }
+    return NuIOS_CreateGLTexFromPlatfomSpecificForecPVR(filename);
 }
 
 GLuint NuIOS_CreateGLTexFromPlatformInMemory(void *data, i32 *width, i32 *height, bool is_pvrtc) {

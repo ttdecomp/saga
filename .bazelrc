@@ -10,7 +10,6 @@ build --show_timestamps
 build --verbose_failures
 build --incompatible_strict_action_env
 
-build:saga-common --compilation_mode=dbg
 build:saga-common --copt=-fno-exceptions
 build:saga-common --copt=-Wno-write-strings
 build:saga-common --conlyopt=-std=gnu11
@@ -25,6 +24,15 @@ try-import %workspace%/bazel/android_per_file_copts.bazelrc
 
 build:native --config=saga-common
 build:native --define=SAGA_BUILD=native
+build:native --define=SAGA_MODE=debug
+build:native --compilation_mode=dbg
+
+build:native_release --config=saga-common
+build:native_release --define=SAGA_BUILD=native
+build:native_release --define=SAGA_MODE=release
+build:native_release --compilation_mode=opt
+build:native_release --copt=-O2
+build:native_release --host_copt=-O2
 
 # Bazel 9's detected Windows toolchains auto-register MSVC only. This explicit
 # platform activates the MinGW toolchain supplied by rules_cc.
@@ -34,5 +42,14 @@ build:windows-mingw --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windo
 
 build:wasm --config=saga-common
 build:wasm --define=SAGA_BUILD=wasm
+build:wasm --define=SAGA_MODE=debug
+build:wasm --compilation_mode=dbg
+
+build:wasm_release --config=saga-common
+build:wasm_release --define=SAGA_BUILD=wasm
+build:wasm_release --define=SAGA_MODE=release
+build:wasm_release --compilation_mode=opt
+build:wasm_release --copt=-O2
+build:wasm_release --host_copt=-O2
 
 test --test_output=errors

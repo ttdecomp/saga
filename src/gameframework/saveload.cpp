@@ -140,6 +140,7 @@ void *memcard_extra_savedatabuffer = NULL;
 hashfn_t memcard_hashfn = NULL;
 void (*memcard_drawasiconfn)(void) = NULL;
 i32 memcard_autosave = 0;
+i32 memcard_autosaveneeded = 0;
 i32 memcard_autosavestarted = 0;
 f32 memcard_autosavepredelay = 0.0f;
 f32 memcard_autosavepostdelay = 0.0f;

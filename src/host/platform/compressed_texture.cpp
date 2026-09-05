@@ -285,12 +285,17 @@ static void host_pvr_decode_4bpp(const u8 *data, usize data_size, i32 width, i32
     i32 bpp = 4;
     i32 W = 4;
     i32 H = 4;
-    u32 word_count = (u32)((usize)width * height / 2 / 4);
-    std::vector<u32> words(width * height / 2 / 4, 0);
-    memcpy(words.data(), data, std::min(data_size, (usize)width * height / 2));
-    std::vector<u8> out((usize)width * height * 4, 0);
-    u32 nxw = width / W;
-    u32 nyw = height / H;
+    // PVRTC1 4bpp always stores at least a 2x2-word (8x8-pixel) image,
+    // including mip levels whose logical dimensions are smaller.
+    const i32 decode_width = std::max(width, W * 2);
+    const i32 decode_height = std::max(height, H * 2);
+    const usize compressed_size = static_cast<usize>(decode_width) * decode_height / 2;
+    u32 word_count = static_cast<u32>(compressed_size / sizeof(u32));
+    std::vector<u32> words(word_count, 0);
+    memcpy(words.data(), data, std::min(data_size, compressed_size));
+    std::vector<u8> out(static_cast<usize>(decode_width) * decode_height * 4, 0);
+    u32 nxw = decode_width / W;
+    u32 nyw = decode_height / H;
     for (i32 wy = -1; wy < (i32)nyw - 1; wy++) {
         for (i32 wx = -1; wx < (i32)nxw - 1; wx++) {
             u32 Px = ((u32)wx) % nxw;
@@ -313,10 +318,13 @@ static void host_pvr_decode_4bpp(const u8 *data, usize data_size, i32 width, i32
             PvrWordPair SW = {words[offs[3]], words[offs[3] + 1]};
             u8 block[16][4];
             host_pvr_get_pixels(PW, QW, RW, SW, bpp, block);
-            host_pvr_map_data(out.data(), width, block, Py, Px, Qy, Qx, Ry, Rx, Sy, Sx, bpp);
+            host_pvr_map_data(out.data(), decode_width, block, Py, Px, Qy, Qx, Ry, Rx, Sy, Sx, bpp);
         }
     }
-    memcpy(outRGBA, out.data(), (usize)width * height * 4);
+    for (i32 y = 0; y < height; ++y) {
+        memcpy(outRGBA + static_cast<usize>(y) * width * 4, out.data() + static_cast<usize>(y) * decode_width * 4,
+               static_cast<usize>(width) * 4);
+    }
 }
 
 // --- ETC1 (host software decode) --------------------------------------------
@@ -442,7 +450,7 @@ bool HostDecodeCompressedTexture(GLenum internal_format, GLsizei width, GLsizei 
     }
 
     if (internal_format == 0x8c00 || internal_format == 0x8c02) {
-        const usize required_size = static_cast<usize>(width) * static_cast<usize>(height) / 2;
+        const usize required_size = static_cast<usize>(std::max(width, 8)) * std::max(height, 8) / 2;
         if (!host_pvr_is_pow2(static_cast<u32>(width)) || !host_pvr_is_pow2(static_cast<u32>(height)) ||
             static_cast<usize>(image_size) < required_size) {
             return false;

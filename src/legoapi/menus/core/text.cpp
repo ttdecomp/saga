@@ -12,12 +12,14 @@ extern char **TTab;
 extern i32 MenuDrawDropShadows;
 f32 text3d_height;
 f32 text3d_width;
+void (*buttonmapfn)(char *, char *);
+f32 (*pulsetimerfn)(f32);
 extern "C" {
     i32 smarttextex_drawmessagebox = 0;
     void NuQFntSetJustifiedTolerances(float squash, float stretch);
     unsigned char *NuUnicodeCharFromUTF8(u16 *character, unsigned char *text);
     unsigned char *NuUTF8CharFromUnicode(unsigned char *text, u16 character);
-    VUFNT *LoadGameFont(char *, char *, i32, variptr_u *, variptr_u *);
+    VUFNT *LoadGameFont(char *, char *, variptr_u *, variptr_u *, i32);
     VUFNT *LoadButtonFont(char *, char *, variptr_u *, variptr_u *, i32);
     void NuLanguageSet(i32 language);
 }
@@ -26,9 +28,10 @@ char *Text_GetLanguagePath(i32 language);
 void Text_LoadAndFixUpStrings(unsigned char *filename, unsigned char **buffer, char **table, i32 count);
 void IntroText_SetTextID(i32 id);
 void Text_InsertCommasIntoNumber(char *number, char *text, i32 length);
+static VUFNT *app_fnt;
 void Text_LoadFont(char *path, variptr_u *buf, variptr_u *buf_end) {
     create_qfont3dz = 1;
-    QFont2D = LoadGameFont(path, path, 1, buf, buf_end);
+    app_fnt = LoadGameFont(path, path, buf, buf_end, 1);
     LoadButtonFont("stuff\\text\\Buttons", 0, buf, buf_end, 0);
 }
 #include "nu2api/numath/numtx.h"
@@ -229,7 +232,7 @@ void Text_SetLanguage(i32 language) {
     }
 }
 void *Text_IsFontLoaded() {
-    return QFont2D;
+    return app_fnt;
 }
 void TextDecodeCodeword(char *, char *) {
 }
@@ -240,7 +243,7 @@ static f32 APITEXTSCALEY = 1.0f;
 static f32 STCOORDSCALE = 1.0f;
 static f32 g_buttonFontScalePulse = 1.0f;
 i32 MenuStopDraw;
-static i32 smarttext_fwn;
+i32 smarttext_fwn;
 static i32 followon_line;
 
 f32 TextPrintSubstring(unsigned char *text, f32 x, f32 y, f32 z, f32 x_scale, f32 y_scale, i32 colour,
@@ -271,7 +274,10 @@ f32 TextPrintSubstring(unsigned char *text, f32 x, f32 y, f32 z, f32 x_scale, f3
     NuQFntPrintW(font, encoded);
     return width / pulse;
 }
-void Text_DecodeButtons(char *, char *) {
+void Text_DecodeButtons(char *source, char *destination) {
+    if (NuStrICmp(source, "wibble") == 0) {
+        NuStrCpy(destination, "cross");
+    }
 }
 char *Text_GetLanguagePath(i32 language) {
     static char japanese[] = "japanese";
@@ -416,7 +422,8 @@ void Text_LoadAndFixUpStrings(unsigned char *filename, unsigned char **buffer, c
     }
     *buffer = out;
 }
-void Text_GetMaxOverallStrings() {
+i32 Text_GetMaxOverallStrings() {
+    return Text_MaxOverallStrings;
 }
 void Text_LocaliseDecimalPoint(char *text) {
     if ((Text_Language >= 2 && Text_Language <= 5) || Text_Language == 6 || Text_Language == 7 || Text_Language == 8 ||
@@ -494,7 +501,7 @@ extern "C" {
         return QFont2DButtons;
     }
 
-    VUFNT *LoadGameFont(char *path, char *name, i32 render_plane, variptr_u *buf, variptr_u *buf_end) {
+    VUFNT *LoadGameFont(char *path, char *name, variptr_u *buf, variptr_u *buf_end, i32 render_plane) {
         QFont2D = static_cast<VUFNT *>(NuQFntLoadPtr(path, name, 4, render_plane, buf, buf_end));
         if (QFont2D != nullptr) {
             if (create_qfont2dlower != 0)
@@ -528,9 +535,11 @@ extern "C" {
         }
         Text3DEx(text, x, y, z, x_scale, y_scale, z_scale, alignment, red, green, blue, alpha);
     }
-    void Set3DGameFont(void) {
+    void Set3DGameFont(VUFNT *font) {
+        QFont3D = font;
     }
-    void SetGameFont(void) {
+    void SetGameFont(VUFNT *font) {
+        QFont2D = font;
     }
     void SmartText(void) {
     }
@@ -667,9 +676,11 @@ extern "C" {
         if (coordinate_scale != nullptr)
             *coordinate_scale = STCOORDSCALE;
     }
-    void SmartTextSetFWNMode(void) {
+    void SmartTextSetFWNMode(i32 mode) {
+        smarttext_fwn = mode;
     }
-    void SmartTextSetFont(void) {
+    void SmartTextSetFont(VUFNT *font) {
+        SmartTextFont = font;
     }
     void SmartTextSetWidescreen(f32 font_scale_x, f32 coordinate_scale) {
         QFONTSCALEX = 1.0f - (1.0f - font_scale_x) * 0.5f;
@@ -754,9 +765,15 @@ extern "C" {
         }
         dest[dest_pos] = 0;
     }
-    void TextRegisterButtonMapFn(void) {
+    void TextRegisterButtonMapFn(void (*fn)(char *, char *)) {
+        if (fn != nullptr) {
+            buttonmapfn = fn;
+        }
     }
-    void TextRegisterPulseTimerFn(void) {
+    void TextRegisterPulseTimerFn(f32 (*fn)(f32)) {
+        if (fn != nullptr) {
+            pulsetimerfn = fn;
+        }
     }
     void UnloadGameFont(void) {
     }

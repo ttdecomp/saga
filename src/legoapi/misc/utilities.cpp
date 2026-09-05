@@ -190,7 +190,16 @@ i32 MatrixReflectionVU0_AXISY(numtx_s *, float, float, numtx_s *) {
     return 0;
 }
 
-void SphereSphereOverlapScaleY(nuvec_s *, float, float, nuvec_s *, float, float) {
+i32 SphereSphereOverlapScaleY(nuvec_s *position_a, float radius_a, float y_radius_a, nuvec_s *position_b,
+                              float radius_b, float y_radius_b) {
+    f32 dx = position_b->x - position_a->x;
+    f32 dy = position_b->y - position_a->y;
+    f32 dz = position_b->z - position_a->z;
+    if (radius_b != y_radius_b || radius_a != y_radius_a) {
+        dy *= (radius_b + radius_a) / (y_radius_b + y_radius_a);
+    }
+    f32 radius = radius_b + radius_a;
+    return dx * dx + dy * dy + dz * dz <= radius * radius;
 }
 
 void IToX(char *, i32) {

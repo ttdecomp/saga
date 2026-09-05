@@ -217,7 +217,14 @@ i32 Episode_IsComplete(EPISODEDATA *episode, i32 *completed_area_count) {
     return complete == episode->regular_areas;
 }
 
-void Episodes_Completed() {
+i32 Episodes_Completed() {
+    i32 completed = 0;
+    for (i32 i = 0; i < EPISODECOUNT; ++i) {
+        if (Episode_IsComplete(&EDataList[i], NULL) != 0) {
+            ++completed;
+        }
+    }
+    return completed;
 }
 
 void Episodes_CompleteAllSuperStories() {

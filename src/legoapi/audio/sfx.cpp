@@ -378,7 +378,17 @@ void UpdateRepeatSfx() {
     }
 }
 
-void AddLevelSfxFromId(i32, i32 *, i32 *, i32) {
+void AddLevelSfxFromId(i32 sfx_id, i32 *sfx_ids, i32 *sfx_count, i32 max_sfx) {
+    if (sfx_count == NULL || sfx_ids == NULL || *sfx_count >= max_sfx || sfx_id == -1) {
+        return;
+    }
+    for (i32 index = 0; index < *sfx_count; ++index) {
+        if (sfx_ids[index] == sfx_id) {
+            return;
+        }
+    }
+    sfx_ids[*sfx_count] = sfx_id;
+    ++*sfx_count;
 }
 
 void SetSfxBitTab_OnEx(SoundTable *, i32) {
@@ -390,10 +400,42 @@ void SetSfxBitTab_OffEx(SoundTable *, i32) {
 void SfxCheckMusicOnOff(OPTIONSSAVE_s *) {
 }
 
-void AddLevelSfxFromName(char *, i32 *, i32 *, i32) {
+void AddLevelSfxFromName(char *sfx_name, i32 *sfx_ids, i32 *sfx_count, i32 max_sfx_count) {
+    if (sfx_count == NULL || sfx_ids == NULL || *sfx_count >= max_sfx_count) {
+        return;
+    }
+
+    i32 sfx_id = GetSfxId(sfx_name);
+    if (sfx_id == -1) {
+        return;
+    }
+
+    for (i32 i = 0; i < *sfx_count; i++) {
+        if (sfx_ids[i] == sfx_id) {
+            return;
+        }
+    }
+
+    sfx_ids[*sfx_count] = sfx_id;
+    ++*sfx_count;
 }
 
-void AddLevelSfxGizmoSys(GIZMOSYS_s *, void *, i32 *, i32 *, i32) {
+void AddLevelSfxGizmoSys(GIZMOSYS_s *gizmo_sys, void *world_info, i32 *sfx_ids, i32 *sfx_count, i32 max_sfx_count) {
+    if (gizmotypes == NULL || gizmo_sys == NULL) {
+        return;
+    }
+
+    GIZMOSET *set = gizmo_sys->sets;
+    GIZMOTYPE *type = gizmotypes->types;
+    i32 i = 0;
+    while (i < gizmotypes->count) {
+        if (type->fns.add_level_sfx_fn != NULL) {
+            type->fns.add_level_sfx_fn(world_info, set->unknown, sfx_ids, sfx_count, max_sfx_count);
+        }
+        ++i;
+        ++set;
+        ++type;
+    }
 }
 
 void BlockSfx(GameObject_s *) {

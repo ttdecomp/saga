@@ -14,6 +14,8 @@ struct HostWindowOptions {
     bool offscreen = false;
     bool mute = false;
     bool show_fps = false;
+    bool msaa = true;
+    bool portals = true;
     u64 script_tail_ms = 8000;
     u64 timeout_ms = 90000;
 };

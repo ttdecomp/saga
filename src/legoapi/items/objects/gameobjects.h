@@ -32,6 +32,7 @@ DECOMP_ASSERT(sizeof(GAMEFOG_STATE) == 0x40, "GAMEFOG_STATE size");
 extern GAMEFOG_STATE GameFog;
 
 void *GameBufferAlloc(VARIPTR *buf, VARIPTR *buf_end, i32 size);
+i32 Game_100PercentComplete();
 
 GameObject_s *FindGameObject(i32 id, u32 type, i32 a3, i32 a4, i32 a5);
 CABLE_s *CreateCable(GameObject_s *source, GameObject_s *target, i32 flags);

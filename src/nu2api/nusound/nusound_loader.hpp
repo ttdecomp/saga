@@ -44,7 +44,10 @@ class NuSoundLoader {
     i32 CloseStream();
     u64 Deinterleave(char *data, int length, char **dest, int count, NuSoundSystem::ChannelConfig config);
     void GetChannelAddress(NuSoundBuffer *, NuSoundStreamDesc *, NuSoundSystem::AudioChannel);
-    void ReleaseHeader(NuSoundStreamDesc *);
+    // libTTapp calls this after clearing its loader pointer.  The routine never
+    // reads `this`; exposing that original static-style semantic to sanitizer
+    // builds avoids manufacturing a non-null object that the target did not use.
+    SAGA_HOST_STATIC void ReleaseHeader(NuSoundStreamDesc *);
     i32 LoadFromFile(const char *name, NuSoundStreamDesc *desc, NuSoundBuffer *buffer, NuSoundOutOfMemCallback *oom);
     i32 Load(NuSoundStreamDesc *desc, NuSoundBuffer *buffer);
 

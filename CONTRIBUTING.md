@@ -92,6 +92,15 @@ library, not a desktop executable. The `native` and `wasm` builds add host
 support for testing behavior; their machine code is not compared with the
 original Android library.
 
+The host variants each have explicit debug and release configurations:
+
+| Configuration      | Behavior                                                        |
+| ------------------ | --------------------------------------------------------------- |
+| `native`           | Debug native build; Linux enables AddressSanitizer and UBSan    |
+| `native_release`   | Native build compiled with `-O2`, without sanitizers            |
+| `wasm`             | Debug WebAssembly build                                         |
+| `wasm_release`     | WebAssembly build compiled with `-O2`, without sanitizers       |
+
 ### Android target
 
 ```sh
@@ -110,6 +119,7 @@ On Linux:
 
 ```sh
 bazel build --config=native //src:saga_native
+bazel build --config=native_release //src:saga_native
 ```
 
 On Windows, from MSYS2 MINGW64:
@@ -161,6 +171,7 @@ timeout 38s bazel run --config=native //src:run_native -- \
 
 ```sh
 bazel build --config=wasm //src:saga_wasm
+bazel build --config=wasm_release //src:saga_wasm
 ```
 
 The outputs are `bazel-bin/src/saga.html`, `saga.js`, and `saga.wasm`. Build
@@ -221,7 +232,9 @@ test pass. Shared behavior should still reconstruct the original game.
    ```sh
    bazel build --config=target //src:clang_tidy_target
    bazel build --config=native //src:clang_tidy_native
+   bazel build --config=native_release //src:clang_tidy_native
    bazel build --config=wasm //src:clang_tidy_wasm
+   bazel build --config=wasm_release //src:clang_tidy_wasm
    ```
 
    macOS skips the unsupported `native` check. Apple Silicon also skips

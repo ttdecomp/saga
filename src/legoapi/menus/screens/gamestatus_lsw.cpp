@@ -9,6 +9,7 @@
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nutex.h"
+#include "nu2api/numath/nutrig.h"
 
 struct AIROW_s;
 struct nuqthdr_s;
@@ -23,9 +24,14 @@ extern f32 statstime;
 extern f32 cointotaltime;
 extern i32 screendump;
 extern i32 newgamecam;
+extern STATUSPACKET_s StatusPacket;
 
 i32 GetMenuID();
 extern "C" i32 MenuInMemoryCard();
+void ResetRumble(RUMBLEPACKET *packet);
+void ReCalculateCompletionPoints();
+void StatusStage_Reset(STATUS_STAGE_s *stage);
+void GameCam_Blend(GAMECAMERA_s *camera, f32 duration, f32 curve, i32 mode);
 
 namespace {
     enum PANEL_BLOCKING_MENU {
@@ -56,6 +62,13 @@ namespace {
 
 u16 hub_iconang[4] = {};
 static f32 hub_icontime[4] = {};
+STATUS_STAGE_s *StatusStages;
+f32 iconalphaoverride;
+f32 icon_y;
+i32 draw_player_icons;
+i32 status_prompt;
+static i32 DrawGoldBrick_Stage;
+static i32 DrawGoldBrick_Phase;
 
 void NewGameMode() {
     NewMode = 1;
@@ -90,16 +103,69 @@ void UpdateStats() {
     CoinTotalScale = SeekLinearF(CoinTotalScale, 1.0f, 3.0f * FRAMETIME);
 }
 
-void AddStatusStage(STATUSPACKET_s *, i32, i32) {
+void AddStatusStage(STATUSPACKET_s *packet, i32 type, i32 gold_brick_enabled) {
+    const u8 index = packet->stage_count;
+    packet->stage_types[index] = static_cast<i8>(type);
+    packet->gold_brick_enabled[index] = static_cast<u8>(gold_brick_enabled);
+    packet->stage_count = index + 1;
 }
 
-void SetBonusWinner(i32) {
+void SetBonusWinner(i32 player) {
+    BonusWinner = player;
+    GameCam_Blend(GameCam, 1.5f, 0.0f, 1);
+    LookAtBoth = 1;
 }
 
-void FindStatusStage(i32) {
+STATUS_STAGE_s *FindStatusStage(i32 type) {
+    for (STATUS_STAGE_s *stage = StatusStages; stage->type != -1; ++stage) {
+        if (stage->type == type) {
+            return stage;
+        }
+    }
+    return NULL;
 }
 
-void NextStatusStage(STATUSPACKET_s *) {
+void NextStatusStage(STATUSPACKET_s *packet) {
+    STATUS_STAGE_s *stage = packet->stage;
+    if (stage != NULL) {
+        if (stage->field_0x14 == -1 && packet->field_0x68 > stage->field_0x18) {
+            packet->field_0xb0 |= 2;
+            return;
+        }
+        stage->field_0x12 = 1;
+    }
+
+    packet->previous_stage_2 = packet->previous_stage;
+    packet->previous_stage = stage;
+    ++packet->current_gold_brick;
+    packet->stage = packet->next_stage;
+    packet->next_stage = FindStatusStage(packet->stage_types[packet->current_gold_brick + 1]);
+
+    while (packet->stage == NULL || packet->next_stage == NULL) {
+        if (packet->stage == NULL && packet->next_stage != NULL) {
+            packet->stage = packet->next_stage;
+            packet->next_stage = NULL;
+        }
+
+        ++packet->current_gold_brick;
+        if (packet->current_gold_brick + 1 < packet->stage_count) {
+            packet->next_stage = FindStatusStage(packet->stage_types[packet->current_gold_brick + 1]);
+        } else {
+            packet->next_stage = FindStatusStage(10);
+        }
+    }
+
+    StatusStage_Reset(packet->stage);
+    packet->field_0xb0 &= ~2;
+    status_prompt = 0;
+
+    if (packet->stage->type == 10 || packet->stage->type == 11) {
+        ResetRumble(reinterpret_cast<RUMBLEPACKET *>(&packet->player0_rumble_amount));
+        ResetRumble(reinterpret_cast<RUMBLEPACKET *>(&packet->player1_rumble_amount));
+    }
+    if (packet->stage->type == 11) {
+        ReCalculateCompletionPoints();
+    }
 }
 
 void Prompt_LSW_Draw(STATUS_STAGE_s *, STATUSPACKET_s *, i32) {
@@ -122,10 +188,70 @@ void Save_LSW_Update(STATUS_STAGE_s *, STATUSPACKET_s *, float) {
 void InitStatusScreen(WORLDINFO_s *) {
 }
 
-void SetDrawGoldBrick(STATUSPACKET_s *, i32) {
+void SetDrawGoldBrick(STATUSPACKET_s *packet, i32) {
+    const i32 stage = packet->current_gold_brick;
+    if (packet->gold_brick_enabled[stage] != 0) {
+        DrawGoldBrick_Stage = stage;
+        DrawGoldBrick_Phase = packet->stage->field_0x14;
+    }
 }
 
-void StatusIconsOnOff(float) {
+void NewStatusRumbleBuzz(i32 player, float amount, float buzz, i32 priority) {
+    if (!(amount > 0.0f)) {
+        if (StatusPacket.player0_active != 0 && (player == 0 || player == -1)) {
+            goto player0_buzz;
+        }
+        if (StatusPacket.player1_active != 0 && (player == 1 || player == -1)) {
+            goto player1_buzz;
+        }
+        return;
+    }
+
+    if (StatusPacket.player0_active != 0 && (player == 0 || player == -1)) {
+        if (StatusPacket.player0_rumble_time <= 0.0f || amount > StatusPacket.player0_rumble_time /
+                                                                     StatusPacket.player0_rumble_duration *
+                                                                     StatusPacket.player0_rumble_amount) {
+            StatusPacket.player0_rumble_amount = amount;
+            StatusPacket.player0_rumble_duration = amount;
+            StatusPacket.player0_rumble_time = amount;
+        }
+    player0_buzz:
+        if (buzz > StatusPacket.player0_buzz_amount) {
+            StatusPacket.player0_buzz_amount = buzz;
+        }
+        if (priority > 0) {
+            const i32 old_priority = StatusPacket.player0_rumble_priority;
+            ++priority;
+            if (priority > old_priority) {
+                StatusPacket.player0_rumble_priority = static_cast<u8>(priority);
+            }
+        }
+    }
+
+    if (StatusPacket.player1_active != 0 && (player == 1 || player == -1)) {
+        if (StatusPacket.player1_rumble_time <= 0.0f || amount > StatusPacket.player1_rumble_time /
+                                                                     StatusPacket.player1_rumble_duration *
+                                                                     StatusPacket.player1_rumble_amount) {
+            StatusPacket.player1_rumble_amount = amount;
+            StatusPacket.player1_rumble_duration = amount;
+            StatusPacket.player1_rumble_time = amount;
+        }
+    player1_buzz:
+        if (buzz > StatusPacket.player1_buzz_amount) {
+            StatusPacket.player1_buzz_amount = buzz;
+        }
+        if (priority > 0) {
+            const i32 old_priority = StatusPacket.player1_rumble_priority;
+            ++priority;
+            if (priority > old_priority) {
+                StatusPacket.player1_rumble_priority = static_cast<u8>(priority);
+            }
+        }
+    }
+}
+
+f32 StatusIconsOnOff(f32 progress) {
+    return NuTrigTable[(static_cast<i32>(progress * 16384.0f) >> 1) & 0x7fff] * (STATSPOSY - STATSPOS2Y) + STATSPOS2Y;
 }
 
 void UpdateIconWibble() {
@@ -145,7 +271,7 @@ void StatusPacketReset(STATUSPACKET_s *packet) {
     const i32 field_0x04 = packet->field_0x04;
     const i32 field_0x08 = packet->field_0x08;
     void (*reset_callback)(STATUSPACKET_s *) = packet->reset_callback;
-    const i32 field_0x10 = packet->field_0x10;
+    void (*draw_background_callback)(STATUSPACKET_s *) = packet->draw_background_callback;
     const f32 field_0x68 = packet->field_0x68;
 
     reset_callback(packet);
@@ -155,7 +281,7 @@ void StatusPacketReset(STATUSPACKET_s *packet) {
     packet->lsw_packet = const_cast<STATUSPACKET_LSW_s *>(lsw_packet);
     packet->field_0x04 = field_0x04;
     packet->field_0x08 = field_0x08;
-    packet->field_0x10 = field_0x10;
+    packet->draw_background_callback = draw_background_callback;
     packet->field_0x68 = field_0x68;
 }
 

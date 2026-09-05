@@ -79,6 +79,26 @@ enum {
     NU_DISPLAYSCENE_FLAG_NEEDS_BUILD = 0x10,
 };
 
+// NuVisiEvaluate returns a view beginning at NUGSCN::visibility_result_instance_count.
+typedef struct nuvisibilityresult_s {
+    i32 instance_count;            // 0x00
+    u8 pad_04[4];                  // 0x04
+    struct nugscn_s *source_scene; // 0x08
+    void *occlusion_data;          // 0x0c
+    u8 pad_10[4];                  // 0x10
+    void *instance_tree;           // 0x14
+    void *portal_marker;           // 0x18
+    u8 *portal_bits;               // 0x1c
+    void *visibility_context;      // 0x20
+    u8 *instance_tree_bits;        // 0x24
+    u8 state;                      // 0x28
+} NuVisibilityResult;
+
+DECOMP_ASSERT(offsetof(NuVisibilityResult, portal_marker) == 0x18, "visibility portal marker offset");
+DECOMP_ASSERT(offsetof(NuVisibilityResult, portal_bits) == 0x1c, "visibility portal bits offset");
+DECOMP_ASSERT(offsetof(NuVisibilityResult, instance_tree_bits) == 0x24, "visibility tree bits offset");
+DECOMP_ASSERT(offsetof(NuVisibilityResult, state) == 0x28, "visibility state offset");
+
 typedef struct nugscn_s {
     i32 *texture_ids;
     i32 ntextures;
@@ -93,14 +113,8 @@ typedef struct nugscn_s {
     undefined field13_0x19;
     undefined field14_0x1a;
     undefined field15_0x1b;
-    undefined field16_0x1c;
-    undefined field17_0x1d;
-    undefined field18_0x1e;
-    undefined field19_0x1f;
-    undefined field20_0x20;
-    undefined field21_0x21;
-    undefined field22_0x22;
-    undefined field23_0x23;
+    i32 num_instances; // 0x1c
+    u8 *instances;     // 0x20, 0x50-byte legacy instance records
     i32 numspecial;
     struct nuspecial_s *specials;
     undefined field26_0x2c;
@@ -130,43 +144,23 @@ typedef struct nugscn_s {
     i32 camera_room;                      // 0xe0
     i32 portal_depth;                     // 0xe4, maximum recursive depth
     undefined pad_e8[0x0c];
-    void *portal_visibility_data; // 0xf4, required by portal traversal
-    undefined field224_0xf8;
-    undefined field225_0xf9;
-    undefined field226_0xfa;
-    undefined field227_0xfb;
-    undefined field228_0xfc;
-    undefined field229_0xfd;
-    undefined field230_0xfe;
-    undefined field231_0xff;
-    undefined field232_0x100;
-    undefined field233_0x101;
-    undefined field234_0x102;
-    undefined field235_0x103;
-    undefined field236_0x104;
-    undefined field237_0x105;
-    undefined field238_0x106;
-    undefined field239_0x107;
-    undefined field240_0x108;
-    undefined field241_0x109;
-    undefined field242_0x10a;
-    undefined field243_0x10b;
-    undefined field244_0x10c;
-    undefined field245_0x10d;
-    undefined field246_0x10e;
-    undefined field247_0x10f;
+    i32 portal_instance_count;      // 0xf4, nonzero when portal visibility data is present
+    NUPORTALSPHERE *portal_spheres; // 0xf8, one 0x10-byte sphere per instance
+    NUPORTALBOX *portal_boxes;      // 0xfc, one 0x20-byte box per instance
+    undefined pad_100[0x10];
     struct nudldlistscene_s *display_list;
-    undefined pad_114[0x28];
-    u8 *instance_visibility_flags; // 0x13c, shared portal-visibility result buffer
-    undefined field293_0x140;
-    undefined field294_0x141;
-    undefined field295_0x142;
-    undefined field296_0x143;
-    undefined field297_0x144;
-    undefined field298_0x145;
-    undefined field299_0x146;
-    undefined field300_0x147;
-    undefined field301_0x148;
+    undefined pad_114[0x0c];
+    i32 visibility_result_instance_count; // 0x120
+    undefined pad_124[4];
+    struct nugscn_s *visibility_source_scene; // 0x128
+    void *occlusion_data;                     // 0x12c
+    undefined pad_130[4];
+    void *instance_visibility_tree;     // 0x134
+    void *portal_visibility_marker;     // 0x138, enables the portal result at 0x13c
+    u8 *instance_visibility_flags;      // 0x13c, shared portal-visibility result buffer
+    void *visibility_context;           // 0x140
+    u8 *instance_tree_visibility_flags; // 0x144
+    u8 visibility_state;                // 0x148
     undefined field302_0x149;
     undefined field303_0x14a;
     undefined field304_0x14b;
@@ -351,8 +345,10 @@ DECOMP_ASSERT(offsetof(NUGSCN, portal_frusta) == 0x9c, "NUGSCN portal-frustum ar
 DECOMP_ASSERT(offsetof(NUGSCN, num_portal_frusta) == 0xdc, "NUGSCN portal-frustum count offset");
 DECOMP_ASSERT(offsetof(NUGSCN, camera_room) == 0xe0, "NUGSCN camera-room offset");
 DECOMP_ASSERT(offsetof(NUGSCN, portal_depth) == 0xe4, "NUGSCN portal-depth offset");
-DECOMP_ASSERT(offsetof(NUGSCN, portal_visibility_data) == 0xf4, "NUGSCN portal-visibility data offset");
+DECOMP_ASSERT(offsetof(NUGSCN, portal_instance_count) == 0xf4, "NUGSCN portal-instance count offset");
 DECOMP_ASSERT(offsetof(NUGSCN, display_list) == 0x110, "NUGSCN display-list offset");
+DECOMP_ASSERT(offsetof(NUGSCN, visibility_result_instance_count) == 0x120, "NUGSCN visibility result offset");
+DECOMP_ASSERT(offsetof(NUGSCN, portal_visibility_marker) == 0x138, "NUGSCN portal-visibility marker offset");
 DECOMP_ASSERT(offsetof(NUGSCN, instance_visibility_flags) == 0x13c, "NUGSCN portal-visibility buffer offset");
 DECOMP_ASSERT(offsetof(NUGSCN, animation_end_frames) == 0x1e0, "NUGSCN animation end-frame table offset");
 

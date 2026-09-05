@@ -11,6 +11,9 @@ struct SDL_Window;
 const char *HostPlatformVideoDriver();
 bool HostPlatformAudioOutputEnabled();
 ANativeWindow *HostPlatformNativeWindow(SDL_Window *window);
+#if defined(__linux__) && !defined(__EMSCRIPTEN__)
+void HostSetSDLGraphics(SDL_Window *window, void *context);
+#endif
 void HostPlatformPrepareArguments(i32 *argc, char ***argv);
 void HostPlatformHandleInputEvent(const SDL_Event &event, i32 width, i32 height);
 u32 HostPlatformKeyboardButtons(const bool *keyboard);

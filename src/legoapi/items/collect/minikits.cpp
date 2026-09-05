@@ -2,6 +2,7 @@
 #include "globals.h"
 #include "legoapi/gizmos/fx/gizmopickups.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/world/area.h"
 #include "nu2api/nu3d/nutex.h"
 
 struct AIROW_s;
@@ -21,7 +22,17 @@ void MiniKits_Init(variptr_u *, variptr_u *) {
 void CollectMinikit(nuvec_s *, char *, i32) {
 }
 
-void AllMiniKitsDone(AREASAVE_s *) {
+i32 AllMiniKitsDone(AREASAVE_s *save) {
+    if (save == NULL) {
+        return 1;
+    }
+
+    for (i32 i = 0; i < AREACOUNT; ++i, ++save) {
+        if ((ADataList[i].flags & AREAFLAG_MINIKIT) != 0 && save->minikit_count == 0) {
+            return 0;
+        }
+    }
+    return 1;
 }
 
 void MiniKitDetector(nuvec_s *) {

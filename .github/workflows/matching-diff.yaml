@@ -1,0 +1,95 @@
+---
+name: Function matching report
+
+# This privileged trigger lets the workflow update its comment for forked PRs.
+# Never execute or check out code from the PR in this workflow.
+# yamllint disable-line rule:truthy
+on:
+  pull_request_target:
+    branches: ["main"]
+    types: [opened, reopened, synchronize]
+    paths:
+      - "matching.json"
+      - "scripts/matching_diff.py"
+      - ".github/workflows/matching-diff.yaml"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: matching-report-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  report:
+    name: Compare function matches
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # pull_request_target checks out trusted code from the PR's base. The PR
+      # matching file is read as data from Git without checking out its tree.
+      - name: Checkout trusted report script
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 1
+
+      - name: Read matching reports
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          git show "$BASE_SHA:matching.json" > "$RUNNER_TEMP/matching-base.json"
+          git fetch --no-tags --depth=1 origin "pull/$PR_NUMBER/head"
+          git show "$HEAD_SHA:matching.json" > "$RUNNER_TEMP/matching-head.json"
+
+      - name: Build Markdown report
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          python3 scripts/matching_diff.py \
+            --old-label "${BASE_SHA:0:7}" \
+            --new-label "${HEAD_SHA:0:7}" \
+            "$RUNNER_TEMP/matching-base.json" \
+            "$RUNNER_TEMP/matching-head.json" \
+            > "$RUNNER_TEMP/matching-report.md"
+          cat "$RUNNER_TEMP/matching-report.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Create or update pull request comment
+        uses: actions/github-script@v9
+        env:
+          REPORT_PATH: ${{ runner.temp }}/matching-report.md
+        with:
+          script: |
+            const fs = require("fs");
+            const marker = "<!-- saga-function-matching-report -->";
+            const body = fs.readFileSync(process.env.REPORT_PATH, "utf8");
+            const {owner, repo} = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              {owner, repo, issue_number, per_page: 100},
+            );
+            const previous = comments.find(
+              (comment) => comment.user?.login === "github-actions[bot]" &&
+                comment.body?.includes(marker),
+            );
+
+            if (previous) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: previous.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }

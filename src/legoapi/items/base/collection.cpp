@@ -8,11 +8,15 @@
 #include "legoapi/menus/screens/store.h"
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/nufile/nufpar.h"
+
+#include <string.h>
 struct GIZMOPICKUP_s;
 struct PART_s;
 struct starfighter_s;
 
 struct APICHARACTERMODELLIST_s;
+
+void GizmoPickup_CollectCoin(WORLDINFO_s *, nuvec_s *, i32, i32, GameObject_s *, i32);
 
 COLLECTID *TempCollectID = NULL;
 
@@ -266,8 +270,59 @@ i32 Collection_GetIDList(COLLECTION_s *collection, u32 model_flag_mask, u32 requ
     return result_count;
 }
 
-void Collection_CreateCustom(char *, i16 *, COLLECTION_s *, u32, u32, u32, i32, i32, variptr_u *, variptr_u *, i32,
-                             float) {
+void Collection_CreateCustom(char *name, i16 *id_list, COLLECTION_s *collection, u32 required_model_flags,
+                             u32 excluded_model_flags, u32 required_game_flags, i32 require_buyable, i32 columns,
+                             VARIPTR *buffer, VARIPTR *, i32 use_all_characters, f32 scale) {
+    collection->count_x = static_cast<u16>(columns);
+    collection->count_y = 0;
+    collection->field_8 = id_list;
+    collection->field_c = name;
+    collection->field_10 = scale;
+
+    buffer->addr = ALIGN(buffer->addr, 4);
+    collection->list = reinterpret_cast<COLLECTID *>(buffer->void_ptr);
+
+    if (use_all_characters == 0) {
+        for (i32 index = 0; index < CollectCount; ++index) {
+            COLLECTID &source = CollectList[index];
+            const i32 id = source.id;
+            if (id < 0) {
+                continue;
+            }
+            if (excluded_model_flags != 0 && (CDataList[id].model_flags & excluded_model_flags) != 0) {
+                continue;
+            }
+            if (require_buyable != 0 && source.can_buy == 0) {
+                continue;
+            }
+            if (required_game_flags != 0 && (GCDataList[id].flags_090 & required_game_flags) != required_game_flags) {
+                continue;
+            }
+            if (required_model_flags != 0 &&
+                (CDataList[id].model_flags & required_model_flags) != required_model_flags) {
+                continue;
+            }
+            collection->list[collection->count_y++] = source;
+        }
+    } else {
+        for (i32 id = 0; id < CHARCOUNT; ++id) {
+            if (required_model_flags != 0 &&
+                (CDataList[id].model_flags & required_model_flags) != required_model_flags) {
+                continue;
+            }
+            if (excluded_model_flags != 0 && (CDataList[id].model_flags & excluded_model_flags) != 0) {
+                continue;
+            }
+            if (required_game_flags != 0 && (GCDataList[id].flags_090 & required_game_flags) != required_game_flags) {
+                continue;
+            }
+            COLLECTID &entry = collection->list[collection->count_y++];
+            memset(&entry, 0, sizeof(entry));
+            entry.id = static_cast<i16>(id);
+        }
+    }
+
+    buffer->addr += static_cast<usize>(collection->count_y) * sizeof(COLLECTID);
 }
 
 void Collection_CreateMaster(char *file, i16 *idlist, COLLECTION_s *collection, i32 param4, float param5) {
@@ -336,7 +391,8 @@ void AddToCollection(i32) {
 void AddToGoldBricks() {
 }
 
-void Pup_CollectCoin(WORLDINFO_s *, GIZMOPICKUP_s *, i32, GameObject_s *, i32) {
+void Pup_CollectCoin(WORLDINFO_s *world, GIZMOPICKUP_s *pickup, i32 type, GameObject_s *object, i32 arg) {
+    GizmoPickup_CollectCoin(world, &pickup->position, type, pickup->model_variant, object, arg);
 }
 
 void ResetCoinPacket(COINPACKET_s *packet) {

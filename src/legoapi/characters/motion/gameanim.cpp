@@ -2051,13 +2051,14 @@ extern "C" {
         if (state == NULL) {
             return NULL;
         }
-        state = reinterpret_cast<StateAnim *>(reinterpret_cast<u8 *>(state) + delta);
-        if (state->times != NULL) {
-            state->times = reinterpret_cast<f32 *>(reinterpret_cast<u8 *>(state->times) + delta);
+        state = reinterpret_cast<StateAnim *>(reinterpret_cast<usize>(state) + delta);
+        if (state == NULL) {
+            return NULL;
         }
-        if (state->values != NULL) {
-            state->values += delta;
-        }
+        state->times =
+            state->times != NULL ? reinterpret_cast<f32 *>(reinterpret_cast<usize>(state->times) + delta) : NULL;
+        state->values =
+            state->values != NULL ? reinterpret_cast<u8 *>(reinterpret_cast<usize>(state->values) + delta) : NULL;
         return state;
     }
 

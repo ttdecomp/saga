@@ -24,6 +24,7 @@
 #include "nu2api/nu3d/NuRenderDevice.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/nudlist.h"
+#include "nu2api/nu3d/nuportal.h"
 #include "nu2api/nu3d/nuscreen.hpp"
 #include "nu2api/nucore/nuanim3.h"
 #include "nu2api/nufile/nufile.h"
@@ -47,6 +48,8 @@ extern FadeSystem FadeSys;
 extern GAMEPAD_s GamePad[64];
 
 namespace {
+    char host_capture_directory[128] = ".work/capture";
+
     struct HostSpecialHandleLayout {
         NUGSCN *scene;
         void *special;
@@ -353,6 +356,116 @@ namespace {
                  snapshot.has_run_animation ? 1 : 0);
     }
 
+    static void host_log_portal_trace(const char *stage) {
+        NUGSCN *scene = WORLD != nullptr ? WORLD->current_gscn : nullptr;
+        if (scene == nullptr) {
+            LOG_INFO("portal visibility %s: no current scene", stage);
+            return;
+        }
+        i32 visible = 0;
+        const void *visibility_marker = scene->portal_visibility_marker;
+        const i32 instance_count = scene->display_list != nullptr ? scene->display_list->nclip_objects : 0;
+        for (i32 i = 0; i < instance_count; ++i) {
+            visible += (PortalVisiFlags[i >> 3] >> (i & 7)) & 1;
+        }
+        LOG_INFO("portal visibility %s: rooms=%d portals=%u camera-room=%d frusta=%d clips=%d visible=%d "
+                 "data=%p spheres=%p boxes=%p visibility-tag=0x%x bits=%p display=%p",
+                 stage, scene->num_rooms, scene->max_portals, scene->camera_room, scene->num_portal_frusta,
+                 instance_count, visible, reinterpret_cast<void *>(scene->portal_instance_count), scene->portal_spheres,
+                 scene->portal_boxes, static_cast<u32>(reinterpret_cast<usize>(visibility_marker)),
+                 scene->instance_visibility_flags, scene->display_list);
+    }
+
+    static void host_log_display_list_trace() {
+        NUGSCN *scene = WORLD != nullptr ? WORLD->current_gscn : nullptr;
+        NUDLDLISTSCENE *display = scene != nullptr ? scene->display_list : nullptr;
+        if (display == nullptr || display->items == nullptr) {
+            LOG_INFO("display-list trace: no current display list");
+            return;
+        }
+
+        i32 item_counts[256] = {};
+        for (i32 i = 0; i < display->nitems; ++i) {
+            ++item_counts[display->items[i].type];
+        }
+        LOG_INFO("display-list trace: name=%s instances=%d items=%d materials=%u specials=%d sort-priorities=%d",
+                 display->name != nullptr ? display->name : "-", scene->num_instances, display->nitems, display->nmtls,
+                 display->nspecials, display->nsort_pris);
+        for (i32 type = 0; type < 256; ++type) {
+            if (item_counts[type] != 0) {
+                LOG_INFO("display-list type 0x%02x: count=%d handler=%p", type, item_counts[type],
+                         reinterpret_cast<void *>(g_nudl_dispatch_table[type]));
+            }
+        }
+    }
+
+    static void host_log_pickup_trace(const char *stage) {
+        if (WORLD == nullptr || WORLD->gizmo_pickup_sys == nullptr) {
+            LOG_INFO("pickup trace %s: no pickup system", stage);
+            return;
+        }
+
+        GIZMOPICKUPRUNTIMESYS_s *system = WORLD->gizmo_pickup_sys;
+        i32 active = 0;
+        i32 visible = 0;
+        i32 draw_visible = 0;
+        i32 collected = 0;
+        i32 drawn = 0;
+        i32 room_visible = 0;
+        i32 model_active = 0;
+        i32 types[256] = {};
+        i32 nearest_index = -1;
+        f32 nearest_distance_squared = 0.0f;
+        const GameObject_s *player = Player[0];
+        for (i32 index = 0; index < system->pickup_count; ++index) {
+            const GIZMOPICKUP_s &pickup = system->pickups[index];
+            active += (pickup.state_flags & GIZMOPICKUP_STATE_ACTIVE) != 0;
+            visible += (pickup.state_flags & GIZMOPICKUP_STATE_VISIBLE) != 0;
+            draw_visible += (pickup.state_flags & GIZMOPICKUP_STATE_DRAW_VISIBLE) != 0;
+            collected += (pickup.state_flags & GIZMOPICKUP_STATE_COLLECTED) != 0;
+            drawn += (pickup.state_flags & GIZMOPICKUP_STATE_DRAWN) != 0;
+            ++types[static_cast<u8>(pickup.type_code)];
+
+            const bool pickup_room_visible = pickup.room_index < 0 || WORLD->rooms_visible_ptr == nullptr ||
+                                             WORLD->rooms_visible_ptr[pickup.room_index] != 0;
+            room_visible += pickup_room_visible;
+            if (pickup.type_index < GizmoPickupSys_Game.type_count) {
+                const GIZMO_PICKUP_TYPE &type = GizmoPickupSys_Game.types[pickup.type_index];
+                const i32 model_index = type.first_model_id + pickup.model_variant;
+                model_active += WORLD->lev_objs != nullptr && WORLD->lev_objs[model_index].active != 0;
+            }
+            if (player != nullptr && (pickup.state_flags & (GIZMOPICKUP_STATE_ACTIVE | GIZMOPICKUP_STATE_ENABLED |
+                                                            GIZMOPICKUP_STATE_COLLECTED)) ==
+                                         (GIZMOPICKUP_STATE_ACTIVE | GIZMOPICKUP_STATE_ENABLED)) {
+                const f32 dx = pickup.position.x - player->apiobj.position.x;
+                const f32 dy = pickup.position.y - player->apiobj.position.y;
+                const f32 dz = pickup.position.z - player->apiobj.position.z;
+                const f32 distance_squared = dx * dx + dy * dy + dz * dz;
+                if (nearest_index == -1 || distance_squared < nearest_distance_squared) {
+                    nearest_index = index;
+                    nearest_distance_squared = distance_squared;
+                }
+            }
+        }
+        LOG_INFO("pickup trace %s: total=%d active=%d visible=%d draw-visible=%d collected=%d drawn=%d "
+                 "room-visible=%d model-active=%d draw-distance=%.3f scale=%.3f",
+                 stage, system->pickup_count, active, visible, draw_visible, collected, drawn, room_visible,
+                 model_active, system->draw_distance, system->pickup_scale);
+        for (i32 type = 0; type < 256; ++type) {
+            if (types[type] != 0) {
+                LOG_INFO("pickup type '%c': count=%d", type, types[type]);
+            }
+        }
+        if (nearest_index != -1) {
+            const GIZMOPICKUP_s &pickup = system->pickups[nearest_index];
+            LOG_INFO("pickup nearest %s: index=%d type='%c' position=(%.3f,%.3f,%.3f) "
+                     "player=(%.3f,%.3f,%.3f) distance-squared=%.3f flags=0x%x config=0x%x",
+                     stage, nearest_index, pickup.type_code, pickup.position.x, pickup.position.y, pickup.position.z,
+                     player->apiobj.position.x, player->apiobj.position.y, player->apiobj.position.z,
+                     nearest_distance_squared, pickup.state_flags, pickup.config_flags);
+        }
+    }
+
     static HostScriptedMenuAction host_scripted_menu_select(i32 row, i32 column, Uint64 elapsed_ticks,
                                                             Uint64 &last_action_ticks) {
         if (elapsed_ticks < last_action_ticks + host_scripted_menu_settle_ms) {
@@ -440,13 +553,13 @@ namespace {
     }
 
     static bool host_capture_frame(i32 frame, const std::vector<u8> &pixels, i32 width, i32 height) {
-        char filename[64];
-        snprintf(filename, sizeof(filename), ".work/capture/window_%04d.ppm", frame);
+        char filename[192];
+        snprintf(filename, sizeof(filename), "%s/window_%04d.ppm", host_capture_directory, frame);
 
         return host_write_ppm(filename, pixels.data(), width, height);
     }
 
-    static void host_sdl_init(bool offscreen, bool mute) {
+    static void host_sdl_init(bool offscreen, bool mute, bool msaa) {
         const char *video_driver = HostPlatformVideoDriver();
         SDL_SetHint(SDL_HINT_VIDEO_DRIVER, video_driver);
         if (mute) {
@@ -459,8 +572,28 @@ namespace {
         }
         SDL_InitSubSystem(SDL_INIT_AUDIO);
 
-        const SDL_WindowFlags window_flags =
+#if defined(__linux__) && !defined(__EMSCRIPTEN__)
+        // The 32-bit NVIDIA package does not provide the vendor's external EGL
+        // platform modules. SDL's GLX path can still create a hardware GLES2
+        // context, which the Linux host render-device adapter adopts below.
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+        SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+        SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+        SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+        SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+        SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 0);
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, msaa ? 1 : 0);
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, msaa ? 4 : 0);
+#endif
+
+        SDL_WindowFlags window_flags =
             offscreen ? static_cast<SDL_WindowFlags>(SDL_WINDOW_HIDDEN | SDL_WINDOW_NOT_FOCUSABLE) : 0;
+#if defined(__linux__) && !defined(__EMSCRIPTEN__)
+        window_flags = static_cast<SDL_WindowFlags>(window_flags | SDL_WINDOW_OPENGL);
+#endif
         SDL_Window *window = SDL_CreateWindow("saga", host_window_width, host_window_height, window_flags);
         if (window == nullptr) {
             LOG_ERR("SDL_CreateWindow failed: %s", SDL_GetError());
@@ -472,6 +605,14 @@ namespace {
             return;
         }
 
+#if defined(__linux__) && !defined(__EMSCRIPTEN__)
+        SDL_GLContext bootstrap_context = SDL_GL_CreateContext(window);
+        if (bootstrap_context == nullptr) {
+            LOG_ERR("SDL_GL_CreateContext failed: %s", SDL_GetError());
+            return;
+        }
+        HostSetSDLGraphics(window, bootstrap_context);
+#endif
         g_renderDevice.OnWindowCreated(HostPlatformNativeWindow(window));
     }
 
@@ -503,8 +644,10 @@ namespace {
 i32 host_run_window(const HostWindowOptions &options) {
     HostSetReadbackEnabled(options.capture);
     HostSetFpsOverlayEnabled(options.show_fps);
+    HostSetMsaaEnabled(options.msaa);
     HostFreeCameraConfigure(options.camera_free);
-    host_sdl_init(options.offscreen, options.mute);
+    NuPortalEnabled(options.portals ? 1 : 0);
+    host_sdl_init(options.offscreen, options.mute, options.msaa);
     const char *documents_path = ".work/host-documents/";
     char scripted_documents_path[256];
     if (options.script_input) {
@@ -529,11 +672,14 @@ i32 host_run_window(const HostWindowOptions &options) {
     NuDatSet(dat);
 
     if (options.capture) {
-        // Try to remove .work/capture/* before starting, but don't fail if it
-        // does not exist. Readback is deliberately opt-in: glReadPixels must
-        // synchronize with the render thread and noticeably affects pacing.
-        system("rm -r .work/capture");
-        system("mkdir -p .work/capture");
+        SDL_CreateDirectory(".work/capture");
+        snprintf(host_capture_directory, sizeof(host_capture_directory), ".work/capture/run_%llu",
+                 static_cast<unsigned long long>(SDL_GetTicksNS()));
+        if (!SDL_CreateDirectory(host_capture_directory)) {
+            LOG_ERR("failed to create capture directory %s: %s", host_capture_directory, SDL_GetError());
+        } else {
+            LOG_INFO("capturing frames under %s", host_capture_directory);
+        }
     }
 
     // AndroidMain performs the process-side lifecycle after the activity has
@@ -756,6 +902,9 @@ i32 host_run_window(const HostWindowOptions &options) {
                 scripted_play_before = host_scripted_play_snapshot();
                 host_log_camera_trace("before", scripted_play_before);
                 host_log_animation_trace("before", scripted_play_before);
+                host_log_portal_trace("before");
+                host_log_display_list_trace();
+                host_log_pickup_trace("before");
                 scripted_play_started = true;
                 const CHARACTERMODEL_s *player_model = Player[0]->apiobj.character_model;
                 LOG_INFO("scripted play: cantina ready level=%s idx=%d area=%d player=%p pad=%p pad0=%p "
@@ -875,7 +1024,7 @@ i32 host_run_window(const HostWindowOptions &options) {
                 scripted_play_during = host_scripted_play_snapshot();
                 host_log_camera_trace("during", scripted_play_during);
                 host_log_animation_trace("during", scripted_play_during);
-                LOG_INFO("scripted play: during DRIGHT flags=(state=0x%x,motion=0x%x) "
+                LOG_INFO("scripted play: during DUP flags=(state=0x%x,motion=0x%x) "
                          "position=(%.3f,%.3f,%.3f) velocity=(%.3f,%.3f,%.3f) "
                          "input=(held=0x%x,magnitude=%.3f,speed=%.3f) object-index=%d frametime=%.6f "
                          "camera=(%.3f,%.3f,%.3f)->(%.3f,%.3f,%.3f) angles=(%u,%u)->(%u,%u) "
@@ -916,7 +1065,7 @@ i32 host_run_window(const HostWindowOptions &options) {
                 const f32 player_delta_squared =
                     player_delta.x * player_delta.x + player_delta.y * player_delta.y + player_delta.z * player_delta.z;
                 scripted_play_movement_observed = player_delta_squared > 0.0001f;
-                LOG_INFO("scripted play: held DRIGHT for %llu ms; "
+                LOG_INFO("scripted play: held DUP for %llu ms; "
                          "after position=(%.3f,%.3f,%.3f) velocity=(%.3f,%.3f,%.3f) yrot=%u "
                          "input=(held=0x%x,magnitude=%.3f,speed=%.3f) camera=(%.3f,%.3f,%.3f); "
                          "deltas player=(%.3f,%.3f,%.3f) yrot=%d camera=(%.3f,%.3f,%.3f); "
@@ -1005,7 +1154,9 @@ i32 host_run_window(const HostWindowOptions &options) {
                          scripted_play_jump_landed.player_velocity.y, scripted_play_jump_landed.player_context,
                          scripted_play_jump_landed.animation_current, scripted_play_jump_landed.animation_requested,
                          scripted_play_jump_observed ? 1 : 0);
-                HostInputSetHeld(0, GAMEPAD_DRIGHT);
+                // From the fixed cantina spawn/camera, forward crosses the nearest
+                // world pickup. This exercises the normal collision and HUD path.
+                HostInputSetHeld(0, GAMEPAD_DUP);
                 scripted_play_input_held = true;
                 scripted_stage = HostScriptedInputStage::play_move;
                 scripted_stage_ticks = elapsed_ticks;
@@ -1080,6 +1231,7 @@ i32 host_run_window(const HostWindowOptions &options) {
                 GameCam->field_0x218 = camera_orbit_base_yaw;
                 camera_orbit_finished = true;
                 LOG_INFO("host camera orbit: completed");
+                host_log_portal_trace("after orbit");
             }
         }
 
@@ -1102,6 +1254,7 @@ i32 host_run_window(const HostWindowOptions &options) {
         // host-loop iteration throttles the game itself, so inspect at 10 Hz
         // and retain the existing 500 ms capture cadence while images move.
         next_readback_ticks = readback_ticks + 100;
+        HostRequestReadback();
 
         u64 current_hash = 0;
         if (!host_read_frame(pixels, capture_width, capture_height, current_hash)) {
@@ -1199,6 +1352,7 @@ i32 host_run_window(const HostWindowOptions &options) {
         }
         LOG_INFO("scripted objects: high=%d active=%d models=%d drawn=%d", HIGHGAMEOBJECT, active_objects,
                  model_objects, drawn_objects);
+        host_log_pickup_trace("after");
         for (i32 index = 0; Obj != nullptr && index < HIGHGAMEOBJECT; ++index) {
             const GameObject_s &object = Obj[index];
             if ((object.apiobj.field_0x1f8 & 1) == 0 || object.apiobj.model_draw_result == 0) {

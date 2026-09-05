@@ -5,10 +5,14 @@
 #include "gameframework/saveload.h"
 #include "legoapi/menus/core/text.h"
 #include "legoapi/characters/core/character.h"
+#include "legoapi/core/input/timer.h"
 #include "legoapi/gizmo/base/gizmo.h"
 #include "legoapi/items/objects/gameobjects.h"
+#include "legoapi/items/base/collection.h"
+#include "legoapi/menus/screens/shop.h"
 #include "legoapi/world/area.h"
 #include "legoapi/world/levels/episode.h"
+#include "legoapi/world/mission.h"
 #include "legoapi/world/world_shared.h"
 #include "globals.h"
 struct starfighter_s;
@@ -18,6 +22,7 @@ struct rtlidata_s;
 #include "legoapi/render/core/SwipeDecalRenderer.h"
 #include "nu2api/nu3d/nudlist.h"
 #include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nu3d/nuqfnt.h"
 #include "nu2api/nu3d/nurndrstat.h"
 #include "nu2api/nu3d/nuvport.h"
 #include "nu2api/nu3d/NuRenderDevice.h"
@@ -44,6 +49,21 @@ struct rtlidata_s;
 extern NuVertexFormatPS *g_nuFaceOnVertexFormat;
 extern NuVertexFormatPS *g_nuDebrisVertexFormat;
 extern i32 VehicleArea;
+extern i32 GAMEDEMO;
+extern STATUSPACKET_s StatusPacket;
+extern STATUS_STAGE_s *StatusStages;
+extern f32 iconalphaoverride;
+extern f32 icon_y;
+extern i32 draw_player_icons;
+extern i16 tHINTS;
+extern i16 tCHARACTERS;
+extern i16 tHELPANDOPTIONS;
+extern i16 tGOLDBRICKS;
+extern i16 tSTORYCLIPS;
+extern i16 tENTERCODE;
+
+f32 HUB_EPISODESUBTITLEY = -0.745f;
+f32 HUB_EPISODETITLEY = -0.595f;
 
 void DisplayListGenerateTransforms(nudisplayscene_s *scene);
 void DrawGameObjectsDraw(i32 pass);
@@ -64,7 +84,10 @@ struct ripple_node_s;
 struct ripple_set_s;
 struct VuVec;
 
+nuhspecial_s *(*GameMsg_GetExtraObjFn)(GAMEMESSAGE_s *);
+
 extern "C" void SetQFont2D(void);
+extern "C" void Text3DStringEncode(char *src, u16 *dst);
 extern "C" bool StateAnimEvaluate2(StateAnim *state, u8 *index, char *value, f32 frame);
 extern "C" void DrawMenu(i32 paused);
 extern "C" i32 NuRndrBeginScene(i32);
@@ -106,7 +129,7 @@ extern u8 MENUFLASH1B;
 extern f32 menu_pulse;
 extern f32 menu_pulsate;
 extern i32 menu_flash;
-extern "C" i32 TestForController(void);
+extern "C" bool TestForController(void);
 extern f32 text3d_height;
 extern f32 text3d_width;
 extern FadeSystem FadeSys;
@@ -119,15 +142,22 @@ extern i32 PANELOFF;
 extern i32 noscenespecials;
 extern void RotateGameMatrix(numtx_s *matrix, i32 order, u16 x, u16 y, u16 z);
 extern NUGSCN *IconScene_FindById(i32 character_id);
+extern void SetLevelLights(void *set, f32 scale);
+extern f32 ICONX;
+extern f32 ICONSIZE;
+extern f32 DROPINALPHA;
+extern f32 statstime;
+f32 GetAspectRatio();
 void Hint_Draw(i32 player_index);
+extern i32 CutScenePlayer_CanStart(i32 cutscene_id);
 
-static NUCAMERA *cam;
-static NUMTX local_inv_view_mtx;
-static NUVEC world_campos;
+NUCAMERA *cam;
+NUMTX local_inv_view_mtx;
+NUVEC world_campos;
 NUVEC *override_campos;
-static NUFRUSTRUM **frustra;
-static i32 *nfrustra;
-static i16 camera_roomid;
+NUFRUSTRUM **frustra;
+i32 *nfrustra;
+i16 camera_roomid;
 static NUPLANE near_clip_plane;
 NUPLANE cam_plane;
 i32 draw_portals;
@@ -162,6 +192,8 @@ namespace {
 
 DECOMP_ASSERT(sizeof(NuDisplaySpecialLayout) == 0xd0, "display special size");
 
+void SetAllInstancesHidden(NUGSCN *scene);
+
 // Camera zoom state
 f32 CameraZoom = 1.0f;
 
@@ -176,6 +208,7 @@ extern "C" {
     i32 NuDisplayListRndrSpecial(nuhspecial_s *special, NUMTX *mtx, i32 skinned, void *skin_mtx, void *blend_values);
     void Initialise_PS(NUGSCN *scene);
     void SetAllInstancesVisible(void);
+    void *NuVisiEvaluate(NUGSCN *scene, void *visibility_context);
 
     static void DisplaySceneSetClipResult(NUDLDLISTSCENE *scene, i32 clip_index, i32 clip_result) {
         const u32 buffer = scene->render_buffer >> 7;
@@ -260,10 +293,11 @@ extern "C" {
         return 1.0f;
     }
 
-    // NuDisplaySceneRndr.part.101's ordinary non-shadow path. NuVisiEvaluate
-    // is not reconstructed yet, so every instance starts portal-visible just
-    // as the target does when no visibility result is available.
     static void DisplaySceneEvaluateClipFallback(NUDLDLISTSCENE *scene) {
+        u8 visibility_context[0x2800];
+        NuVisibilityResult *visibility =
+            static_cast<NuVisibilityResult *>(NuVisiEvaluate(scene->gscene, visibility_context));
+        const bool portal_filter = visibility != NULL && visibility->portal_marker != NULL && portals_enabled != 0;
         scene->alpha_values = NULL;
         if (scene->nclip_objects <= 0) {
             return;
@@ -279,7 +313,13 @@ extern "C" {
         i32 instance_index = 0;
         while (clip_index < scene->nclip_objects) {
             const u8 flags = static_cast<u8>(scene->visibility_flags[instance_index]);
-            if ((flags & NUDL_INSTANCE_FLAG_VISIBLE) != 0) {
+            bool visibility_bit =
+                visibility == NULL || visibility->instance_tree_bits == NULL ||
+                (visibility->instance_tree_bits[instance_index >> 3] & (1U << (instance_index & 7))) != 0;
+            if (portal_filter && (flags & NUDL_INSTANCE_FLAG_NO_VISIBILITY_TEST) == 0) {
+                visibility_bit = (visibility->portal_bits[instance_index >> 3] & (1U << (instance_index & 7))) != 0;
+            }
+            if (visibility_bit && (flags & NUDL_INSTANCE_FLAG_VISIBLE) != 0) {
                 NUCLIPBOUNDS &bounds = scene->clip_bounds[instance_index];
                 const f32 distance_sqr = DisplaySceneDistanceSqrToCamera(bounds);
                 const i32 selected_clip = DisplaySceneSelectLod(scene, clip_index, distance_sqr);
@@ -341,13 +381,14 @@ extern "C" {
             SetAllInstancesVisible();
             return 0;
         }
-        if (scene->max_portals == 0 || scene->num_rooms == 0 || scene->portal_visibility_data == NULL) {
+        if (scene->max_portals == 0 || scene->num_rooms == 0 || scene->portal_instance_count == 0) {
             return 0;
         }
 
         scene->num_portal_frusta = 0;
         nfrustra = &scene->num_portal_frusta;
         frustra = scene->portal_frusta;
+        SetAllInstancesHidden(scene);
         cam = NuCameraGetCam();
         local_inv_view_mtx = *NuCameraGetMtx();
         world_campos = {
@@ -377,10 +418,14 @@ extern "C" {
                               (world_campos.y + cam->near_clip * forward_y) * forward_y +
                               (world_campos.z + cam->near_clip * forward_z) * forward_z);
 
-        // The recursive room/frustum traversal follows these target guards.
-        // Leave the preceding frame's visibility intact until that traversal
-        // is reconstructed, rather than publishing a partially hidden scene.
-        return 0;
+        NUVEC minimum = {-1.0f, -1.0f, -1.0f};
+        NUVEC maximum = {1.0f, 1.0f, 1.0f};
+        NUFRUSTRUM *frustum = buildFrustrum(&minimum, &maximum, -2);
+        for (i32 i = 0; i < scene->num_rooms; ++i) {
+            scene->rooms[i].flags &= ~NUROOM_FLAG_VISITED;
+        }
+        roomRecursive(scene, frustum, camera_roomid, -1, 0);
+        return 1;
     }
     void NuGScnRndr3(NUGSCN *scene) {
         NuDisplaySceneRndr(scene->display_list);
@@ -763,7 +808,12 @@ void DrawCables() {
 void DrawRipple(ripple_node_s *) {
 }
 
-void DrawShop3D(WORLDINFO_s *) {
+void DrawShop3D(WORLDINFO_s *world) {
+    if (drawptr != NULL) {
+        drawptr();
+    }
+    DrawTopShelf(picked);
+    SetLevelLights(world->rtl_set, 1.0f);
 }
 
 void DrawAreaBox(nuvec_s *, nuvec_s *, i32, i32) {
@@ -781,7 +831,26 @@ void DrawStreaks() {
 void Draw_LOADED() {
 }
 
-void Draw3DObject(WORLDINFO_s *, i32, nuvec_s *, u16, u16, u16, float, float, float, i32) {
+__attribute__((force_align_arg_pointer)) void Draw3DObject(WORLDINFO_s *world, i32 object_index, nuvec_s *position,
+                                                           u16 x_rotation, u16 y_rotation, u16 z_rotation,
+                                                           float scale_x, float scale_y, float scale_z,
+                                                           i32 rotate_order) {
+    if (object_index == -1) {
+        return;
+    }
+    if (world == NULL) {
+        world = WorldInfo_CurrentlyActive();
+    }
+    if (world != NULL) {
+        if (world->lev_objs[object_index].active != 0 && (scale_x != 0.0f || scale_y != 0.0f || scale_z != 0.0f)) {
+            NUVEC scale = {scale_x, scale_y, scale_z};
+            NUMTX matrix;
+            NuMtxSetScale(&matrix, &scale);
+            RotateGameMatrix(&matrix, rotate_order, x_rotation, y_rotation, z_rotation);
+            NuMtxTranslate(&matrix, position);
+            NuSpecialDrawAt(&world->lev_objs[object_index].special, &matrix);
+        }
+    }
 }
 
 void DrawCharIcon(i32 character_id, float x, float y, float z, float scale, i32 frame_object_id, float character_alpha,
@@ -863,10 +932,282 @@ void DrawQuestion(nuvec_s *, float, float) {
 void DrawRectRGBA(float, float, float, float, u32, numtl_s *, i32, float) {
 }
 
+__attribute__((force_align_arg_pointer)) void DrawItem(nuhspecial_s *special, nuvec_s *position, float scale_value,
+                                                       float unused, float y_push, u16 x_rot, u16 y_rot, u16 z_rot);
+static __attribute__((noinline)) void Shop_DrawCharacter(shopitem_s *item, NUVEC *position, f32 scale_value, f32 ypush,
+                                                         u16 xrot, u16 yrot, u16 zrot);
+
 void DrawSubItems() {
+    /* The sub-shelf is laid out as seven positions, with the centre position
+       (3) used by both the entering and leaving item.  Keep the slightly odd
+       indexing here: it is observable through the menu hit rectangles. */
+    f32 alpha = iconalphaoverride;
+    if (GetMenuID() == 13 && !TestForController()) {
+        const f32 since_touch = GlobalTimer.time_elapsed - (LastTouchTime + 1.32f);
+        if (since_touch > 4.0f) {
+            const f32 phase = NuFmod(since_touch, 4.0f);
+            const i32 angle = static_cast<i32>(phase * 0.25f * 65536.0f);
+            const f32 pulse = NuTrigTable[(angle >> 1) & 0x7fff] - 0.8f;
+            if (pulse >= 0.0f) {
+                alpha = pulse + 1.0f;
+            }
+        }
+    }
+
+    /* statstime is the fade used when an item/status icon is being replaced. */
+    f32 phase = statstime;
+    i32 phase_angle = 0x2000;
+    if (phase > 0.0f) {
+        phase -= FRAMETIME;
+        const f32 cycle = phase / 2.64f;
+        phase_angle = (static_cast<i32>(cycle * 0.25f + 1.75f) >> 1) & 0x7fff;
+        statstime = phase;
+    } else {
+        phase = 0.0f;
+        statstime = 0.0f;
+    }
+    alpha -= 0.5f * (NuTrigTable[phase_angle] + alpha);
+
+    shopitem_s *items = NULL;
+    i32 *shelf_ids = NULL;
+    NUVEC *positions = NULL;
+    f32 base_scale = 0.9f;
+    switch (picked) {
+        case 0:
+            items = HintItems;
+            shelf_ids = HintShelfIds;
+            positions = HintCurPos;
+            break;
+        case 1:
+            items = CharItems;
+            shelf_ids = CharShelfIds;
+            positions = CharCurPos;
+            base_scale = 0.9f;
+            break;
+        case 2:
+            items = ExtraItems;
+            shelf_ids = ExtraShelfIds;
+            positions = ExtraCurPos;
+            break;
+        case 3:
+            return;
+        case 4:
+            items = BrickItems;
+            shelf_ids = BrickShelfIds;
+            positions = BrickCurPos;
+            break;
+        case 5:
+            items = CutItems;
+            shelf_ids = CutShelfIds;
+            positions = CutCurPos;
+            break;
+        default:
+            return;
+    }
+    if (items == NULL || shelf_ids == NULL || positions == NULL || GameMenuLevel < 0) {
+        return;
+    }
+
+    const f32 item_scale = picked == 1 ? 0.28f : (picked == 4 ? 0.8f : base_scale);
+    MENU *menu = &GameMenu[GameMenuLevel];
+    for (i32 index = 1; index < 7; ++index) {
+        i32 slot = index;
+        if (index == 6) {
+            slot = 3;
+        } else if (index >= 3) {
+            slot = index - 1;
+        }
+
+        const i32 item_id = shelf_ids[slot];
+        shopitem_s *item = &items[item_id];
+        NUVEC position = positions[slot];
+        f32 scale = item_scale * inoutscale;
+        if (slot == 1) {
+            scale = item_scale * inoutscale * scaleoverride[1];
+        } else if (slot == 2) {
+            scale = item_scale * scale2 * inoutscale;
+        } else if (slot == 3) {
+            scale = 0.5f * alpha + item_scale * scale3 * inoutscale;
+        } else if (slot == 4) {
+            scale = item_scale * scale4 * inoutscale;
+        }
+        if (moveitems == 2 && slot == 3) {
+            NuVecAdd(&position, &position, &selectedoff);
+            scale *= 1.25f;
+        }
+        const f32 ypush = subpush[slot < 3 ? slot : 2];
+
+        NUVEC screen;
+        NuCameraTransformScreenClip(&screen, &position, 1, NULL);
+        menu->item_x[slot + 4] = screen.x;
+        menu->item_y[slot + 4] = screen.y;
+        f32 hit_size = 0.0f;
+        f32 hit_width = 0.0f;
+        if (moveitems < 1) {
+            hit_size = (scale / item_scale) * 0.15f;
+            hit_width = hit_size / GetAspectRatio();
+        }
+        menu->item_width[slot + 4] = hit_width;
+        menu->item_height[slot + 4] = hit_size;
+        menu->item_column[slot + 4] = slot;
+        menu->item_row[slot + 4] = 1;
+
+        const u16 angle = static_cast<u16>(shelfang);
+        switch (picked) {
+            case 0: {
+                if (item->unlocked == 1) {
+                    DrawItem(&TopShelf[0].special, &position, scale * alpha, 0.0f, ypush, 0, angle, 0);
+                } else {
+                    DrawItem(&infoblank, &position, scale * alpha, 0.0f, ypush, 0, angle, 0);
+                    /* This is intentionally the original's odd TopShelf offset. */
+                    DrawItem(reinterpret_cast<nuhspecial_s *>(reinterpret_cast<u8 *>(TopShelf) + 0x1c4), &position,
+                             scale * alpha, 0.0f, ypush, 0, angle, 0);
+                }
+                break;
+            }
+            case 1:
+                if (NuSpecialExistsFn(&iconback) != 0) {
+                    Shop_DrawCharacter(item, &position, scale * alpha, ypush, 0, angle, 0);
+                }
+                break;
+            case 2: {
+                const bool unlocked = item->unlocked == 1;
+                if (!unlocked) {
+                    DrawItem(&toolblank, &position, scale * alpha, 0.0f, ypush, 0, angle, 0);
+                }
+                if (NuSpecialExistsFn(&item->special) != 0) {
+                    DrawItem(&item->special, &position, scale * alpha, 0.0f, ypush, 0, angle, 0);
+                }
+                break;
+            }
+            case 4:
+                if (NuSpecialExistsFn(&item->special) != 0) {
+                    DrawItem(&item->special, &position, scale * alpha, 0.0f, ypush, 0, angle, 0);
+                }
+                break;
+            case 5: {
+                nuhspecial_s *blank = &cutblank;
+                nuhspecial_s *film = &cutfilm_locked;
+                if (shopcutsceneplayer != NULL && CutScenePlayer_CanStart(item->item_id) != 0) {
+                    blank = &toolblank;
+                    film = &cutfilm_unlocked;
+                }
+                DrawItem(blank, &position, scale * alpha, 0.0f, ypush, 0,
+                         static_cast<u16>(angle + item->item_id * 0x1555), 0);
+                DrawItem(film, &position, scale * alpha, 0.0f, ypush, 0,
+                         static_cast<u16>(angle + item->item_id * 0x1555), 0);
+                break;
+            }
+            default:
+                break;
+        }
+    }
+}
+
+static __attribute__((noinline)) void Shop_DrawCharacter(shopitem_s *item, NUVEC *position, f32 scale_value, f32 ypush,
+                                                         u16 xrot, u16 yrot, u16 zrot) {
+    const bool top_shelf_character = item == &TopShelf[1];
+    if (top_shelf_character) {
+        const f32 cycle_length = static_cast<f32>(SHOPCHARCOUNT) * 0.2f;
+        const i32 character_index = static_cast<i32>(NuFmod(GameTimer.time_elapsed, cycle_length) / 0.2f);
+        item = &CharItems[character_index];
+    }
+
+    const i32 character_id = item->item_id;
+    const bool unlocked = CollectIDUnlocked(character_id) != NULL;
+    const bool unavailable = !unlocked || item->unlocked != 1;
+    const f32 alpha = unlocked ? 1.0f : 0.5f;
+
+    NUVEC scale = {scale_value, scale_value, scale_value};
+    NUMTX matrix;
+    NuMtxSetScale(&matrix, &scale);
+    NuMtxRotateX(&matrix, xrot);
+    NuMtxRotateY(&matrix, yrot);
+    NuMtxRotateZ(&matrix, zrot);
+    NuMtxTranslate(&matrix, position);
+    matrix.m31 += ypush;
+
+    NuSpecialDrawAtAlpha(&iconback, &matrix, top_shelf_character ? 1.0f : alpha);
+
+    i32 icon_object_id = CDataList[character_id].field20_0x42;
+    if (icon_object_id != -1) {
+        if (unavailable) {
+            ++icon_object_id;
+        }
+        WORLDINFO_s *world = WorldInfo_CurrentlyActive();
+        LEVEL_OBJECT_RUNTIME_s *icon = &world->lev_objs[icon_object_id];
+        if (icon->active != 0) {
+            NuSpecialDrawAtAlpha(&icon->special, &matrix, alpha);
+        }
+    }
 }
 
 void DrawTopShelf(i32) {
+    f32 alpha_scale = 1.0f;
+    if (GetMenuID() == 13 && subitemselected == 0 && TestForController() == 0) {
+        const f32 elapsed_since_touch = GlobalTimer.time_elapsed - (LastTouchTime + 1.32f);
+        if (elapsed_since_touch > 4.0f) {
+            const f32 phase = NuFmod(elapsed_since_touch, 4.0f);
+            const i32 angle = static_cast<i32>(phase * 0.25f * 65536.0f);
+            const f32 pulse = NuTrigTable[(angle >> 1) & 0x7fff] - 0.8f;
+            if (pulse >= 0.0f) {
+                alpha_scale = pulse + 1.0f;
+            }
+        }
+    }
+
+    if (NuSpecialExistsFn(&iconback) != 0) {
+        Shop_DrawCharacter(&TopShelf[1], &ShelfPos[1], topscale[1] * alpha_scale, toppush[1], 0, shelfang, 0);
+    }
+
+    if (NuSpecialExistsFn(&TopShelf[2].special) != 0) {
+        NUANGVEC rotation = {0, shelfang, 0};
+        NUMTX matrix;
+        NuMtxSetRotateXYZVU0(&matrix, &rotation);
+        const f32 scale_value = topscale[2] * alpha_scale;
+        NUVEC scale = {scale_value, scale_value, scale_value};
+        NuMtxScaleVU0(&matrix, &scale);
+        matrix.m30 = ShelfPos[2].x;
+        matrix.m31 = ShelfPos[2].y + toppush[2] + 0.005f;
+        matrix.m32 = ShelfPos[2].z;
+        NuSpecialDrawAt(&TopShelf[2].special, &matrix);
+    }
+
+    if (SHOPGOLDBRICKS > 0 && NuSpecialExistsFn(&TopShelf[4].special) != 0) {
+        NUVEC scale = {topscale[4] * alpha_scale, topscale[4] * alpha_scale, topscale[4] * alpha_scale};
+        NUMTX matrix;
+        NuMtxSetScale(&matrix, &scale);
+        NuMtxRotateY(&matrix, static_cast<u16>(shelfang + 0x2000));
+        NuMtxTranslate(&matrix, &ShelfPos[4]);
+        matrix.m31 += toppush[4] - 0.0325f;
+        NuSpecialDrawAt(&TopShelf[4].special, &matrix);
+    }
+
+    if (GetMenuID() != 13) {
+        return;
+    }
+
+    MENU *menu = &GameMenu[GameMenuLevel];
+    for (i32 shelf_index = 1; shelf_index <= 4; ++shelf_index) {
+        const i32 menu_index = shelf_index - 1;
+        if (shelf_index == 3) {
+            menu->item_width[menu_index] = 0.0f;
+            continue;
+        }
+
+        NUVEC world_position = ShelfPos[shelf_index];
+        world_position.y += toppush[shelf_index];
+        const f32 size = topscale[shelf_index] / TopShelfScale[shelf_index] * 0.15f;
+        const f32 aspect_ratio = GetAspectRatio();
+        NUVEC screen_position;
+        NuCameraTransformScreenClip(&screen_position, &world_position, 1, NULL);
+        menu->item_x[menu_index] = screen_position.x;
+        menu->item_y[menu_index] = screen_position.y;
+        menu->item_width[menu_index] = size;
+        menu->item_height[menu_index] = size / aspect_ratio;
+        menu->item_column[menu_index] = menu_index;
+        menu->item_row[menu_index] = 0;
+    }
 }
 
 void DrawTorpedos(GameObject_s *) {
@@ -998,6 +1339,27 @@ void DrawExplosions() {
 }
 
 void DrawItemMenu2D() {
+    if (0.0f < ShopNameAlpha) {
+        i16 text_id;
+        if (picked == 0) {
+            text_id = tHINTS;
+        } else if (picked == 1) {
+            text_id = tCHARACTERS;
+        } else if (picked == 2) {
+            text_id = tHELPANDOPTIONS;
+        } else if (picked == 4) {
+            text_id = tGOLDBRICKS;
+        } else if (picked == 5) {
+            text_id = tSTORYCLIPS;
+        } else {
+            text_id = tENTERCODE;
+        }
+
+        const i32 alpha = static_cast<i32>(ShopNameAlpha * 128.0f);
+        const f32 y = (HUB_EPISODETITLEY + HUB_EPISODESUBTITLEY) * 0.5f;
+        SmartTextEx(TTab[text_id], 0.0f, y, 1.0f, 0.8f, 0.8f, 0.8f, 0, 255, 255, 255, 1.7f, 1, NULL, 0,
+                    static_cast<u32>(alpha));
+    }
 }
 
 void DrawMessageBox(i32, float, float, float, float) {
@@ -1009,7 +1371,45 @@ void DrawRopeCurved(nuvec_s *, nuvec_s *, i32, i32, numtl_s *) {
 void DrawRopeSingle(nuvec_s *, nuvec_s *, float, numtl_s *, float, float, float, float) {
 }
 
-void DrawStatusText(char *, u16, float, float, float, u32, i32) {
+void DrawStatusText(char *text, u16 angle, float x, float y, float scale, u32 colour, i32 alignment) {
+    static NUMTX status_mtx;
+
+    NUVEC origin = {0.0f, 0.0f, 800.0f};
+    NUVEC position = {x * 350.0f, y * 300.0f, 0.0f};
+    u16 encoded[512];
+
+    NuQFntSetJustifiedTolerances(1.2f, 1.2f);
+    NuMtxSetIdentity(&status_mtx);
+    NuMtxSetRotationX(&status_mtx, 0);
+    NuMtxRotateY(&status_mtx, 0);
+    NuMtxRotateZ(&status_mtx, angle);
+    NuMtxTranslate(&status_mtx, &origin);
+    NuMtxTranslate(&status_mtx, &position);
+    NuMtxMul(&status_mtx, &status_mtx, NuCameraGetMtx());
+
+    NuQFntSet(QFont3DZ);
+    NuQFntSetMtx(QFont3DZ, &status_mtx);
+    NuQFntPushPrintMode(NUQFNT_CSMODE_ABSOLUTE);
+    NuQFntSetCoordinateSystem(NUQFNT_CSMODE_ABSOLUTE);
+    NuQFntSetColour(QFont3DZ, colour);
+    NuQFntSetScale(QFont3DZ, scale, scale);
+    Text3DStringEncode(text, encoded);
+
+    if (alignment == 2) {
+        const f32 height = NuQFntHeight(QFont3DZ);
+        NuQFntMove(QFont3DZ, 0.0f, -height * 0.5f, 0.0f);
+    } else if (alignment == 8) {
+        const f32 height = NuQFntHeight(QFont3DZ);
+        const f32 width = NuQFntPrintLenW(QFont3DZ, encoded);
+        NuQFntMove(QFont3DZ, -width, -height * 0.5f, 0.0f);
+    } else {
+        const f32 height = NuQFntHeight(QFont3DZ);
+        const f32 width = NuQFntPrintLenW(QFont3DZ, encoded);
+        NuQFntMove(QFont3DZ, -width * 0.5f, -height * 0.5f, 0.0f);
+    }
+    NuQFntPrintW(QFont3DZ, encoded);
+    NuQFntPopPrintMode();
+    NuQFntSetCoordinateSystem(NUQFNT_CSMODE_NORMALISED);
 }
 
 void DrawWallSpline(float) {
@@ -1051,7 +1451,16 @@ void DrawPaintLights() {
 void DrawShopPrompts() {
 }
 
-void DrawStatusIcons(STATUSPACKET_s *, float, float) {
+void DrawStatusIcons(STATUSPACKET_s *status, float y, float alpha) {
+    f32 icon_alpha;
+    if (status->player0_active == 0) {
+        icon_alpha = 0.25f;
+    } else {
+        icon_alpha = 1.0f;
+    }
+    icon_alpha *= alpha;
+    const f32 size = ICONSIZE;
+    DrawCharIcon(static_cast<i16>(status->player0_model), -ICONX, y, 0.0f, size, 0xa5, icon_alpha, icon_alpha, 1, NULL);
 }
 
 void DrawStillScreen(i32 clear) {
@@ -1070,7 +1479,63 @@ void DrawStillScreen(i32 clear) {
     NuRndrEndScene();
 }
 
-void DrawTouchPrompt(char *, char *, bool, bool) {
+void DrawTouchPrompt(char *prompt, char *unused_label, bool hovered, bool large) {
+    (void)unused_label;
+    float text_x_offset;
+    float text_y_offset;
+
+    // Retained from the original routine even though the result is unused.
+    NuFmod(GlobalTimer.time_elapsed_mod_seconds, 0.5f);
+
+    if (NuStrICmp(prompt, ">") == 0) {
+        text_x_offset = 0.005f;
+        text_y_offset = 0.0f;
+    } else if (NuStrICmp(prompt, "<<") == 0) {
+        text_x_offset = -0.01f;
+        text_y_offset = 0.0f;
+    } else if (NuStrICmp(prompt, "II") == 0) {
+        text_x_offset = 0.0f;
+        text_y_offset = -0.01f;
+    } else {
+        text_x_offset = 0.0f;
+        text_y_offset = 0.0f;
+    }
+
+    const float zero = 0.0f;
+    float pulse = 1.0f;
+    if (TestForController() == 0) {
+        const float elapsed_since_touch = GlobalTimer.time_elapsed - (LastTouchTime + zero);
+        if (elapsed_since_touch > 4.0f) {
+            const float phase = NuFmod(elapsed_since_touch, 4.0f);
+            const i32 angle = static_cast<i32>(phase * 0.25f * 65536.0f);
+            const float wave = NuTrigTable[(angle >> 1) & 0x7fff] - 0.8f;
+            if (zero <= wave) {
+                pulse = wave + 1.0f;
+            }
+        }
+    }
+
+    float icon_scale = ICONSIZE;
+    if (hovered) {
+        icon_scale *= 1.25f;
+        DrawPanel3DObject(ICONX, STATSPOSY, 1.0f, icon_scale, icon_scale, icon_scale, 0, 0, 0,
+                          &WORLD->lev_objs[0xa5].special, 0, 0.75f);
+        pulse = 0.75f;
+    } else if (large) {
+        icon_scale *= 1.25f;
+        DrawPanel3DObject(ICONX, STATSPOSY, 1.0f, icon_scale, icon_scale, icon_scale, 0, 0, 0,
+                          &WORLD->lev_objs[0xa5].special, 0, 0.75f);
+        pulse *= 0.6f;
+    } else {
+        DrawPanel3DObject(ICONX, STATSPOSY, 1.0f, icon_scale, icon_scale, icon_scale, 0, 0, 0,
+                          &WORLD->lev_objs[0xa5].special, 0, 0.75f);
+        pulse = 0.6f;
+    }
+
+    if (prompt != NULL) {
+        Text3DEx(prompt, ICONX + text_x_offset * pulse, STATSPOSY + text_y_offset * pulse, 1.0f, pulse * 1.3f, pulse,
+                 pulse, 0, 255, 255, 255, 0x60);
+    }
 }
 
 void Draw_LOADFAILED() {
@@ -1083,6 +1548,145 @@ void DrawCameraTarget(nuvec_s *) {
 }
 
 void DrawGameMessages() {
+    struct RENDER_MESSAGE {
+        char *text;
+        char text_buffer[0x78];
+        NUVEC position_a;
+        NUVEC target_position;
+        NUVEC position;
+        NUVEC start_position;
+        f32 field_0xac;
+        f32 target_scale;
+        f32 field_0xb4;
+        f32 field_0xb8;
+        f32 elapsed;
+        f32 duration;
+        f32 field_0xc4;
+        f32 field_0xc8;
+        u32 field_0xcc;
+        f32 field_0xd0;
+        f32 field_0xd4;
+        u32 flags;
+        u32 score;
+        u16 field_0xe0;
+        u16 field_0xe2;
+        u16 field_0xe4;
+        u16 icon;
+        nuhspecial_s extra_special;
+        u8 red;
+        u8 green;
+        u8 blue;
+        u8 alpha;
+        u8 active;
+        u8 field_0xf9;
+        u8 field_0xfa;
+        u8 field_0xfb;
+        u8 field_0xfc;
+        u8 field_0xfd;
+        u8 field_0xfe;
+        u8 field_0xff;
+        u32 field_0x100;
+        u32 field_0x104;
+        void (*update_fn)(GAMEMESSAGE_s *);
+        void (*draw_fn)(GAMEMESSAGE_s *, NUVEC *, f32);
+        void (*end_fn)(GAMEMESSAGE_s *);
+    };
+    extern GAMEMESSAGE_s GameMessage[128];
+    extern void DrawPanel3DObjectNoAlpha(float, float, float, float, float, float, u16, u16, u16, nuhspecial_s *, i32);
+
+    auto draw_special = [](nuhspecial_s *special, RENDER_MESSAGE *message, f32 x, f32 y, f32 z, f32 scale, f32 alpha) {
+        if (NuSpecialExistsFn(special) == 0) {
+            return;
+        }
+        const u32 flags = message->flags;
+        if ((flags & 0x20000) != 0) {
+            DrawPanel3DObjectNoAlpha(x, y, z, scale, scale, scale, message->field_0xe0, message->field_0xe2,
+                                     message->field_0xe4, special, 2);
+        } else {
+            DrawPanel3DObject(x, y, z, scale, scale, scale, message->field_0xe0, message->field_0xe2,
+                              message->field_0xe4, special, 2, alpha);
+        }
+    };
+
+    RENDER_MESSAGE *message = reinterpret_cast<RENDER_MESSAGE *>(GameMessage);
+    RENDER_MESSAGE *end = message + 128;
+    for (; message != end; ++message) {
+        if (message->active == 0) {
+            continue;
+        }
+        if (message->field_0xfb != 0 && (message->flags & 4) == 0) {
+            continue;
+        }
+        if (message->field_0xd0 > 0.0f) {
+            continue;
+        }
+        if (message->elapsed > message->duration && message->field_0xfa == 0) {
+            continue;
+        }
+
+        f32 progress = message->elapsed;
+        if ((message->flags & 0x100) != 0) {
+            progress = message->duration != 0.0f ? message->elapsed / message->duration : 0.0f;
+        } else if ((message->flags & 0x200) != 0) {
+            progress = NU_SIN_LUT(static_cast<i32>(message->elapsed * 16384.0f));
+        } else if ((message->flags & 0x400) != 0) {
+            progress = NU_SIN_LUT(static_cast<i32>(message->elapsed * 32768.0f));
+        } else if ((message->flags & 0x800) != 0) {
+            progress = NU_SIN_LUT(static_cast<i32>(message->elapsed * 32768.0f));
+        }
+
+        NUVEC position = message->start_position;
+        if ((message->field_0xd4 != 0.0f || message->field_0xd4 != message->field_0xd4) && message->field_0xfb == 0) {
+            if (position.x < -1.0f) {
+                position.x = -1.0f;
+            } else if (position.x > 1.0f) {
+                position.x = 1.0f;
+            }
+            if (position.y < -1.0f) {
+                position.y = -1.0f;
+            } else if (position.y > 1.0f) {
+                position.y = 1.0f;
+            }
+        }
+
+        f32 scale = message->field_0xb4;
+        if ((message->flags & 0x20) != 0) {
+            scale += (message->target_scale - scale) * progress;
+        }
+        position.x += message->field_0xc4;
+        position.z += message->field_0xc8;
+
+        if ((message->flags & 8) != 0) {
+            if (message->update_fn != NULL) {
+                message->update_fn(reinterpret_cast<GAMEMESSAGE_s *>(message));
+            }
+            position.x =
+                message->start_position.x + (message->target_position.x - message->start_position.x) * progress;
+            position.y =
+                message->start_position.y + (message->target_position.y - message->start_position.y) * progress;
+            position.z =
+                message->start_position.z + (message->target_position.z - message->start_position.z) * progress;
+        }
+
+        if (message->draw_fn != NULL) {
+            message->draw_fn(reinterpret_cast<GAMEMESSAGE_s *>(message), &position, scale);
+            continue;
+        }
+
+        draw_special(&message->extra_special, message, position.x, position.y, position.z, scale,
+                     static_cast<f32>(message->alpha) * (1.0f / 255.0f));
+        if (GameMsg_GetExtraObjFn != NULL) {
+            nuhspecial_s *extra = GameMsg_GetExtraObjFn(reinterpret_cast<GAMEMESSAGE_s *>(message));
+            if (extra != NULL) {
+                draw_special(extra, message, position.x, position.y, position.z, scale,
+                             static_cast<f32>(message->alpha) * (1.0f / 255.0f));
+            }
+        }
+
+        char *text = message->text != NULL ? message->text : message->text_buffer;
+        Text3DEx(text, position.x, position.y, position.z, scale, scale, scale, message->field_0xfc, message->red,
+                 message->green, message->blue, message->alpha);
+    }
 }
 
 void DrawMeleeTargets(i16 *, char *, float *, i32) {
@@ -1091,16 +1695,88 @@ void DrawMeleeTargets(i16 *, char *, float *, i32) {
 void DrawMiniKitCount(float, float, i32, i32) {
 }
 
-void DrawStatusBG_LSW(STATUSPACKET_s *) {
+void DrawStatusBG_LSW(STATUSPACKET_s *status) {
+    STATUS_STAGE_s *stage = status->stage;
+    if (stage->field_0x14 == -1) {
+        stage->field_0x18 = 0;
+        stage->field_0x14 = 0;
+    }
 }
 
 void DrawStatusScreen(WORLDINFO_s *) {
+    static u8 KitPart[0x2d0];
+
+    iconalphaoverride = -1.0f;
+    memset(KitPart, 0, sizeof(KitPart));
+
+    if (GAMEDEMO != 0 || FadeSys.fade > 0.0f) {
+        return;
+    }
+
+    STATUSPACKET_s *status = &StatusPacket;
+    if (status->status_flags == 0) {
+        return;
+    }
+
+    if (status->draw_background_callback != NULL) {
+        status->draw_background_callback(status);
+    }
+
+    for (STATUS_STAGE_s *stage = StatusStages; stage->type != -1; ++stage) {
+        if (stage->draw_callback != NULL) {
+            stage->draw_callback(stage, status, stage == status->stage);
+        }
+    }
+
+    STATUS_STAGE_s *stage = status->stage;
+    f32 alpha;
+    if (stage->type == 11) {
+        return;
+    } else if (stage->type == 12) {
+        alpha = 0.0f;
+    } else if (stage->type == 10) {
+        alpha = stage->field_0x18 < 1.0f ? 1.0f - stage->field_0x18 : 0.0f;
+    } else {
+        alpha = 1.0f;
+        if (stage->type == 19 && stage->field_0x14 != 0) {
+            const f32 time = stage->field_0x18;
+            if (time < 1.0f) {
+                alpha = 1.0f - time;
+            } else {
+                const f32 fade_start = stage->field_0x1c - 1.0f;
+                alpha = time < fade_start ? 0.0f : (time - fade_start) / (stage->field_0x1c - fade_start);
+            }
+        }
+    }
+
+    if (draw_player_icons != 0) {
+        DrawStatusIcons(status, icon_y, iconalphaoverride >= 0.0f ? iconalphaoverride : alpha);
+    }
 }
 
 void Draw_LOADCORRUPT() {
 }
 
-void Draw3DObjectAlpha(WORLDINFO_s *, i32, nuvec_s *, u16, u16, u16, float, float, float, i32, float) {
+__attribute__((force_align_arg_pointer)) void Draw3DObjectAlpha(WORLDINFO_s *world, i32 object_index, nuvec_s *position,
+                                                                u16 x_rotation, u16 y_rotation, u16 z_rotation,
+                                                                float scale_x, float scale_y, float scale_z,
+                                                                i32 rotate_order, float alpha) {
+    if (object_index == -1) {
+        return;
+    }
+    if (world == NULL) {
+        world = WorldInfo_CurrentlyActive();
+    }
+    if (world != NULL) {
+        if (world->lev_objs[object_index].active != 0 && (scale_x != 0.0f || scale_y != 0.0f || scale_z != 0.0f)) {
+            NUVEC scale = {scale_x, scale_y, scale_z};
+            NUMTX matrix;
+            NuMtxSetScale(&matrix, &scale);
+            RotateGameMatrix(&matrix, rotate_order, x_rotation, y_rotation, z_rotation);
+            NuMtxTranslate(&matrix, position);
+            NuSpecialDrawAtAlpha(&world->lev_objs[object_index].special, &matrix, alpha);
+        }
+    }
 }
 
 void DrawBossHitPoints(GameObject_s *) {
@@ -1136,6 +1812,7 @@ void DrawSubItemMenu2D() {
 }
 
 void DrawSubItemMenu3D() {
+    DrawSubItems();
 }
 
 void Draw_NOMEMORYCARD() {
@@ -1338,7 +2015,15 @@ void DrawMeleeTargetsRows(i16 *, char *, float *, i32) {
 void DrawMiniSnowTroopers(WORLDINFO_s *) {
 }
 
-void DrawPanel3DObjectMtx(nuhspecial_s *, numtx_s *, float) {
+void DrawPanel3DObjectMtx(nuhspecial_s *special, numtx_s *matrix, float alpha) {
+    if (alpha > 0.0f) {
+        NUVEC scale = {1.0f / CameraZoom, 1.0f / CameraZoom, 1.0f / CameraZoom};
+        NuMtxPreScale(matrix, &scale);
+        if (special != NULL && NuSpecialExistsFn(special) != 0) {
+            NuMtxMulVU0(matrix, matrix, NuCameraGetMtx());
+            NuSpecialDrawAtAlpha(special, matrix, alpha);
+        }
+    }
 }
 
 void Draw_AUTOSAVEWARNING() {
@@ -1452,7 +2137,21 @@ void DrawPanel3DObjectMtxNoAlpha(nuhspecial_s *, numtx_s *) {
 void Draw_OK(MENU_s *) {
 }
 
-void DrawItem(nuhspecial_s *, nuvec_s *, float, float, float, u16, u16, u16) {
+__attribute__((force_align_arg_pointer)) void DrawItem(nuhspecial_s *special, nuvec_s *position, float scale_value,
+                                                       float, float y_push, u16 x_rot, u16 y_rot, u16 z_rot) {
+    if (position != NULL) {
+        if (NuSpecialExistsFn(special) != 0) {
+            NUANGVEC rotation = {x_rot, y_rot, z_rot};
+            NUMTX matrix;
+            NuMtxSetRotateXYZVU0(&matrix, &rotation);
+
+            NUVEC scale = {scale_value, scale_value, scale_value};
+            NuMtxScaleVU0(&matrix, &scale);
+            *reinterpret_cast<NUVEC *>(&matrix.m30) = *position;
+            matrix.m31 += y_push;
+            NuSpecialDrawAt(special, &matrix);
+        }
+    }
 }
 
 void DrawAABox(_vuv_s *, _vuv_s *, i32) {
@@ -1467,12 +2166,129 @@ void DrawCross(nuvec_s *, float, numtl_s *, i32) {
 void DrawMSitu(i32) {
 }
 
+static void DrawHitPoints(GameObject_s *object, float x, float y, float scale, float alpha, i32 alignment, float, i32) {
+    if (object == NULL || WORLD == NULL) {
+        return;
+    }
+
+    i32 two_rows = 0;
+    if (SuperStory != 0 && WORLD->current_level == VADERC_LDATA && object->hitpoints == 10) {
+        two_rows = 1;
+    }
+    if ((object->field_0xefb & 8) != 0) {
+        two_rows = drawbosshitpoints_2rows != 0;
+        drawbosshitpoints_2rows = 0;
+    }
+
+    const i32 heart_object = object->field_0xcc0 == NULL ? 0xcc : 0xcd;
+    LEVEL_OBJECT_RUNTIME_s &heart = WORLD->lev_objs[heart_object];
+    if (heart.active == 0) {
+        return;
+    }
+
+    i32 hitpoints;
+    i32 current_hp;
+    if (object->hitpoints == 0) {
+        hitpoints = 1;
+        current_hp = 1;
+    } else {
+        hitpoints = object->hitpoints;
+        current_hp = static_cast<i8>(object->current_hp);
+    }
+
+    if (PLAYERHITPOINTS_2HEARTSIN1 != 0 && static_cast<i8>(object->apiobj.flags_low) < 0) {
+        hitpoints = (hitpoints + 1) / 2;
+        current_hp = (current_hp + 1) / 2;
+    }
+
+    i32 transitioning = 0;
+    if (static_cast<u8>(object->apiobj.field_0x27c) <= 1 && hitpoints > 1 && object->apiobj.field_0x287 != 0 &&
+        object->field_0x101c > 0.0f && object->field_0x101c < 1.0f) {
+        current_hp = static_cast<i32>(static_cast<float>(hitpoints) * (1.0f - object->field_0x101c));
+        transitioning = 1;
+    }
+
+    float spacing = scale * 0.35f;
+    const bool widescreen = GetMenuID() == 4 ? TempOptions.field11_0xb != 0
+                                             : Game_OptionsSave != NULL && Game_OptionsSave->field11_0xb != 0;
+    if (widescreen) {
+        spacing *= 0.85f;
+    }
+    if (alignment == 8) {
+        spacing = -spacing;
+    } else if (alignment == 0) {
+        const i32 row_width = two_rows != 0 ? hitpoints / 2 : hitpoints;
+        x -= static_cast<float>(row_width - 1) * spacing * 0.5f;
+    }
+
+    float draw_x = x;
+    float draw_y = y * PANEL3DMULY;
+    const i32 split = hitpoints / 2;
+    for (i32 i = 0; i < hitpoints; ++i) {
+        if (two_rows == 1 && i >= split) {
+            two_rows = 2;
+            draw_y -= scale * 0.14f;
+            draw_x = x;
+        }
+
+        float draw_alpha = 0.5f;
+        float scale_xy = scale;
+        float z = 1.001f;
+        if (i < current_hp) {
+            draw_alpha = 1.0f;
+            if (PLAYERHITPOINTS_2HEARTSIN1 != 0 && static_cast<i8>(object->apiobj.flags_low) < 0 &&
+                i == current_hp - 1 && static_cast<i8>(object->current_hp) < (i + 1) * 2) {
+                draw_alpha = 0.75f;
+            }
+
+            if (transitioning == 0 && current_hp > 0 && i == current_hp - 1) {
+                const float pulse = i == 0 && current_hp == 1 ? 0.5f : 0.2f;
+                const float pulse_scale = 1.0f + pulse - NuFmod(GlobalTimer.time_elapsed, 0.5f) * (pulse * 2.0f);
+                scale_xy *= pulse_scale;
+                z = 0.999f;
+            }
+        }
+
+        NUVEC object_scale = {scale_xy, scale_xy, scale};
+        NUMTX matrix;
+        NuMtxSetScale(&matrix, &object_scale);
+        NUVEC translation = {draw_x * PANEL3DMULX, draw_y, z};
+        NuMtxTranslate(&matrix, &translation);
+        DrawPanel3DObjectMtx(&heart.special, &matrix, draw_alpha * alpha);
+        draw_x += spacing;
+    }
+}
+
 void DrawPanel() {
     SetQFont2D();
 
     if (editor_active == 0 && PANELOFF == 0 && WORLD != NULL && WORLD->current_level != NULL) {
         LEVELDATA *level = WORLD->current_level;
         if ((level->flags & LEVEL_GAMEPLAY) != 0) {
+            const f32 status_y =
+                NuTrigTable[(static_cast<i32>(statstime * static_cast<f32>(NUANG_90DEG)) >> 1) & 0x7fff] *
+                    (STATSPOSY - STATSPOS2Y) +
+                STATSPOS2Y;
+            GameObject_s *player = Player[0];
+            if (player != NULL) {
+                const f32 alpha = static_cast<i8>(player->apiobj.flags_low) < 0 ? 1.0f : DROPINALPHA;
+                const i32 character_id = player->field_0xcc0 == NULL ? player->id : player->field_0xcc0->id;
+                const f32 icon_timer = player->hud_icon_timer;
+                const i32 draw_character =
+                    icon_timer <= 0.0f || (icon_timer < 0.5f && NuFmod(icon_timer, 0.4f) < 0.075f);
+                DrawCharIcon(character_id, -ICONX, status_y, 0.0f, ICONSIZE, 0xa6, alpha, alpha, draw_character, NULL);
+                if (static_cast<i8>(player->apiobj.flags_low) < 0 && player->apiobj.character_data != NULL &&
+                    player->apiobj.character_data->name_id != -1) {
+                    const bool raised_hearts =
+                        (WORLD->area != NULL &&
+                         (WORLD->area == HUB_ADATA ||
+                          (WORLD->area->flags & (AREAFLAG_SUPER_BONUS_AREA & ~AREAFLAG_BONUS_AREA)) != 0)) ||
+                        SuperStory != 0 || ChallengeMode != 0 || Mission_Active(NULL) != NULL;
+                    DrawHitPoints(player, -PANEL_HITPOINTSX, status_y + (raised_hearts ? 0.0f : PANEL_HEARTY), 0.195f,
+                                  alpha, 2, 0.0f, 0);
+                }
+            }
+
             // The target's ordinary Cantina branch is DrawCoinTotal(0, 0).
             // Keep its recovered normal-game calculation here while that
             // target-local helper remains in the separately reconstructed HUD

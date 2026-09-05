@@ -18,6 +18,7 @@ struct TIMER_s {
 typedef struct TIMER_s TIMER;
 
 extern TIMER GlobalTimer;
+extern f32 LastTouchTime;
 
 #ifdef __cplusplus
 void ResetTimer(TIMER *timer, f32 reset_time);

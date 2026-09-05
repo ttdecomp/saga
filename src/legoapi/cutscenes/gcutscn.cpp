@@ -4,14 +4,24 @@
 
 #include "globals.h"
 #include "legoapi/cutscenes/cutscenes.h"
+#include "legoapi/world/area.h"
+#include "legoapi/world/level.h"
+#include "legoapi/world/levels/episode.h"
 #include "legoapi/world/levels/levels.h"
 #include "legoapi/world/world.h"
 
 #include <string.h>
 
+struct CUTSCENEPLAYERCLIP_s {
+    i16 level_id;
+    u8 pad_0x02[0x44 - 0x02];
+};
+DECOMP_ASSERT(sizeof(CUTSCENEPLAYERCLIP_s) == 0x44, "CUTSCENEPLAYERCLIP ABI");
+
 struct CUTSCENEPLAYER_s {
-    void *clips;
+    CUTSCENEPLAYERCLIP_s *clips;
     i32 active;
+    u16 clip_count;
 };
 
 CUTSCENEPLAYER_s *CutScenePlayer = NULL;
@@ -32,7 +42,32 @@ i32 CutScenePlayer_Active() {
 void CutScenePlayer_GetText(i32, char *, char *, i32) {
 }
 
-void CutScenePlayer_CanStart(i32) {
+i32 CutScenePlayer_CanStart(i32 clip_id) {
+    if (CutScenePlayer == NULL || clip_id < 0 || clip_id >= CutScenePlayer->clip_count) {
+        return 0;
+    }
+
+    i32 area_id = LDataList[CutScenePlayer->clips[clip_id].level_id].area_index;
+    if (area_id == -1) {
+        return 0;
+    }
+
+    AREADATA_s *area = &ADataList[area_id];
+    if ((area->flags & 2) == 0) {
+        if (Game_AreaSave != NULL && Game_AreaSave[area_id].area_complete != 0) {
+            return 1;
+        }
+        return 0;
+    }
+
+    i32 episode_id = area->episode_index;
+    if (episode_id == -1) {
+        return 0;
+    }
+    if (Episode_IsComplete(&EDataList[episode_id], NULL) != 0) {
+        return 2;
+    }
+    return 0;
 }
 
 void CutScenePlayer_DrawGrid(COLLECTION_s *, i16 *, float, float, i32, float) {

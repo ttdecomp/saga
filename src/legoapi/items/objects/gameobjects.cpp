@@ -1,6 +1,7 @@
 #include "legoapi/items/objects/gameobjects.h"
 #include "decomp.h"
 #include "gameapi/ai/aisys/aisys.h"
+#include "gameapi/edtools/edfile.h"
 #include "gameapi/gui/apimenu.h"
 #include "globals.h"
 #include "legoapi/legoapi_types.h"
@@ -11,6 +12,7 @@
 #include "legoapi/characters/motion/gameanim.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/core/players.h"
+#include "legoapi/menus/screens/shop.h"
 #include "legoapi/props/doors/door.h"
 #include "legoapi/world/area.h"
 #include "legoapi/core/input/qrand.h"
@@ -68,6 +70,9 @@ void InitAICreatures(AISYS_s *system);
 void ResetAICreatures(AISYS_s *system);
 void LevelScriptReStoreProgress(WORLDINFO_s *world, LEVELSCRIPTPROCESS_s *process);
 void GizmoSysAddGizmos(GIZMOSYS_s *gizmo_sys, GIZFLOW_s *giz_flow, void *world);
+void UpdateCoinPacket(COINPACKET_s *packet, i32 active, i32 player_index);
+void ResetCoinPacket(COINPACKET_s *packet);
+GIZMOPICKUP_s *GizmoPickups_Collide(WORLDINFO_s *world, GameObject_s *object, i32 arg);
 
 f32 Condition_InHubArea(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *);
 void *Condition_InHubAreaInit(AISYS_s *, char *, AISCRIPT_s *);
@@ -1307,10 +1312,25 @@ void GameObjectDimensions(GameObject_s *object) {
 void GameObjectUsingLever(GameObject_s *, LEVER_s *) {
 }
 
-void GameAntiNodeData_Init(GAMEANTINODEDATA_s *, nuhspecial_s *) {
+void GameAntiNodeData_Init(GAMEANTINODEDATA_s *data, nuhspecial_s *) {
+    if (data != NULL) {
+        memset(data, 0, sizeof(*data));
+    }
 }
 
-void GameAntiNodeData_Read(GAMEANTINODEDATA_s *) {
+void GameAntiNodeData_Read(GAMEANTINODEDATA_s *data) {
+    if (EdFileReadChar() == 0) {
+        return;
+    }
+    EdFileReadNuVec(&data->position);
+    data->radius = EdFileReadFloat();
+    data->min_y = EdFileReadFloat();
+    data->max_y = EdFileReadFloat();
+    data->extent_x = EdFileReadFloat();
+    data->extent_z = EdFileReadFloat();
+    data->flags = EdFileReadShort();
+    data->use_largest_extent = static_cast<u8>(EdFileReadChar());
+    data->mode = static_cast<u8>(EdFileReadChar());
 }
 
 void GameAudio_PlaySfxById(i32, nuvec_s *, i32, i32) {
@@ -1386,7 +1406,11 @@ void GameLoadCharacterModels(APICHARACTERMODELLIST_s *list, i32 append, VARIPTR 
     APILoadCharacterModels(list, append, buf, *buf_end, area_models);
 }
 
-void Game_100PercentComplete() {
+i32 Game_100PercentComplete() {
+    if (StatusCollectList.ptr == NULL) {
+        return 0;
+    }
+    return StatusCollectList.ptr->flags & 1;
 }
 
 void Game_WorldInfo_InitMenu(WORLDINFO_s *world, i32 *menu_id, i32 *) {
@@ -1863,6 +1887,28 @@ void TakeOverCode(GameObject_s *, i32) {
 }
 
 void InitExtraList() {
+    for (i32 i = 0; i < 44; ++i) {
+        NuStrCpy(ExtraItems[i].special_name, Cheat[i].extra_name);
+        NuSpecialFind(WORLD->current_gscn, &ExtraItems[i].special, ExtraItems[i].special_name, 1);
+        ExtraItems[i].type = 2;
+        ExtraItems[i].unlocked = 0;
+        ExtraItems[i].item_id = i;
+
+        u32 unlocked = reinterpret_cast<u32 *>(reinterpret_cast<u8 *>(&Game) + 0x7bf0)[i >> 5];
+        if (((static_cast<u64>(unlocked) >> (i & 0x1f)) & 1) != 0) {
+            ExtraItems[i].unlocked = 1;
+            reinterpret_cast<u32 *>(reinterpret_cast<u8 *>(&Game) + 0x7c00)[i >> 5] |= 1u << (i & 0x1f);
+        }
+        ExtraItems[i].price = Cheat[i].extra_price;
+    }
+
+    SHOPEXTRACOUNT = 44;
+    for (i32 i = 0; i < SHOPEXTRACOUNT; ++i) {
+        char name[32];
+        NuStrCpy(name, ExtraItems[i].special_name);
+        NuStrCat(name, "b");
+        NuSpecialFind(WORLD->current_gscn, &extrasils[i], name, 1);
+    }
 }
 
 GameObject_s *FindGameObject(i32 character_id, u32 required_flags, i32 alive_only, i32 vehicle_only,
@@ -2163,6 +2209,14 @@ void UpdateGameObjects(WORLDINFO_s *world) {
         object->context_target_position = NULL;
         ScaleGameObject(object);
         GameObjectDimensions(object);
+        UpdateCoinPacket(object->coinpacket, static_cast<u32>(object->apiobj.flags_low) >> 7,
+                         object->apiobj.field_0x27c);
+        if ((object->apiobj.flags_low & APIOBJECT_FLAG_PLAYER_ACTIVE) != 0 && object->apiobj.field_0x287 == 0 &&
+            object->field_0x7a5 != 0x2b && !(object->field_0x7a5 == 0x0f && object->field_0x7a3 == 1)) {
+            GizmoPickups_Collide(world, object, 1);
+        } else {
+            ResetCoinPacket(object->coinpacket);
+        }
         if (object->use_model_origin != 0xff) {
             ++object->use_model_origin;
         }

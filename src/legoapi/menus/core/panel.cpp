@@ -2,6 +2,9 @@
 #include "globals.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/render/core/render.h"
+#include "legoapi/world/area.h"
+#include "legoapi/world/level.h"
+#include "legoapi/world/world.h"
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nu3d/nucamera.h"
@@ -31,6 +34,7 @@ extern i32 TimingBarSet;
 extern f32 statstime;
 extern f32 cointotaltime;
 extern f32 goldbricktime;
+extern i32 SuperStory;
 
 static f32 redbrickslidetime;
 
@@ -112,7 +116,14 @@ void Panel_Clear() {
 void AddCoinsToPanel(i32, nuvec_s *, i32, float, GameObject_s *, i32) {
 }
 
-void CoinsGoToMainTotal() {
+i32 CoinsGoToMainTotal() {
+    WORLDINFO_s *world = WorldInfo_CurrentlyActive();
+    if ((HUB_ADATA != NULL && HUB_ADATA == world->area) || SuperStory != 0 ||
+        (world->area != NULL && (world->area->flags & (AREAFLAG_SUPER_BONUS_AREA & ~AREAFLAG_BONUS_AREA)) != 0) ||
+        (world->current_level != NULL && (world->current_level->flags & LEVEL_STATUS) != 0)) {
+        return 1;
+    }
+    return 0;
 }
 
 void InitPanel(i32) {

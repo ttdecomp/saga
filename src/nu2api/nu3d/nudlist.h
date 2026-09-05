@@ -193,7 +193,8 @@ extern "C" {
         struct nugscn_s *gscene;                 // 0x78
         void *ps;                                // 0x7c platform scratch
         struct nuglobalrndrstate_s *local_state; // 0x80
-        u8 pad_84[8];                            // 0x84..0x8b unnamed in original DB
+        u8 pad_84[4];                            // 0x84..0x87 unnamed in original DB
+        u8 *portal_visibility_overrides;         // 0x88 instances excluded from portal clipping
         NUMTLANIMSET *material_animations;       // 0x8c
     } NUDLDLISTSCENE;
 
@@ -231,6 +232,7 @@ extern "C" {
     static_assert(offsetof(NUDLDLISTSCENE, render_buffer) == 0x75, "scene.render_buffer");
     static_assert(offsetof(NUDLDLISTSCENE, gscene) == 0x78, "scene.gscene");
     static_assert(offsetof(NUDLDLISTSCENE, local_state) == 0x80, "scene.local_state");
+    static_assert(offsetof(NUDLDLISTSCENE, portal_visibility_overrides) == 0x88, "scene.portal_visibility_overrides");
     static_assert(offsetof(NUDLDLISTSCENE, material_animations) == 0x8c, "scene.material_animations");
 #endif
 #endif

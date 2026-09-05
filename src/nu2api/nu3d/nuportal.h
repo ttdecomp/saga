@@ -5,14 +5,27 @@
 #include "decomp_assert.h"
 
 typedef struct nuportal_s {
-    NUPLANE plane; // 0x00, separates the two adjoining rooms
-    u8 pad_10[6];
-    u16 front_room; // 0x16
-    u16 back_room;  // 0x18
-    i8 id;          // 0x1a
+    NUPLANE plane;    // 0x00, separates the two adjoining rooms
+    NUVEC *vertices;  // 0x10
+    i16 vertex_count; // 0x14
+    u16 front_room;   // 0x16
+    u16 back_room;    // 0x18
+    i8 id;            // 0x1a
     u8 pad_1b;
     u32 is_active; // 0x1c, bit 0 enables traversal
 } NUPORTAL;
+
+typedef struct nuportalsphere_s {
+    NUVEC center;
+    f32 radius;
+} NUPORTALSPHERE;
+
+typedef struct nuportalbox_s {
+    NUVEC first; // minimum, or center when the display scene uses center/extent bounds
+    f32 first_w;
+    NUVEC second; // maximum, or extent when the display scene uses center/extent bounds
+    f32 second_w;
+} NUPORTALBOX;
 
 enum NUPORTAL_FLAGS {
     NUPORTAL_FLAG_ACTIVE = 0x01,
@@ -47,6 +60,8 @@ typedef struct NUFRUSTRUM {
 } NUFRUSTRUM;
 
 DECOMP_ASSERT(sizeof(NUPORTAL) == 0x20, "portal record size");
+DECOMP_ASSERT(offsetof(NUPORTAL, vertices) == 0x10, "portal vertex-array offset");
+DECOMP_ASSERT(offsetof(NUPORTAL, vertex_count) == 0x14, "portal vertex-count offset");
 DECOMP_ASSERT(sizeof(NUROOM) == 0x18, "room record size");
 DECOMP_ASSERT(sizeof(NUFRUSTRUM) == 0xa0, "portal frustum size");
 DECOMP_ASSERT(offsetof(NUROOM, instance_indices) == 0x00, "room instance-index offset");
@@ -78,4 +93,15 @@ extern "C" {
 
 void NuPortalSetOverride(NUVEC *position);
 void NuPortalEnableDebugDraw(i32 enabled);
+
+// These helpers were file-local in the original combined render translation unit.
+// They live in nuportal.cpp here, so retain their original local symbol names while
+// allowing the recovered NuPortalVisibility body in render.cpp to call them.
+extern __attribute__((visibility("hidden"))) NUFRUSTRUM *
+buildFrustrum(NUVEC *minimum, NUVEC *maximum, i16 room_id) asm("_ZL13buildFrustrumP7nuvec_sS0_s");
+extern __attribute__((visibility("hidden"))) void
+transposeClipPlanes(NUFRUSTRUM *frustum) asm("_ZL19transposeClipPlanesP10NUFRUSTRUM");
+extern __attribute__((visibility("hidden"))) void
+roomRecursive(struct nugscn_s *scene, NUFRUSTRUM *frustum, i16 room_id, i16 previous_room,
+              i32 depth) asm("_ZL13roomRecursiveP8nugscn_sP10NUFRUSTRUMssi");
 #endif

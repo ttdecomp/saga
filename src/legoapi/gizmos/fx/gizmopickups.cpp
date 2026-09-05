@@ -15,6 +15,7 @@
 #include "legoapi/world/mission.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nuspecial.h"
+#include "nu2api/nu3d/nurndr.h"
 #include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/numtx.h"
 #include "nu2api/numath/nutrig.h"
@@ -135,11 +136,31 @@ namespace {
             }
 
             NUMTX matrix;
-            if ((type->flags & GIZMOPICKUP_TYPE_DRAW_BOBBING) != 0) {
-                NuMtxSetRotationY(&matrix, pickup.draw_rotation);
-                NUVEC draw_position = pickup.position;
-                draw_position.y += type->bob_height * NU_SIN_LUT(pickup.draw_rotation);
-                NuMtxTranslate(&matrix, &draw_position);
+            if ((type->flags & GIZMOPICKUP_TYPE_DRAW_TUMBLING) != 0) {
+                const u16 y_rotation = pickup.draw_rotation;
+                const i32 x_rotation = static_cast<i32>(NU_SIN_LUT(y_rotation) * 1820.0f);
+                const f32 cos_x = NU_COS_LUT(x_rotation);
+                const f32 sin_x = NU_SIN_LUT(x_rotation);
+                const f32 cos_y = NU_COS_LUT(y_rotation);
+                const f32 sin_y = NU_SIN_LUT(y_rotation);
+
+                matrix.m00 = cos_y;
+                matrix.m01 = 0.0f;
+                matrix.m02 = -sin_y;
+                matrix.m03 = 0.0f;
+                matrix.m10 = sin_x * sin_y;
+                matrix.m11 = cos_x;
+                matrix.m12 = sin_x * cos_y;
+                matrix.m13 = 0.0f;
+                matrix.m20 = cos_x * sin_y;
+                matrix.m21 = -sin_x;
+                matrix.m22 = cos_x * cos_y;
+                matrix.m23 = 0.0f;
+                matrix.m30 = 0.0f;
+                matrix.m31 = 0.0f;
+                matrix.m32 = 0.0f;
+                matrix.m33 = 1.0f;
+                NuMtxTranslate(&matrix, &pickup.position);
             } else if ((type->flags & GIZMOPICKUP_TYPE_DRAW_Y_ROTATION) != 0) {
                 NuMtxSetRotationY(&matrix, pickup.draw_rotation);
                 NuMtxTranslate(&matrix, &pickup.position);
@@ -167,6 +188,17 @@ namespace {
             }
             if ((pickup.config_flags & GIZMOPICKUP_CONFIG_DISABLE_SHADOW_MAP) != 0) {
                 EnableShadowMapRendering(0);
+            }
+
+            if (VehicleArea == 0 && pickup.floor_height != 2000000.0f && maximum_distance_squared > 0.0f) {
+                const f32 distance_ratio = (camera_x * camera_x + camera_z * camera_z) / maximum_distance_squared;
+                NUVEC shadow_position = pickup.position;
+                shadow_position.y = pickup.floor_height + 0.005f;
+                const i32 opacity =
+                    static_cast<i32>((1.0f - distance_ratio) *
+                                     static_cast<f32>(static_cast<u8>(world->current_level->blob_shadow_alpha)));
+                NuRndrAddShadow(&shadow_position, type->shadow_radius_x, opacity, pickup.shadow_x_rotation, 0,
+                                pickup.shadow_z_rotation);
             }
         }
     }

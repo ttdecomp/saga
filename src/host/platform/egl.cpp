@@ -21,6 +21,7 @@ namespace {
     i32 host_readback_width;
     i32 host_readback_height;
     std::atomic<bool> host_readback_enabled{false};
+    std::atomic<bool> host_readback_requested{false};
     std::atomic<bool> host_fps_overlay_enabled{false};
 
     // Three-by-five glyphs, stored one three-bit row at a time. This keeps the
@@ -49,15 +50,11 @@ namespace {
         return space;
     }
 
-    void host_draw_fps_overlay(EGLDisplay display, EGLSurface surface) {
+    void host_draw_fps_overlay(i32 width, i32 height) {
         if (!host_fps_overlay_enabled.load(std::memory_order_relaxed)) {
             return;
         }
-
-        EGLint width = 0;
-        EGLint height = 0;
-        if (!eglQuerySurface(display, surface, EGL_WIDTH, &width) ||
-            !eglQuerySurface(display, surface, EGL_HEIGHT, &height) || width <= 0 || height <= 0) {
+        if (width <= 0 || height <= 0) {
             return;
         }
 
@@ -123,15 +120,22 @@ namespace {
 } // namespace
 
 void HostCaptureCurrentSurface(EGLDisplay display, EGLSurface surface) {
-    host_draw_fps_overlay(display, surface);
-    if (!host_readback_enabled.load(std::memory_order_relaxed)) {
-        return;
-    }
-
     EGLint width = 0;
     EGLint height = 0;
     if (!eglQuerySurface(display, surface, EGL_WIDTH, &width) ||
-        !eglQuerySurface(display, surface, EGL_HEIGHT, &height) || width <= 0 || height <= 0) {
+        !eglQuerySurface(display, surface, EGL_HEIGHT, &height)) {
+        return;
+    }
+    HostCaptureCurrentFramebuffer(width, height);
+}
+
+void HostCaptureCurrentFramebuffer(i32 width, i32 height) {
+    host_draw_fps_overlay(width, height);
+    if (!host_readback_enabled.load(std::memory_order_relaxed) ||
+        !host_readback_requested.exchange(false, std::memory_order_acq_rel)) {
+        return;
+    }
+    if (width <= 0 || height <= 0) {
         return;
     }
 
@@ -151,10 +155,33 @@ void HostCaptureCurrentSurface(EGLDisplay display, EGLSurface surface) {
 
 void HostSetReadbackEnabled(bool enabled) {
     host_readback_enabled.store(enabled, std::memory_order_relaxed);
+    host_readback_requested.store(enabled, std::memory_order_release);
+}
+
+void HostRequestReadback(void) {
+    if (host_readback_enabled.load(std::memory_order_relaxed)) {
+        host_readback_requested.store(true, std::memory_order_release);
+    }
 }
 
 void HostSetFpsOverlayEnabled(bool enabled) {
     host_fps_overlay_enabled.store(enabled, std::memory_order_relaxed);
+}
+
+void HostPaceFrame(const NUTIME *frame_start, f32 target_seconds) {
+    NUTIME now;
+    NUTIME elapsed;
+    NuTimeGet(&now);
+    NuTimeSub(&elapsed, &now, const_cast<NUTIME *>(frame_start));
+    const f32 remaining_seconds = target_seconds - NuTimeSeconds(&elapsed);
+
+    // Leave a short tail to the original polling loop so the game's timing
+    // and minimum-frame semantics remain unchanged despite scheduler jitter.
+    constexpr f32 spin_tail_seconds = 0.0005f;
+    if (remaining_seconds > spin_tail_seconds) {
+        const Uint64 sleep_ns = static_cast<Uint64>((remaining_seconds - spin_tail_seconds) * 1000000000.0f);
+        SDL_DelayPrecise(sleep_ns);
+    }
 }
 
 i32 HostReadbackPixels(u32 max_w, u32 max_h, u8 *rgba) {

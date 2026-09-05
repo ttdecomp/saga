@@ -202,6 +202,7 @@ AREADATA_s *LOSTTEMPLE_ADATA = NULL;
 // ------------------------------------------------------------------------
 GAMESAVE_s Game = {0};
 GAMESAVE_s BackupGame = {0};
+STATUSCOLLECTLIST_s StatusCollectList = {};
 u32 areaSuitBits = 0;
 u8 *Game_LevelSave = NULL;
 EPISODESAVE_s *Game_EpisodeSave = NULL;
@@ -240,16 +241,23 @@ i32 CompletionPointInfo[7] = {0};
 i32 OldBonusScore[2] = {0};
 i32 BonusScore[2] = {0};
 i32 BonusCoinTotal = 0;
+u32 BonusCoinTarget = 0;
 
 // Gameplay panel layout and animation state.  The non-zero constants are the
 // original panel coordinates; the animation values are reset by Panel_Clear.
 f32 STATSPOSY = 0.745f;
 f32 STATSPOS2Y = 1.255f;
+f32 PANEL_HEARTY = -0.045f;
+f32 PANEL_HITPOINTSX = 0.65f;
 f32 COINTOTAL_SCOREDY = -0.005f;
 f32 COINTOTAL_COINDX = 0.05f;
 f32 COINTOTAL_COINSIZE = 0.5f;
 f32 COINTOTAL_SCORESIZE = 0.5f;
 f32 PANEL_COINADJUSTDY = -0.006f;
+f32 PANEL_COINSCALE_END = 0.35f;
+f32 PANEL_COINSCALE_START = 1.0f;
+f32 PANEL_COINY = 0.045f;
+f32 PANEL_COINX = 0.65f;
 f32 CoinTotalScale = 0.0f;
 f32 cointotal_x[2] = {0.0f, 0.0f};
 i32 cointotal_i_obj[2] = {187, 187};
@@ -313,6 +321,7 @@ NUCAMERA *pNuCam = NULL;
 static GAMECAMERA_s GameCamera;
 GAMECAMERA_s *GameCam = &GameCamera;
 i32 (*GameCam_ObjLookingWithLeftStick)(GameObject_s *object) = nullptr;
+i32 LookAtBoth = 0;
 PLAYPLANE_s PlayPlane[6] = {};
 i32 KEEPONSCREEN_SIDESONLY = 0;
 NUVEC GunshipANorm = {};
@@ -384,7 +393,7 @@ DETONATOR_s Detonator[10] = {};
 // ------------------------------------------------------------------------
 // Bonus / arcade / challenge mode
 // ------------------------------------------------------------------------
-i32 BonusWinner = 0;
+i32 BonusWinner = -1;
 i32 BonusWinFlag = 0;
 i32 ChallengeMode = 0;
 TIMER ChallengeTimer;
@@ -463,6 +472,12 @@ EXTRAMODEL ExtraModelList[1] = {{0}};
 COLLECTION_s CharacterCollection = {};
 COLLECTION_s VehicleCollection = {};
 COLLECTION_s MiniKitCollection = {};
+COLLECTION_s MasterCollection = {};
+COLLECTION_s ShopCollection = {};
+COLLECTION_s JediCollection = {};
+COLLECTION_s BlasterCollection = {};
+COLLECTION_s BountyHunterCollection = {};
+f32 COLLECTION_DEFAULTSCALE = 0.6f;
 ARCADEITEM_s ArcadeItem = {0};
 ARCADE_MODE_s Arcade_Mode[1] = {{0}};
 GAME_CUSTOMISER_s *Game_Customiser = NULL;
@@ -501,6 +516,8 @@ char *ExtraLevelObject_NameTable = NULL;
 i32 ExtraLevelObject_NameTableSize = 0;
 i32 ExtraLevelObject_NameTableIndex = 0;
 i32 KNOBS = -1;
+i32 PLAYERHITPOINTS_2HEARTSIN1 = 1;
+i32 drawbosshitpoints_2rows = 0;
 
 i16 drawcharicon_hspecial_spin = 0;
 f32 drawcharicon_hspecial_dz = 0.0f;
@@ -1235,8 +1252,105 @@ LEVELSPLINE SplTab[26] = {
     {NULL, "mission_cam", 2, 2, -1, -1},
     {NULL, NULL, 0, 0, 0, 0},
 };
-u8 LSW_CharCategory[0x78];  // LSW character-category table
-u8 Cheat[0x5a0];            // cheat table
+u8 LSW_CharCategory[0x78]; // LSW character-category table
+extern i16 tCHEAT_EXTRATOGGLE;
+extern i16 tCHEAT_POO;
+extern i16 tCHEAT_DISGUISE;
+extern i16 tCHEAT_DAISYCHAINS;
+extern i16 tCHEAT_C3POBITS;
+extern i16 tCHEAT_TOWDEATHSTAR;
+extern i16 tCHEAT_SILHOUETTES;
+extern i16 tCHEAT_BEEPBEEP;
+extern i16 tCHEAT_SUPERGONK;
+extern i16 tCHEAT_POOMONEY;
+extern i16 tCHEAT_WALKIETALKIEDISABLE;
+extern i16 tCHEAT_POWERBRICKDETECTOR;
+extern i16 tCHEAT_SUPERSLAP;
+extern i16 tCHEAT_FORCEZIPUP;
+extern i16 tCHEAT_COINMAGNET;
+extern i16 tCHEAT_DISARMTROOPERS;
+extern i16 tCHEAT_CHARACTERSTUDS;
+extern i16 tCHEAT_PERFECTDEFLECT;
+extern i16 tCHEAT_EXPLODINGBLASTERBOLTS;
+extern i16 tCHEAT_FORCEPULL;
+extern i16 tCHEAT_VEHICLESMARTBOMB;
+extern i16 tCHEAT_SUPERASTROMECH;
+extern i16 tCHEAT_SUPERJEDISLAM;
+extern i16 tCHEAT_SUPERTHERMALDETONATOR;
+extern i16 tCHEAT_DEFLECTBOLTS;
+extern i16 tCHEAT_DARKSIDE;
+extern i16 tCHEAT_SUPERBLASTERS;
+extern i16 tCHEAT_FASTFORCE;
+extern i16 tCHEAT_PURPLEFORCE;
+extern i16 tCHEAT_TRACTORBEAM;
+extern i16 tCHEAT_INVINCIBILITY;
+extern i16 tCHEAT_X2;
+extern i16 tCHEAT_SELFDESTRUCT;
+extern i16 tCHEAT_FASTBUILD;
+extern i16 tCHEAT_X4;
+extern i16 tCHEAT_REGENERATE;
+extern i16 tCHEAT_MINIKITDETECTOR;
+extern i16 tCHEAT_X6;
+extern i16 tCHEAT_SUPERZAPPER;
+extern i16 tCHEAT_ROCKETS;
+extern i16 tCHEAT_X8;
+extern i16 tCHEAT_SUPEREWOKCATAPULT;
+extern i16 tCHEAT_INFINITETORPEDOS;
+extern i16 tCHEAT_X10;
+
+#define CHEAT_ENTRY(name_, text_, code_, price_, extra_, flag_)                                                        \
+    {const_cast<char *>(name_),  &text_, 0, 0, 0, 0xff, -1, const_cast<char *>(code_), price_,                         \
+     const_cast<char *>(extra_), flag_}
+
+CHEAT Cheat[45] = {
+    CHEAT_ENTRY("extratoggle", tCHEAT_EXTRATOGGLE, "VX8FZ6", 25000, "shop_tool1", 0x100),
+    CHEAT_ENTRY("poo", tCHEAT_POO, "F4035S", 8000, "shop_tool2", 0),
+    CHEAT_ENTRY("disguises", tCHEAT_DISGUISE, "4HBIHK", 10000, "shop_tool3", 0),
+    CHEAT_ENTRY("daisychains", tCHEAT_DAISYCHAINS, "2J0VGC", 5000, "shop_tool4", 0),
+    CHEAT_ENTRY("c3pobits", tCHEAT_C3POBITS, "RTI8PX", 10000, "shop_tool5", 0),
+    CHEAT_ENTRY("towdeathstar", tCHEAT_TOWDEATHSTAR, "YDQYJR", 5000, "shop_tool6", 0),
+    CHEAT_ENTRY("silhouettes", tCHEAT_SILHOUETTES, "J2ZFT7", 10000, "shop_silhouette", 0x1),
+    CHEAT_ENTRY("beepbeep", tCHEAT_BEEPBEEP, "V1VV95", 7500, "shop_beepbeep", 0),
+    CHEAT_ENTRY("supergonk", tCHEAT_SUPERGONK, "K0HOMF", 50000, "shop_supergonk", 0),
+    CHEAT_ENTRY("poomoney", tCHEAT_POOMONEY, "1J2G9Z", 50000, "shop_poomoney", 0x200000),
+    CHEAT_ENTRY("walkietalkiedisable", tCHEAT_WALKIETALKIEDISABLE, "9DIHAR", 5000, "shop_walkietalkie", 0),
+    CHEAT_ENTRY("powerbrickdetector", tCHEAT_POWERBRICKDETECTOR, "0SY75X", 62500, "shop_powerbrick", 0x40000),
+    CHEAT_ENTRY("superslap", tCHEAT_SUPERSLAP, "YHXD63", 5000, "shop_superslap", 0),
+    CHEAT_ENTRY("forcezipup", tCHEAT_FORCEZIPUP, "GPHF03", 15000, "shop_forcegrapple", 0),
+    CHEAT_ENTRY("coinmagnet", tCHEAT_COINMAGNET, "FE0YXY", 100000, "shop_coinmagnet", 0x238000),
+    CHEAT_ENTRY("disarmtroopers", tCHEAT_DISARMTROOPERS, "D0FSCN", 50000, "shop_disarmtroopers", 0),
+    CHEAT_ENTRY("characterstuds", tCHEAT_CHARACTERSTUDS, "PSA7PM", 75000, "shop_characterstuds", 0x200000),
+    CHEAT_ENTRY("perfectdeflect", tCHEAT_PERFECTDEFLECT, "HTWHIS", 20000, "shop_perfectdeflect", 0x100000),
+    CHEAT_ENTRY("explodingblasterbolts", tCHEAT_EXPLODINGBLASTERBOLTS, "GYL04B", 20000, "shop_explodingbolts", 0),
+    CHEAT_ENTRY("forcepull", tCHEAT_FORCEPULL, "7XR7Z1", 12000, "shop_forcepull", 0),
+    CHEAT_ENTRY("vehiclesmartbomb", tCHEAT_VEHICLESMARTBOMB, "OYS2JP", 15000, "shop_vehiclesmart", 0),
+    CHEAT_ENTRY("superastromech", tCHEAT_SUPERASTROMECH, "0OJO5O", 10000, "shop_superastromech", 0),
+    CHEAT_ENTRY("superjedislam", tCHEAT_SUPERJEDISLAM, "6DT2CK", 11000, "shop_superjedislam", 0),
+    CHEAT_ENTRY("superthermaldetonator", tCHEAT_SUPERTHERMALDETONATOR, "ZURPDI", 25000, "shop_superthermal", 0),
+    CHEAT_ENTRY("deflectbolts", tCHEAT_DEFLECTBOLTS, "TPF1LL", 100000, "shop_deflectbolts", 0xb0000),
+    CHEAT_ENTRY("darkside", tCHEAT_DARKSIDE, "3O1DUB", 25000, "shop_darkside", 0),
+    CHEAT_ENTRY("superblasters", tCHEAT_SUPERBLASTERS, "CRX1LO", 15000, "shop_tool7", 0x32002),
+    CHEAT_ENTRY("fastforce", tCHEAT_FASTFORCE, "QTDYVG", 40000, "shop_tool8", 0x412000),
+    CHEAT_ENTRY("supersabres", tCHEAT_PURPLEFORCE, "3X7303", 40000, "shop_tool9", 0x12400),
+    CHEAT_ENTRY("tractorbeam", tCHEAT_TRACTORBEAM, "LEMPCP", 15000, "shop_tool10", 0x20000),
+    CHEAT_ENTRY("invincibility", tCHEAT_INVINCIBILITY, "4T2X0G", 500000, "shop_tool11", 0x32080),
+    CHEAT_ENTRY("scorex2", tCHEAT_X2, "R26FOR", 625000, "shop_tool13", 0x230004),
+    CHEAT_ENTRY("selfdestruct", tCHEAT_SELFDESTRUCT, "5VPUHC", 25000, "shop_tool12", 0),
+    CHEAT_ENTRY("fastbuild", tCHEAT_FASTBUILD, "E7ZZLD", 30000, "shop_tool14", 0x16000),
+    CHEAT_ENTRY("scorex4", tCHEAT_X4, "YNHS94", 1250000, "shop_tool15", 0x200008),
+    CHEAT_ENTRY("regenerate", tCHEAT_REGENERATE, "JEHZU6", 150000, "shop_tool16", 0x33000),
+    CHEAT_ENTRY("minikitdetector", tCHEAT_MINIKITDETECTOR, "WGXC8Y", 125000, "shop_tool17", 0x200),
+    CHEAT_ENTRY("scorex6", tCHEAT_X6, "YW9S6L", 2500000, "shop_tool18", 0x200010),
+    CHEAT_ENTRY("superzapper", tCHEAT_SUPERZAPPER, "2T7WBD", 14000, "shop_tool19", 0x2000),
+    CHEAT_ENTRY("rockets", tCHEAT_ROCKETS, "1P9CGR", 20000, "shop_tool20", 0x2000),
+    CHEAT_ENTRY("scorex8", tCHEAT_X8, "VYWFEV", 5000000, "shop_tool21", 0x200020),
+    CHEAT_ENTRY("superewokcatapult", tCHEAT_SUPEREWOKCATAPULT, "ALQFGF", 25000, "shop_tool22", 0),
+    CHEAT_ENTRY("infinitetorpedos", tCHEAT_INFINITETORPEDOS, "3Z3AFX", 25000, "shop_tool23", 0),
+    CHEAT_ENTRY("scorex10", tCHEAT_X10, "OC7VIL", 10000000, "shop_tool24", 0x200040),
+    {},
+};
+
+#undef CHEAT_ENTRY
 u8 CharVariants_Game[0x5c]; // in-game character-variant table
 MemoryManager theMemoryManager;
 #include "legoapi/menus/core/lsw_text_data.inc"

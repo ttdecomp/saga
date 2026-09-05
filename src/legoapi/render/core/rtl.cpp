@@ -85,12 +85,6 @@ static __used__ i32 rtlCmp(rtl_s *, rtl_s *) {
     return 0;
 }
 
-static __used__ void transposeClipPlanes(NUFRUSTRUM *) {
-}
-
-static __used__ void roomRecursive(nugscn_s *, NUFRUSTRUM *, i16, i16, i32) {
-}
-
 extern "C" {
 
     void IndexLights(rtlset *, VARIPTR *, i32);

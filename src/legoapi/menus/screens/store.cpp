@@ -1,5 +1,7 @@
 #include "decomp.h"
-struct SHOPINPUT;
+#include "gameapi/gui/apimenu.h"
+#include "legoapi/menus/screens/shop.h"
+#include "legoapi/characters/core/players.h"
 #include "legoapi/menus/screens/store.h"
 #include "legoapi/world/levels/episode.h"
 #include "legoapi/world/world.h"
@@ -9,9 +11,15 @@ struct SHOPINPUT;
 #include "nu2api/nucore/nustring.h"
 #include "nu2api/numath/nufloat.h"
 
+#include <string.h>
+
 struct GameObject_s;
 struct LEVEL_PROGRESS_s;
 struct WORLDINFO_s;
+
+extern GAMEPAD_s GamePad[64];
+extern u32 GAMEPAD_MENUSELECT;
+extern u32 GAMEPAD_MENUCANCEL;
 
 extern void TurnEpisodeDoorLightsOn(i32);
 
@@ -203,8 +211,4 @@ static __used__ void StoreUnlockArcade() {
 static __used__ void StoreUnlockBounty() {
 }
 static __used__ void StoreUnlockChallenge() {
-}
-
-static __used__ i32 Shop_GetInput(SHOPINPUT *) {
-    return 0;
 }

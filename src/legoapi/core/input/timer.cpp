@@ -5,6 +5,7 @@
 
 // Original bss @0x127a164.
 TIMER GlobalTimer;
+f32 LastTouchTime;
 
 void ResetTimer(TIMER *timer, f32 reset_time) {
     timer->last_time_elapsed = reset_time;

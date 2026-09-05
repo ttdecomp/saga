@@ -7,6 +7,24 @@ struct GameObject_s;
 
 // Gamepad system (module legoapi/core/input, gamepads.cpp).
 
+extern "C" GAMEPAD_s GamePad[64];
+
+// Directional/button mask constants (original .data @0x667bf0-0x667c40).
+extern u32 GAMEPAD_DRIGHT;
+extern u32 GAMEPAD_DLEFT;
+extern u32 GAMEPAD_DDOWN;
+extern u32 GAMEPAD_DUP;
+extern u32 GAMEPAD_TOGGLERIGHT;
+extern u32 GAMEPAD_TOGGLELEFT;
+extern u32 GAMEPAD_TAG;
+extern u32 GAMEPAD_SPECIAL;
+extern u32 GAMEPAD_ACTION;
+extern u32 GAMEPAD_JUMP;
+extern u32 GAMEPAD_START;
+extern u32 GAMEPAD_SELECT;
+extern u32 GAMEPAD_MENUSELECT;
+extern u32 GAMEPAD_MENUCANCEL;
+
 void GamePads_Init();
 GAMEPAD_s *GamePad_Allocate();
 u16 GamePad_InputAngle(GameObject_s *object, GAMEPAD_s *pad);

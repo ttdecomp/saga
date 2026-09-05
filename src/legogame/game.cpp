@@ -251,6 +251,7 @@ void InitGameBeforeConfig(void) {
     Game_CharacterSave = Game.character_save;
     Game_CompletionSave = &Game.completion;
     Game_MissionSave = &Game.mission_save;
+    StatusCollectList.ptr = reinterpret_cast<STATUSCOLLECT_s *>(&Game.completion);
 
     ResetSeeds();
     ResetTimer(&GlobalTimer, 0.0f);

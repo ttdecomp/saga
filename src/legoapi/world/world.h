@@ -65,6 +65,8 @@ struct GIZSPECIALSYS_s;
 struct TRAFFICANIMSYS_s;
 struct PLUGSYS_s;
 struct GIZTIMER_s;
+struct MINICUT_s;
+struct MINICUTPART_s;
 struct TIMER_s;
 struct LEVEL_OBJECT_RUNTIME_s;
 struct spacelevel_s;
@@ -271,7 +273,11 @@ typedef struct WORLDINFO_s {
 
     GIZRANDOMSYS_s *giz_randoms;
 
-    char filler12[0x50fc - 0x50dc];
+    char filler12a[0x50ec - 0x50dc];
+    NUMTX *gizmo_blowup_mtx_buffer;            // 0x50ec, aligned 0x8000-byte animation matrix arena
+    MINICUT_s *minicuts;                       // 0x50f0
+    MINICUTPART_s *minicut_parts;              // 0x50f4
+    i32 minicut_count;                         // 0x50f8
     struct GIZTIMER_s *giz_timers;             // 0x50fc
     i32 giz_timers_count;                      // 0x5100
     GIZTORPMACHINESYS_s *giz_torp_machine_sys; // 0x5104
@@ -325,6 +331,9 @@ DECOMP_ASSERT(offsetof(WORLDINFO, grapple_count) == 0x5088, "WORLDINFO grapple c
 DECOMP_ASSERT(offsetof(WORLDINFO, plug_sys) == 0x5170, "WORLDINFO plug-system offset");
 DECOMP_ASSERT(offsetof(WORLDINFO, game_antinode_sys) == 0x5110, "WORLDINFO game-antinode system offset");
 DECOMP_ASSERT(offsetof(WORLDINFO, gizmo_blowups) == 0x50cc, "WORLDINFO blowup array offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, minicuts) == 0x50f0, "WORLDINFO minicut array offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, minicut_parts) == 0x50f4, "WORLDINFO minicut-part array offset");
+DECOMP_ASSERT(offsetof(WORLDINFO, minicut_count) == 0x50f8, "WORLDINFO minicut count offset");
 DECOMP_ASSERT(offsetof(WORLDINFO, giz_timers) == 0x50fc, "WORLDINFO gizmo-timer array offset");
 DECOMP_ASSERT(offsetof(WORLDINFO, giz_timers_count) == 0x5100, "WORLDINFO gizmo-timer count offset");
 DECOMP_ASSERT(offsetof(WORLDINFO, spinners) == 0x46e4, "WORLDINFO spinner array offset");

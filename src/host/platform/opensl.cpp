@@ -269,12 +269,11 @@ namespace hostsl {
         // shared registry (device callback thread vs NuMain thread)
         // ---------------------------------------------------------------------------
 
-        // The device-side buffer (the AudioTrack analog): real SL copies the
-        // SL queue's front buffer into the AudioTrack as its buffer drains and
-        // removes buffers from the SL queue on that hand-off, so the playhead
-        // lags the queue by the AudioTrack buffer size. The cap bounds how much the
-        // device holds; 16384 device bytes ≈ 4 × 21 ms periods at 48 kHz.
-        const u32 HOST_TRACK_CAP_BYTES = 16384;
+        // Keep one SDL callback period between the OpenSL queue and the device.
+        // Feeding four periods here removed both of the game's initial stream
+        // buffers from GetState() in one callback, before its original two-buffer
+        // low-watermark logic could observe and refill the queue.
+        const u32 HOST_TRACK_CAP_BYTES = 4096;
 
         // Frees and drops every queued entry.
         void host_queue_release_all(Player *player) {
@@ -558,6 +557,9 @@ namespace hostsl {
         u32 host_play_set_play_state(void *self, u32 state) {
             Player *player = (Player *)HOSTSL_CONTAINER_OF(self, Player, play_itf);
             player->play_state = state;
+            if (state != 3) {
+                player->underrunning = false;
+            }
             return HOST_SL_RESULT_SUCCESS;
         }
 
@@ -770,13 +772,13 @@ namespace hostsl {
                     const u32 available = (u32)SDL_GetAudioStreamAvailable(player->stream);
                     const u32 take = (available < chunk ? available : chunk) & ~3u;
                     if (take == 0) {
-                        // Underrun: nothing queued means the play head sits at the end
-                        // of the last buffer, which is when real SL raises
-                        // SL_PLAYEVENT_HEADATEND. The streaming refill starts here.
+                        // Reaching the end is normal for one-shot sounds. Real SL
+                        // raises SL_PLAYEVENT_HEADATEND here; only call it an
+                        // underrun if this same playing voice later resumes with
+                        // another buffer.
                         if (!player->underrunning) {
                             player->underrunning = true;
                             player->underrun_start_ms = SDL_GetTicks();
-                            LOG_WARN("audio: buffer underrun on player %p (playing, queue empty)", (void *)player);
                             if (fired_count < HOST_FIRED_MAX) {
                                 fired[fired_count++] = player;
                             }
@@ -789,7 +791,7 @@ namespace hostsl {
                     }
                     if (player->underrunning) {
                         player->underrunning = false;
-                        LOG_WARN("audio: player %p underrun recovered after %.1f ms", (void *)player,
+                        LOG_WARN("audio: streaming starvation on player %p recovered after %.1f ms", (void *)player,
                                  (double)(SDL_GetTicks() - player->underrun_start_ms));
                     }
 

@@ -98,28 +98,24 @@ DECOMP_ASSERT(sizeof(AREA_GLOBALS) == 0x34, "AREA_GLOBALS size");
 // ----------------------------------------------------------------------
 // Placeholder save-game / model-list structures.
 // ----------------------------------------------------------------------
-typedef struct CHEAT { /* PlaceHolder Structure */
+typedef struct CHEAT {
     char *name;
-    undefined field1_0x4;
-    undefined field2_0x5;
-    undefined field3_0x6;
-    undefined field4_0x7;
-    byte enabled; /* Created by retype action */
-    undefined field6_0x9;
-    undefined field7_0xa;
+    i16 *text_id;
+    byte enabled;
+    undefined field_0x09;
+    undefined field_0x0a;
     u8 area;
-    undefined field9_0xc;
-    undefined field10_0xd;
-    undefined field11_0xe;
-    undefined field12_0xf;
+    i32 field_0x0c;
     char *code;
-    undefined field14_0x14;
-    undefined field15_0x15;
-    undefined field16_0x16;
-    undefined field17_0x17;
+    i32 extra_price;
     char *extra_name;
     u32 flag;
 } CHEAT;
+DECOMP_ASSERT(sizeof(CHEAT) == 0x20, "CHEAT size");
+DECOMP_ASSERT(offsetof(CHEAT, enabled) == 0x08, "CHEAT enabled offset");
+DECOMP_ASSERT(offsetof(CHEAT, extra_price) == 0x14, "CHEAT extra price offset");
+DECOMP_ASSERT(offsetof(CHEAT, extra_name) == 0x18, "CHEAT extra name offset");
+DECOMP_ASSERT(offsetof(CHEAT, flag) == 0x1c, "CHEAT flags offset");
 
 struct OPTIONSSAVE_s { /* PlaceHolder Structure */
     undefined field0_0x0;
@@ -173,7 +169,8 @@ struct GAMESAVE_s {
     EPISODESAVE_s episode_save[9];
     u32 field_0x7bf8;
     u32 initial_store_pack_flags;
-    u8 field_0x7c00[0x20];
+    u8 field_0x7c00[8];
+    u32 hint_completion_bits[6]; // 0x7c08
     u32 coins;
     u16 completion;
     u8 field_0x7c26[6];
@@ -191,6 +188,19 @@ DECOMP_ASSERT(offsetof(GAMESAVE_s, episode_save) == 0x7b8c, "GAMESAVE episode sa
 DECOMP_ASSERT(offsetof(GAMESAVE_s, initial_store_pack_flags) == 0x7bfc, "GAMESAVE store flags offset");
 DECOMP_ASSERT(offsetof(GAMESAVE_s, customizer) == 0x7c30, "GAMESAVE customizer offset");
 DECOMP_ASSERT(offsetof(GAMESAVE_s, character_save) == 0x7d04, "GAMESAVE character save offset");
+
+struct STATUSCOLLECT_s {
+    u16 completion_points;
+    u8 gold_bricks;
+    u8 flags;
+};
+DECOMP_ASSERT(sizeof(STATUSCOLLECT_s) == 4, "STATUSCOLLECT size");
+
+struct STATUSCOLLECTLIST_s {
+    STATUSCOLLECT_s *ptr;
+    u8 pad_0x04[0x0c];
+};
+DECOMP_ASSERT(sizeof(STATUSCOLLECTLIST_s) == 0x10, "STATUSCOLLECTLIST size");
 
 struct CHARCAT_s {
     undefined field0_0x0[4];
@@ -311,6 +321,7 @@ extern EPISODESAVE_s *Game_EpisodeSave;
 extern u8 *Game_CharacterSave;
 extern u16 *Game_CompletionSave;
 extern MISSIONSAVE *Game_MissionSave;
+extern STATUSCOLLECTLIST_s StatusCollectList;
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -362,21 +373,35 @@ extern i32 CompletionPointInfo[7];
 extern i32 OldBonusScore[2];
 extern i32 BonusScore[2];
 extern i32 BonusCoinTotal;
+extern u32 BonusCoinTarget;
 
 // ------------------------------------------------------------------------
 // Gameplay panel / coin-total state
 // ------------------------------------------------------------------------
 extern f32 STATSPOSY;
 extern f32 STATSPOS2Y;
+extern f32 PANEL_HEARTY;
+extern f32 PANEL_HITPOINTSX;
 extern f32 COINTOTAL_SCOREDY;
 extern f32 COINTOTAL_COINDX;
 extern f32 COINTOTAL_COINSIZE;
 extern f32 COINTOTAL_SCORESIZE;
 extern f32 PANEL_COINADJUSTDY;
+extern f32 PANEL_COINSCALE_END;
+extern f32 PANEL_COINSCALE_START;
+extern f32 PANEL_COINY;
+extern f32 PANEL_COINX;
 extern f32 CoinTotalScale;
 extern f32 cointotal_x[2];
 extern i32 cointotal_i_obj[2];
 extern i32 SuperStoryEpisode;
+#ifdef __cplusplus
+extern "C" {
+#endif
+    extern i32 SuperStory;
+#ifdef __cplusplus
+}
+#endif
 extern f32 SuperStoryTimer[4];
 extern u32 SuperStoryScore;
 
@@ -477,6 +502,7 @@ extern f32 VehicleAreaRememberSpeed;
 extern nugspline_s *ObstacleCamSpl;
 extern GAMECAMERA_s *GameCam;
 extern i32 (*GameCam_ObjLookingWithLeftStick)(GameObject_s *object);
+extern i32 LookAtBoth;
 extern PLAYPLANE_s PlayPlane[6];
 extern i32 KEEPONSCREEN_SIDESONLY;
 extern NUVEC GunshipANorm;
@@ -515,6 +541,7 @@ extern DETONATOR_s Detonator[10];
 // ------------------------------------------------------------------------
 extern i32 BonusWinner;
 extern i32 BonusWinFlag;
+extern i32 BonusArea;
 extern i32 ChallengeMode;
 extern struct TIMER_s ChallengeTimer;
 extern i32 LSW1;
@@ -571,6 +598,12 @@ extern EXTRAMODEL ExtraModelList[];
 extern COLLECTION_s CharacterCollection;
 extern COLLECTION_s VehicleCollection;
 extern COLLECTION_s MiniKitCollection;
+extern COLLECTION_s MasterCollection;
+extern COLLECTION_s ShopCollection;
+extern COLLECTION_s JediCollection;
+extern COLLECTION_s BlasterCollection;
+extern COLLECTION_s BountyHunterCollection;
+extern f32 COLLECTION_DEFAULTSCALE;
 extern ARCADEITEM_s ArcadeItem;
 extern ARCADE_MODE_s Arcade_Mode[];
 extern GAME_CUSTOMISER_s *Game_Customiser;
@@ -602,6 +635,8 @@ extern char *ExtraLevelObject_NameTable;
 extern i32 ExtraLevelObject_NameTableSize;
 extern i32 ExtraLevelObject_NameTableIndex;
 extern i32 KNOBS;
+extern i32 PLAYERHITPOINTS_2HEARTSIN1;
+extern i32 drawbosshitpoints_2rows;
 
 extern i16 drawcharicon_hspecial_spin;
 extern f32 drawcharicon_hspecial_dz;
@@ -899,7 +934,7 @@ extern void (*AIPathCnxHelperSysInitFn)(WORLDINFO_s *);
 extern LEVELOBJECT ObjTab[0x2ee]; // level-object type table (.data @0x618240, 0xff-terminated)
 extern struct LEVELSPLINE SplTab[26];
 extern u8 LSW_CharCategory[0x78];
-extern u8 Cheat[0x5a0];
+extern CHEAT Cheat[45];
 extern u8 CharVariants_Game[0x5c];
 extern MemoryManager theMemoryManager;
 extern struct TEXTENTRY LSW_Text[713];
@@ -934,7 +969,7 @@ extern i32 menu_flash;              // bss
 extern i32 noscenespecials;         // disables automatic display-scene specials
 extern i32 portals_enabled;
 extern i32 portal_special_objects; // portal visibility also filters display-scene specials
-extern u8 PortalVisiFlags[0x271];  // one portal-visibility byte per scene instance
+extern u8 PortalVisiFlags[0x271];  // portal-visibility bitset for up to 5000 scene instances
 extern f32 game_pulse;
 extern f32 global_pulse;
 extern i32 IntroText_TextID; // .data init -1

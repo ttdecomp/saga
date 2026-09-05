@@ -21,7 +21,9 @@ Run clang-tidy for the three build modes with:
 ```sh
 bazel build --config=target //src:clang_tidy_target
 bazel build --config=native //src:clang_tidy_native
+bazel build --config=native_release //src:clang_tidy_native
 bazel build --config=wasm //src:clang_tidy_wasm
+bazel build --config=wasm_release //src:clang_tidy_wasm
 ```
 
 These targets attach clang-tidy directly to the configured Bazel C/C++ targets.

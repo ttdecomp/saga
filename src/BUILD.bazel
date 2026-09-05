@@ -13,6 +13,15 @@ load(
 
 package(default_visibility = ["//visibility:public"])
 
+config_setting(
+    name = "native_linux_debug",
+    constraint_values = ["@platforms//os:linux"],
+    define_values = {
+        "SAGA_BUILD": "native",
+        "SAGA_MODE": "debug",
+    },
+)
+
 _ENGINE_DIRS = [
     "MechInputTouch",
     "editor",
@@ -58,6 +67,7 @@ _HOST_COMMON_SRCS = [source for source in _ENGINE_SRCS if source not in _HOST_EX
 
 _NATIVE_PLATFORM_SRCS = ["host/platform/native_render_device.cpp"] + select({
     "//bazel/platforms:linux": [
+        "host/platform/linux/render_device.cpp",
         "host/platform/linux/runtime.cpp",
         "host/platform/posix/compressed_texture.cpp",
         "host/platform/posix/egl.cpp",
@@ -161,8 +171,10 @@ _HOST_PLATFORM_COPTS = select({
     "//bazel/platforms:linux": [
         "-m32",
         "-march=i686",
-        "-fsanitize=address,undefined",
     ],
+    "//conditions:default": [],
+}) + select({
+    ":native_linux_debug": ["-fsanitize=address,undefined"],
     "//conditions:default": [],
 }) + select({
     "//bazel/platforms:x86_64": ["-msse2"],
@@ -237,7 +249,7 @@ cc_binary(
     linkopts = select({
         "//bazel/platforms:linux": [
             "-m32",
-            "-fsanitize=address,undefined",
+            "-Wl,--wrap=NuFrameEnd",
         ],
         "//bazel/platforms:macos": [
             "-framework",
@@ -248,6 +260,9 @@ cc_binary(
         "//bazel/platforms:windows": [
             "-Wl,--export-all-symbols",
         ],
+        "//conditions:default": [],
+    }) + select({
+        ":native_linux_debug": ["-fsanitize=address,undefined"],
         "//conditions:default": [],
     }),
     linkstatic = False,

@@ -31,13 +31,37 @@ namespace {
             LOG_ERR("SDL_Init failed: %s", SDL_GetError());
             return;
         }
+#if defined(__linux__) && !defined(__EMSCRIPTEN__)
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+        SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+        SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+        SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+        SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
+#endif
 
-        SDL_Window *window = SDL_CreateWindow("saga-audio", 1280, 720, 0);
+        SDL_WindowFlags window_flags = 0;
+#if defined(__linux__) && !defined(__EMSCRIPTEN__)
+        window_flags = SDL_WINDOW_OPENGL;
+#endif
+        SDL_Window *window = SDL_CreateWindow("saga-audio", 1280, 720, window_flags);
         if (window == nullptr) {
             LOG_ERR("SDL_CreateWindow failed: %s", SDL_GetError());
             return;
         }
 
+#if defined(__linux__) && !defined(__EMSCRIPTEN__)
+        SDL_GLContext bootstrap_context = SDL_GL_CreateContext(window);
+        if (bootstrap_context == nullptr) {
+            LOG_ERR("SDL_GL_CreateContext failed: %s", SDL_GetError());
+            return;
+        }
+        HostSetSDLGraphics(window, bootstrap_context);
+#endif
         g_renderDevice.OnWindowCreated(HostPlatformNativeWindow(window));
     }
 

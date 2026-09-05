@@ -446,7 +446,7 @@ i32 ResetGizmoType(GIZMOSYS *gizmo_sys, i32 type_id, char *name) {
     }
 
     gizmo_sys->sets[type_id].count = 0;
-    memset(gizmo_sys->sets[type_id].gizmos, 0, gizmo_sys->sets[type_id].max_count * sizeof(GIZMO));
+    SAGA_HOST_SAFE_MEMSET(gizmo_sys->sets[type_id].gizmos, 0, gizmo_sys->sets[type_id].max_count * sizeof(GIZMO));
 
     return 1;
 }

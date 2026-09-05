@@ -200,10 +200,6 @@ u16 GameCam_GetAdjustedYRot(GAMECAMERA_s *camera) {
     return static_cast<u16>(camera->input_yaw + static_cast<i32>(camera->field_0x218));
 }
 
-static __used__ variptr_u buildFrustrum(nuvec_s *, nuvec_s *, i16) {
-    return {};
-}
-
 extern "C" {
 
     void CameraEmitterDistance(void) {

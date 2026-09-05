@@ -290,7 +290,7 @@ extern "C" {
     }
     void NuCameraIntersectsAABB(void) {
     }
-    void NuCameraLock(void) {
+    void NuCameraLock(i32) {
     }
     void NuCameraMotionBlurEffect(void) {
     }
@@ -1512,7 +1512,7 @@ extern "C" {
         if (data == NULL) {
             return NULL;
         }
-        nuanimdata2_s *anim = reinterpret_cast<nuanimdata2_s *>(reinterpret_cast<u8 *>(data) + delta);
+        nuanimdata2_s *anim = reinterpret_cast<nuanimdata2_s *>(reinterpret_cast<usize>(data) + delta);
         if (*reinterpret_cast<u32 *>(&anim->duration) + 0xbeb1b6ccU < 2) {
             ANI_FixUpAddrs(reinterpret_cast<ani3_animheader_s *>(anim),
                            external_delta == 0 ? static_cast<isize>(reinterpret_cast<usize>(anim)) : delta, flags);
@@ -1520,32 +1520,32 @@ extern "C" {
         }
 
         if (anim->curves != NULL) {
-            anim->curves = reinterpret_cast<nuanimcurve2_s *>(reinterpret_cast<u8 *>(anim->curves) + delta);
+            anim->curves = reinterpret_cast<nuanimcurve2_s *>(reinterpret_cast<usize>(anim->curves) + delta);
         }
         if (anim->curve_types != NULL) {
-            anim->curve_types = reinterpret_cast<u8 *>(anim->curve_types) + delta;
+            anim->curve_types = reinterpret_cast<u8 *>(reinterpret_cast<usize>(anim->curve_types) + delta);
         }
         if (anim->node_flags != NULL) {
-            anim->node_flags = reinterpret_cast<u8 *>(anim->node_flags) + delta;
+            anim->node_flags = reinterpret_cast<u8 *>(reinterpret_cast<usize>(anim->node_flags) + delta);
         }
         i32 curve_count = static_cast<i32>(anim->curve_count) * static_cast<i32>(anim->node_count);
         for (i32 i = 0; i < curve_count; ++i) {
             if (anim->curve_types[i] != 0) {
                 nuanimcurvedata_s *curve = anim->curves[i].data.curvedata;
                 if (curve != NULL) {
-                    curve = reinterpret_cast<nuanimcurvedata_s *>(reinterpret_cast<u8 *>(curve) + delta);
+                    curve = reinterpret_cast<nuanimcurvedata_s *>(reinterpret_cast<usize>(curve) + delta);
                     anim->curves[i].data.curvedata = curve;
                 } else {
                     continue;
                 }
                 if (curve->key_mask != NULL) {
-                    curve->key_mask = reinterpret_cast<u32 *>(reinterpret_cast<u8 *>(curve->key_mask) + delta);
+                    curve->key_mask = reinterpret_cast<u32 *>(reinterpret_cast<usize>(curve->key_mask) + delta);
                 }
                 if (curve->key_offsets != NULL) {
-                    curve->key_offsets = reinterpret_cast<u16 *>(reinterpret_cast<u8 *>(curve->key_offsets) + delta);
+                    curve->key_offsets = reinterpret_cast<u16 *>(reinterpret_cast<usize>(curve->key_offsets) + delta);
                 }
                 if (curve->key_data != NULL) {
-                    curve->key_data = reinterpret_cast<u8 *>(curve->key_data) + delta;
+                    curve->key_data = reinterpret_cast<u8 *>(reinterpret_cast<usize>(curve->key_data) + delta);
                 }
             }
         }
@@ -3017,8 +3017,6 @@ extern "C" {
 
     void NuPortalClipTest(void) {
     }
-    void NuPortalClipTestBox(void) {
-    }
     i32 NuPortalEnabled(i32 enabled) {
         const i32 previous = portals_enabled;
         portals_enabled = enabled;
@@ -3090,12 +3088,15 @@ extern "C" {
                 NUROOM &first = scene->rooms[candidates[0]];
                 NUROOM &second = scene->rooms[candidates[1]];
                 if (first.priority < second.priority) {
-                    candidates[1] = static_cast<i16>(room_index);
-                } else {
                     candidates[0] = static_cast<i16>(room_index);
+                } else {
+                    candidates[1] = static_cast<i16>(room_index);
                 }
                 candidate_count = 3;
-                continue;
+                // The original scan leaves the candidate loop here. Keeping
+                // the sentinel prevents a third room from indexing past the
+                // two candidate slots below.
+                break;
             }
 
             candidates[candidate_count++] = static_cast<i16>(room_index);
@@ -3137,12 +3138,46 @@ extern "C" {
     }
     void NuVisiBoxTree(void) {
     }
-    void *NuVisiEvaluate(NUGSCN *, void *) {
-        return NULL;
+    i32 VisiSysCameraLock;
+    i32 LoadedOcclusionData;
+    i32 do_InstTree = 1;
+    i32 do_occlusion = 1;
+    i32 do_visibility = 1;
+
+    void NuVisiInstTree(void *, NUGSCN *);
+    void NuVisiOcclusion(void *);
+
+    void *NuVisiEvaluate(NUGSCN *scene, void *visibility_context) {
+        void *result = NULL;
+        if (visibility_context != NULL && do_visibility != 0) {
+            result = &scene->visibility_result_instance_count;
+            NuCameraLock(VisiSysCameraLock);
+            scene->visibility_context = NULL;
+            scene->instance_tree_visibility_flags = NULL;
+            NUGSCN *source_scene = scene->visibility_source_scene;
+            scene->visibility_result_instance_count =
+                source_scene == NULL ? scene->num_instances : source_scene->num_instances;
+            scene->visibility_state &= 0xea;
+            LoadedOcclusionData = result != NULL;
+            if (do_occlusion != 0 && scene->occlusion_data != NULL) {
+                NuVisiOcclusion(result);
+            }
+            if (scene->portal_visibility_marker == NULL || portals_enabled == 0) {
+                if (scene->instance_visibility_tree != NULL && do_InstTree != 0) {
+                    scene->visibility_context = visibility_context;
+                    NuVisiInstTree(result, scene);
+                    scene->visibility_state |= 1;
+                }
+            } else {
+                NuPortalVisibility(scene);
+            }
+            NuCameraUnlock();
+        }
+        return result;
     }
-    void NuVisiInstTree(void) {
+    void NuVisiInstTree(void *, NUGSCN *) {
     }
-    void NuVisiOcclusion(void) {
+    void NuVisiOcclusion(void *) {
     }
     void NuVisiOctree(void) {
     }

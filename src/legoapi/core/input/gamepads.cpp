@@ -32,6 +32,21 @@ GAMEPAD_s GamePad[64];
 // Original bss @0x127a4e0.
 i32 readpads_always = 0;
 
+u32 GAMEPAD_DRIGHT = 0x2000;
+u32 GAMEPAD_DLEFT = 0x8000;
+u32 GAMEPAD_DDOWN = 0x4000;
+u32 GAMEPAD_DUP = 0x1000;
+u32 GAMEPAD_TOGGLERIGHT = 10;
+u32 GAMEPAD_TOGGLELEFT = 5;
+u32 GAMEPAD_TAG = 16;
+u32 GAMEPAD_SPECIAL = 32;
+u32 GAMEPAD_ACTION = 128;
+u32 GAMEPAD_JUMP = 64;
+u32 GAMEPAD_START = 2048;
+u32 GAMEPAD_SELECT = 256;
+u32 GAMEPAD_MENUSELECT = 64;
+u32 GAMEPAD_MENUCANCEL = 16;
+
 // Two frames of direction history for each local player.  MovePlayer shifts
 // these before accepting the new input; GamePad_Rotate then reports a stable
 // angular velocity only when both consecutive turns agree.
@@ -209,9 +224,6 @@ void SpaceRumbleProcess() {
 }
 
 void NewRumbleAllPlayers(float, float, i32, i32) {
-}
-
-void NewStatusRumbleBuzz(i32, float, float, i32) {
 }
 
 i32 ObjLookingWithLeftStick(GameObject_s *object) {

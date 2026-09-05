@@ -38,6 +38,7 @@ struct TouchHolder;
 void CheckForPlayersTurnedOff();
 
 extern NUVEC plr_lastpos;
+extern void *CutScenePlayer;
 
 extern void GetTopBot(GameObject_s *obj);
 extern void GameObjectDimensions(GameObject_s *obj);
@@ -669,7 +670,7 @@ PLAYERSTARTENTRY PlayerStart[8];
 // ---- Misc player/gameobject helpers relocated from doorstubs.cpp ----
 
 void *CutScenePlayer_Available(void) {
-    return NULL;
+    return CutScenePlayer;
 }
 
 void ChatterSfx(GameObject_s *g, i32 a, float b) {
@@ -731,22 +732,6 @@ i32 Player_HasPurpleForce(GameObject_s *obj) {
     (void)obj;
     return 0;
 }
-
-// Directional/button mask constants (original .data @0x667bf0-0x667c40).
-u32 GAMEPAD_DRIGHT = 0x2000;
-u32 GAMEPAD_DLEFT = 0x8000;
-u32 GAMEPAD_DDOWN = 0x4000;
-u32 GAMEPAD_DUP = 0x1000;
-u32 GAMEPAD_TOGGLERIGHT = 10;
-u32 GAMEPAD_TOGGLELEFT = 5;
-u32 GAMEPAD_TAG = 16;
-u32 GAMEPAD_SPECIAL = 32;
-u32 GAMEPAD_ACTION = 128;
-u32 GAMEPAD_JUMP = 64;
-u32 GAMEPAD_START = 2048;
-u32 GAMEPAD_SELECT = 256;
-u32 GAMEPAD_MENUSELECT = 64;
-u32 GAMEPAD_MENUCANCEL = 16;
 
 void PlayerTakeHit(GameObject_s *, GameObject_s *) {
 }
