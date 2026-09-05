@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 15.3176,
+    "fuzzy_match_percent": 15.326643,
     "total_code": "4722419",
-    "matched_code": "37401",
-    "matched_code_percent": 0.79198813,
+    "matched_code": "37472",
+    "matched_code_percent": 0.79349166,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 947,
-    "matched_functions_percent": 7.036184,
+    "matched_functions": 948,
+    "matched_functions_percent": 7.0436144,
     "total_units": 1
   },
   "text": {
@@ -38846,7 +38846,7 @@
           "address": 1142960,
           "offset": 252992,
           "size": 223,
-          "match_percent": 8.936171
+          "match_percent": 99.14893
         },
         {
           "name": "_ZL24MenuUpdateSelectLanguageP6MENU_s",
@@ -48259,7 +48259,7 @@
           "address": 2987824,
           "offset": 2097856,
           "size": 71,
-          "match_percent": 32.576923
+          "match_percent": 100.0
         },
         {
           "name": "AnimEndFrame",
@@ -72605,7 +72605,7 @@
           "address": 2395456,
           "offset": 1505488,
           "size": 230,
-          "match_percent": 6.885246
+          "match_percent": 41.34426
         },
         {
           "name": "_Z14DrawCodeMenu3Dv",
@@ -72637,7 +72637,7 @@
           "address": 2398704,
           "offset": 1508736,
           "size": 2082,
-          "match_percent": 11.863081
+          "match_percent": 12.183374
         },
         {
           "name": "_Z12DrawSubItemsv",
@@ -72653,7 +72653,7 @@
           "address": 2406880,
           "offset": 1516912,
           "size": 27,
-          "match_percent": 35.0
+          "match_percent": 99.875
         },
         {
           "name": "_Z10DrawShop3DP11WORLDINFO_s",
@@ -74330,7 +74330,7 @@
           "address": 2567152,
           "offset": 1677184,
           "size": 52,
-          "match_percent": 35.0
+          "match_percent": 99.75
         },
         {
           "name": "_Z17LinkShaderProgramj",
@@ -95291,7 +95291,7 @@
           "address": 2867392,
           "offset": 1977424,
           "size": 359,
-          "match_percent": 18.709677
+          "match_percent": 29.096775
         },
         {
           "name": "NuAnimData2Relocate",
@@ -107167,7 +107167,7 @@
           "address": 3447648,
           "offset": 2557680,
           "size": 831,
-          "match_percent": 18.748878
+          "match_percent": 19.161434
         }
       ]
     },

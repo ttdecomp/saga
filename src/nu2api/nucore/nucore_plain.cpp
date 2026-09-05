@@ -1512,7 +1512,7 @@ extern "C" {
         if (data == NULL) {
             return NULL;
         }
-        nuanimdata2_s *anim = reinterpret_cast<nuanimdata2_s *>(reinterpret_cast<u8 *>(data) + delta);
+        nuanimdata2_s *anim = reinterpret_cast<nuanimdata2_s *>(reinterpret_cast<usize>(data) + delta);
         if (*reinterpret_cast<u32 *>(&anim->duration) + 0xbeb1b6ccU < 2) {
             ANI_FixUpAddrs(reinterpret_cast<ani3_animheader_s *>(anim),
                            external_delta == 0 ? static_cast<isize>(reinterpret_cast<usize>(anim)) : delta, flags);
@@ -1520,32 +1520,32 @@ extern "C" {
         }
 
         if (anim->curves != NULL) {
-            anim->curves = reinterpret_cast<nuanimcurve2_s *>(reinterpret_cast<u8 *>(anim->curves) + delta);
+            anim->curves = reinterpret_cast<nuanimcurve2_s *>(reinterpret_cast<usize>(anim->curves) + delta);
         }
         if (anim->curve_types != NULL) {
-            anim->curve_types = reinterpret_cast<u8 *>(anim->curve_types) + delta;
+            anim->curve_types = reinterpret_cast<u8 *>(reinterpret_cast<usize>(anim->curve_types) + delta);
         }
         if (anim->node_flags != NULL) {
-            anim->node_flags = reinterpret_cast<u8 *>(anim->node_flags) + delta;
+            anim->node_flags = reinterpret_cast<u8 *>(reinterpret_cast<usize>(anim->node_flags) + delta);
         }
         i32 curve_count = static_cast<i32>(anim->curve_count) * static_cast<i32>(anim->node_count);
         for (i32 i = 0; i < curve_count; ++i) {
             if (anim->curve_types[i] != 0) {
                 nuanimcurvedata_s *curve = anim->curves[i].data.curvedata;
                 if (curve != NULL) {
-                    curve = reinterpret_cast<nuanimcurvedata_s *>(reinterpret_cast<u8 *>(curve) + delta);
+                    curve = reinterpret_cast<nuanimcurvedata_s *>(reinterpret_cast<usize>(curve) + delta);
                     anim->curves[i].data.curvedata = curve;
                 } else {
                     continue;
                 }
                 if (curve->key_mask != NULL) {
-                    curve->key_mask = reinterpret_cast<u32 *>(reinterpret_cast<u8 *>(curve->key_mask) + delta);
+                    curve->key_mask = reinterpret_cast<u32 *>(reinterpret_cast<usize>(curve->key_mask) + delta);
                 }
                 if (curve->key_offsets != NULL) {
-                    curve->key_offsets = reinterpret_cast<u16 *>(reinterpret_cast<u8 *>(curve->key_offsets) + delta);
+                    curve->key_offsets = reinterpret_cast<u16 *>(reinterpret_cast<usize>(curve->key_offsets) + delta);
                 }
                 if (curve->key_data != NULL) {
-                    curve->key_data = reinterpret_cast<u8 *>(curve->key_data) + delta;
+                    curve->key_data = reinterpret_cast<u8 *>(reinterpret_cast<usize>(curve->key_data) + delta);
                 }
             }
         }

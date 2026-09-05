@@ -227,28 +227,36 @@ static NUFPCOMJMP audioCom[] = {
 
 void LoadSfx(const char *file, variptr_u *buffer_start, variptr_u buffer_end);
 
+#if defined(__i386__)
+__attribute__((force_align_arg_pointer))
+#endif
 void InitSfx(variptr_u *buffer_start, variptr_u buffer_end, const char *file) {
     // bVar15 = 0;
     // g_soundMap = (short *)((i32)buffer_start->voidptr + 3U & 0xfffffffc);
-    g_soundMap = BUFFER_ALLOC_ARRAY(buffer_start, 0x100, u16);
+    usize allocation = ALIGN(buffer_start->addr, 4);
+    g_soundMap = reinterpret_cast<u16 *>(allocation);
 
     // sfx_info = (nusound_filename_info_s *)(g_soundMap + 0x100);
     // SfxInfo = sfx_info;
     // buffer_start->voidptr = g_soundMap + 0x6500;
     // memset(sfx_info, 0, 0xc800);
-    SfxInfo = BUFFER_ALLOC_ARRAY(buffer_start, 1600, nusound_filename_info_s);
+    SfxInfo = reinterpret_cast<nusound_filename_info_s *>(allocation + 0x100 * sizeof(u16));
+    buffer_start->addr = reinterpret_cast<usize>(SfxInfo + 1600);
+    memset(SfxInfo, 0, 1600 * sizeof(nusound_filename_info_s));
 
     // sound_info = (SoundInfo *)((i32)buffer_start->voidptr + 3U & 0xfffffffc);
     // g_soundInfo = sound_info;
     // buffer_start->voidptr = sound_info + 0x640;
     // memset(sound_info, 0, 0x1a900);
-    g_soundInfo = BUFFER_ALLOC_ARRAY(buffer_start, 1600, NUSOUNDINFO);
+    g_soundInfo = static_cast<NUSOUNDINFO *>(BUFFER_ALLOC(buffer_start, 1600 * sizeof(NUSOUNDINFO), 4));
+    memset(g_soundInfo, 0, 1600 * sizeof(NUSOUNDINFO));
 
     //__s = (void *)((i32)buffer_start->voidptr + 3U & 0xfffffffc);
     // g_revertSoundInfo = __s;
     // buffer_start->voidptr = (void *)((i32)__s + 0x1a900);
     // memset(__s, 0, 0x1a900);
-    g_revertSoundInfo = BUFFER_ALLOC_ARRAY(buffer_start, 1600, NUSOUNDINFO);
+    g_revertSoundInfo = static_cast<NUSOUNDINFO *>(BUFFER_ALLOC(buffer_start, 1600 * sizeof(NUSOUNDINFO), 4));
+    memset(g_revertSoundInfo, 0, 1600 * sizeof(NUSOUNDINFO));
 
     CRC_Init(buffer_start);
 

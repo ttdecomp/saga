@@ -536,7 +536,7 @@ namespace {
         return host_write_ppm(filename, pixels.data(), width, height);
     }
 
-    static void host_sdl_init(bool offscreen, bool mute) {
+    static void host_sdl_init(bool offscreen, bool mute, bool msaa) {
         const char *video_driver = HostPlatformVideoDriver();
         SDL_SetHint(SDL_HINT_VIDEO_DRIVER, video_driver);
         if (mute) {
@@ -549,8 +549,28 @@ namespace {
         }
         SDL_InitSubSystem(SDL_INIT_AUDIO);
 
-        const SDL_WindowFlags window_flags =
+#if defined(__linux__) && !defined(__EMSCRIPTEN__)
+        // The 32-bit NVIDIA package does not provide the vendor's external EGL
+        // platform modules. SDL's GLX path can still create a hardware GLES2
+        // context, which the Linux host render-device adapter adopts below.
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+        SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 5);
+        SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 6);
+        SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 5);
+        SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 0);
+        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+        SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 0);
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, msaa ? 1 : 0);
+        SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, msaa ? 4 : 0);
+#endif
+
+        SDL_WindowFlags window_flags =
             offscreen ? static_cast<SDL_WindowFlags>(SDL_WINDOW_HIDDEN | SDL_WINDOW_NOT_FOCUSABLE) : 0;
+#if defined(__linux__) && !defined(__EMSCRIPTEN__)
+        window_flags = static_cast<SDL_WindowFlags>(window_flags | SDL_WINDOW_OPENGL);
+#endif
         SDL_Window *window = SDL_CreateWindow("saga", host_window_width, host_window_height, window_flags);
         if (window == nullptr) {
             LOG_ERR("SDL_CreateWindow failed: %s", SDL_GetError());
@@ -562,6 +582,14 @@ namespace {
             return;
         }
 
+#if defined(__linux__) && !defined(__EMSCRIPTEN__)
+        SDL_GLContext bootstrap_context = SDL_GL_CreateContext(window);
+        if (bootstrap_context == nullptr) {
+            LOG_ERR("SDL_GL_CreateContext failed: %s", SDL_GetError());
+            return;
+        }
+        HostSetSDLGraphics(window, bootstrap_context);
+#endif
         g_renderDevice.OnWindowCreated(HostPlatformNativeWindow(window));
     }
 
@@ -596,7 +624,7 @@ i32 host_run_window(const HostWindowOptions &options) {
     HostSetMsaaEnabled(options.msaa);
     HostFreeCameraConfigure(options.camera_free);
     NuPortalEnabled(options.portals ? 1 : 0);
-    host_sdl_init(options.offscreen, options.mute);
+    host_sdl_init(options.offscreen, options.mute, options.msaa);
     const char *documents_path = ".work/host-documents/";
     char scripted_documents_path[256];
     if (options.script_input) {
