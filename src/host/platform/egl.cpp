@@ -21,6 +21,7 @@ namespace {
     i32 host_readback_width;
     i32 host_readback_height;
     std::atomic<bool> host_readback_enabled{false};
+    std::atomic<bool> host_readback_requested{false};
     std::atomic<bool> host_fps_overlay_enabled{false};
 
     // Three-by-five glyphs, stored one three-bit row at a time. This keeps the
@@ -124,7 +125,8 @@ namespace {
 
 void HostCaptureCurrentSurface(EGLDisplay display, EGLSurface surface) {
     host_draw_fps_overlay(display, surface);
-    if (!host_readback_enabled.load(std::memory_order_relaxed)) {
+    if (!host_readback_enabled.load(std::memory_order_relaxed) ||
+        !host_readback_requested.exchange(false, std::memory_order_acq_rel)) {
         return;
     }
 
@@ -151,6 +153,13 @@ void HostCaptureCurrentSurface(EGLDisplay display, EGLSurface surface) {
 
 void HostSetReadbackEnabled(bool enabled) {
     host_readback_enabled.store(enabled, std::memory_order_relaxed);
+    host_readback_requested.store(enabled, std::memory_order_release);
+}
+
+void HostRequestReadback(void) {
+    if (host_readback_enabled.load(std::memory_order_relaxed)) {
+        host_readback_requested.store(true, std::memory_order_release);
+    }
 }
 
 void HostSetFpsOverlayEnabled(bool enabled) {

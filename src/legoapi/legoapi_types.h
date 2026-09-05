@@ -676,7 +676,18 @@ struct GAMEANIMSYS_s {
     GAMEANIMSET_s **sets;  // 0x0c
 };
 DECOMP_ASSERT(sizeof(GAMEANIMSYS_s) == 0x10, "GAMEANIMSYS_s ABI");
-struct GAMEANTINODEDATA_s {};
+struct GAMEANTINODEDATA_s {
+    NUVEC position;
+    f32 radius;
+    f32 min_y;
+    f32 max_y;
+    f32 extent_x;
+    f32 extent_z;
+    i16 flags;
+    u8 use_largest_extent;
+    u8 mode;
+};
+DECOMP_ASSERT(sizeof(GAMEANTINODEDATA_s) == 0x24, "GAMEANTINODEDATA_s ABI");
 struct GAMEANTINODESYS_s {};
 struct GAMEANTINODE_s {};
 struct GAMEAUDIO {
@@ -939,7 +950,7 @@ DECOMP_ASSERT(sizeof(GIZFLOW_s) == 0x10, "GIZFLOW_s ABI");
 DECOMP_ASSERT(offsetof(GIZFLOW_s, pointers_need_reset) == 0xd, "GIZFLOW reset flag offset");
 struct GIZFORCESYS_s;
 struct GIZMOBLOWUPTYPE_s {
-    u8 field_0x00[0x30];
+    nuhspecial_s alternate_specials[4]; // 0x00
     union {
         nuhspecial_s animated_special; // primary model/animation shared by instances
         nuhspecial_s special;
@@ -947,15 +958,32 @@ struct GIZMOBLOWUPTYPE_s {
     nuhspecial_s decal_special;  // 0x3c, drawn for blown-up instances
     nuhspecial_s shadow_special; // 0x48, projected beneath active instances
     nuhspecial_s burst_special;  // 0x54, drawn for instances with the burst output set
-    u8 field_0x60[0x7d - 0x60];
-    u8 animation_flags; // 0x7d, GIZMOBLOWUPTYPE_ANIMATION_FLAGS
-    u8 field_0x7e[0x90 - 0x7e];
-    f32 animation_base_frame; // 0x90
-    u8 field_0x94[0xb2 - 0x94];
-    u16 instance_count; // 0xb2, number of consecutive instances using this type
-    u8 field_0xb4[0xd8 - 0xb4];
+    u8 field_0x60[0x78 - 0x60];
+    f32 animation_time_scale; // 0x78
+    union {
+        u32 type_flags; // 0x7c
+        struct {
+            u8 type_flags_low;
+            u8 animation_flags; // 0x7d, GIZMOBLOWUPTYPE_ANIMATION_FLAGS
+            u8 type_flags_high[2];
+        };
+    };
+    u32 effect_flags; // 0x80
+    f32 field_0x84;
+    f32 animation_start_frame; // 0x88
+    f32 animation_end_frame;   // 0x8c
+    f32 animation_base_frame;  // 0x90
+    f32 field_0x94;
+    f32 field_0x98;
+    f32 field_0x9c;
+    i16 particle_types[9];             // 0xa0
+    u16 instance_count;                // 0xb2, number of consecutive instances using this type
+    GAMEANTINODEDATA_s anti_node_data; // 0xb4
     char name[0x20];
-    u8 field_0xf8[4];
+    u8 field_0xf8;
+    u8 field_0xf9;
+    u8 field_0xfa;
+    u8 field_0xfb;
     u8 animation_runtime_flags; // 0xfc, cleared by the late-update pass
     u8 field_0xfd[3];
 };
@@ -972,7 +1000,7 @@ DECOMP_ASSERT(offsetof(GIZMOBLOWUPTYPE_s, name) == 0xd8, "GIZMOBLOWUPTYPE_s name
 DECOMP_ASSERT(offsetof(GIZMOBLOWUPTYPE_s, animation_runtime_flags) == 0xfc,
               "GIZMOBLOWUPTYPE_s animation runtime flags offset");
 enum GIZMOPICKUP_TYPE_FLAGS : u8 {
-    GIZMOPICKUP_TYPE_DRAW_BOBBING = 0x01,
+    GIZMOPICKUP_TYPE_DRAW_TUMBLING = 0x01,
     GIZMOPICKUP_TYPE_DRAW_Y_ROTATION = 0x02,
     GIZMOPICKUP_TYPE_MINIKIT_DETECTOR = 0x04,
     GIZMOPICKUP_TYPE_RED_BRICK_DETECTOR = 0x08,
@@ -2320,7 +2348,18 @@ struct ripple_set_s {
 };
 DECOMP_ASSERT(sizeof(ripple_set_s) == 0x14, "ripple_set_s ABI");
 struct rtlset {};
-struct shopitem_s {};
+struct shopitem_s {
+    char name[0x40];
+    char special_name[0x20];
+    i16 item_id;
+    u8 type;
+    u8 unlocked;
+    i32 price;
+    nuhspecial_s special;
+};
+DECOMP_ASSERT(sizeof(shopitem_s) == 0x74, "shopitem_s size");
+DECOMP_ASSERT(offsetof(shopitem_s, item_id) == 0x60, "shopitem_s item-id offset");
+DECOMP_ASSERT(offsetof(shopitem_s, special) == 0x68, "shopitem_s special offset");
 struct specialsfx_s {};
 struct speedup_s {};
 struct starfighter_s {};
@@ -2717,7 +2756,15 @@ struct GIZMOBLOWUP_s {
             NUVEC mid_position; // 0x50, center used by effects and collision
             NUVEC bounds_min;   // 0x5c
             NUVEC bounds_max;   // 0x68
-            u8 field_0x74[0x24];
+            f32 field_0x74;
+            f32 field_0x78;
+            f32 field_0x7c;
+            f32 field_0x80;
+            f32 field_0x84;
+            f32 field_0x88;
+            f32 field_0x8c;
+            f32 field_0x90;
+            f32 field_0x94;
             f32 flicker_timer; // 0x98
             union {
                 u32 status_flags; // 0x9c, aggregate tested by the draw pass
@@ -2734,30 +2781,47 @@ struct GIZMOBLOWUP_s {
         u32 draw_flags; // 0xa0, GIZMOBLOWUP_DRAW_FLAGS
         u32 field_0xa0; // compatibility name for level-specific setup code
     };
-    char field_0xa4[0x8];    // 0xa4 .. 0xac
+    u32 secondary_flags;     // 0xa4
+    u32 field_0xa8;          // 0xa8
     GIZMOBLOWUPTYPE_s *type; // 0xac, shared type/animation data
     f32 target_scale;        // 0xb0, scales the transform-target marker
-    undefined field_0xb4[8];
+    f32 field_0xb4;
+    f32 field_0xb8;
     f32 activation_delay; // 0xbc
-    undefined field_0xc0[4];
+    f32 field_0xc0;
     f32 animation_time; // 0xc4, explicitly selected animation frame
-    undefined field_0xc8[8];
+    f32 field_0xc8;
+    f32 field_0xcc;
     f32 animation_offset; // 0xd0, offset from the type's base frame
     f32 respawn_timer;    // 0xd4
-    undefined field_0xd8[4];
+    f32 field_0xd8;
     f32 reflection_height;     // 0xdc
     GAMEANTINODE_s *anti_node; // 0xe0, registered while the blowup is visible
-    undefined field_0xe4[0x16];
+    i16 field_0xe4;
+    i16 field_0xe6;
+    i16 field_0xe8;
+    i16 field_0xea;
+    i16 field_0xec;
+    i16 field_0xee;
+    u16 field_0xf0;
+    u16 field_0xf2;
+    u16 field_0xf4;
+    i16 field_0xf6;
+    i16 field_0xf8;
     char name[0x10]; // 0xfa
     i16 platform_id; // 0x10a, terrain platform toggled with visibility
-    undefined field_0x10c[0xa];
+    i16 field_0x10c;
+    undefined field_0x10e[6];
+    u8 field_0x114;
+    u8 field_0x115;
     u8 saved_state_0;   // 0x116
     u8 initial_state_0; // 0x117
     u8 saved_state_1;   // 0x118
     u8 initial_state_1; // 0x119
-    undefined field_0x11a[6];
-    void *field_0x120; // 0x120
-    u8 field_0x124;    // 0x124
+    undefined field_0x11a[2];
+    nuhspecial_s *override_special; // 0x11c, optional per-instance special
+    void *field_0x120;              // 0x120
+    u8 field_0x124;                 // 0x124
     undefined field_0x125[3];
     float field_0x128; // 0x128
     void ClearMechObjectInterface();
@@ -2773,6 +2837,7 @@ DECOMP_ASSERT(offsetof(GIZMOBLOWUP_s, target_scale) == 0xb0, "GIZMOBLOWUP target
 DECOMP_ASSERT(offsetof(GIZMOBLOWUP_s, reflection_height) == 0xdc, "GIZMOBLOWUP reflection height offset");
 DECOMP_ASSERT(offsetof(GIZMOBLOWUP_s, name) == 0xfa, "GIZMOBLOWUP name offset");
 DECOMP_ASSERT(offsetof(GIZMOBLOWUP_s, platform_id) == 0x10a, "GIZMOBLOWUP platform id offset");
+DECOMP_ASSERT(offsetof(GIZMOBLOWUP_s, override_special) == 0x11c, "GIZMOBLOWUP override special offset");
 struct GIZOBSTACLE_s {
     char name[0x10];
     union {

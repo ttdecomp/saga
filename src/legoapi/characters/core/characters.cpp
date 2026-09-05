@@ -11,6 +11,7 @@
 #include "legoapi/items/base/collection.h"
 #include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/menus/screens/store.h"
+#include "legoapi/menus/screens/shop.h"
 #include "legoapi/render/fx.h"
 #include "legoapi/gizmos/object/lever.h"
 #include "legoapi/gizmos/object/technos.h"
@@ -363,6 +364,12 @@ void UpdateCharacterIdle(GameObject_s *object) {
 }
 
 void UpdateCharacterIDs() {
+    shopitem_s *item = CharItems;
+    COLLECTID *collect = ShopCollection.list;
+    for (i32 i = 0; i < ShopCollection.count_y; ++i, ++item, ++collect) {
+        item->item_id = collect->id;
+        item->price = collect->field3_0x4;
+    }
 }
 
 void CharScenes_AreaDump() {
@@ -721,10 +728,31 @@ void LoadPerm1() {
 }
 
 void LoadPerm2() {
+    extern i16 tALL;
+    extern i16 tJEDI;
+    extern i16 tBLASTER;
+    extern i16 tBOUNTYHUNTERCHARACTERS;
+
     CharConfig_ConfigureAll(1, NULL);
     ExtraCharacterFixUpAfterConfig();
     apiloadcharactermodels_nopakfile = CHARPAK == 0;
     APILoadCharacterModels(PermModelList, 1, &permbuffer_ptr, permbuffer_end, 1);
+
+    Collection_CreateMaster(const_cast<char *>("All"), NULL, &MasterCollection, 15, COLLECTION_DEFAULTSCALE);
+    Collection_CreateCustom(const_cast<char *>("Characters"), &tALL, &CharacterCollection, 0, 0x04002000, 0, 0, 16,
+                            &permbuffer_ptr, &permbuffer_end, 0, 0.725f);
+    Collection_CreateCustom(const_cast<char *>("Vehicles"), NULL, &VehicleCollection, 0x2000, 0x04000000, 0, 0, 7,
+                            &permbuffer_ptr, &permbuffer_end, 0, 1.0f);
+    Collection_CreateCustom(const_cast<char *>("Minikits"), NULL, &MiniKitCollection, 0x04000000, 0, 0, 0, 12,
+                            &permbuffer_ptr, &permbuffer_end, 0, COLLECTION_DEFAULTSCALE);
+    Collection_CreateCustom(const_cast<char *>("Shop"), NULL, &ShopCollection, 0, 0, 0, 1, 10, &permbuffer_ptr,
+                            &permbuffer_end, 0, COLLECTION_DEFAULTSCALE);
+    Collection_CreateCustom(const_cast<char *>("Jedi"), &tJEDI, &JediCollection, 8, 0, 0, 0, 7, &permbuffer_ptr,
+                            &permbuffer_end, 0, COLLECTION_DEFAULTSCALE);
+    Collection_CreateCustom(const_cast<char *>("BlasterZipUps"), &tBLASTER, &BlasterCollection, 0x100080, 0x01000000, 0,
+                            0, 11, &permbuffer_ptr, &permbuffer_end, 0, COLLECTION_DEFAULTSCALE);
+    Collection_CreateCustom(const_cast<char *>("BountyHunters"), &tBOUNTYHUNTERCHARACTERS, &BountyHunterCollection,
+                            0x01000000, 0, 0, 0, 4, &permbuffer_ptr, &permbuffer_end, 0, COLLECTION_DEFAULTSCALE);
     Areas_ConfigureResidents(&permbuffer_ptr, &permbuffer_end);
 }
 

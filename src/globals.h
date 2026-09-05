@@ -193,6 +193,19 @@ DECOMP_ASSERT(offsetof(GAMESAVE_s, initial_store_pack_flags) == 0x7bfc, "GAMESAV
 DECOMP_ASSERT(offsetof(GAMESAVE_s, customizer) == 0x7c30, "GAMESAVE customizer offset");
 DECOMP_ASSERT(offsetof(GAMESAVE_s, character_save) == 0x7d04, "GAMESAVE character save offset");
 
+struct STATUSCOLLECT_s {
+    u16 completion_points;
+    u8 gold_bricks;
+    u8 flags;
+};
+DECOMP_ASSERT(sizeof(STATUSCOLLECT_s) == 4, "STATUSCOLLECT size");
+
+struct STATUSCOLLECTLIST_s {
+    STATUSCOLLECT_s *ptr;
+    u8 pad_0x04[0x0c];
+};
+DECOMP_ASSERT(sizeof(STATUSCOLLECTLIST_s) == 0x10, "STATUSCOLLECTLIST size");
+
 struct CHARCAT_s {
     undefined field0_0x0[4];
     u32 field1_0x4;
@@ -312,6 +325,7 @@ extern EPISODESAVE_s *Game_EpisodeSave;
 extern u8 *Game_CharacterSave;
 extern u16 *Game_CompletionSave;
 extern MISSIONSAVE *Game_MissionSave;
+extern STATUSCOLLECTLIST_s StatusCollectList;
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -572,6 +586,12 @@ extern EXTRAMODEL ExtraModelList[];
 extern COLLECTION_s CharacterCollection;
 extern COLLECTION_s VehicleCollection;
 extern COLLECTION_s MiniKitCollection;
+extern COLLECTION_s MasterCollection;
+extern COLLECTION_s ShopCollection;
+extern COLLECTION_s JediCollection;
+extern COLLECTION_s BlasterCollection;
+extern COLLECTION_s BountyHunterCollection;
+extern f32 COLLECTION_DEFAULTSCALE;
 extern ARCADEITEM_s ArcadeItem;
 extern ARCADE_MODE_s Arcade_Mode[];
 extern GAME_CUSTOMISER_s *Game_Customiser;
@@ -935,7 +955,7 @@ extern i32 menu_flash;              // bss
 extern i32 noscenespecials;         // disables automatic display-scene specials
 extern i32 portals_enabled;
 extern i32 portal_special_objects; // portal visibility also filters display-scene specials
-extern u8 PortalVisiFlags[0x271];  // one portal-visibility byte per scene instance
+extern u8 PortalVisiFlags[0x271];  // portal-visibility bitset for up to 5000 scene instances
 extern f32 game_pulse;
 extern f32 global_pulse;
 extern i32 IntroText_TextID; // .data init -1

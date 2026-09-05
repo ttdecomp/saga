@@ -870,12 +870,12 @@ void WorldInfo_UpdateRoomVisibility(WORLDINFO *world, i32 param) {
     world->rooms_visible_ptr = visBuf;
     memset(visBuf, 0, 0x100);
 
-    if (param == 0 && world->current_gscn != NULL && world->current_gscn->max_portals > 0) {
-        u8 *portalData = (u8 *)world->current_gscn->portals;
-        u8 *end = visBuf + world->current_gscn->max_portals;
+    if (param == 0 && world->current_gscn != NULL && world->current_gscn->num_rooms > 0) {
+        u8 *room_data = reinterpret_cast<u8 *>(world->current_gscn->rooms);
+        u8 *end = visBuf + world->current_gscn->num_rooms;
         while (visBuf != end) {
-            *visBuf++ = (u8)((portalData[0x10] >> 2) & 1);
-            portalData += 0x18;
+            *visBuf++ = static_cast<u8>((room_data[0x10] >> 2) & 1);
+            room_data += 0x18;
         }
     }
 }

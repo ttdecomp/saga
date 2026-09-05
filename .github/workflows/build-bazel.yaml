@@ -95,7 +95,7 @@ jobs:
           external-cache: true
           cache-save: ${{ github.event_name != 'pull_request' }}
 
-      - name: Build WebAssembly host
+      - name: Build WebAssembly host (debug)
         run: bazel build --config=wasm //src:saga_wasm
 
       - name: Run WebAssembly clang-tidy
@@ -202,7 +202,7 @@ jobs:
       - name: Verify Bazel version
         run: test "$(bazel --version)" = "bazel $BAZEL_VERSION"
 
-      - name: Build native
+      - name: Build native (debug)
         env:
           PKG_CONFIG_PATH: /usr/lib/i386-linux-gnu/pkgconfig
         run: bazel build --config=native //src:saga_native
@@ -250,7 +250,7 @@ jobs:
           BAZEL_SH: "${{ steps.msys2.outputs.msys2-location }}/usr/bin/bash.exe"
         run: test "$(bazel --version)" = "bazel $BAZEL_VERSION"
 
-      - name: Build native
+      - name: Build native (debug)
         shell: msys2 {0}
         env:
           BAZEL_SH: "${{ steps.msys2.outputs.msys2-location }}/usr/bin/bash.exe"

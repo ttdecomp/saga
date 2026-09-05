@@ -13,6 +13,14 @@ load(
 
 package(default_visibility = ["//visibility:public"])
 
+config_setting(
+    name = "native_linux_debug",
+    define_values = {
+        "SAGA_BUILD": "native",
+        "SAGA_MODE": "debug",
+    },
+)
+
 _ENGINE_DIRS = [
     "MechInputTouch",
     "editor",
@@ -161,8 +169,10 @@ _HOST_PLATFORM_COPTS = select({
     "//bazel/platforms:linux": [
         "-m32",
         "-march=i686",
-        "-fsanitize=address,undefined",
     ],
+    "//conditions:default": [],
+}) + select({
+    ":native_linux_debug": ["-fsanitize=address,undefined"],
     "//conditions:default": [],
 }) + select({
     "//bazel/platforms:x86_64": ["-msse2"],
@@ -235,10 +245,7 @@ clang_tidy_check(
 cc_binary(
     name = "saga_native",
     linkopts = select({
-        "//bazel/platforms:linux": [
-            "-m32",
-            "-fsanitize=address,undefined",
-        ],
+        "//bazel/platforms:linux": ["-m32"],
         "//bazel/platforms:macos": [
             "-framework",
             "Cocoa",
@@ -248,6 +255,9 @@ cc_binary(
         "//bazel/platforms:windows": [
             "-Wl,--export-all-symbols",
         ],
+        "//conditions:default": [],
+    }) + select({
+        ":native_linux_debug": ["-fsanitize=address,undefined"],
         "//conditions:default": [],
     }),
     linkstatic = False,

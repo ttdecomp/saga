@@ -1,10 +1,12 @@
 #include "decomp.h"
 #include "globals.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/menus/screens/shop.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nuspline.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nucore/nustring.h"
+#include "nu2api/numath/nutrig.h"
 
 #include <string.h>
 
@@ -44,6 +46,49 @@ void BezierLineLength(VuVec &, VuVec &, VuVec &, VuVec &, float) {
 }
 
 void LoadShelfSplines() {
+    splshelf = NuSplineFind(WORLD->current_gscn, const_cast<char *>("shelf_top1"));
+    splcharshelf = NuSplineFind(WORLD->current_gscn, const_cast<char *>("shelf_bottom"));
+    splcodes = NuSplineFind(WORLD->current_gscn, const_cast<char *>("shelf_6"));
+
+    if (splshelf == NULL || splcharshelf == NULL || splcodes == NULL) {
+        return;
+    }
+
+    memset(SubShelfPos, 0, sizeof(SubShelfPos));
+    memset(ShelfPos, 0, sizeof(ShelfPos));
+    memset(CodePos, 0, 6 * sizeof(*CodePos));
+
+    for (i32 i = 0; i < splshelf->length; ++i) {
+        ShelfPos[i] = splshelf->pts[i];
+    }
+    for (i32 i = 0; i < splcharshelf->length; ++i) {
+        SubShelfPos[i] = splcharshelf->pts[i];
+    }
+    for (i32 i = 0; i < splcodes->length; ++i) {
+        CodePos[i] = splcodes->pts[i];
+    }
+
+    ShelfPos[2].x += (ShelfPos[3].x - ShelfPos[2].x) * 0.5f;
+    ShelfPos[2].z += (ShelfPos[3].z - ShelfPos[2].z) * 0.5f;
+
+    NUVEC diff;
+    NuVecSub(&diff, &CodePos[5], &CodePos[4]);
+    NuVecAdd(&CodePos[6], &CodePos[5], &diff);
+    CodePos[6].y += 0.02f;
+    NuVecScale(&diff, &diff, 0.5f);
+    NuVecSub(&CodePos[0], &CodePos[0], &diff);
+    NuVecSub(&CodePos[1], &CodePos[1], &diff);
+    NuVecSub(&CodePos[2], &CodePos[2], &diff);
+    NuVecSub(&CodePos[3], &CodePos[3], &diff);
+    NuVecSub(&CodePos[4], &CodePos[4], &diff);
+    NuVecSub(&CodePos[5], &CodePos[5], &diff);
+    NuVecSub(&CodePos[6], &CodePos[6], &diff);
+
+    NUVEC start = splshelf->pts[0];
+    NUVEC end = splshelf->pts[splshelf->length];
+    NUVEC direction;
+    NuVecSub(&direction, &end, &start);
+    shelfang = static_cast<u16>(NuAtan2D(direction.x, direction.z));
 }
 
 void PointAlongSpline(nugspline_s *, float, nuvec_s *, u16 *, u16 *, i32) {

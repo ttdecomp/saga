@@ -6,7 +6,11 @@
 #include "legoapi/core/startup/game.h"
 #include "legoapi/core/input/gamepads.h"
 #include "legoapi/cutscenes/cutscenes.h"
+#include "legoapi/items/base/collection.h"
+#include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/legoapi_types.h"
+#include "legoapi/menus/screens/store.h"
+#include "legoapi/world/levels/episode.h"
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nutex.h"
 
@@ -85,7 +89,46 @@ float CalcValue1648(char *data, i32 quarter, i32 stride, float fraction, ani3_sc
 void ConstantRumble(GameObject_s *, float, float) {
 }
 
-void CollectIDUnlocked(i32) {
+extern i32 AllMiniKitsDone(AREASAVE_s *save);
+
+COLLECTID *CollectIDUnlocked(i32 id) {
+    i32 index = InCollectList_Index(id, CollectList, CollectCount);
+    if (index == -1) {
+        return NULL;
+    }
+
+    COLLECTID *entry = &CollectList[index];
+    if (Game_CharacterSave != NULL && (Game_CharacterSave[id] & 2) != 0) {
+        return entry;
+    }
+
+    switch (entry->type) {
+        case 0:
+            return entry;
+        case 2:
+            if (static_cast<i8>(entry->field2_0x3) == -1 || Game_AreaSave == NULL) {
+                return NULL;
+            }
+            return Game_AreaSave[entry->field2_0x3].area_complete != 0 ? entry : NULL;
+        case 3:
+            if (Episodes_Completed() != EPISODECOUNT) {
+                return NULL;
+            }
+            return Game_100PercentComplete() != 0 ? entry : NULL;
+        case 4:
+            return AllMiniKitsDone(Game_AreaSave) != 0 ? entry : NULL;
+        case 6:
+            if (StatusCollectList.ptr == NULL || StatusCollectList.ptr->gold_bricks < entry->field6_0xa) {
+                return NULL;
+            }
+            return entry;
+        case 7:
+            return Game_100PercentComplete() != 0 ? entry : NULL;
+        case 8:
+            return Store_IsPackUnlocked(static_cast<i8>(entry->field2_0x3)) != 0 ? entry : NULL;
+        default:
+            return NULL;
+    }
 }
 
 void ClearLastSafeTakeOver(GameObject_s *) {

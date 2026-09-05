@@ -271,7 +271,9 @@ typedef struct WORLDINFO_s {
 
     GIZRANDOMSYS_s *giz_randoms;
 
-    char filler12[0x50fc - 0x50dc];
+    char filler12a[0x50ec - 0x50dc];
+    NUMTX *gizmo_blowup_mtx_buffer; // 0x50ec, aligned 0x8000-byte animation matrix arena
+    char filler12b[0x50fc - 0x50f0];
     struct GIZTIMER_s *giz_timers;             // 0x50fc
     i32 giz_timers_count;                      // 0x5100
     GIZTORPMACHINESYS_s *giz_torp_machine_sys; // 0x5104

@@ -96,7 +96,9 @@ def read_elf32(path: Path) -> tuple[list[dict], list[dict]]:
 
     symbols = []
     symbol_struct = struct.Struct(byte_order + "IIIBBH")
-    for symbol_table in (section for section in sections if section["type"] == SHT_SYMTAB):
+    for symbol_table in (
+        section for section in sections if section["type"] == SHT_SYMTAB
+    ):
         strings_section = sections[symbol_table["link"]]
         strings = data[
             strings_section["offset"] : strings_section["offset"]
@@ -247,9 +249,7 @@ def _matching_table(report: dict) -> list[str]:
     ]
     for key in sorted(stats):
         row = stats[key]
-        fuzzy = (
-            row["weighted_score"] / row["code_size"] if row["code_size"] else 0.0
-        )
+        fuzzy = row["weighted_score"] / row["code_size"] if row["code_size"] else 0.0
         functions = (
             100.0 * row["matched_functions"] / row["functions"]
             if row["functions"]
@@ -273,6 +273,8 @@ def update_readme(path: Path, report: dict) -> None:
             "",
             "## Matching progress 📊",
             "",
+            "See https://ttdecomp.github.io/saga/",
+            "",
             *_matching_table(report),
             "",
             MATCHING_TABLE_END,
@@ -285,22 +287,24 @@ def update_readme(path: Path, report: dict) -> None:
         f"https://img.shields.io/badge/matching-{progress:.2f}%25-"
         f"{_badge_color(progress)}"
     )
-    content = re.sub(
-        r"https://img\.shields\.io/badge/matching-[^)]*", badge, content
-    )
+    content = re.sub(r"https://img\.shields\.io/badge/matching-[^)]*", badge, content)
     path.write_text(content, encoding="utf-8")
 
 
 def build_custom_report(original: Path, report: dict, units: list[dict]) -> dict:
     """Combine whole-binary scores, original addresses, and Bazel ownership."""
     sections, original_symbols = read_elf32(original)
-    text_section = next((section for section in sections if section["name"] == ".text"), None)
+    text_section = next(
+        (section for section in sections if section["name"] == ".text"), None
+    )
     if text_section is None:
         raise ValueError(f"{original}: no .text section")
 
     report_units = report.get("units", [])
     if len(report_units) != 1:
-        raise ValueError(f"expected one whole-binary objdiff unit, got {len(report_units)}")
+        raise ValueError(
+            f"expected one whole-binary objdiff unit, got {len(report_units)}"
+        )
     report_functions = report_units[0].get("functions", [])
     details_by_key: dict[tuple[int, str], list[dict]] = defaultdict(list)
     for function in report_functions:
@@ -351,7 +355,9 @@ def build_custom_report(original: Path, report: dict, units: list[dict]) -> dict
     ambiguous_functions = []
     unassigned_functions = []
 
-    for symbol in sorted(original_functions, key=lambda item: (item["address"], item["name"])):
+    for symbol in sorted(
+        original_functions, key=lambda item: (item["address"], item["name"])
+    ):
         offset = symbol["address"] - text_section["address"]
         candidates = details_by_key.get((offset, symbol["name"]), [])
         detail = candidates[0] if candidates else None
@@ -376,7 +382,9 @@ def build_custom_report(original: Path, report: dict, units: list[dict]) -> dict
             unassigned_functions.append(record)
 
     for unit in public_units:
-        unit["functions"].sort(key=lambda function: (function["address"], function["name"]))
+        unit["functions"].sort(
+            key=lambda function: (function["address"], function["name"])
+        )
 
     allocated_sections = [
         {

@@ -3,6 +3,7 @@
 #include <emscripten/html5_webgl.h>
 
 #include "decomp.h"
+#include "host/platform/graphics.hpp"
 #include "nu2api/nu3d/android/nutex_ios_ex.h"
 #include "nu2api/nu3d/nurndr.h"
 #include "nu2api/nuandroid/ios_graphics.h"
@@ -13,6 +14,8 @@ extern i32 g_nextGLContextIndex;
 extern u32 g_activeAttributes;
 
 namespace {
+    bool host_msaa_enabled = true;
+
     struct WasmPresentResources {
         GLuint program = 0;
         GLint position = -1;
@@ -93,6 +96,10 @@ namespace {
     }
 } // namespace
 
+void HostSetMsaaEnabled(bool enabled) {
+    host_msaa_enabled = enabled;
+}
+
 void NuRenderInspectEGLConfig(EGLDisplay, EGLConfig) {
 }
 
@@ -138,7 +145,7 @@ void NuRenderDevice::InitialiseOpenGLContext(ANativeWindow *) {
         attributes.alpha = false;
         attributes.depth = true;
         attributes.stencil = false;
-        attributes.antialias = true;
+        attributes.antialias = host_msaa_enabled;
         attributes.majorVersion = 2;
         attributes.minorVersion = 0;
         attributes.explicitSwapControl = true;

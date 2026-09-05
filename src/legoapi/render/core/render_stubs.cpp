@@ -56,23 +56,133 @@ static u32 EvaluateDebrisColour(const debinftype *effect, f32 time) {
 struct numtl_s;
 typedef struct numtl_s NUMTL;
 
-namespace {
-    struct NuVisibilityResult {
-        u8 pad_00[0x18];
-        i32 instance_count;
-        u8 *instance_bits;
-    };
-
-    DECOMP_ASSERT(offsetof(NuVisibilityResult, instance_count) == 0x18, "visibility result instance count offset");
-    DECOMP_ASSERT(offsetof(NuVisibilityResult, instance_bits) == 0x1c, "visibility result instance bits offset");
-} // namespace
-
 extern "C" {
 
     extern NUGLOBALRNDRSTATE render_state;
     extern nudisplayscene_s currentScene;
 
     void *NuVisiEvaluate(NUGSCN *scene, void *visibility_context);
+    extern NUPLANE cam_plane;
+
+    i32 clipTestSphere(NUPORTALSPHERE *sphere, NUFRUSTRUM *frustum) {
+        i32 fully_inside = 0;
+        for (i32 i = 0; i < frustum->plane_count; ++i) {
+            const NUPLANE &plane = frustum->planes[i];
+            const f32 distance =
+                plane.a * sphere->center.x + plane.b * sphere->center.y + plane.c * sphere->center.z + plane.d;
+            if (distance < -sphere->radius) {
+                return 0;
+            }
+            if (distance > sphere->radius) {
+                ++fully_inside;
+            }
+        }
+        const f32 camera_distance = cam_plane.a * sphere->center.x + cam_plane.b * sphere->center.y +
+                                    cam_plane.c * sphere->center.z + cam_plane.d;
+        if (camera_distance < -sphere->radius) {
+            return 0;
+        }
+        if (camera_distance > sphere->radius) {
+            ++fully_inside;
+        }
+        return fully_inside == frustum->plane_count + 1 ? 1 : 2;
+    }
+
+    i32 clipTestBox(NUVEC *minimum, NUVEC *maximum, NUPLANE *planes, i32 plane_count) {
+        i32 inside_vertices = 0;
+        for (i32 plane_index = 0; plane_index < plane_count; ++plane_index) {
+            const NUPLANE &plane = planes[plane_index];
+            i32 inside_plane = 0;
+            for (i32 corner = 0; corner < 8; ++corner) {
+                const f32 x = (corner & 1) != 0 ? maximum->x : minimum->x;
+                const f32 y = (corner & 2) != 0 ? maximum->y : minimum->y;
+                const f32 z = (corner & 4) != 0 ? maximum->z : minimum->z;
+                if (plane.a * x + plane.b * y + plane.c * z + plane.d >= 0.0f) {
+                    ++inside_plane;
+                    ++inside_vertices;
+                }
+            }
+            if (inside_plane == 0) {
+                return 0;
+            }
+        }
+        return inside_vertices == plane_count * 8 ? 1 : 2;
+    }
+
+    i32 NuPortalClipTestBox(NUVEC *center, NUVEC *extent, NUFRUSTRUM *frustum) {
+        for (i32 i = 0; i < frustum->plane_count; ++i) {
+            const NUPLANE &plane = frustum->planes[i];
+            const f32 distance = plane.a * center->x + plane.b * center->y + plane.c * center->z + plane.d;
+            const f32 radius = NuFabs(plane.a) * extent->x + NuFabs(plane.b) * extent->y + NuFabs(plane.c) * extent->z;
+            if (distance < -radius) {
+                return 0;
+            }
+        }
+        return 1;
+    }
+
+    void clipRoomAgainstFrustrum(NUGSCN *scene, NUROOM *room, NUFRUSTRUM *frustum) {
+        u32 instance_index;
+        i32 clip_result;
+        u32 i;
+
+        if (scene->display_list != NULL &&
+            (scene->display_list->render_buffer & NUDL_SCENE_RENDER_FLAG_CENTER_EXTENT_BOUNDS) != 0) {
+            for (i = 0; i < static_cast<u32>(static_cast<i32>(room->instance_count)); ++i) {
+                instance_index = room->instance_indices[i];
+                u8 *instance_record = scene->instances + instance_index * 0x50;
+                (void)instance_record;
+                if ((((u8)PortalVisiFlags[instance_index >> 3] >> (instance_index & 7)) & 1) == 0) {
+                    if ((((u8)scene->display_list->portal_visibility_overrides[instance_index >> 3] >>
+                          (instance_index & 7)) &
+                         1) == 0) {
+                        if ((scene->display_list->visibility_flags[instance_index] & NUDL_INSTANCE_FLAG_VISIBLE) != 0) {
+                            if ((scene->display_list->visibility_flags[instance_index] &
+                                 NUDL_INSTANCE_FLAG_NO_VISIBILITY_TEST) != 0) {
+                                PortalVisiFlags[instance_index >> 3] |= 1 << (instance_index & 7);
+                            } else {
+                                clip_result = NuPortalClipTestBox(&scene->portal_boxes[instance_index].first,
+                                                                  &scene->portal_boxes[instance_index].second, frustum);
+                                if (clip_result != 0) {
+                                    PortalVisiFlags[instance_index >> 3] |= 1 << (instance_index & 7);
+                                }
+                            }
+                        }
+                    } else {
+                        PortalVisiFlags[instance_index >> 3] |= 1 << (instance_index & 7);
+                    }
+                }
+            }
+        } else {
+            for (i = 0; i < static_cast<u32>(static_cast<i32>(room->instance_count)); ++i) {
+                instance_index = room->instance_indices[i];
+                u8 *instance_record = scene->instances + instance_index * 0x50;
+                (void)instance_record;
+                if ((((u8)PortalVisiFlags[instance_index >> 3] >> (instance_index & 7)) & 1) == 0) {
+                    if ((((u8)scene->display_list->portal_visibility_overrides[instance_index >> 3] >>
+                          (instance_index & 7)) &
+                         1) == 0) {
+                        if ((scene->display_list->visibility_flags[instance_index] &
+                             NUDL_INSTANCE_FLAG_NO_VISIBILITY_TEST) == 0) {
+                            clip_result = clipTestSphere(&scene->portal_spheres[instance_index], frustum);
+                            if (clip_result == 1) {
+                                PortalVisiFlags[instance_index >> 3] |= 1 << (instance_index & 7);
+                            } else if (clip_result == 2 &&
+                                       clipTestBox(&scene->portal_boxes[instance_index].first,
+                                                   &scene->portal_boxes[instance_index].second, frustum->planes,
+                                                   static_cast<i32>(frustum->plane_count)) != 0) {
+                                PortalVisiFlags[instance_index >> 3] |= 1 << (instance_index & 7);
+                            }
+                        } else {
+                            PortalVisiFlags[instance_index >> 3] |= 1 << (instance_index & 7);
+                        }
+                    } else {
+                        PortalVisiFlags[instance_index >> 3] |= 1 << (instance_index & 7);
+                    }
+                }
+            }
+        }
+    }
     i32 NuDisplayListRndrSpecial(nuhspecial_s *special, NUMTX *matrix, i32 skinned, NUMTX *skin_matrices,
                                  DEFORMERWEIGHTSARRAY *deformer_weights);
 
@@ -223,7 +333,7 @@ extern "C" {
         NuVisibilityResult *visibility =
             static_cast<NuVisibilityResult *>(NuVisiEvaluate(scene->gscene, &visibility_context));
         const bool portal_filter = visibility != NULL && portal_special_objects != 0 &&
-                                   visibility->instance_count != 0 && portals_enabled != 0;
+                                   visibility->portal_marker != NULL && portals_enabled != 0;
         const bool shadow_pass = currentScene.unknown_3c != NULL;
 
         if ((scene->instance_visibility_enabled & NUDL_SCENE_INSTANCE_VISIBILITY_ENABLED) != 0 ||
@@ -254,7 +364,7 @@ extern "C" {
             if (portal_filter &&
                 (static_cast<u8>(scene->visibility_flags[instance_index]) & NUDL_INSTANCE_FLAG_NO_VISIBILITY_TEST) ==
                     0 &&
-                (visibility->instance_bits[instance_index >> 3] & (1U << (instance_index & 7))) == 0) {
+                (visibility->portal_bits[instance_index >> 3] & (1U << (instance_index & 7))) == 0) {
                 continue;
             }
 
@@ -478,15 +588,6 @@ extern "C" {
     }
 
     void SphereDrawEx(void) {
-    }
-
-    void clipRoomAgainstFrustrum(void) {
-    }
-
-    void clipTestBox(void) {
-    }
-
-    void clipTestSphere(void) {
     }
 
     void glDeleteVertexArraysOESC(void) {

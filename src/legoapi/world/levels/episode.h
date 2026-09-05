@@ -26,6 +26,7 @@ EPISODEDATA *Episodes_ConfigureList(char *file, VARIPTR *bufferStart, VARIPTR *b
 
 i32 Episode_ContainsArea(i32 areaId, i32 *areaIndex);
 i32 Episode_IsComplete(EPISODEDATA *episode, i32 *completed_area_count);
+i32 Episodes_Completed();
 
 u32 Episode_FindAreaFromFlags(EPISODEDATA *ep, u32 flags, u32 want);
 

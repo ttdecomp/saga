@@ -5,6 +5,14 @@
 #include <EGL/egl.h>
 #include <pthread.h>
 
+namespace {
+    bool host_msaa_enabled = true;
+}
+
+void HostSetMsaaEnabled(bool enabled) {
+    host_msaa_enabled = enabled;
+}
+
 void NuRenderInspectEGLConfig(EGLDisplay display, EGLConfig config) {
     EGLint red = 0;
     EGLint green = 0;
@@ -49,9 +57,9 @@ EGLConfig NuRenderDevice::SelectEGLConfig() {
         EGL_STENCIL_SIZE,
         0,
         EGL_SAMPLE_BUFFERS,
-        1,
+        host_msaa_enabled ? 1 : 0,
         EGL_SAMPLES,
-        4,
+        host_msaa_enabled ? 4 : 0,
         EGL_NONE,
     };
 

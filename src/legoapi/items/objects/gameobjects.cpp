@@ -1,6 +1,7 @@
 #include "legoapi/items/objects/gameobjects.h"
 #include "decomp.h"
 #include "gameapi/ai/aisys/aisys.h"
+#include "gameapi/edtools/edfile.h"
 #include "gameapi/gui/apimenu.h"
 #include "globals.h"
 #include "legoapi/legoapi_types.h"
@@ -1307,10 +1308,25 @@ void GameObjectDimensions(GameObject_s *object) {
 void GameObjectUsingLever(GameObject_s *, LEVER_s *) {
 }
 
-void GameAntiNodeData_Init(GAMEANTINODEDATA_s *, nuhspecial_s *) {
+void GameAntiNodeData_Init(GAMEANTINODEDATA_s *data, nuhspecial_s *) {
+    if (data != NULL) {
+        memset(data, 0, sizeof(*data));
+    }
 }
 
-void GameAntiNodeData_Read(GAMEANTINODEDATA_s *) {
+void GameAntiNodeData_Read(GAMEANTINODEDATA_s *data) {
+    if (EdFileReadChar() == 0) {
+        return;
+    }
+    EdFileReadNuVec(&data->position);
+    data->radius = EdFileReadFloat();
+    data->min_y = EdFileReadFloat();
+    data->max_y = EdFileReadFloat();
+    data->extent_x = EdFileReadFloat();
+    data->extent_z = EdFileReadFloat();
+    data->flags = EdFileReadShort();
+    data->use_largest_extent = static_cast<u8>(EdFileReadChar());
+    data->mode = static_cast<u8>(EdFileReadChar());
 }
 
 void GameAudio_PlaySfxById(i32, nuvec_s *, i32, i32) {
@@ -1386,7 +1402,11 @@ void GameLoadCharacterModels(APICHARACTERMODELLIST_s *list, i32 append, VARIPTR 
     APILoadCharacterModels(list, append, buf, *buf_end, area_models);
 }
 
-void Game_100PercentComplete() {
+i32 Game_100PercentComplete() {
+    if (StatusCollectList.ptr == NULL) {
+        return 0;
+    }
+    return StatusCollectList.ptr->flags & 1;
 }
 
 void Game_WorldInfo_InitMenu(WORLDINFO_s *world, i32 *menu_id, i32 *) {

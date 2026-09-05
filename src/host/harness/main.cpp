@@ -60,6 +60,8 @@ namespace {
         printf("  --offscreen            Create a hidden, non-focusable window\n");
         printf("  --mute                 Use SDL's dummy audio driver\n");
         printf("  --fps                  Show a top-left FPS counter\n");
+        printf("  --no-msaa              Disable native-host 4x multisampling\n");
+        printf("  --no-portals           Disable portal culling for host comparison captures\n");
         printf("  --script-tail-ms <ms>  Wait after scripted input completes (default: 8000)\n");
         printf("  --timeout-ms <ms>      Stop the window utility after this time (default: 90000)\n");
     }
@@ -150,6 +152,10 @@ namespace {
                 options.mute = true;
             } else if (strcmp(argument, "--fps") == 0) {
                 options.show_fps = true;
+            } else if (strcmp(argument, "--no-msaa") == 0) {
+                options.msaa = false;
+            } else if (strcmp(argument, "--no-portals") == 0) {
+                options.portals = false;
             } else if (strcmp(argument, "--script-tail-ms") == 0 || strcmp(argument, "--timeout-ms") == 0) {
                 if (++i == argc) {
                     fprintf(stderr, "Missing value for %s\n", argument);

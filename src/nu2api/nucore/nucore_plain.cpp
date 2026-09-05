@@ -290,7 +290,7 @@ extern "C" {
     }
     void NuCameraIntersectsAABB(void) {
     }
-    void NuCameraLock(void) {
+    void NuCameraLock(i32) {
     }
     void NuCameraMotionBlurEffect(void) {
     }
@@ -3017,8 +3017,6 @@ extern "C" {
 
     void NuPortalClipTest(void) {
     }
-    void NuPortalClipTestBox(void) {
-    }
     i32 NuPortalEnabled(i32 enabled) {
         const i32 previous = portals_enabled;
         portals_enabled = enabled;
@@ -3090,9 +3088,9 @@ extern "C" {
                 NUROOM &first = scene->rooms[candidates[0]];
                 NUROOM &second = scene->rooms[candidates[1]];
                 if (first.priority < second.priority) {
-                    candidates[1] = static_cast<i16>(room_index);
-                } else {
                     candidates[0] = static_cast<i16>(room_index);
+                } else {
+                    candidates[1] = static_cast<i16>(room_index);
                 }
                 candidate_count = 3;
                 continue;
@@ -3137,12 +3135,46 @@ extern "C" {
     }
     void NuVisiBoxTree(void) {
     }
-    void *NuVisiEvaluate(NUGSCN *, void *) {
-        return NULL;
+    i32 VisiSysCameraLock;
+    i32 LoadedOcclusionData;
+    i32 do_InstTree = 1;
+    i32 do_occlusion = 1;
+    i32 do_visibility = 1;
+
+    void NuVisiInstTree(void *, NUGSCN *);
+    void NuVisiOcclusion(void *);
+
+    void *NuVisiEvaluate(NUGSCN *scene, void *visibility_context) {
+        void *result = NULL;
+        if (visibility_context != NULL && do_visibility != 0) {
+            result = &scene->visibility_result_instance_count;
+            NuCameraLock(VisiSysCameraLock);
+            scene->visibility_context = NULL;
+            scene->instance_tree_visibility_flags = NULL;
+            NUGSCN *source_scene = scene->visibility_source_scene;
+            scene->visibility_result_instance_count =
+                source_scene == NULL ? scene->num_instances : source_scene->num_instances;
+            scene->visibility_state &= 0xea;
+            LoadedOcclusionData = result != NULL;
+            if (do_occlusion != 0 && scene->occlusion_data != NULL) {
+                NuVisiOcclusion(result);
+            }
+            if (scene->portal_visibility_marker == NULL || portals_enabled == 0) {
+                if (scene->instance_visibility_tree != NULL && do_InstTree != 0) {
+                    scene->visibility_context = visibility_context;
+                    NuVisiInstTree(result, scene);
+                    scene->visibility_state |= 1;
+                }
+            } else {
+                NuPortalVisibility(scene);
+            }
+            NuCameraUnlock();
+        }
+        return result;
     }
-    void NuVisiInstTree(void) {
+    void NuVisiInstTree(void *, NUGSCN *) {
     }
-    void NuVisiOcclusion(void) {
+    void NuVisiOcclusion(void *) {
     }
     void NuVisiOctree(void) {
     }

@@ -1,6 +1,6 @@
 # _saga_
 
-![Progress](https://img.shields.io/badge/matching-15.13%25-red)
+![Progress](https://img.shields.io/badge/matching-15.32%25-red)
 [![Bazel build](https://github.com/ttdecomp/saga/actions/workflows/build-bazel.yaml/badge.svg)](https://github.com/ttdecomp/saga/actions/workflows/build-bazel.yaml)
 [![Discord](https://img.shields.io/discord/1467775700894224555?color=%235865F2&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/2HJuMtzA7q)
 
@@ -37,6 +37,10 @@ bazel build --config=wasm //src:saga_wasm
 bazel test //scripts/checks:checks
 ```
 
+Optimized, sanitizer-free host builds are available as
+`--config=native_release` and `--config=wasm_release`; both compile with
+`-O2`.
+
 To run the native or browser build after supplying your own game assets, see
 [CONTRIBUTING.md](CONTRIBUTING.md):
 
@@ -60,23 +64,23 @@ See https://ttdecomp.github.io/saga/
 | `gameframework` | 84.0% | 5.9% |
 | `gamelib` | 6.7% | 4.3% |
 | `java` | 10.5% | 0.0% |
-| `legoapi` | 14.1% | 7.1% |
+| `legoapi` | 14.5% | 7.1% |
 | `legoapi/actions` | 6.3% | 1.4% |
 | `legoapi/ai` | 12.8% | 0.0% |
 | `legoapi/audio` | 6.6% | 5.0% |
-| `legoapi/characters` | 11.0% | 3.9% |
+| `legoapi/characters` | 11.2% | 3.9% |
 | `legoapi/core` | 24.6% | 6.7% |
 | `legoapi/cutscenes` | 11.0% | 2.3% |
-| `legoapi/gizmo` | 10.7% | 3.0% |
-| `legoapi/gizmos` | 35.6% | 26.6% |
-| `legoapi/items` | 8.3% | 4.0% |
-| `legoapi/menus` | 12.5% | 6.1% |
-| `legoapi/misc` | 8.0% | 3.6% |
+| `legoapi/gizmo` | 11.5% | 3.0% |
+| `legoapi/gizmos` | 36.4% | 26.8% |
+| `legoapi/items` | 8.7% | 4.0% |
+| `legoapi/menus` | 12.9% | 6.1% |
+| `legoapi/misc` | 8.8% | 3.6% |
 | `legoapi/props` | 28.2% | 2.4% |
-| `legoapi/render` | 10.2% | 6.2% |
+| `legoapi/render` | 10.7% | 6.2% |
 | `legoapi/world` | 23.7% | 6.4% |
-| `legogame` | 50.4% | 0.0% |
-| `nu2api` | 33.0% | 14.8% |
+| `legogame` | 50.3% | 0.0% |
+| `nu2api` | 33.0% | 14.7% |
 
 <!-- matching-table-end -->
 

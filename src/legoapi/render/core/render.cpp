@@ -7,6 +7,8 @@
 #include "legoapi/characters/core/character.h"
 #include "legoapi/gizmo/base/gizmo.h"
 #include "legoapi/items/objects/gameobjects.h"
+#include "legoapi/items/base/collection.h"
+#include "legoapi/menus/screens/shop.h"
 #include "legoapi/world/area.h"
 #include "legoapi/world/levels/episode.h"
 #include "legoapi/world/world_shared.h"
@@ -119,15 +121,16 @@ extern i32 PANELOFF;
 extern i32 noscenespecials;
 extern void RotateGameMatrix(numtx_s *matrix, i32 order, u16 x, u16 y, u16 z);
 extern NUGSCN *IconScene_FindById(i32 character_id);
+extern void SetLevelLights(void *set, f32 scale);
 void Hint_Draw(i32 player_index);
 
-static NUCAMERA *cam;
-static NUMTX local_inv_view_mtx;
-static NUVEC world_campos;
+NUCAMERA *cam;
+NUMTX local_inv_view_mtx;
+NUVEC world_campos;
 NUVEC *override_campos;
-static NUFRUSTRUM **frustra;
-static i32 *nfrustra;
-static i16 camera_roomid;
+NUFRUSTRUM **frustra;
+i32 *nfrustra;
+i16 camera_roomid;
 static NUPLANE near_clip_plane;
 NUPLANE cam_plane;
 i32 draw_portals;
@@ -162,6 +165,8 @@ namespace {
 
 DECOMP_ASSERT(sizeof(NuDisplaySpecialLayout) == 0xd0, "display special size");
 
+void SetAllInstancesHidden(NUGSCN *scene);
+
 // Camera zoom state
 f32 CameraZoom = 1.0f;
 
@@ -176,6 +181,7 @@ extern "C" {
     i32 NuDisplayListRndrSpecial(nuhspecial_s *special, NUMTX *mtx, i32 skinned, void *skin_mtx, void *blend_values);
     void Initialise_PS(NUGSCN *scene);
     void SetAllInstancesVisible(void);
+    void *NuVisiEvaluate(NUGSCN *scene, void *visibility_context);
 
     static void DisplaySceneSetClipResult(NUDLDLISTSCENE *scene, i32 clip_index, i32 clip_result) {
         const u32 buffer = scene->render_buffer >> 7;
@@ -260,10 +266,11 @@ extern "C" {
         return 1.0f;
     }
 
-    // NuDisplaySceneRndr.part.101's ordinary non-shadow path. NuVisiEvaluate
-    // is not reconstructed yet, so every instance starts portal-visible just
-    // as the target does when no visibility result is available.
     static void DisplaySceneEvaluateClipFallback(NUDLDLISTSCENE *scene) {
+        u8 visibility_context[0x2800];
+        NuVisibilityResult *visibility =
+            static_cast<NuVisibilityResult *>(NuVisiEvaluate(scene->gscene, visibility_context));
+        const bool portal_filter = visibility != NULL && visibility->portal_marker != NULL && portals_enabled != 0;
         scene->alpha_values = NULL;
         if (scene->nclip_objects <= 0) {
             return;
@@ -279,7 +286,13 @@ extern "C" {
         i32 instance_index = 0;
         while (clip_index < scene->nclip_objects) {
             const u8 flags = static_cast<u8>(scene->visibility_flags[instance_index]);
-            if ((flags & NUDL_INSTANCE_FLAG_VISIBLE) != 0) {
+            bool visibility_bit =
+                visibility == NULL || visibility->instance_tree_bits == NULL ||
+                (visibility->instance_tree_bits[instance_index >> 3] & (1U << (instance_index & 7))) != 0;
+            if (portal_filter && (flags & NUDL_INSTANCE_FLAG_NO_VISIBILITY_TEST) == 0) {
+                visibility_bit = (visibility->portal_bits[instance_index >> 3] & (1U << (instance_index & 7))) != 0;
+            }
+            if (visibility_bit && (flags & NUDL_INSTANCE_FLAG_VISIBLE) != 0) {
                 NUCLIPBOUNDS &bounds = scene->clip_bounds[instance_index];
                 const f32 distance_sqr = DisplaySceneDistanceSqrToCamera(bounds);
                 const i32 selected_clip = DisplaySceneSelectLod(scene, clip_index, distance_sqr);
@@ -341,13 +354,14 @@ extern "C" {
             SetAllInstancesVisible();
             return 0;
         }
-        if (scene->max_portals == 0 || scene->num_rooms == 0 || scene->portal_visibility_data == NULL) {
+        if (scene->max_portals == 0 || scene->num_rooms == 0 || scene->portal_instance_count == 0) {
             return 0;
         }
 
         scene->num_portal_frusta = 0;
         nfrustra = &scene->num_portal_frusta;
         frustra = scene->portal_frusta;
+        SetAllInstancesHidden(scene);
         cam = NuCameraGetCam();
         local_inv_view_mtx = *NuCameraGetMtx();
         world_campos = {
@@ -377,10 +391,14 @@ extern "C" {
                               (world_campos.y + cam->near_clip * forward_y) * forward_y +
                               (world_campos.z + cam->near_clip * forward_z) * forward_z);
 
-        // The recursive room/frustum traversal follows these target guards.
-        // Leave the preceding frame's visibility intact until that traversal
-        // is reconstructed, rather than publishing a partially hidden scene.
-        return 0;
+        NUVEC minimum = {-1.0f, -1.0f, -1.0f};
+        NUVEC maximum = {1.0f, 1.0f, 1.0f};
+        NUFRUSTRUM *frustum = buildFrustrum(&minimum, &maximum, -2);
+        for (i32 i = 0; i < scene->num_rooms; ++i) {
+            scene->rooms[i].flags &= ~NUROOM_FLAG_VISITED;
+        }
+        roomRecursive(scene, frustum, camera_roomid, -1, 0);
+        return 1;
     }
     void NuGScnRndr3(NUGSCN *scene) {
         NuDisplaySceneRndr(scene->display_list);
@@ -763,7 +781,12 @@ void DrawCables() {
 void DrawRipple(ripple_node_s *) {
 }
 
-void DrawShop3D(WORLDINFO_s *) {
+void DrawShop3D(WORLDINFO_s *world) {
+    if (drawptr != NULL) {
+        drawptr();
+    }
+    DrawTopShelf(picked);
+    SetLevelLights(world->rtl_set, 1.0f);
 }
 
 void DrawAreaBox(nuvec_s *, nuvec_s *, i32, i32) {
@@ -866,7 +889,70 @@ void DrawRectRGBA(float, float, float, float, u32, numtl_s *, i32, float) {
 void DrawSubItems() {
 }
 
+static __attribute__((noinline)) void Shop_DrawCharacter(shopitem_s *item, NUVEC *position, f32 scale_value, f32 ypush,
+                                                         u16 xrot, u16 yrot, u16 zrot) {
+    const bool top_shelf_character = item == &TopShelf[1];
+    if (top_shelf_character) {
+        const f32 cycle_length = static_cast<f32>(SHOPCHARCOUNT) * 0.2f;
+        const i32 character_index = static_cast<i32>(NuFmod(GameTimer.time_elapsed, cycle_length) / 0.2f);
+        item = &CharItems[character_index];
+    }
+
+    const i32 character_id = item->item_id;
+    const bool unlocked = CollectIDUnlocked(character_id) != NULL;
+    const bool unavailable = !unlocked || item->unlocked != 1;
+    const f32 alpha = unlocked ? 1.0f : 0.5f;
+
+    NUVEC scale = {scale_value, scale_value, scale_value};
+    NUMTX matrix;
+    NuMtxSetScale(&matrix, &scale);
+    NuMtxRotateX(&matrix, xrot);
+    NuMtxRotateY(&matrix, yrot);
+    NuMtxRotateZ(&matrix, zrot);
+    NuMtxTranslate(&matrix, position);
+    matrix.m31 += ypush;
+
+    NuSpecialDrawAtAlpha(&iconback, &matrix, top_shelf_character ? 1.0f : alpha);
+
+    i32 icon_object_id = CDataList[character_id].field20_0x42;
+    if (icon_object_id != -1) {
+        if (unavailable) {
+            ++icon_object_id;
+        }
+        WORLDINFO_s *world = WorldInfo_CurrentlyActive();
+        LEVEL_OBJECT_RUNTIME_s *icon = &world->lev_objs[icon_object_id];
+        if (icon->active != 0) {
+            NuSpecialDrawAtAlpha(&icon->special, &matrix, alpha);
+        }
+    }
+}
+
 void DrawTopShelf(i32) {
+    const f32 alpha_scale = 1.0f;
+
+    if (NuSpecialExistsFn(&iconback) != 0) {
+        Shop_DrawCharacter(&TopShelf[1], &ShelfPos[1], topscale[1] * alpha_scale, toppush[1], 0, shelfang, 0);
+    }
+
+    if (NuSpecialExistsFn(&TopShelf[2].special) != 0) {
+        NUANGVEC rotation = {0, shelfang, 0};
+        NUMTX matrix;
+        NuMtxSetRotateXYZ(&matrix, &rotation);
+        NuMtxScaleU(&matrix, topscale[2] * alpha_scale);
+        NuMtxTranslate(&matrix, &ShelfPos[2]);
+        matrix.m31 += toppush[2] + 0.005f;
+        NuSpecialDrawAt(&TopShelf[2].special, &matrix);
+    }
+
+    if (SHOPGOLDBRICKS > 0 && NuSpecialExistsFn(&TopShelf[4].special) != 0) {
+        NUVEC scale = {topscale[4] * alpha_scale, topscale[4] * alpha_scale, topscale[4] * alpha_scale};
+        NUMTX matrix;
+        NuMtxSetScale(&matrix, &scale);
+        NuMtxRotateY(&matrix, static_cast<u16>(shelfang + 0x2000));
+        NuMtxTranslate(&matrix, &ShelfPos[4]);
+        matrix.m31 += toppush[4] - 0.0325f;
+        NuSpecialDrawAt(&TopShelf[4].special, &matrix);
+    }
 }
 
 void DrawTorpedos(GameObject_s *) {
