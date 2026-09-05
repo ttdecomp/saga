@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 16.14583,
+    "fuzzy_match_percent": 16.17962,
     "total_code": "4722419",
     "matched_code": "38126",
     "matched_code_percent": 0.80734044,
@@ -47779,7 +47779,7 @@
           "address": 4840832,
           "offset": 3950864,
           "size": 22,
-          "match_percent": 51.42857
+          "match_percent": 99.71429
         },
         {
           "name": "_Z10ChatterSfxP12GameObject_sif",
@@ -52933,7 +52933,7 @@
           "address": 4841088,
           "offset": 3951120,
           "size": 217,
-          "match_percent": 8.181818
+          "match_percent": 73.22727
         },
         {
           "name": "_Z20CutScenePlayer_Startii",
@@ -67299,14 +67299,6 @@
           "match_percent": 0.429338
         },
         {
-          "name": "_ZL11SubItemMenuP6MENU_s",
-          "demangled_name": "SubItemMenu(MENU_s*)",
-          "address": 2391568,
-          "offset": 1501600,
-          "size": 2909,
-          "match_percent": 1.073718
-        },
-        {
           "name": "_ZL14DrawPackButtonP13GAMEMESSAGE_sP7nuvec_sf",
           "demangled_name": "DrawPackButton(GAMEMESSAGE_s*, nuvec_s*, float)",
           "address": 2410720,
@@ -70315,12 +70307,20 @@
           "match_percent": 5.40678
         },
         {
+          "name": "_ZL13Shop_GetInputP9SHOPINPUT",
+          "demangled_name": "Shop_GetInput(SHOPINPUT*)",
+          "address": 2366176,
+          "offset": 1476208,
+          "size": 1020,
+          "match_percent": 21.33992
+        },
+        {
           "name": "_Z8ItemMenuP6MENU_s",
           "demangled_name": "ItemMenu(MENU_s*)",
           "address": 2367200,
           "offset": 1477232,
           "size": 2237,
-          "match_percent": 1.468682
+          "match_percent": 32.177105
         },
         {
           "name": "_Z8CodeMenuP6MENU_s",
@@ -70328,7 +70328,7 @@
           "address": 2370128,
           "offset": 1480160,
           "size": 3222,
-          "match_percent": 0.61674
+          "match_percent": 0.646109
         },
         {
           "name": "NewMenu",
@@ -70462,7 +70462,7 @@
           "address": 2386304,
           "offset": 1496336,
           "size": 43,
-          "match_percent": 35.0
+          "match_percent": 99.833336
         },
         {
           "name": "_Z11BuyShopItemP10shopitem_sii",
@@ -70534,14 +70534,6 @@
           "offset": 330064,
           "size": 754,
           "match_percent": 2.153846
-        },
-        {
-          "name": "_ZL13Shop_GetInputP9SHOPINPUT",
-          "demangled_name": "Shop_GetInput(SHOPINPUT*)",
-          "address": 2366176,
-          "offset": 1476208,
-          "size": 1020,
-          "match_percent": 1.73913
         },
         {
           "name": "_ZL17StoreUnlockArcadev",
@@ -73605,7 +73597,7 @@
           "address": 1316752,
           "offset": 426784,
           "size": 12845,
-          "match_percent": 2.117745
+          "match_percent": 2.098121
         },
         {
           "name": "_Z19DrawForceBackEffectP12nuhspecial_s",
@@ -73805,7 +73797,7 @@
           "address": 2398704,
           "offset": 1508736,
           "size": 2082,
-          "match_percent": 12.207824
+          "match_percent": 11.163815
         },
         {
           "name": "_Z12DrawSubItemsv",
@@ -73813,7 +73805,7 @@
           "address": 2400800,
           "offset": 1510832,
           "size": 6077,
-          "match_percent": 0.185014
+          "match_percent": 9.274746
         },
         {
           "name": "_Z17DrawSubItemMenu3Dv",
@@ -115273,6 +115265,18 @@
       ]
     },
     {
+      "name": "_ZL11SubItemMenuP6MENU_s",
+      "demangled_name": "SubItemMenu(MENU_s*)",
+      "address": 2391568,
+      "offset": 1501600,
+      "size": 2909,
+      "match_percent": 1.073718,
+      "candidate_units": [
+        "legoapi/menus/core/hud.cpp.o",
+        "legoapi/menus/screens/menus.cpp.o"
+      ]
+    },
+    {
       "name": "VuVecSet",
       "demangled_name": "VuVecSet",
       "address": 2454832,
@@ -131432,8 +131436,8 @@
   "summary": {
     "bazel_units": 497,
     "functions": 13454,
-    "assigned_functions": 12119,
-    "ambiguous_functions": 184,
+    "assigned_functions": 12118,
+    "ambiguous_functions": 185,
     "unassigned_functions": 1151
   }
 }

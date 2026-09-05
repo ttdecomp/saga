@@ -12,6 +12,7 @@
 #include "legoapi/menus/screens/shop.h"
 #include "legoapi/world/area.h"
 #include "legoapi/world/levels/episode.h"
+#include "legoapi/world/mission.h"
 #include "legoapi/world/world_shared.h"
 #include "globals.h"
 struct starfighter_s;
@@ -148,6 +149,7 @@ extern f32 DROPINALPHA;
 extern f32 statstime;
 f32 GetAspectRatio();
 void Hint_Draw(i32 player_index);
+extern i32 CutScenePlayer_CanStart(i32 cutscene_id);
 
 NUCAMERA *cam;
 NUMTX local_inv_view_mtx;
@@ -930,7 +932,176 @@ void DrawQuestion(nuvec_s *, float, float) {
 void DrawRectRGBA(float, float, float, float, u32, numtl_s *, i32, float) {
 }
 
+__attribute__((force_align_arg_pointer)) void DrawItem(nuhspecial_s *special, nuvec_s *position, float scale_value,
+                                                       float unused, float y_push, u16 x_rot, u16 y_rot, u16 z_rot);
+static __attribute__((noinline)) void Shop_DrawCharacter(shopitem_s *item, NUVEC *position, f32 scale_value, f32 ypush,
+                                                         u16 xrot, u16 yrot, u16 zrot);
+
 void DrawSubItems() {
+    /* The sub-shelf is laid out as seven positions, with the centre position
+       (3) used by both the entering and leaving item.  Keep the slightly odd
+       indexing here: it is observable through the menu hit rectangles. */
+    f32 alpha = iconalphaoverride;
+    if (GetMenuID() == 13 && !TestForController()) {
+        const f32 since_touch = GlobalTimer.time_elapsed - (LastTouchTime + 1.32f);
+        if (since_touch > 4.0f) {
+            const f32 phase = NuFmod(since_touch, 4.0f);
+            const i32 angle = static_cast<i32>(phase * 0.25f * 65536.0f);
+            const f32 pulse = NuTrigTable[(angle >> 1) & 0x7fff] - 0.8f;
+            if (pulse >= 0.0f) {
+                alpha = pulse + 1.0f;
+            }
+        }
+    }
+
+    /* statstime is the fade used when an item/status icon is being replaced. */
+    f32 phase = statstime;
+    i32 phase_angle = 0x2000;
+    if (phase > 0.0f) {
+        phase -= FRAMETIME;
+        const f32 cycle = phase / 2.64f;
+        phase_angle = (static_cast<i32>(cycle * 0.25f + 1.75f) >> 1) & 0x7fff;
+        statstime = phase;
+    } else {
+        phase = 0.0f;
+        statstime = 0.0f;
+    }
+    alpha -= 0.5f * (NuTrigTable[phase_angle] + alpha);
+
+    shopitem_s *items = NULL;
+    i32 *shelf_ids = NULL;
+    NUVEC *positions = NULL;
+    f32 base_scale = 0.9f;
+    switch (picked) {
+        case 0:
+            items = HintItems;
+            shelf_ids = HintShelfIds;
+            positions = HintCurPos;
+            break;
+        case 1:
+            items = CharItems;
+            shelf_ids = CharShelfIds;
+            positions = CharCurPos;
+            base_scale = 0.9f;
+            break;
+        case 2:
+            items = ExtraItems;
+            shelf_ids = ExtraShelfIds;
+            positions = ExtraCurPos;
+            break;
+        case 3:
+            return;
+        case 4:
+            items = BrickItems;
+            shelf_ids = BrickShelfIds;
+            positions = BrickCurPos;
+            break;
+        case 5:
+            items = CutItems;
+            shelf_ids = CutShelfIds;
+            positions = CutCurPos;
+            break;
+        default:
+            return;
+    }
+    if (items == NULL || shelf_ids == NULL || positions == NULL || GameMenuLevel < 0) {
+        return;
+    }
+
+    const f32 item_scale = picked == 1 ? 0.28f : (picked == 4 ? 0.8f : base_scale);
+    MENU *menu = &GameMenu[GameMenuLevel];
+    for (i32 index = 1; index < 7; ++index) {
+        i32 slot = index;
+        if (index == 6) {
+            slot = 3;
+        } else if (index >= 3) {
+            slot = index - 1;
+        }
+
+        const i32 item_id = shelf_ids[slot];
+        shopitem_s *item = &items[item_id];
+        NUVEC position = positions[slot];
+        f32 scale = item_scale * inoutscale;
+        if (slot == 1) {
+            scale = item_scale * inoutscale * scaleoverride[1];
+        } else if (slot == 2) {
+            scale = item_scale * scale2 * inoutscale;
+        } else if (slot == 3) {
+            scale = 0.5f * alpha + item_scale * scale3 * inoutscale;
+        } else if (slot == 4) {
+            scale = item_scale * scale4 * inoutscale;
+        }
+        if (moveitems == 2 && slot == 3) {
+            NuVecAdd(&position, &position, &selectedoff);
+            scale *= 1.25f;
+        }
+        const f32 ypush = subpush[slot < 3 ? slot : 2];
+
+        NUVEC screen;
+        NuCameraTransformScreenClip(&screen, &position, 1, NULL);
+        menu->item_x[slot + 4] = screen.x;
+        menu->item_y[slot + 4] = screen.y;
+        f32 hit_size = 0.0f;
+        f32 hit_width = 0.0f;
+        if (moveitems < 1) {
+            hit_size = (scale / item_scale) * 0.15f;
+            hit_width = hit_size / GetAspectRatio();
+        }
+        menu->item_width[slot + 4] = hit_width;
+        menu->item_height[slot + 4] = hit_size;
+        menu->item_column[slot + 4] = slot;
+        menu->item_row[slot + 4] = 1;
+
+        const u16 angle = static_cast<u16>(shelfang);
+        switch (picked) {
+            case 0: {
+                if (item->unlocked == 1) {
+                    DrawItem(&TopShelf[0].special, &position, scale * alpha, 0.0f, ypush, 0, angle, 0);
+                } else {
+                    DrawItem(&infoblank, &position, scale * alpha, 0.0f, ypush, 0, angle, 0);
+                    /* This is intentionally the original's odd TopShelf offset. */
+                    DrawItem(reinterpret_cast<nuhspecial_s *>(reinterpret_cast<u8 *>(TopShelf) + 0x1c4), &position,
+                             scale * alpha, 0.0f, ypush, 0, angle, 0);
+                }
+                break;
+            }
+            case 1:
+                if (NuSpecialExistsFn(&iconback) != 0) {
+                    Shop_DrawCharacter(item, &position, scale * alpha, ypush, 0, angle, 0);
+                }
+                break;
+            case 2: {
+                const bool unlocked = item->unlocked == 1;
+                if (!unlocked) {
+                    DrawItem(&toolblank, &position, scale * alpha, 0.0f, ypush, 0, angle, 0);
+                }
+                if (NuSpecialExistsFn(&item->special) != 0) {
+                    DrawItem(&item->special, &position, scale * alpha, 0.0f, ypush, 0, angle, 0);
+                }
+                break;
+            }
+            case 4:
+                if (NuSpecialExistsFn(&item->special) != 0) {
+                    DrawItem(&item->special, &position, scale * alpha, 0.0f, ypush, 0, angle, 0);
+                }
+                break;
+            case 5: {
+                nuhspecial_s *blank = &cutblank;
+                nuhspecial_s *film = &cutfilm_locked;
+                if (shopcutsceneplayer != NULL && CutScenePlayer_CanStart(item->item_id) != 0) {
+                    blank = &toolblank;
+                    film = &cutfilm_unlocked;
+                }
+                DrawItem(blank, &position, scale * alpha, 0.0f, ypush, 0,
+                         static_cast<u16>(angle + item->item_id * 0x1555), 0);
+                DrawItem(film, &position, scale * alpha, 0.0f, ypush, 0,
+                         static_cast<u16>(angle + item->item_id * 0x1555), 0);
+                break;
+            }
+            default:
+                break;
+        }
+    }
 }
 
 static __attribute__((noinline)) void Shop_DrawCharacter(shopitem_s *item, NUVEC *position, f32 scale_value, f32 ypush,
@@ -2108,7 +2279,13 @@ void DrawPanel() {
                 DrawCharIcon(character_id, -ICONX, status_y, 0.0f, ICONSIZE, 0xa6, alpha, alpha, draw_character, NULL);
                 if (static_cast<i8>(player->apiobj.flags_low) < 0 && player->apiobj.character_data != NULL &&
                     player->apiobj.character_data->name_id != -1) {
-                    DrawHitPoints(player, -PANEL_HITPOINTSX, status_y + PANEL_HEARTY, 0.195f, alpha, 2, 0.0f, 0);
+                    const bool raised_hearts =
+                        (WORLD->area != NULL &&
+                         (WORLD->area == HUB_ADATA ||
+                          (WORLD->area->flags & (AREAFLAG_SUPER_BONUS_AREA & ~AREAFLAG_BONUS_AREA)) != 0)) ||
+                        SuperStory != 0 || ChallengeMode != 0 || Mission_Active(NULL) != NULL;
+                    DrawHitPoints(player, -PANEL_HITPOINTSX, status_y + (raised_hearts ? 0.0f : PANEL_HEARTY), 0.195f,
+                                  alpha, 2, 0.0f, 0);
                 }
             }
 

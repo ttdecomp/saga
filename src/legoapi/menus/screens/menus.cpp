@@ -5,10 +5,13 @@
 #include "globals.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/menus/core/text.h"
+#include "legoapi/menus/screens/shop.h"
+#include "legoapi/menus/screens/gamemenuall.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/level.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/numusic/numusic.h"
+#include "nu2api/numath/nufloat.h"
 #include "nu2api/numath/nutrig.h"
 
 struct AIROW_s;
@@ -55,10 +58,179 @@ void GetMenuActiveChild(eduimenu_s *) {
 }
 void ResizePauseScreenTexture(i32, i32) {
 }
-void CodeMenu(MENU_s *) {
-}
-i32 ItemMenu(MENU_s *) {
+i32 CodeMenu(MENU_s *) {
     return 0;
+}
+
+extern void GameAudio_PlaySfx(i32, nuvec_s *, i32, i32);
+extern void GameCam_Blend(GAMECAMERA_s *, f32, f32, i32);
+extern void Hint_CancelCurrent(void);
+extern void DrawSubItemMenu2D(void);
+extern void DrawSubItemMenu3D(void);
+extern void DrawCodeMenu(void);
+extern void DrawCodeMenu3D(void);
+static i32 SubItemMenu(MENU_s *) {
+    return 0;
+}
+
+static f32 ShopClamp01(f32 value) {
+    return NuFmax(0.0f, NuFmin(value, 1.0f));
+}
+
+static f32 ShopSinePhase(f32 phase) {
+    const i32 angle = static_cast<i32>(phase * 65536.0f + 16384.0f);
+    return (NuTrigTable[(angle >> 1) & 0x7fff] + 1.0f) * 0.5f;
+}
+
+static __used__ i32 Shop_GetInput(SHOPINPUT *input) {
+    memset(input, 0, sizeof(*input));
+
+    const u32 held = GamePad[0].buttons_held | GamePad[1].buttons_held;
+    const u32 pressed = GamePad[0].buttons_pressed | GamePad[1].buttons_pressed;
+    const u32 alternate_held = GamePad[0].left_directions | GamePad[1].left_directions;
+    const u32 alternate_pressed = GamePad[0].right_directions | GamePad[1].right_directions;
+    const u32 active = held | pressed | alternate_held | alternate_pressed;
+
+    // ItemMenu consumes the horizontal pair at offsets 0/4.  The vertical
+    // pair follows at offsets 8/c in the original SHOPINPUT layout.
+    input->value[0] = ((active & GAMEPAD_DLEFT) != 0) ? 1 : 0;
+    input->value[1] = ((active & GAMEPAD_DRIGHT) != 0) ? 1 : 0;
+    input->value[2] = ((active & GAMEPAD_DUP) != 0) ? 1 : 0;
+    input->value[3] = ((active & GAMEPAD_DDOWN) != 0) ? 1 : 0;
+    input->value[8] = ((pressed | alternate_pressed) & GAMEPAD_MENUSELECT) != 0 ? 1 : 0;
+    input->value[9] = ((pressed | alternate_pressed) & GAMEPAD_MENUCANCEL) != 0 ? 1 : 0;
+    return 0;
+}
+
+i32 ItemMenu(MENU_s *menu) {
+    SHOPINPUT input;
+    const i32 entry_picked = picked;
+    Shop_GetInput(&input);
+
+    if (slidetimer >= 0.0f) {
+        slidetimer -= FRAMETIME;
+        FRAMETIME = 0.0f;
+    }
+    if (ExitMenu)
+        FRAMETIME = 0.0f;
+
+    i32 candidate = entry_picked;
+    i32 transition = 0;
+    if (menu != nullptr && menu->confirm_pressed != 0 && menu->selected_row == 0) {
+        candidate = static_cast<i32>(menu->selected_column) + 1;
+        if (candidate == entry_picked) {
+            input.value[8] = 1;
+        }
+    }
+
+    itemchanged = 0;
+    Hint_CancelCurrent();
+    hintdrawwait = 0.2f;
+
+    if (slidetimer < 0.0f) {
+        movesfxlock = 0;
+
+        if (input.value[0] != 0 && picked > 1) {
+            candidate = picked - 1;
+            if (candidate == 3)
+                candidate = 2;
+            if (candidate == 4) {
+                if (SHOPGOLDBRICKS == 0)
+                    candidate = picked - 2;
+            }
+            transition = 1;
+        } else if (input.value[1] != 0 && picked <= 3) {
+            candidate = picked + 1;
+            if (candidate == 3)
+                candidate = picked + 2;
+            if (candidate == 4 && SHOPGOLDBRICKS == 0)
+                candidate = picked;
+            transition = 1;
+        } else if (input.value[8] != 0) {
+            if (picked == 0) {
+                picked = 1;
+            } else if (picked == 5) {
+                picked = SHOPGOLDBRICKS != 0 ? 4 : 3;
+            }
+            candidate = picked;
+        } else if (input.value[9] != 0) {
+            transition = 1;
+        }
+
+        if (transition || candidate != entry_picked) {
+            lastitem = picked;
+            SubMenu = 0;
+            picked = candidate <= 0 ? 1 : candidate > 5 ? 5 : candidate;
+
+            slidetimer = 0.125f;
+            if (movesfxlock == 0) {
+                movesfxlock = 1;
+                GameAudio_PlaySfx(0x2f, reinterpret_cast<nuvec_s *>(SubShelfPos) + 5, 0, 0);
+            }
+            GameCam_Blend(GameCam, 0.3f, 0.0f, 1);
+            FRAMETIME = 0.0f;
+        }
+    }
+
+    if (slidetimer >= 0.0f && lastitem != picked) {
+        const f32 reverse_phase = slidetimer * 8.0f;
+        const f32 old_factor = ShopClamp01(1.0f - ShopSinePhase(1.0f - reverse_phase));
+        const f32 forward_factor = ShopClamp01(1.0f - ShopSinePhase(reverse_phase));
+
+        topscale[lastitem] = TopBigScale[lastitem] + (TopShelfScale[lastitem] - TopBigScale[lastitem]) * old_factor;
+        toppush[lastitem] = TopShelfPush[lastitem] + (TopBigPush[lastitem] - TopShelfPush[lastitem]) * forward_factor;
+
+        if (picked != -1 && lastitem != -1) {
+            topscale[picked] = TopBigScale[picked] + (TopShelfScale[picked] - TopBigScale[picked]) * old_factor;
+            toppush[picked] = TopShelfPush[picked] + (TopBigPush[picked] - TopShelfPush[picked]) * old_factor;
+        }
+    }
+
+    if (SubMenu == 0) {
+        if (ExitMenu && slidetimer <= 0.0f) {
+            menuptr = nullptr;
+            return 5;
+        }
+        return 7;
+    }
+
+    if (slidetimer > 0.0f)
+        return 7;
+
+    picked = lastitem;
+    SubMenu = 0;
+    if (TopShelf[lastitem].type == 3) {
+        lastitem = -1;
+        easesubin = 1;
+        inoutscale = 0.0f;
+        cheatname = 0;
+        slidetimer = 0.125f;
+        shopmenu = 11;
+        col = 0;
+
+        ++currentmenulevel;
+        menuparent[currentmenulevel] = menuptr;
+        menuptr = CodeMenu;
+        memcpy(usercode, "AAAAAA", 6);
+
+        ++currentdrawlevel;
+        drawparent[currentdrawlevel] = drawpanelptr;
+        drawpanelptr = DrawCodeMenu;
+        drawptr = DrawCodeMenu3D;
+    } else {
+        easesubin = 1;
+        ++currentmenulevel;
+        inoutscale = 0.0f;
+        menuparent[currentmenulevel] = menuptr;
+        menuptr = SubItemMenu;
+
+        ++currentdrawlevel;
+        slidetimer = 0.125f;
+        drawparent[currentdrawlevel] = drawpanelptr;
+        drawpanelptr = DrawSubItemMenu2D;
+        drawptr = DrawSubItemMenu3D;
+    }
+    return 7;
 }
 i32 GetMenuID(void) {
     if (GameMenu[GameMenuLevel].menu != -1) {

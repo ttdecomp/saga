@@ -15,6 +15,7 @@
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nucore/nustring.h"
+#include "legoapi/core/input/gamepads.h"
 
 #include <string.h>
 
@@ -75,8 +76,10 @@ NUGSPLINE *shopcamspline = NULL;
 NUVEC *shopcampos = NULL;
 NUVEC *shopcamlookat = NULL;
 __attribute__((visibility("hidden"))) f32 TopShelfScale[6] = {};
+__attribute__((visibility("hidden"))) f32 TopBigScale[6] = {};
 __attribute__((visibility("hidden"))) f32 topscale[6] = {};
 __attribute__((visibility("hidden"))) f32 TopShelfPush[6] = {};
+__attribute__((visibility("hidden"))) f32 TopBigPush[6] = {};
 __attribute__((visibility("hidden"))) f32 toppush[6] = {};
 i32 oldpicked = 1;
 i32 picked = 1;
@@ -84,13 +87,21 @@ i32 subpicked = 0;
 i32 subitemselected = 0;
 __attribute__((visibility("hidden"))) void (*drawptr)() = NULL;
 
-typedef i32 (*ShopMenuCallback)(MENU_s *);
-typedef void (*ShopDrawCallback)();
+__attribute__((visibility("hidden"))) f32 scale2 = 0.0f;
+__attribute__((visibility("hidden"))) f32 scale3 = 0.0f;
+__attribute__((visibility("hidden"))) f32 scale4 = 0.0f;
+__attribute__((visibility("hidden"))) f32 subpush[3] = {};
+__attribute__((visibility("hidden"))) i32 moveitems = 0;
+NUVEC selectedoff = {};
+void *shopcutsceneplayer = NULL;
 
 f32 ShopLockedScale = 0.0f;
 f32 ShopNameAlpha = 0.0f;
 i32 enteredshop = 0;
 i32 SHOPACTIVE = 0;
+i32 shopmenu = 0;
+i32 col = 0;
+char usercode[6] = {'A', 'A', 'A', 'A', 'A', 'A'};
 extern i32 shop_from_cutsceneplayer;
 
 __attribute__((visibility("hidden"))) f32 SubBigCharPush = 0.0f;
@@ -114,6 +125,13 @@ __attribute__((visibility("hidden"))) f32 slidetimer = 0.0f;
 __attribute__((visibility("hidden"))) f32 scaleoverride[7] = {};
 __attribute__((visibility("hidden"))) i32 ExitMenu = 0;
 __attribute__((visibility("hidden"))) i32 lastitem = 0;
+__attribute__((visibility("hidden"))) i32 itemchanged = 0;
+__attribute__((visibility("hidden"))) f32 hintdrawwait = 0.0f;
+__attribute__((visibility("hidden"))) i32 movesfxlock = 0;
+__attribute__((visibility("hidden"))) i32 SubMenu = 0;
+__attribute__((visibility("hidden"))) i32 easesubin = 0;
+__attribute__((visibility("hidden"))) f32 inoutscale = 0.0f;
+__attribute__((visibility("hidden"))) i32 cheatname = 0;
 
 extern i32 ItemMenu(MENU_s *menu);
 extern void DrawItemMenu2D();
@@ -415,5 +433,6 @@ void InitShop(WORLDINFO_s *world) {
     subpicked = 0;
 }
 
-void CheckCash(shopitem_s *, i32) {
+i32 CheckCash(shopitem_s *items, i32 item) {
+    return Game.coins >= items[item].price;
 }
