@@ -21,6 +21,7 @@ struct rtlidata_s;
 #include "legoapi/render/core/SwipeDecalRenderer.h"
 #include "nu2api/nu3d/nudlist.h"
 #include "nu2api/nu3d/nucamera.h"
+#include "nu2api/nu3d/nuqfnt.h"
 #include "nu2api/nu3d/nurndrstat.h"
 #include "nu2api/nu3d/nuvport.h"
 #include "nu2api/nu3d/NuRenderDevice.h"
@@ -47,6 +48,12 @@ struct rtlidata_s;
 extern NuVertexFormatPS *g_nuFaceOnVertexFormat;
 extern NuVertexFormatPS *g_nuDebrisVertexFormat;
 extern i32 VehicleArea;
+extern i32 GAMEDEMO;
+extern STATUSPACKET_s StatusPacket;
+extern STATUS_STAGE_s *StatusStages;
+extern f32 iconalphaoverride;
+extern f32 icon_y;
+extern i32 draw_player_icons;
 
 void DisplayListGenerateTransforms(nudisplayscene_s *scene);
 void DrawGameObjectsDraw(i32 pass);
@@ -68,6 +75,7 @@ struct ripple_set_s;
 struct VuVec;
 
 extern "C" void SetQFont2D(void);
+extern "C" void Text3DStringEncode(char *src, u16 *dst);
 extern "C" bool StateAnimEvaluate2(StateAnim *state, u8 *index, char *value, f32 frame);
 extern "C" void DrawMenu(i32 paused);
 extern "C" i32 NuRndrBeginScene(i32);
@@ -123,6 +131,8 @@ extern i32 noscenespecials;
 extern void RotateGameMatrix(numtx_s *matrix, i32 order, u16 x, u16 y, u16 z);
 extern NUGSCN *IconScene_FindById(i32 character_id);
 extern void SetLevelLights(void *set, f32 scale);
+extern f32 ICONX;
+extern f32 ICONSIZE;
 f32 GetAspectRatio();
 void Hint_Draw(i32 player_index);
 
@@ -1137,7 +1147,45 @@ void DrawRopeCurved(nuvec_s *, nuvec_s *, i32, i32, numtl_s *) {
 void DrawRopeSingle(nuvec_s *, nuvec_s *, float, numtl_s *, float, float, float, float) {
 }
 
-void DrawStatusText(char *, u16, float, float, float, u32, i32) {
+void DrawStatusText(char *text, u16 angle, float x, float y, float scale, u32 colour, i32 alignment) {
+    static NUMTX status_mtx;
+
+    NUVEC origin = {0.0f, 0.0f, 800.0f};
+    NUVEC position = {x * 350.0f, y * 300.0f, 0.0f};
+    u16 encoded[512];
+
+    NuQFntSetJustifiedTolerances(1.2f, 1.2f);
+    NuMtxSetIdentity(&status_mtx);
+    NuMtxSetRotationX(&status_mtx, 0);
+    NuMtxRotateY(&status_mtx, 0);
+    NuMtxRotateZ(&status_mtx, angle);
+    NuMtxTranslate(&status_mtx, &origin);
+    NuMtxTranslate(&status_mtx, &position);
+    NuMtxMul(&status_mtx, &status_mtx, NuCameraGetMtx());
+
+    NuQFntSet(QFont3DZ);
+    NuQFntSetMtx(QFont3DZ, &status_mtx);
+    NuQFntPushPrintMode(NUQFNT_CSMODE_ABSOLUTE);
+    NuQFntSetCoordinateSystem(NUQFNT_CSMODE_ABSOLUTE);
+    NuQFntSetColour(QFont3DZ, colour);
+    NuQFntSetScale(QFont3DZ, scale, scale);
+    Text3DStringEncode(text, encoded);
+
+    if (alignment == 2) {
+        const f32 height = NuQFntHeight(QFont3DZ);
+        NuQFntMove(QFont3DZ, 0.0f, -height * 0.5f, 0.0f);
+    } else if (alignment == 8) {
+        const f32 height = NuQFntHeight(QFont3DZ);
+        const f32 width = NuQFntPrintLenW(QFont3DZ, encoded);
+        NuQFntMove(QFont3DZ, -width, -height * 0.5f, 0.0f);
+    } else {
+        const f32 height = NuQFntHeight(QFont3DZ);
+        const f32 width = NuQFntPrintLenW(QFont3DZ, encoded);
+        NuQFntMove(QFont3DZ, -width * 0.5f, -height * 0.5f, 0.0f);
+    }
+    NuQFntPrintW(QFont3DZ, encoded);
+    NuQFntPopPrintMode();
+    NuQFntSetCoordinateSystem(NUQFNT_CSMODE_NORMALISED);
 }
 
 void DrawWallSpline(float) {
@@ -1179,7 +1227,11 @@ void DrawPaintLights() {
 void DrawShopPrompts() {
 }
 
-void DrawStatusIcons(STATUSPACKET_s *, float, float) {
+void DrawStatusIcons(STATUSPACKET_s *status, float y, float alpha) {
+    const f32 x = ICONX;
+    const f32 icon_alpha = (status->player0_active != 0 ? 1.0f : 0.25f) * alpha;
+    const f32 size = ICONSIZE;
+    DrawCharIcon(static_cast<i16>(status->player0_model), -x, y, 0.0f, size, 0xa5, icon_alpha, icon_alpha, 1, NULL);
 }
 
 void DrawStillScreen(i32 clear) {
@@ -1219,10 +1271,63 @@ void DrawMeleeTargets(i16 *, char *, float *, i32) {
 void DrawMiniKitCount(float, float, i32, i32) {
 }
 
-void DrawStatusBG_LSW(STATUSPACKET_s *) {
+void DrawStatusBG_LSW(STATUSPACKET_s *status) {
+    STATUS_STAGE_s *stage = status->stage;
+    if (stage->field_0x14 == -1) {
+        stage->field_0x18 = 0;
+        stage->field_0x14 = 0;
+    }
 }
 
 void DrawStatusScreen(WORLDINFO_s *) {
+    static u8 KitPart[0x2d0];
+
+    iconalphaoverride = -1.0f;
+    memset(KitPart, 0, sizeof(KitPart));
+
+    if (GAMEDEMO != 0 || FadeSys.fade > 0.0f) {
+        return;
+    }
+
+    STATUSPACKET_s *status = &StatusPacket;
+    if (status->status_flags == 0) {
+        return;
+    }
+
+    if (status->draw_background_callback != NULL) {
+        status->draw_background_callback(status);
+    }
+
+    for (STATUS_STAGE_s *stage = StatusStages; stage->type != -1; ++stage) {
+        if (stage->draw_callback != NULL) {
+            stage->draw_callback(stage, status, stage == status->stage);
+        }
+    }
+
+    STATUS_STAGE_s *stage = status->stage;
+    f32 alpha;
+    if (stage->type == 11) {
+        return;
+    } else if (stage->type == 12) {
+        alpha = 0.0f;
+    } else if (stage->type == 10) {
+        alpha = stage->field_0x18 < 1.0f ? 1.0f - stage->field_0x18 : 0.0f;
+    } else {
+        alpha = 1.0f;
+        if (stage->type == 19 && stage->field_0x14 != 0) {
+            const f32 time = stage->field_0x18;
+            if (time < 1.0f) {
+                alpha = 1.0f - time;
+            } else {
+                const f32 fade_start = stage->field_0x1c - 1.0f;
+                alpha = time < fade_start ? 0.0f : (time - fade_start) / (stage->field_0x1c - fade_start);
+            }
+        }
+    }
+
+    if (draw_player_icons != 0) {
+        DrawStatusIcons(status, icon_y, iconalphaoverride >= 0.0f ? iconalphaoverride : alpha);
+    }
 }
 
 void Draw_LOADCORRUPT() {

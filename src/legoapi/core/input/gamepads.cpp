@@ -211,9 +211,6 @@ void SpaceRumbleProcess() {
 void NewRumbleAllPlayers(float, float, i32, i32) {
 }
 
-void NewStatusRumbleBuzz(i32, float, float, i32) {
-}
-
 i32 ObjLookingWithLeftStick(GameObject_s *object) {
     if (object->character_id_0x7a5 == 0x4d) {
         return object->field_0x7a3 == 0 ? 2 : 1;

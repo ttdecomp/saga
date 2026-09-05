@@ -1,16 +1,16 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 15.328772,
+    "fuzzy_match_percent": 15.353579,
     "total_code": "4722419",
-    "matched_code": "37472",
-    "matched_code_percent": 0.79349166,
+    "matched_code": "37547",
+    "matched_code_percent": 0.79507977,
     "total_data": "14606528",
     "matched_data": "543696",
     "matched_data_percent": 3.722281,
     "total_functions": 13459,
-    "matched_functions": 948,
-    "matched_functions_percent": 7.0436144,
+    "matched_functions": 950,
+    "matched_functions_percent": 7.0584736,
     "total_units": 1
   },
   "text": {
@@ -50367,14 +50367,6 @@
           "match_percent": 20.0
         },
         {
-          "name": "_Z19NewStatusRumbleBuzziffi",
-          "demangled_name": "NewStatusRumbleBuzz(int, float, float, int)",
-          "address": 2427936,
-          "offset": 1537968,
-          "size": 359,
-          "match_percent": 4.117647
-        },
-        {
           "name": "SavePadRecord",
           "demangled_name": "SavePadRecord",
           "address": 2542839,
@@ -69145,7 +69137,7 @@
           "address": 2425536,
           "offset": 1535568,
           "size": 54,
-          "match_percent": 38.18182
+          "match_percent": 99.72727
         },
         {
           "name": "_Z15FindStatusStagei",
@@ -69161,7 +69153,15 @@
           "address": 2427888,
           "offset": 1537920,
           "size": 36,
-          "match_percent": 99.6
+          "match_percent": 100.0
+        },
+        {
+          "name": "_Z19NewStatusRumbleBuzziffi",
+          "demangled_name": "NewStatusRumbleBuzz(int, float, float, int)",
+          "address": 2427936,
+          "offset": 1537968,
+          "size": 359,
+          "match_percent": 32.22549
         },
         {
           "name": "_Z15NextStatusStageP14STATUSPACKET_s",
@@ -72285,7 +72285,7 @@
           "address": 1107680,
           "offset": 217712,
           "size": 586,
-          "match_percent": 36.70922
+          "match_percent": 36.8156
         },
         {
           "name": "_Z15DrawGameObjectsv",
@@ -72469,7 +72469,7 @@
           "address": 2019840,
           "offset": 1129872,
           "size": 39,
-          "match_percent": 46.666668
+          "match_percent": 100.0
         },
         {
           "name": "_Z23DrawGameMessage_TargetsP13GAMEMESSAGE_sP7nuvec_sf",
@@ -72685,7 +72685,7 @@
           "address": 2425600,
           "offset": 1535632,
           "size": 721,
-          "match_percent": 2.625
+          "match_percent": 81.39375
         },
         {
           "name": "_Z22DrawStatusTextFractioniifftfjff",
@@ -72701,7 +72701,7 @@
           "address": 2435856,
           "offset": 1545888,
           "size": 178,
-          "match_percent": 11.351352
+          "match_percent": 96.324326
         },
         {
           "name": "_Z17DrawStatusMiniKitfffffiP14STATUSPACKET_sf",
@@ -72725,7 +72725,7 @@
           "address": 2444672,
           "offset": 1554704,
           "size": 2554,
-          "match_percent": 0.721649
+          "match_percent": 11.910653
         },
         {
           "name": "_ZL29DisplayListMaterialClipUpdateP16nudisplayscene_s",
@@ -72853,7 +72853,7 @@
           "address": 3138778,
           "offset": 2248810,
           "size": 403,
-          "match_percent": 28.864407
+          "match_percent": 30.415255
         },
         {
           "name": "NuGScnFixupPS",
@@ -72861,7 +72861,7 @@
           "address": 3139181,
           "offset": 2249213,
           "size": 1016,
-          "match_percent": 23.035212
+          "match_percent": 23.47183
         },
         {
           "name": "_Z9DrawMSitui",

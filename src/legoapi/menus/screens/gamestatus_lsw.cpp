@@ -23,6 +23,7 @@ extern f32 statstime;
 extern f32 cointotaltime;
 extern i32 screendump;
 extern i32 newgamecam;
+extern STATUSPACKET_s StatusPacket;
 
 i32 GetMenuID();
 extern "C" i32 MenuInMemoryCard();
@@ -56,6 +57,12 @@ namespace {
 
 u16 hub_iconang[4] = {};
 static f32 hub_icontime[4] = {};
+STATUS_STAGE_s *StatusStages;
+f32 iconalphaoverride;
+f32 icon_y;
+i32 draw_player_icons;
+static i32 DrawGoldBrick_Stage;
+static i32 DrawGoldBrick_Phase;
 
 void NewGameMode() {
     NewMode = 1;
@@ -122,7 +129,66 @@ void Save_LSW_Update(STATUS_STAGE_s *, STATUSPACKET_s *, float) {
 void InitStatusScreen(WORLDINFO_s *) {
 }
 
-void SetDrawGoldBrick(STATUSPACKET_s *, i32) {
+void SetDrawGoldBrick(STATUSPACKET_s *packet, i32) {
+    const i32 stage = packet->current_gold_brick;
+    if (packet->gold_brick_enabled[stage] != 0) {
+        DrawGoldBrick_Stage = stage;
+        DrawGoldBrick_Phase = packet->stage->field_0x14;
+    }
+}
+
+void NewStatusRumbleBuzz(i32 player, float amount, float buzz, i32 priority) {
+    if (!(amount > 0.0f)) {
+        if (StatusPacket.player0_active != 0 && (player == 0 || player == -1)) {
+            goto player0_buzz;
+        }
+        if (StatusPacket.player1_active != 0 && (player == 1 || player == -1)) {
+            goto player1_buzz;
+        }
+        return;
+    }
+
+    if (StatusPacket.player0_active != 0 && (player == 0 || player == -1)) {
+        if (StatusPacket.player0_rumble_time <= 0.0f || amount > StatusPacket.player0_rumble_time /
+                                                                     StatusPacket.player0_rumble_duration *
+                                                                     StatusPacket.player0_rumble_amount) {
+            StatusPacket.player0_rumble_amount = amount;
+            StatusPacket.player0_rumble_duration = amount;
+            StatusPacket.player0_rumble_time = amount;
+        }
+    player0_buzz:
+        if (buzz > StatusPacket.player0_buzz_amount) {
+            StatusPacket.player0_buzz_amount = buzz;
+        }
+        if (priority > 0) {
+            const i32 old_priority = StatusPacket.player0_rumble_priority;
+            ++priority;
+            if (priority > old_priority) {
+                StatusPacket.player0_rumble_priority = static_cast<u8>(priority);
+            }
+        }
+    }
+
+    if (StatusPacket.player1_active != 0 && (player == 1 || player == -1)) {
+        if (StatusPacket.player1_rumble_time <= 0.0f || amount > StatusPacket.player1_rumble_time /
+                                                                     StatusPacket.player1_rumble_duration *
+                                                                     StatusPacket.player1_rumble_amount) {
+            StatusPacket.player1_rumble_amount = amount;
+            StatusPacket.player1_rumble_duration = amount;
+            StatusPacket.player1_rumble_time = amount;
+        }
+    player1_buzz:
+        if (buzz > StatusPacket.player1_buzz_amount) {
+            StatusPacket.player1_buzz_amount = buzz;
+        }
+        if (priority > 0) {
+            const i32 old_priority = StatusPacket.player1_rumble_priority;
+            ++priority;
+            if (priority > old_priority) {
+                StatusPacket.player1_rumble_priority = static_cast<u8>(priority);
+            }
+        }
+    }
 }
 
 void StatusIconsOnOff(float) {
@@ -145,7 +211,7 @@ void StatusPacketReset(STATUSPACKET_s *packet) {
     const i32 field_0x04 = packet->field_0x04;
     const i32 field_0x08 = packet->field_0x08;
     void (*reset_callback)(STATUSPACKET_s *) = packet->reset_callback;
-    const i32 field_0x10 = packet->field_0x10;
+    void (*draw_background_callback)(STATUSPACKET_s *) = packet->draw_background_callback;
     const f32 field_0x68 = packet->field_0x68;
 
     reset_callback(packet);
@@ -155,7 +221,7 @@ void StatusPacketReset(STATUSPACKET_s *packet) {
     packet->lsw_packet = const_cast<STATUSPACKET_LSW_s *>(lsw_packet);
     packet->field_0x04 = field_0x04;
     packet->field_0x08 = field_0x08;
-    packet->field_0x10 = field_0x10;
+    packet->draw_background_callback = draw_background_callback;
     packet->field_0x68 = field_0x68;
 }
 

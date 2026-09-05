@@ -1435,9 +1435,21 @@ struct STATUSPACKET_s {
     STATUSPACKET_LSW_s *lsw_packet; // 0x00
     i32 field_0x04;
     i32 field_0x08;
-    void (*reset_callback)(STATUSPACKET_s *); // 0x0c
-    i32 field_0x10;
-    undefined field_0x14[0x68 - 0x14];
+    void (*reset_callback)(STATUSPACKET_s *);           // 0x0c
+    void (*draw_background_callback)(STATUSPACKET_s *); // 0x10
+    undefined field_0x14[0x24 - 0x14];
+    f32 player0_rumble_amount;   // 0x24
+    f32 player0_rumble_time;     // 0x28
+    f32 player0_rumble_duration; // 0x2c
+    f32 player0_buzz_amount;     // 0x30
+    u8 player0_rumble_priority;  // 0x34
+    undefined field_0x35[0x38 - 0x35];
+    f32 player1_rumble_amount;   // 0x38
+    f32 player1_rumble_time;     // 0x3c
+    f32 player1_rumble_duration; // 0x40
+    f32 player1_buzz_amount;     // 0x44
+    u8 player1_rumble_priority;  // 0x48
+    undefined field_0x49[0x68 - 0x49];
     f32 field_0x68;
     undefined field_0x6c[0x9c - 0x6c];
     u16 player0_model; // 0x9c
@@ -1448,18 +1460,27 @@ struct STATUSPACKET_s {
     undefined field_0xa6[0xb1 - 0xa6];
     u8 mode_flags;   // 0xb1
     u8 status_flags; // 0xb2
-    undefined field_0xb3[0x14c - 0xb3];
+    undefined field_0xb3[0xb6 - 0xb3];
+    i8 current_gold_brick; // 0xb6
+    undefined field_0xb7[0xee - 0xb7];
+    u8 gold_brick_enabled[0x124 - 0xee]; // 0xee
+    struct STATUS_STAGE_s *stage;        // 0x124
+    undefined field_0x128[0x14c - 0x128];
 };
 DECOMP_ASSERT(sizeof(STATUSPACKET_s) == 0x14c, "STATUSPACKET_s size");
 struct STATUSPACKET_LSW_s {
     i32 field_0x00;
 };
 struct STATUS_STAGE_s {
-    u8 pad_0x00[0x12];
+    void (*draw_callback)(STATUS_STAGE_s *, STATUSPACKET_s *, i32);   // 0x00
+    void (*update_callback)(STATUS_STAGE_s *, STATUSPACKET_s *, f32); // 0x04
+    void (*skip_callback)(STATUS_STAGE_s *, STATUSPACKET_s *);        // 0x08
+    i32 type;                                                         // 0x0c
+    u16 field_0x10;
     u8 field_0x12;
     u8 pad_0x13;
     i32 field_0x14;
-    i32 field_0x18;
+    f32 field_0x18;
     f32 field_0x1c;
 };
 DECOMP_ASSERT(sizeof(STATUS_STAGE_s) == 0x20, "STATUS_STAGE_s size");
