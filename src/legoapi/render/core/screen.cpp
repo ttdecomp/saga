@@ -27,7 +27,8 @@ void RenderQuads(i16 *) {
 void InitAlphaList() {
 }
 
-void GetAspectRatio() {
+f32 GetAspectRatio() {
+    return static_cast<f32>(g_backingWidth) / static_cast<f32>(g_backingHeight);
 }
 
 static u8 ScreenGrabNeeded;

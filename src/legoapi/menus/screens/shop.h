@@ -29,6 +29,7 @@ extern __attribute__((visibility("hidden"))) f32 toppush[6];
 extern i32 oldpicked;
 extern i32 picked;
 extern i32 subpicked;
+extern i32 subitemselected;
 extern __attribute__((visibility("hidden"))) void (*drawptr)();
 
 void InitShop(WORLDINFO_s *world);

@@ -5,6 +5,7 @@
 #include "gameframework/saveload.h"
 #include "legoapi/menus/core/text.h"
 #include "legoapi/characters/core/character.h"
+#include "legoapi/core/input/timer.h"
 #include "legoapi/gizmo/base/gizmo.h"
 #include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/items/base/collection.h"
@@ -122,6 +123,7 @@ extern i32 noscenespecials;
 extern void RotateGameMatrix(numtx_s *matrix, i32 order, u16 x, u16 y, u16 z);
 extern NUGSCN *IconScene_FindById(i32 character_id);
 extern void SetLevelLights(void *set, f32 scale);
+f32 GetAspectRatio();
 void Hint_Draw(i32 player_index);
 
 NUCAMERA *cam;
@@ -928,7 +930,18 @@ static __attribute__((noinline)) void Shop_DrawCharacter(shopitem_s *item, NUVEC
 }
 
 void DrawTopShelf(i32) {
-    const f32 alpha_scale = 1.0f;
+    f32 alpha_scale = 1.0f;
+    if (GetMenuID() == 13 && subitemselected == 0 && TestForController() == 0) {
+        const f32 elapsed_since_touch = GlobalTimer.time_elapsed - (LastTouchTime + 1.32f);
+        if (elapsed_since_touch > 4.0f) {
+            const f32 phase = NuFmod(elapsed_since_touch, 4.0f);
+            const i32 angle = static_cast<i32>(phase * 0.25f * 65536.0f);
+            const f32 pulse = NuTrigTable[(angle >> 1) & 0x7fff] - 0.8f;
+            if (pulse >= 0.0f) {
+                alpha_scale = pulse + 1.0f;
+            }
+        }
+    }
 
     if (NuSpecialExistsFn(&iconback) != 0) {
         Shop_DrawCharacter(&TopShelf[1], &ShelfPos[1], topscale[1] * alpha_scale, toppush[1], 0, shelfang, 0);
@@ -937,10 +950,13 @@ void DrawTopShelf(i32) {
     if (NuSpecialExistsFn(&TopShelf[2].special) != 0) {
         NUANGVEC rotation = {0, shelfang, 0};
         NUMTX matrix;
-        NuMtxSetRotateXYZ(&matrix, &rotation);
-        NuMtxScaleU(&matrix, topscale[2] * alpha_scale);
-        NuMtxTranslate(&matrix, &ShelfPos[2]);
-        matrix.m31 += toppush[2] + 0.005f;
+        NuMtxSetRotateXYZVU0(&matrix, &rotation);
+        const f32 scale_value = topscale[2] * alpha_scale;
+        NUVEC scale = {scale_value, scale_value, scale_value};
+        NuMtxScaleVU0(&matrix, &scale);
+        matrix.m30 = ShelfPos[2].x;
+        matrix.m31 = ShelfPos[2].y + toppush[2] + 0.005f;
+        matrix.m32 = ShelfPos[2].z;
         NuSpecialDrawAt(&TopShelf[2].special, &matrix);
     }
 
@@ -952,6 +968,32 @@ void DrawTopShelf(i32) {
         NuMtxTranslate(&matrix, &ShelfPos[4]);
         matrix.m31 += toppush[4] - 0.0325f;
         NuSpecialDrawAt(&TopShelf[4].special, &matrix);
+    }
+
+    if (GetMenuID() != 13) {
+        return;
+    }
+
+    MENU *menu = &GameMenu[GameMenuLevel];
+    for (i32 shelf_index = 1; shelf_index <= 4; ++shelf_index) {
+        const i32 menu_index = shelf_index - 1;
+        if (shelf_index == 3) {
+            menu->item_width[menu_index] = 0.0f;
+            continue;
+        }
+
+        NUVEC world_position = ShelfPos[shelf_index];
+        world_position.y += toppush[shelf_index];
+        const f32 size = topscale[shelf_index] / TopShelfScale[shelf_index] * 0.15f;
+        const f32 aspect_ratio = GetAspectRatio();
+        NUVEC screen_position;
+        NuCameraTransformScreenClip(&screen_position, &world_position, 1, NULL);
+        menu->item_x[menu_index] = screen_position.x;
+        menu->item_y[menu_index] = screen_position.y;
+        menu->item_width[menu_index] = size;
+        menu->item_height[menu_index] = size / aspect_ratio;
+        menu->item_column[menu_index] = menu_index;
+        menu->item_row[menu_index] = 0;
     }
 }
 
@@ -1222,6 +1264,7 @@ void DrawSubItemMenu2D() {
 }
 
 void DrawSubItemMenu3D() {
+    DrawSubItems();
 }
 
 void Draw_NOMEMORYCARD() {
@@ -1538,7 +1581,21 @@ void DrawPanel3DObjectMtxNoAlpha(nuhspecial_s *, numtx_s *) {
 void Draw_OK(MENU_s *) {
 }
 
-void DrawItem(nuhspecial_s *, nuvec_s *, float, float, float, u16, u16, u16) {
+__attribute__((force_align_arg_pointer)) void DrawItem(nuhspecial_s *special, nuvec_s *position, float scale_value,
+                                                       float, float y_push, u16 x_rot, u16 y_rot, u16 z_rot) {
+    if (position != NULL) {
+        if (NuSpecialExistsFn(special) != 0) {
+            NUANGVEC rotation = {x_rot, y_rot, z_rot};
+            NUMTX matrix;
+            NuMtxSetRotateXYZVU0(&matrix, &rotation);
+
+            NUVEC scale = {scale_value, scale_value, scale_value};
+            NuMtxScaleVU0(&matrix, &scale);
+            *reinterpret_cast<NUVEC *>(&matrix.m30) = *position;
+            matrix.m31 += y_push;
+            NuSpecialDrawAt(special, &matrix);
+        }
+    }
 }
 
 void DrawAABox(_vuv_s *, _vuv_s *, i32) {

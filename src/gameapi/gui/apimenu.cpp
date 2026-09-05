@@ -12,7 +12,9 @@
 #include "legoapi/items/objects/gameobjects.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/menus/core/text.h"
+#include "legoapi/menus/screens/gamemenuall.h"
 #include "legoapi/menus/screens/movies.h"
+#include "legoapi/render/core/render.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/mission.h"
 #include "legoapi/world/world.h"
@@ -393,6 +395,12 @@ char *apitxt_SAVING = " ";
 f32 AUTOSAVEICONY = 0.745f;
 f32 AUTOSAVEICONX = 0.775f;
 f32 AUTOSAVEICONSIZE = 0.075f;
+f32 ICONX = 0.775f;
+f32 ICONSIZE = 0.16f;
+f32 DROPINALPHA = 0.75f;
+i32 shop_quit;
+
+void DrawShopPrompts();
 
 void MenuReset(void) {
     memset(GameMenu, 0, sizeof(GameMenu));
@@ -537,6 +545,11 @@ void MenuLoadTechnicalStrings(char *filepath, char *language, VARIPTR *buf, VARI
 }
 
 static __used__ void MenuDrawShop(MENU *) {
+    if (MenuStopDraw == 0 && shop_quit == 0) {
+        const f32 alpha = MenuPacket.active_player[0] != 0 ? 1.0f : DROPINALPHA;
+        DrawCharIcon(MenuPacket.player_model[0], -ICONX, STATSPOSY, 0.0f, ICONSIZE, 0xa6, alpha, alpha, 1, NULL);
+        DrawShopPrompts();
+    }
 }
 static __used__ void MenuDrawTitles(MENU *) {
     if (GameTimer.time_elapsed >= 3.0f && GameTimer.time_elapsed_mod_seconds < 0.666f) {

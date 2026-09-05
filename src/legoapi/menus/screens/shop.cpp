@@ -46,6 +46,7 @@ __attribute__((visibility("hidden"))) f32 toppush[6] = {};
 i32 oldpicked = 1;
 i32 picked = 1;
 i32 subpicked = 0;
+i32 subitemselected = 0;
 __attribute__((visibility("hidden"))) void (*drawptr)() = NULL;
 
 void DoShopMenu(MENU_s *) {
