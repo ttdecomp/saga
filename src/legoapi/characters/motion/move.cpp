@@ -879,8 +879,7 @@ void Glide_MoveCode(GameObject_s *) {
 
 i32 SetObjOnSurface(GameObject_s *object, i32 mode) {
     APIOBJECT &api = object->apiobj;
-    if (api.field_0x218 == 2000000.0f ||
-        (WorldInfo_CurrentlyActive()->current_level->flags & LEVEL_IN_SPACE) != 0) {
+    if (api.field_0x218 == 2000000.0f || (WorldInfo_CurrentlyActive()->current_level->flags & LEVEL_IN_SPACE) != 0) {
         return 0;
     }
 

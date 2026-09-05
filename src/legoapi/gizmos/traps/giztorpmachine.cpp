@@ -172,10 +172,8 @@ static void *GizTorps_ReserveBufferSpace(void *world_ptr) {
 
     world->giz_buffer.addr = (world->giz_buffer.addr + 3) & ~3u;
     system->machines = reinterpret_cast<GIZTORPMACHINE *>(world->giz_buffer.addr);
-    world->giz_buffer.addr +=
-        world->current_level->max_torp_machines * static_cast<i32>(sizeof(GIZTORPMACHINE));
-    memset(system->machines, 0,
-           world->current_level->max_torp_machines * static_cast<i32>(sizeof(GIZTORPMACHINE)));
+    world->giz_buffer.addr += world->current_level->max_torp_machines * static_cast<i32>(sizeof(GIZTORPMACHINE));
+    memset(system->machines, 0, world->current_level->max_torp_machines * static_cast<i32>(sizeof(GIZTORPMACHINE)));
     system->scale = 1.0f;
     return world->giz_torp_machine_sys;
 }

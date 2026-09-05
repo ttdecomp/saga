@@ -504,7 +504,7 @@ void *NuMemoryManager::_BlockReAlloc(void *ptr, u32 size, u32 alignment, u32 fla
     }
 
     void *replacement = _TryBlockAlloc(size, alignment, flags, name, category);
-    if (replacement != NULL) {
+    if (replacement != NULL && (flags & 0x40) == 0) {
         memcpy(replacement, ptr, old_size);
         BlockFree(ptr, flags);
     }

@@ -489,10 +489,10 @@ typedef struct GameObject_s {
     union {
         u8 pad_2b0[0x10]; // 0x02b0 .. 0x02c0
         struct {
-            f32 idle_total_time;       // 0x02b0
-            f32 idle_animation_time;   // 0x02b4
-            f32 idle_animation_limit;  // 0x02b8
-            i16 idle_animation;        // 0x02bc
+            f32 idle_total_time;         // 0x02b0
+            f32 idle_animation_time;     // 0x02b4
+            f32 idle_animation_limit;    // 0x02b8
+            i16 idle_animation;          // 0x02bc
             i16 previous_idle_animation; // 0x02be
         };
     };

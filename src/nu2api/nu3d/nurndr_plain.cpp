@@ -78,8 +78,8 @@ i32 g_NuPrim_VertexCount;
 
 // File-local bookkeeping for the in-flight prim.  These mirror the original
 // TU statics at 0x99b60c (vertex-count pointer) and 0x628cc0 (prim type).
-static u16 *s_pendingVertexCount = nullptr;
-static u16 s_activePrimType = 0;
+u16 *g_NuPrim_PendingVertexCount = nullptr;
+u16 g_NuPrim_ActivePrimType = 0;
 
 // Display-list cursor for the 2D stream.  Defined in nudlist.cpp.
 extern VARIPTR *display_list_buffer;
@@ -154,20 +154,20 @@ extern "C" {
 // ---------------------------------------------------------------------------
 
 extern "C" void NuPrim2DAddXYZ(float x, float y, float z) {
-    PrimVertexRaw *vtx = (PrimVertexRaw *)((*g_NuPrim_StreamBufferPtr)->addr);
+    PrimVertexRaw *vtx = (PrimVertexRaw *)g_NuPrim_StreamBufferPtr->addr;
     vtx->x = NuPrim_XBias + NuPrim_XScale * x;
     vtx->y = NuPrim_YBias + NuPrim_YScale * y;
     vtx->z = z;
-    (*g_NuPrim_StreamBufferPtr)->addr += sizeof(PrimVertexRaw);
+    g_NuPrim_StreamBufferPtr->addr += sizeof(PrimVertexRaw);
     g_NuPrim_VertexCount++;
 
     // Quad expansion (prim type 4): every pair of AddXYZ calls becomes a
     // 6-vertex quad (two triangles).  The expansion is done word-wise so
     // both full-float and half-float UV encodings are preserved without
     // needing to know which is active.  See original 0x29d235..0x29d395.
-    if (s_activePrimType == 4 && (g_NuPrim_VertexCount & 1) == 0) {
-        u32 *words = (u32 *)(usize)((*g_NuPrim_StreamBufferPtr)->addr - 0x30);
-        (*g_NuPrim_StreamBufferPtr)->addr += 0x60;
+    if (g_NuPrim_ActivePrimType == 4 && (g_NuPrim_VertexCount & 1) == 0) {
+        u32 *words = (u32 *)(usize)(g_NuPrim_StreamBufferPtr->addr - 0x30);
+        g_NuPrim_StreamBufferPtr->addr += 0x60;
         g_NuPrim_VertexCount += 4;
 
         memcpy(&words[12], &words[6], 0x18);
@@ -218,27 +218,27 @@ extern "C" __attribute__((weak)) void NuPrim2DBegin(u32 prim_type, u32 /*vtx_fmt
     DisplayListUpdateRenderState(list, &render_state);
     NuDisplayListLinkItems(list, 1);
 
-    g_NuPrim_StreamBufferPtr = &display_list_buffer;
+    g_NuPrim_StreamBufferPtr = display_list_buffer;
 
     auto *hdr = (PrimStreamHeader *)display_list_buffer->addr;
     hdr->prim_type = prim_type;
     hdr->vertex_count = 0;
     display_list_buffer->addr += sizeof(PrimStreamHeader);
 
-    s_pendingVertexCount = &hdr->vertex_count;
-    s_activePrimType = (u16)prim_type;
+    g_NuPrim_PendingVertexCount = &hdr->vertex_count;
+    g_NuPrim_ActivePrimType = (u16)prim_type;
     g_NuPrim_VertexCount = 0;
 
     AddDisplayListItem(list, 0x93, hdr);
 }
 
 extern "C" void NuPrim2DEnd(void) {
-    *s_pendingVertexCount = (u16)g_NuPrim_VertexCount;
+    *g_NuPrim_PendingVertexCount = (u16)g_NuPrim_VertexCount;
     g_NuPrim_VertexCount = 0;
 }
 
 extern "C" void NuPrim3DEnd(void) {
-    *s_pendingVertexCount = (u16)g_NuPrim_VertexCount;
+    *g_NuPrim_PendingVertexCount = (u16)g_NuPrim_VertexCount;
     g_NuPrim_VertexCount = 0;
 }
 
@@ -544,7 +544,7 @@ static inline u32 NuRndrPrimColour(u32 colour) {
 }
 
 static inline void NuRndrPrimAttributes(u32 colour, bool u_one, bool v_one) {
-    u8 *vertex = reinterpret_cast<u8 *>((*g_NuPrim_StreamBufferPtr)->addr);
+    u8 *vertex = reinterpret_cast<u8 *>(g_NuPrim_StreamBufferPtr->addr);
     *reinterpret_cast<u32 *>(vertex + 0xc) = NuRndrPrimColour(colour);
     if (g_NuPrim_NeedsHalfUVs != 0) {
         *reinterpret_cast<u16 *>(vertex + 0x10) = u_one ? 0x3c00 : 0;
@@ -590,7 +590,7 @@ static inline u16 NuRndrFloatToHalf(f32 value) {
 }
 
 static inline void NuRndrPrimUV(f32 u, f32 v) {
-    u8 *vertex = reinterpret_cast<u8 *>((*g_NuPrim_StreamBufferPtr)->addr);
+    u8 *vertex = reinterpret_cast<u8 *>(g_NuPrim_StreamBufferPtr->addr);
     if (g_NuPrim_NeedsHalfUVs != 0) {
         *reinterpret_cast<u16 *>(vertex + 0x10) = NuRndrFloatToHalf(u);
         *reinterpret_cast<u16 *>(vertex + 0x12) = NuRndrFloatToHalf(v);

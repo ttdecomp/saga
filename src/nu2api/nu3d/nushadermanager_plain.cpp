@@ -853,12 +853,8 @@ extern "C" void NuShaderObjectGLSLSetupMaterial(NUSHADEROBJECT *shader, struct n
     const NUSHADERUSAGEMASK *usage = shader->usage_mask;
     if (usage != NULL) {
         const u8 *material = reinterpret_cast<const u8 *>(mtl);
-        auto materialFloat = [material](usize offset) {
-            return *reinterpret_cast<const f32 *>(material + offset);
-        };
-        auto materialU32 = [material](usize offset) {
-            return *reinterpret_cast<const u32 *>(material + offset);
-        };
+        auto materialFloat = [material](usize offset) { return *reinterpret_cast<const f32 *>(material + offset); };
+        auto materialU32 = [material](usize offset) { return *reinterpret_cast<const u32 *>(material + offset); };
 
         // Original 0x309da0.  Material semantics are not part of the global
         // uniform table: every active one is rebuilt from NUMTL immediately
@@ -1138,8 +1134,7 @@ extern "C" void NuShaderObjectGLSLSetupMaterial(NUSHADEROBJECT *shader, struct n
 
             switch (parameter.type_and_flags & 0x0f) {
                 case 1:
-                    g_glConstantSetterTable[parameter.element_count_and_setter & 3](parameter.location, count,
-                                                                                    values);
+                    g_glConstantSetterTable[parameter.element_count_and_setter & 3](parameter.location, count, values);
                     break;
                 case 2:
                     glUniform4fv(parameter.location, count, values);

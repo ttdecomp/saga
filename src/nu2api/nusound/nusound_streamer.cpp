@@ -401,17 +401,27 @@ void NuSoundStreamingSample::Close() {
         this->field8_0x90 = 0;
         this->SetLoadState(LoadState::NOT_LOADED);
 
-        if (this->field_0x88 != 0 && this->sound_buffer1 != NULL) {
-            this->sound_buffer1->Free();
-            this->sound_buffer1->~NuSoundBuffer();
-            NU_FREE(this->sound_buffer1);
+        if (this->field_0x88 != 0) {
+            if (this->sound_buffer1 != NULL) {
+                this->sound_buffer1->Free();
+                NuSoundBuffer *buffer = this->sound_buffer1;
+                if (buffer != NULL) {
+                    buffer->~NuSoundBuffer();
+                    NU_FREE(buffer);
+                }
+            }
         }
         this->sound_buffer1 = NULL;
 
-        if (this->field_0x88 != 0 && this->sound_buffer2 != NULL) {
-            this->sound_buffer2->Free();
-            this->sound_buffer2->~NuSoundBuffer();
-            NU_FREE(this->sound_buffer2);
+        if (this->field_0x88 != 0) {
+            if (this->sound_buffer2 != NULL) {
+                this->sound_buffer2->Free();
+                NuSoundBuffer *buffer = this->sound_buffer2;
+                if (buffer != NULL) {
+                    buffer->~NuSoundBuffer();
+                    NU_FREE(buffer);
+                }
+            }
         }
         this->sound_buffer2 = NULL;
     }

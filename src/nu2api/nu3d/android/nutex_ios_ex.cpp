@@ -33,10 +33,9 @@ i32 g_fileSize;
 
 extern i32 g_loadingCharacterInHub;
 
-extern "C" __attribute__((weak)) void NuIOS_UploadCompressedTexture(GLenum target, GLint level,
-                                                                     GLenum internal_format, GLsizei width,
-                                                                     GLsizei height, GLint border, GLsizei image_size,
-                                                                     const void *data) {
+extern "C" __attribute__((weak)) void NuIOS_UploadCompressedTexture(GLenum target, GLint level, GLenum internal_format,
+                                                                    GLsizei width, GLsizei height, GLint border,
+                                                                    GLsizei image_size, const void *data) {
     glCompressedTexImage2D(target, level, internal_format, width, height, border, image_size, data);
 }
 
@@ -824,7 +823,7 @@ void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, 
 
                         if (g_loadDefaultTexture == 0) {
                             NuIOS_UploadCompressedTexture(GL_TEXTURE_2D, mip, glInternalFormat, mipWidth, hLimit, 0,
-                                                         mipSize, mipData);
+                                                          mipSize, mipData);
                         } else {
                             loadDefaultTexture(texID, mip, mipWidth, GL_TEXTURE_2D, GL_TEXTURE_2D);
                         }
@@ -839,7 +838,7 @@ void UnlockTexturePS(u32 texID, void *pixels, i32 width, i32 height, i32 depth, 
 
                         if (g_loadDefaultTexture == 0) {
                             NuIOS_UploadCompressedTexture(faceTarget, mip, glInternalFormat, mipWidth, hLimit, 0,
-                                                         mipSize, mipData);
+                                                          mipSize, mipData);
                         } else {
                             loadDefaultTexture(texID, mip, mipWidth, GL_TEXTURE_CUBE_MAP, faceTarget);
                         }

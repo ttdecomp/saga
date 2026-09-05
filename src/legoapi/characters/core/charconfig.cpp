@@ -237,8 +237,7 @@ static void ParseCharacterConfig(i32 character_id, NUFPAR *parser, i32 permanent
                 NUFPAR *included_parser = NuFParCreate(path);
                 if (included_parser != NULL) {
                     included_parser->separator_list = const_cast<char *>("=");
-                    ParseCharacterConfig(character_id, included_parser, permanent, directory, include_depth + 1,
-                                         state);
+                    ParseCharacterConfig(character_id, included_parser, permanent, directory, include_depth + 1, state);
                     NuFParDestroy(included_parser);
                 }
             }

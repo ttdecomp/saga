@@ -1012,8 +1012,8 @@ extern "C" {
                                                   joint_overrides, output_matrices, BlendRootFn, object);
                     } else {
                         NuHGobjEvalAnimBlend2(model->hierarchy, first, animation->time, second,
-                                              animation->blend_target_time, blend, joint_override_count, joint_overrides,
-                                              output_matrices);
+                                              animation->blend_target_time, blend, joint_override_count,
+                                              joint_overrides, output_matrices);
                     }
                     evaluated = true;
                 }

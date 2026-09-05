@@ -450,6 +450,8 @@ u32 NuQFntMode;
 
 static i32 g_buttonsFont;
 
+extern "C" void RemapAddr(void *new_base, void *old_base, void **address);
+
 VUFNT *NuQFntDuplicate(VUFNT *font, i32 flags, i32 render_plane, VARIPTR *buf, VARIPTR *buf_end) {
     VUFNT *duplicate = reinterpret_cast<VUFNT *>(ALIGN(buf->addr, 0x10));
     buf->void_ptr = duplicate;
@@ -458,26 +460,22 @@ VUFNT *NuQFntDuplicate(VUFNT *font, i32 flags, i32 render_plane, VARIPTR *buf, V
     if (buf->addr < buf_end->addr) {
         memmove(duplicate, font, font->size);
         duplicate->flags |= 1;
-        duplicate->glyphs =
-            reinterpret_cast<VUFNTCHAR *>(reinterpret_cast<usize>(duplicate) +
-                                          (reinterpret_cast<usize>(font->glyphs) - reinterpret_cast<usize>(font)));
-        duplicate->unicode_map =
-            reinterpret_cast<VUCHARIDX *>(reinterpret_cast<usize>(duplicate) +
-                                          (reinterpret_cast<usize>(font->unicode_map) - reinterpret_cast<usize>(font)));
+        RemapAddr(duplicate, font, reinterpret_cast<void **>(&duplicate->glyphs));
+        RemapAddr(duplicate, font, reinterpret_cast<void **>(&duplicate->unicode_map));
     }
 
     i32 previous_render_plane = NuMtlSetCurrentRenderPlane(render_plane);
     NUMTL *material = (flags & 8) != 0 ? NuMtlCreate3D(1) : NuMtlCreate(1);
     duplicate->mtl = material;
     material->attribs = font->mtl->attribs;
-    material->sort_pri = font->mtl->sort_pri;
     material->tex_id = font->mtl->tex_id;
-    material->attribs.cull_mode = 2;
+    material->sort_pri = font->mtl->sort_pri;
+    material->attribs.unknown_2_1_2 = 2;
     if ((flags & 8) != 0) {
         material->attribs.unknown_6_128 = 0;
     }
     if ((flags & 0x40) != 0) {
-        material->attribs.cull_mode = 0;
+        material->attribs.z_mode = 0;
     }
     NuMtlUpdate(material);
     NuMtlSetCurrentRenderPlane(previous_render_plane);
@@ -923,39 +921,80 @@ void NuQFntPrintU(NUQFNT *font, char *text) {
     }
 }
 
+struct NuQFntVertex {
+    f32 x;
+    f32 y;
+    f32 z;
+    u32 colour;
+    f32 u;
+    f32 v;
+};
+
+static inline u16 NuQFntFloatToHalf(f32 value) {
+    union {
+        f32 value;
+        u32 bits;
+    } conversion = {value};
+    i32 exponent = static_cast<i32>((conversion.bits >> 23) & 0xff) - 0x70;
+    u16 half_exponent = 0;
+    if (exponent >= 0) {
+        half_exponent = 0x7c00;
+        if (exponent < 0x20)
+            half_exponent = static_cast<u16>(exponent << 10);
+    }
+    return static_cast<u16>((conversion.bits & 0x7fffff) >> 13) | static_cast<u16>((conversion.bits >> 31) << 15) |
+           half_exponent;
+}
+
+static inline void NuQFntSetVertexAttributes(NuQFntVertex *vertex, u32 colour, f32 u, f32 v) {
+    vertex->colour = g_NuPrim_NeedsOverbrightening == 0 ? ((colour >> 1) & 0x7f7f7f) | (colour & 0xff000000) : colour;
+    if (g_NuPrim_NeedsHalfUVs != 0) {
+        u16 *uv = reinterpret_cast<u16 *>(&vertex->u);
+        uv[0] = NuQFntFloatToHalf(u);
+        uv[1] = NuQFntFloatToHalf(v);
+    } else {
+        vertex->u = u;
+        vertex->v = v;
+    }
+}
+
+static inline void NuQFntAdd3DVertex(f32 x, f32 y, f32 z, u32 colour, f32 u, f32 v) {
+    NuQFntVertex *vertex = reinterpret_cast<NuQFntVertex *>(g_NuPrim_StreamBufferPtr->void_ptr);
+    NuQFntSetVertexAttributes(vertex, colour, u, v);
+    vertex->x = x;
+    vertex->y = y;
+    vertex->z = z;
+    g_NuPrim_StreamBufferPtr->addr += sizeof(NuQFntVertex);
+    g_NuPrim_VertexCount++;
+}
+
 void NuQFntPrintCharW(NUQFNT *font, u16 *text, u32 flags) {
     if (text == NULL)
         return;
-
-    struct FontVertex {
-        f32 x;
-        f32 y;
-        f32 z;
-        u32 colour;
-        f32 u;
-        f32 v;
-    };
 
     VUFNT *vufnt = static_cast<VUFNT *>(font);
     VUFNT_ANDROID *platform = vufnt->platform_data;
     f32 x = platform->x;
     f32 y = platform->y;
     f32 z = platform->z;
-    f32 texture_width = 1.0f;
-    f32 texture_height = 1.0f;
+    f32 inverse_texture_width = 1.0f;
+    f32 inverse_texture_height = 1.0f;
     if (vufnt->mtl->tex_id > 0) {
-        texture_width = static_cast<f32>(NuTexWidth(vufnt->mtl->tex_id));
-        texture_height = static_cast<f32>(NuTexHeight(vufnt->mtl->tex_id));
+        inverse_texture_width = 1.0f / static_cast<f32>(NuTexWidth(vufnt->mtl->tex_id));
+        inverse_texture_height = 1.0f / static_cast<f32>(NuTexHeight(vufnt->mtl->tex_id));
     }
 
     f32 height = vufnt->height * *vufnt->y_scale;
     f32 space_width = (nuqfnt_space_width == 0.0f ? vufnt->space_width : nuqfnt_space_width) * *vufnt->x_scale;
     u32 colour = platform->colour;
-    u32 dim_colour = ((colour >> 1) & 0x7f7f7f) | (colour & 0xff000000);
+    bool is_3d = (flags & 4) != 0;
 
     NuPrimCSPos++;
     NuPrimSetCoordinateSystem(NUPRIM_SCALEMODE_PS2);
-    NuPrim2DBegin(4, 7, vufnt->mtl);
+    if (is_3d)
+        NuPrim3DBegin(0, 7, vufnt->mtl, &platform->mtx);
+    else
+        NuPrim2DBegin(4, 7, vufnt->mtl);
 
     for (; *text != 0; text++) {
         u16 character = *text;
@@ -970,25 +1009,37 @@ void NuQFntPrintCharW(NUQFNT *font, u16 *text, u32 flags) {
         }
 
         if (character != 0x20) {
-            FontVertex *vertex = reinterpret_cast<FontVertex *>((*g_NuPrim_StreamBufferPtr)->void_ptr);
-            vertex->colour = g_NuPrim_NeedsOverbrightening == 0 ? dim_colour : colour;
-            vertex->u = glyph->x / texture_width;
-            vertex->v = glyph->y / texture_height;
-            NuPrim2DAddXYZ(left, y, 0.0f);
-
-            vertex = reinterpret_cast<FontVertex *>((*g_NuPrim_StreamBufferPtr)->void_ptr);
-            vertex->colour = g_NuPrim_NeedsOverbrightening == 0 ? dim_colour : colour;
-            vertex->u = (glyph->x + glyph->width) / texture_width;
-            vertex->v = (glyph->y + vufnt->height) / texture_height;
-            NuPrim2DAddXYZ(left + advance, y + height, 0.0f);
+            f32 right = left + glyph->width * *vufnt->x_scale;
+            f32 u0 = glyph->x * inverse_texture_width;
+            f32 v0 = glyph->y * inverse_texture_height;
+            f32 u1 = (glyph->x + glyph->width) * inverse_texture_width;
+            f32 v1 = (glyph->y + vufnt->height) * inverse_texture_height;
+            if (is_3d) {
+                f32 top = y - height;
+                NuQFntAdd3DVertex(left, top, z, colour, u0, v1);
+                NuQFntAdd3DVertex(right, top, z, colour, u1, v1);
+                NuQFntAdd3DVertex(right, y, z, colour, u1, v0);
+                NuQFntAdd3DVertex(right, y, z, colour, u1, v0);
+                NuQFntAdd3DVertex(left, y, z, colour, u0, v0);
+                NuQFntAdd3DVertex(left, top, z, colour, u0, v1);
+            } else {
+                NuQFntVertex *vertex = reinterpret_cast<NuQFntVertex *>(g_NuPrim_StreamBufferPtr->void_ptr);
+                NuQFntSetVertexAttributes(vertex, colour, u0, v0);
+                NuPrim2DAddXYZ(left, y, 0.0f);
+                vertex = reinterpret_cast<NuQFntVertex *>(g_NuPrim_StreamBufferPtr->void_ptr);
+                NuQFntSetVertexAttributes(vertex, colour, u1, v1);
+                NuPrim2DAddXYZ(right, y + height, 0.0f);
+            }
         }
         x += advance + vufnt->ic_gap * *vufnt->x_scale;
     }
 
-    NuPrim2DEnd();
+    if (is_3d)
+        NuPrim3DEnd();
+    else
+        NuPrim2DEnd();
     NuPrimCSPos--;
     NuPrimSetCoordinateSystem(NuPrimCoordSystemStack[NuPrimCSPos]);
-    (void)z;
 }
 
 NUQFNT_CSMODE NuQFntSetCoordinateSystem(NUQFNT_CSMODE mode) {

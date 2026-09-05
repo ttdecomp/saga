@@ -1,6 +1,12 @@
 load("@rules_python//python:defs.bzl", "py_library")
 
 py_library(
+    name = "bazel_actions",
+    srcs = ["bazel_actions.py"],
+    visibility = ["//scripts:__pkg__"],
+)
+
+py_library(
     name = "ndk_tools",
     srcs = ["ndk_tools.py"],
     visibility = ["//scripts/checks:__pkg__"],

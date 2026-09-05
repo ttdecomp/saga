@@ -601,7 +601,7 @@ void LoadPerm(void) {
                             };
                         };
 
-                        LegalVertex *vert = reinterpret_cast<LegalVertex *>((*g_NuPrim_StreamBufferPtr)->addr);
+                        LegalVertex *vert = reinterpret_cast<LegalVertex *>(g_NuPrim_StreamBufferPtr->addr);
                         vert->colour = colour | (g_NuPrim_NeedsOverbrightening ? 0x808080u : 0x404040u);
                         if (g_NuPrim_NeedsHalfUVs) {
                             vert->half.u = F32ToF16(0.0f);
@@ -612,7 +612,7 @@ void LoadPerm(void) {
                         }
                         NuPrim2DAddXYZ(0.5f - half_w, 0.5f - half_h, 0.0f);
 
-                        vert = reinterpret_cast<LegalVertex *>((*g_NuPrim_StreamBufferPtr)->addr);
+                        vert = reinterpret_cast<LegalVertex *>(g_NuPrim_StreamBufferPtr->addr);
                         vert->colour = colour | (g_NuPrim_NeedsOverbrightening ? 0x808080u : 0x404040u);
                         if (g_NuPrim_NeedsHalfUVs) {
                             vert->half.u = F32ToF16(1.0f);

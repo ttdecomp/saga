@@ -72,8 +72,8 @@ struct MINIANIMPACKET_s {
     f32 target_time;  // 0x04
     u8 data_0x08[0x14 - 0x08];
     f32 previous_time; // 0x14
-    u8 reset_state;              // 0x18
-    u8 field_0x19;               // 0x19
+    u8 reset_state;    // 0x18
+    u8 field_0x19;     // 0x19
     u8 data_0x1a[0x1e - 0x1a];
     union {
         i16 animation_index;

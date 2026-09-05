@@ -1,5 +1,8 @@
 # Host utilities
 
+> Agent/reference document. Human host workflows are summarized in
+> [`CONTRIBUTING.md`](../CONTRIBUTING.md).
+
 The host executable is a diagnostic aid for the decompilation. A successful
 host run does not justify behavior that is absent from the original binary;
 game-side fixes must still come from the original code, data, and ABI.

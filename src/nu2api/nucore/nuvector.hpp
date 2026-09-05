@@ -31,12 +31,13 @@ template <typename T> class NuVector {
 
   private:
     void resize(usize new_length) {
-        // T *new_data = (T *)NuMemoryGet()->GetThreadMem()->_BlockReAlloc(data, new_length * sizeof(T), 4, 0x31, "",
-        // NUMEMORY_CATEGORY_NONE);
-        T *new_data = (T *)NU_ALLOC(new_length * sizeof(T), 4, 1, "", NUMEMORY_CATEGORY_NONE);
+        T *new_data = (T *)NuMemoryGet()->GetThreadMem()->_BlockReAlloc(data, new_length * sizeof(T), 4, 0x41, "",
+                                                                        NUMEMORY_CATEGORY_NONE);
 
         if (new_data != data) {
-            memmove(new_data, data, length * sizeof(T));
+            if (length != 0) {
+                memmove(new_data, data, length * sizeof(T));
+            }
             NU_FREE(data);
         }
 

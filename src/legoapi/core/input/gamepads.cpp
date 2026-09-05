@@ -120,11 +120,10 @@ u16 GamePad_InputAngle(GameObject_s *object, GAMEPAD_s *pad) {
 camera_relative:
     return static_cast<u16>(pad->input_angle + GameCam->input_yaw);
 
-socket_relative:
-    {
-        SOCK &socket = WORLD->sock_sys->sock[static_cast<i8>(object->field_0x661)];
-        return static_cast<u16>(pad->input_angle + object->yrot + socket.input_yaw);
-    }
+socket_relative: {
+    SOCK &socket = WORLD->sock_sys->sock[static_cast<i8>(object->field_0x661)];
+    return static_cast<u16>(pad->input_angle + object->yrot + socket.input_yaw);
+}
 }
 
 void GamePads_NetClient() {

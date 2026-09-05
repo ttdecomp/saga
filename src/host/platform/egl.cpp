@@ -106,8 +106,8 @@ namespace {
                     if ((glyph[row] & (1u << (2 - column))) == 0) {
                         continue;
                     }
-                    glScissor(margin + glyph_index * advance + column * scale,
-                              baseline + (4 - row) * scale, scale, scale);
+                    glScissor(margin + glyph_index * advance + column * scale, baseline + (4 - row) * scale, scale,
+                              scale);
                     glClear(GL_COLOR_BUFFER_BIT);
                 }
             }

@@ -28,7 +28,9 @@ u64 NuSoundLoader::Deinterleave(char *data, i32 length, char **dest, i32 count, 
 void NuSoundLoader::GetChannelAddress(NuSoundBuffer *, NuSoundStreamDesc *, NuSoundSystem::AudioChannel) {
 }
 
-void NuSoundLoader::ReleaseHeader(NuSoundStreamDesc *) {
+void NuSoundLoader::ReleaseHeader(NuSoundStreamDesc *desc) {
+    desc->~NuSoundStreamDesc();
+    NuSoundSystem::FreeMemory(NuSoundSystem::MemoryDiscipline::SCRATCH, reinterpret_cast<usize>(desc), 0);
 }
 
 i32 NuSoundLoader::LoadFromFile(const char *name, NuSoundStreamDesc *desc, NuSoundBuffer *buffer,

@@ -33,6 +33,7 @@ extern void Store_HubDrawFloorTargets(WORLDINFO_s *);
 extern void Store_HubInitFloorTargets(WORLDINFO_s *);
 extern void InitShop(WORLDINFO_s *);
 extern void DrawShop3D(WORLDINFO_s *);
+extern void Draw3DObjectMtx(WORLDINFO_s *, i32, NUMTX *);
 extern void CutScenePlayer_Reset();
 extern GIZBUILDIT_s *GizBuildIt_Find(WORLDINFO_s *, char *);
 extern void GizBuildIt_SetToEnd(GIZBUILDIT_s *);
@@ -105,6 +106,7 @@ static i32 fpcount = 0;
 static APICHARACTERMODELLIST_s fplist[341] = {};
 
 static const NUVEC Hub_PercentPos = {-26.713f, 0.7f, -48.777f};
+static const NUVEC ClipsSignOffset = {-0.114f, -0.0385f, -0.045f};
 
 static inline void Hub_SetStatsTextMtx(NUMTX *mtx, i32 angle) {
     const f32 sine = NU_SIN_LUT(angle);
@@ -257,17 +259,48 @@ static f32 HUB_AREAPANELX_TWOTRUEJEDIGOLDBRICKS[6] = {-0.15f, -0.45f, 0.75f, -0.
 static f32 HUB_AREAPANELX_1TRUEJEDIGB_NOCHALLENGE[6] = {-0.201f, 0.201f, 0.6f, -0.6f, 0.0f, 0.0f};
 f32 *HUB_AREAPANELX = HUB_AREAPANELX_ONETRUEJEDIGOLDBRICK;
 
+static inline void Hub_DrawEpisodeCompletionSign(WORLDINFO_s *world, i32 episode) {
+    nuhspecial_s *special = &HubAreaInfo[episode * 7 + 6].lock;
+    if (NuSpecialExistsFn(special) == 0) {
+        return;
+    }
+
+    NUMTX draw_mtx = *NuSpecialGetDrawMtx(special);
+    const f32 direction_x = draw_mtx.m20;
+    const f32 direction_z = draw_mtx.m22;
+    NuMtxSetTranslation(&draw_mtx, const_cast<NUVEC *>(&ClipsSignOffset));
+    NuMtxRotateY(&draw_mtx, NuAtan2D(direction_x, direction_z) + NUANG_90DEG);
+    NuMtxTranslate(&draw_mtx, NuSpecialGetDrawPos(special));
+    Draw3DObjectMtx(world, 316, &draw_mtx);
+    Draw3DObjectMtx(world, Episode_IsComplete(&EDataList[episode], NULL) != 0 ? 320 : 319, &draw_mtx);
+}
+
 void Hub_Draw3D(WORLDINFO_s *world) {
     Store_HubDrawFloorTargets(world);
 
-    // The original draws the six episode-completion signs here before the
-    // persistent hub systems.  Those signs are presentation-only; the three
-    // calls below are the stateful draw chain used during ordinary play.
+    for (i32 episode = 0; episode < 6; episode++) {
+        Hub_DrawEpisodeCompletionSign(world, episode);
+    }
+
     Customiser_Draw3D(CharacterCustomiser);
     DrawShop3D(world);
     Hub_DrawMiniKits(world);
 
-    if (GameCam != NULL && GameCam->sock_position.location.sock != 0 && QFont3DZ != NULL) {
+    if (GameCam->sock_position.location.sock == 0) {
+        if (Store_IsPackUnlocked(6) == 0) {
+            if (NuSpecialExistsFn(&LevHSpecial[16]) != 0 && NuSpecialExistsFn(&LevHSpecial[4]) != 0) {
+                NUMTX draw_mtx = *NuSpecialGetDrawMtx(&LevHSpecial[16]);
+                NuSpecialDrawAt(&LevHSpecial[4], &draw_mtx);
+            }
+        }
+
+        nuhspecial_s *display = &LevHSpecial[Store_IsPackUnlocked(5) != 0 ? 5 : 4];
+        if (NuSpecialExistsFn(display) != 0) {
+            NuSpecialDrawAt(display, &LevMtx);
+        }
+    }
+
+    if (QFont3DZ != NULL) {
         const i32 spin = static_cast<i32>(NuFmod(GameTimer.time_elapsed, 5.0f) / 5.0f * 65536.0f);
         const i32 angle = static_cast<i32>(NU_SIN_LUT(spin) * 2730.0f + 8192.0f);
         const i32 pulse = static_cast<i32>(NuFmod(GameTimer.time_elapsed, 3.21f) / 3.21f * 65536.0f);
@@ -275,14 +308,14 @@ void Hub_Draw3D(WORLDINFO_s *world) {
         const i32 alpha = static_cast<i32>(Hub_HologramAlpha * 15.0f + 56.0f);
         const u32 colour = (static_cast<u32>(alpha) << 24) | 0xff7f00;
 
+        char text[128];
+        sprintf(text, "%.1f%%", static_cast<f32>(Game.completion * 100) / COMPLETIONPOINTS);
+        Text_LocaliseDecimalPoint(text);
+
         NUMTX text_mtx;
         Hub_SetStatsTextMtx(&text_mtx, angle);
         NuMtxTranslate(&text_mtx, const_cast<NUVEC *>(&Hub_PercentPos));
         text_mtx.m31 += bob;
-
-        char text[128];
-        sprintf(text, "%.1f%%", static_cast<f32>(Game.completion * 100) / COMPLETIONPOINTS);
-        Text_LocaliseDecimalPoint(text);
 
         NuQFntPushPrintMode(NUQFNT_CSMODE_ABSOLUTE);
         NuQFntSet(QFont3DZ);
@@ -309,19 +342,12 @@ void Hub_Draw3D(WORLDINFO_s *world) {
         NuQFntMove(QFont3DZ, NuQFntPrintLenU(QFont3DZ, text) * -0.5f, 0.0f, 0.0f);
         NuQFntPrintU(QFont3DZ, text);
         NuQFntPopPrintMode();
-    }
 
-    nuhspecial_s *display = NULL;
-    if (Store_IsPackUnlocked(6) == 0) {
-        if (NuSpecialExistsFn(&LevHSpecial[16]) != 0 && NuSpecialExistsFn(&LevHSpecial[4]) != 0) {
-            NUMTX draw_mtx = *NuSpecialGetDrawMtx(&LevHSpecial[16]);
-            NuSpecialDrawAt(&LevHSpecial[4], &draw_mtx);
+        if (NuSpecialExistsFn(&LevHSpecial[15]) != 0) {
+            Hub_SetStatsTextMtx(&text_mtx, angle);
+            NuMtxTranslate(&text_mtx, NuSpecialGetDrawPos(&LevHSpecial[15]));
+            NuSpecialDrawAtAlpha(&LevHSpecial[15], &text_mtx, Hub_HologramAlpha * 0.2f + 0.8f);
         }
-    }
-
-    display = &LevHSpecial[Store_IsPackUnlocked(5) != 0 ? 5 : 4];
-    if (NuSpecialExistsFn(display) != 0) {
-        NuSpecialDrawAt(display, &LevMtx);
     }
 }
 

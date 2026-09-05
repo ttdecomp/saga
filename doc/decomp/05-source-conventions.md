@@ -1,5 +1,8 @@
 # 05 — Source conventions
 
+> Agent/reference document. Human source conventions are summarized in
+> [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
+
 Guide to placing and authoring reconstructed code in the current `src/` tree.
 The tree is actively reorganized, so use live paths and Bazel actions instead
 of a copied basename map.
@@ -46,7 +49,7 @@ Locate the source definition and inspect its compile action:
 ```bash
 rg -n 'SYMBOL_OR_DEMANGLED_NAME' src
 bazel aquery --config=target \
-  'mnemonic("CppCompile", //src:saga_target)' --include_commandline
+  'mnemonic("CppCompile", deps(//src:saga_target))' --output=commands
 ```
 
 If the original symbol has no source definition, classify it as missing game

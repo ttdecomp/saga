@@ -674,8 +674,8 @@ void Animate_CHARACTER(GameObject_s *object) {
         if (object->apiobj.character_model->model_data_b[43] != NULL) {
             packet.requested_animation = 43;
         } else {
-            const i32 target_state = *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(object->context_target_position) +
-                                                              0x14);
+            const i32 target_state =
+                *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(object->context_target_position) + 0x14);
             packet.requested_animation = target_state == 1 ? CHARACTER_ANIMATION_IDLE : CHARACTER_ANIMATION_FALL;
         }
     } else if (object->character_context == CHARACTER_CONTEXT_FORCE) {
@@ -1463,35 +1463,36 @@ extern "C" {
         }
     }
 
-    void ANI_FixUpAddrs(ani3_animheader_s *anim, isize delta) {
+    void ANI_FixUpAddrs(ani3_animheader_s *anim, isize delta, i32) {
         if (anim->magic != 0x414e4934) {
             return;
         }
         while (true) {
-            if (anim->scale_min != NULL) {
-                anim->scale_min = reinterpret_cast<ani3_scalemin_s *>(reinterpret_cast<u8 *>(anim->scale_min) + delta);
-            }
             if (anim->constants != NULL) {
-                anim->constants = reinterpret_cast<i16 *>(reinterpret_cast<u8 *>(anim->constants) + delta);
+                anim->constants = reinterpret_cast<i16 *>(reinterpret_cast<usize>(anim->constants) + (usize)delta);
             }
-            if (anim->curve_types != NULL) {
-                anim->curve_types = reinterpret_cast<u16 *>(reinterpret_cast<u8 *>(anim->curve_types) + delta);
+            if (anim->scale_min != NULL) {
+                anim->scale_min =
+                    reinterpret_cast<ani3_scalemin_s *>(reinterpret_cast<usize>(anim->scale_min) + (usize)delta);
             }
             if (anim->keys != NULL) {
-                anim->keys = reinterpret_cast<u8 *>(anim->keys) + delta;
+                anim->keys = reinterpret_cast<u8 *>(reinterpret_cast<usize>(anim->keys) + (usize)delta);
+            }
+            if (anim->curve_types != NULL) {
+                anim->curve_types = reinterpret_cast<u16 *>(reinterpret_cast<usize>(anim->curve_types) + (usize)delta);
             }
             if (anim->node_flags != NULL) {
-                anim->node_flags = reinterpret_cast<u8 *>(anim->node_flags) + delta;
+                anim->node_flags = reinterpret_cast<u8 *>(reinterpret_cast<usize>(anim->node_flags) + (usize)delta);
             }
             if (anim->field_38 != NULL) {
-                anim->field_38 = reinterpret_cast<u8 *>(anim->field_38) + delta;
+                anim->field_38 = reinterpret_cast<void *>(reinterpret_cast<usize>(anim->field_38) + (usize)delta);
             }
             u16 next = anim->next_block;
             if (next == 0) {
                 break;
             }
             delta += next;
-            anim = reinterpret_cast<ani3_animheader_s *>(reinterpret_cast<u8 *>(anim) + next);
+            anim = reinterpret_cast<ani3_animheader_s *>(reinterpret_cast<usize>(anim) + next);
         }
     }
 

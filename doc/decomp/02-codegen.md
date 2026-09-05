@@ -1,5 +1,8 @@
 # 02 — GCC 4.7 (Android NDK r8e) x86-32 codegen encyclopedia
 
+> Agent/reference document. Human workflows are in
+> [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
+
 Toolchain: the checksum-pinned Android NDK r8e x86 GCC 4.7 compiler downloaded
 by Bazel.
 Results were measured with temporary compile/disassembly experiments using

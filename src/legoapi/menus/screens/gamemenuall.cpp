@@ -1482,7 +1482,8 @@ extern "C" {
     void ProcessFileSel2(void) {
     }
 
-    void RemapAddr(void) {
+    void RemapAddr(void *new_base, void *old_base, void **address) {
+        *address = static_cast<u8 *>(new_base) + (static_cast<u8 *>(*address) - static_cast<u8 *>(old_base));
     }
 
     void RenderFileSel2(void) {

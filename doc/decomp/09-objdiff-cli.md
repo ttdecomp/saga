@@ -1,5 +1,8 @@
 # 09 — per-symbol diffing with `scripts/objdiff-cli.py`
 
+> Agent/reference document. Human matching workflows are in
+> [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
+
 The primary tool for drilling into **one symbol's** mismatch is
 `scripts/objdiff-cli.py`, not the raw `objdiff` tools. Use it whenever you are
 reviewing or fixing a single function against the original. The human-facing

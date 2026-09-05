@@ -1,5 +1,8 @@
 # SAGA matching-decompilation knowledge base
 
+> Agent/reference documentation. Human setup and development workflows are in
+> [`README.md`](../../README.md) and [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
+
 This directory documents the Android x86 binary, its GCC 4.7 ABI and code
 generation, and the workflow for comparing reconstructed code with the
 original `res/libTTapp.so`.
