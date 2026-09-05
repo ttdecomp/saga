@@ -13,8 +13,17 @@ py_binary(
 py_binary(
     name = "generate_bazel_objdiff_report",
     srcs = ["generate_bazel_objdiff_report.py"],
+    deps = ["//scripts/lib:bazel_actions"],
     env = _PYTHON_ENV,
     main = "generate_bazel_objdiff_report.py",
+)
+
+py_binary(
+    name = "generate_objdiff_gui_config",
+    srcs = ["generate_objdiff_gui_config.py"],
+    deps = ["//scripts/lib:bazel_actions"],
+    env = _PYTHON_ENV,
+    main = "generate_objdiff_gui_config.py",
 )
 
 py_binary(

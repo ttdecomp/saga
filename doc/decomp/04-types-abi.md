@@ -1,5 +1,8 @@
 # 04 — Types & ABI: mangling, layout, calling conventions, vtables, thunks
 
+> Agent/reference document. Human workflows are in
+> [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
+
 Agent-oriented cheat sheet for matching `res/libTTapp.so` (Android x86, i686).
 Everything below was verified with the repo's Bazel-managed Android NDK r8e
 GCC 4.7 toolchain (`-fno-exceptions -fno-rtti`, C++11 — the flags in

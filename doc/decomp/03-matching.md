@@ -1,5 +1,8 @@
 # 03 — Matching and verification
 
+> Agent/reference document. Human matching workflows are in
+> [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
+
 The matching workflow compares the original Android x86 shared object with the
 shared object produced by Bazel. Matching remains a whole-binary comparison;
 the repository also generates a GitHub Pages summary by mapping Bazel compile
@@ -74,7 +77,19 @@ bazel run //scripts:plot_binary_match_map
 
 The first generator runs one whole-binary objdiff comparison and writes
 `matching.json`; the second renders `doc/pages/index.html`.
-Bazel does not generate split objects, `objdiff.json`, or `report.json`.
+Bazel does not generate split target objects or `report.json`.
+
+For manual exploration in the objdiff GUI, generate the ignored project file:
+
+```bash
+bazel run //scripts:generate_objdiff_gui_config
+objdiff -p .
+```
+
+This `objdiff.json` is GUI-only. It uses the same Bazel action query as the
+matching report to create one entry per source/object unit; each current object
+is compared with the complete original library. It is not an input to
+reporting, hooks, or CI.
 
 ## Common pitfalls
 

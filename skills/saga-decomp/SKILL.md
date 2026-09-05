@@ -36,7 +36,7 @@ Locate source ownership with `rg`. If membership or options are ambiguous, use:
 
 ```bash
 bazel aquery --config=target \
-  'mnemonic("CppCompile", //src:saga_target)' --include_commandline
+  'mnemonic("CppCompile", deps(//src:saga_target))' --output=commands
 ```
 
 ## Non-negotiable rules

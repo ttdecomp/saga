@@ -1,5 +1,8 @@
 # 01 — Toolchain reference
 
+> Agent/reference document. Human workflows are in
+> [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
+
 The matching target is built with the Android NDK r8e x86 GCC 4.7 toolchain.
 The Bazel entry point is:
 
@@ -43,7 +46,7 @@ Inspect the exact command line rather than copying a generated path:
 
 ```bash
 bazel aquery --config=target \
-  'mnemonic("CppCompile", //src:saga_target)' --include_commandline
+  'mnemonic("CppCompile", deps(//src:saga_target))' --output=commands
 ```
 
 ## Optimization levels

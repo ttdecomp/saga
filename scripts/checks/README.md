@@ -1,5 +1,8 @@
 # Repository checks
 
+> Agent/reference document. Human development workflows are in
+> [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
+
 Run the complete fast suite with:
 
 ```sh

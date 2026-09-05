@@ -1,3 +1,6 @@
+> Agent/reference file. See [`CONTRIBUTING.md`](../CONTRIBUTING.md) for the
+> complete legal and matching workflow.
+
 Place the following locally obtained files in this directory:
 
 - `libTTapp.so`, extracted from `lib/x86/libTTapp.so` in the supported APK.

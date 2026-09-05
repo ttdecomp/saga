@@ -1,5 +1,8 @@
 # 07 — Mismatch diagnostics
 
+> Agent/reference document. Human matching workflows are in
+> [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
+
 Scope: diagnosing differences between `res/libTTapp.so` and the Bazel target
 `bazel-bin/src/libTTapp.so` built with NDK r8e GCC 4.7.
 
@@ -16,7 +19,7 @@ For the affected source file, also confirm its effective optimization options:
 ```bash
 rg -n 'source/path\.cpp' bazel/android_per_file_copts.bazelrc
 bazel aquery --config=target \
-  'mnemonic("CppCompile", //src:saga_target)' --include_commandline
+  'mnemonic("CppCompile", deps(//src:saga_target))' --output=commands
 ```
 
 No optimization-map entry means `-O0`.

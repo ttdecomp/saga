@@ -1,5 +1,8 @@
 # 06 — Original target binary reference
 
+> Agent/reference document. Human matching workflows are in
+> [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
+
 This document records measured facts about `res/libTTapp.so`, the original
 Android x86 binary. Re-run the listed tools when exact numbers matter.
 

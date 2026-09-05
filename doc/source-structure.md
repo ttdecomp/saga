@@ -1,5 +1,8 @@
 # Source-tree structure
 
+> Agent/reference document. Human development workflows are in
+> [`CONTRIBUTING.md`](../CONTRIBUTING.md).
+
 This document explains how the reconstructed source tree relates to the
 original Android x86 binary. It is the restructuring reference, but generated
 artifacts—not copied counts in prose—are the source of truth.
@@ -89,7 +92,7 @@ source and destination commands.
 ```bash
 # Show compile actions and their effective arguments.
 bazel aquery --config=target \
-  'mnemonic("CppCompile", //src:saga_target)' --include_commandline
+  'mnemonic("CppCompile", deps(//src:saga_target))' --output=commands
 
 # Review and validate declared overrides.
 rg -n -- '--per_file_copt' bazel/android_per_file_copts.bazelrc
@@ -113,7 +116,7 @@ the Bazel compile action if the basename is ambiguous:
 ```bash
 rg -n 'qrand' src
 bazel aquery --config=target \
-  'mnemonic("CppCompile", //src:saga_target)' --include_commandline
+  'mnemonic("CppCompile", deps(//src:saga_target))' --output=commands
 ```
 
 The action query is authoritative for source membership, effective options,

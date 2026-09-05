@@ -1,5 +1,8 @@
 # 08 — Assembly review workflow
 
+> Agent/reference document. Human matching workflows are in
+> [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
+
 Use the complete original and rebuilt shared objects for review. The repository
 does not require generated split objects or a generated objdiff project. The
 optional Pages report described in [03-matching.md](03-matching.md) summarizes

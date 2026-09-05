@@ -1,5 +1,8 @@
 # Matching report page
 
+> Agent/reference document. Human matching and Pages workflows are in
+> [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
+
 The repository-root `matching.json` is generated from one whole-binary
 `objdiff-cli` report for
 `res/libTTapp.so` and `bazel-bin/src/libTTapp.so`. The generator uses Bazel's
