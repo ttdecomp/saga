@@ -58,13 +58,19 @@ static i32 GizObstacle_PosWithinBox(GIZOBSTACLE_s *obstacle, NUVEC *position) {
            local_position.z <= obstacle->trigger_box_half_extents.z;
 }
 
-void GizObstacle_Stop(GIZOBSTACLE_s *) {
+void GizObstacle_Stop(GIZOBSTACLE_s *obstacle) {
+    if (obstacle != NULL) {
+        GameAnimSet_Stop(obstacle->anim_set);
+    }
 }
 
 void GizObstacles_Hit(void *, GIZOBSTACLE_s *, nuvec_s *, i32, i32) {
 }
 
-void GizObstacle_JumpToEnd(GIZOBSTACLE_s *) {
+void GizObstacle_JumpToEnd(GIZOBSTACLE_s *obstacle) {
+    if (obstacle != NULL && obstacle->anim_set != NULL) {
+        GameAnimSet_JumpToEnd(obstacle->anim_set);
+    }
 }
 
 GIZOBSTACLE_s *GizObstacle_FindByName(GIZOBSTACLESYS_s *system, char *name) {
@@ -85,7 +91,10 @@ GIZOBSTACLE_s *GizObstacle_FindByName(GIZOBSTACLESYS_s *system, char *name) {
 void GizObstacle_FindNearest(GIZOBSTACLESYS_s *, nuvec_s *, GameObject_s *, float *, i32) {
 }
 
-void GizObstacle_JumpToStart(GIZOBSTACLE_s *) {
+void GizObstacle_JumpToStart(GIZOBSTACLE_s *obstacle) {
+    if (obstacle != NULL && obstacle->anim_set != NULL) {
+        GameAnimSet_JumpToStart(obstacle->anim_set);
+    }
 }
 
 void GizObstacles_AddTrigger(nuvec_s *position) {
@@ -103,10 +112,26 @@ void GizObstacles_AddTrigger(nuvec_s *position) {
 void GizObstacles_TotalScore(void *) {
 }
 
-void GizObstacle_PlayForwards(GIZOBSTACLE_s *) {
+void GizObstacle_PlayForwards(GIZOBSTACLE_s *obstacle) {
+    if (obstacle != NULL) {
+        GameAnimSet_SetRepeating(obstacle->anim_set, obstacle->state == 2);
+        if (obstacle->animation_speed < 0.0f) {
+            GameAnimSet_Play(obstacle->anim_set, obstacle->animation_speed * obstacle->field_0x50, 0);
+        } else {
+            GameAnimSet_Play(obstacle->anim_set, obstacle->animation_speed * obstacle->field_0x4c, 0);
+        }
+    }
 }
 
-void GizObstacle_PlayBackwards(GIZOBSTACLE_s *) {
+void GizObstacle_PlayBackwards(GIZOBSTACLE_s *obstacle) {
+    if (obstacle != NULL) {
+        GameAnimSet_SetRepeating(obstacle->anim_set, obstacle->state == 2);
+        if (obstacle->animation_speed < 0.0f) {
+            GameAnimSet_Play(obstacle->anim_set, -obstacle->animation_speed * obstacle->field_0x4c, 0);
+        } else {
+            GameAnimSet_Play(obstacle->anim_set, -obstacle->animation_speed * obstacle->field_0x50, 0);
+        }
+    }
 }
 
 void GizObstacle_SetPushControlled(GIZOBSTACLE_s *, GameObject_s *, float) {

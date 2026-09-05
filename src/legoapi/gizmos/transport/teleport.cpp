@@ -1,6 +1,7 @@
 #include "legoapi/gizmos/transport/teleport.h"
 
 #include "decomp.h"
+#include "legoapi/legoapi_types.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/world.h"
 
@@ -13,42 +14,56 @@ static i32 Teleport_GetMaxGizmos(void *world_ptr) {
 
 static void Teleport_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_ptr, void *) {
     WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
-    if (world == NULL || world->teleports == NULL || world->teleport_count <= 0) {
-        return;
-    }
-
-    for (i32 index = 0; index < world->teleport_count; ++index) {
-        AddGizmo(gizmo_sys, type_id, NULL, &world->teleports[index]);
+    if (world != NULL && world->teleports != NULL) {
+        for (i32 index = 0; index < world->teleport_count; ++index) {
+            AddGizmo(gizmo_sys, type_id, NULL, &world->teleports[index]);
+        }
     }
 }
 
 static char *Teleport_GetGizmoName(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+    return gizmo != NULL ? static_cast<char *>(gizmo->object) : NULL;
 }
 
 static i32 Teleport_GetOutput(GIZMO *gizmo, i32, i32) {
-    UNIMPLEMENTED();
-    return {};
+    if (gizmo != NULL && gizmo->object != NULL) {
+        return static_cast<TELEPORT_s *>(gizmo->object)->active;
+    }
+    return 0;
 }
 
-char *Teleport_GetOutputName(GIZMO *gizmo, i32 output_index) {
-    UNIMPLEMENTED();
-    return {};
+char *Teleport_GetOutputName(GIZMO *, i32) {
+    return const_cast<char *>("Occupied");
 }
 
-static i32 Teleport_GetNumOutputs(GIZMO *gizmo) {
-    UNIMPLEMENTED();
-    return {};
+static i32 Teleport_GetNumOutputs(GIZMO *) {
+    return 1;
 }
 
-static void Teleport_Activate(GIZMO *gizmo, i32) {
-    UNIMPLEMENTED();
+static void Teleport_Activate(GIZMO *gizmo, i32 activate) {
+    TELEPORT_s *teleport = static_cast<TELEPORT_s *>(gizmo->object);
+    if (activate != 0) {
+        teleport->active = 0;
+        teleport->enabled = 1;
+    } else {
+        teleport->enabled = 0;
+    }
 }
 
-static i32 Teleport_ActivateRev(GIZMO *gizmo, i32, i32) {
-    UNIMPLEMENTED();
-    return {};
+static i32 Teleport_ActivateRev(GIZMO *gizmo, i32 activate, i32 flags) {
+    if (gizmo == NULL || gizmo->object == NULL) {
+        return 0;
+    }
+    TELEPORT_s *teleport = static_cast<TELEPORT_s *>(gizmo->object);
+    if ((flags & 1) != 0 && teleport->enabled != activate) {
+        return 0;
+    }
+    if (activate != 0) {
+        teleport->enabled = 0;
+    } else if (teleport->enabled == 0) {
+        teleport->enabled = 1;
+    }
+    return 1;
 }
 
 ADDGIZMOTYPE *Teleport_RegisterGizmo(i32 type_id) {
