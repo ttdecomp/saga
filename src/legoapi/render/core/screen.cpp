@@ -3,6 +3,10 @@
 #include "legoapi/legoapi_types.h"
 #include "legoapi/characters/motion.h"
 #include "legoapi/menus/core/text.h"
+#include "gameapi/gui/apimenu.h"
+#include "legoapi/world/area.h"
+#include "legoapi/world/level.h"
+#include "legoapi/world/world.h"
 #include "legoapi/menus/screens/shop.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/numtl.h"
@@ -59,14 +63,33 @@ f32 GetAspectRatio() {
 }
 
 static u8 ScreenGrabNeeded;
-i32 pause_rt;
+static i32 pause_rt;
 NUMTL *pause_rndr_mtl;
 extern i32 pause_rndr_on;
 extern i32 pause_fade;
+static i32 old_pause_state;
+i32 (*PauseRenderOffFn)(void);
+i32 cut_waiting_for_new_level;
+
+extern FadeSystem FadeSys;
+extern i32 Paused;
+extern i32 waiting_for_level;
+extern i32 GAMEDEMO;
+extern "C" {
+    extern f32 MainRenderTime;
+    extern i32 back_rgba[2];
+    extern i32 clear_screen_onstill;
+    extern i32 gone_through_door_to_new_level;
+    extern i32 screendump;
+}
+void BackDrop_Draw(f32, i32);
+void DrawStillScreen(i32);
 
 extern "C" i32 NuRndrBeginScene(i32);
 extern "C" void NuRndrEndScene(void);
 extern "C" void NuBackbufferCopy(i32);
+extern "C" void NuRndrClear(i32, i32, f32);
+extern "C" void NuRndrGradClear(i32, i32, i32, f32);
 
 void NeedScreenGrab(i32 needed) {
     ScreenGrabNeeded = needed != 0;
@@ -154,6 +177,61 @@ void UpdateCutBorders() {
 }
 
 void HandleStillRender() {
+    GetMenuID();
+    if (pause_rndr_on != 0 && FadeSys.pending_type == FADE_TYPE_NONE) {
+        NuRndrBeginScene(-1);
+        if (MainRenderTime < 1.0f) {
+            if (back_rgba[0] == back_rgba[1]) {
+                NuRndrClear(0xf00, back_rgba[0], 1.0f);
+            } else {
+                NuRndrGradClear(0xf00, back_rgba[0], back_rgba[1], 1.0f);
+            }
+            BackDrop_Draw(1.0f - MainRenderTime, 0);
+        } else {
+            NuRndrClear(0x300, 0, 1.0f);
+        }
+        NuRndrEndScene();
+    }
+
+    if (grab_screen_image != 2 && pause_rndr_on != 0 && pause_rt != 0 &&
+        FadeSys.pending_type == FADE_TYPE_NONE) {
+        DrawStillScreen(clear_screen_onstill);
+    }
+
+    if (Paused != 0) {
+        if (old_pause_state == 0 && FadeSys.pending_type == FADE_TYPE_NONE) {
+            NeedScreenGrab(1);
+        }
+    }
+    if (Paused == 0 && old_pause_state != 0) {
+        pause_rndr_on = 0;
+    }
+    old_pause_state = Paused;
+
+    if ((waiting_for_level == -1 ||
+         (gone_through_door_to_new_level == 0 && cut_waiting_for_new_level == 0 && waiting_for_new_level == 0)) &&
+        (NewLData != CREDITS_LDATA || LastLData != STATUS_LDATA) &&
+        (NewLData != STATUS_LDATA ||
+         ((WORLD->level_sub_id == -1 || (WORLD->area[WORLD->level_sub_id].flags & 2) == 0) && GAMEDEMO == 0)) &&
+        NewLData != CREDITS_LDATA &&
+        (NewLData != HUB_LDATA || WORLD->level_sub_id == -1 || (WORLD->area[WORLD->level_sub_id].flags & 2) == 0) &&
+        !(MainRenderTime > 0.0f && MainRenderTime < 1.0f)) {
+        if (Paused == 0 || IsGrabbingScreen() != 0) {
+            pause_rndr_on = static_cast<u32>(grab_screen_image) > 1;
+        } else if (PauseRenderOffFn != NULL && PauseRenderOffFn() != 0) {
+            pause_rndr_on = 0;
+        } else {
+            pause_rndr_on = 1;
+        }
+    } else {
+        pause_rndr_on = 1;
+    }
+
+    if (screendump != 0) {
+        pause_rndr_on = 0;
+    }
+    clear_screen_onstill = 1;
+    grab_screen_image = 0;
 }
 
 void LinkShaderProgram(u32) {
