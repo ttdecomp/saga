@@ -241,16 +241,23 @@ i32 CompletionPointInfo[7] = {0};
 i32 OldBonusScore[2] = {0};
 i32 BonusScore[2] = {0};
 i32 BonusCoinTotal = 0;
+u32 BonusCoinTarget = 0;
 
 // Gameplay panel layout and animation state.  The non-zero constants are the
 // original panel coordinates; the animation values are reset by Panel_Clear.
 f32 STATSPOSY = 0.745f;
 f32 STATSPOS2Y = 1.255f;
+f32 PANEL_HEARTY = -0.045f;
+f32 PANEL_HITPOINTSX = 0.65f;
 f32 COINTOTAL_SCOREDY = -0.005f;
 f32 COINTOTAL_COINDX = 0.05f;
 f32 COINTOTAL_COINSIZE = 0.5f;
 f32 COINTOTAL_SCORESIZE = 0.5f;
 f32 PANEL_COINADJUSTDY = -0.006f;
+f32 PANEL_COINSCALE_END = 0.35f;
+f32 PANEL_COINSCALE_START = 1.0f;
+f32 PANEL_COINY = 0.045f;
+f32 PANEL_COINX = 0.65f;
 f32 CoinTotalScale = 0.0f;
 f32 cointotal_x[2] = {0.0f, 0.0f};
 i32 cointotal_i_obj[2] = {187, 187};
@@ -386,7 +393,7 @@ DETONATOR_s Detonator[10] = {};
 // ------------------------------------------------------------------------
 // Bonus / arcade / challenge mode
 // ------------------------------------------------------------------------
-i32 BonusWinner = 0;
+i32 BonusWinner = -1;
 i32 BonusWinFlag = 0;
 i32 ChallengeMode = 0;
 TIMER ChallengeTimer;
@@ -509,6 +516,8 @@ char *ExtraLevelObject_NameTable = NULL;
 i32 ExtraLevelObject_NameTableSize = 0;
 i32 ExtraLevelObject_NameTableIndex = 0;
 i32 KNOBS = -1;
+i32 PLAYERHITPOINTS_2HEARTSIN1 = 1;
+i32 drawbosshitpoints_2rows = 0;
 
 i16 drawcharicon_hspecial_spin = 0;
 f32 drawcharicon_hspecial_dz = 0.0f;

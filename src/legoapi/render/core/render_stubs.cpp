@@ -126,8 +126,14 @@ extern "C" {
         i32 clip_result;
         u32 i;
 
-        if (scene->display_list != NULL &&
-            (scene->display_list->render_buffer & NUDL_SCENE_RENDER_FLAG_CENTER_EXTENT_BOUNDS) != 0) {
+        // The original routine exits before selecting the bounds path when a
+        // display list is unavailable; the sphere path also needs its flags
+        // and override tables below.
+        if (scene->display_list == NULL) {
+            return;
+        }
+
+        if ((scene->display_list->render_buffer & NUDL_SCENE_RENDER_FLAG_CENTER_EXTENT_BOUNDS) != 0) {
             for (i = 0; i < static_cast<u32>(static_cast<i32>(room->instance_count)); ++i) {
                 instance_index = room->instance_indices[i];
                 u8 *instance_record = scene->instances + instance_index * 0x50;
@@ -162,19 +168,21 @@ extern "C" {
                     if ((((u8)scene->display_list->portal_visibility_overrides[instance_index >> 3] >>
                           (instance_index & 7)) &
                          1) == 0) {
-                        if ((scene->display_list->visibility_flags[instance_index] &
-                             NUDL_INSTANCE_FLAG_NO_VISIBILITY_TEST) == 0) {
-                            clip_result = clipTestSphere(&scene->portal_spheres[instance_index], frustum);
-                            if (clip_result == 1) {
-                                PortalVisiFlags[instance_index >> 3] |= 1 << (instance_index & 7);
-                            } else if (clip_result == 2 &&
-                                       clipTestBox(&scene->portal_boxes[instance_index].first,
-                                                   &scene->portal_boxes[instance_index].second, frustum->planes,
-                                                   static_cast<i32>(frustum->plane_count)) != 0) {
+                        if ((scene->display_list->visibility_flags[instance_index] & NUDL_INSTANCE_FLAG_VISIBLE) != 0) {
+                            if ((scene->display_list->visibility_flags[instance_index] &
+                                 NUDL_INSTANCE_FLAG_NO_VISIBILITY_TEST) == 0) {
+                                clip_result = clipTestSphere(&scene->portal_spheres[instance_index], frustum);
+                                if (clip_result == 1) {
+                                    PortalVisiFlags[instance_index >> 3] |= 1 << (instance_index & 7);
+                                } else if (clip_result == 2 &&
+                                           clipTestBox(&scene->portal_boxes[instance_index].first,
+                                                       &scene->portal_boxes[instance_index].second, frustum->planes,
+                                                       static_cast<i32>(frustum->plane_count)) != 0) {
+                                    PortalVisiFlags[instance_index >> 3] |= 1 << (instance_index & 7);
+                                }
+                            } else {
                                 PortalVisiFlags[instance_index >> 3] |= 1 << (instance_index & 7);
                             }
-                        } else {
-                            PortalVisiFlags[instance_index >> 3] |= 1 << (instance_index & 7);
                         }
                     } else {
                         PortalVisiFlags[instance_index >> 3] |= 1 << (instance_index & 7);

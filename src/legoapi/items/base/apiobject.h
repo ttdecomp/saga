@@ -589,37 +589,40 @@ typedef struct GameObject_s {
             NUMTX remaining_joint_matrices[15];
         };
     };
-    u8 pad_bf4[0xc34 - 0xbf4];       // 0x0bf4 .. 0x0c34
-    u32 field_0xc34;                 // 0x0c34
-    f32 field_0xc38;                 // 0x0c38
-    u8 pad_c3c[0xc54 - 0xc3c];       // 0x0c3c .. 0x0c54
-    f32 field_0xc54;                 // 0x0c54
-    u8 pad_c58[0xc94 - 0xc58];       // 0x0c58 .. 0x0c94
-    struct GAMEPAD_s *pad_gamepad;   // 0x0c94  (originally inside PLAYERPACKET_s)
-    SOCKPOSITION *oldpos;            // 0x0c98
-    u8 pad_c9c[0xca8 - 0xc9c];       // 0x0c9c .. 0x0ca8
-    void *field_0xca8;               // 0x0ca8
-    void *suit;                      // 0x0cac
-    void *batarang;                  // 0x0cb0
-    TORPEDOPACKET *torpedo;          // 0x0cb4
-    u8 pad_cb8[0xcc0 - 0xcb8];       // 0x0cb8 .. 0x0cc0
-    GameObject_s *field_0xcc0;       // 0x0cc0
-    u8 pad_cc4[0xd10 - 0xcc4];       // 0x0cc4 .. 0x0d10
-    f32 airborne_reset_timer;        // 0x0d10
-    u32 field_0xd14;                 // 0x0d14
-    f32 ground_contact_grace_timer;  // 0x0d18, keeps airborne animation briefly after contact
-    f32 jump_reentry_timer;          // 0x0d1c
-    f32 airborne_input_timer;        // 0x0d20
-    f32 field_0xd24;                 // 0x0d24
-    u8 pad_d28[0xd30 - 0xd28];       // 0x0d28 .. 0x0d30
-    f32 weapon_scale;                // 0x0d30, 0.0 retracted .. 1.0 extended
-    f32 weapon_scale_rate;           // 0x0d34
-    u8 pad_d38[0xd3c - 0xd38];       // 0x0d38 .. 0x0d3c
-    f32 weapon_out_timer;            // 0x0d3c
-    f32 delayed_turn_timer;          // 0x0d40
-    f32 combo_input_timer;           // 0x0d44
-    u8 pad_d48[0xd5c - 0xd48];       // 0x0d48 .. 0x0d5c
-    i32 pause_input_state;           // 0x0d5c, cleared when entering pause
+    u8 pad_bf4[0xc34 - 0xbf4];      // 0x0bf4 .. 0x0c34
+    u32 field_0xc34;                // 0x0c34
+    f32 field_0xc38;                // 0x0c38
+    u8 pad_c3c[0xc54 - 0xc3c];      // 0x0c3c .. 0x0c54
+    f32 field_0xc54;                // 0x0c54
+    u8 pad_c58[0xc94 - 0xc58];      // 0x0c58 .. 0x0c94
+    struct GAMEPAD_s *pad_gamepad;  // 0x0c94  (originally inside PLAYERPACKET_s)
+    SOCKPOSITION *oldpos;           // 0x0c98
+    u8 pad_c9c[0xca8 - 0xc9c];      // 0x0c9c .. 0x0ca8
+    void *field_0xca8;              // 0x0ca8
+    void *suit;                     // 0x0cac
+    void *batarang;                 // 0x0cb0
+    TORPEDOPACKET *torpedo;         // 0x0cb4
+    u8 pad_cb8[0xcc0 - 0xcb8];      // 0x0cb8 .. 0x0cc0
+    GameObject_s *field_0xcc0;      // 0x0cc0
+    u8 pad_cc4[0xd10 - 0xcc4];      // 0x0cc4 .. 0x0d10
+    f32 airborne_reset_timer;       // 0x0d10
+    u32 field_0xd14;                // 0x0d14
+    f32 ground_contact_grace_timer; // 0x0d18, keeps airborne animation briefly after contact
+    f32 jump_reentry_timer;         // 0x0d1c
+    f32 airborne_input_timer;       // 0x0d20
+    f32 field_0xd24;                // 0x0d24
+    u8 pad_d28[0xd30 - 0xd28];      // 0x0d28 .. 0x0d30
+    f32 weapon_scale;               // 0x0d30, 0.0 retracted .. 1.0 extended
+    f32 weapon_scale_rate;          // 0x0d34
+    u8 pad_d38[0xd3c - 0xd38];      // 0x0d38 .. 0x0d3c
+    f32 weapon_out_timer;           // 0x0d3c
+    f32 delayed_turn_timer;         // 0x0d40
+    f32 combo_input_timer;          // 0x0d44
+    u8 pad_d48[0xd5c - 0xd48];      // 0x0d48 .. 0x0d5c
+    union {
+        i32 pause_input_state; // 0x0d5c, cleared when entering pause
+        f32 hud_icon_timer;    // countdown controlling the portrait blink during death/drop transitions
+    };
     u8 pad_d60[0xd64 - 0xd60];       // 0x0d60 .. 0x0d64
     f32 jump_variant_timer;          // 0x0d64
     f32 jump_chain_timer;            // 0x0d68
@@ -703,7 +706,8 @@ typedef struct GameObject_s {
     i32 pause_context_state;                    // 0x0ef4, cleared when entering pause
     u8 field_0xef8;                             // 0x0ef8
     u8 field_0xef9;                             // 0x0ef9
-    u8 pad_efa[0xefc - 0xefa];                  // 0x0efa .. 0x0efc
+    u8 field_0xefa;                             // 0x0efa
+    u8 field_0xefb;                             // 0x0efb, bit 3 requests the two-row hit-point layout
     u8 field_0xefc;                             // 0x0efc
     u8 field_0xefd;                             // 0x0efd
     u8 field_0xefe;                             // 0x0efe

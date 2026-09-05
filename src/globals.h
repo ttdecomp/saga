@@ -377,21 +377,35 @@ extern i32 CompletionPointInfo[7];
 extern i32 OldBonusScore[2];
 extern i32 BonusScore[2];
 extern i32 BonusCoinTotal;
+extern u32 BonusCoinTarget;
 
 // ------------------------------------------------------------------------
 // Gameplay panel / coin-total state
 // ------------------------------------------------------------------------
 extern f32 STATSPOSY;
 extern f32 STATSPOS2Y;
+extern f32 PANEL_HEARTY;
+extern f32 PANEL_HITPOINTSX;
 extern f32 COINTOTAL_SCOREDY;
 extern f32 COINTOTAL_COINDX;
 extern f32 COINTOTAL_COINSIZE;
 extern f32 COINTOTAL_SCORESIZE;
 extern f32 PANEL_COINADJUSTDY;
+extern f32 PANEL_COINSCALE_END;
+extern f32 PANEL_COINSCALE_START;
+extern f32 PANEL_COINY;
+extern f32 PANEL_COINX;
 extern f32 CoinTotalScale;
 extern f32 cointotal_x[2];
 extern i32 cointotal_i_obj[2];
 extern i32 SuperStoryEpisode;
+#ifdef __cplusplus
+extern "C" {
+#endif
+    extern i32 SuperStory;
+#ifdef __cplusplus
+}
+#endif
 extern f32 SuperStoryTimer[4];
 extern u32 SuperStoryScore;
 
@@ -531,6 +545,7 @@ extern DETONATOR_s Detonator[10];
 // ------------------------------------------------------------------------
 extern i32 BonusWinner;
 extern i32 BonusWinFlag;
+extern i32 BonusArea;
 extern i32 ChallengeMode;
 extern struct TIMER_s ChallengeTimer;
 extern i32 LSW1;
@@ -624,6 +639,8 @@ extern char *ExtraLevelObject_NameTable;
 extern i32 ExtraLevelObject_NameTableSize;
 extern i32 ExtraLevelObject_NameTableIndex;
 extern i32 KNOBS;
+extern i32 PLAYERHITPOINTS_2HEARTSIN1;
+extern i32 drawbosshitpoints_2rows;
 
 extern i16 drawcharicon_hspecial_spin;
 extern f32 drawcharicon_hspecial_dz;

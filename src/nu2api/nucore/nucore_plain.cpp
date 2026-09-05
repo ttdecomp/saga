@@ -3093,7 +3093,10 @@ extern "C" {
                     candidates[1] = static_cast<i16>(room_index);
                 }
                 candidate_count = 3;
-                continue;
+                // The original scan leaves the candidate loop here. Keeping
+                // the sentinel prevents a third room from indexing past the
+                // two candidate slots below.
+                break;
             }
 
             candidates[candidate_count++] = static_cast<i16>(room_index);

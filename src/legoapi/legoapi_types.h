@@ -336,7 +336,36 @@ struct uv1deb;
 struct uv1debdata;
 struct vucharidx_s;
 
-struct ADDGAMEMSG {};
+struct ADDGAMEMSG {
+    char *text;                         // 0x00
+    nuvec_s *position;                  // 0x04
+    nuvec_s *target_position;           // 0x08
+    f32 scale;                          // 0x0c
+    f32 target_scale;                   // 0x10
+    u8 red;                             // 0x14
+    u8 green;                           // 0x15
+    u8 blue;                            // 0x16
+    u8 alpha;                           // 0x17
+    u32 flags;                          // 0x18
+    f32 duration;                       // 0x1c
+    f32 field_0x20;                     // 0x20
+    u16 field_0x24;                     // 0x24
+    i16 icon;                           // 0x26
+    nuvec_s *extra_position;            // 0x28
+    u32 score;                          // 0x2c
+    f32 field_0x30;                     // 0x30
+    f32 field_0x34;                     // 0x34
+    f32 field_0x38;                     // 0x38
+    f32 field_0x3c;                     // 0x3c
+    void (*update_fn)(GAMEMESSAGE_s *); // 0x40
+    void *field_0x44;                   // 0x44
+    void (*end_fn)(GAMEMESSAGE_s *);    // 0x48
+    i8 player_index;                    // 0x4c
+    u8 field_0x4d;
+    u8 field_0x4e;
+    u8 field_0x4f;
+};
+DECOMP_ASSERT(sizeof(ADDGAMEMSG) == 0x50, "ADDGAMEMSG size");
 struct ADDPART_s {};
 struct AIANTINODE_s;
 struct AIAREA_s;
@@ -3136,11 +3165,22 @@ struct GIZTURRET_s {
     GAMEANIMOBJ_s *primary_anim_obj;   // 0x1c
     GAMEANIMOBJ_s *secondary_anim_obj; // 0x20
     NUVEC position;                    // 0x24, position exposed through GIZMOFNS
-    u8 field_0x30[0x54 - 0x30];
+    NUVEC field_0x30;
+    NUVEC field_0x3c;
+    NUVEC field_0x48;
     NUANG pitch; // 0x54
-    u8 field_0x58[0x60 - 0x58];
+    i32 field_0x58;
+    i32 field_0x5c;
     NUANG yaw; // 0x60
-    u8 field_0x64[0xf4 - 0x64];
+    i32 field_0x64;
+    i32 field_0x68;
+    i32 field_0x6c;
+    i32 field_0x70;
+    NUVEC field_0x74[4];
+    NUMTX field_0xa4;
+    u8 field_0xe4[0xec - 0xe4];
+    f32 field_0xec;
+    f32 field_0xf0;
     f32 reflection_alpha; // 0xf4
     f32 fire_cooldown;    // 0xf8
     f32 fire_interval;    // 0xfc
@@ -3154,17 +3194,30 @@ struct GIZTURRET_s {
             u16 behavior_flags_high;
         };
     };
-    u8 field_0x10c[0x10e - 0x10c];
+    i16 field_0x10c;
     i16 room_id; // 0x10e
-    u8 field_0x110[0x128 - 0x110];
+    i16 field_0x110;
+    i16 field_0x112;
+    NUVEC field_0x114;
+    f32 field_0x120;
+    i16 blowup_type; // 0x124 (name-table id until post-load fixup)
+    i16 field_0x126;
     i16 base_y_rotation; // 0x128
     i16 field_0x12a;
     u8 field_0x12c;
     i8 bolt_type_id; // 0x12d
-    u8 field_0x12e[0x13a - 0x12e];
+    u8 field_0x12e;
+    u8 field_0x12f;
+    u8 field_0x130;
+    u8 field_0x131;
+    u8 field_0x132[2];
+    i16 field_0x134;
+    u8 field_0x136[2];
+    i16 field_0x138;
     u8 flags;         // 0x13a
     u8 runtime_flags; // 0x13b
-    u8 field_0x13c[0x144 - 0x13c];
+    u8 field_0x13c[4];
+    f32 field_0x140;
     void ClearMechObjectInterface();
     void GetMechObjectInterface();
 };
@@ -3179,6 +3232,7 @@ DECOMP_ASSERT(offsetof(GIZTURRET_s, fire_cooldown) == 0xf8, "GIZTURRET fire-cool
 DECOMP_ASSERT(offsetof(GIZTURRET_s, behavior_flags) == 0x108, "GIZTURRET behavior-flags offset");
 DECOMP_ASSERT(offsetof(GIZTURRET_s, animation_flags) == 0x109, "GIZTURRET animation-flags offset");
 DECOMP_ASSERT(offsetof(GIZTURRET_s, room_id) == 0x10e, "GIZTURRET room offset");
+DECOMP_ASSERT(offsetof(GIZTURRET_s, blowup_type) == 0x124, "GIZTURRET blowup-type offset");
 DECOMP_ASSERT(offsetof(GIZTURRET_s, flags) == 0x13a, "GIZTURRET flags offset");
 
 struct GIZTURRETSYS_s {

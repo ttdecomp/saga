@@ -69,6 +69,9 @@ void InitAICreatures(AISYS_s *system);
 void ResetAICreatures(AISYS_s *system);
 void LevelScriptReStoreProgress(WORLDINFO_s *world, LEVELSCRIPTPROCESS_s *process);
 void GizmoSysAddGizmos(GIZMOSYS_s *gizmo_sys, GIZFLOW_s *giz_flow, void *world);
+void UpdateCoinPacket(COINPACKET_s *packet, i32 active, i32 player_index);
+void ResetCoinPacket(COINPACKET_s *packet);
+GIZMOPICKUP_s *GizmoPickups_Collide(WORLDINFO_s *world, GameObject_s *object, i32 arg);
 
 f32 Condition_InHubArea(AISYS_s *, AISCRIPTPROCESS_s *, AIPACKET_s *, char *, void *);
 void *Condition_InHubAreaInit(AISYS_s *, char *, AISCRIPT_s *);
@@ -2183,6 +2186,14 @@ void UpdateGameObjects(WORLDINFO_s *world) {
         object->context_target_position = NULL;
         ScaleGameObject(object);
         GameObjectDimensions(object);
+        UpdateCoinPacket(object->coinpacket, static_cast<u32>(object->apiobj.flags_low) >> 7,
+                         object->apiobj.field_0x27c);
+        if ((object->apiobj.flags_low & APIOBJECT_FLAG_PLAYER_ACTIVE) != 0 && object->apiobj.field_0x287 == 0 &&
+            object->field_0x7a5 != 0x2b && !(object->field_0x7a5 == 0x0f && object->field_0x7a3 == 1)) {
+            GizmoPickups_Collide(world, object, 1);
+        } else {
+            ResetCoinPacket(object->coinpacket);
+        }
         if (object->use_model_origin != 0xff) {
             ++object->use_model_origin;
         }

@@ -414,6 +414,9 @@ namespace {
         i32 room_visible = 0;
         i32 model_active = 0;
         i32 types[256] = {};
+        i32 nearest_index = -1;
+        f32 nearest_distance_squared = 0.0f;
+        const GameObject_s *player = Player[0];
         for (i32 index = 0; index < system->pickup_count; ++index) {
             const GIZMOPICKUP_s &pickup = system->pickups[index];
             active += (pickup.state_flags & GIZMOPICKUP_STATE_ACTIVE) != 0;
@@ -431,6 +434,18 @@ namespace {
                 const i32 model_index = type.first_model_id + pickup.model_variant;
                 model_active += WORLD->lev_objs != nullptr && WORLD->lev_objs[model_index].active != 0;
             }
+            if (player != nullptr && (pickup.state_flags & (GIZMOPICKUP_STATE_ACTIVE | GIZMOPICKUP_STATE_ENABLED |
+                                                            GIZMOPICKUP_STATE_COLLECTED)) ==
+                                         (GIZMOPICKUP_STATE_ACTIVE | GIZMOPICKUP_STATE_ENABLED)) {
+                const f32 dx = pickup.position.x - player->apiobj.position.x;
+                const f32 dy = pickup.position.y - player->apiobj.position.y;
+                const f32 dz = pickup.position.z - player->apiobj.position.z;
+                const f32 distance_squared = dx * dx + dy * dy + dz * dz;
+                if (nearest_index == -1 || distance_squared < nearest_distance_squared) {
+                    nearest_index = index;
+                    nearest_distance_squared = distance_squared;
+                }
+            }
         }
         LOG_INFO("pickup trace %s: total=%d active=%d visible=%d draw-visible=%d collected=%d drawn=%d "
                  "room-visible=%d model-active=%d draw-distance=%.3f scale=%.3f",
@@ -440,6 +455,14 @@ namespace {
             if (types[type] != 0) {
                 LOG_INFO("pickup type '%c': count=%d", type, types[type]);
             }
+        }
+        if (nearest_index != -1) {
+            const GIZMOPICKUP_s &pickup = system->pickups[nearest_index];
+            LOG_INFO("pickup nearest %s: index=%d type='%c' position=(%.3f,%.3f,%.3f) "
+                     "player=(%.3f,%.3f,%.3f) distance-squared=%.3f flags=0x%x config=0x%x",
+                     stage, nearest_index, pickup.type_code, pickup.position.x, pickup.position.y, pickup.position.z,
+                     player->apiobj.position.x, player->apiobj.position.y, player->apiobj.position.z,
+                     nearest_distance_squared, pickup.state_flags, pickup.config_flags);
         }
     }
 
@@ -1001,7 +1024,7 @@ i32 host_run_window(const HostWindowOptions &options) {
                 scripted_play_during = host_scripted_play_snapshot();
                 host_log_camera_trace("during", scripted_play_during);
                 host_log_animation_trace("during", scripted_play_during);
-                LOG_INFO("scripted play: during DRIGHT flags=(state=0x%x,motion=0x%x) "
+                LOG_INFO("scripted play: during DUP flags=(state=0x%x,motion=0x%x) "
                          "position=(%.3f,%.3f,%.3f) velocity=(%.3f,%.3f,%.3f) "
                          "input=(held=0x%x,magnitude=%.3f,speed=%.3f) object-index=%d frametime=%.6f "
                          "camera=(%.3f,%.3f,%.3f)->(%.3f,%.3f,%.3f) angles=(%u,%u)->(%u,%u) "
@@ -1042,7 +1065,7 @@ i32 host_run_window(const HostWindowOptions &options) {
                 const f32 player_delta_squared =
                     player_delta.x * player_delta.x + player_delta.y * player_delta.y + player_delta.z * player_delta.z;
                 scripted_play_movement_observed = player_delta_squared > 0.0001f;
-                LOG_INFO("scripted play: held DRIGHT for %llu ms; "
+                LOG_INFO("scripted play: held DUP for %llu ms; "
                          "after position=(%.3f,%.3f,%.3f) velocity=(%.3f,%.3f,%.3f) yrot=%u "
                          "input=(held=0x%x,magnitude=%.3f,speed=%.3f) camera=(%.3f,%.3f,%.3f); "
                          "deltas player=(%.3f,%.3f,%.3f) yrot=%d camera=(%.3f,%.3f,%.3f); "
@@ -1131,7 +1154,9 @@ i32 host_run_window(const HostWindowOptions &options) {
                          scripted_play_jump_landed.player_velocity.y, scripted_play_jump_landed.player_context,
                          scripted_play_jump_landed.animation_current, scripted_play_jump_landed.animation_requested,
                          scripted_play_jump_observed ? 1 : 0);
-                HostInputSetHeld(0, GAMEPAD_DRIGHT);
+                // From the fixed cantina spawn/camera, forward crosses the nearest
+                // world pickup. This exercises the normal collision and HUD path.
+                HostInputSetHeld(0, GAMEPAD_DUP);
                 scripted_play_input_held = true;
                 scripted_stage = HostScriptedInputStage::play_move;
                 scripted_stage_ticks = elapsed_ticks;

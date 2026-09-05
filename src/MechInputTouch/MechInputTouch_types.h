@@ -7,6 +7,7 @@
 #include "legoapi/items/objects/basething.h"
 #include "legoapi/render/core/SwipeDecalRenderer.h"
 #include "nu2api/nucore/NuTouchInputElement.h"
+#include "nu2api/nucore/nuvuvec.hpp"
 #include "decomp_assert.h"
 
 struct AIPATHCNX_s;
@@ -74,7 +75,6 @@ struct ThingProcessData;
 struct ThingRenderData;
 struct ThingResetData;
 struct TouchHolder;
-struct VuVec;
 struct WORLDINFO_s;
 struct nuvec_s;
 
@@ -83,11 +83,49 @@ struct AIPATH_s;
 struct AISYS_s;
 struct JumpTriggerPacket {};
 struct MechAutoJumpConnection {};
-struct MechInputTouchGestureTracker {};
-struct MechTouchUIElement {};
+struct NuVec2 {
+    float x;
+    float y;
+};
+struct TouchHolder {
+    u8 field_0x0[0x2c];
+    NuVec2 touch_position;
+};
+struct MechInputTouchGestureTracker {
+    virtual bool OnDown(GameObject_s &, TouchHolder &);
+    virtual bool OnRelease(GameObject_s &, TouchHolder &);
+    virtual bool OnClick(GameObject_s &, TouchHolder &);
+    virtual bool OnDoubleClick(GameObject_s &, TouchHolder &);
+    virtual bool OnHold(GameObject_s &, TouchHolder &);
+    virtual bool OnSwipe(GameObject_s &, TouchHolder &, i32);
+};
+typedef void (*MechTouchUICallback)(MechTouchUIElement &, TouchHolder &);
+struct MechTouchUIElement {
+    MechTouchUIElement()
+        : managed_links(NULL), position(), radius_x(0.0f), radius_y(0.0f), on_down(NULL), on_click(NULL), on_hold(NULL),
+          on_release(NULL), on_leave(NULL), hovered(0), disabled(0), visible(1), rectangular(0), owner(NULL) {
+    }
+    virtual ~MechTouchUIElement();
+    virtual void Process(float);
+    virtual void Render();
+
+    void *managed_links;
+    VuVec position;
+    float radius_x;
+    float radius_y;
+    MechTouchUICallback on_down;
+    MechTouchUICallback on_click;
+    MechTouchUICallback on_hold;
+    MechTouchUICallback on_release;
+    MechTouchUICallback on_leave;
+    u8 hovered;
+    u8 disabled;
+    u8 visible;
+    u8 rectangular;
+    TouchHolder *owner;
+};
 struct NuInputTouch;
 struct NuInputTouchData;
-struct NuVec2 {};
 struct NuVirtualTouchDevice;
 struct nupad_s;
 struct ThingProcessData {
@@ -98,8 +136,6 @@ struct ThingProcessData {
 };
 struct ThingRenderData {};
 struct ThingResetData {};
-struct TouchHolder {};
-struct VuVec;
 struct WORLDINFO_s;
 struct nuvec_s;
 
@@ -408,6 +444,25 @@ struct MechSystems : BaseThing {
 
     u32 unknown_0x10[6];
     MechInputTouchSystem input_touch_system;
+    u8 unknown_0x30[0x265c - 0x30];
+    u8 ui_storage[0x84];
+    u8 player_button_storage[0x164];
+    u8 pause_button_storage[0x44];
+    u32 marker_manager_vptr;
+    u8 marker_storage[0x80];
+    void *renderers_and_buttons[11];
+    u8 initialized;
+    u8 field_0x2939[3];
+
+    MechTouchUI &TouchUI() {
+        return *reinterpret_cast<MechTouchUI *>(ui_storage);
+    }
+    MechTouchUIPlayerButton &PlayerButton() {
+        return *reinterpret_cast<MechTouchUIPlayerButton *>(player_button_storage);
+    }
+    MechTouchUIPauseButton &PauseButton() {
+        return *reinterpret_cast<MechTouchUIPauseButton *>(pause_button_storage);
+    }
 };
 struct MechTempPosInterface {
     void GetFloorTargetPos(VuVec &, i32) const;
@@ -509,26 +564,29 @@ struct MechTouchTaskUseZipUp {
     void OnStart();
     void Update();
 };
-struct MechTouchUI {
-    void AddUIElement(MechTouchUIElement &);
+struct MechTouchUI : MechInputTouchGestureTracker {
+    bool AddUIElement(MechTouchUIElement &);
     void Init();
     MechTouchUI();
-    void OnClick(GameObject_s &, TouchHolder &);
-    void OnDoubleClick(GameObject_s &, TouchHolder &);
-    void OnDown(GameObject_s &, TouchHolder &);
-    void OnHold(GameObject_s &, TouchHolder &);
-    void OnRelease(GameObject_s &, TouchHolder &);
-    void PickElement(NuVec2 &);
+    bool OnClick(GameObject_s &, TouchHolder &) override;
+    bool OnDoubleClick(GameObject_s &, TouchHolder &) override;
+    bool OnDown(GameObject_s &, TouchHolder &) override;
+    bool OnHold(GameObject_s &, TouchHolder &) override;
+    bool OnRelease(GameObject_s &, TouchHolder &) override;
+    MechTouchUIElement *PickElement(NuVec2 &);
     void Process(float);
-    void RemoveUIElement(MechTouchUIElement &);
+    bool RemoveUIElement(MechTouchUIElement &);
     void Render();
     ~MechTouchUI();
+
+    MechTouchUIElement *elements[32];
 };
-struct MechTouchUICharIcon {
+struct MechTouchUICharIcon : MechTouchUIElement {
     MechTouchUICharIcon(MechTouchUIPartySelector &, VuVec const &, i32, float);
-    void Process(float);
-    void Render();
+    void Process(float) override;
+    void Render() override;
     void SetupDisabled();
+    u8 field_0x3c[0x80 - 0x3c];
 };
 struct MechTouchUIPartySelector {
     void BlendOut();
@@ -537,31 +595,46 @@ struct MechTouchUIPartySelector {
     MechTouchUIPartySelector(MechTouchUIPlayerButton &, i32 *);
     ~MechTouchUIPartySelector();
 };
-struct MechTouchUIPauseButton {
+struct MechTouchUIPauseButton : MechTouchUIElement {
     MechTouchUIPauseButton();
-    void Process(float);
-    void Render();
+    void Process(float) override;
+    void Render() override;
+    float disable_timer;
+    float skip_prompt_timer;
 };
-struct MechTouchUIPlayerButton {
+struct MechTouchUIPlayerButton : MechTouchUIElement {
     MechTouchUIPlayerButton();
-    void Process(float);
+    void Process(float) override;
     void SetupTargetIds();
     void ShowChooser();
     void TriggerTagNext();
+    u8 field_0x3c[0x164 - 0x3c];
 };
-struct MechTouchUITagButton {
+struct MechTouchUITagButton : MechTouchUIElement {
     void FadeOut();
     MechTouchUITagButton(GameObject_s &, TouchHolder &);
-    void Process(float);
-    void Render();
-    virtual ~MechTouchUITagButton();
+    void Process(float) override;
+    void Render() override;
+    ~MechTouchUITagButton() override;
+    u8 field_0x3c[0xe4 - 0x3c];
 };
-struct MechTouchUITexButton {
+struct MechTouchUITexButton : MechTouchUIElement {
     MechTouchUITexButton(VuVec const &, float);
-    void Process(float);
-    void Render();
+    void Process(float) override;
+    void Render() override;
     void UpdateTexture(i16);
-    virtual ~MechTouchUITexButton();
+    ~MechTouchUITexButton() override;
+    u8 field_0x3c[0x90 - 0x3c];
 };
+
+DECOMP_ASSERT(sizeof(NuVec2) == 0x8, "NuVec2 size");
+DECOMP_ASSERT(sizeof(MechInputTouchGestureTracker) == 0x4, "MechInputTouchGestureTracker size");
+DECOMP_ASSERT(sizeof(MechTouchUIElement) == 0x3c, "MechTouchUIElement size");
+DECOMP_ASSERT(sizeof(MechTouchUI) == 0x84, "MechTouchUI size");
+DECOMP_ASSERT(sizeof(MechTouchUIPlayerButton) == 0x164, "MechTouchUIPlayerButton size");
+DECOMP_ASSERT(sizeof(MechTouchUIPauseButton) == 0x44, "MechTouchUIPauseButton size");
+DECOMP_ASSERT(sizeof(MechTouchUITagButton) == 0xe4, "MechTouchUITagButton size");
+DECOMP_ASSERT(sizeof(MechInputTouchSystem) == 0x8, "MechInputTouchSystem size");
+DECOMP_ASSERT(sizeof(MechSystems) == 0x293c, "MechSystems size");
 
 #endif // MECHINPUTTOUCH_TYPES_H

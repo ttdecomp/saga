@@ -2,6 +2,7 @@
 
 #include "batman.h"
 #include "decomp.h"
+#include "gameapi/edtools/edfile.h"
 #include "globals.h"
 #include "legoapi/characters/motion/gameanim.h"
 #include "legoapi/legoapi_types.h"
@@ -9,6 +10,7 @@
 #include "legoapi/world/world.h"
 #include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nucore/nustring.h"
+#include "nu2api/numath/nuvec.h"
 #include "nu2api/numath/numtx.h"
 
 #include <string.h>
@@ -25,6 +27,7 @@ extern "C" {
 f32 GameShadow(GameObject_s *object, NUVEC *position, f32 probe_height, i32 terrain_mask);
 i32 GizSpinner_GetState(GIZSPINNER_s *spinner);
 i32 GizSpinner_Update(GIZSPINNER_s *spinner);
+void GameAnimSet_RemoveAllObjects(GAMEANIMSET_s *set);
 i32 GameAnimSet_IsAnimationReset(GAMEANIMSET_s *set);
 i32 MatrixReflectionVU0_AXISY(NUMTX *matrix, f32 plane, f32 scale, NUMTX *result);
 
@@ -409,9 +412,221 @@ static void *GizSpinner_ReserveBufferSpace(void *world_ptr) {
     return NULL;
 }
 
-static i32 GizSpinner_Load(void *, void *) {
-    UNIMPLEMENTED();
-    return {};
+static i32 GizSpinner_Load(void *world_ptr, void *) {
+    static i32 version = -1;
+
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    if (world->spinners == NULL) {
+        return 0;
+    }
+
+    NuSpecialFind(things_scene, &thingsSceneBase, const_cast<char *>("Spinner_default_Base"), 0);
+    NuSpecialFind(things_scene, &thingsSceneArm, const_cast<char *>("Spinner_default_Arm"), 0);
+    if (world->spinner_count != 0) {
+        return 0;
+    }
+
+    version = EdFileReadInt();
+    world->spinner_count = EdFileReadInt();
+    if (world->spinner_count <= 0) {
+        return 1;
+    }
+
+    for (i32 index = 0; index < world->spinner_count; ++index) {
+        GIZSPINNER_s *spinner = &world->spinners[index];
+        GAMEANIMSET_s *anim_set = spinner->anim_set;
+        memset(spinner, 0, sizeof(*spinner));
+        spinner->anim_set = anim_set;
+
+        char special_name[32];
+        const i32 name_length = static_cast<signed char>(EdFileReadChar());
+        if (name_length != 0) {
+            EdFileRead(spinner->name, name_length);
+        }
+        EdFileReadNuVec(&spinner->position);
+        spinner->initial_rotation = static_cast<u16>(EdFileReadShort());
+
+        const i32 special_name_length = static_cast<signed char>(EdFileReadChar());
+        if (special_name_length != 0) {
+            EdFileRead(special_name, special_name_length);
+        }
+        nuhspecial_s special;
+        NuSpecialFind(world->current_gscn, &special, special_name, 0);
+        bool special_missing = NuSpecialExistsFn(&special) == 0;
+        if (special_missing) {
+            NuSpecialFind(things_scene, &special, special_name, 0);
+            special_missing = NuSpecialExistsFn(&special) == 0;
+        }
+        spinner->special = special;
+
+        const u8 output_count = static_cast<u8>(EdFileReadChar());
+        const i32 output_points = static_cast<signed char>(output_count);
+        u8 spinner_type = 4;
+        u32 spinner_state_flags = 0;
+        f32 animation_speed = 0.0f;
+        f32 initial_animation_point = 1.0f;
+        f32 spinner_field_98 = 0.0f;
+        u8 spinner_flags = 0;
+        bool read_game_anim_set = false;
+
+        if (version > 1) {
+            spinner_type = static_cast<u8>(EdFileReadChar());
+        }
+        if (version <= 2) {
+            GameAnimSet_RemoveAllObjects(anim_set);
+            animation_speed = 1.0f;
+        } else {
+            spinner_state_flags = static_cast<u32>(EdFileReadInt()) & ~0x360u;
+            spinner->field_0x2d8 = EdFileReadFloat();
+            if (version == 3) {
+                GameAnimSet_RemoveAllObjects(anim_set);
+                spinner_state_flags = 0;
+                spinner_type = 4;
+                animation_speed = 1.0f;
+            } else {
+                animation_speed = EdFileReadFloat();
+                if (version == 4) {
+                    GameAnimSet_RemoveAllObjects(anim_set);
+                    initial_animation_point = animation_speed;
+                } else {
+                    if (version > 5) {
+                        spinner_flags = static_cast<u8>(EdFileReadChar());
+                    }
+                    GameAnimSet_RemoveAllObjects(anim_set);
+                    read_game_anim_set = true;
+                }
+            }
+        }
+
+        f32 longest_duration = 0.0f;
+        if (!read_game_anim_set) {
+            const i32 object_count = static_cast<signed char>(EdFileReadChar());
+            for (i32 object_index = 0; object_index < object_count; ++object_index) {
+                const i32 object_name_length = static_cast<signed char>(EdFileReadChar());
+                if (object_name_length != 0) {
+                    EdFileRead(special_name, object_name_length);
+                }
+                NuSpecialFind(world->current_gscn, &special, special_name, 0);
+                GAMEANIMOBJ_s *object = GameAnimSet_AddObject(anim_set, &special, 1.0f, 1000000000.0f, 0);
+                if (spinner->primary_anim_obj == NULL) {
+                    if (object != NULL && object->animation != NULL) {
+                        spinner->primary_anim_obj = object;
+                        longest_duration = object->end_frame - object->start_frame;
+                    }
+                } else if (object != NULL && object->animation != NULL) {
+                    const f32 duration = __builtin_fabsf(object->end_frame - object->start_frame);
+                    if (duration > longest_duration) {
+                        spinner->primary_anim_obj = object;
+                        longest_duration = duration;
+                    }
+                }
+            }
+        } else {
+            GizmoFileReadGameAnimSet(anim_set, world, NULL, static_cast<u8>(version), const_cast<char *>("Spinner"),
+                                     spinner->name);
+            for (GAMEANIMOBJ_s *object = anim_set->objects; object != NULL; object = object->next) {
+                if (spinner->primary_anim_obj == NULL) {
+                    if (object->animation != NULL) {
+                        spinner->primary_anim_obj = object;
+                        longest_duration = __builtin_fabsf(object->end_frame - object->start_frame);
+                    }
+                } else if (object->animation != NULL) {
+                    const f32 duration = __builtin_fabsf(object->end_frame - object->start_frame);
+                    if (duration > longest_duration) {
+                        spinner->primary_anim_obj = object;
+                        longest_duration = duration;
+                    }
+                }
+            }
+        }
+
+        if (version > 6) {
+            if (output_points > 0) {
+                for (i32 point = 1; point <= output_points; ++point) {
+                    spinner->animation_points[point] = EdFileReadFloat();
+                }
+            }
+            if (output_points <= 7) {
+                for (i32 point = output_points + 1; point < 10; ++point) {
+                    spinner->animation_points[point] = -1.0f;
+                }
+            }
+            if (version == 7) {
+                initial_animation_point = animation_speed;
+            } else {
+                spinner_field_98 = EdFileReadFloat();
+                if (version == 8) {
+                    initial_animation_point = animation_speed;
+                } else {
+                    initial_animation_point = EdFileReadFloat();
+                }
+            }
+        } else {
+            initial_animation_point = animation_speed;
+            if (spinner->primary_anim_obj != NULL) {
+                if (output_points > 0) {
+                    const f32 start_frame = spinner->primary_anim_obj->start_frame;
+                    const f32 duration = spinner->primary_anim_obj->end_frame - start_frame;
+                    if (duration > 0.0f) {
+                        const f32 interval = duration / static_cast<f32>(output_points - 1);
+                        for (i32 point = 0; point < output_points; ++point) {
+                            spinner->animation_points[point + 1] =
+                                static_cast<f32>(static_cast<i32>(static_cast<f32>(point) * interval)) + start_frame;
+                        }
+                    }
+                }
+                if (output_points <= 7) {
+                    for (i32 point = output_points + 1; point < 10; ++point) {
+                        spinner->animation_points[point] = -1.0f;
+                    }
+                }
+            }
+        }
+
+        if (special_missing) {
+            --world->spinner_count;
+            --index;
+            continue;
+        }
+
+        NUVEC minimum;
+        NUVEC maximum;
+        NuSpecialGetBounds(&spinner->special, &minimum, &maximum);
+        if (NuSpecialCompare(&thingsSceneBase, &spinner->special) != 0) {
+            NUVEC arm_minimum;
+            NUVEC arm_maximum;
+            NuSpecialGetBounds(&thingsSceneArm, &arm_minimum, &arm_maximum);
+            NuVecAdd(&minimum, &minimum, reinterpret_cast<NUVEC *>(&spinner->special));
+            NuVecAdd(&maximum, &maximum, &arm_maximum);
+        } else {
+            f32 extent = maximum.z - minimum.z;
+            const f32 other_extent = maximum.x - minimum.x;
+            spinner->type = 4;
+            spinner->output_count = 1;
+            spinner->rotation = spinner->initial_rotation;
+            spinner->animation_speed = 1.0f;
+            if (other_extent > extent) {
+                extent = other_extent;
+            }
+            spinner->animation_points[0] = 1.0f;
+            spinner->field_0x08c = 0;
+            spinner->state_flags |= 8;
+            spinner->field_0x098 = 0.0f;
+            spinner->field_0x09c = extent * 31.5f;
+            spinner->field_0x094 = extent * 0.4f;
+        }
+
+        spinner->type = spinner_type;
+        spinner->animation_speed = animation_speed;
+        spinner->animation_points[0] = initial_animation_point;
+        spinner->output_count = output_count;
+        spinner->state_flags = spinner_state_flags;
+        spinner->flags = spinner_flags;
+        spinner->field_0x098 = spinner_field_98;
+        spinner->flags |= GIZSPINNER_FLAG_VALID;
+        spinner->flags &= 0xdd;
+    }
+    return 1;
 }
 
 ADDGIZMOTYPE *Spinner_RegisterGizmo(i32 type_id) {

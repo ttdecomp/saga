@@ -11,8 +11,15 @@ static i32 Teleport_GetMaxGizmos(void *world_ptr) {
     return world != NULL ? world->current_level->max_teleports : 0;
 }
 
-static void Teleport_AddGizmos(GIZMOSYS *gizmo_sys, i32, void *, void *) {
-    UNIMPLEMENTED();
+static void Teleport_AddGizmos(GIZMOSYS *gizmo_sys, i32 type_id, void *world_ptr, void *) {
+    WORLDINFO *world = static_cast<WORLDINFO *>(world_ptr);
+    if (world == NULL || world->teleports == NULL || world->teleport_count <= 0) {
+        return;
+    }
+
+    for (i32 index = 0; index < world->teleport_count; ++index) {
+        AddGizmo(gizmo_sys, type_id, NULL, &world->teleports[index]);
+    }
 }
 
 static char *Teleport_GetGizmoName(GIZMO *gizmo) {

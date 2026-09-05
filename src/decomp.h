@@ -62,6 +62,23 @@ enum AREA_FLAGS {
 #endif
 
 #ifdef HOST_BUILD
+#define SAGA_HOST_STATIC static
+#define SAGA_HOST_SAFE_MEMSET(dest, value, size)                                                                       \
+    do {                                                                                                               \
+        usize saga_memset_size = (size);                                                                               \
+        if (saga_memset_size != 0) {                                                                                   \
+            memset((dest), (value), saga_memset_size);                                                                 \
+        }                                                                                                              \
+    } while (0)
+#define SAGA_HOST_SAFE_MEMMOVE(dest, source, size)                                                                     \
+    do {                                                                                                               \
+        usize saga_memmove_size = (size);                                                                              \
+        if (saga_memmove_size != 0) {                                                                                  \
+            memmove((dest), (source), saga_memmove_size);                                                              \
+        }                                                                                                              \
+    } while (0)
+#define SAGA_UPPERCASE_CHAR(character, table) ((character) = toupper((unsigned char)(character)))
+
 #include <stdio.h>
 #include <time.h>
 
@@ -122,6 +139,16 @@ static void _saga_log(enum log_level level, const char *file, i32 line, const ch
 #define UNIMPLEMENTED(...) LOG_ERR("UNIMPLEMENTED: %s", #__VA_ARGS__)
 
 #else
+
+#define SAGA_HOST_STATIC
+#define SAGA_HOST_SAFE_MEMSET(dest, value, size) memset((dest), (value), (size))
+#define SAGA_HOST_SAFE_MEMMOVE(dest, source, size) memmove((dest), (source), (size))
+#define SAGA_UPPERCASE_CHAR(character, table)                                                                          \
+    do {                                                                                                               \
+        if ((u32)(character) <= 0xff) {                                                                                \
+            (character) = (table)[(character) + 1];                                                                    \
+        }                                                                                                              \
+    } while (0)
 
 #define UNIMPLEMENTED(...)
 

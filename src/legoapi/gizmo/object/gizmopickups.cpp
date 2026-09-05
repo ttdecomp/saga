@@ -10,15 +10,17 @@ struct SHOPINPUT;
 
 u8 CoinTab[4] = {0, 1, 2, 3};
 
+void Pup_CollectCoin(WORLDINFO_s *, GIZMOPICKUP_s *, i32, GameObject_s *, i32);
+
 GIZMO_PICKUP_TYPE GizmoPickupType[10] = {
     {"Silver Coin", NULL, NULL, 's', 4, GIZMOPICKUP_TYPE_FLAG_40, 0, 0x00b7, 10, 0.045f, 0.045f, 10.0f, 0.0f, NULL,
-     NULL, -1, -1, 0.0f, 0.0f},
-    {"Gold Coin", NULL, NULL, 'g', 4, GIZMOPICKUP_TYPE_FLAG_40, 0, 0x00bf, 100, 0.045f, 0.045f, 10.0f, 0.0f, NULL, NULL,
-     -1, -1, 0.0f, 0.0f},
+     Pup_CollectCoin, -1, -1, 0.0f, 0.0f},
+    {"Gold Coin", NULL, NULL, 'g', 4, GIZMOPICKUP_TYPE_FLAG_40, 0, 0x00bf, 100, 0.045f, 0.045f, 10.0f, 0.0f, NULL,
+     Pup_CollectCoin, -1, -1, 0.0f, 0.0f},
     {"Blue Coin", "PickupCoinB", NULL, 'b', 4, GIZMOPICKUP_TYPE_FLAG_40, 0, 0x00c7, 1000, 0.045f, 0.045f, 6.0f, 0.0f,
-     NULL, NULL, 8, -1, 0.0f, 0.0f},
+     NULL, Pup_CollectCoin, 8, -1, 0.0f, 0.0f},
     {"Purple Coin", "PickupCoinB", NULL, 'p', 4, GIZMOPICKUP_TYPE_FLAG_40, 0, 0x00d5, 10000, 0.045f, 0.045f, 6.0f, 0.0f,
-     NULL, NULL, 8, -1, 0.0f, 0.0f},
+     NULL, Pup_CollectCoin, 8, -1, 0.0f, 0.0f},
     {"Minikit", "MK-Appear", NULL, 'm', 0,
      GIZMOPICKUP_TYPE_DRAW_TUMBLING | GIZMOPICKUP_TYPE_MINIKIT_DETECTOR | GIZMOPICKUP_TYPE_FLAG_40, 0, 0x00ce, 0,
      0.125f, 0.15f, 2.0f, 0.05f, NULL, NULL, 20, -1, 0.0f, 0.0f},

@@ -2,6 +2,7 @@
 
 #include "decomp.h"
 #include "globals.h"
+#include "gameapi/edtools/edfile.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/characters/motion.h"
 #include "legoapi/characters/motion/gameanim.h"
@@ -307,9 +308,25 @@ static void *GizBombGens_ReserveBufferSpace(void *world_ptr) {
     return system;
 }
 
-static i32 GizBombGens_Load(void *, void *) {
-    UNIMPLEMENTED();
-    return {};
+static i32 GizBombGens_Load(void *world_ptr, void *system_ptr) {
+    const u8 version = static_cast<u8>(EdFileReadChar());
+    GIZBOMBGENSYS *system = static_cast<GIZBOMBGENSYS *>(system_ptr);
+    system->count = static_cast<u16>(EdFileReadShort());
+    if (system->count != 0) {
+        GIZBOMBGEN *bomb_generator = system->bomb_generators;
+        i32 index = 0;
+        do {
+            EdFileRead(bomb_generator->name, sizeof(bomb_generator->name));
+            EdFileReadNuVec(&bomb_generator->position);
+            bomb_generator->interval = EdFileReadInt();
+            bomb_generator->flags |= GIZBOMBGEN_FLAG_ACTIVE | GIZBOMBGEN_FLAG_VISIBLE;
+            GizmoFileReadGameAnimSet(bomb_generator->anim_set, world_ptr, NULL, version,
+                                     const_cast<char *>("BombGenerator"), bomb_generator->name);
+            ++index;
+            ++bomb_generator;
+        } while (system->count > index);
+    }
+    return 1;
 }
 
 ADDGIZMOTYPE *GizBombGen_RegisterGizmo(i32 type_id) {

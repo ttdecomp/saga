@@ -16,6 +16,8 @@ struct starfighter_s;
 
 struct APICHARACTERMODELLIST_s;
 
+void GizmoPickup_CollectCoin(WORLDINFO_s *, nuvec_s *, i32, i32, GameObject_s *, i32);
+
 COLLECTID *TempCollectID = NULL;
 
 i32 CollectCount = 0;
@@ -389,7 +391,8 @@ void AddToCollection(i32) {
 void AddToGoldBricks() {
 }
 
-void Pup_CollectCoin(WORLDINFO_s *, GIZMOPICKUP_s *, i32, GameObject_s *, i32) {
+void Pup_CollectCoin(WORLDINFO_s *world, GIZMOPICKUP_s *pickup, i32 type, GameObject_s *object, i32 arg) {
+    GizmoPickup_CollectCoin(world, &pickup->position, type, pickup->model_variant, object, arg);
 }
 
 void ResetCoinPacket(COINPACKET_s *packet) {
