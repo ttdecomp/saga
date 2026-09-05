@@ -69,7 +69,7 @@ void PanelRender(WORLDINFO_s *) {
             u32 colour;
         };
 
-        PanelFadeVertex *vertex = reinterpret_cast<PanelFadeVertex *>((*g_NuPrim_StreamBufferPtr)->void_ptr);
+        PanelFadeVertex *vertex = reinterpret_cast<PanelFadeVertex *>(g_NuPrim_StreamBufferPtr->void_ptr);
         if (g_NuPrim_NeedsOverbrightening == 0) {
             vertex->colour = colour & 0xff000000u;
         } else {
@@ -77,7 +77,7 @@ void PanelRender(WORLDINFO_s *) {
         }
         NuPrim2DAddXYZ(0.0f, 0.0f, 0.0f);
 
-        vertex = reinterpret_cast<PanelFadeVertex *>((*g_NuPrim_StreamBufferPtr)->void_ptr);
+        vertex = reinterpret_cast<PanelFadeVertex *>(g_NuPrim_StreamBufferPtr->void_ptr);
         if (g_NuPrim_NeedsOverbrightening == 0) {
             vertex->colour = colour & 0xff000000u;
         } else {

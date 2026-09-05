@@ -1073,7 +1073,7 @@ i32 host_run_window(const HostWindowOptions &options) {
             const Uint64 clamped_elapsed =
                 orbit_elapsed < host_camera_orbit_duration_ms ? orbit_elapsed : host_camera_orbit_duration_ms;
             const f32 progress = static_cast<f32>(clamped_elapsed) / static_cast<f32>(host_camera_orbit_duration_ms);
-            GameCam->field_0x218 = camera_orbit_base_yaw + progress * host_full_camera_rotation;
+            GameCam->field_0x218 = camera_orbit_base_yaw - progress * host_full_camera_rotation;
 
             if (orbit_elapsed >= host_camera_orbit_duration_ms) {
                 GameCam->field_0x218 = camera_orbit_base_yaw;
