@@ -29,7 +29,7 @@ NuSoundLoaderOGG::NuSoundLoaderOGG() : buffer(NULL) {
 
 NuSoundStreamDesc *NuSoundLoaderOGG::CreateHeader() {
     NuSoundHeaderOGG *header = (NuSoundHeaderOGG *)NuSoundSystem::_AllocMemory(
-        NuSoundSystem::MemoryDiscipline::SCRATCH, 0x308, 4,
+        NuSoundSystem::MemoryDiscipline::SCRATCH, sizeof(NuSoundHeaderOGG), 4,
         "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound_loader_ogg.cpp:280");
 
     if (header != NULL) {

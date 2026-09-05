@@ -1,5 +1,6 @@
 #include "decomp.h"
 #include "gameapi/gui/apimenu.h"
+#include "gameframework/saveload.h"
 #include "legoapi/menus/screens/shop.h"
 #include "legoapi/characters/core/players.h"
 #include "legoapi/menus/screens/store.h"
@@ -123,7 +124,14 @@ bool Store_IsPackUnlocked(i32) {
     return 1;
 }
 
-void Store_IsPackAvailable(i32, char *) {
+bool Store_IsPackAvailable(i32, char *reason) {
+    if (reason != NULL) {
+        *reason = '\0';
+    }
+    if (memcard_autosavestarted != 0 || memcard_autosavepostdelay > 0.0f) {
+        return false;
+    }
+    return memcard_autosavepredelay <= 0.0f;
 }
 
 void StoreBundle_FindByName(char *) {

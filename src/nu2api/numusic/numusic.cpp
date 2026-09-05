@@ -265,9 +265,11 @@ void NuMusic::InitData(const char *file, VARIPTR *buffer_start, VARIPTR buffer_e
 
     this->tracks = tracksPtr;
     if (0 < count) {
+        const isize track_rebase = reinterpret_cast<char *>(tracksPtr) - reinterpret_cast<char *>(pTVar3);
         for (Album *album = this->albums; album < &this->albums[count]; album++) {
             if (album->tracks_source != NULL) {
-                album->tracks_source += (tracksPtr - pTVar3);
+                album->tracks_source =
+                    reinterpret_cast<Track *>(reinterpret_cast<char *>(album->tracks_source) + track_rebase);
             }
         }
         tracksPtr = this->tracks;
@@ -290,11 +292,13 @@ LAB_003203e6:
         this->indexes = __dest;
 
         if (0 < track_count) {
+            const isize index_rebase = reinterpret_cast<char *>(__dest) - reinterpret_cast<char *>(pfVar2);
             tracksPtr = this->tracks;
             pTVar3 = tracksPtr + track_count;
             do {
                 if (tracksPtr->entry_times != NULL) {
-                    tracksPtr->entry_times += (__dest - pfVar2);
+                    tracksPtr->entry_times =
+                        reinterpret_cast<f32 *>(reinterpret_cast<char *>(tracksPtr->entry_times) + index_rebase);
                 }
                 tracksPtr = tracksPtr + 1;
             } while (tracksPtr != pTVar3);

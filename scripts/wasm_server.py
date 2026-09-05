@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Serve the Bazel WASM output with cross-origin isolation headers."""
+"""Serve the generated static site and Bazel WASM output locally."""
 
 from __future__ import annotations
 
@@ -9,19 +9,34 @@ import shutil
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.error import HTTPError, URLError
-from urllib.parse import parse_qs, urlsplit
-from urllib.request import Request, urlopen
+from urllib.parse import urlsplit
+
+try:
+    from scripts.plot_binary_match_map import generate_site
+except ModuleNotFoundError:
+    from plot_binary_match_map import generate_site
 
 
 OBB_NAME = "main.1060.com.wb.lego.tcs.obb"
 
 
-def default_output_directory() -> Path:
+def default_wasm_directory() -> Path:
     runfiles_output = Path("src")
     if (runfiles_output / "saga.html").is_file():
         return runfiles_output
-    return Path("bazel-bin/src")
+    workspace = Path(os.environ.get("BUILD_WORKSPACE_DIRECTORY", Path.cwd()))
+    return workspace / "bazel-bin/src"
+
+
+def default_site_directory(wasm_directory: Path) -> Path:
+    workspace = Path(os.environ.get("BUILD_WORKSPACE_DIRECTORY", Path.cwd()))
+    pages = workspace / "doc/pages"
+    report = workspace / "matching.json"
+    if report.is_file():
+        generate_site(report, pages / "index.html", 256 * 512, 512)
+    if (pages / "index.html").is_file():
+        return pages
+    return wasm_directory
 
 
 def default_obb_path() -> Path | None:
@@ -51,8 +66,15 @@ class WasmRequestHandler(SimpleHTTPRequestHandler):
         ".wasm": "application/wasm",
     }
 
-    def __init__(self, *args, obb_path: Path | None = None, **kwargs) -> None:
+    def __init__(
+        self,
+        *args,
+        obb_path: Path | None = None,
+        wasm_directory: Path | None = None,
+        **kwargs,
+    ) -> None:
         self.obb_path = obb_path
+        self.wasm_directory = wasm_directory
         super().__init__(*args, **kwargs)
 
     def end_headers(self) -> None:
@@ -64,27 +86,53 @@ class WasmRequestHandler(SimpleHTTPRequestHandler):
 
     def do_GET(self) -> None:
         path = urlsplit(self.path).path
-        if path == "/local-obb":
+        if path == f"/{OBB_NAME}":
             self._serve_local_obb(head_only=False)
             return
-        if path == "/proxy":
-            self._serve_proxy(head_only=False)
+        if path in {"/saga.js", "/saga.wasm"} and self._serve_wasm_asset(
+            path[1:], head_only=False
+        ):
             return
         if path == "/":
-            self.path = "/saga.html"
+            self.path = (
+                "/index.html"
+                if (Path(self.directory) / "index.html").is_file()
+                else "/saga.html"
+            )
         super().do_GET()
 
     def do_HEAD(self) -> None:
         path = urlsplit(self.path).path
-        if path == "/local-obb":
+        if path == f"/{OBB_NAME}":
             self._serve_local_obb(head_only=True)
             return
-        if path == "/proxy":
-            self._serve_proxy(head_only=True)
+        if path in {"/saga.js", "/saga.wasm"} and self._serve_wasm_asset(
+            path[1:], head_only=True
+        ):
             return
         if path == "/":
-            self.path = "/saga.html"
+            self.path = (
+                "/index.html"
+                if (Path(self.directory) / "index.html").is_file()
+                else "/saga.html"
+            )
         super().do_HEAD()
+
+    def _serve_wasm_asset(self, name: str, *, head_only: bool) -> bool:
+        if self.wasm_directory is None:
+            return False
+        asset = self.wasm_directory / name
+        if not asset.is_file():
+            return False
+        size = asset.stat().st_size
+        self.send_response(200)
+        self.send_header("Content-Type", self.guess_type(str(asset)))
+        self.send_header("Content-Length", str(size))
+        self.end_headers()
+        if not head_only:
+            with asset.open("rb") as source:
+                shutil.copyfileobj(source, self.wfile)
+        return True
 
     def _serve_local_obb(self, *, head_only: bool) -> None:
         if self.obb_path is None:
@@ -105,36 +153,6 @@ class WasmRequestHandler(SimpleHTTPRequestHandler):
                 # Reloading the page legitimately abandons a large in-flight OBB.
                 pass
 
-    def _serve_proxy(self, *, head_only: bool) -> None:
-        fetch_site = self.headers.get("Sec-Fetch-Site")
-        if fetch_site and fetch_site != "same-origin":
-            self.send_error(403, "Cross-origin proxy requests are not allowed")
-            return
-
-        query = parse_qs(urlsplit(self.path).query)
-        target = query.get("url", [""])[0]
-        parsed_target = urlsplit(target)
-        if parsed_target.scheme not in {"http", "https"} or not parsed_target.netloc:
-            self.send_error(400, "A valid HTTP or HTTPS proxy URL is required")
-            return
-
-        try:
-            request = Request(target, method="HEAD" if head_only else "GET")
-            with urlopen(request, timeout=30) as remote:
-                self.send_response(remote.status)
-                for header in ("Content-Type", "Content-Length"):
-                    value = remote.headers.get(header)
-                    if value:
-                        self.send_header(header, value)
-                self.end_headers()
-                if not head_only:
-                    shutil.copyfileobj(remote, self.wfile)
-        except HTTPError as error:
-            self.send_error(error.code, error.reason)
-        except URLError as error:
-            self.send_error(502, str(error.reason))
-
-
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", default="127.0.0.1")
@@ -143,10 +161,11 @@ def main() -> None:
     parser.add_argument("--obb", type=Path, help=f"override the path to {OBB_NAME}")
     args = parser.parse_args()
 
+    wasm_directory = default_wasm_directory().resolve()
     directory = (
         argument_path(args.directory).resolve()
         if args.directory is not None
-        else default_output_directory().resolve()
+        else default_site_directory(wasm_directory).resolve()
     )
     if not directory.is_dir():
         parser.error(f"build output directory does not exist: {directory}")
@@ -155,9 +174,15 @@ def main() -> None:
     if args.obb is not None and not obb_path.is_file():
         parser.error(f"OBB does not exist: {obb_path}")
 
-    handler = partial(WasmRequestHandler, directory=str(directory), obb_path=obb_path)
+    handler = partial(
+        WasmRequestHandler,
+        directory=str(directory),
+        obb_path=obb_path,
+        wasm_directory=wasm_directory,
+    )
     server = ThreadingHTTPServer((args.host, args.port), handler)
     print(f"Now listening at http://{args.host}:{args.port}/")
+    print(f"Serving site from {directory}")
     if obb_path is not None:
         print(f"Serving local OBB from {obb_path}")
     try:

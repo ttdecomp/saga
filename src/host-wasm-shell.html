@@ -80,6 +80,16 @@
         line-height: 1.6;
       }
 
+      #play-button,
+      #local-obb-load {
+        width: 100%;
+        margin-top: 1rem;
+      }
+
+      #local-obb-load[hidden] {
+        display: none;
+      }
+
       header p {
         margin: 0.55rem 0 0;
       }
@@ -232,7 +242,7 @@
       <section class="panel" aria-label="Game data">
         <div id="status" class="status" role="status" aria-live="polite">
           <span class="status-dot" aria-hidden="true"></span>
-          <span id="status-text">Preparing runtime…</span>
+          <span id="status-text">Looking for game data…</span>
         </div>
 
         <div class="field">
@@ -248,8 +258,11 @@
           </div>
         </form>
 
-        <p class="hint">When the development server finds the expected OBB under <code>res/</code>, it loads it
-          automatically. Files selected here remain in browser memory.</p>
+        <button id="local-obb-load" type="button" hidden>Load detected OBB</button>
+        <button id="play-button" type="button" disabled>Play</button>
+
+        <p class="hint">When the development server finds the expected OBB under <code>res/</code>, it waits for
+          permission before loading it. The game starts only when you press Play.</p>
       </section>
     </main>
 
@@ -266,16 +279,18 @@
       const urlForm = document.getElementById("url-form");
       const urlInput = document.getElementById("obb-url");
       const urlSubmit = document.getElementById("url-submit");
+      const localObbLoad = document.getElementById("local-obb-load");
+      const playButton = document.getElementById("play-button");
       const status = document.getElementById("status");
       const statusText = document.getElementById("status-text");
       const runtimeError = document.getElementById("runtime-error");
+      const obbName = "main.1060.com.wb.lego.tcs.obb";
       let resolveRuntime;
-      let rejectRuntime;
       let started = false;
-      let webglPreflightContext = null;
-      const runtimeReady = new Promise((resolve, reject) => {
+      let loadedObb = null;
+      let detectedObbUrl = null;
+      const runtimeReady = new Promise((resolve) => {
         resolveRuntime = resolve;
-        rejectRuntime = reject;
       });
 
       function setStatus(message, isError = false, isReady = false) {
@@ -288,6 +303,8 @@
         fileInput.disabled = busy;
         urlInput.disabled = busy;
         urlSubmit.disabled = busy;
+        localObbLoad.disabled = busy;
+        playButton.disabled = busy || loadedObb === null;
       }
 
       function showRuntimeError(error) {
@@ -295,29 +312,6 @@
         runtimeError.textContent = message;
         runtimeError.hidden = false;
         console.error(error);
-      }
-
-      function prepareGraphics() {
-        // Create this before the large OBB enters memory. Emscripten registers
-        // and reuses the same browser context when the game starts.
-        webglPreflightContext = canvas.getContext("webgl2", {
-          alpha: false,
-          depth: true,
-          stencil: false,
-          antialias: true,
-          preserveDrawingBuffer: true,
-        });
-        if (!webglPreflightContext) {
-          throw new Error("WebGL 2 could not be started. Enable browser hardware acceleration and reload the page.");
-        }
-        canvas.addEventListener("webglcontextlost", (event) => {
-          event.preventDefault();
-          showRuntimeError("The WebGL context was lost. Reload the page to restart the game.");
-        });
-      }
-
-      function proxyUrl(url) {
-        return `/proxy?url=${encodeURIComponent(url)}`;
       }
 
       async function readResponse(response, label) {
@@ -347,19 +341,51 @@
         return data.buffer;
       }
 
-      async function startGame(buffer) {
-        if (started) {
+      async function fetchUrl(url, label) {
+        let response;
+        try {
+          response = await fetch(url);
+        } catch (error) {
+          throw new Error("The OBB source blocked this browser download. It must allow cross-origin requests.");
+        }
+        if (!response.ok) {
+          throw new Error(`OBB download failed: HTTP ${response.status}`);
+        }
+        if ((response.headers.get("content-type") || "").includes("text/html")) {
+          throw new Error("The URL returned a web page instead of an OBB.");
+        }
+        return readResponse(response, label);
+      }
+
+      async function loadObb(load, label) {
+        setBusy(true);
+        setStatus(label);
+        try {
+          const [buffer] = await Promise.all([load(), ensureRuntimeLoaded()]);
+          if (!buffer.byteLength) {
+            throw new Error("The selected OBB is empty.");
+          }
+          loadedObb = buffer;
+          setBusy(false);
+          setStatus("Game data ready — press Play.", false, true);
+        } catch (error) {
+          loadedObb = null;
+          setBusy(false);
+          setStatus(error instanceof Error ? error.message : String(error), true);
+          throw error;
+        }
+      }
+
+      function startGame() {
+        if (started || loadedObb === null) {
           return;
         }
-        if (!buffer.byteLength) {
-          throw new Error("The selected OBB is empty.");
-        }
-
         started = true;
         setBusy(true);
         setStatus("Starting game…");
         try {
-          await runtimeReady;
+          const buffer = loadedObb;
+          loadedObb = null;
           Module.FS.mkdirTree("/res");
           Module.FS.writeFile(
             "/res/main.1060.com.wb.lego.tcs.obb",
@@ -385,7 +411,7 @@
           const identifier = decodeURIComponent(pathParts[1]);
           setStatus("Finding OBB in Archive.org item…");
           const metadataUrl = `https://archive.org/metadata/${encodeURIComponent(identifier)}`;
-          const metadataResponse = await fetch(proxyUrl(metadataUrl));
+          const metadataResponse = await fetch(metadataUrl);
           if (!metadataResponse.ok) {
             throw new Error(`Archive.org metadata failed: HTTP ${metadataResponse.status}`);
           }
@@ -400,37 +426,21 @@
         return url.href;
       }
 
-      async function downloadRemoteObb(value) {
-        const url = await resolveObbUrl(value);
-        const response = await fetch(proxyUrl(url));
-        if (!response.ok) {
-          throw new Error(`OBB download failed: HTTP ${response.status}`);
-        }
-        if ((response.headers.get("content-type") || "").includes("text/html")) {
-          throw new Error("The URL returned a web page instead of an OBB.");
-        }
-        return readResponse(response, "Downloading OBB…");
-      }
-
       async function loadServerObb() {
         try {
-          const available = await fetch("/local-obb", { method: "HEAD" });
+          const obbUrl = new URL(obbName, location.href);
+          const available = await fetch(obbUrl, { method: "HEAD", cache: "no-store" });
           if (!available.ok) {
-            setStatus("Runtime ready — choose an OBB to start.", false, true);
+            setStatus("Choose an OBB to load.", false, true);
             return;
           }
 
-          setBusy(true);
-          setStatus("Loading OBB from res/…");
-          const response = await fetch("/local-obb");
-          if (!response.ok) {
-            throw new Error(`Local OBB failed: HTTP ${response.status}`);
-          }
-          await startGame(await readResponse(response, "Loading local OBB…"));
+          detectedObbUrl = obbUrl;
+          localObbLoad.hidden = false;
+          setStatus("Local OBB detected — load it when ready.", false, true);
         } catch (error) {
-          started = false;
           setBusy(false);
-          setStatus(`Automatic load failed: ${error instanceof Error ? error.message : String(error)}`, true);
+          setStatus(`OBB check failed: ${error instanceof Error ? error.message : String(error)}`, true);
           console.error(error);
         }
       }
@@ -442,7 +452,7 @@
         }
         setStatus(`Reading ${file.name}…`);
         try {
-          await startGame(await file.arrayBuffer());
+          await loadObb(() => file.arrayBuffer(), `Reading ${file.name}…`);
         } catch (error) {
           console.error(error);
         }
@@ -452,14 +462,33 @@
         event.preventDefault();
         setBusy(true);
         try {
-          await startGame(await downloadRemoteObb(urlInput.value));
+          const resolvedUrl = await resolveObbUrl(urlInput.value);
+          await loadObb(() => fetchUrl(resolvedUrl, "Downloading OBB…"), "Downloading OBB…");
         } catch (error) {
-          started = false;
           setBusy(false);
           setStatus(error instanceof Error ? error.message : String(error), true);
           console.error(error);
         }
       });
+
+      localObbLoad.addEventListener("click", async () => {
+        if (detectedObbUrl === null) {
+          return;
+        }
+        try {
+          await loadObb(async () => {
+            const response = await fetch(detectedObbUrl);
+            if (!response.ok) {
+              throw new Error(`Local OBB failed: HTTP ${response.status}`);
+            }
+            return readResponse(response, "Loading local OBB…");
+          }, "Loading local OBB…");
+        } catch (error) {
+          console.error(error);
+        }
+      });
+
+      playButton.addEventListener("click", startGame);
 
       var Module = {
         canvas,
@@ -467,20 +496,12 @@
         print: (...args) => console.log(...args),
         printErr: (...args) => console.error(...args),
         setStatus(message) {
-          if (!started && message) {
+          if (started && message) {
             setStatus(message);
           }
         },
         onRuntimeInitialized() {
-          try {
-            prepareGraphics();
-            resolveRuntime();
-            void loadServerObb();
-          } catch (error) {
-            setBusy(true);
-            setStatus(error instanceof Error ? error.message : String(error), true);
-            rejectRuntime(error);
-          }
+          resolveRuntime();
         },
         onAbort: showRuntimeError,
       };
@@ -491,6 +512,19 @@
       window.addEventListener("unhandledrejection", (event) => {
         showRuntimeError(event.reason);
       });
+      canvas.addEventListener("webglcontextlost", (event) => {
+        event.preventDefault();
+        showRuntimeError("The WebGL context was lost. Reload the page to restart the game.");
+      });
+      canvas.addEventListener("webglcontextcreationerror", (event) => {
+        showRuntimeError(`WebGL context creation failed: ${event.statusMessage || "unknown browser error"}`);
+      });
+
+      function ensureRuntimeLoaded() {
+        return runtimeReady;
+      }
+
+      void loadServerObb();
     </script>
     {{{ SCRIPT }}}
   </body>

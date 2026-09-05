@@ -3,6 +3,7 @@
 #include "legoapi/characters/core/players.h"
 #include "legoapi/characters/motion.h"
 #include "legoapi/core/input/gamepads.h"
+#include "legoapi/core/input/qrand.h"
 #include "legoapi/items/base/apiobject.h"
 #include "legoapi/legoapi_types.h"
 #include "legoapi/world/world.h"
@@ -56,14 +57,14 @@ void GameCam_Reset(GAMECAMERA_s *camera) {
     camera->sock_position.location.sock = -1;
     camera->sock_position.location.segment = -1;
     camera->previous_mode = -1;
-    camera->field_0x1c8 = 0.0f;
+    camera->judder_time = 0.0f;
     ObstacleCamSpl = NULL;
-    camera->field_0x1d0 = 0.0f;
+    camera->shake_amplitude = 0.0f;
     MiniCutCam = 0;
-    camera->field_0x1d4 = 0.0f;
+    camera->shake_target_amount = 0.0f;
     camera->mode = -1;
-    camera->field_0x1d8 = 0.0f;
-    camera->field_0x1dc = 1.0f;
+    camera->shake_time = 0.0f;
+    camera->shake_speed = 1.0f;
     camera->blend_duration = 0.0f;
     camera->blend_time = 0.0f;
     camera->position_seek = static_cast<f32>(static_cast<u8>(WORLD->current_level->cam_pos_seek));
@@ -77,25 +78,89 @@ void GameCam_Reset(GAMECAMERA_s *camera) {
     Minicam_InitSystem();
 }
 
-void GameCam_Judder(GAMECAMERA_s *, float, i32, nuvec_s *) {
-}
-
-void GameCam_HitRoll() {
-}
-
-void GameCam_NewShake(GAMECAMERA_s *camera, float amount, float speed, float duration) {
+void GameCam_Judder(GAMECAMERA_s *camera, float amount, i32 axis, nuvec_s *source) {
     if (camera == NULL) {
         camera = GameCam;
     }
-    camera->field_0x1d4 = amount;
-    camera->field_0x1d8 = speed;
-    camera->field_0x1dc = duration;
+
+    const f32 absolute_amount = NuFabs(amount);
+    if (absolute_amount <= camera->judder_time) {
+        return;
+    }
+
+    f32 attenuated_amount = absolute_amount;
+    if (source != NULL) {
+        const f32 distance = NuVecDist(&camera->pos, source, NULL);
+        const f32 maximum_distance = static_cast<f32>(static_cast<u8>(WORLD->current_level->camera_judder_distance));
+        if (distance >= maximum_distance) {
+            return;
+        }
+        attenuated_amount *= (maximum_distance - distance) / maximum_distance;
+        if (attenuated_amount <= camera->judder_time) {
+            return;
+        }
+    }
+
+    camera->judder_reverse = amount < 0.0f;
+    camera->judder_axis = static_cast<u8>(axis);
+    camera->judder_duration = attenuated_amount;
+    camera->judder_time = attenuated_amount;
+}
+
+void GameCam_HitRoll() {
+    const f32 amount = qrand() > 0x7fff ? 0.25f : -0.25f;
+    GameCam_Judder(GameCam, amount, 2, NULL);
+}
+
+void GameCam_NewShake(GAMECAMERA_s *camera, float amount, float duration, float speed) {
+    if (camera == NULL) {
+        camera = GameCam;
+    }
+    camera->shake_target_amount = amount;
+    camera->shake_time = duration;
+    camera->shake_speed = speed;
 }
 
 void GameCam_HitJudder() {
+    f32 amount = VehicleArea != 0 ? -0.3f : -0.2f;
+    if (qrand() <= 0x7fff) {
+        amount = -amount;
+    }
+    GameCam_Judder(GameCam, amount, qrand() / 0x5556, NULL);
 }
 
-void GameCam_UpdateShake(GAMECAMERA_s *, float) {
+void GameCam_UpdateShake(GAMECAMERA_s *camera, float ambient_amount) {
+    if (camera == NULL) {
+        camera = GameCam;
+    }
+
+    if (camera->shake_time > 0.0f) {
+        camera->shake_time -= FRAMETIME;
+    }
+    const f32 target_amount = camera->shake_time > 0.0f ? camera->shake_target_amount : MAX(ambient_amount, 0.0f);
+    camera->shake_amplitude = SeekLinearF(camera->shake_amplitude, target_amount, FRAMETIME * 2.0f);
+
+    constexpr f32 kShakeRadius = 0.1f;
+    constexpr f32 kShakeRetargetDistanceSquared = 0.000625f;
+    if (NuVecDistSqr(&camera->shake_direction, &camera->shake_target, NULL) < kShakeRetargetDistanceSquared) {
+        camera->shake_target = {0.0f, static_cast<f32>(qrand()) * (1.0f / 65535.0f) * kShakeRadius, 0.0f};
+        NuVecRotateZ(&camera->shake_target, &camera->shake_target, static_cast<NUANG>(qrand()));
+        camera->shake_target.x *= 4.0f / 3.0f;
+    }
+
+    const bool forced_shake = camera->shake_time > 0.0f;
+    SeekVec(&camera->shake_direction, &camera->shake_direction, &camera->shake_target,
+            forced_shake ? camera->shake_speed * 10.0f : 2.0f);
+    SeekVec(&camera->shake_offset, &camera->shake_offset, &camera->shake_direction,
+            forced_shake ? camera->shake_speed * 2.0f : 2.0f);
+
+    NUVEC scaled_offset;
+    NuVecScale(&scaled_offset, &camera->shake_offset, camera->shake_amplitude);
+    constexpr f32 kShakeAngleScale = 75.0f;
+    const i32 pitch = static_cast<i32>(kShakeAngleScale * camera->shake_amplitude * (scaled_offset.y / kShakeRadius));
+    const i32 yaw = static_cast<i32>(kShakeAngleScale * camera->shake_amplitude * (scaled_offset.x / kShakeRadius));
+    NuMtxPreRotateX(&camera->render_mtx, pitch);
+    NuMtxPreRotateY(&camera->render_mtx, yaw);
 }
 
 void GameCam_ResetLookRot(GAMECAMERA_s *camera) {

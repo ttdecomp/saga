@@ -231,7 +231,7 @@ NuSoundLoader *NuSoundSystem::CreateFileLoader(FileType type) {
         case FileType::OGG:
 
             NuSoundLoaderOGG *ogg_loader =
-                (NuSoundLoaderOGG *)_AllocMemory(NuSoundSystem::MemoryDiscipline::SCRATCH, 0x2e8, 4,
+                (NuSoundLoaderOGG *)_AllocMemory(NuSoundSystem::MemoryDiscipline::SCRATCH, sizeof(NuSoundLoaderOGG), 4,
                                                  "i:/SagaTouch-Android_9176564/nu2api.2013/nusound/nusound.cpp:1247");
             if (ogg_loader != NULL) {
                 new (ogg_loader) NuSoundLoaderOGG();

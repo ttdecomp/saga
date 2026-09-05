@@ -326,7 +326,24 @@ void ResetStatusPacket_LSW(STATUSPACKET_s *packet) {
 void Status_DrawPromptMenu(STATUSPACKET_s *, i32, float) {
 }
 
-void getFinishedStatusAlpha(STATUSPACKET_s *) {
+f32 getFinishedStatusAlpha(STATUSPACKET_s *packet) {
+    STATUS_STAGE_s *stage = packet->stage;
+    f32 alpha = 1.0f;
+    if (stage->type == 11 || stage->type == 12) {
+        alpha = 0.0f;
+    } else if (stage->type == 10) {
+        alpha = stage->field_0x18 < 1.0f ? 1.0f - stage->field_0x18 : 0.0f;
+    } else if (stage->type == 19 && stage->field_0x14 != 0) {
+        if (stage->field_0x18 < 1.0f) {
+            alpha = 1.0f - stage->field_0x18;
+        } else {
+            const f32 fade_start = stage->field_0x1c - 1.0f;
+            alpha = stage->field_0x18 < fade_start
+                        ? 0.0f
+                        : (stage->field_0x18 - fade_start) / (stage->field_0x1c - fade_start);
+        }
+    }
+    return alpha;
 }
 
 void SuperStoryTime_LSW_Draw(STATUS_STAGE_s *, STATUSPACKET_s *, i32) {
