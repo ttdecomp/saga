@@ -1054,6 +1054,7 @@ i32 host_run_window(const HostWindowOptions &options) {
                 scripted_stage = HostScriptedInputStage::complete;
                 scripted_stage_ticks = elapsed_ticks;
             } else if (scripted_stage == HostScriptedInputStage::complete && !options.camera_free &&
+                       (!options.camera_orbit || camera_orbit_finished) &&
                        elapsed_ticks >= scripted_stage_ticks + options.script_tail_ms) {
                 break;
             }

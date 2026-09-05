@@ -214,8 +214,8 @@ void Players_Init(void) {
 static char sMissionStartDoor[] = "MissionStartDoor";
 static char sArcadeStartDoor[] = "ArcadeStartDoor";
 
-static NUVEC HubVehiclesDoorPos[2] = {{0}};
-static NUVEC HubMinikitDoorPos[2] = {{0}};
+static NUVEC HubVehiclesDoorPos[2] = {{-24.21f, 0.0f, -25.36f}, {-23.63f, 0.0f, -25.68f}};
+static NUVEC HubMinikitDoorPos[2] = {{-27.14f, 0.0f, -24.92f}, {-26.77f, 0.0f, -24.94f}};
 
 void Players_InitPositions(WORLDINFO *world) __attribute__((optimize("unroll-loops")));
 void Players_InitPositions(WORLDINFO *world) {
@@ -290,13 +290,33 @@ void Players_InitPositions(WORLDINFO *world) {
                 if (door != NULL) {
                     NuStrCpy(Door_ExitName, (char *)door);
                 }
-            } else if (VEHICLES_ADATA == NULL || (u8)((char *)VEHICLES_ADATA)[0x7c] == 0xa09) {
-                if (VEHICLES_ADATA != NULL && (i32)(u8)((char *)VEHICLES_ADATA)[0x7c] == 0xa09) {
+            } else if (last_area != -1) {
+                i32 area = last_area;
+                if (VEHICLES_ADATA != NULL && VEHICLES_ADATA->index == area) {
                     PlayerStart[0].pos = (NUVEC *)&HubVehiclesDoorPos[0];
+                    PlayerStart[0].angle = 0x9555;
                     PlayerStart[1].pos = (NUVEC *)&HubVehiclesDoorPos[1];
-                } else if ((u16)(ADataList[0xa09].flags) & 0x5) {
-                    PlayerStart[0].pos = (NUVEC *)&HubMinikitDoorPos[0];
-                    PlayerStart[1].pos = (NUVEC *)&HubMinikitDoorPos[1];
+                    PlayerStart[1].angle = 0x9555;
+                } else {
+                    AREADATA *area_data = &ADataList[area];
+                    if ((area_data->flags & 5) == 5) {
+                        PlayerStart[0].pos = (NUVEC *)&HubMinikitDoorPos[0];
+                        PlayerStart[0].angle = 0x6e38;
+                        PlayerStart[1].pos = (NUVEC *)&HubMinikitDoorPos[1];
+                        PlayerStart[1].angle = 0x6e38;
+                    } else {
+                        if ((area_data->flags & 4) != 0 && area_data->episode_index != AREA_EPISODE_NONE) {
+                            i32 episode_area = (i32)Episode_FindAreaFromFlags(
+                                &EDataList[area_data->episode_index], 5, 5);
+                            if (episode_area != -1) {
+                                area = episode_area;
+                            }
+                        }
+                        void *door = Door_FindByIndex(world, area, -1, NULL);
+                        if (door != NULL) {
+                            NuStrCpy(Door_ExitName, (char *)door);
+                        }
+                    }
                 }
             }
         }
