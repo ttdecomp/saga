@@ -19,7 +19,7 @@ extern "C" {
     void NuQFntSetJustifiedTolerances(float squash, float stretch);
     unsigned char *NuUnicodeCharFromUTF8(u16 *character, unsigned char *text);
     unsigned char *NuUTF8CharFromUnicode(unsigned char *text, u16 character);
-    VUFNT *LoadGameFont(char *, char *, i32, variptr_u *, variptr_u *);
+    VUFNT *LoadGameFont(char *, char *, variptr_u *, variptr_u *, i32);
     VUFNT *LoadButtonFont(char *, char *, variptr_u *, variptr_u *, i32);
     void NuLanguageSet(i32 language);
 }
@@ -28,9 +28,10 @@ char *Text_GetLanguagePath(i32 language);
 void Text_LoadAndFixUpStrings(unsigned char *filename, unsigned char **buffer, char **table, i32 count);
 void IntroText_SetTextID(i32 id);
 void Text_InsertCommasIntoNumber(char *number, char *text, i32 length);
+static VUFNT *app_fnt;
 void Text_LoadFont(char *path, variptr_u *buf, variptr_u *buf_end) {
     create_qfont3dz = 1;
-    QFont2D = LoadGameFont(path, path, 1, buf, buf_end);
+    app_fnt = LoadGameFont(path, path, buf, buf_end, 1);
     LoadButtonFont("stuff\\text\\Buttons", 0, buf, buf_end, 0);
 }
 #include "nu2api/numath/numtx.h"
@@ -231,7 +232,7 @@ void Text_SetLanguage(i32 language) {
     }
 }
 void *Text_IsFontLoaded() {
-    return QFont2D;
+    return app_fnt;
 }
 void TextDecodeCodeword(char *, char *) {
 }
@@ -500,7 +501,7 @@ extern "C" {
         return QFont2DButtons;
     }
 
-    VUFNT *LoadGameFont(char *path, char *name, i32 render_plane, variptr_u *buf, variptr_u *buf_end) {
+    VUFNT *LoadGameFont(char *path, char *name, variptr_u *buf, variptr_u *buf_end, i32 render_plane) {
         QFont2D = static_cast<VUFNT *>(NuQFntLoadPtr(path, name, 4, render_plane, buf, buf_end));
         if (QFont2D != nullptr) {
             if (create_qfont2dlower != 0)

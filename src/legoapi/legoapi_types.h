@@ -1184,17 +1184,19 @@ struct HINT_s {
     u8 flags;                // 0x04
     u8 pad_0x05[0x1c - 0x05];
     u8 completion_flags[4]; // 0x1c
-    i32 field_0x20;
+    f32 field_0x20;
 };
 DECOMP_ASSERT(sizeof(HINT_s) == 0x24, "HINT_s size");
 struct HINTSYS_s {
-    u8 pad_0x00[0x04];
-    HINT_s *hints;       // 0x04
-    HINT_s *active_hint; // 0x08
+    void (*update_fn)(HINT_s *, i32); // 0x00
+    HINT_s *hints;                    // 0x04
+    HINT_s *active_hint;              // 0x08
     u8 pad_0x0c[0x0d - 0x0c];
     u8 state; // 0x0d
-    u8 pad_0x0e[0x18 - 0x0e];
-    i32 current_hint; // 0x18
+    u8 pad_0x0e[0x10 - 0x0e];
+    u32 *save_bits;     // 0x10
+    i32 save_bit_count; // 0x14
+    i32 current_hint;   // 0x18
     i32 field_0x1c;
 };
 DECOMP_ASSERT(sizeof(HINTSYS_s) == 0x20, "HINTSYS_s size");

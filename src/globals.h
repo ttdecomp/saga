@@ -173,7 +173,8 @@ struct GAMESAVE_s {
     EPISODESAVE_s episode_save[9];
     u32 field_0x7bf8;
     u32 initial_store_pack_flags;
-    u8 field_0x7c00[0x20];
+    u8 field_0x7c00[8];
+    u32 hint_completion_bits[6]; // 0x7c08
     u32 coins;
     u16 completion;
     u8 field_0x7c26[6];

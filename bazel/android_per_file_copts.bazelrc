@@ -19,6 +19,7 @@ build:target --per_file_copt=^src/legoapi/menus/core/text\.cpp$@-O2
 build:target --per_file_copt=^src/legoapi/menus/core/hud\.cpp$@-O2
 build:target --per_file_copt=^src/legoapi/menus/core/gamemessages\.cpp$@-O2
 build:target --per_file_copt=^src/legoapi/menus/core/gamehint\.cpp$@-O2
+build:target --per_file_copt=^src/legoapi/menus/core/hint\.cpp$@-O2
 build:target --per_file_copt=^src/legoapi/menus/screens/gamestatus_lsw\.cpp$@-O2
 build:target --per_file_copt=^src/legoapi/menus/screens/gamemenuall\.cpp$@-O3
 build:target --per_file_copt=^src/legoapi/menus/screens/menus\.cpp$@-O3
