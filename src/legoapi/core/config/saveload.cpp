@@ -286,7 +286,13 @@ extern "C" {
     void saveloadWriteKeyCode(void) {
     }
 
-    void TriggerAutoSave(void) {
+    i32 TriggerAutoSave(void) {
+        if (memcard_autosave != 0 && memcard_autosaveenabled != 0 && saveload_autosave != -1) {
+            memcard_autosaveneeded = 1;
+            MenuSaveOccurred = 0;
+            return 1;
+        }
+        return 0;
     }
 
 } // extern "C"

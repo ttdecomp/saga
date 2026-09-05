@@ -1,6 +1,8 @@
 #include "decomp.h"
+#include "gameapi/gui/apimenu.h"
 #include "gamelib/crc/crc.h"
 #include "globals.h"
+#include "legoapi/characters/motion.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/items/base/collection.h"
 #include "legoapi/items/objects/gameobjects.h"
@@ -10,6 +12,7 @@
 #include "legoapi/world/world.h"
 #include "legoapi/world/world_shared.h"
 #include "nu2api/nu3d/nugscn.h"
+#include "nu2api/nu3d/nuspecial.h"
 #include "nu2api/nu3d/nutex.h"
 #include "nu2api/nucore/nustring.h"
 
@@ -26,9 +29,27 @@ shopitem_s *HintItems = NULL;
 shopitem_s *ExtraItems = NULL;
 shopitem_s *CodeItems = NULL;
 shopitem_s *BrickItems = NULL;
+shopitem_s CutItems[128] = {};
+nuhspecial_s extrasils[44] = {};
+nuhspecial_s atoz0to9icon[36] = {};
 
 u32 codelist[144] = {};
 i32 SHOPCHARCOUNT = 0;
+i32 SHOPHINTCOUNT = 0;
+i32 SHOPEXTRACOUNT = 0;
+i32 CutScenePlayCount = 0;
+i16 HintTab[24] = {-1};
+
+i32 CharShelfIds[7] = {};
+i32 HintShelfIds[7] = {};
+i32 ExtraShelfIds[7] = {};
+i32 BrickShelfIds[7] = {};
+i32 CutShelfIds[7] = {};
+NUVEC CharCurPos[7] = {};
+NUVEC HintCurPos[7] = {};
+NUVEC ExtraCurPos[7] = {};
+NUVEC BrickCurPos[7] = {};
+NUVEC CutCurPos[7] = {};
 
 __attribute__((visibility("hidden"))) NUGSPLINE *splshelf = NULL;
 __attribute__((visibility("hidden"))) NUGSPLINE *splcharshelf = NULL;
@@ -39,6 +60,20 @@ NUVEC CodePos[7] = {};
 u16 shelfang = 0;
 
 nuhspecial_s iconback = {};
+nuhspecial_s infoblank = {};
+nuhspecial_s cutblank = {};
+nuhspecial_s cutfilm_unlocked = {};
+nuhspecial_s cutfilm_locked = {};
+nuhspecial_s toolblank = {};
+nuhspecial_s codeblank = {};
+nuhspecial_s question = {};
+nuhspecial_s arrow1 = {};
+nuhspecial_s arrow2 = {};
+nuhspecial_s arrow3 = {};
+nuhspecial_s arrow4 = {};
+NUGSPLINE *shopcamspline = NULL;
+NUVEC *shopcampos = NULL;
+NUVEC *shopcamlookat = NULL;
 __attribute__((visibility("hidden"))) f32 TopShelfScale[6] = {};
 __attribute__((visibility("hidden"))) f32 topscale[6] = {};
 __attribute__((visibility("hidden"))) f32 TopShelfPush[6] = {};
@@ -49,16 +84,138 @@ i32 subpicked = 0;
 i32 subitemselected = 0;
 __attribute__((visibility("hidden"))) void (*drawptr)() = NULL;
 
-void DoShopMenu(MENU_s *) {
+typedef i32 (*ShopMenuCallback)(MENU_s *);
+typedef void (*ShopDrawCallback)();
+
+f32 ShopLockedScale = 0.0f;
+f32 ShopNameAlpha = 0.0f;
+i32 enteredshop = 0;
+i32 SHOPACTIVE = 0;
+extern i32 shop_from_cutsceneplayer;
+
+__attribute__((visibility("hidden"))) f32 SubBigCharPush = 0.0f;
+__attribute__((visibility("hidden"))) f32 SubNormCharPush = 0.0f;
+__attribute__((visibility("hidden"))) ShopMenuCallback menuptr = NULL;
+__attribute__((visibility("hidden"))) ShopMenuCallback oldmenuptr = NULL;
+__attribute__((visibility("hidden"))) ShopMenuCallback menuparent[3] = {};
+__attribute__((visibility("hidden"))) ShopMenuCallback oldmenuparent[3] = {};
+__attribute__((visibility("hidden"))) ShopDrawCallback drawparent[3] = {};
+__attribute__((visibility("hidden"))) ShopDrawCallback olddrawparent[3] = {};
+__attribute__((visibility("hidden"))) ShopDrawCallback drawpanelptr = NULL;
+__attribute__((visibility("hidden"))) ShopDrawCallback olddrawpanelptr = NULL;
+__attribute__((visibility("hidden"))) ShopDrawCallback olddrawptr = NULL;
+__attribute__((visibility("hidden"))) i32 currentmenulevel = 0;
+__attribute__((visibility("hidden"))) i32 oldcurrentmenulevel = 0;
+__attribute__((visibility("hidden"))) i32 currentdrawlevel = 0;
+__attribute__((visibility("hidden"))) i32 oldcurrentdrawlevel = 0;
+__attribute__((visibility("hidden"))) f32 oldpickedscale = 0.0f;
+__attribute__((visibility("hidden"))) f32 oldpickedpush = 0.0f;
+__attribute__((visibility("hidden"))) f32 slidetimer = 0.0f;
+__attribute__((visibility("hidden"))) f32 scaleoverride[7] = {};
+__attribute__((visibility("hidden"))) i32 ExitMenu = 0;
+__attribute__((visibility("hidden"))) i32 lastitem = 0;
+
+extern i32 ItemMenu(MENU_s *menu);
+extern void DrawItemMenu2D();
+extern void InitAlphaList();
+extern void InitExtraList();
+extern HINT_s *Hint_FindHint(i32 hint_id);
+extern i16 HintTab[24];
+extern void GameCam_Blend(GAMECAMERA_s *camera, f32 duration, f32 curve, i32 mode);
+
+i32 DoShopMenu(MENU_s *menu) {
+    i32 result = 0;
+    if (menuptr != NULL) {
+        result = menuptr(menu);
+        if (menu->cancel_pressed != 0) {
+            result = currentmenulevel < 1 ? 5 : 6;
+            for (i32 i = 4; i < 13; ++i) {
+                menu->item_width[i] = 0.0f;
+            }
+            subitemselected = 0;
+        }
+
+        if (result == 5) {
+            return 1;
+        }
+        if (result == 6) {
+            GameCam_Blend(GameCam, 0.6f, 0.0f, 1);
+            drawptr = NULL;
+
+            menuptr = menuparent[currentmenulevel];
+            menuparent[currentmenulevel] = NULL;
+            --currentmenulevel;
+            if (currentmenulevel < 0) {
+                currentmenulevel = 0;
+            }
+
+            drawpanelptr = drawparent[currentdrawlevel];
+            drawparent[currentdrawlevel] = NULL;
+            --currentdrawlevel;
+            if (currentdrawlevel < 0) {
+                currentdrawlevel = 0;
+            }
+        }
+    }
+    return 0;
 }
 
-void UpdateShop(MENU_s *) {
+i32 UpdateShop(MENU_s *menu) {
+    UpdateCharacterIDs();
+
+    scaleoverride[0] = 0.0f;
+    scaleoverride[1] = 0.4f;
+    scaleoverride[2] = 0.8f;
+    scaleoverride[4] = 0.8f;
+    scaleoverride[5] = 0.4f;
+    scaleoverride[6] = 0.0f;
+
+    if (1.0f > ShopNameAlpha) {
+        ShopNameAlpha += FRAMETIME + FRAMETIME;
+        if (ShopNameAlpha > 1.0f) {
+            ShopNameAlpha = 1.0f;
+        }
+    }
+
+    ShopLockedScale = SeekLinearF(ShopLockedScale, 1.0f, FRAMETIME * 3.0f);
+    SubNormCharPush = 0.02f;
+    SubBigCharPush = 0.05f;
+
+    if (menuptr == NULL) {
+        if (shop_from_cutsceneplayer != 0) {
+            shop_from_cutsceneplayer = 0;
+            topscale[5] = oldpickedscale;
+            menuptr = oldmenuptr;
+            toppush[5] = oldpickedpush;
+            drawparent[0] = olddrawparent[0];
+            menuparent[0] = oldmenuparent[0];
+            drawparent[1] = olddrawparent[1];
+            menuparent[1] = oldmenuparent[1];
+            drawparent[2] = olddrawparent[2];
+            menuparent[2] = oldmenuparent[2];
+            drawpanelptr = olddrawpanelptr;
+            drawptr = olddrawptr;
+            currentmenulevel = oldcurrentmenulevel;
+            currentdrawlevel = oldcurrentdrawlevel;
+            picked = oldpicked;
+        } else {
+            menuptr = ItemMenu;
+            ExitMenu = 0;
+            slidetimer = 0.125f;
+            enteredshop = 1;
+            currentmenulevel = 0;
+            currentdrawlevel = 0;
+            menuparent[0] = NULL;
+            drawparent[0] = NULL;
+            picked = oldpicked;
+            drawpanelptr = DrawItemMenu2D;
+        }
+    }
+
+    return DoShopMenu(menu) != 0;
 }
 
 void BuyShopItem(shopitem_s *, i32, i32) {
-}
-
-void EndShopMenu(i32) {
 }
 
 void SelectSubItem() {
@@ -156,7 +313,96 @@ void InitShop(WORLDINFO_s *world) {
 
     UpdateCharacterIDs();
     NuSpecialFind(things_scene, &iconback, "icon_back_neutral", 1);
+
+    NuSpecialFind(WORLD->current_gscn, &infoblank, "info_blank", 1);
+    NuSpecialFind(WORLD->current_gscn, &cutblank, "fmv_blank", 1);
+    NuSpecialFind(WORLD->current_gscn, &cutfilm_unlocked, "shop_film1", 1);
+    NuSpecialFind(WORLD->current_gscn, &cutfilm_locked, "shop_film1b", 1);
+    NuSpecialFind(WORLD->current_gscn, &toolblank, "tool_blank", 1);
+    NuSpecialFind(WORLD->current_gscn, &codeblank, "code_blank", 1);
+    NuSpecialFind(things_scene, &question, "question_icon", 1);
+    NuSpecialFind(WORLD->current_gscn, &arrow1, "shop_arrow1", 1);
+    NuSpecialFind(WORLD->current_gscn, &arrow2, "shop_arrow2", 1);
+    NuSpecialFind(WORLD->current_gscn, &arrow3, "shop_arrow3", 1);
+    NuSpecialFind(WORLD->current_gscn, &arrow4, "shop_arrow4", 1);
+    NuSpecialSetVisibility(&arrow1, 0);
+    NuSpecialSetVisibility(&arrow2, 0);
+    NuSpecialSetVisibility(&arrow3, 0);
+    NuSpecialSetVisibility(&arrow4, 0);
+
+    InitExtraList();
+    InitAlphaList();
+
+    for (i32 i = 0; i < SHOPHINTCOUNT; ++i) {
+        HINT_s *hint = Hint_FindHint(HintTab[i]);
+        shopitem_s *item = &HintItems[i];
+        item->item_id = i;
+        item->type = 0;
+        item->price = hint != NULL ? *reinterpret_cast<i32 *>(reinterpret_cast<u8 *>(hint) + 8) : 0;
+        item->unlocked = (reinterpret_cast<u32 *>(reinterpret_cast<u8 *>(&Game) + 0x7bd4)[i >> 5] >> (i & 0x1f)) & 1;
+        if (item->price == 0) {
+            item->unlocked = 1;
+        }
+        item->special = atoz0to9icon[i];
+    }
+
+    shopcamspline = NuSplineFind(WORLD->current_gscn, const_cast<char *>("shop_cam"));
+    if (shopcamspline == NULL) {
+        return;
+    }
+    shopcampos = shopcamspline->pts;
+    shopcamlookat = shopcamspline->pts + 1;
     LoadShelfSplines();
+
+    if (SHOPCHARCOUNT > 0) {
+        for (i32 i = 0; i < 7; ++i) {
+            CharShelfIds[i] = (SHOPCHARCOUNT + i - 3) % SHOPCHARCOUNT;
+            CharCurPos[i] = SubShelfPos[i];
+        }
+    }
+    if (SHOPHINTCOUNT > 0) {
+        for (i32 i = 0; i < 7; ++i) {
+            HintShelfIds[i] = (SHOPHINTCOUNT + i - 3) % SHOPHINTCOUNT;
+            HintCurPos[i] = SubShelfPos[i];
+        }
+    }
+    if (SHOPEXTRACOUNT > 0) {
+        for (i32 i = 0; i < 7; ++i) {
+            ExtraShelfIds[i] = (SHOPEXTRACOUNT + i - 3) % SHOPEXTRACOUNT;
+            ExtraCurPos[i] = SubShelfPos[i];
+        }
+    }
+
+    const i32 brick_shelf_ids[7] = {11, 12, 13, 0, 1, 2, 3};
+    for (i32 i = 0; i < 7; ++i) {
+        BrickShelfIds[i] = brick_shelf_ids[i];
+        BrickCurPos[i] = SubShelfPos[i];
+    }
+
+    for (i32 i = 0; i < SHOPGOLDBRICKS; ++i) {
+        shopitem_s *item = &BrickItems[i];
+        item->item_id = i;
+        item->type = 4;
+        item->price = 10000 + i * 5000;
+        item->unlocked = (reinterpret_cast<u32 *>(reinterpret_cast<u8 *>(&Game) + 0x7bf8)[i >> 5] >> (i & 0x1f)) & 1;
+        item->special = TopShelf[4].special;
+    }
+
+    for (i32 i = 0; i < CutScenePlayCount && i < 128; ++i) {
+        shopitem_s *item = &CutItems[i];
+        item->item_id = i;
+        item->type = 5;
+        item->price = 0;
+        item->unlocked = 0;
+        item->special = TopShelf[5].special;
+    }
+
+    if (shop_from_cutsceneplayer == 0 && CutScenePlayCount > 0) {
+        for (i32 i = 0; i < 7; ++i) {
+            CutShelfIds[i] = (CutScenePlayCount + i - 3) % CutScenePlayCount;
+            CutCurPos[i] = SubShelfPos[i];
+        }
+    }
 
     const f32 shelf_scale[6] = {0.9f, 0.28f, 0.9f, 0.95f, 0.8f, 0.9f};
     const f32 shelf_push[6] = {0.045f, 0.045f, 0.045f, 0.05f, 0.015f, 0.045f};

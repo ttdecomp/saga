@@ -15,6 +15,7 @@ package(default_visibility = ["//visibility:public"])
 
 config_setting(
     name = "native_linux_debug",
+    constraint_values = ["@platforms//os:linux"],
     define_values = {
         "SAGA_BUILD": "native",
         "SAGA_MODE": "debug",

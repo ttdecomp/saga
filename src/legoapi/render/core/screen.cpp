@@ -3,6 +3,7 @@
 #include "legoapi/legoapi_types.h"
 #include "legoapi/characters/motion.h"
 #include "legoapi/menus/core/text.h"
+#include "legoapi/menus/screens/shop.h"
 #include "nu2api/nu3d/nucamera.h"
 #include "nu2api/nu3d/numtl.h"
 #include "nu2api/nu3d/nutex.h"
@@ -11,6 +12,7 @@
 #include "nu2api/nuandroid/ios_graphics.h"
 
 #include <GLES2/gl2.h>
+#include <stdio.h>
 #include <string.h>
 
 struct AIROW_s;
@@ -25,6 +27,31 @@ void RenderQuads(i16 *) {
 }
 
 void InitAlphaList() {
+    char name[16];
+
+    for (i32 i = 0; i < 26; ++i) {
+        memset(name, 0, sizeof(name));
+        sprintf(name, "shop_%c", i + 'a');
+        NuSpecialFind(WORLD->current_gscn, &atoz0to9icon[i], name, 1);
+    }
+
+#define FIND_SHOP_DIGIT(index_, digit_)                                                                                \
+    memset(name, 0, sizeof(name));                                                                                     \
+    sprintf(name, "shop_%c", digit_);                                                                                  \
+    NuSpecialFind(WORLD->current_gscn, &atoz0to9icon[index_], name, 1)
+
+    FIND_SHOP_DIGIT(26, '0');
+    FIND_SHOP_DIGIT(27, '1');
+    FIND_SHOP_DIGIT(28, '2');
+    FIND_SHOP_DIGIT(29, '3');
+    FIND_SHOP_DIGIT(30, '4');
+    FIND_SHOP_DIGIT(31, '5');
+    FIND_SHOP_DIGIT(32, '6');
+    FIND_SHOP_DIGIT(33, '7');
+    FIND_SHOP_DIGIT(34, '8');
+    FIND_SHOP_DIGIT(35, '9');
+
+#undef FIND_SHOP_DIGIT
 }
 
 f32 GetAspectRatio() {

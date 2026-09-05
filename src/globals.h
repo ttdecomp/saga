@@ -98,28 +98,24 @@ DECOMP_ASSERT(sizeof(AREA_GLOBALS) == 0x34, "AREA_GLOBALS size");
 // ----------------------------------------------------------------------
 // Placeholder save-game / model-list structures.
 // ----------------------------------------------------------------------
-typedef struct CHEAT { /* PlaceHolder Structure */
+typedef struct CHEAT {
     char *name;
-    undefined field1_0x4;
-    undefined field2_0x5;
-    undefined field3_0x6;
-    undefined field4_0x7;
-    byte enabled; /* Created by retype action */
-    undefined field6_0x9;
-    undefined field7_0xa;
+    i16 *text_id;
+    byte enabled;
+    undefined field_0x09;
+    undefined field_0x0a;
     u8 area;
-    undefined field9_0xc;
-    undefined field10_0xd;
-    undefined field11_0xe;
-    undefined field12_0xf;
+    i32 field_0x0c;
     char *code;
-    undefined field14_0x14;
-    undefined field15_0x15;
-    undefined field16_0x16;
-    undefined field17_0x17;
+    i32 extra_price;
     char *extra_name;
     u32 flag;
 } CHEAT;
+DECOMP_ASSERT(sizeof(CHEAT) == 0x20, "CHEAT size");
+DECOMP_ASSERT(offsetof(CHEAT, enabled) == 0x08, "CHEAT enabled offset");
+DECOMP_ASSERT(offsetof(CHEAT, extra_price) == 0x14, "CHEAT extra price offset");
+DECOMP_ASSERT(offsetof(CHEAT, extra_name) == 0x18, "CHEAT extra name offset");
+DECOMP_ASSERT(offsetof(CHEAT, flag) == 0x1c, "CHEAT flags offset");
 
 struct OPTIONSSAVE_s { /* PlaceHolder Structure */
     undefined field0_0x0;
@@ -938,7 +934,7 @@ extern void (*AIPathCnxHelperSysInitFn)(WORLDINFO_s *);
 extern LEVELOBJECT ObjTab[0x2ee]; // level-object type table (.data @0x618240, 0xff-terminated)
 extern struct LEVELSPLINE SplTab[26];
 extern u8 LSW_CharCategory[0x78];
-extern u8 Cheat[0x5a0];
+extern CHEAT Cheat[45];
 extern u8 CharVariants_Game[0x5c];
 extern MemoryManager theMemoryManager;
 extern struct TEXTENTRY LSW_Text[713];

@@ -12,6 +12,7 @@
 #include "legoapi/characters/motion/gameanim.h"
 #include "legoapi/characters/core/character.h"
 #include "legoapi/characters/core/players.h"
+#include "legoapi/menus/screens/shop.h"
 #include "legoapi/props/doors/door.h"
 #include "legoapi/world/area.h"
 #include "legoapi/core/input/qrand.h"
@@ -1886,6 +1887,28 @@ void TakeOverCode(GameObject_s *, i32) {
 }
 
 void InitExtraList() {
+    for (i32 i = 0; i < 44; ++i) {
+        NuStrCpy(ExtraItems[i].special_name, Cheat[i].extra_name);
+        NuSpecialFind(WORLD->current_gscn, &ExtraItems[i].special, ExtraItems[i].special_name, 1);
+        ExtraItems[i].type = 2;
+        ExtraItems[i].unlocked = 0;
+        ExtraItems[i].item_id = i;
+
+        u32 unlocked = reinterpret_cast<u32 *>(reinterpret_cast<u8 *>(&Game) + 0x7bf0)[i >> 5];
+        if (((static_cast<u64>(unlocked) >> (i & 0x1f)) & 1) != 0) {
+            ExtraItems[i].unlocked = 1;
+            reinterpret_cast<u32 *>(reinterpret_cast<u8 *>(&Game) + 0x7c00)[i >> 5] |= 1u << (i & 0x1f);
+        }
+        ExtraItems[i].price = Cheat[i].extra_price;
+    }
+
+    SHOPEXTRACOUNT = 44;
+    for (i32 i = 0; i < SHOPEXTRACOUNT; ++i) {
+        char name[32];
+        NuStrCpy(name, ExtraItems[i].special_name);
+        NuStrCat(name, "b");
+        NuSpecialFind(WORLD->current_gscn, &extrasils[i], name, 1);
+    }
 }
 
 GameObject_s *FindGameObject(i32 character_id, u32 required_flags, i32 alive_only, i32 vehicle_only,

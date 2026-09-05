@@ -54,6 +54,15 @@ extern STATUS_STAGE_s *StatusStages;
 extern f32 iconalphaoverride;
 extern f32 icon_y;
 extern i32 draw_player_icons;
+extern i16 tHINTS;
+extern i16 tCHARACTERS;
+extern i16 tHELPANDOPTIONS;
+extern i16 tGOLDBRICKS;
+extern i16 tSTORYCLIPS;
+extern i16 tENTERCODE;
+
+f32 HUB_EPISODESUBTITLEY = -0.745f;
+f32 HUB_EPISODETITLEY = -0.595f;
 
 void DisplayListGenerateTransforms(nudisplayscene_s *scene);
 void DrawGameObjectsDraw(i32 pass);
@@ -1159,6 +1168,27 @@ void DrawExplosions() {
 }
 
 void DrawItemMenu2D() {
+    if (0.0f < ShopNameAlpha) {
+        i16 text_id;
+        if (picked == 0) {
+            text_id = tHINTS;
+        } else if (picked == 1) {
+            text_id = tCHARACTERS;
+        } else if (picked == 2) {
+            text_id = tHELPANDOPTIONS;
+        } else if (picked == 4) {
+            text_id = tGOLDBRICKS;
+        } else if (picked == 5) {
+            text_id = tSTORYCLIPS;
+        } else {
+            text_id = tENTERCODE;
+        }
+
+        const i32 alpha = static_cast<i32>(ShopNameAlpha * 128.0f);
+        const f32 y = (HUB_EPISODETITLEY + HUB_EPISODESUBTITLEY) * 0.5f;
+        SmartTextEx(TTab[text_id], 0.0f, y, 1.0f, 0.8f, 0.8f, 0.8f, 0, 255, 255, 255, 1.7f, 1, NULL, 0,
+                    static_cast<u32>(alpha));
+    }
 }
 
 void DrawMessageBox(i32, float, float, float, float) {

@@ -14,6 +14,7 @@
 #include "legoapi/menus/core/text.h"
 #include "legoapi/menus/screens/gamemenuall.h"
 #include "legoapi/menus/screens/movies.h"
+#include "legoapi/menus/screens/shop.h"
 #include "legoapi/render/core/render.h"
 #include "legoapi/world/level.h"
 #include "legoapi/world/mission.h"
@@ -63,6 +64,7 @@ extern "C" i32 NuIOS_IsWidescreen(void);
 f32 GameGetMusicVolume(OPTIONSSAVE_s *options);
 f32 GameSetSoundVolume(OPTIONSSAVE_s *options);
 i32 GameAudio_GetSfxId(i32 sfx);
+void GameAudio_PlaySfx(i32 sfx, nuvec_s *position, i32 volume, i32 flags);
 void legoSetMusicVolume(f32 volume);
 void Hint_LoadAllGameState(void);
 void NuIOS_RestoreInAppPurchases(void);
@@ -399,6 +401,15 @@ f32 ICONX = 0.775f;
 f32 ICONSIZE = 0.16f;
 f32 DROPINALPHA = 0.75f;
 i32 shop_quit;
+i32 shop_save_done;
+GAMESAVE_s TempGame = {};
+
+extern i32 hub_forceshopsave;
+extern "C" i32 TriggerAutoSave(void);
+void Hub_ClearStats();
+void Text_FillInExtendedSaveInfo();
+i32 UpdateAchievements(STATUSPACKET_s *packet);
+void ReCalculateCompletionPoints();
 
 void DrawShopPrompts();
 
@@ -558,7 +569,57 @@ static __used__ void MenuDrawTitles(MENU *) {
                     static_cast<i32>(static_cast<f32>(MenuA) * newgamealpha));
     }
 }
-static __used__ void MenuUpdateShop(MENU *) {
+void EndShopMenu(i32) {
+    LevLock[0] = 1;
+    LevTime[0] = 2.0f;
+    DrawCoinTotalTime = 2.0f;
+    MenuRememberCursor(&GameMenu[GameMenuLevel]);
+    MenuReset();
+    ReCalculateCompletionPoints();
+}
+static __used__ void MenuUpdateShop(MENU *menu) {
+    if (shop_save_done != 0) {
+        EndShopMenu(0);
+        shop_save_done = 0;
+        return;
+    }
+
+    if (UpdateShop(menu) == 0) {
+        return;
+    }
+
+    GameAudio_PlaySfx(0x31, NULL, 0, 0);
+    SHOPACTIVE = 0;
+    ShopNameAlpha = 0.0f;
+    shop_quit = 1;
+
+    if (hub_forceshopsave != 0) {
+        goto begin_save;
+    }
+
+    TempGame.field30_0x7c2c = Game.field30_0x7c2c;
+    if (memcmp(&TempGame, &Game, sizeof(Game)) != 0) {
+        goto begin_save;
+    }
+
+    NuIOS_RecordFlurryEvent(const_cast<char *>("hubshop_leavewithoutbuying"));
+    if (hub_forceshopsave == 0) {
+        EndShopMenu(0);
+        return;
+    }
+
+begin_save:
+    hub_forceshopsave = 0;
+    UpdateAchievements(NULL);
+    Hub_ClearStats();
+    Text_FillInExtendedSaveInfo();
+    if (TriggerAutoSave() != 0) {
+        EndShopMenu(0);
+        return;
+    }
+
+    shop_save_done = 1;
+    NewMenu(1000, -1, -1);
 }
 static i32 UpdateTitleSequence(MENU *menu) {
     f32 music_volume = 0.0f;

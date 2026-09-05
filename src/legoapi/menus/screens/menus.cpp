@@ -57,7 +57,8 @@ void ResizePauseScreenTexture(i32, i32) {
 }
 void CodeMenu(MENU_s *) {
 }
-void ItemMenu(MENU_s *) {
+i32 ItemMenu(MENU_s *) {
+    return 0;
 }
 i32 GetMenuID(void) {
     if (GameMenu[GameMenuLevel].menu != -1) {

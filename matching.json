@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "measures": {
-    "fuzzy_match_percent": 16.06926,
+    "fuzzy_match_percent": 16.14583,
     "total_code": "4722419",
     "matched_code": "38126",
     "matched_code_percent": 0.80734044,
@@ -39225,12 +39225,20 @@
           "match_percent": 69.18604
         },
         {
+          "name": "_Z11EndShopMenui",
+          "demangled_name": "EndShopMenu(int)",
+          "address": 1152336,
+          "offset": 262368,
+          "size": 95,
+          "match_percent": 99.666664
+        },
+        {
           "name": "_ZL14MenuUpdateShopP6MENU_s",
           "demangled_name": "MenuUpdateShop(MENU_s*)",
           "address": 1152432,
           "offset": 262464,
           "size": 369,
-          "match_percent": 5.6
+          "match_percent": 68.90667
         },
         {
           "name": "MenuInitialiseEx",
@@ -50845,7 +50853,7 @@
           "address": 4368000,
           "offset": 3478032,
           "size": 78,
-          "match_percent": 11.0
+          "match_percent": 58.2
         },
         {
           "name": "_Z18getsaveload_statusv",
@@ -65003,7 +65011,7 @@
           "address": 2379920,
           "offset": 1489952,
           "size": 435,
-          "match_percent": 7.03125
+          "match_percent": 99.88281
         },
         {
           "name": "_Z11GameFog_Setv",
@@ -65731,7 +65739,7 @@
           "address": 4644240,
           "offset": 3754272,
           "size": 1745,
-          "match_percent": 26.05669
+          "match_percent": 26.079365
         },
         {
           "name": "_Z21FindNearestGameObjectP7nuvec_sP12GameObject_sjffiiiPfiPFiS2_Eb",
@@ -70312,7 +70320,7 @@
           "address": 2367200,
           "offset": 1477232,
           "size": 2237,
-          "match_percent": 1.814255
+          "match_percent": 1.468682
         },
         {
           "name": "_Z8CodeMenuP6MENU_s",
@@ -70417,14 +70425,6 @@
           "match_percent": 92.35294
         },
         {
-          "name": "_Z11EndShopMenui",
-          "demangled_name": "EndShopMenu(int)",
-          "address": 1152336,
-          "offset": 262368,
-          "size": 95,
-          "match_percent": 20.0
-        },
-        {
           "name": "_Z16BuyAllShopExtrasv",
           "demangled_name": "BuyAllShopExtras()",
           "address": 1174976,
@@ -70446,7 +70446,7 @@
           "address": 2381584,
           "offset": 1491616,
           "size": 4613,
-          "match_percent": 17.442095
+          "match_percent": 34.278492
         },
         {
           "name": "_Z17GetShopCamLookPosP7nuvec_s",
@@ -70494,7 +70494,7 @@
           "address": 2394480,
           "offset": 1504512,
           "size": 354,
-          "match_percent": 5.915493
+          "match_percent": 72.49296
         },
         {
           "name": "_Z10UpdateShopP6MENU_s",
@@ -70502,7 +70502,7 @@
           "address": 2394848,
           "offset": 1504880,
           "size": 599,
-          "match_percent": 3.818182
+          "match_percent": 74.40909
         },
         {
           "name": "_Z25Shop_CollectAllCharactersi",
@@ -73749,7 +73749,7 @@
           "address": 2369440,
           "offset": 1479472,
           "size": 358,
-          "match_percent": 5.833334
+          "match_percent": 99.791664
         },
         {
           "name": "_Z12DrawCodeMenuv",
@@ -75490,7 +75490,7 @@
           "address": 2380368,
           "offset": 1490400,
           "size": 1122,
-          "match_percent": 1.802575
+          "match_percent": 99.93991
         },
         {
           "name": "_Z18UCStretchToCornersPsS_",
@@ -75602,7 +75602,7 @@
           "address": 4768528,
           "offset": 3878560,
           "size": 191,
-          "match_percent": 99.21568
+          "match_percent": 99.5098
         },
         {
           "name": "_Z15InitStillRenderP9variptr_uS_",
