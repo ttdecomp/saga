@@ -43,11 +43,11 @@ jobs:
       - name: Build WebAssembly
         run: bazel build --config=wasm //src:saga_wasm
 
-      - name: Build Pages
-        run: bazel run //scripts:plot_binary_match_map
-
       - name: Assemble Pages
         run: cp bazel-bin/src/saga.js bazel-bin/src/saga.wasm doc/pages/
+
+      - name: Build Pages
+        run: bazel run //scripts:plot_binary_match_map
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
