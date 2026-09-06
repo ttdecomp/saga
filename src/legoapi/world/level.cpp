@@ -488,7 +488,7 @@ LEVELDATA *Levels_ConfigureList(char *file, VARIPTR *buf, VARIPTR *buf_end, i32 
             cur_level->blob_shadow_fade_far = 10;
             cur_level->cam_pos_seek = 5;
             cur_level->cam_angle_seek = 5;
-            cur_level->unknown_0d9 = 10;
+            cur_level->camera_judder_distance = 10;
             cur_level->unknown_0da = 5;
             cur_level->unknown_0db = 5;
 

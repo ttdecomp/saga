@@ -97,7 +97,7 @@ static __used__ void LC_AL_raycaststep(nufpar_s *fp) {
 }
 
 static __used__ void LC_AL_reflect_range(nufpar_s *fp) {
-    levelconfig_ldata->unknown_0d9 = (u8)NuFParGetInt(fp);
+    levelconfig_ldata->camera_judder_distance = (u8)NuFParGetInt(fp);
 }
 
 static __used__ void LC_AL_reflect_y(nufpar_s *fp) {

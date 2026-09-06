@@ -40,8 +40,14 @@ jobs:
           external-cache: true
           cache-save: ${{ github.event_name != 'pull_request' }}
 
+      - name: Build WebAssembly
+        run: bazel build --config=wasm_release //src:saga_wasm
+
       - name: Build Pages
         run: bazel run //scripts:plot_binary_match_map
+
+      - name: Assemble Pages
+        run: cp bazel-bin/src/saga.js bazel-bin/src/saga.wasm doc/pages/
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

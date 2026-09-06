@@ -28,6 +28,7 @@ void GameObjectOrigin(GameObject_s *object);
 i32 Grapple_LookAtPos(GameObject_s *object, NUVEC *position);
 NUVEC *Technos_TgtPos(TECHNO_s *techno);
 void GameCam_UpdateLookRot(GAMECAMERA_s *camera);
+void GameCam_UpdateShake(GAMECAMERA_s *camera, f32 ambient_amount);
 void MakePlayPlanes(GAMECAMERA_s *camera);
 u16 SeekRot(u16 current, u16 target, f32 rate);
 void SeekVec(NUVEC *result, NUVEC *current, NUVEC *target, f32 rate);
@@ -299,7 +300,38 @@ static void PlayerCamPos(GameObject_s *object, NUVEC *camera_position, NUVEC *) 
     camera_position->y += centre_height;
 }
 
-static void SetGameCameraView(GAMECAMERA_s *camera, const NUVEC &position, const NUVEC &target, bool snap_angles) {
+static void GameCam_UpdateJudder(GAMECAMERA_s *camera) {
+    if (camera->judder_time <= 0.0f) {
+        return;
+    }
+
+    camera->judder_time -= FRAMETIME;
+    if (camera->judder_time <= 0.0f) {
+        return;
+    }
+
+    constexpr f32 kJudderPeriod = 1.0f / 3.0f;
+    constexpr f32 kJudderAngleScale = 546.0f;
+    const i32 cycles = static_cast<i32>(camera->judder_duration / kJudderPeriod) + 1;
+    const f32 elapsed_ratio = (camera->judder_duration - camera->judder_time) / camera->judder_duration;
+    const NUANG phase = static_cast<NUANG>(static_cast<i32>(static_cast<f32>(cycles * 0x10000) * elapsed_ratio));
+    f32 angle = kJudderAngleScale * camera->judder_time * NU_SIN_LUT(phase);
+    if (camera->judder_reverse != 0) {
+        angle = -angle;
+    }
+
+    const NUANG rotation = static_cast<NUANG>(static_cast<i32>(angle));
+    if (camera->judder_axis == 0) {
+        NuMtxPreRotateX(&camera->render_mtx, rotation);
+    } else if (camera->judder_axis == 1) {
+        NuMtxPreRotateY(&camera->render_mtx, rotation);
+    } else {
+        NuMtxPreRotateZ(&camera->render_mtx, rotation);
+    }
+}
+
+static void SetGameCameraView(GAMECAMERA_s *camera, const NUVEC &position, const NUVEC &target, bool snap_angles,
+                              f32 camera_shake) {
     NUVEC delta;
     NuVecSub(&delta, const_cast<NUVEC *>(&target), const_cast<NUVEC *>(&position));
 
@@ -331,6 +363,8 @@ static void SetGameCameraView(GAMECAMERA_s *camera, const NUVEC &position, const
     NuMtxRotateY(&camera->mtx, render_yaw);
     NuMtxTranslate(&camera->mtx, const_cast<NUVEC *>(&position));
     camera->render_mtx = camera->mtx;
+    GameCam_UpdateJudder(camera);
+    GameCam_UpdateShake(camera, camera_shake);
 
     NuMtxSetRotationZ(&camera->target_mtx, camera->roll);
     NuMtxRotateX(&camera->target_mtx, camera->pitch);
@@ -363,7 +397,7 @@ void MoveGameCamera(GAMECAMERA_s *camera) {
         NUVEC target = {points[3], points[4], points[5]};
         camera->mode = 3;
         camera->desired_position = position;
-        SetGameCameraView(camera, position, target, true);
+        SetGameCameraView(camera, position, target, true, 0.0f);
         camera->previous_mode = camera->mode;
         return;
     }
@@ -412,11 +446,11 @@ void MoveGameCamera(GAMECAMERA_s *camera) {
     f32 overlap_blend = 0.0f;
     f32 position_seek = camera->position_seek;
     f32 angle_seek = camera->angle_seek;
-    f32 terrain_clearance = 0.0f;
+    f32 camera_shake = 0.0f;
     f32 separation_scale = 0.0f;
     SockSysCamera(WORLD->sock_sys, &camera->pos, camera->mode != camera->previous_mode, player_camera_positions,
                   player_positions, player_count, &camera->sock_position, &position, &target, &overlap_blend,
-                  &position_seek, &angle_seek, &terrain_clearance, &separation_scale);
+                  &position_seek, &angle_seek, &camera_shake, &separation_scale);
     overlap_blend *= 1.5f;
     camera->position_seek = position_seek;
     camera->angle_seek = angle_seek;
@@ -435,7 +469,7 @@ void MoveGameCamera(GAMECAMERA_s *camera) {
     // camera position while still producing the current player focus.  Its
     // return value is not a validity gate; both paths continue into the
     // common matrix update.
-    SetGameCameraView(camera, position, target, mode_changed);
+    SetGameCameraView(camera, position, target, mode_changed, camera_shake);
     camera->previous_mode = camera->mode;
 }
 

@@ -1,6 +1,6 @@
 # _saga_
 
-![Progress](https://img.shields.io/badge/matching-16.18%25-red)
+![Progress](https://img.shields.io/badge/matching-16.20%25-red)
 [![Bazel build](https://github.com/ttdecomp/saga/actions/workflows/build-bazel.yaml/badge.svg)](https://github.com/ttdecomp/saga/actions/workflows/build-bazel.yaml)
 [![Discord](https://img.shields.io/discord/1467775700894224555?color=%235865F2&logo=discord&logoColor=%23FFFFFF)](https://discord.gg/2HJuMtzA7q)
 
@@ -68,7 +68,7 @@ See https://ttdecomp.github.io/saga/
 | `legoapi/actions` | 6.6% | 1.3% |
 | `legoapi/ai` | 13.0% | 0.0% |
 | `legoapi/audio` | 7.8% | 5.7% |
-| `legoapi/characters` | 11.3% | 4.0% |
+| `legoapi/characters` | 11.6% | 4.0% |
 | `legoapi/core` | 24.9% | 6.6% |
 | `legoapi/cutscenes` | 11.3% | 2.3% |
 | `legoapi/gizmo` | 12.3% | 2.9% |
@@ -77,7 +77,7 @@ See https://ttdecomp.github.io/saga/
 | `legoapi/menus` | 15.8% | 6.4% |
 | `legoapi/misc` | 8.9% | 3.5% |
 | `legoapi/props` | 28.4% | 2.2% |
-| `legoapi/render` | 12.0% | 6.2% |
+| `legoapi/render` | 11.9% | 6.2% |
 | `legoapi/world` | 23.9% | 6.4% |
 | `legogame` | 50.3% | 0.0% |
 | `nu2api` | 33.0% | 14.7% |

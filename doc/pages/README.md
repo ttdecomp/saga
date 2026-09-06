@@ -40,8 +40,17 @@ The report also stores the original binary's global, local, and weak text
 symbol names in `original_text_symbols`. CI uses that derived symbol surface to
 run `check_symbols` without requiring the copyrighted reference binary.
 
-The second script embeds this data in `index.html`. The Pages workflow runs it
-with the pinned Bazel Python toolchain, then deploys `doc/pages/`.
+The second script fills `scripts/plot_binary_match_map.html` with the compact
+report payload to produce the unified `index.html` landing page. That page also
+launches the browser build from a user-selected OBB, an `obb` query parameter,
+or the expected OBB filename at the page root. Game data is loaded only after
+an explicit user action, and the game waits for a separate Play click. The
+Pages workflow builds the release WASM target, copies `saga.js` and `saga.wasm`
+next to the generated
+page, and deploys `doc/pages/`. The artifact is fully static: it has no proxy or
+server-side API. Remote OBB URLs therefore need to allow cross-origin browser
+requests. A generated service worker provides the cross-origin isolation
+required by the threaded WASM build on GitHub Pages.
 
 The pre-commit hook is a small shim for the `//scripts:pre_commit` Bazel
 `py_binary`. That target runs the build, symbol check, and Bazel report

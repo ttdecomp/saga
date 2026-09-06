@@ -1,1 +1,5 @@
 index.html
+.nojekyll
+coi-serviceworker.js
+saga.js
+saga.wasm

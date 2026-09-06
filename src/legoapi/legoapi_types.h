@@ -748,17 +748,20 @@ struct GAMECAMERA_s {
     NUVEC blend_start_target; // 0x164
     u8 pad_170[0x17c - 0x170];
     NUVEC blend_end_target; // 0x17c
-    u8 pad_188[0x1b8 - 0x188];
+    u8 pad_188[0x194 - 0x188];
+    NUVEC shake_offset;    // 0x194; filtered camera shake applied to render_mtx
+    NUVEC shake_direction; // 0x1a0; current random shake direction
+    NUVEC shake_target;    // 0x1ac; next random shake direction
     f32 field_0x1b8;
-    f32 blend_time;     // 0x1bc
-    f32 blend_duration; // 0x1c0
-    f32 blend_curve;    // 0x1c4
-    f32 field_0x1c8;
-    u8 pad_1cc[4];
-    f32 field_0x1d0;
-    f32 field_0x1d4;
-    f32 field_0x1d8;
-    f32 field_0x1dc;
+    f32 blend_time;          // 0x1bc
+    f32 blend_duration;      // 0x1c0
+    f32 blend_curve;         // 0x1c4
+    f32 judder_time;         // 0x1c8; remaining impact-judder time
+    f32 judder_duration;     // 0x1cc; initial impact-judder time
+    f32 shake_amplitude;     // 0x1d0; filtered ambient-shake amplitude
+    f32 shake_target_amount; // 0x1d4; amplitude used while shake_time is active
+    f32 shake_time;          // 0x1d8; remaining forced-shake time
+    f32 shake_speed;         // 0x1dc; forced-shake direction/filter speed
     f32 position_seek;
     f32 angle_seek;
     f32 field_0x1e8;
@@ -780,13 +783,14 @@ struct GAMECAMERA_s {
     f32 field_0x210;
     f32 field_0x214;
     f32 field_0x218;
-    u16 blend_start_pitch; // 0x21c
-    u16 desired_pitch;     // 0x21e
-    u16 blend_start_yaw;   // 0x220
-    u16 desired_yaw;       // 0x222
-    u16 blend_start_roll;  // 0x224
-    u16 desired_roll;      // 0x226
-    u8 pad_228[2];
+    u16 blend_start_pitch;   // 0x21c
+    u16 desired_pitch;       // 0x21e
+    u16 blend_start_yaw;     // 0x220
+    u16 desired_yaw;         // 0x222
+    u16 blend_start_roll;    // 0x224
+    u16 desired_roll;        // 0x226
+    u8 judder_reverse;       // 0x228
+    u8 judder_axis;          // 0x229; 0 pitch, 1 yaw, otherwise roll
     u8 reset_blend;          // 0x22a
     u8 blend_mode;           // 0x22b
     i8 mode;                 // 0x22c
@@ -795,6 +799,10 @@ struct GAMECAMERA_s {
     u8 pad_22f;
 };
 DECOMP_ASSERT(sizeof(GAMECAMERA_s) == 0x230, "GAMECAMERA_s ABI");
+DECOMP_ASSERT(offsetof(GAMECAMERA_s, shake_offset) == 0x194, "GAMECAMERA shake offset");
+DECOMP_ASSERT(offsetof(GAMECAMERA_s, judder_time) == 0x1c8, "GAMECAMERA judder offset");
+DECOMP_ASSERT(offsetof(GAMECAMERA_s, shake_amplitude) == 0x1d0, "GAMECAMERA shake amplitude offset");
+DECOMP_ASSERT(offsetof(GAMECAMERA_s, judder_reverse) == 0x228, "GAMECAMERA judder flags offset");
 
 // Camera-space containment plane: one point on the plane followed by its
 // inward-facing normal.  The original PlayPlane global contains six of these.
@@ -3703,11 +3711,25 @@ struct ShaderManagerOpenGL {
     virtual ~ShaderManagerOpenGL();
 };
 struct ShaderMtlDescFilter {
-    void getVertexFlags() const;
-    void hasDiffuseMap(i32) const;
-    void hasLayer(i32) const;
+    u32 getVertexFlags() const;
+    bool hasDiffuseMap(i32) const;
+    bool hasLayer(i32) const;
     void internalInit(nushadermtldesc_s const *, numtl_s const *, i32, i32);
+
+    const nushadermtldesc_s *desc; // 0x00
+    const numtl_s *mtl;            // 0x04
+    i32 flags_in;                  // 0x08
+    i32 variant;                   // 0x0c
+    i32 field_0x10;
+    i32 field_0x14;
+    i32 field_0x18;
+    i32 layer_count; // 0x1c
+    i32 texture_id_threshold;
 };
+DECOMP_ASSERT(sizeof(ShaderMtlDescFilter) == 0x24, "ShaderMtlDescFilter ABI");
+DECOMP_ASSERT(offsetof(ShaderMtlDescFilter, variant) == 0x0c, "ShaderMtlDescFilter variant offset");
+DECOMP_ASSERT(offsetof(ShaderMtlDescFilter, texture_id_threshold) == 0x20,
+              "ShaderMtlDescFilter texture threshold offset");
 struct SpecialObject {
     void Exists() const;
     void GetCollision() const;

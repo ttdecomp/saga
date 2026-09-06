@@ -463,7 +463,7 @@ void InitGameAfterConfig(void) {
                                 bVar1 = pAVar2[(char)episode].episode_index;
                                 level->unknown_0ae = bVar1;
                                 if ((pAVar2[(char)episode].flags & 1) != 0) {
-                                    level->unknown_0d9 = 0x32;
+                                    level->camera_judder_distance = 0x32;
                                     level->unknown_0da = 0x14;
                                 }
                                 if (((bVar1 != 0xff) && ((pAVar2[(char)episode].flags & 0x106) == 0)) &&

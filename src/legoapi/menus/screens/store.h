@@ -65,3 +65,4 @@ typedef struct COLLECTID {
 
 i32 Store_FindPack(i32 id, char *name);
 bool Store_IsPackUnlocked(i32 pack);
+bool Store_IsPackAvailable(i32 pack, char *reason);

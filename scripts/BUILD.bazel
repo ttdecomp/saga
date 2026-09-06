@@ -1,4 +1,4 @@
-load("@rules_python//python:defs.bzl", "py_binary")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library")
 
 _PYTHON_ENV = {"PYTHONDONTWRITEBYTECODE": "1"}
 
@@ -6,8 +6,15 @@ py_binary(
     name = "wasm_server",
     srcs = ["wasm_server.py"],
     data = ["//src:saga_wasm"],
+    deps = [":plot_binary_match_map_lib"],
     env = _PYTHON_ENV,
     main = "wasm_server.py",
+)
+
+py_library(
+    name = "plot_binary_match_map_lib",
+    srcs = ["plot_binary_match_map.py"],
+    data = ["plot_binary_match_map.html"],
 )
 
 py_binary(
@@ -36,6 +43,7 @@ py_binary(
 py_binary(
     name = "plot_binary_match_map",
     srcs = ["plot_binary_match_map.py"],
+    data = ["plot_binary_match_map.html"],
     env = _PYTHON_ENV,
     main = "plot_binary_match_map.py",
 )

@@ -19,7 +19,7 @@ i32 RotDiff(u16 current, u16 target);
 u16 TurnRot(u16 current, u16 target, i32 speed, i32 *difference);
 u16 SeekRot(u16 current, u16 target, float rate);
 void SeekVec(NUVEC *result, NUVEC *current, NUVEC *target, float rate);
-void GameCam_NewShake(GAMECAMERA_s *cam, float a, float b, float c);
+void GameCam_NewShake(GAMECAMERA_s *camera, float amount, float duration, float speed);
 void GameCam_HitJudder(void);
 void GameCam_Reset(GAMECAMERA_s *camera);
 void ChrisAllocLevelStuff(WORLDINFO_s *world);
