@@ -41,7 +41,7 @@ jobs:
           cache-save: ${{ github.event_name != 'pull_request' }}
 
       - name: Build WebAssembly
-        run: bazel build --config=wasm_release //src:saga_wasm
+        run: bazel build --config=wasm //src:saga_wasm
 
       - name: Build Pages
         run: bazel run //scripts:plot_binary_match_map
